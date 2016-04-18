@@ -1,0 +1,106 @@
+#!/bin/bash
+
+PARAMETERS="$0 $*"
+CMAKEFLAGS=
+SRCDIR=$(dirname $(readlink -f $0))
+CURPATH="$PWD"
+
+function help(){
+	echo ""
+	echo "h5-memvol uses the CMake (http://www.cmake.org) buildsystem instead of configure."
+	echo "CMake uses different options than configure, but you can use this script to "
+	echo "specify them in the traditional way and get the equivalent cmake command."
+	echo "Use the following options to change default paths."
+	echo "--prefix=<dir>           : installation prefix"
+	echo "--with-hdf5=<dir>        : path to the HDF5 installation directory"
+	echo
+	echo "Optional:"
+	echo "--build-dir=<dir>        : directory in which to build"
+	echo "--debug                  : build SIOX with debug flags"
+	echo "--verbose                : output the command but do not execute it"
+	echo "--reconfigure            : run configure again with the parameters used the last time"
+	echo "--with-mpicc=<file>      : path to the MPI C compiler"
+	echo "--with-mpicxx=<file>     : path to the MPI C++ compiler"
+	echo
+}
+
+buildDIR="build"
+
+function reconfigure(){
+	if [[ ! -e "configure.log" ]] ; then
+		echo "Error, didn't run configure before!" ;
+		exit 1
+	fi
+	$(cat configure.log)
+	exit $?
+}
+
+set -- `getopt -ul "help,version,debug,reconfigure,prefix:,with-cc:,with-cxx:,with-hdf5:,with-mpicc:,with-mpicxx:,verbose,build-dir:" hV "$@"`
+test $# -lt 1  && exit 1
+while test $# -gt 0
+do
+	case "$1" in
+		--help) help; exit;;
+		--reconfigure) reconfigure;;
+		--version) cmake --version; exit;;
+		--prefix) prefix="$2"; shift;;
+		--debug) debug="yes"; ;;
+		--with-boost) boostdir="$2"; shift;;
+		--with-cc) ccbin="$2"; shift;;
+		--with-cxx) cxxbin="$2"; shift;;
+		--with-hdf5) hdf5="$2"; shift;;
+		--with-mpicc) mpicc="$2"; shift;;
+		--with-mpicxx) mpicxx="$2"; shift;;
+		--build-dir) buildDIR="$2"; shift;;
+		--verbose) VERBOSE="YES";;
+		--) ;;
+		*) echo "Unknown option $1"; exit 1;;
+	esac
+	shift
+done
+
+echo $PARAMETERS > configure.log
+
+TARGET_DIR="/usr/local"
+
+if test -n "$debug"; then
+	CMAKEFLAGS="$CMAKEFLAGS -DCMAKE_BUILD_TYPE:STRING=debug"
+else
+	CMAKEFLAGS="$CMAKEFLAGS -DCMAKE_BUILD_TYPE:STRING=release"
+fi
+
+if test -n "$prefix"; then
+	CMAKEFLAGS="$CMAKEFLAGS -DCMAKE_INSTALL_PREFIX:PATH=$prefix"
+	TARGET_DIR="$prefix"
+fi
+if test -n "$ccbin"; then
+	CMAKEFLAGS="$CMAKEFLAGS -DCMAKE_C_COMPILER:FILEPATH=$ccbin"
+fi
+if test -n "$cxxbin"; then
+	CMAKEFLAGS="$CMAKEFLAGS -DCMAKE_CXX_COMPILER:FILEPATH=$cxxbin"
+fi
+if test -n "$hdf5"; then
+	CMAKEFLAGS="$CMAKEFLAGS -DHDF5_hdf5_LIBRARY_RELEASE:PATH=$hdf5/lib/libhdf5.so -DHDF5_C_INCLUDE_DIR:PATH=$hdf/include"
+fi
+if test -n "$mpicc"; then
+	CMAKEFLAGS="$CMAKEFLAGS -DMPI_C_COMPILER:FILEPATH=$mpicc"
+fi
+if test -n "$mpicxx"; then
+	CMAKEFLAGS="$CMAKEFLAGS -DMPI_CXX_COMPILER:FILEPATH=$mpicxx"
+fi
+
+
+COMMAND="mkdir -p $buildDIR && cd $buildDIR && echo $PARAMETERS > configure.log ; rm CMakeCache.txt 2>/dev/null; cmake $CMAKEFLAGS $SRCDIR"
+
+if [[ "$VERBOSE" == "YES" ]] ; then
+	echo "Your current configure options translate more or less to:"
+	echo "$COMMAND"
+	exit 0
+else
+	eval "$COMMAND"
+	ERROR="$?"
+	if [[ "$ERROR" != 0 ]] ; then
+		echo "An error occurred during the configuration, aborting!"
+		exit 1
+	fi
+fi
