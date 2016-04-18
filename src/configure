@@ -80,7 +80,7 @@ if test -n "$cxxbin"; then
 	CMAKEFLAGS="$CMAKEFLAGS -DCMAKE_CXX_COMPILER:FILEPATH=$cxxbin"
 fi
 if test -n "$hdf5"; then
-	CMAKEFLAGS="$CMAKEFLAGS -DHDF5_hdf5_LIBRARY_RELEASE:PATH=$hdf5/lib/libhdf5.so -DHDF5_C_INCLUDE_DIR:PATH=$hdf/include"
+	CMAKEFLAGS="$CMAKEFLAGS -DHDF5_hdf5_LIBRARY_RELEASE:PATH=$hdf5/lib/libhdf5.so -DHDF5_C_INCLUDE_DIR:PATH=$hdf5/include"
 fi
 if test -n "$mpicc"; then
 	CMAKEFLAGS="$CMAKEFLAGS -DMPI_C_COMPILER:FILEPATH=$mpicc"
