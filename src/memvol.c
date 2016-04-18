@@ -132,3 +132,12 @@ int H5VL_memvol_finalize(){
   H5VLclose(vol_id);
   vol_id = -1;
 }
+
+// see H5PL.c:695 ff for a description how the plugin is loaded.
+H5PL_type_t H5PLget_plugin_type(void) {
+	return H5PL_TYPE_VOL;
+}
+
+const void *H5PLget_plugin_info(void) {
+	return & H5VL_memvol;
+}
