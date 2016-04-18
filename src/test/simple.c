@@ -31,8 +31,8 @@ int main(){
   H5VLget_plugin_name(fid, name, 1024);
   printf ("Using VOL %s\n", name);
 
+  H5Fclose(fid);
   H5VL_memvol_finalize();
 
-  H5Fclose(fid);
   return 0;
 }

@@ -30,8 +30,8 @@ int main(){
   fid = H5Fcreate("test", H5F_ACC_TRUNC, H5P_DEFAULT, fprop);
   H5VLget_plugin_name(fid, name, 1024);
   printf ("Using VOL %s\n", name);
+  H5Fclose(fid);
   H5VLunregister(vol_id);
 
-  H5Fclose(fid);
   return 0;
 }
