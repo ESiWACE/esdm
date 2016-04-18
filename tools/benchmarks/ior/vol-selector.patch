@@ -1,0 +1,23 @@
+diff --git a/src/aiori-HDF5.c b/src/aiori-HDF5.c
+index 7649be0..17f8515 100644
+--- a/src/aiori-HDF5.c
++++ b/src/aiori-HDF5.c
+@@ -215,8 +215,17 @@ static void *HDF5_Open(char *testFileName, IOR_param_t * param)
+                 ShowHints(&mpiHints);
+                 fprintf(stdout, "}\n");
+         }
+-        HDF5_CHECK(H5Pset_fapl_mpio(accessPropList, comm, mpiHints),
++
++        const char * vol_driver = getenv("VOL_DRIVER");
++        if (vol_driver == NULL){
++          printf("Using native VOL\n");
++          HDF5_CHECK(H5Pset_fapl_mpio(accessPropList, comm, mpiHints),
+                    "cannot set file access property list");
++        }else{
++           printf("Using VOL: %s for IOR\n", vol_driver);
++           hid_t vol_id = H5VLregister_by_name(vol_driver);
++           H5Pset_vol(accessPropList, vol_id, & accessPropList);
++         }
+
+         /* set alignment */
+         HDF5_CHECK(H5Pset_alignment(accessPropList, param->setAlignment,
