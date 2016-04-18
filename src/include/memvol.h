@@ -13,24 +13,17 @@
 // You should have received a copy of the GNU Lesser General Public License
 // along with h5-memvol.  If not, see <http://www.gnu.org/licenses/>.
 
-#include <memvol.h>
+#ifndef H5_MEMVOL_HEADER__
+#define H5_MEMVOL_HEADER__
 
-int main(){
-  hid_t fprop;
-  hid_t fid;
-  hid_t vol_id = H5VL_memvol_init();
+#include <stdio.h>
+#include <hdf5.h>
 
-  char name[1024];
+/*
+  Returns the volume id.
+*/
+hid_t H5VL_memvol_init();
+int H5VL_memvol_finalize();
 
-  fprop = H5Pcreate(H5P_FILE_ACCESS);
-  H5Pset_vol(fprop, vol_id, &fprop);
 
-  fid = H5Fcreate("test", H5F_ACC_TRUNC, H5P_DEFAULT, fprop);
-  H5VLget_plugin_name(fid, name, 1024);
-  printf ("Using VOL %s\n", name);
-
-  H5VL_memvol_finalize();
-
-  H5Fclose(fid);
-  return 0;
-}
+#endif
