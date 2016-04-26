@@ -10,6 +10,9 @@ if [[ ! -e vol ]] ; then
 fi
 
 cd vol
+echo "Preparing Configure"
+./autogen.sh
+
 mkdir build
 cd build
 ../configure --prefix=$DIR/install --enable-parallel --with-default-plugindir=$DIR/src/build/  --enable-debug=all  --enable-hl   CFLAGS="-g" || exit 1
