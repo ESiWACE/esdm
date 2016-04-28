@@ -17,7 +17,7 @@
 #define H5_MEMVOL_INTERNAL_HEADER__
 
 typedef struct {
-  //
+  int dummy;
 } memvol_t;
 
 #endif

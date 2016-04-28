@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/bash -x
 
 echo "This scripts installs the necessary development environment in ../install"
 
@@ -11,6 +11,8 @@ fi
 
 cd vol
 mkdir build
+
+./autogen.sh || exit 1
 cd build
 ../configure --prefix=$DIR/install --enable-parallel --with-default-plugindir=$DIR/src/build/  --enable-debug=all  --enable-hl   CFLAGS="-g" || exit 1
 make -j 8 || exit 1

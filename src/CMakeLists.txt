@@ -20,10 +20,31 @@ include(CheckCSourceCompiles)
 set(DEV_DIR "${CMAKE_SOURCE_DIR}/../dev")
 set(DEPS_DIR "${CMAKE_SOURCE_DIR}/../deps")
 
+
+### MESSAGE(STATUS "Running platform tests")
+
+set(CMAKE_REQUIRED_INCLUDES ${HDF5_INCLUDE_DIR})
+set(CMAKE_REQUIRED_LIBRARIES "hdf5")
+
+CHECK_C_SOURCE_COMPILES("
+  #include <hdf5.h>
+  const H5VL_class_t H5VL_memvol = {};
+  int main(){
+    return 0;
+  }
+  " HDF5_VOL_TEST)
+
+if( ${HDF5_VOL_TEST} )
+else()
+    message( FATAL_ERROR "HDF5 library does not support VOL interface. Please check dev/install-dev-environment.sh" )
+endif()
+####
+
+
 # compile flags
 set (CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -std=gnu11 -pedantic -Wall -Wextra -Wdouble-promotion -Wfloat-equal -flto -fdata-sections -ffunction-sections -Wl,--gc-sections -Wl,--no-allow-shlib-undefined -Wl,--retain-symbols-file=${CMAKE_SOURCE_DIR}/../dev/symbols.txt -pedantic-errors")
  # -fvisibility=hidden -fvisibility-inlines-hidden
- 
+
 set ( CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -pedantic -Wall -Wextra -Wdouble-promotion -Wfloat-equal -flto -fdata-sections -ffunction-sections -Wl,--gc-sections -Wl,--no-allow-shlib-undefined -pedantic-errors")
 #-fvisibility=hidden -fvisibility-inlines-hidden
 # set (CMAKE_C_FLAGS_DEBUG "${CMAKE_C_FLAGS_DEBUG} -O0")
@@ -31,7 +52,6 @@ set ( CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -pedantic -Wall -Wextra -Wdouble-promo
 
 set (CMAKE_C_FLAGS_DEBUG   "-O0")
 set (CMAKE_C_FLAGS_RELEASE "-O3")
-
 
 ## Documentation
 find_package(Doxygen)
@@ -65,8 +85,8 @@ add_feature_info(plantuml plantuml  "PlantUML for documentation" URL http://de.p
 add_library(h5-memvol SHARED memvol.c)
 target_link_libraries(h5-memvol ${HDF5_LIBRARIES})
 link_directories(h5-memvol ${HDF5_LIBRARY_DIRS} ${MPI_LIBRARIES})
-
 include_directories(${CMAKE_SOURCE_DIR}/include/ ${CMAKE_BINARY_DIR} ${HDF5_INCLUDE_DIR} ${MPI_INCLUDE_PATH})
+
 
 SUBDIRS (test)
 
