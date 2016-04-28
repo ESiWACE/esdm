@@ -91,8 +91,8 @@ static const H5VL_class_t H5VL_memvol = {
         memvol_group_create,
         memvol_group_open,
         memvol_group_get,
-        memvol_group_specific,
-        memvol_group_optional,
+        NULL, // memvol_group_specific => Not used right now.
+        NULL, // memvol_group_optional => Not used right now.
         memvol_group_close
     },
     {                                           /* link_cls */

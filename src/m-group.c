@@ -86,13 +86,3 @@ static herr_t memvol_group_get(void *obj, H5VL_group_get_t get_type, hid_t dxpl_
   }
   return -1;
 }
-
-static herr_t memvol_group_specific(void *obj, H5VL_group_specific_t specific_type, hid_t dxpl_id, void **req, va_list arguments){
-  debugI("Gspecific %p\n", obj);
-  return -1;
-}
-
-static herr_t memvol_group_optional(void *obj, hid_t dxpl_id, void **req, va_list arguments){
-  debugI("Goptional %p\n", obj);
-  return -1;
-}
