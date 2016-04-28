@@ -58,8 +58,8 @@ int main(){
   H5Gclose(g1);
   g1 = H5Gopen2(fid, "g2", H5P_DEFAULT );
   H5Gclose(g1);
-  g1 = H5Gopen2(fid, "INVALID", H5P_DEFAULT );
-  H5Gclose(g1);
+  //g1 = H5Gopen2(fid, "INVALID", H5P_DEFAULT );
+  //H5Gclose(g1);
 
   g1 =  H5Gcreate_anon( fid, H5P_DEFAULT, H5P_DEFAULT );
   H5Gclose(g1);
