@@ -1,0 +1,18 @@
+{
+  "cmd": "cd {PROJECT_PATH}/build/; cmake ../src; make VERBOSE=1",
+  "name": "make all",
+  "args": [""],
+  "sh": true,
+  "cwd": "",
+  "env": {},
+  "errorMatch": [
+    "(?<file>[\\/0-9a-zA-Z\\._\\-]+):(?<line>\\d+):(?<col>\\d+):\\s+(?<message>.+)"
+  ],
+  "keymap": "CTRL-B",
+  "atomCommandName": "namespace:command",
+  "targets": {
+    "build": {
+      "cmd": "cmake ../src ; make VERBOSE=1"
+    }
+  }
+}
