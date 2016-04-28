@@ -62,14 +62,14 @@ static const H5VL_class_t H5VL_memvol = {
         NULL  //memvol_attr_close                  /* close */
     },
     {                                           /* dataset_cls */
-        NULL,                    /* create */
-        NULL,                      /* open */
-        NULL,                      /* read */
-        NULL,                     /* write */
-        NULL, //memvol_dataset_get,               /* get */
-        NULL, //memvol_dataset_specific,          /* specific */
-        NULL, //memvol_dataset_optional,          /* optional */
-        NULL                      /* close */
+        memvol_create,
+        memvol_open,  
+        memvol_read,
+        memvol_write,
+        memvol_get,
+        memvol_specific,
+        NULL,
+        memvol_close
     },
     {                                               /* datatype_cls */
         memvol_datatype_commit,                   /* commit */
