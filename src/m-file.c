@@ -16,7 +16,9 @@
 static void * memvol_file_create(const char *name, unsigned flags, hid_t fcpl_id, hid_t fapl_id, hid_t dxpl_id, void **req)
 {
     memvol_t *file;
-    file = (memvol_t *)calloc(1, sizeof(memvol_t));
+    file = (memvol_t *) malloc(sizeof(memvol_t));
+    memvol_group_init(& file->root_grp);
+    printf("Fcreate %p %s\n", (void*) file, name);
 
     return (void *)file;
 }

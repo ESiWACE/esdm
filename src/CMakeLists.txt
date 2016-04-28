@@ -7,18 +7,21 @@ project (${PROJECT_NAME})
 set (VERSION_MAJOR 0)
 set (VERSION_MINOR 1)
 
+set(DEV_DIR "${CMAKE_SOURCE_DIR}/../dev")
+set(DEPS_DIR "${CMAKE_SOURCE_DIR}/../deps")
+
+include(CTest)
+include(FeatureSummary)
+include(CheckCSourceCompiles)
+
 find_package(PkgConfig REQUIRED)
 # pkg_search_module(HDF5 REQUIRED hdf5)
 
 find_package(HDF5 REQUIRED)
 find_package(MPI REQUIRED)
 
-include(CTest)
-include(FeatureSummary)
-include(CheckCSourceCompiles)
-
-set(DEV_DIR "${CMAKE_SOURCE_DIR}/../dev")
-set(DEPS_DIR "${CMAKE_SOURCE_DIR}/../deps")
+pkg_search_module(GLIB REQUIRED glib-2.0>=2.40)
+set_package_properties(GLIB PROPERTIES URL "http://www.gtk.org" TYPE REQUIRED PURPOSE "data structures")
 
 
 ### MESSAGE(STATUS "Running platform tests")
@@ -50,7 +53,7 @@ set ( CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -pedantic -Wall -Wextra -Wdouble-promo
 # set (CMAKE_C_FLAGS_DEBUG "${CMAKE_C_FLAGS_DEBUG} -O0")
 # set (CMAKE_C_FLAGS_RELEASE "${CMAKE_C_FLAGS_RELEASE} -O2")
 
-set (CMAKE_C_FLAGS_DEBUG   "-O0")
+set (CMAKE_C_FLAGS_DEBUG   "-O0 -g")
 set (CMAKE_C_FLAGS_RELEASE "-O3")
 
 ## Documentation
@@ -81,17 +84,14 @@ add_feature_info(plantuml plantuml  "PlantUML for documentation" URL http://de.p
 ##### END Documentation
 
 
-
 add_library(h5-memvol SHARED memvol.c)
-target_link_libraries(h5-memvol ${HDF5_LIBRARIES})
-link_directories(h5-memvol ${HDF5_LIBRARY_DIRS} ${MPI_LIBRARIES})
-include_directories(${CMAKE_SOURCE_DIR}/include/ ${CMAKE_BINARY_DIR} ${HDF5_INCLUDE_DIR} ${MPI_INCLUDE_PATH})
-
+target_link_libraries(h5-memvol ${HDF5_LIBRARIES} ${GLIB_LIBRARIES})
+link_directories(h5-memvol ${HDF5_LIBRARY_DIRS} ${MPI_LIBRARIES} ${GLIB_LIBRARIES})
+include_directories(${CMAKE_SOURCE_DIR}/include/ ${CMAKE_BINARY_DIR} ${HDF5_INCLUDE_DIR} ${MPI_INCLUDE_PATH} ${GLIB_INCLUDE_DIRS})
 
 SUBDIRS (test)
 
 feature_summary(WHAT ALL)
 
-
 ## Installation
-# install(TARGETS xxx LIBRARY DESTINATION lib)
+install(TARGETS h5-memvol LIBRARY DESTINATION lib)

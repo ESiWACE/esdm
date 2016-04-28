@@ -16,8 +16,18 @@
 #ifndef H5_MEMVOL_INTERNAL_HEADER__
 #define H5_MEMVOL_INTERNAL_HEADER__
 
+#include <string.h>
+
+#include <glib.h>
+
 typedef struct {
-  int dummy;
+  GHashTable * childs_tbl;
+} memvol_group_t;
+
+typedef struct {
+  memvol_group_t root_grp; // it must start with the root group
 } memvol_t;
+
+static void memvol_group_init(memvol_group_t * group);
 
 #endif

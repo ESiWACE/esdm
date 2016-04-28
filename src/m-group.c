@@ -13,37 +13,55 @@
 // You should have received a copy of the GNU Lesser General Public License
 // along with h5-memvol.  If not, see <http://www.gnu.org/licenses/>.
 
-static void * memvol_group_create(void *obj, H5VL_loc_params_t loc_params, const char *name,
-                      hid_t gcpl_id, hid_t gapl_id, hid_t dxpl_id, void **req)
-{
-    memvol_t *group;
-    memvol_t *o = (memvol_t *) obj;
+static void memvol_group_init(memvol_group_t * group){
+  group->childs_tbl = g_hash_table_new (g_str_hash,g_str_equal);
+  assert(group->childs_tbl != NULL);
+}
 
-    group = (memvol_t *)calloc(1, sizeof(memvol_t));
+static void * memvol_group_create(void *obj, H5VL_loc_params_t loc_params, const char *name, hid_t gcpl_id, hid_t gapl_id, hid_t dxpl_id, void **req)
+{
+    memvol_group_t *group;
+    memvol_group_t *parent = (memvol_group_t *) obj;
+
+    // check if the object exists already in the parent
+    if (g_hash_table_lookup (parent->childs_tbl, name) != NULL){
+      return NULL;
+    }
+    group = (memvol_group_t*) malloc(sizeof(memvol_group_t));
+    memvol_group_init(group);
+
+    printf("Gcreate parent %p child %p %s\n", (void*)  obj, (void*)  group, name);
+
+    g_hash_table_insert (parent->childs_tbl, strdup(name), group);
 
     return (void *)group;
 }
 
 static herr_t memvol_group_close(void *grp, hid_t dxpl_id, void **req)
 {
-    memvol_t *g = (memvol_t *)grp;
-
-    free(g);
+    memvol_group_t *g = (memvol_group_t *)grp;
+    printf("Gclose %p\n", (void*)  g);
     return 0;
 }
 
 static void *memvol_group_open(void *obj, H5VL_loc_params_t loc_params, const char *name,  hid_t gapl_id, hid_t dxpl_id, void **req){
-  return NULL;
+  memvol_group_t *parent = (memvol_group_t *) obj;
+  void * child = g_hash_table_lookup(parent->childs_tbl, name);
+  printf("Gopen %p with %s child %p\n", obj, name, child);
+  return child;
 }
 
 static herr_t memvol_group_get(void *obj, H5VL_group_get_t get_type, hid_t dxpl_id, void **req, va_list arguments){
+  printf("Gget %p\n", obj);
   return -1;
 }
 
 static herr_t memvol_group_specific(void *obj, H5VL_group_specific_t specific_type, hid_t dxpl_id, void **req, va_list arguments){
+  printf("Gspecific %p\n", obj);
   return -1;
 }
 
 static herr_t memvol_group_optional(void *obj, hid_t dxpl_id, void **req, va_list arguments){
+  printf("Goptional %p\n", obj);
   return -1;
 }

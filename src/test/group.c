@@ -38,11 +38,13 @@ int main(){
   H5Gclose(g1);
 
   g2 = H5Gcreate2(fid, "g2", H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
+  g1 = H5Gcreate2(g2, "g1", H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
+  H5Gclose(g1);
   H5Gclose(g2);
 
   // is this allowed?
-  g3 = H5Gcreate2(fid, "g1", H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
-  H5Gclose(g3);
+  //g3 = H5Gcreate2(fid, "g1", H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
+  //H5Gclose(g3);
 
   printf("Testing additional functions\n");
   g1 = H5Gopen2(fid, "g1", H5P_DEFAULT );
