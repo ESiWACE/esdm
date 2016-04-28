@@ -88,12 +88,12 @@ static const H5VL_class_t H5VL_memvol = {
         memvol_file_close                        /* close */
     },
     {                                           /* group_cls */
-        NULL,                     /* create */
-        NULL, //memvol_group_open,               /* open */
-        NULL, //memvol_group_get,                /* get */
-        NULL, //memvol_group_specific,           /* specific */
-        NULL, //memvol_group_optional,           /* optional */
-        NULL                       /* close */
+        memvol_group_create,
+        memvol_group_open,
+        memvol_group_get,
+        memvol_group_specific,
+        memvol_group_optional,
+        memvol_group_close
     },
     {                                           /* link_cls */
         NULL, //memvol_link_create,                /* create */
