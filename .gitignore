@@ -4,3 +4,4 @@
 *.backup
 *.log
 build
+plantuml.jar
