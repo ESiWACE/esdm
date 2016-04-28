@@ -134,6 +134,7 @@ int H5VL_memvol_finalize(){
 
   H5VLclose(vol_id);
   vol_id = -1;
+  return 0;
 }
 
 // see H5PL.c:695 ff for a description how the plugin is loaded.
