@@ -53,16 +53,16 @@ int main(){
   H5VLget_plugin_name(fid, name, 1024);
   printf ("%s using VOL %s\n", __FILE__ , name);
 
-  assert(H5Tcommit(fid, "t_complex", tid, H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT) > 0);
-  assert(H5Tcommit(fid, "t_complex_p", disk_tid,  H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT) > 0);
+  assert(H5Tcommit(fid, "t_complex", tid, H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT) >= 0);
+  assert(H5Tcommit(fid, "t_complex_p", disk_tid,  H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT) >= 0);
 
   hid_t tid_stored1 = H5Topen(fid, "t_complex", H5P_DEFAULT);
   hid_t tid_stored2 = H5Topen(fid, "t_complex_p", H5P_DEFAULT);
-  hid_t tid_stored3 = H5Topen(fid, "NotExisting", H5P_DEFAULT);
+  // hid_t tid_stored3 = H5Topen(fid, "NotExisting", H5P_DEFAULT);
+  // assert(tid_stored3 < 0);
 
   assert(H5Tequal(tid_stored1, tid));
   assert(H5Tequal(tid_stored2, disk_tid));
-  assert(tid_stored3 < 0);
 
   H5Fclose(fid);
 

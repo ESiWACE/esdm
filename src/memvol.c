@@ -17,6 +17,9 @@
 #include <stdlib.h>
 #include <assert.h>
 
+#include <glib.h>
+
+
 #pragma GCC diagnostic ignored "-Wunused-parameter"
 
 #include <memvol.h>
@@ -24,14 +27,6 @@
 
 #define MEMVOL_ID 503
 #define MEMVOL_NAME "h5-memvol"
-
-static herr_t memvol_term(hid_t vtpl_id){
-    return 0;
-}
-
-static herr_t memvol_init(hid_t vipl_id){
-  return 0;
-}
 
 #include "m-attribute.c"
 #include "m-dataset.c"
@@ -41,13 +36,23 @@ static herr_t memvol_init(hid_t vipl_id){
 #include "m-link.c"
 #include "m-object.c"
 
+static herr_t memvol_file_term(hid_t vtpl_id){
+    return 0;
+}
+
+static herr_t memvol_init(hid_t vipl_id){
+  memvol_init_dtype(vipl_id);
+  return 0;
+}
+
+
 
 static const H5VL_class_t H5VL_memvol = {
     0,
     MEMVOL_ID,
     MEMVOL_NAME,
     memvol_init,                              /* initialize */
-    memvol_term,                              /* terminate */
+    memvol_file_term,                              /* terminate */
     sizeof(hid_t),
     NULL,
     NULL,

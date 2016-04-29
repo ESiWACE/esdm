@@ -15,8 +15,8 @@
 
 static void * memvol_file_create(const char *name, unsigned flags, hid_t fcpl_id, hid_t fapl_id, hid_t dxpl_id, void **req)
 {
-    memvol_t *file;
-    file = (memvol_t *) malloc(sizeof(memvol_t));
+    memvol_file_t *file;
+    file = (memvol_file_t *) malloc(sizeof(memvol_file_t));
     memvol_group_init(& file->root_grp);
     debugI("Fcreate %p %s\n", (void*) file, name);
 
@@ -25,21 +25,21 @@ static void * memvol_file_create(const char *name, unsigned flags, hid_t fcpl_id
 
 static void * memvol_file_open(const char *name, unsigned flags, hid_t fapl_id, hid_t dxpl_id, void **req)
 {
-    memvol_t *file;
-    file = (memvol_t *)calloc(1, sizeof(memvol_t));
+    memvol_file_t *file;
+    file = (memvol_file_t *)calloc(1, sizeof(memvol_file_t));
 
     return (void *)file;
 }
 
 static herr_t memvol_file_get(void *file, H5VL_file_get_t get_type, hid_t dxpl_id, void **req, va_list arguments)
 {
-    memvol_t *f = (memvol_t *)file;
+    memvol_file_t *f = (memvol_file_t *)file;
     return 1;
 }
 
 static herr_t memvol_file_close(void *file, hid_t dxpl_id, void **req)
 {
-    memvol_t *f = (memvol_t *)file;
+    memvol_file_t *f = (memvol_file_t *)file;
     free(f);
     return 1;
 }

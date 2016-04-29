@@ -48,7 +48,7 @@ typedef struct {
 
 typedef struct {
   memvol_group_t root_grp; // it must start with the root group
-} memvol_t;
+} memvol_file_t;
 
 static void memvol_group_init(memvol_group_t * group);
 
