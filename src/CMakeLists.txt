@@ -15,8 +15,6 @@ include(FeatureSummary)
 include(CheckCSourceCompiles)
 
 find_package(PkgConfig REQUIRED)
-# pkg_search_module(HDF5 REQUIRED hdf5)
-
 find_package(HDF5 REQUIRED)
 find_package(MPI REQUIRED)
 
@@ -24,10 +22,8 @@ pkg_search_module(GLIB REQUIRED glib-2.0>=2.40)
 set_package_properties(GLIB PROPERTIES URL "http://www.gtk.org" TYPE REQUIRED PURPOSE "data structures")
 
 
-### MESSAGE(STATUS "Running platform tests")
-
-set(CMAKE_REQUIRED_INCLUDES ${HDF5_INCLUDE_DIR})
-set(CMAKE_REQUIRED_LIBRARIES "hdf5")
+set(CMAKE_REQUIRED_INCLUDES ${HDF5_INCLUDE_DIR} ${MPI_INCLUDE_PATH})
+set(CMAKE_REQUIRED_LIBRARIES ${HDF5_LIBRARIES} ${MPI_LIBRARIES})
 
 CHECK_C_SOURCE_COMPILES("
   #include <hdf5.h>
@@ -65,9 +61,9 @@ if(DOXYGEN_FOUND)
         COMMENT "Generating API documentation with Doxygen" VERBATIM
     )
 
-    find_package( Java )
+    #find_package( Java )
     # add_feature_info( Java DESCRIPTION "Java is needed in the documentation to run Plantuml" TYPE OPTIONAL)
-    if(JAVA_FOUND)
+    #if(JAVA_FOUND)
       find_path (PLANTUML_JAR_PATH plantuml.jar HINTS ${DEPS_DIR} . ${DEV_DIR} DOC "PLANTUML directory" ENV PLANTUML_JAR_PATH)
       if(PLANTUML_JAR_PATH)
         set(PLANTUML_JAR_PATH "${PLANTUML_JAR_PATH}/plantuml.jar")
@@ -75,7 +71,7 @@ if(DOXYGEN_FOUND)
       else()
         message(STATUS "Warning: no plantuml.jar found.")
       endif()
-    endif(JAVA_FOUND)
+    #endif(JAVA_FOUND)
     configure_file(${DEV_DIR}/Doxyfile.in Doxyfile @ONLY)
 endif(DOXYGEN_FOUND)
 
