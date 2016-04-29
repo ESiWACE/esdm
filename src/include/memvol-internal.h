@@ -16,8 +16,40 @@
 #ifndef H5_MEMVOL_INTERNAL_HEADER__
 #define H5_MEMVOL_INTERNAL_HEADER__
 
+#include <string.h>
+#include <stdlib.h>
+#include <assert.h>
+
+#include <glib.h>
+
+#define DEBUG_INTERNALS // for now...
+
+#ifdef DEBUG
+  #define debug(...) fprintf(stderr, "[MEMVOL DEBUG] "__VA_ARGS__);
+#else
+  #define debug(...)
+#endif
+
+#ifdef DEBUG_INTERNALS
+  #define debugI(...) fprintf(stderr, "[MEMVOL DEBUG I] "__VA_ARGS__);
+#else
+  #define debugI(...)
+#endif
+
+#define critical(...) { fprintf(stderr, "[MEMVOL CRITICAL] "__VA_ARGS__); exit(1); }
+#define warn(...) fprintf(stderr, "[MEMVOL WARN] "__VA_ARGS__);
+
+#define FUNC_START debug("CALL %s\n", __PRETTY_FUNCTION__);
+
 typedef struct {
-  //
+  GHashTable * childs_tbl;
+  hid_t gcpl_id;
+} memvol_group_t;
+
+typedef struct {
+  memvol_group_t root_grp; // it must start with the root group
 } memvol_t;
+
+static void memvol_group_init(memvol_group_t * group);
 
 #endif

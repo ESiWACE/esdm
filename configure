@@ -2,7 +2,7 @@
 
 PARAMETERS="$0 $*"
 CMAKEFLAGS=
-SRCDIR=$(dirname $(readlink -f $0))
+SRCDIR=$(dirname $(readlink -f $0))/src/
 CURPATH="$PWD"
 
 function help(){
@@ -21,6 +21,7 @@ function help(){
 	echo "--reconfigure            : run configure again with the parameters used the last time"
 	echo "--with-mpicc=<file>      : path to the MPI C compiler"
 	echo "--with-mpicxx=<file>     : path to the MPI C++ compiler"
+	echo "--plantuml-jar-dir=<dir> : directory containing plantuml.jar, useful for building the documentation"
 	echo
 }
 
@@ -35,7 +36,7 @@ function reconfigure(){
 	exit $?
 }
 
-set -- `getopt -ul "help,version,debug,reconfigure,prefix:,with-cc:,with-cxx:,with-hdf5:,with-mpicc:,with-mpicxx:,verbose,build-dir:" hV "$@"`
+set -- `getopt -ul "help,version,debug,reconfigure,prefix:,with-cc:,with-cxx:,with-hdf5:,plantuml-jar-dir:with-mpicc:,with-mpicxx:,verbose,build-dir:" hV "$@"`
 test $# -lt 1  && exit 1
 while test $# -gt 0
 do
@@ -52,6 +53,7 @@ do
 		--with-mpicc) mpicc="$2"; shift;;
 		--with-mpicxx) mpicxx="$2"; shift;;
 		--build-dir) buildDIR="$2"; shift;;
+		--plantuml-jar-dir) export PLANTUML_JAR_PATH="$2"; shift;;
 		--verbose) VERBOSE="YES";;
 		--) ;;
 		*) echo "Unknown option $1"; exit 1;;

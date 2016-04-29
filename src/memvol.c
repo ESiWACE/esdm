@@ -13,6 +13,7 @@
 // You should have received a copy of the GNU Lesser General Public License
 // along with h5-memvol.  If not, see <http://www.gnu.org/licenses/>.
 
+
 #include <stdlib.h>
 #include <assert.h>
 
@@ -61,14 +62,14 @@ static const H5VL_class_t H5VL_memvol = {
         NULL  //memvol_attr_close                  /* close */
     },
     {                                           /* dataset_cls */
-        NULL,                    /* create */
-        NULL,                      /* open */
-        NULL,                      /* read */
-        NULL,                     /* write */
-        NULL, //memvol_dataset_get,               /* get */
-        NULL, //memvol_dataset_specific,          /* specific */
-        NULL, //memvol_dataset_optional,          /* optional */
-        NULL                      /* close */
+        memvol_create,
+        memvol_open,  
+        memvol_read,
+        memvol_write,
+        memvol_get,
+        memvol_specific,
+        NULL,
+        memvol_close
     },
     {                                               /* datatype_cls */
         memvol_datatype_commit,                   /* commit */
@@ -87,12 +88,12 @@ static const H5VL_class_t H5VL_memvol = {
         memvol_file_close                        /* close */
     },
     {                                           /* group_cls */
-        NULL,                     /* create */
-        NULL, //memvol_group_open,               /* open */
-        NULL, //memvol_group_get,                /* get */
-        NULL, //memvol_group_specific,           /* specific */
-        NULL, //memvol_group_optional,           /* optional */
-        NULL                       /* close */
+        memvol_group_create,
+        memvol_group_open,
+        memvol_group_get,
+        NULL, // memvol_group_specific => Not used right now.
+        NULL, // memvol_group_optional => Not used right now.
+        memvol_group_close
     },
     {                                           /* link_cls */
         NULL, //memvol_link_create,                /* create */
@@ -133,6 +134,7 @@ int H5VL_memvol_finalize(){
 
   H5VLclose(vol_id);
   vol_id = -1;
+  return 0;
 }
 
 // see H5PL.c:695 ff for a description how the plugin is loaded.
