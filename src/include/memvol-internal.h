@@ -43,6 +43,7 @@
 
 typedef struct {
   GHashTable * childs_tbl;
+  GArray * childs_ord_by_index_arr; 
   hid_t gcpl_id;
 } memvol_group_t;
 

@@ -157,6 +157,8 @@ static herr_t memvol_file_get(void *file, H5VL_file_get_t get_type, hid_t dxpl_i
             break;
           case H5I_ATTR:
             break;
+          default:
+            assert(0 && "Invalid datatype");
         }
 
         *ret = (void*) tmp;

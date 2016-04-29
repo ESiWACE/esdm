@@ -15,6 +15,7 @@
 
 static void memvol_group_init(memvol_group_t * group){
   group->childs_tbl = g_hash_table_new (g_str_hash,g_str_equal);
+  group->childs_ord_by_index_arr = g_array_new(0, 0, sizeof(void*));
   assert(group->childs_tbl != NULL);
 }
 
@@ -35,7 +36,8 @@ static void * memvol_group_create(void *obj, H5VL_loc_params_t loc_params, const
         free(group);
         return NULL;
       }
-      g_hash_table_insert (parent->childs_tbl, strdup(name), group);
+      g_hash_table_insert(parent->childs_tbl, strdup(name), group);
+      g_array_append_val (parent->childs_ord_by_index_arr, group);
     }
 
     return (void *)group;
@@ -71,14 +73,31 @@ static herr_t memvol_group_get(void *obj, H5VL_group_get_t get_type, hid_t dxpl_
 
       debugI("Gget info %p loc_param: %d \n", obj, loc_params.type);
 
-      grp_info->storage_type = H5G_STORAGE_TYPE_COMPACT;
+      memvol_group_t * relevant_group;
+
       if(loc_params.type == H5VL_OBJECT_BY_SELF) {
+        relevant_group = g;
       }else if(loc_params.type == H5VL_OBJECT_BY_NAME) {
+        relevant_group = g_hash_table_lookup(g->childs_tbl, loc_params.loc_data.loc_by_name.name);
+        if (relevant_group == NULL){
+          return -1;
+        }
       }else if(loc_params.type == H5VL_OBJECT_BY_IDX) {
+        assert(loc_params.loc_data.loc_by_idx.order == H5_ITER_INC || loc_params.loc_data.loc_by_idx.order == H5_ITER_NATIVE);
+        if(loc_params.loc_data.loc_by_idx.idx_type == H5_INDEX_NAME){
+          // TODO, for now return the index position.
+          relevant_group = g_array_index(g->childs_ord_by_index_arr, memvol_group_t*, loc_params.loc_data.loc_by_idx.n);
+        }else if(loc_params.loc_data.loc_by_idx.idx_type == H5_INDEX_CRT_ORDER){
+          relevant_group = g_array_index(g->childs_ord_by_index_arr, memvol_group_t*, loc_params.loc_data.loc_by_idx.n);
+        }else{
+          assert(0);
+        }
       }
 
-      grp_info->nlinks = 1;
-      grp_info->max_corder = 1;
+      grp_info->storage_type = H5G_STORAGE_TYPE_COMPACT;
+
+      grp_info->nlinks = 0;
+      grp_info->max_corder = g_hash_table_size(relevant_group->childs_tbl);
       grp_info->mounted = 0;
 
       return 0;
