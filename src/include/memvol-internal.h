@@ -48,6 +48,11 @@ typedef struct {
 
 typedef struct {
   memvol_group_t root_grp; // it must start with the root group
+
+  char * name;
+  int mode_flags; // RDWR etc.
+  hid_t fapl_id;
+  hid_t fcpl_id;
 } memvol_file_t;
 
 static void memvol_group_init(memvol_group_t * group);
