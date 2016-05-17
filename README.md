@@ -16,7 +16,6 @@ An in-memory VOL plugin for HDF5.
 - src contains the source code...
   To build the project call:
 
-		cd src/
 		./configure --with-hdf5=$PWD/../install
 		cd build
 		make -j

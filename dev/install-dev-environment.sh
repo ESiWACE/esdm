@@ -5,7 +5,7 @@ echo "This scripts installs the necessary development environment in ../install"
 DIR=$PWD/../
 
 if [[ ! -e vol ]] ; then
-  echo "Downloading code"
+  echo "Downloading source code for HDF5 with VOL"
   svn checkout https://svn.hdfgroup.uiuc.edu/hdf5/features/vol/ || exit 1
 fi
 
@@ -17,7 +17,7 @@ mkdir build
 
 ./autogen.sh || exit 1
 cd build
-../configure --prefix=$DIR/install --enable-parallel --with-default-plugindir=$DIR/src/build/  --enable-debug=all  --enable-hl   CFLAGS="-g" || exit 1
+../configure --prefix=$DIR/install --enable-parallel --with-default-plugindir=$DIR/src/build/ --enable-build-mode=debug --enable-hl   CFLAGS="-g" || exit 1
 make -j 8 || exit 1
 make -j install
 
