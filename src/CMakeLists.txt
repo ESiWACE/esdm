@@ -8,6 +8,7 @@ set (VERSION_MAJOR 0)
 set (VERSION_MINOR 1)
 
 set(DEV_DIR "${CMAKE_SOURCE_DIR}/../dev")
+set(DOC_DIR "${CMAKE_SOURCE_DIR}/../doc")
 set(DEPS_DIR "${CMAKE_SOURCE_DIR}/../deps")
 
 include(CTest)
@@ -72,7 +73,7 @@ if(DOXYGEN_FOUND)
         message(STATUS "Warning: no plantuml.jar found.")
       endif()
     #endif(JAVA_FOUND)
-    configure_file(${DEV_DIR}/Doxyfile.in Doxyfile @ONLY)
+    configure_file(${DOC_DIR}/Doxyfile.in Doxyfile @ONLY)
 endif(DOXYGEN_FOUND)
 
 option(plantuml "Plantuml support" ${PLANTUML_ON})
