@@ -1,7 +1,11 @@
+build/*
+install/*
+
 *.o
 *.exe
 *~
 *.backup
 *.log
-build
+
 plantuml.jar
+
