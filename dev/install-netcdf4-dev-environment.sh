@@ -1,16 +1,19 @@
 #!/bin/bash -x
 
-echo "This scripts installs the necessary development environment in ../install"
+DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+prefix=$DIR/../install
 
-prefix=$PWD/../install
+echo "Installing NetCDF 4 to $prefix"
 
+
+# required for netCDF to link the correct HDF5 installation
 H5DIR=$prefix
 
 # Download and unpack NetCDF4
 if [[ ! -e netcdf-4.4.0 ]] ; then
   echo "Downloading source code for NetCDF 4"
-  wget ftp://ftp.unidata.ucar.edu/pub/netcdf/netcdf-4.4.0.tar.gz
-  tar xvf netcdf-4.4.0.tar.gz
+  wget ftp://ftp.unidata.ucar.edu/pub/netcdf/netcdf-4.4.0.tar.gz || exit 1
+  tar xvf netcdf-4.4.0.tar.gz || exit 1
 fi
 
 cd netcdf-4.4.0

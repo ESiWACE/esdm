@@ -1,8 +1,11 @@
 #!/bin/bash -x
 
-echo "This scripts installs the necessary development environment in ../install"
+DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+prefix=$DIR/../install
 
-DIR=$PWD/../
+
+echo "Installing HDF5 to $prefix"
+
 
 if [[ ! -e vol ]] ; then
   echo "Downloading source code for HDF5 with VOL"
@@ -11,13 +14,12 @@ fi
 
 cd vol
 echo "Preparing Configure"
-./autogen.sh
 
 mkdir build
 
 ./autogen.sh || exit 1
 cd build
-../configure --prefix=$DIR/install --enable-parallel --with-default-plugindir=$DIR/build/ --enable-build-mode=debug --enable-hl   CFLAGS="-g" || exit 1
+../configure --prefix=$prefix --enable-parallel --with-default-plugindir=$DIR/../build/ --enable-build-mode=debug --enable-hl   CFLAGS="-g" || exit 1
 make -j 8 || exit 1
 make -j install
 
