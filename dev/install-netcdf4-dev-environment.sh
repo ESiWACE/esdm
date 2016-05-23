@@ -4,6 +4,9 @@ DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 prefix=$DIR/../install
 
 echo "Installing NetCDF 4 to $prefix"
+cd $DIR/..
+mkdir -p install/download
+cd install/download
 
 
 # required for netCDF to link the correct HDF5 installation

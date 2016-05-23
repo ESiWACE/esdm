@@ -1,6 +1,8 @@
 #!/bin/bash -x
 
-echo "This scripts installs the necessary development environment in ../install"
+DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 
-./install-hdf5-dev-environment.sh
-./install-netcdf4-dev-environment.sh
+echo "This scripts installs the necessary development environment $DIR/../install"
+
+$DIR/install-hdf5-dev-environment.sh || exit 1
+$DIR/install-netcdf4-dev-environment.sh || exit 1
