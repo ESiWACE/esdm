@@ -14,7 +14,7 @@ An in-memory VOL plugin for HDF5.
 - dev contains stuff for development purpose
   To install hdf5-vol required by this project, call 
   
-        cd dev ; ./install-dev-environment.sh"
+        cd dev ; ./install-dev-environment.sh
   
   You may want to activate the development environment (PATH, LD_LIBRARY_PATH, etc) by sourcing dev/setenv.bash:
 
