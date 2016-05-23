@@ -12,7 +12,13 @@ An in-memory VOL plugin for HDF5.
 ### Directory structure
 
 - dev contains stuff for development purpose
-  To install hdf5-vol required by this project, call "cd dev ; ./install-dev-environment.sh"
+  To install hdf5-vol required by this project, call 
+  
+        cd dev ; ./install-dev-environment.sh"
+  
+  You may want to activate the development environment (PATH, LD_LIBRARY_PATH, etc) by sourcing dev/setenv.bash:
+
+        source dev/setenv.bash
 
 - src contains the source code...
   To build the project call:
@@ -24,10 +30,5 @@ An in-memory VOL plugin for HDF5.
   To run the tests call:
 
 		make test
-
-- You may want to activate the development installation by updating the environment (PATH, LD_LIBRARY_PATH, etc):
-
-	source dev/setenv.bash
-
 - tools contains separate programs, e.g., for benchmarking HDF5. 
   They should only be loosly coupled with the source code and allow to be used with the regular HDF5.
