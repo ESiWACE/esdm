@@ -1,0 +1,20 @@
+Q: Undefined references during linking. => Are you using HDF5 with VOL support?
+
+Example:
+/tmp/ccsoMBoL.ltrans0.ltrans.o: In function `main':
+<artificial>:(.text.startup.main+0xf): undefined reference to `H5VLregister_by_name'
+<artificial>:(.text.startup.main+0x38): undefined reference to `H5Pset_vol'
+<artificial>:(.text.startup.main+0x7a): undefined reference to `H5VLget_plugin_name'
+<artificial>:(.text.startup.main+0x9b): undefined reference to `H5VLunregister'
+../libh5-memvol.so: undefined reference to `H5VLclose'
+../libh5-memvol.so: undefined reference to `H5VLget_plugin_id'
+../libh5-memvol.so: undefined reference to `H5VLregister'
+../libh5-memvol.so: undefined reference to `H5VLinitialize'
+collect2: error: ld returned 1 exit status
+test/CMakeFiles/test-create-dataset.exe.dir/build.make:102: recipe for target 'test/test-create-dataset.exe' failed
+make[2]: *** [test/test-create-dataset.exe] Error 1
+CMakeFiles/Makefile2:1064: recipe for target 'test/CMakeFiles/test-create-dataset.exe.dir/all' failed
+make[1]: *** [test/CMakeFiles/test-create-dataset.exe.dir/all] Error 2
+Makefile:138: recipe for target 'all' failed
+make: *** [all] Error 2
+

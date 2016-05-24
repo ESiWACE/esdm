@@ -20,6 +20,7 @@
 
 \startuml{memvol-components.png}
   title Components of memvol
+  skinparam shadowing false
 
   folder "Core in src/" {
 

@@ -10,7 +10,7 @@ foreach(TESTFILE ${TESTFILES})
     STRING(REGEX REPLACE ".c$" "" TESTNAME ${TESTNAME_C})
 
     add_executable(test-${TESTNAME}.exe ${TESTFILE})
-    target_link_libraries(test-${TESTNAME}.exe h5-memvol)
+    target_link_libraries(test-${TESTNAME}.exe h5-memvol hdf5)
   add_test(${TESTNAME} ./test-${TESTNAME}.exe)
   endif()  
 endforeach()

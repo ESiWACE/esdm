@@ -41,56 +41,54 @@ static herr_t memvol_file_term(hid_t vtpl_id){
 }
 
 static herr_t memvol_init(hid_t vipl_id){
-  memvol_init_dtype(vipl_id);
-  return 0;
+	memvol_init_datatype(vipl_id);
+	return 0;
 }
-
-
 
 static const H5VL_class_t H5VL_memvol = {
     0,
     MEMVOL_ID,
-    MEMVOL_NAME,
-    memvol_init,                              /* initialize */
-    memvol_file_term,                              /* terminate */
+    MEMVOL_NAME,                                /* name */
+    memvol_init,                                /* initialize */
+    memvol_file_term,                           /* terminate */
     sizeof(hid_t),
     NULL,
     NULL,
     {                                           /* attribute_cls */
-        NULL, //memvol_attr_create,                /* create */
-        NULL, //memvol_attr_open,                  /* open */
-        NULL, //memvol_attr_read,                  /* read */
-        NULL, //memvol_attr_write,                 /* write */
-        NULL, //memvol_attr_get,                   /* get */
-        NULL, //memvol_attr_specific,              /* specific */
-        NULL, //memvol_attr_optional,              /* optional */
-        NULL  //memvol_attr_close                  /* close */
+        NULL, //memvol_attr_create,             /* create */
+        NULL, //memvol_attr_open,               /* open */
+        NULL, //memvol_attr_read,               /* read */
+        NULL, //memvol_attr_write,              /* write */
+        NULL, //memvol_attr_get,                /* get */
+        NULL, //memvol_attr_specific,           /* specific */
+        NULL, //memvol_attr_optional,           /* optional */
+        NULL  //memvol_attr_close               /* close */
     },
     {                                           /* dataset_cls */
-        memvol_create,
-        memvol_open,  
-        memvol_read,
-        memvol_write,
-        memvol_get,
-        memvol_specific,
-        NULL,
-        memvol_close
+        memvol_dataset_create,
+        memvol_dataset_open,  
+        memvol_dataset_read,
+        memvol_dataset_write,
+        memvol_dataset_get,
+        memvol_dataset_specific,
+        NULL, //memvol_dataset_optional         /* optional */
+        memvol_dataset_close
     },
-    {                                               /* datatype_cls */
-        memvol_datatype_commit,                   /* commit */
-        memvol_datatype_open,                     /* open */
-        memvol_datatype_get,                      /* get_size */
-        NULL, //H5VL_log_datatype_specific,         /* specific */
-        NULL, //H5VL_log_datatype_optional,         /* optional */
-        memvol_datatype_close                     /* close */
+    {                                           /* datatype_cls */
+        memvol_datatype_commit,                 /* commit */
+        memvol_datatype_open,                   /* open */
+        memvol_datatype_get,                    /* get_size */
+        NULL, //H5VL_log_datatype_specific,     /* specific */
+        NULL, //H5VL_log_datatype_optional,     /* optional */
+        memvol_datatype_close                   /* close */
     },
     {                                           /* file_cls */
-        memvol_file_create,                      /* create */
-        memvol_file_open,                        /* open */
-        memvol_file_get,                         /* get */
-        NULL, //memvol_file_specific,            /* specific */
-        NULL, //memvol_file_optional,            /* optional */
-        memvol_file_close                        /* close */
+        memvol_file_create,                     /* create */
+        memvol_file_open,                       /* open */
+        memvol_file_get,                        /* get */
+        NULL, //memvol_file_specific,           /* specific */
+        NULL, //memvol_file_optional,           /* optional */
+        memvol_file_close                       /* close */
     },
     {                                           /* group_cls */
         memvol_group_create,
@@ -101,19 +99,19 @@ static const H5VL_class_t H5VL_memvol = {
         memvol_group_close
     },
     {                                           /* link_cls */
-        NULL, //memvol_link_create,                /* create */
-        NULL, //memvol_link_copy,                  /* copy */
-        NULL, //memvol_link_move,                  /* move */
-        NULL, //memvol_link_get,                   /* get */
-        NULL, //memvol_link_specific,              /* specific */
-        NULL, //memvol_link_optional,              /* optional */
+        NULL, //memvol_link_create,             /* create */
+        NULL, //memvol_link_copy,               /* copy */
+        NULL, //memvol_link_move,               /* move */
+        NULL, //memvol_link_get,                /* get */
+        NULL, //memvol_link_specific,           /* specific */
+        NULL, //memvol_link_optional,           /* optional */
     },
     {                                           /* object_cls */
-        NULL,                        /* open */
-        NULL, //memvol_object_copy,                /* copy */
-        NULL, //memvol_object_get,                 /* get */
-        NULL,                    /* specific */
-        NULL, //memvol_object_optional,            /* optional */
+        NULL, //memvol_object_open,             /* open */
+        NULL, //memvol_object_copy,             /* copy */
+        NULL, //memvol_object_get,              /* get */
+        NULL, //memvol_object_specific,         /* specific */
+        NULL, //memvol_object_optional,         /* optional */
     },
     {
         NULL,
@@ -125,22 +123,25 @@ static const H5VL_class_t H5VL_memvol = {
 
 static hid_t vol_id = -1;
 
+
 hid_t H5VL_memvol_init(){
-  vol_id = H5VLregister (& H5VL_memvol);
-  H5VLinitialize(vol_id, H5P_DEFAULT);
+	vol_id = H5VLregister (& H5VL_memvol);
+	H5VLinitialize(vol_id, H5P_DEFAULT);
 
-  assert(H5VLget_plugin_id(MEMVOL_NAME) != -1);
+	assert(H5VLget_plugin_id(MEMVOL_NAME) != -1);
 
-  return vol_id;
+	return vol_id;
 }
+
 
 int H5VL_memvol_finalize(){
-  assert(vol_id != -1);
+	assert(vol_id != -1);
 
-  H5VLclose(vol_id);
-  vol_id = -1;
-  return 0;
+	H5VLclose(vol_id);
+	vol_id = -1;
+	return 0;
 }
+
 
 // see H5PL.c:695 ff for a description how the plugin is loaded.
 H5PL_type_t H5PLget_plugin_type(void) {

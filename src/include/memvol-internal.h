@@ -41,6 +41,17 @@
 
 #define FUNC_START debug("CALL %s\n", __PRETTY_FUNCTION__);
 
+
+typedef struct {
+  hid_t dscpl_id;
+  int dim;
+} memvol_dataspace_t;
+
+typedef struct {
+  hid_t dapl_id;
+  hid_t dxpl_id;
+} memvol_dataset_t;
+
 typedef struct {
   GHashTable * childs_tbl;
   GArray * childs_ord_by_index_arr; 

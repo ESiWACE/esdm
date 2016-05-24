@@ -15,13 +15,12 @@
 
 #include <stdio.h>
 
-#include <memvol.h>
+#include <hdf5.h>
 
 int main(){
   hid_t fprop;
   hid_t fid;
-  hid_t vol_id = H5VL_memvol_init();
-  herr_t status;
+  hid_t vol_id = H5VLregister_by_name("h5-memvol");
 
   hid_t g1, g2, g3;
   hid_t plist;
@@ -31,6 +30,7 @@ int main(){
   fprop = H5Pcreate(H5P_FILE_ACCESS);
   H5Pset_vol(fprop, vol_id, &fprop);
 
+  // hdf5 as usual
   fid = H5Fcreate("test", H5F_ACC_TRUNC, H5P_DEFAULT, fprop);
   H5VLget_plugin_name(fid, name, 1024);
   printf ("Using VOL %s\n", name);
@@ -68,7 +68,11 @@ int main(){
   H5Gclose(g1);
 
   H5Fclose(fid);
-  H5VL_memvol_finalize();
+
+
+
+  // end hdf5 as usual
+  H5VLunregister(vol_id);
 
   return 0;
 }

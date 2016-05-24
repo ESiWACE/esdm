@@ -16,7 +16,7 @@
 // TODO some locking here
 static GHashTable * type_table = NULL;
 
-static void memvol_init_dtype(hid_t vipl_id){
+static void memvol_init_datatype(hid_t vipl_id){
   type_table =  g_hash_table_new (g_str_hash, g_str_equal);
 }
 
