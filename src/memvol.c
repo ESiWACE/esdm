@@ -84,14 +84,14 @@ static const H5VL_class_t H5VL_memvol = {
     NULL,
     NULL,
     {                                           /* attribute_cls */
-        NULL, //memvol_attr_create,             /* create */
-        NULL, //memvol_attr_open,               /* open */
-        NULL, //memvol_attr_read,               /* read */
-        NULL, //memvol_attr_write,              /* write */
-        NULL, //memvol_attr_get,                /* get */
-        NULL, //memvol_attr_specific,           /* specific */
-        NULL, //memvol_attr_optional,           /* optional */
-        NULL  //memvol_attr_close               /* close */
+        NULL, //memvol_attribute_create,             /* create */
+        NULL, //memvol_attribute_open,               /* open */
+        NULL, //memvol_attribute_read,               /* read */
+        NULL, //memvol_attribute_write,              /* write */
+        NULL, //memvol_attribute_get,                /* get */
+        NULL, //memvol_attribute_specific,           /* specific */
+        NULL, //memvol_attribute_optional,           /* optional */
+        NULL  //memvol_attribute_close               /* close */
     },
     {                                           /* dataset_cls */
         memvol_dataset_create,
