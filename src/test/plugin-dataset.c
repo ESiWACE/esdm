@@ -34,7 +34,7 @@ int main(){
 	// hdf5 as usual
 	file_id = H5Fcreate("test", H5F_ACC_TRUNC, H5P_DEFAULT, fprop);
 	H5VLget_plugin_name(file_id, name, 1024);
-	printf ("Using VOL %s\n", name);
+	printf ("FAPL set to use VOL %s\n", name);
 
 
 	/* Create the data space for the dataset. */
@@ -43,8 +43,7 @@ int main(){
 	dataspace_id = H5Screate_simple(2, dims, NULL);
 
 	/* Create the dataset. */
-	dataset_id = H5Dcreate2(file_id, "/dset", H5T_STD_I32BE, dataspace_id, 
-			H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
+	dataset_id = H5Dcreate2(file_id, "/dset", H5T_STD_I32BE, dataspace_id, H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
 
 	/* End access to the dataset and release resources used by it. */
 	status = H5Dclose(dataset_id);

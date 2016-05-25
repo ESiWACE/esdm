@@ -45,6 +45,35 @@ static herr_t memvol_init(hid_t vipl_id){
 	return 0;
 }
 
+
+
+// iextract from H5VLpublic.h:327
+/* Class information for each VOL driver */
+//typedef struct H5VL_class_t {
+//    unsigned int version;                         /* Class version # */
+//    H5VL_class_value_t value;                     /* value to identify plugin */
+//    const char *name;                             /* Plugin name */
+//    herr_t  (*initialize)(hid_t vipl_id);         /* Plugin initialization callback */
+//    herr_t  (*terminate)(hid_t vtpl_id);          /* Plugin termination callback */
+//    size_t  fapl_size;                            /* size of the vol info in the fapl property */
+//    void *  (*fapl_copy)(const void *info);       /* callback to create a copy of the vol info */
+//    herr_t  (*fapl_free)(void *info);             /* callback to release the vol info copy */
+//
+//    /* Data Model */
+//    H5VL_attr_class_t          attr_cls;          /* attribute class callbacks */
+//    H5VL_dataset_class_t       dataset_cls;       /* dataset class callbacks */
+//    H5VL_datatype_class_t      datatype_cls;      /* datatype class callbacks */
+//    H5VL_file_class_t          file_cls;          /* file class callbacks */
+//    H5VL_group_class_t         group_cls;         /* group class callbacks */
+//    H5VL_link_class_t          link_cls;          /* link class callbacks */
+//    H5VL_object_class_t        object_cls;        /* object class callbacks */
+//
+//    /* Services */
+//    H5VL_async_class_t         async_cls;         /* asynchronous class callbacks */
+//    herr_t (*optional)(void *obj, hid_t dxpl_id, void **req, va_list arguments); /* Optional callback */
+//} H5VL_class_t;
+
+
 static const H5VL_class_t H5VL_memvol = {
     0,
     MEMVOL_ID,

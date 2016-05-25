@@ -18,20 +18,21 @@
 #include <hdf5.h>
 
 int main(){
-  hid_t fprop;
-  hid_t fid;
-  hid_t vol_id = H5VLregister_by_name("h5-memvol");
+	hid_t fprop;
+	hid_t fid;
+	hid_t vol_id = H5VLregister_by_name("h5-memvol");
 
-  char name[1024];
+	char name[1024];
 
-  fprop = H5Pcreate(H5P_FILE_ACCESS);
-  H5Pset_vol(fprop, vol_id, &fprop);
+	fprop = H5Pcreate(H5P_FILE_ACCESS);
+	H5Pset_vol(fprop, vol_id, &fprop);
 
-  fid = H5Fcreate("test", H5F_ACC_TRUNC, H5P_DEFAULT, fprop);
-  H5VLget_plugin_name(fid, name, 1024);
-  printf ("Using VOL %s\n", name);
-  H5Fclose(fid);
-  H5VLunregister(vol_id);
+	fid = H5Fcreate("test", H5F_ACC_TRUNC, H5P_DEFAULT, fprop);
+	H5VLget_plugin_name(fid, name, 1024);
+	printf ("FAPL set to use VOL %s\n", name);
 
-  return 0;
+	H5Fclose(fid);
+	H5VLunregister(vol_id);
+
+	return 0;
 }

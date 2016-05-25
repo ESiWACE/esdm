@@ -13,21 +13,47 @@
 // You should have received a copy of the GNU Lesser General Public License
 // along with h5-memvol.  If not, see <http://www.gnu.org/licenses/>.
 
-static void memvol_dataset_init(memvol_group_t * group){
-  group->childs_tbl = g_hash_table_new (g_str_hash,g_str_equal);
-  group->childs_ord_by_index_arr = g_array_new(0, 0, sizeof(void*));
-  assert(group->childs_tbl != NULL);
+static void memvol_dataset_init(memvol_dataset_t * dataset){
+  //group->childs_tbl = g_hash_table_new (g_str_hash,g_str_equal);
+  //group->childs_ord_by_index_arr = g_array_new(0, 0, sizeof(void*));
+  //assert(group->childs_tbl != NULL);
 }
 
 
 void *memvol_dataset_create(void *obj, H5VL_loc_params_t loc_params, const char *name,  hid_t dcpl_id, hid_t dapl_id, hid_t dxpl_id, void **req){
 	debugI("%s\n", __func__);
 
-	return NULL;
+    memvol_dataset_t *dataset;
+    memvol_group_t *parent = (memvol_group_t *) obj;
+
+    dataset = (memvol_dataset_t*) malloc(sizeof(memvol_dataset_t));
+    memvol_dataset_init(dataset);
+    dataset->dcpl_id = H5Pcopy(dcpl_id);
+
+    //if (name != NULL){ // anonymous group
+    //  // check if the object exists already in the parent
+    //  if (g_hash_table_lookup (parent->childs_tbl, name) != NULL){
+    //    free(group);
+    //    return NULL;
+    //  }
+    //  g_hash_table_insert(parent->childs_tbl, strdup(name), group);
+    //  g_array_append_val (parent->childs_ord_by_index_arr, group);
+    //}
+	
+
+
+	return (void *)dataset;
 }
 
 void *memvol_dataset_open(void *obj, H5VL_loc_params_t loc_params, const char *name,  hid_t dapl_id, hid_t dxpl_id, void **req){
 	debugI("%s\n", __func__);
+
+	/*
+	memvol_group_t *parent = (memvol_group_t *) obj;
+	void * child = g_hash_table_lookup(parent->childs_tbl, name);
+	debugI("Gopen %p with %s child %p\n", obj, name, child);
+	return child;
+	*/
 
 	return NULL;
 }

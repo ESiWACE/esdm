@@ -12,3 +12,37 @@
 // 
 // You should have received a copy of the GNU Lesser General Public License
 // along with h5-memvol.  If not, see <http://www.gnu.org/licenses/>.
+
+
+
+static void* create (void *obj, H5VL_loc_params_t loc_params, const char *attr_name, hid_t acpl_id, hid_t aapl_id, hid_t dxpl_id, void **req) {
+	return NULL;
+}
+
+static void* open (void *obj, H5VL_loc_params_t loc_params, const char *attr_name, hid_t aapl_id, hid_t dxpl_id, void **req) {
+	return NULL;
+}
+
+static herr_t read (void *attr, hid_t mem_type_id, void *buf, hid_t dxpl_id, void **req) {
+	return 0;
+}
+
+static herr_t write (void *attr, hid_t mem_type_id, const void *buf, hid_t dxpl_id, void **req) {
+	return 0;
+}
+
+static herr_t get (void *obj, H5VL_attr_get_t get_type, hid_t dxpl_id, void **req, va_list arguments) {
+	return 0;
+}
+
+static herr_t specific (void *obj, H5VL_loc_params_t loc_params, H5VL_attr_specific_t specific_type, hid_t dxpl_id, void **req, va_list arguments) {
+	return -1;
+}
+
+static herr_t optional (void *obj, hid_t dxpl_id, void **req, va_list arguments) {
+	return -1;
+}
+
+static herr_t close (void *attr, hid_t dxpl_id, void **req) {
+	return -1;
+}

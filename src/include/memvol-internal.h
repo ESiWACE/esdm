@@ -43,28 +43,30 @@
 
 
 typedef struct {
-  hid_t dscpl_id;
-  int dim;
+	hid_t dscpl_id;
+	int dim;
 } memvol_dataspace_t;
 
 typedef struct {
-  hid_t dapl_id;
-  hid_t dxpl_id;
+	hid_t dcpl_id;
+	hid_t dapl_id;
+	hid_t dxpl_id;
+
 } memvol_dataset_t;
 
 typedef struct {
-  GHashTable * childs_tbl;
-  GArray * childs_ord_by_index_arr; 
-  hid_t gcpl_id;
+	GHashTable * childs_tbl;
+	GArray * childs_ord_by_index_arr; 
+	hid_t gcpl_id;
 } memvol_group_t;
 
 typedef struct {
-  memvol_group_t root_grp; // it must start with the root group
+	memvol_group_t root_grp; // it must start with the root group
 
-  char * name;
-  int mode_flags; // RDWR etc.
-  hid_t fapl_id;
-  hid_t fcpl_id;
+	char * name;
+	int mode_flags; // RDWR etc.
+	hid_t fapl_id;
+	hid_t fcpl_id;
 } memvol_file_t;
 
 static void memvol_group_init(memvol_group_t * group);
