@@ -8,6 +8,8 @@ cd $DIR/..
 mkdir -p install/download
 cd install/download
 
+# set PATH, etc.
+source $DIR/setenv.bash
 
 # required for netCDF to link the correct HDF5 installation
 H5DIR=$prefix
@@ -21,10 +23,15 @@ fi
 
 cd netcdf-4.4.0
 
+# patch netcdf
+patch -b --verbose $PWD/libsrc4/nc4file.c $DIR/netcdf4-libsrc4-nc4file-c.patch
+patch -b --verbose $PWD/include/netcdf.h $DIR/netcdf4-include-netcdf-h.patch
+
 # Patch NetCDF to use ESD middleware
 # TODO: patch netcdf to use e.g. memvol plugin for hdf5 (libsrc4/nc4file.c)
 
 # build, check and install
+
 CC=mpicc CPPFLAGS=-I${H5DIR}/include LDFLAGS=-L${H5DIR}/lib ./configure --prefix=$prefix
 
 make -j

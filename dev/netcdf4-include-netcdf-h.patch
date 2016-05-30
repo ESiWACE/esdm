@@ -1,0 +1,15 @@
+*** ../install/download/netcdf-4.4.0/include/netcdf.h.orig	2016-02-05 18:15:28.000000000 +0100
+--- ../install/download/netcdf-4.4.0/include/netcdf.h	2016-05-30 15:34:56.979573383 +0200
+***************
+*** 164,169 ****
+--- 164,173 ----
+  
+  #define NC_PNETCDF       (NC_MPIIO) /**< Use parallel-netcdf library; alias for NC_MPIIO. */
+  
++ /* ESD middleware offer netcdf mode to use MEMVOL plugin */
++ #define NC_H5VOL_MEMVOL   0xC000  /**< Use HDF5 VOL Plugin: MEMVOL */
++ 
++ 
+  /** Format specifier for nc_set_default_format() and returned
+   *  by nc_inq_format. This returns the format as provided by
+   *  the API. See nc_inq_format_extended to see the true file format.

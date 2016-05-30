@@ -1,0 +1,82 @@
+*** ../install/download/netcdf-4.4.0/libsrc4/nc4file.c.orig	2016-02-05 18:15:36.000000000 +0100
+--- ../install/download/netcdf-4.4.0/libsrc4/nc4file.c	2016-05-30 16:27:07.916963146 +0200
+***************
+*** 283,288 ****
+--- 283,293 ----
+     int persist = 0; /* Should diskless try to persist its data into file?*/
+  #endif
+  
++    hid_t vol_id;
++    if ( cmode & NC_H5VOL_MEMVOL )
++    	   vol_id = H5VLregister_by_name("h5-memvol"); // ESD middleware: use VOL plugin
++ 
++    
+     assert(nc);
+  
+     if(cmode & NC_DISKLESS)
+***************
+*** 414,419 ****
+--- 419,433 ----
+  					    H5P_CRT_ORDER_INDEXED)) < 0)
+        BAIL(NC_EHDFERR);
+  
++ 
++ 
++    /* ESD middleware set vol plugin */ // TODO: Property exists by now, otherwise NetCDF would "BAIL"
++    if ( cmode & NC_H5VOL_MEMVOL ) {
++      if (H5Pset_vol(fapl_id, vol_id, &fapl_id) < 0) // ESD middleware: use VOL plugin 
++ 	   BAIL(NC_EHDFERR); // TODO: more sensible error code?
++    }
++ 
++ 
+     /* Create the file. */
+     if ((nc4_info->hdfid = H5Fcreate(path, flags, fcpl_id, fapl_id)) < 0)
+          /*Change the return error from NC_EFILEMETADATA to
+***************
+*** 2201,2206 ****
+--- 2218,2227 ----
+     int info_duped = 0;          /* Whether the MPI Info object was duplicated */
+  #endif /* !USE_PARALLEL4 */
+  
++    hid_t vol_id;
++    if ( mode & NC_H5VOL_MEMVOL )
++      vol_id = H5VLregister_by_name("h5-memvol"); // ESD middleware: use VOL plugin
++ 
+     LOG((3, "%s: path %s mode %d", __func__, path, mode));
+     assert(path && nc);
+  
+***************
+*** 2244,2250 ****
+  	 LOG((4, "opening parallel file with MPI/posix"));
+  	 if (H5Pset_fapl_mpiposix(fapl_id, mpiinfo->comm, 0) < 0)
+  	    BAIL(NC_EPARINIT);
+!       }
+  #else /* USE_PARALLEL_POSIX */
+        /* Should not happen! Code in NC4_create/NC4_open should alias the
+         *        NC_MPIPOSIX flag to NC_MPIIO, if the MPI-POSIX VFD is not
+--- 2265,2271 ----
+  	 LOG((4, "opening parallel file with MPI/posix"));
+  	 if (H5Pset_fapl_mpiposix(fapl_id, mpiinfo->comm, 0) < 0)
+  	    BAIL(NC_EPARINIT);
+!       }/
+  #else /* USE_PARALLEL_POSIX */
+        /* Should not happen! Code in NC4_create/NC4_open should alias the
+         *        NC_MPIPOSIX flag to NC_MPIIO, if the MPI-POSIX VFD is not
+***************
+*** 2278,2283 ****
+--- 2299,2313 ----
+  	__func__, nc4_chunk_cache_size, nc4_chunk_cache_nelems, nc4_chunk_cache_preemption));
+  #endif /* USE_PARALLEL4 */
+  
++    
++    
++    /* ESD middleware set vol plugin */ // TODO: Property exists by now, otherwise NetCDF would "BAIL"
++    if ( mode & NC_H5VOL_MEMVOL ) {
++ 	 if (H5Pset_vol(fapl_id, vol_id, &fapl_id) < 0) // ESD middleware: use VOL plugin 
++ 	   BAIL(NC_EHDFERR); // TODO: more sensible error code?
++    }
++ 
++ 
+     /* The NetCDF-3.x prototype contains an mode option NC_SHARE for
+        multiple processes accessing the dataset concurrently.  As there
+        is no HDF5 equivalent, NC_SHARE is treated as NC_NOWRITE. */
