@@ -42,6 +42,16 @@
 #define FUNC_START debug("CALL %s\n", __PRETTY_FUNCTION__);
 
 
+typedef enum type {
+	MEMVOL_FILE,
+	MEMVOL_GROUP,
+	MEMVOL_DATASET,
+	MEMVOL_ATTRIBUTE,
+	MEMVOL_DATASPACE,
+	MEMVOL_DATATYPE
+} memvol_object_type_t;
+
+
 typedef struct {
 	hid_t dscpl_id;
 	int dim;
@@ -68,6 +78,15 @@ typedef struct {
 	hid_t fapl_id;
 	hid_t fcpl_id;
 } memvol_file_t;
+
+
+
+
+typedef struct {
+	
+	int dim;
+} memvol_object_t;
+
 
 static void memvol_group_init(memvol_group_t * group);
 

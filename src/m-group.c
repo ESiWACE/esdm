@@ -14,14 +14,13 @@
 // along with h5-memvol.  If not, see <http://www.gnu.org/licenses/>.
 
 
-
-
-
 static void memvol_group_init(memvol_group_t * group){
   group->childs_tbl = g_hash_table_new (g_str_hash,g_str_equal);
   group->childs_ord_by_index_arr = g_array_new(0, 0, sizeof(void*));
   assert(group->childs_tbl != NULL);
 }
+
+
 
 static void * memvol_group_create(void *obj, H5VL_loc_params_t loc_params, const char *name, hid_t gcpl_id, hid_t gapl_id, hid_t dxpl_id, void **req)
 {
@@ -47,12 +46,6 @@ static void * memvol_group_create(void *obj, H5VL_loc_params_t loc_params, const
     return (void *)group;
 }
 
-static herr_t memvol_group_close(void *grp, hid_t dxpl_id, void **req)
-{
-    memvol_group_t *g = (memvol_group_t *)grp;
-    debugI("Gclose %p\n", (void*)  g);
-    return 0;
-}
 
 static void *memvol_group_open(void *obj, H5VL_loc_params_t loc_params, const char *name,  hid_t gapl_id, hid_t dxpl_id, void **req){
   memvol_group_t *parent = (memvol_group_t *) obj;
@@ -60,6 +53,7 @@ static void *memvol_group_open(void *obj, H5VL_loc_params_t loc_params, const ch
   debugI("Gopen %p with %s child %p\n", obj, name, child);
   return child;
 }
+
 
 static herr_t memvol_group_get(void *obj, H5VL_group_get_t get_type, hid_t dxpl_id, void **req, va_list arguments){
   memvol_group_t * g = (memvol_group_t *) obj;
@@ -108,4 +102,12 @@ static herr_t memvol_group_get(void *obj, H5VL_group_get_t get_type, hid_t dxpl_
     }
   }
   return -1;
+}
+
+
+static herr_t memvol_group_close(void *grp, hid_t dxpl_id, void **req)
+{
+    memvol_group_t *g = (memvol_group_t *)grp;
+    debugI("Closing group %p\n", (void*)  g);
+    return 0;
 }

@@ -28,15 +28,21 @@ int main(){
 
 	char name[1024];
 
+	// set VOL plugin
 	fprop = H5Pcreate(H5P_FILE_ACCESS);
 	H5Pset_vol(fprop, vol_id, &fprop);
 
-	// hdf5 as usual
+	// Bootstrap //////////////////////////////////////////////////////////////
 	file_id = H5Fcreate("test", H5F_ACC_TRUNC, H5P_DEFAULT, fprop);
+  
+  	// check if correct VOL plugin is used
 	H5VLget_plugin_name(file_id, name, 1024);
-	printf ("FAPL set to use VOL %s\n", name);
+	printf ("VOL plugin in use: %s\n", name);
 
 
+
+
+	// CREATE /////////////////////////////////////////////////////////////////
 	/* Create the data space for the dataset. */
 	dims[0] = 4; 
 	dims[1] = 6; 
@@ -50,6 +56,16 @@ int main(){
 
 	/* Terminate access to the data space. */ 
 	status = H5Sclose(dataspace_id);
+
+	// CLOSE //////////////////////////////////////////////////////////////////
+	status = H5Fclose(file_id);
+
+	// OPEN ///////////////////////////////////////////////////////////////////
+
+
+	// WRITE //////////////////////////////////////////////////////////////////
+	// READ ///////////////////////////////////////////////////////////////////
+
 
 	status = H5Fclose(file_id);
 

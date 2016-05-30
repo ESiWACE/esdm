@@ -29,7 +29,7 @@ int main(){
 
 	fid = H5Fcreate("test", H5F_ACC_TRUNC, H5P_DEFAULT, fprop);
 	H5VLget_plugin_name(fid, name, 1024);
-	printf ("FAPL set to use VOL %s\n", name);
+	printf ("VOL plugin in use: %s\n", name);
 
 	H5Fclose(fid);
 	H5VLunregister(vol_id);

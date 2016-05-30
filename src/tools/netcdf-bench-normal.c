@@ -38,7 +38,7 @@ int main(int argc, char ** argv){
 
 
   //ret = nc_create_par(file, NC_MPIIO, MPI_COMM_WORLD, MPI_INFO_NULL, & ncid);
-  ret = nc_create(file, NC_NETCDF4 | NC_H5VOL_MEMVOL, & ncid);
+  ret = nc_create(file, NC_NETCDF4, & ncid);
   assert(ret == NC_NOERR);
 
   ret = nc_def_dim(ncid, "lat", 100, & dimids[0]);
