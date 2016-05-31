@@ -7,7 +7,7 @@
   #define NC_PNETCDF       (NC_MPIIO) /**< Use parallel-netcdf library; alias for NC_MPIIO. */
   
 + /* ESD middleware offer netcdf mode to use MEMVOL plugin */
-+ #define NC_H5VOL_MEMVOL   0xC000  /**< Use HDF5 VOL Plugin: MEMVOL */
++ #define NC_H5VOL_MEMVOL   0x0080  /**< Use HDF5 VOL Plugin: MEMVOL */
 + 
 + 
   /** Format specifier for nc_set_default_format() and returned
