@@ -17,10 +17,12 @@
 
 #include <hdf5.h>
 
-int main(){
-	hid_t fprop;
-	hid_t fid;
-	hid_t vol_id = H5VLregister_by_name("h5-memvol");
+int main()
+{	
+	herr_t	status;
+	hid_t   fprop;
+	hid_t   fid;
+	hid_t   vol_id = H5VLregister_by_name("h5-memvol");
 
 	hid_t g1, g2, g3;
 	hid_t plist;

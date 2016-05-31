@@ -57,18 +57,28 @@ typedef struct {
 	int dim;
 } memvol_dataspace_t;
 
+
+typedef struct {
+	hid_t lcpl_id;
+	hid_t tcpl_id;
+	hid_t tapl_id;
+	hid_t dxpl_id;
+} memvol_datatype_t;
+
+
 typedef struct {
 	hid_t dcpl_id;
 	hid_t dapl_id;
 	hid_t dxpl_id;
-
 } memvol_dataset_t;
+
 
 typedef struct {
 	GHashTable * childs_tbl;
 	GArray * childs_ord_by_index_arr; 
 	hid_t gcpl_id;
 } memvol_group_t;
+
 
 typedef struct {
 	memvol_group_t root_grp; // it must start with the root group
@@ -82,9 +92,16 @@ typedef struct {
 
 
 
+typedef union {
+	memvol_group_t* group;
+	memvol_dataset_t* dataset;
+	memvol_datatype_t* datatype;
+} memvol_object_u;
+
 typedef struct {
-	
-	int dim;
+	memvol_object_type_t type;
+	void * object;
+	//memvol_object_u obj;
 } memvol_object_t;
 
 

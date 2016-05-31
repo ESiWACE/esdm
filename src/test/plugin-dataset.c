@@ -18,10 +18,11 @@
 #include <hdf5.h>
 
 int main(){
+
+	herr_t	status;
 	hid_t	fprop;
 	hid_t	file_id, dataset_id, dataspace_id;
 	hid_t	vol_id = H5VLregister_by_name("h5-memvol");
-	herr_t	status;
 
 	hsize_t	dims[2];
 	hid_t	plist;
@@ -57,8 +58,10 @@ int main(){
 	/* Terminate access to the data space. */ 
 	status = H5Sclose(dataspace_id);
 
+
 	// CLOSE //////////////////////////////////////////////////////////////////
 	status = H5Fclose(file_id);
+
 
 	// OPEN ///////////////////////////////////////////////////////////////////
 

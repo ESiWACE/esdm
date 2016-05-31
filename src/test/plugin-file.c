@@ -19,7 +19,7 @@
 
 int main(){
 	hid_t fprop;
-	hid_t fid;
+	hid_t file_id;
 	hid_t vol_id = H5VLregister_by_name("h5-memvol");
 
 	char name[1024];
@@ -27,11 +27,20 @@ int main(){
 	fprop = H5Pcreate(H5P_FILE_ACCESS);
 	H5Pset_vol(fprop, vol_id, &fprop);
 
-	fid = H5Fcreate("test", H5F_ACC_TRUNC, H5P_DEFAULT, fprop);
-	H5VLget_plugin_name(fid, name, 1024);
+
+	// CREATE /////////////////////////////////////////////////////////////////
+	file_id = H5Fcreate("test", H5F_ACC_TRUNC, H5P_DEFAULT, fprop);
+	H5VLget_plugin_name(file_id, name, 1024);
 	printf ("VOL plugin in use: %s\n", name);
 
-	H5Fclose(fid);
+
+	// CLOSE //////////////////////////////////////////////////////////////////
+	H5Fclose(file_id);
+
+
+	// OPEN ///////////////////////////////////////////////////////////////////
+
+
 	H5VLunregister(vol_id);
 
 	return 0;

@@ -14,7 +14,8 @@
 // along with h5-memvol.  If not, see <http://www.gnu.org/licenses/>.
 
 
-static void memvol_group_init(memvol_group_t * group){
+static void memvol_group_init(memvol_group_t * group)
+{
   group->childs_tbl = g_hash_table_new (g_str_hash,g_str_equal);
   group->childs_ord_by_index_arr = g_array_new(0, 0, sizeof(void*));
   assert(group->childs_tbl != NULL);
@@ -24,14 +25,22 @@ static void memvol_group_init(memvol_group_t * group){
 
 static void * memvol_group_create(void *obj, H5VL_loc_params_t loc_params, const char *name, hid_t gcpl_id, hid_t gapl_id, hid_t dxpl_id, void **req)
 {
-    memvol_group_t *group;
-    memvol_group_t *parent = (memvol_group_t *) obj;
+    memvol_object_t *object;
+    memvol_group_t  *group;
+    memvol_group_t  *parent = (memvol_group_t *) obj;
 
-    group = (memvol_group_t*) malloc(sizeof(memvol_group_t));
+	debugI("%s\n", __func__);
+
+    object = (memvol_object_t*) malloc(sizeof(memvol_object_t));
+    group  = (memvol_group_t*)  malloc(sizeof(memvol_group_t));
+
+	object->type = MEMVOL_GROUP;
+	object->object = group;
+
     memvol_group_init(group);
     group->gcpl_id = H5Pcopy(gcpl_id);
 
-    debugI("Gcreate parent %p child %p, %s, loc_param %d \n", (void*)  obj, (void*)  group, name, loc_params.type);
+    debugI("Group create: parent %p child %p, %s, loc_param %d \n", (void*)  obj, (void*)  group, name, loc_params.type);
 
     if (name != NULL){ // anonymous group
       // check if the object exists already in the parent
@@ -47,20 +56,25 @@ static void * memvol_group_create(void *obj, H5VL_loc_params_t loc_params, const
 }
 
 
-static void *memvol_group_open(void *obj, H5VL_loc_params_t loc_params, const char *name,  hid_t gapl_id, hid_t dxpl_id, void **req){
-  memvol_group_t *parent = (memvol_group_t *) obj;
-  void * child = g_hash_table_lookup(parent->childs_tbl, name);
-  debugI("Gopen %p with %s child %p\n", obj, name, child);
-  return child;
+static void *memvol_group_open(void *obj, H5VL_loc_params_t loc_params, const char *name,  hid_t gapl_id, hid_t dxpl_id, void **req)
+{
+	memvol_group_t *parent = (memvol_group_t *) obj;
+
+	debugI("%s\n", __func__);
+
+	void * child = g_hash_table_lookup(parent->childs_tbl, name);
+	debugI("Group open: %p with %s child %p\n", obj, name, child);
+	return child;
 }
 
 
-static herr_t memvol_group_get(void *obj, H5VL_group_get_t get_type, hid_t dxpl_id, void **req, va_list arguments){
+static herr_t memvol_group_get(void *obj, H5VL_group_get_t get_type, hid_t dxpl_id, void **req, va_list arguments)
+{
   memvol_group_t * g = (memvol_group_t *) obj;
 
   switch (get_type){
     case H5VL_GROUP_GET_GCPL:{
-      debugI("Gget GCPL %p\n", obj);
+      debugI("Group get: GCPL %p\n", obj);
       hid_t *new_gcpl_id = va_arg(arguments, hid_t *);
       *new_gcpl_id = H5Pcopy(g->gcpl_id);
       return 0;
@@ -69,7 +83,7 @@ static herr_t memvol_group_get(void *obj, H5VL_group_get_t get_type, hid_t dxpl_
       H5VL_loc_params_t loc_params = va_arg (arguments, H5VL_loc_params_t);
       H5G_info_t  *grp_info = va_arg (arguments, H5G_info_t *);
 
-      debugI("Gget info %p loc_param: %d \n", obj, loc_params.type);
+      debugI("Group get: info %p loc_param: %d \n", obj, loc_params.type);
 
       memvol_group_t * relevant_group;
 
@@ -108,6 +122,6 @@ static herr_t memvol_group_get(void *obj, H5VL_group_get_t get_type, hid_t dxpl_
 static herr_t memvol_group_close(void *grp, hid_t dxpl_id, void **req)
 {
     memvol_group_t *g = (memvol_group_t *)grp;
-    debugI("Closing group %p\n", (void*)  g);
+    debugI("Group close: %p\n", (void*)  g);
     return 0;
 }
