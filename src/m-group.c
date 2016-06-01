@@ -88,17 +88,15 @@ static herr_t memvol_group_get(void *obj, H5VL_group_get_t get_type, hid_t dxpl_
     
     case H5VL_GROUP_GET_INFO:{
 
-        debugI("Group get: INFO %p\n", obj);
         // This argument defines if we should retrieve information about ourselve or a child node
         H5VL_loc_params_t loc_params = va_arg(arguments, H5VL_loc_params_t);
         H5G_info_t *grp_info         = va_arg(arguments, H5G_info_t *);
  
-        debugI("Group get: info %p loc_param: %d \n", obj, loc_params.type);
+        debugI("Group get: INFO %p loc_param: %d \n", obj, loc_params.type);
 
         memvol_group_t * relevant_group;
 
 
-		debugI("Group get: g=%p\n", (void*) g);
 
         if(loc_params.type == H5VL_OBJECT_BY_SELF) {
             relevant_group = g;

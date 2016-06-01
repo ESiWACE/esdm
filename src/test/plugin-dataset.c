@@ -52,24 +52,35 @@ int main(){
 	/* Create the dataset. */
 	dataset_id = H5Dcreate2(file_id, "/dset", H5T_STD_I32BE, dataspace_id, H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
 
-	/* End access to the dataset and release resources used by it. */
-	status = H5Dclose(dataset_id);
 
-	/* Terminate access to the data space. */ 
+	// CLOSE //////////////////////////////////////////////////////////////////
+	status = H5Dclose(dataset_id);
 	status = H5Sclose(dataspace_id);
 
 
-	// CLOSE //////////////////////////////////////////////////////////////////
-	status = H5Fclose(file_id);
-
-
 	// OPEN ///////////////////////////////////////////////////////////////////
+    dataset_id = H5Dopen2(file_id, "/dset", H5P_DEFAULT);
 
 
 	// WRITE //////////////////////////////////////////////////////////////////
+	int i, j, dset_data[4][6];
+
+	/* Prepare the dataset. */
+	for (i = 0; i < 4; i++)
+		for (j = 0; j < 6; j++)
+			dset_data[i][j] = i * 6 + j + 1;
+
+	/* Write the dataset. */
+	status = H5Dwrite(dataset_id, H5T_NATIVE_INT, H5S_ALL, H5S_ALL, H5P_DEFAULT, dset_data);
+
+
 	// READ ///////////////////////////////////////////////////////////////////
+	status = H5Dread(dataset_id, H5T_NATIVE_INT, H5S_ALL, H5S_ALL, H5P_DEFAULT, dset_data);
 
 
+
+	// Clean up ///////////////////////////////////////////////////////////////
+	status = H5Dclose(dataset_id);
 	status = H5Fclose(file_id);
 
 	// end hdf5 as usual
