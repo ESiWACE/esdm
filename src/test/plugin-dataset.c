@@ -52,7 +52,6 @@ int main(){
 	/* Create the dataset. */
 	dataset_id = H5Dcreate2(file_id, "/dset", H5T_STD_I32BE, dataspace_id, H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
 
-
 	// CLOSE //////////////////////////////////////////////////////////////////
 	status = H5Dclose(dataset_id);
 	status = H5Sclose(dataspace_id);
