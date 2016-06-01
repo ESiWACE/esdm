@@ -41,16 +41,19 @@ static void * memvol_group_create(void *obj, H5VL_loc_params_t loc_params, const
     memvol_group_init(group);
     group->gcpl_id = H5Pcopy(gcpl_id);
 
-    debugI("Group create: parent %p child %p, %s, loc_param %d \n", (void*)  obj, (void*)  group, name, loc_params.type);
+    debugI("Group create: parent %p child %p, name=%s, loc_param=%d \n", (void*)  obj, (void*)  group, name, loc_params.type);
 
-    if (name != NULL){ // anonymous group
+    if (name != NULL){ // anonymous object/group
       // check if the object exists already in the parent
       if (g_hash_table_lookup (parent->childs_tbl, name) != NULL){
         free(group);
         return NULL;
       }
-      g_hash_table_insert(parent->childs_tbl, strdup(name), group);
-      g_array_append_val (parent->childs_ord_by_index_arr, group);
+      g_hash_table_insert(parent->childs_tbl, strdup(name), object);
+      g_array_append_val (parent->childs_ord_by_index_arr, object);
+      
+      //g_hash_table_insert(parent->childs_tbl, strdup(name), group);
+      //g_array_append_val (parent->childs_ord_by_index_arr, group);
     }
 
     return (void *)group;
@@ -63,9 +66,10 @@ static void *memvol_group_open(void *obj, H5VL_loc_params_t loc_params, const ch
 
 	debugI("%s\n", __func__);
 
-	void * child = g_hash_table_lookup(parent->childs_tbl, name);
+	memvol_object_t * child = g_hash_table_lookup(parent->childs_tbl, name);
 	debugI("Group open: %p with %s child %p\n", obj, name, child);
-	return child;
+
+	return (void *)child->object;
 }
 
 
@@ -73,48 +77,63 @@ static herr_t memvol_group_get(void *obj, H5VL_group_get_t get_type, hid_t dxpl_
 {
   memvol_group_t * g = (memvol_group_t *) obj;
 
-  switch (get_type){
+  switch (get_type) {
     case H5VL_GROUP_GET_GCPL:{
-      debugI("Group get: GCPL %p\n", obj);
-      hid_t *new_gcpl_id = va_arg(arguments, hid_t *);
-      *new_gcpl_id = H5Pcopy(g->gcpl_id);
-      return 0;
-    }case H5VL_GROUP_GET_INFO:{
-      // This argument defines if we should retrieve information about ourselve or a child node
-      H5VL_loc_params_t loc_params = va_arg (arguments, H5VL_loc_params_t);
-      H5G_info_t  *grp_info = va_arg (arguments, H5G_info_t *);
-
-      debugI("Group get: info %p loc_param: %d \n", obj, loc_params.type);
-
-      memvol_group_t * relevant_group;
-
-      if(loc_params.type == H5VL_OBJECT_BY_SELF) {
-        relevant_group = g;
-      }else if(loc_params.type == H5VL_OBJECT_BY_NAME) {
-        relevant_group = g_hash_table_lookup(g->childs_tbl, loc_params.loc_data.loc_by_name.name);
-        if (relevant_group == NULL){
-          return -1;
-        }
-      }else if(loc_params.type == H5VL_OBJECT_BY_IDX) {
-        assert(loc_params.loc_data.loc_by_idx.order == H5_ITER_INC || loc_params.loc_data.loc_by_idx.order == H5_ITER_NATIVE);
-        if(loc_params.loc_data.loc_by_idx.idx_type == H5_INDEX_NAME){
-          // TODO, for now return the index position.
-          relevant_group = g_array_index(g->childs_ord_by_index_arr, memvol_group_t*, loc_params.loc_data.loc_by_idx.n);
-        }else if(loc_params.loc_data.loc_by_idx.idx_type == H5_INDEX_CRT_ORDER){
-          relevant_group = g_array_index(g->childs_ord_by_index_arr, memvol_group_t*, loc_params.loc_data.loc_by_idx.n);
-        }else{
-          assert(0);
-        }
-      }
-
-      grp_info->storage_type = H5G_STORAGE_TYPE_COMPACT;
-
-      grp_info->nlinks = 0;
-      grp_info->max_corder = g_hash_table_size(relevant_group->childs_tbl);
-      grp_info->mounted = 0;
-
-      return 0;
+    	// group creation property list (GCPL)
+        debugI("Group get: GCPL %p\n", obj);
+		hid_t *new_gcpl_id = va_arg(arguments, hid_t *);
+		*new_gcpl_id = H5Pcopy(g->gcpl_id);
+		return 0;
     }
+    
+    case H5VL_GROUP_GET_INFO:{
+
+        debugI("Group get: INFO %p\n", obj);
+        // This argument defines if we should retrieve information about ourselve or a child node
+        H5VL_loc_params_t loc_params = va_arg(arguments, H5VL_loc_params_t);
+        H5G_info_t *grp_info         = va_arg(arguments, H5G_info_t *);
+ 
+        debugI("Group get: info %p loc_param: %d \n", obj, loc_params.type);
+
+        memvol_group_t * relevant_group;
+
+
+		debugI("Group get: g=%p\n", (void*) g);
+
+        if(loc_params.type == H5VL_OBJECT_BY_SELF) {
+            relevant_group = g;
+
+        } else if (loc_params.type == H5VL_OBJECT_BY_NAME) {
+            relevant_group = g_hash_table_lookup(g->childs_tbl, loc_params.loc_data.loc_by_name.name);
+            if (relevant_group == NULL){
+                return -1;
+            }
+            relevant_group = (memvol_group_t*) ((memvol_object_t*)relevant_group)->object;
+           
+        } else if (loc_params.type == H5VL_OBJECT_BY_IDX) {
+          assert(loc_params.loc_data.loc_by_idx.order == H5_ITER_INC || loc_params.loc_data.loc_by_idx.order == H5_ITER_NATIVE);
+          if(loc_params.loc_data.loc_by_idx.idx_type == H5_INDEX_NAME){
+              // TODO, for now return the index position.
+              relevant_group = g_array_index(g->childs_ord_by_index_arr, memvol_group_t*, loc_params.loc_data.loc_by_idx.n);
+              relevant_group = (memvol_group_t*) ((memvol_object_t*)relevant_group)->object;
+
+          } else if(loc_params.loc_data.loc_by_idx.idx_type == H5_INDEX_CRT_ORDER){
+              relevant_group = g_array_index(g->childs_ord_by_index_arr, memvol_group_t*, loc_params.loc_data.loc_by_idx.n);
+              relevant_group = (memvol_group_t*) ((memvol_object_t*)relevant_group)->object;
+
+          } else{
+              assert(0);
+          }
+        }
+
+        grp_info->storage_type = H5G_STORAGE_TYPE_COMPACT;
+        grp_info->nlinks = 0;
+        grp_info->max_corder = g_hash_table_size(relevant_group->childs_tbl);
+        grp_info->mounted = 0;
+
+        return 0;
+    }
+
   }
   return -1;
 }
@@ -123,6 +142,8 @@ static herr_t memvol_group_get(void *obj, H5VL_group_get_t get_type, hid_t dxpl_
 static herr_t memvol_group_close(void *grp, hid_t dxpl_id, void **req)
 {
     memvol_group_t *g = (memvol_group_t *)grp;
+
     debugI("Group close: %p\n", (void*)  g);
+
     return 0;
 }

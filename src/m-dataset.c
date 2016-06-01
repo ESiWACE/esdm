@@ -73,6 +73,7 @@ void *memvol_dataset_create(void *obj, H5VL_loc_params_t loc_params, const char 
 {
     memvol_object_t *object;
     memvol_dataset_t *dataset;
+    memvol_group_t *parent = (memvol_group_t *) obj;
 
 	debugI("%s\n", __func__);
 
@@ -83,18 +84,17 @@ void *memvol_dataset_create(void *obj, H5VL_loc_params_t loc_params, const char 
 	object->type = MEMVOL_DATASET;
 	object->object = dataset;
 
-    memvol_group_t *parent = (memvol_group_t *) obj;
     memvol_dataset_init(dataset);
     dataset->dcpl_id = H5Pcopy(dcpl_id);
 
-    if (name != NULL){ 
+    if (name != NULL){ // anonymous object/datset
 		// check if the object exists already in the parent
 		if (g_hash_table_lookup (parent->childs_tbl, name) != NULL){
 			free(dataset);
 			return NULL;
 		}
-		//  g_hash_table_insert(parent->childs_tbl, strdup(name), group);
-		//  g_array_append_val (parent->childs_ord_by_index_arr, group);
+		g_hash_table_insert(parent->childs_tbl, strdup(name), object);
+		g_array_append_val (parent->childs_ord_by_index_arr, object);
     }
 	
 

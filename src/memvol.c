@@ -142,12 +142,12 @@ static const H5VL_class_t H5VL_memvol = {
         NULL, //memvol_object_specific,         /* specific */
         NULL, //memvol_object_optional,         /* optional */
     },
-    {
-        NULL,
-        NULL,
-        NULL
+    {                                           /* asynchronous class callbacks */
+        NULL, //memvol_async_cancel,
+        NULL, //memvol_async_test,
+        NULL, //memvol_async_wait  
     },
-    NULL
+    NULL                                        /* Optional callback */
 };
 
 static hid_t vol_id = -1;

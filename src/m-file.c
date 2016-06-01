@@ -29,7 +29,7 @@ static void * memvol_file_create(const char *name, unsigned flags, hid_t fcpl_id
 	// lookup the filename in the lsit of files
     file = g_hash_table_lookup (files_tbl, name);
 
-    // Conform to HDF5: invalid https://www.hdfgroup.org/HDF5/doc/RM/RM_H5F.html#File-Create
+    // conform to HDF5: invalid https://www.hdfgroup.org/HDF5/doc/RM/RM_H5F.html#File-Create
     if((flags & H5F_ACC_EXCL) && file != NULL){
       return NULL;
     }
@@ -65,7 +65,7 @@ static void * memvol_file_create(const char *name, unsigned flags, hid_t fcpl_id
     file->mode_flags = flags;
     file->fapl_id = H5Pcopy(fapl_id);
 
-    debugI("Fcreate %p %s\n", (void*) file, name);
+    debugI("File create: %p %s\n", (void*) file, name);
 
     return (void *)file;
 }

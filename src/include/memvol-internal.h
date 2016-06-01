@@ -81,7 +81,7 @@ typedef struct {
 
 
 typedef struct {
-	memvol_group_t root_grp; // it must start with the root group
+	memvol_group_t root_grp; // it must start with the root group, since in many cases we cast files to groups
 
 	char * name;
 	int mode_flags; // RDWR etc.
