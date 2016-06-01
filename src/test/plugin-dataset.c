@@ -66,17 +66,33 @@ int main(){
 	int i, j, dset_data[4][6];
 
 	/* Prepare the dataset. */
-	for (i = 0; i < 4; i++)
-		for (j = 0; j < 6; j++)
+	printf("BUFFER: ");
+	for (i = 0; i < 4; i++) {
+		for (j = 0; j < 6; j++) {
 			dset_data[i][j] = i * 6 + j + 1;
+			printf("%d,", dset_data[i][j]);
+		}
+	}
+	printf("\n");
 
 	/* Write the dataset. */
 	status = H5Dwrite(dataset_id, H5T_NATIVE_INT, H5S_ALL, H5S_ALL, H5P_DEFAULT, dset_data);
 
 
 	// READ ///////////////////////////////////////////////////////////////////
-	status = H5Dread(dataset_id, H5T_NATIVE_INT, H5S_ALL, H5S_ALL, H5P_DEFAULT, dset_data);
+	int dset_data_read[4][5];
 
+
+
+	status = H5Dread(dataset_id, H5T_NATIVE_INT, H5S_ALL, H5S_ALL, H5P_DEFAULT, dset_data_read);
+	
+	printf("BUFFER: ");
+	for (i = 0; i < 4; i++) {
+		for (j = 0; j < 5; j++) {
+			printf("%d,", dset_data_read[i][j]);
+		}
+	}
+	printf("\n");
 
 
 	// Clean up ///////////////////////////////////////////////////////////////
