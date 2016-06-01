@@ -85,6 +85,8 @@ static herr_t memvol_file_get(void *file, H5VL_file_get_t get_type, hid_t dxpl_i
 {
     memvol_file_t *f = (memvol_file_t *)file;
 
+	debugI("%s\n", __func__);
+
     switch (get_type) {
       /* H5Fget_access_plist */
       case H5VL_FILE_GET_FAPL:
@@ -188,5 +190,7 @@ static herr_t memvol_file_get(void *file, H5VL_file_get_t get_type, hid_t dxpl_i
 
 static herr_t memvol_file_close(void *file, hid_t dxpl_id, void **req)
 {
+	debugI("%s\n", __func__);
+
     return 0;
 }

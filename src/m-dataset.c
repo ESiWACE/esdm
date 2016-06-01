@@ -104,16 +104,14 @@ void *memvol_dataset_create(void *obj, H5VL_loc_params_t loc_params, const char 
 
 void *memvol_dataset_open(void *obj, H5VL_loc_params_t loc_params, const char *name,  hid_t dapl_id, hid_t dxpl_id, void **req)
 {
+	memvol_group_t *parent = (memvol_group_t *) obj;
+
 	debugI("%s\n", __func__);
 
-	/*
-	memvol_group_t *parent = (memvol_group_t *) obj;
-	void * child = g_hash_table_lookup(parent->childs_tbl, name);
-	debugI("Gopen %p with %s child %p\n", obj, name, child);
-	return child;
-	*/
+	memvol_object_t * child = g_hash_table_lookup(parent->childs_tbl, name);
+	debugI("Group open: %p with %s child %p\n", obj, name, child);
 
-	return NULL;
+	return (void *)child->object;
 }
 
 herr_t memvol_dataset_read(void *dset, hid_t mem_type_id, hid_t mem_space_id, hid_t file_space_id, hid_t xfer_plist_id, void * buf, void **req)
