@@ -31,6 +31,7 @@ static void * memvol_group_create(void *obj, H5VL_loc_params_t loc_params, const
 
 	debugI("%s\n", __func__);
 
+	// allocate resources
     object = (memvol_object_t*) malloc(sizeof(memvol_object_t));
     group  = (memvol_group_t*)  malloc(sizeof(memvol_group_t));
 

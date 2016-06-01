@@ -69,14 +69,15 @@ static void memvol_dataset_init(memvol_dataset_t * dataset){
 }
 
 
-void *memvol_dataset_create(void *obj, H5VL_loc_params_t loc_params, const char *name,  hid_t dcpl_id, hid_t dapl_id, hid_t dxpl_id, void **req){
-	debugI("%s\n", __func__);
-
+void *memvol_dataset_create(void *obj, H5VL_loc_params_t loc_params, const char *name,  hid_t dcpl_id, hid_t dapl_id, hid_t dxpl_id, void **req)
+{
     memvol_object_t *object;
     memvol_dataset_t *dataset;
 
+	debugI("%s\n", __func__);
 
-    object = (memvol_object_t*) malloc(sizeof(memvol_object_t));
+	// allocate resoources
+    object  = (memvol_object_t*)  malloc(sizeof(memvol_object_t));
     dataset = (memvol_dataset_t*) malloc(sizeof(memvol_dataset_t));
 
 	object->type = MEMVOL_DATASET;

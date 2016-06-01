@@ -28,7 +28,7 @@
 #define MEMVOL_ID 503
 #define MEMVOL_NAME "h5-memvol"
 
-#include "m-attribute.c"
+//#include "m-attribute.c"
 #include "m-dataset.c"
 #include "m-datatype.c"
 #include "m-file.c"
@@ -153,7 +153,8 @@ static const H5VL_class_t H5VL_memvol = {
 static hid_t vol_id = -1;
 
 
-hid_t H5VL_memvol_init(){
+hid_t H5VL_memvol_init()
+{
 	vol_id = H5VLregister (& H5VL_memvol);
 	H5VLinitialize(vol_id, H5P_DEFAULT);
 
@@ -163,7 +164,8 @@ hid_t H5VL_memvol_init(){
 }
 
 
-int H5VL_memvol_finalize(){
+int H5VL_memvol_finalize()
+{
 	assert(vol_id != -1);
 
 	H5VLclose(vol_id);
@@ -173,10 +175,12 @@ int H5VL_memvol_finalize(){
 
 
 // see H5PL.c:695 ff for a description how the plugin is loaded.
-H5PL_type_t H5PLget_plugin_type(void) {
+H5PL_type_t H5PLget_plugin_type(void)
+{
 	return H5PL_TYPE_VOL;
 }
 
-const void *H5PLget_plugin_info(void) {
+const void *H5PLget_plugin_info(void)
+{
 	return & H5VL_memvol;
 }
