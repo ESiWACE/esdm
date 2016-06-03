@@ -13,6 +13,112 @@
 // You should have received a copy of the GNU Lesser General Public License
 // along with h5-memvol.  If not, see <http://www.gnu.org/licenses/>.
 
+
+
+
+// extract from H5Fpkg.h:233 for reference (consider any structure strictly private!)
+/*
+ * Define the structure to store the file information for HDF5 files. One of
+ * these structures is allocated per file, not per H5Fopen(). That is, set of
+ * H5F_t structs can all point to the same H5F_file_t struct. The `nrefs'
+ * count in this struct indicates the number of H5F_t structs which are
+ * pointing to this struct.
+ */
+//struct H5F_file_t {
+//    H5FD_t	*lf; 		/* Lower level file handle for I/O	*/
+//    H5F_super_t *sblock;        /* Pointer to (pinned) superblock for file */
+//    H5O_drvinfo_t *drvinfo;	/* Pointer to the (pinned) driver info 
+//                                 * cache entry.  This field is only defined
+//                                 * for older versions of the super block,
+//                                 * and then only when a driver information
+//                                 * block is present.  At all other times
+//                                 * it should be NULL.
+//                                 */
+//    unsigned	nrefs;		/* Ref count for times file is opened	*/
+//    unsigned	flags;		/* Access Permissions for file          */
+//    H5F_mtab_t	mtab;		/* File mount table                     */
+//    H5F_efc_t   *efc;           /* External file cache                  */
+//
+//    /* Cached values from FCPL/superblock */
+//    uint8_t	sizeof_addr;	/* Size of addresses in file            */
+//    uint8_t	sizeof_size;	/* Size of offsets in file              */
+//    haddr_t	sohm_addr;	/* Relative address of shared object header message table */
+//    unsigned	sohm_vers;	/* Version of shared message table on disk */
+//    unsigned	sohm_nindexes;	/* Number of shared messages indexes in the table */
+//    unsigned long feature_flags; /* VFL Driver feature Flags            */
+//    haddr_t	maxaddr;	/* Maximum address for file             */
+//
+//    H5AC_t      *cache;		/* The object cache	 		*/
+//    H5AC_cache_config_t
+//		mdc_initCacheCfg; /* initial configuration for the      */
+//                                /* metadata cache.  This structure is   */
+//                                /* fixed at creation time and should    */
+//                                /* not change thereafter.               */
+//    hid_t       fcpl_id;	/* File creation property list ID 	*/
+//    H5F_close_degree_t fc_degree;   /* File close behavior degree	*/
+//    size_t	rdcc_nslots;	/* Size of raw data chunk cache (slots)	*/
+//    size_t	rdcc_nbytes;	/* Size of raw data chunk cache	(bytes)	*/
+//    double	rdcc_w0;	/* Preempt read chunks first? [0.0..1.0]*/
+//    size_t      sieve_buf_size; /* Size of the data sieve buffer allocated (in bytes) */
+//    hsize_t	threshold;	/* Threshold for alignment		*/
+//    hsize_t	alignment;	/* Alignment				*/
+//    unsigned	gc_ref;		/* Garbage-collect references?		*/
+//    unsigned	latest_flags;	/* The latest version support */
+//    hbool_t	store_msg_crt_idx;  /* Store creation index for object header messages?	*/
+//    unsigned	ncwfs;		/* Num entries on cwfs list		*/
+//    struct H5HG_heap_t **cwfs;	/* Global heap cache			*/
+//    struct H5G_t *root_grp;	/* Open root group			*/
+//    H5FO_t *open_objs;          /* Open objects in file                 */
+//    H5UC_t *grp_btree_shared;   /* Ref-counted group B-tree node info   */
+//
+//    /* File space allocation information */
+//    H5F_file_space_type_t fs_strategy;	/* File space handling strategy		*/
+//    hsize_t     fs_threshold;	/* Free space section threshold 	*/
+//    hbool_t     use_tmp_space;  /* Whether temp. file space allocation is allowed */
+//    haddr_t	tmp_addr;       /* Next address to use for temp. space in the file */
+//    unsigned fs_aggr_merge[H5FD_MEM_NTYPES];    /* Flags for whether free space can merge with aggregator(s) */
+//    H5F_fs_state_t fs_state[H5FD_MEM_NTYPES];   /* State of free space manager for each type */
+//    haddr_t fs_addr[H5FD_MEM_NTYPES];   /* Address of free space manager info for each type */
+//    H5FS_t *fs_man[H5FD_MEM_NTYPES];    /* Free space manager for each file space type */
+//    H5FD_mem_t fs_type_map[H5FD_MEM_NTYPES]; /* Mapping of "real" file space type into tracked type */
+//    H5F_blk_aggr_t meta_aggr;   /* Metadata aggregation info */
+//                                /* (if aggregating metadata allocations) */
+//    H5F_blk_aggr_t sdata_aggr;  /* "Small data" aggregation info */
+//                                /* (if aggregating "small data" allocations) */
+//
+//    /* Metadata accumulator information */
+//    H5F_meta_accum_t accum;     /* Metadata accumulator info           	*/
+//};
+//
+/*
+ * This is the top-level file descriptor.  One of these structures is
+ * allocated every time H5Fopen() is called although they may contain pointers
+ * to shared H5F_file_t structs.
+ */
+//struct H5F_t {
+//    char		*open_name;	/* Name used to open file	*/
+//    char		*actual_name;	/* Actual name of the file, after resolving symlinks, etc. */
+//    char               	*extpath;       /* Path for searching target external link file */
+//    H5F_file_t		*shared;	/* The shared file info		*/
+//    unsigned		nopen_objs;	/* Number of open object headers*/
+//    H5FO_t              *obj_count;     /* # of time each object is opened through top file structure */
+//    hbool_t             id_exists;      /* Whether an ID for this struct exists   */
+//    hbool_t             closing;        /* File is in the process of being closed */
+//    struct H5F_t        *parent;        /* Parent file that this file is mounted to */
+//    unsigned            nmounts;        /* Number of children mounted to this file */
+//#ifdef H5_HAVE_PARALLEL
+//    H5P_coll_md_read_flag_t coll_md_read;  /* Do all metadata reads collectively */
+//    hbool_t             coll_md_write;  /* Do all metadata writes collectively */
+//#endif /* H5_HAVE_PARALLEL */
+//};
+
+
+
+
+
+
+
+
 static GHashTable * files_tbl = NULL;
 
 static void * memvol_file_create(const char *name, unsigned flags, hid_t fcpl_id, hid_t fapl_id, hid_t dxpl_id, void **req)

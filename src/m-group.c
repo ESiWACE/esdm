@@ -14,6 +14,29 @@
 // along with h5-memvol.  If not, see <http://www.gnu.org/licenses/>.
 
 
+
+// extract from H5Fpkg.h:138 for reference (consider any structure strictly private!)
+//
+/*
+ * Shared information for all open group objects
+ */
+//struct H5G_shared_t {
+//    int fo_count;                   /* open file object count */
+//    hbool_t mounted;                /* Group is mount point */
+//};
+//
+/*
+ * A group handle passed around through layers of the library within and
+ * above the H5G layer.
+ */
+//struct H5G_t {
+//    H5G_shared_t *shared;               /* Shared file object data */
+//    H5O_loc_t oloc;                     /* Object location for group */
+//    H5G_name_t path;                    /* Group hierarchy path   */
+//};
+
+
+
 static void memvol_group_init(memvol_group_t * group)
 {
   group->childs_tbl = g_hash_table_new (g_str_hash,g_str_equal);
