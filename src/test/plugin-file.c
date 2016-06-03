@@ -14,10 +14,13 @@
 // along with h5-memvol.  If not, see <http://www.gnu.org/licenses/>.
 
 #include <stdio.h>
-
 #include <hdf5.h>
 
-int main(){
+#define FILE "file-test.h5"
+
+int main()
+{
+	herr_t	status;
 	hid_t fprop;
 	hid_t file_id;
 	hid_t vol_id = H5VLregister_by_name("h5-memvol");
@@ -29,18 +32,20 @@ int main(){
 
 
 	// CREATE /////////////////////////////////////////////////////////////////
-	file_id = H5Fcreate("test", H5F_ACC_TRUNC, H5P_DEFAULT, fprop);
+	file_id = H5Fcreate(FILE, H5F_ACC_TRUNC, H5P_DEFAULT, fprop);
 	H5VLget_plugin_name(file_id, name, 1024);
 	printf ("VOL plugin in use: %s\n", name);
 
 
 	// CLOSE //////////////////////////////////////////////////////////////////
-	H5Fclose(file_id);
+	status = H5Fclose(file_id);
 
 
 	// OPEN ///////////////////////////////////////////////////////////////////
+	file_id = H5Fopen(FILE, H5P_DEFAULT, fprop);
 
 
+	// Clean up ///////////////////////////////////////////////////////////////
 	H5VLunregister(vol_id);
 
 	return 0;

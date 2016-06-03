@@ -14,11 +14,12 @@
 // along with h5-memvol.  If not, see <http://www.gnu.org/licenses/>.
 
 #include <stdio.h>
-
 #include <hdf5.h>
 
-int main(){
+#define FILE "dataset-test.h5"
 
+int main()
+{
 	herr_t	status;
 	hid_t	fprop;
 	hid_t	file_id, dataset_id, dataspace_id;
@@ -29,18 +30,17 @@ int main(){
 
 	char name[1024];
 
+
+	// Bootstrap //////////////////////////////////////////////////////////////
 	// set VOL plugin
 	fprop = H5Pcreate(H5P_FILE_ACCESS);
 	H5Pset_vol(fprop, vol_id, &fprop);
-
-	// Bootstrap //////////////////////////////////////////////////////////////
-	file_id = H5Fcreate("test", H5F_ACC_TRUNC, H5P_DEFAULT, fprop);
+	
+	file_id = H5Fcreate(FILE, H5F_ACC_TRUNC, H5P_DEFAULT, fprop);
   
   	// check if correct VOL plugin is used
 	H5VLget_plugin_name(file_id, name, 1024);
 	printf ("VOL plugin in use: %s\n", name);
-
-
 
 
 	// CREATE /////////////////////////////////////////////////////////////////
@@ -51,6 +51,7 @@ int main(){
 
 	/* Create the dataset. */
 	dataset_id = H5Dcreate2(file_id, "/dset", H5T_STD_I32BE, dataspace_id, H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
+
 
 	// CLOSE //////////////////////////////////////////////////////////////////
 	status = H5Dclose(dataset_id);
@@ -80,8 +81,6 @@ int main(){
 
 	// READ ///////////////////////////////////////////////////////////////////
 	int dset_data_read[4][5];
-
-
 
 	status = H5Dread(dataset_id, H5T_NATIVE_INT, H5S_ALL, H5S_ALL, H5P_DEFAULT, dset_data_read);
 	

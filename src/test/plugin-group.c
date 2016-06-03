@@ -14,8 +14,9 @@
 // along with h5-memvol.  If not, see <http://www.gnu.org/licenses/>.
 
 #include <stdio.h>
-
 #include <hdf5.h>
+
+#define FILE "group-test.h5"
 
 int main()
 {	
@@ -35,7 +36,7 @@ int main()
 
 
 	// Bootstrap //////////////////////////////////////////////////////////////
-	fid = H5Fcreate("test", H5F_ACC_TRUNC, H5P_DEFAULT, fprop);
+	fid = H5Fcreate(FILE, H5F_ACC_TRUNC, H5P_DEFAULT, fprop);
 
 	// check if correct vol plugin is used
 	H5VLget_plugin_name(fid, name, 1024);
@@ -58,7 +59,7 @@ int main()
 
 
 
-	// GET  ////////////////////////////////////////////////////////////////////
+	// GET ////////////////////////////////////////////////////////////////////
 	printf("Testing additional functions\n");
 	g1 = H5Gopen2(fid, "g1", H5P_DEFAULT );
 	plist = H5Gget_create_plist(g1);
@@ -70,6 +71,8 @@ int main()
 	H5Gget_info_by_name(fid, "g1", & group_info, H5P_DEFAULT);
 	H5Pclose(plist);
 
+
+	// NESTING? ///////////////////////////////////////////////////////////////
 	H5Gclose(g1);
 	g1 = H5Gopen2(fid, "g2", H5P_DEFAULT);
 	H5Gclose(g1);
@@ -79,9 +82,9 @@ int main()
 	g1 =  H5Gcreate_anon(fid, H5P_DEFAULT, H5P_DEFAULT);
 	H5Gclose(g1);
 
+
+	// Clean up ///////////////////////////////////////////////////////////////
 	H5Fclose(fid);
-
-
 
 	// end hdf5 as usual
 	H5VLunregister(vol_id);

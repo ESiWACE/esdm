@@ -16,7 +16,6 @@
 
 
 // extract from H5Fpkg.h:138 for reference (consider any structure strictly private!)
-//
 /*
  * Shared information for all open group objects
  */
