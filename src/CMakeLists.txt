@@ -87,7 +87,7 @@ link_directories(h5-memvol ${HDF5_LIBRARY_DIRS} ${MPI_LIBRARIES} ${GLIB_LIBRARIE
 include_directories(${CMAKE_SOURCE_DIR}/include/ ${CMAKE_BINARY_DIR} ${HDF5_INCLUDE_DIR} ${MPI_INCLUDE_PATH} ${GLIB_INCLUDE_DIRS})
 
 SUBDIRS (test)
-SUBDIRS (tools)
+#SUBDIRS (tools)
 
 feature_summary(WHAT ALL)
 
