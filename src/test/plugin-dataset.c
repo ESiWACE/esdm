@@ -80,17 +80,21 @@ int main()
 
 
 	// READ ///////////////////////////////////////////////////////////////////
-	int dset_data_read[4][5];
+	int buf_read[4][5];
 
-	status = H5Dread(dataset_id, H5T_NATIVE_INT, H5S_ALL, H5S_ALL, H5P_DEFAULT, dset_data_read);
+	//herr_t H5Dread( hid_t dataset_id, hid_t mem_type_id, hid_t mem_space_id, hid_t file_space_id, hid_t xfer_plist_id, void * buf ) 
+	status = H5Dread( dataset_id,       H5T_NATIVE_INT,    H5S_ALL,            H5S_ALL,             H5P_DEFAULT,         buf_read);
 	
 	printf("BUFFER: ");
 	for (i = 0; i < 4; i++) {
 		for (j = 0; j < 5; j++) {
-			printf("%d,", dset_data_read[i][j]);
+			printf("%d,", buf_read[i][j]);
 		}
 	}
 	printf("\n");
+
+
+	printf("Status: %d\n", status);
 
 
 	// Clean up ///////////////////////////////////////////////////////////////
@@ -99,6 +103,10 @@ int main()
 
 	// end hdf5 as usual
 	H5VLunregister(vol_id);
+
+
+
+	printf("Status: %d\n", status);
 
 	return 0;
 }

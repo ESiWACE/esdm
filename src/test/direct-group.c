@@ -23,7 +23,7 @@ int main(){
   hid_t vol_id = H5VL_memvol_init();
   herr_t status;
 
-  hid_t g1, g2, g3;
+  hid_t g1, g2;
   hid_t plist;
 
   char name[1024];
@@ -58,7 +58,7 @@ int main(){
   H5Gget_info_by_name(fid, "g1", & group_info, H5P_DEFAULT);
   H5Pclose(plist);
 
-  H5Gclose(g1);
+  status = H5Gclose(g1);
   g1 = H5Gopen2(fid, "g2", H5P_DEFAULT );
   H5Gclose(g1);
   //g1 = H5Gopen2(fid, "INVALID", H5P_DEFAULT );
@@ -69,6 +69,9 @@ int main(){
 
   H5Fclose(fid);
   H5VL_memvol_finalize();
+
+
+  printf("Status: %d\n", status);
 
   return 0;
 }

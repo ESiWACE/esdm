@@ -25,7 +25,7 @@ int main()
 	hid_t   fid;
 	hid_t   vol_id = H5VLregister_by_name("h5-memvol");
 
-	hid_t g1, g2, g3;
+	hid_t g1, g2;
 	hid_t plist;
 
 	char name[1024];
@@ -45,11 +45,11 @@ int main()
 
 	// CREATE /////////////////////////////////////////////////////////////////
 	g1 = H5Gcreate2(fid, "g1", H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
-	H5Gclose(g1);
+	status = H5Gclose(g1);
 
 	g2 = H5Gcreate2(fid, "g2", H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
 	g1 = H5Gcreate2(g2, "g1", H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
-	H5Gclose(g1);
+	status = H5Gclose(g1);
 	H5Gclose(g2);
 
 	// is this allowed? 
@@ -88,6 +88,9 @@ int main()
 
 	// end hdf5 as usual
 	H5VLunregister(vol_id);
+
+
+	printf("Status: %d\n", status);
 
 	return 0;
 }
