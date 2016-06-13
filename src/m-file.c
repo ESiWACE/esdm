@@ -27,7 +27,7 @@
 //struct H5F_file_t {
 //    H5FD_t	*lf; 		/* Lower level file handle for I/O	*/
 //    H5F_super_t *sblock;        /* Pointer to (pinned) superblock for file */
-//    H5O_drvinfo_t *drvinfo;	/* Pointer to the (pinned) driver info 
+//    H5O_drvinfo_t *drvinfo;	/* Pointer to the (pinned) driver info
 //                                 * cache entry.  This field is only defined
 //                                 * for older versions of the super block,
 //                                 * and then only when a driver information
@@ -125,14 +125,14 @@ static void * memvol_file_create(const char *name, unsigned flags, hid_t fcpl_id
 {
     memvol_file_t *file;
 
-	debugI("%s\n", __func__);
+	  debugI("%s\n", __func__);
 
-	// create files hash map if not already existent
+	  // create files hash map if not already existent
     if(files_tbl == NULL){
       files_tbl = g_hash_table_new (g_str_hash,g_str_equal);
     }
 
-	// lookup the filename in the lsit of files
+    // lookup the filename in the lsit of files
     file = g_hash_table_lookup (files_tbl, name);
 
     // conform to HDF5: invalid https://www.hdfgroup.org/HDF5/doc/RM/RM_H5F.html#File-Create
@@ -147,10 +147,17 @@ static void * memvol_file_create(const char *name, unsigned flags, hid_t fcpl_id
 
 	// create the file if not already existent
     if ( file == NULL ){
-		file = (memvol_file_t *) malloc(sizeof(memvol_file_t));
-		memvol_group_init(& file->root_grp);
-		file->name = strdup(name);
-		file->fcpl_id = H5Pcopy(fcpl_id);
+  		file = (memvol_file_t *) malloc(sizeof(memvol_file_t));
+  		memvol_group_init(& file->root_grp);
+      memvol_object_t *object;
+      object = (memvol_object_t*) malloc(sizeof(memvol_object_t));
+      object->type = MEMVOL_GROUP;
+      object->object =  & file->root_grp;
+
+      g_hash_table_insert( file->root_grp.childs_tbl, strdup("/"), object);
+
+  		file->name = strdup(name);
+  		file->fcpl_id = H5Pcopy(fcpl_id);
     }
 
 	// validate and set flags

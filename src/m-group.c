@@ -73,7 +73,7 @@ static void * memvol_group_create(void *obj, H5VL_loc_params_t loc_params, const
       }
       g_hash_table_insert(parent->childs_tbl, strdup(name), object);
       g_array_append_val (parent->childs_ord_by_index_arr, object);
-      
+
       //g_hash_table_insert(parent->childs_tbl, strdup(name), group);
       //g_array_append_val (parent->childs_ord_by_index_arr, group);
     }
@@ -97,6 +97,8 @@ static void *memvol_group_open(void *obj, H5VL_loc_params_t loc_params, const ch
 
 static herr_t memvol_group_get(void *obj, H5VL_group_get_t get_type, hid_t dxpl_id, void **req, va_list arguments)
 {
+  debugI("%s\n", __func__);
+
   memvol_group_t * g = (memvol_group_t *) obj;
 
   switch (get_type) {
@@ -107,13 +109,13 @@ static herr_t memvol_group_get(void *obj, H5VL_group_get_t get_type, hid_t dxpl_
 		*new_gcpl_id = H5Pcopy(g->gcpl_id);
 		return 0;
     }
-    
+
     case H5VL_GROUP_GET_INFO:{
 
         // This argument defines if we should retrieve information about ourselve or a child node
         H5VL_loc_params_t loc_params = va_arg(arguments, H5VL_loc_params_t);
         H5G_info_t *grp_info         = va_arg(arguments, H5G_info_t *);
- 
+
         debugI("Group get: INFO %p loc_param: %d \n", obj, loc_params.type);
 
         memvol_group_t * relevant_group;
@@ -129,7 +131,7 @@ static herr_t memvol_group_get(void *obj, H5VL_group_get_t get_type, hid_t dxpl_
                 return -1;
             }
             relevant_group = (memvol_group_t*) ((memvol_object_t*)relevant_group)->object;
-           
+
         } else if (loc_params.type == H5VL_OBJECT_BY_IDX) {
           assert(loc_params.loc_data.loc_by_idx.order == H5_ITER_INC || loc_params.loc_data.loc_by_idx.order == H5_ITER_NATIVE);
           if(loc_params.loc_data.loc_by_idx.idx_type == H5_INDEX_NAME){

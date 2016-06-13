@@ -35,6 +35,7 @@
 #include "m-group.c"
 #include "m-link.c"
 #include "m-object.c"
+#include "m-dummy.c"
 
 static herr_t memvol_file_term(hid_t vtpl_id){
     return 0;
@@ -73,6 +74,8 @@ static herr_t memvol_init(hid_t vipl_id){
 //    herr_t (*optional)(void *obj, hid_t dxpl_id, void **req, va_list arguments); /* Optional callback */
 //} H5VL_class_t;
 
+// TODO ignore invalid types here.
+#pragma GCC diagnostic ignored "-Wincompatible-pointer-types"
 
 static const H5VL_class_t H5VL_memvol = {
     0,
@@ -84,18 +87,18 @@ static const H5VL_class_t H5VL_memvol = {
     NULL,
     NULL,
     {                                           /* attribute_cls */
-        NULL, //memvol_attribute_create,             /* create */
-        NULL, //memvol_attribute_open,               /* open */
-        NULL, //memvol_attribute_read,               /* read */
-        NULL, //memvol_attribute_write,              /* write */
-        NULL, //memvol_attribute_get,                /* get */
-        NULL, //memvol_attribute_specific,           /* specific */
-        NULL, //memvol_attribute_optional,           /* optional */
-        NULL  //memvol_attribute_close               /* close */
+        memvol_attribute_create,             /* create */
+        memvol_attribute_open,               /* open */
+        memvol_attribute_read,               /* read */
+        memvol_attribute_write,              /* write */
+        memvol_attribute_get,                /* get */
+        memvol_attribute_specific,           /* specific */
+        memvol_attribute_optional,           /* optional */
+        memvol_attribute_close               /* close */
     },
     {                                           /* dataset_cls */
         memvol_dataset_create,
-        memvol_dataset_open,  
+        memvol_dataset_open,
         memvol_dataset_read,
         memvol_dataset_write,
         memvol_dataset_get,
@@ -115,8 +118,8 @@ static const H5VL_class_t H5VL_memvol = {
         memvol_file_create,                     /* create */
         memvol_file_open,                       /* open */
         memvol_file_get,                        /* get */
-        NULL, //memvol_file_specific,           /* specific */
-        NULL, //memvol_file_optional,           /* optional */
+        memvol_file_specific,            /* specific */
+        memvol_file_optional,            /* optional */
         memvol_file_close                       /* close */
     },
     {                                           /* group_cls */
@@ -128,24 +131,24 @@ static const H5VL_class_t H5VL_memvol = {
         memvol_group_close
     },
     {                                           /* link_cls */
-        NULL, //memvol_link_create,             /* create */
-        NULL, //memvol_link_copy,               /* copy */
-        NULL, //memvol_link_move,               /* move */
-        NULL, //memvol_link_get,                /* get */
-        NULL, //memvol_link_specific,           /* specific */
-        NULL, //memvol_link_optional,           /* optional */
+        memvol_link_create,             /* create */
+        memvol_link_copy,               /* copy */
+        memvol_link_move,               /* move */
+        memvol_link_get,                /* get */
+        memvol_link_specific,           /* specific */
+        memvol_link_optional,           /* optional */
     },
     {                                           /* object_cls */
-        NULL, //memvol_object_open,             /* open */
-        NULL, //memvol_object_copy,             /* copy */
-        NULL, //memvol_object_get,              /* get */
-        NULL, //memvol_object_specific,         /* specific */
-        NULL, //memvol_object_optional,         /* optional */
+        memvol_object_open,             /* open */
+        memvol_object_copy,             /* copy */
+        memvol_object_get,              /* get */
+        memvol_object_specific,         /* specific */
+        memvol_object_optional,         /* optional */
     },
     {                                           /* asynchronous class callbacks */
-        NULL, //memvol_async_cancel,
-        NULL, //memvol_async_test,
-        NULL, //memvol_async_wait  
+        memvol_async_cancel,
+        memvol_async_test,
+        memvol_async_wait
     },
     NULL                                        /* Optional callback */
 };
