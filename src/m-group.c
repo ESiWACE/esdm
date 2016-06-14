@@ -91,6 +91,13 @@ static void *memvol_group_open(void *obj, H5VL_loc_params_t loc_params, const ch
 	memvol_object_t * child = g_hash_table_lookup(parent->childs_tbl, name);
 	debugI("Group open: %p with %s child %p\n", obj, name, child);
 
+
+	// ../install/download/vol/src/H5VLnative.c
+	// ../install/download/vol/src/H5G.c
+	
+
+	
+
 	return (void *)child->object;
 }
 
