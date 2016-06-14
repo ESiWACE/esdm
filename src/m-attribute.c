@@ -15,11 +15,20 @@
 
 
 
+// extract from ../install/download/vol/src/H5Apkg.h:233 for reference (consider any structure strictly private!)
+
+
+
+// ../install/download/vol/src/H5VLnative.c
+// ../install/download/vol/src/H5A.c
+
+int puipui;
+
 static void* memvol_attribute_create (void *obj, H5VL_loc_params_t loc_params, const char *attr_name, hid_t acpl_id, hid_t aapl_id, hid_t dxpl_id, void **req) 
 {
 	debugI("%s\n", __func__);
 
-	return NULL;
+	return (void*) &puipui;
 }
 
 static void* memvol_attribute_open (void *obj, H5VL_loc_params_t loc_params, const char *attr_name, hid_t aapl_id, hid_t dxpl_id, void **req) 
@@ -54,6 +63,7 @@ static herr_t memvol_attribute_specific (void *obj, H5VL_loc_params_t loc_params
 {
 	debugI("%s\n", __func__);
 
+	return 0;
 	return -1;
 }
 
@@ -61,6 +71,7 @@ static herr_t memvol_attribute_optional (void *obj, hid_t dxpl_id, void **req, v
 {
 	debugI("%s\n", __func__);
 
+	return 0;
 	return -1;
 }
 
@@ -68,5 +79,7 @@ static herr_t memvol_attribute_close (void *attr, hid_t dxpl_id, void **req)
 {
 	debugI("%s\n", __func__);
 
+
+	return 0;
 	return -1;
 }

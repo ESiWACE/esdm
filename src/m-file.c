@@ -15,8 +15,7 @@
 
 
 
-
-// extract from H5Fpkg.h:233 for reference (consider any structure strictly private!)
+// extract from ../install/download/vol/src/H5Fpkg.h:233 for reference (consider any structure strictly private!)
 /*
  * Define the structure to store the file information for HDF5 files. One of
  * these structures is allocated per file, not per H5Fopen(). That is, set of
@@ -114,8 +113,8 @@
 
 
 
-
-
+// ../install/download/vol/src/H5VLnative.c
+// ../install/download/vol/src/H5G.c
 
 
 

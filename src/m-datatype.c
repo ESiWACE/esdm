@@ -13,6 +13,23 @@
 // You should have received a copy of the GNU Lesser General Public License
 // along with h5-memvol.  If not, see <http://www.gnu.org/licenses/>.
 
+
+
+
+
+
+
+
+
+
+
+
+
+// ../install/download/vol/src/H5VLnative.c
+// ../install/download/vol/src/H5T.c
+
+
+
 // TODO some locking here
 static GHashTable * type_table = NULL;
 

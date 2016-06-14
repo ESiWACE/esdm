@@ -58,6 +58,21 @@ typedef struct {
 } memvol_dataspace_t;
 
 
+
+typedef struct {
+	hid_t dummy;
+	// TODO: consolidate with object?
+} memvol_link_t;
+
+
+typedef struct {
+    hid_t acpl_id;
+    hid_t aapl_id;
+    hid_t dxpl_id;
+} memvol_attribute_t;
+
+
+
 typedef struct {
 	hid_t lcpl_id;
 	hid_t tcpl_id;

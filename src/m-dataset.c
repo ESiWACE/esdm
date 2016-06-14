@@ -14,7 +14,8 @@
 // along with h5-memvol.  If not, see <http://www.gnu.org/licenses/>.
 
 
-// extract from H5Dpkg.h:435 for reference (consider any structure strictly private!)
+
+// extract from ../install/download/vol/src/H5Dpkg.h:435 for reference (consider any structure strictly private!)
 /*
  * A dataset is made of two layers, an H5D_t struct that is unique to
  * each instance of an opened datset, and a shared struct that is only
@@ -56,6 +57,12 @@
 //    H5G_name_t          path;           /* Group hierarchy path         */
 //    H5D_shared_t        *shared;        /* cached information from file */
 //};
+
+
+
+// ../install/download/vol/src/H5VLnative.c
+// ../install/download/vol/src/H5D.c
+
 
 
 static void memvol_dataset_init(memvol_dataset_t * dataset){

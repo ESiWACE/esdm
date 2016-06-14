@@ -28,7 +28,7 @@
 #define MEMVOL_ID 503
 #define MEMVOL_NAME "h5-memvol"
 
-//#include "m-attribute.c"
+#include "m-attribute.c"
 #include "m-dataset.c"
 #include "m-datatype.c"
 #include "m-file.c"

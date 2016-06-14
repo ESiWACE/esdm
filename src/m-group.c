@@ -15,7 +15,7 @@
 
 
 
-// extract from H5Fpkg.h:138 for reference (consider any structure strictly private!)
+// extract from ../install/download/vol/src/H5Gpkg.h:138 for reference (consider any structure strictly private!)
 /*
  * Shared information for all open group objects
  */
@@ -36,13 +36,17 @@
 
 
 
+// ../install/download/vol/src/H5VLnative.c
+// ../install/download/vol/src/H5G.c
+
+
+
 static void memvol_group_init(memvol_group_t * group)
 {
   group->childs_tbl = g_hash_table_new (g_str_hash,g_str_equal);
   group->childs_ord_by_index_arr = g_array_new(0, 0, sizeof(void*));
   assert(group->childs_tbl != NULL);
 }
-
 
 
 static void * memvol_group_create(void *obj, H5VL_loc_params_t loc_params, const char *name, hid_t gcpl_id, hid_t gapl_id, hid_t dxpl_id, void **req)
@@ -92,8 +96,6 @@ static void *memvol_group_open(void *obj, H5VL_loc_params_t loc_params, const ch
 	debugI("Group open: %p with %s child %p\n", obj, name, child);
 
 
-	// ../install/download/vol/src/H5VLnative.c
-	// ../install/download/vol/src/H5G.c
 	
 
 	
