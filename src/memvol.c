@@ -118,8 +118,8 @@ static const H5VL_class_t H5VL_memvol = {
         memvol_file_create,                     /* create */
         memvol_file_open,                       /* open */
         memvol_file_get,                        /* get */
-        memvol_file_specific,            /* specific */
-        memvol_file_optional,            /* optional */
+        memvol_file_specific,                   /* specific */
+        memvol_file_optional,                   /* optional */
         memvol_file_close                       /* close */
     },
     {                                           /* group_cls */

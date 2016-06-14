@@ -22,6 +22,7 @@ void memvol_link_optional(){
   debugI("%s (UNIMPLEMENTED m-dummy.c)\n", __func__);
 }
 
+/*
 void memvol_object_open(){
   debugI("%s (UNIMPLEMENTED m-dummy.c)\n", __func__);
 }
@@ -41,6 +42,7 @@ void memvol_object_specific(){
 void memvol_object_optional(){
   debugI("%s (UNIMPLEMENTED m-dummy.c)\n", __func__);
 }
+*/
 
 void memvol_async_cancel(){
   debugI("%s (UNIMPLEMENTED m-dummy.c)\n", __func__);
