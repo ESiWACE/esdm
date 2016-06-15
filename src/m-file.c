@@ -122,42 +122,54 @@ static GHashTable * files_tbl = NULL;
 
 static void * memvol_file_create(const char *name, unsigned flags, hid_t fcpl_id, hid_t fapl_id, hid_t dxpl_id, void **req)
 {
+    memvol_object_t *object;
     memvol_file_t *file;
 
-	  debugI("%s\n", __func__);
+	debugI("%s\n", __func__);
 
-	  // create files hash map if not already existent
-    if(files_tbl == NULL){
-      files_tbl = g_hash_table_new (g_str_hash,g_str_equal);
-    }
 
-    // lookup the filename in the lsit of files
-    file = g_hash_table_lookup (files_tbl, name);
+	// create files hash map if not already existent
+	if(files_tbl == NULL){
+		files_tbl = g_hash_table_new (g_str_hash,g_str_equal);
+	}
 
-    // conform to HDF5: invalid https://www.hdfgroup.org/HDF5/doc/RM/RM_H5F.html#File-Create
-    if((flags & H5F_ACC_EXCL) && file != NULL){
-      return NULL;
-    }
+	// lookup the filename in the lsit of files
+	file = g_hash_table_lookup (files_tbl, name);
 
-    if((flags & H5F_ACC_TRUNC) && file != NULL){
-      // TODO: truncate the file. Free all structures...
-      memvol_group_init(& file->root_grp);
-    }
+
+	debugI("%s: files_tbl.size=%d\n", __func__, g_hash_table_size(files_tbl));
+
+
+	// conform to HDF5: invalid https://www.hdfgroup.org/HDF5/doc/RM/RM_H5F.html#File-Create
+	if((flags & H5F_ACC_EXCL) && file != NULL){
+		return NULL;
+	}
+
+	if((flags & H5F_ACC_TRUNC) && file != NULL){
+		// TODO: truncate the file. Free all structures...
+		memvol_group_init(& file->root_grp);
+	}
+
 
 	// create the file if not already existent
-    if ( file == NULL ){
-  		file = (memvol_file_t *) malloc(sizeof(memvol_file_t));
-  		memvol_group_init(& file->root_grp);
-      memvol_object_t *object;
-      object = (memvol_object_t*) malloc(sizeof(memvol_object_t));
-      object->type = MEMVOL_GROUP;
-      object->object =  & file->root_grp;
+	if ( file == NULL ){
 
-      g_hash_table_insert( file->root_grp.childs_tbl, strdup("/"), object);
+		// allocate resources
+		object = (memvol_object_t*) malloc(sizeof(memvol_object_t));
+		file = (memvol_file_t *) malloc(sizeof(memvol_file_t));
 
-  		file->name = strdup(name);
-  		file->fcpl_id = H5Pcopy(fcpl_id);
-    }
+		// populate file and object data strutures
+		memvol_group_init(& file->root_grp);
+
+		object->type = MEMVOL_GROUP;
+		object->object =  & file->root_grp;
+
+		g_hash_table_insert( file->root_grp.childs_tbl, strdup("/"), object);
+		g_hash_table_insert( files_tbl, strdup(name), object);
+
+		file->name = strdup(name);
+		file->fcpl_id = H5Pcopy(fcpl_id);
+	}
 
 	// validate and set flags
 	if( flags & H5F_ACC_RDONLY) {
@@ -177,20 +189,25 @@ static void * memvol_file_create(const char *name, unsigned flags, hid_t fcpl_id
     file->mode_flags = flags;
     file->fapl_id = H5Pcopy(fapl_id);
 
-    debugI("File create: %p %s\n", (void*) file, name);
+    debugI("%s: New file=%p with name=%s\n", __func__, (void*) file, name);
 
-    return (void *)file;
+
+	debugI("%s: files_tbl.size=%d\n", __func__, g_hash_table_size(files_tbl));
+
+
+
+    return (void *)object;
 }
 
 static void * memvol_file_open(const char *name, unsigned flags, hid_t fapl_id, hid_t dxpl_id, void **req)
 {
-    memvol_file_t *file;
+    memvol_object_t *object;
 
 	debugI("%s\n", __func__);
 
-    file = g_hash_table_lookup (files_tbl, name);
+    object = g_hash_table_lookup (files_tbl, name);
 
-    return (void *)file;
+    return (void *)object;
 }
 
 static herr_t memvol_file_get(void *file, H5VL_file_get_t get_type, hid_t dxpl_id, void **req, va_list arguments)

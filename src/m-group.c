@@ -53,9 +53,11 @@ static void * memvol_group_create(void *obj, H5VL_loc_params_t loc_params, const
 {
     memvol_object_t *object;
     memvol_group_t  *group;
-    memvol_group_t  *parent = (memvol_group_t *) obj;
+    memvol_group_t *parent = (memvol_group_t *) ((memvol_object_t*)obj)->object;
 
 	debugI("%s\n", __func__);
+
+	
 
 	// allocate resources
     object = (memvol_object_t*) malloc(sizeof(memvol_object_t));
@@ -67,7 +69,7 @@ static void * memvol_group_create(void *obj, H5VL_loc_params_t loc_params, const
     memvol_group_init(group);
     group->gcpl_id = H5Pcopy(gcpl_id);
 
-    debugI("Group create: parent %p child %p, name=%s, loc_param=%d \n", (void*)  obj, (void*)  group, name, loc_params.type);
+    debugI("%s: Attach new group=%p with name=%s to parent=%p, loc_param=%d \n", __func__, (void*) group, name, (void*) obj, loc_params.type);
 
     if (name != NULL){ // anonymous object/group
       // check if the object exists already in the parent
@@ -82,25 +84,21 @@ static void * memvol_group_create(void *obj, H5VL_loc_params_t loc_params, const
       //g_array_append_val (parent->childs_ord_by_index_arr, group);
     }
 
-    return (void *)group;
+    return (void *)object;
 }
 
 
 static void *memvol_group_open(void *obj, H5VL_loc_params_t loc_params, const char *name,  hid_t gapl_id, hid_t dxpl_id, void **req)
 {
-	memvol_group_t *parent = (memvol_group_t *) obj;
+    memvol_group_t *parent = (memvol_group_t *) ((memvol_object_t*)obj)->object;
 
 	debugI("%s\n", __func__);
 
 	memvol_object_t * child = g_hash_table_lookup(parent->childs_tbl, name);
-	debugI("Group open: %p with %s child %p\n", obj, name, child);
+	debugI("%s: Found group=%p with name=%s in parent=%p\n", __func__, child->object, name, obj);
 
 
-	
-
-	
-
-	return (void *)child->object;
+	return (void *)child;
 }
 
 
@@ -108,7 +106,7 @@ static herr_t memvol_group_get(void *obj, H5VL_group_get_t get_type, hid_t dxpl_
 {
   debugI("%s\n", __func__);
 
-  memvol_group_t * g = (memvol_group_t *) obj;
+  memvol_group_t *g = (memvol_group_t *) ((memvol_object_t*)obj)->object;
 
   switch (get_type) {
     case H5VL_GROUP_GET_GCPL:{
@@ -170,9 +168,9 @@ static herr_t memvol_group_get(void *obj, H5VL_group_get_t get_type, hid_t dxpl_
 }
 
 
-static herr_t memvol_group_close(void *grp, hid_t dxpl_id, void **req)
+static herr_t memvol_group_close(void *obj, hid_t dxpl_id, void **req)
 {
-    memvol_group_t *g = (memvol_group_t *)grp;
+	memvol_group_t *g = (memvol_group_t *) ((memvol_object_t*)obj)->object;
 
     debugI("Group close: %p\n", (void*)  g);
 

@@ -28,12 +28,17 @@ static void* memvol_attribute_create (void *obj, H5VL_loc_params_t loc_params, c
 {
 	debugI("%s\n", __func__);
 
+	debugI("%s: Attach attribute '%s' to obj=%p\n", __func__, attr_name, obj) 
+
 	return (void*) &puipui;
 }
 
 static void* memvol_attribute_open (void *obj, H5VL_loc_params_t loc_params, const char *attr_name, hid_t aapl_id, hid_t dxpl_id, void **req) 
 {
 	debugI("%s\n", __func__);
+
+
+	debugI("%s: *obj = %p\n", __func__, obj) 
 
 	return NULL;
 }
@@ -55,6 +60,8 @@ static herr_t memvol_attribute_write (void *attr, hid_t mem_type_id, const void 
 static herr_t memvol_attribute_get (void *obj, H5VL_attr_get_t get_type, hid_t dxpl_id, void **req, va_list arguments) 
 {
 	debugI("%s\n", __func__);
+
+	debugI("%s: *obj = %p\n", __func__, obj) 
 
 	return 0;
 }

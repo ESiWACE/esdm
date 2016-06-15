@@ -76,7 +76,7 @@ void *memvol_dataset_create(void *obj, H5VL_loc_params_t loc_params, const char 
 {
     memvol_object_t *object;
     memvol_dataset_t *dataset;
-    memvol_group_t *parent = (memvol_group_t *) obj;
+    memvol_group_t *parent = (memvol_group_t *) ((memvol_object_t*)obj)->object;
 
 	debugI("%s\n", __func__);
 
@@ -100,22 +100,22 @@ void *memvol_dataset_create(void *obj, H5VL_loc_params_t loc_params, const char 
 		g_array_append_val (parent->childs_ord_by_index_arr, object);
     }
 	
+    debugI("%s: Attach new dataset=%p with name=%s to parent=%p, loc_param=%d \n", __func__, (void*) dataset, name, (void*) obj, loc_params.type);
 
-
-	return (void *)object;
+	return (void *) object;
 }
 
 
 void *memvol_dataset_open(void *obj, H5VL_loc_params_t loc_params, const char *name,  hid_t dapl_id, hid_t dxpl_id, void **req)
 {
-	memvol_group_t *parent = (memvol_group_t *) obj;
+    memvol_group_t *parent = (memvol_group_t *) ((memvol_object_t*)obj)->object;
 
 	debugI("%s\n", __func__);
 
 	memvol_object_t * child = g_hash_table_lookup(parent->childs_tbl, name);
 	debugI("Group open: %p with %s child %p\n", obj, name, child);
 
-	return (void *)child->object;
+	return (void *)child;
 }
 
 
@@ -163,7 +163,7 @@ herr_t memvol_dataset_close (void *dset, hid_t dxpl_id, void **req)
 
 	debugI("%s\n", __func__);
 
-    debugI("Dataset :%p\n", (void*)  dataset);
+    debugI("%s: %p\n", __func__, (void*)  dataset);
 
 	return 0;
 }

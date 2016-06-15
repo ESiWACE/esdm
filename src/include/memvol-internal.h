@@ -72,7 +72,6 @@ typedef struct {
 } memvol_attribute_t;
 
 
-
 typedef struct {
 	hid_t lcpl_id;
 	hid_t tcpl_id;
