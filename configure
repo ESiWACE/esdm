@@ -36,7 +36,7 @@ function reconfigure(){
 	exit $?
 }
 
-set -- `getopt -ul "help,version,debug,reconfigure,prefix:,with-cc:,with-cxx:,with-hdf5:,plantuml-jar-dir:,with-mpicc:,with-mpicxx:,verbose,build-dir:" hV "$@"`
+set -- `getopt -u -l "help,version,debug,reconfigure,prefix:,with-cc:,with-cxx:,with-hdf5:,plantuml-jar-dir:,with-mpicc:,with-mpicxx:,verbose,build-dir:" -o "hV" -- "$@"`
 test $# -lt 1  && exit 1
 while test $# -gt 0
 do
@@ -49,12 +49,13 @@ do
 		--with-boost) boostdir="$2"; shift;;
 		--with-cc) ccbin="$2"; shift;;
 		--with-cxx) cxxbin="$2"; shift;;
-		--with-hdf5) hdf5="$2"; shift;;
+		--with-hdf5) hdf5="$2"; echo "$2"; shift;;
 		--with-mpicc) mpicc="$2"; shift;;
 		--with-mpicxx) mpicxx="$2"; shift;;
 		--build-dir) buildDIR="$2"; shift;;
 		--plantuml-jar-dir) export PLANTUML_JAR_PATH="$2"; shift;;
 		--verbose) VERBOSE="YES";;
+                -V) VERBOSE="YES";;
 		--) ;;
 		*) echo "Unknown option $1"; exit 1;;
 	esac
