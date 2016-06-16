@@ -136,6 +136,7 @@ static herr_t memvol_dataset_write(void *dset, hid_t mem_type_id, hid_t mem_spac
 {
 	debugI("%s\n", __func__);
 
+	herr_t ret_value = SUCCEED;
 
 	return 0;
 }
@@ -144,18 +145,131 @@ static herr_t memvol_dataset_write(void *dset, hid_t mem_type_id, hid_t mem_spac
 static herr_t memvol_dataset_get(void *obj, H5VL_dataset_get_t get_type, hid_t dxpl_id, void **req, va_list arguments)
 {
 	debugI("%s\n", __func__);
-
-	
 	debugI("%s: obj=%p\n", __func__, obj);
 
+	herr_t ret_value = SUCCEED;
 
-	return 0;
+	
+	// H5VL_DATASET_GET_SPACE:         Returns an identifier for a copy of the dataspace for a dataset.  (indeed makes a copy)
+	// H5VL_DATASET_GET_SPACE_STATUS:  Determines whether space has been allocated for a dataset. 
+	//  '->  H5D_SPACE_STATUS_NOT_ALLOCATED, H5D_SPACE_STATUS_ALLOCATED, H5D_SPACE_STATUS_PART_ALLOCATED (e.g. chunked)
+	// H5VL_DATASET_GET_TYPE:          Returns an identifier for a copy of the datatype for a dataset.      
+	// H5VL_DATASET_GET_DCPL:          Returns an identifier for a copy of the dataset creation property list for a dataset.
+	// H5VL_DATASET_GET_DAPL:          Returns the dataset access property list associated with a dataset. 
+	// H5VL_DATASET_GET_STORAGE_SIZE:  Returns the amount of storage allocated for a dataset.  
+	// H5VL_DATASET_GET_OFFSET:        Returns dataset address in file. 
+
+    switch (get_type) {
+        /* H5Dget_space */
+        case H5VL_DATASET_GET_SPACE:
+            {
+
+            	/*
+                hid_t	*ret_id = va_arg (arguments, hid_t *);
+
+                if((*ret_id = H5D_get_space(dset)) < 0)
+                    HGOTO_ERROR(H5E_ARGS, H5E_CANTGET, FAIL, "can't get space ID of dataset")
+
+				*/
+
+                break;
+            }
+            /* H5Dget_space_statuc */
+        case H5VL_DATASET_GET_SPACE_STATUS:
+            {
+            	/*
+                H5D_space_status_t *allocation = va_arg (arguments, H5D_space_status_t *);
+
+                // Read data space address and return 
+                if(H5D__get_space_status(dset, allocation, dxpl_id) < 0)
+                    HGOTO_ERROR(H5E_DATASET, H5E_CANTINIT, FAIL, "unable to get space status")
+
+                */
+
+                break;
+            }
+            /* H5Dget_type */
+        case H5VL_DATASET_GET_TYPE:
+            {
+            	/*
+                hid_t	*ret_id = va_arg (arguments, hid_t *);
+
+                if((*ret_id = H5D_get_type(dset)) < 0)
+                    HGOTO_ERROR(H5E_ARGS, H5E_CANTGET, FAIL, "can't get datatype ID of dataset")
+
+                */
+
+                break;
+            }
+            /* H5Dget_create_plist */
+        case H5VL_DATASET_GET_DCPL:
+            {
+            	/*
+                hid_t	*ret_id = va_arg (arguments, hid_t *);
+
+                if((*ret_id = H5D_get_create_plist(dset)) < 0)
+                    HGOTO_ERROR(H5E_ARGS, H5E_CANTGET, FAIL, "can't get creation property list for dataset")
+
+                */
+
+                break;
+            }
+            /* H5Dget_access_plist */
+        case H5VL_DATASET_GET_DAPL:
+            {
+            	/*
+                hid_t	*ret_id = va_arg (arguments, hid_t *);
+
+                if((*ret_id = H5D_get_access_plist(dset)) < 0)
+                    HGOTO_ERROR(H5E_ARGS, H5E_CANTGET, FAIL, "can't get access property list for dataset")
+				*/
+
+                break;
+            }
+            /* H5Dget_storage_size */
+        case H5VL_DATASET_GET_STORAGE_SIZE:
+            {
+            	/*
+                hsize_t *ret = va_arg (arguments, hsize_t *);
+
+                // Set return value 
+                if(H5D__get_storage_size(dset, dxpl_id, ret) < 0)
+                    HGOTO_ERROR(H5E_DATASET, H5E_CANTGET, 0, "can't get size of dataset's storage")
+
+                */
+
+                break;
+            }
+            /* H5Dget_offset */
+        case H5VL_DATASET_GET_OFFSET:
+            {
+            	/*
+                haddr_t *ret = va_arg (arguments, haddr_t *);
+
+                /* Set return value 
+                *ret = H5D__get_offset(dset);
+                if(!H5F_addr_defined(*ret))
+                    *ret = HADDR_UNDEF;
+
+                */
+                
+                break;
+            }
+        default:
+            //HGOTO_ERROR(H5E_VOL, H5E_CANTGET, FAIL, "can't get this type of information from dataset")
+            break;
+    }
+
+
+	return 1;
 }
 
 
 static herr_t memvol_dataset_specific(void *obj, H5VL_dataset_specific_t specific_type,  hid_t dxpl_id, void **req, va_list arguments)
 {
 	debugI("%s\n", __func__);
+
+	herr_t ret_value = SUCCEED;
 
 	return -1;
 }
@@ -164,6 +278,8 @@ static herr_t memvol_dataset_specific(void *obj, H5VL_dataset_specific_t specifi
 static herr_t memvol_dataset_close (void *dset, hid_t dxpl_id, void **req)
 {
     memvol_dataset_t *dataset = (memvol_dataset_t *)dset;
+
+	herr_t ret_value = SUCCEED;
 
 	debugI("%s\n", __func__);
 

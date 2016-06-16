@@ -28,7 +28,7 @@ static void* memvol_attribute_create (void *obj, H5VL_loc_params_t loc_params, c
 {
 	debugI("%s\n", __func__);
 
-	debugI("%s: Attach attribute '%s' to obj=%p\n", __func__, attr_name, obj) 
+	debugI("%s: Attach new attribute=TODO '%s' to obj=%p\n", __func__, attr_name, obj) 
 
 	return (void*) &puipui;
 }

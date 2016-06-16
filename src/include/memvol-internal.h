@@ -42,6 +42,16 @@
 #define FUNC_START debug("CALL %s\n", __PRETTY_FUNCTION__);
 
 
+/* HDF5 related integer defintions e.g. as required for herr_t */
+
+#define SUCCEED    0
+
+
+
+
+
+
+
 typedef enum type {
 	MEMVOL_FILE,
 	MEMVOL_GROUP,
