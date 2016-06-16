@@ -48,7 +48,7 @@ static herr_t memvol_init(hid_t vipl_id){
 
 
 
-// iextract from H5VLpublic.h:327
+// iextract from ../install/download/vol/src/H5VLpublic.h:327
 /* Class information for each VOL driver */
 //typedef struct H5VL_class_t {
 //    unsigned int version;                         /* Class version # */

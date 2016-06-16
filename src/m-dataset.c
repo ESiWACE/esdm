@@ -72,7 +72,7 @@ static void memvol_dataset_init(memvol_dataset_t * dataset){
 }
 
 
-void *memvol_dataset_create(void *obj, H5VL_loc_params_t loc_params, const char *name,  hid_t dcpl_id, hid_t dapl_id, hid_t dxpl_id, void **req)
+static void *memvol_dataset_create(void *obj, H5VL_loc_params_t loc_params, const char *name,  hid_t dcpl_id, hid_t dapl_id, hid_t dxpl_id, void **req)
 {
     memvol_object_t *object;
     memvol_dataset_t *dataset;
@@ -106,7 +106,7 @@ void *memvol_dataset_create(void *obj, H5VL_loc_params_t loc_params, const char 
 }
 
 
-void *memvol_dataset_open(void *obj, H5VL_loc_params_t loc_params, const char *name,  hid_t dapl_id, hid_t dxpl_id, void **req)
+static void *memvol_dataset_open(void *obj, H5VL_loc_params_t loc_params, const char *name,  hid_t dapl_id, hid_t dxpl_id, void **req)
 {
     memvol_group_t *parent = (memvol_group_t *) ((memvol_object_t*)obj)->object;
 
@@ -119,7 +119,7 @@ void *memvol_dataset_open(void *obj, H5VL_loc_params_t loc_params, const char *n
 }
 
 
-herr_t memvol_dataset_read(void *dset, hid_t mem_type_id, hid_t mem_space_id, hid_t file_space_id, hid_t xfer_plist_id, void * buf, void **req)
+static herr_t memvol_dataset_read(void *dset, hid_t mem_type_id, hid_t mem_space_id, hid_t file_space_id, hid_t xfer_plist_id, void * buf, void **req)
 {
 	debugI("%s\n", __func__);
 
@@ -132,7 +132,7 @@ herr_t memvol_dataset_read(void *dset, hid_t mem_type_id, hid_t mem_space_id, hi
 }
 
 
-herr_t memvol_dataset_write(void *dset, hid_t mem_type_id, hid_t mem_space_id, hid_t file_space_id, hid_t xfer_plist_id, const void * buf, void **req)
+static herr_t memvol_dataset_write(void *dset, hid_t mem_type_id, hid_t mem_space_id, hid_t file_space_id, hid_t xfer_plist_id, const void * buf, void **req)
 {
 	debugI("%s\n", __func__);
 
@@ -141,15 +141,19 @@ herr_t memvol_dataset_write(void *dset, hid_t mem_type_id, hid_t mem_space_id, h
 }
 
 
-herr_t memvol_dataset_get(void *obj, H5VL_dataset_get_t get_type, hid_t dxpl_id, void **req, va_list arguments)
+static herr_t memvol_dataset_get(void *obj, H5VL_dataset_get_t get_type, hid_t dxpl_id, void **req, va_list arguments)
 {
 	debugI("%s\n", __func__);
+
+	
+	debugI("%s: obj=%p\n", __func__, obj);
+
 
 	return 0;
 }
 
 
-herr_t memvol_dataset_specific(void *obj, H5VL_dataset_specific_t specific_type,  hid_t dxpl_id, void **req, va_list arguments)
+static herr_t memvol_dataset_specific(void *obj, H5VL_dataset_specific_t specific_type,  hid_t dxpl_id, void **req, va_list arguments)
 {
 	debugI("%s\n", __func__);
 
@@ -157,7 +161,7 @@ herr_t memvol_dataset_specific(void *obj, H5VL_dataset_specific_t specific_type,
 }
 
 
-herr_t memvol_dataset_close (void *dset, hid_t dxpl_id, void **req)
+static herr_t memvol_dataset_close (void *dset, hid_t dxpl_id, void **req)
 {
     memvol_dataset_t *dataset = (memvol_dataset_t *)dset;
 

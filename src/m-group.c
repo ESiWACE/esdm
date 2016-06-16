@@ -49,6 +49,9 @@ static void memvol_group_init(memvol_group_t * group)
 }
 
 
+
+
+
 static void * memvol_group_create(void *obj, H5VL_loc_params_t loc_params, const char *name, hid_t gcpl_id, hid_t gapl_id, hid_t dxpl_id, void **req)
 {
     memvol_object_t *object;
@@ -88,11 +91,13 @@ static void * memvol_group_create(void *obj, H5VL_loc_params_t loc_params, const
 }
 
 
+
+
 static void *memvol_group_open(void *obj, H5VL_loc_params_t loc_params, const char *name,  hid_t gapl_id, hid_t dxpl_id, void **req)
 {
-    memvol_group_t *parent = (memvol_group_t *) ((memvol_object_t*)obj)->object;
-
 	debugI("%s\n", __func__);
+
+    memvol_group_t *parent = (memvol_group_t *) ((memvol_object_t*)obj)->object;
 
 	memvol_object_t * child = g_hash_table_lookup(parent->childs_tbl, name);
 	debugI("%s: Found group=%p with name=%s in parent=%p\n", __func__, child->object, name, obj);
@@ -100,6 +105,7 @@ static void *memvol_group_open(void *obj, H5VL_loc_params_t loc_params, const ch
 
 	return (void *)child;
 }
+
 
 
 static herr_t memvol_group_get(void *obj, H5VL_group_get_t get_type, hid_t dxpl_id, void **req, va_list arguments)
@@ -168,9 +174,30 @@ static herr_t memvol_group_get(void *obj, H5VL_group_get_t get_type, hid_t dxpl_
 }
 
 
-static herr_t memvol_group_close(void *obj, hid_t dxpl_id, void **req)
+
+static herr_t memvol_group_specific(void *obj, H5VL_group_specific_t specific_type, hid_t dxpl_id, void **req, va_list arguments)
 {
-	memvol_group_t *g = (memvol_group_t *) ((memvol_object_t*)obj)->object;
+	debugI("%s\n", __func__);
+	return 0;
+}
+
+
+
+static herr_t memvol_group_optional(void *obj, hid_t dxpl_id, void **req, va_list arguments)
+{
+	debugI("%s\n", __func__);
+	return 0;
+}
+
+
+
+
+
+static herr_t memvol_group_close(void *grp, hid_t dxpl_id, void **req)
+{
+	memvol_group_t *g = (memvol_group_t *) ((memvol_object_t*)grp)->object;
+	
+	debugI("%s\n", __func__);
 
     debugI("Group close: %p\n", (void*)  g);
 

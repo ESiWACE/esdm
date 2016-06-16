@@ -17,14 +17,6 @@
 
 
 
-
-
-
-
-
-
-
-
 // ../install/download/vol/src/H5VLnative.c
 // ../install/download/vol/src/H5T.c
 
@@ -37,6 +29,12 @@ static void memvol_init_datatype(hid_t vipl_id){
   type_table =  g_hash_table_new (g_str_hash, g_str_equal);
 }
 
+
+
+
+
+
+
 static void * memvol_datatype_commit(void *obj, H5VL_loc_params_t loc_params, const char *name, hid_t type_id, hid_t lcpl_id, hid_t tcpl_id, hid_t tapl_id, hid_t dxpl_id, void **req)
 {
   g_hash_table_insert(type_table, (char*) name, (void*) type_id);
@@ -45,7 +43,7 @@ static void * memvol_datatype_commit(void *obj, H5VL_loc_params_t loc_params, co
   return (void*) type_id;
 }
 
-static void * memvol_datatype_open(void *obj, H5VL_loc_params_t loc_params, const char *name, hid_t tapl_id, hid_t dxpl_id, void **req)
+static void * memvol_datatype_open(void *obj, H5VL_loc_params_t loc_params, const char * name, hid_t tapl_id, hid_t dxpl_id, void **req)
 {
   void * found = g_hash_table_lookup(type_table, name);
   printf("O %p\n", found);
@@ -55,7 +53,7 @@ static void * memvol_datatype_open(void *obj, H5VL_loc_params_t loc_params, cons
 }
 
 
-static herr_t memvol_datatype_get(void *dt, H5VL_datatype_get_t get_type, hid_t dxpl_id, void **req, va_list arguments)
+static herr_t memvol_datatype_get(void *obj, H5VL_datatype_get_t get_type, hid_t dxpl_id, void **req, va_list arguments)
 {
   switch (get_type) {
       case H5VL_DATATYPE_GET_BINARY:{ // serialize datatype
@@ -71,6 +69,22 @@ static herr_t memvol_datatype_get(void *dt, H5VL_datatype_get_t get_type, hid_t 
       }
   }
   return 0;
+}
+
+
+static herr_t memvol_datatype_specific(void *obj, H5VL_datatype_specific_t specific_type, hid_t dxpl_id, void **req, va_list arguments)
+{
+	debugI("%s\n", __func__);
+
+	return -1;
+}
+
+
+static herr_t memvol_datatype_optional(void *obj, hid_t dxpl_id, void **req, va_list arguments)
+{
+	debugI("%s\n", __func__);
+
+	return -1;
 }
 
 

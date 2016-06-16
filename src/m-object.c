@@ -51,5 +51,5 @@ herr_t memvol_object_specific(void *obj, H5VL_loc_params_t loc_params, H5VL_obje
 herr_t memvol_object_optional(void *obj, hid_t dxpl_id, void **req, va_list arguments)
 {
 	debugI("%s\n", __func__);
-	return -1;
+	return 0;
 }

@@ -84,13 +84,20 @@ typedef struct {
 	hid_t dcpl_id;
 	hid_t dapl_id;
 	hid_t dxpl_id;
+	
+	char * name;
 } memvol_dataset_t;
 
 
 typedef struct {
 	GHashTable * childs_tbl;
 	GArray * childs_ord_by_index_arr; 
+
 	hid_t gcpl_id;
+	hid_t gapl_id;
+	hid_t dxpl_id;
+
+	char * name;
 } memvol_group_t;
 
 
@@ -99,8 +106,11 @@ typedef struct {
 
 	char * name;
 	int mode_flags; // RDWR etc.
-	hid_t fapl_id;
+
 	hid_t fcpl_id;
+	hid_t fapl_id;
+	hid_t dxpl_id;
+
 } memvol_file_t;
 
 
