@@ -72,7 +72,7 @@ static void * memvol_group_create(void *obj, H5VL_loc_params_t loc_params, const
     memvol_group_init(group);
     group->gcpl_id = H5Pcopy(gcpl_id);
 
-    debugI("%s: Attach new group=%p with name=%s to parent=%p, loc_param=%d \n", __func__, (void*) group, name, (void*) obj, loc_params.type);
+    debugI("%s: Attach new group=(%p, %p) with name=%s to parent=%p, loc_param=%d \n", __func__, (void*) object, (void*) group, name, (void*) obj, loc_params.type);
 
     if (name != NULL){ // anonymous object/group
       // check if the object exists already in the parent
@@ -113,7 +113,7 @@ static herr_t memvol_group_get(void *obj, H5VL_group_get_t get_type, hid_t dxpl_
 	debugI("%s\n", __func__);
 
 
-	memvol_group_t *g = (memvol_group_t *) ((memvol_object_t*)obj)->object;
+	memvol_group_t *group = (memvol_group_t *) ((memvol_object_t*)obj)->object;
 
 	switch (get_type) {
 	case H5VL_GROUP_GET_GCPL:
@@ -121,7 +121,7 @@ static herr_t memvol_group_get(void *obj, H5VL_group_get_t get_type, hid_t dxpl_
 			// group creation property list (GCPL)
 			debugI("Group get: GCPL %p\n", obj);
 			hid_t *new_gcpl_id = va_arg(arguments, hid_t *);
-			*new_gcpl_id = H5Pcopy(g->gcpl_id);
+			*new_gcpl_id = H5Pcopy(group->gcpl_id);
 			return 0;
 		}
 
@@ -138,10 +138,10 @@ static herr_t memvol_group_get(void *obj, H5VL_group_get_t get_type, hid_t dxpl_
 
 
 		if(loc_params.type == H5VL_OBJECT_BY_SELF) {
-			relevant_group = g;
+			relevant_group = group;
 
 		} else if (loc_params.type == H5VL_OBJECT_BY_NAME) {
-			relevant_group = g_hash_table_lookup(g->childs_tbl, loc_params.loc_data.loc_by_name.name);
+			relevant_group = g_hash_table_lookup(group->childs_tbl, loc_params.loc_data.loc_by_name.name);
 			if (relevant_group == NULL){
 				return -1;
 			}
@@ -151,11 +151,11 @@ static herr_t memvol_group_get(void *obj, H5VL_group_get_t get_type, hid_t dxpl_
 			assert(loc_params.loc_data.loc_by_idx.order == H5_ITER_INC || loc_params.loc_data.loc_by_idx.order == H5_ITER_NATIVE);
 			if(loc_params.loc_data.loc_by_idx.idx_type == H5_INDEX_NAME){
 				// TODO, for now return the index position.
-				relevant_group = g_array_index(g->childs_ord_by_index_arr, memvol_group_t*, loc_params.loc_data.loc_by_idx.n);
+				relevant_group = g_array_index(group->childs_ord_by_index_arr, memvol_group_t*, loc_params.loc_data.loc_by_idx.n);
 				relevant_group = (memvol_group_t*) ((memvol_object_t*)relevant_group)->object;
 
 			} else if(loc_params.loc_data.loc_by_idx.idx_type == H5_INDEX_CRT_ORDER){
-				relevant_group = g_array_index(g->childs_ord_by_index_arr, memvol_group_t*, loc_params.loc_data.loc_by_idx.n);
+				relevant_group = g_array_index(group->childs_ord_by_index_arr, memvol_group_t*, loc_params.loc_data.loc_by_idx.n);
 				relevant_group = (memvol_group_t*) ((memvol_object_t*)relevant_group)->object;
 
 			} else{
@@ -197,11 +197,11 @@ static herr_t memvol_group_optional(void *obj, hid_t dxpl_id, void **req, va_lis
 
 static herr_t memvol_group_close(void *grp, hid_t dxpl_id, void **req)
 {
-	memvol_group_t *g = (memvol_group_t *) ((memvol_object_t*)grp)->object;
+	memvol_group_t *group = (memvol_group_t *) ((memvol_object_t*)grp)->object;
 	
 	debugI("%s\n", __func__);
 
-    debugI("Group close: %p\n", (void*)  g);
+    debugI("Group close: %p\n", (void*) group);
 
     return 0;
 }

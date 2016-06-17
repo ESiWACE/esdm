@@ -69,20 +69,20 @@ typedef struct {
 
 
 
-typedef struct {
+typedef struct memvol_link_t {
 	hid_t dummy;
 	// TODO: consolidate with object?
 } memvol_link_t;
 
 
-typedef struct {
+typedef struct memvol_attribute_t {
     hid_t acpl_id;
     hid_t aapl_id;
     hid_t dxpl_id;
 } memvol_attribute_t;
 
 
-typedef struct {
+typedef struct memvol_datatype_t {
 	hid_t lcpl_id;
 	hid_t tcpl_id;
 	hid_t tapl_id;
@@ -90,16 +90,17 @@ typedef struct {
 } memvol_datatype_t;
 
 
-typedef struct {
+typedef struct memvol_dataset_t {
 	hid_t dcpl_id;
 	hid_t dapl_id;
 	hid_t dxpl_id;
-	
-	char * name;
+
+	char * name;	
+    H5VL_loc_params_t loc_params;
 } memvol_dataset_t;
 
 
-typedef struct {
+typedef struct memvol_groupt_t {
 	GHashTable * childs_tbl;
 	GArray * childs_ord_by_index_arr; 
 
@@ -111,7 +112,7 @@ typedef struct {
 } memvol_group_t;
 
 
-typedef struct {
+typedef struct memvol_file_t {
 	memvol_group_t root_grp; // it must start with the root group, since in many cases we cast files to groups
 
 	char * name;
@@ -126,13 +127,13 @@ typedef struct {
 
 
 
-typedef union {
+typedef union memvol_object_u {
 	memvol_group_t* group;
 	memvol_dataset_t* dataset;
 	memvol_datatype_t* datatype;
 } memvol_object_u;
 
-typedef struct {
+typedef struct memvol_object_t {
 	memvol_object_type_t type;
 	void * object;
 	//memvol_object_u obj;

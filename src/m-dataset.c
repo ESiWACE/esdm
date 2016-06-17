@@ -72,8 +72,15 @@ static void memvol_dataset_init(memvol_dataset_t * dataset){
 }
 
 
-static void *memvol_dataset_create(void *obj, H5VL_loc_params_t loc_params, const char *name,  hid_t dcpl_id, hid_t dapl_id, hid_t dxpl_id, void **req)
-{
+static void *memvol_dataset_create(
+		void *obj, 
+		H5VL_loc_params_t loc_params, 
+		const char *name,  
+		hid_t dcpl_id, 
+		hid_t dapl_id, 
+		hid_t dxpl_id, 
+		void **req
+) {
     memvol_object_t *object;
     memvol_dataset_t *dataset;
     memvol_group_t *parent = (memvol_group_t *) ((memvol_object_t*)obj)->object;
@@ -89,18 +96,20 @@ static void *memvol_dataset_create(void *obj, H5VL_loc_params_t loc_params, cons
 
     memvol_dataset_init(dataset);
     dataset->dcpl_id = H5Pcopy(dcpl_id);
+	dataset->loc_params = loc_params;
 
     if (name != NULL){ // anonymous object/datset
 		// check if the object exists already in the parent
 		if (g_hash_table_lookup (parent->childs_tbl, name) != NULL){
 			free(dataset);
 			return NULL;
+			
 		}
 		g_hash_table_insert(parent->childs_tbl, strdup(name), object);
 		g_array_append_val (parent->childs_ord_by_index_arr, object);
     }
 	
-    debugI("%s: Attach new dataset=%p with name=%s to parent=%p, loc_param=%d \n", __func__, (void*) dataset, name, (void*) obj, loc_params.type);
+    debugI("%s: Attach new dataset=(%p, %p) with name=%s to parent=%p, loc_param=%d \n", __func__, (void*) object, (void*) dataset, name, (void*) obj, loc_params.type);
 
 	return (void *) object;
 }
@@ -164,6 +173,7 @@ static herr_t memvol_dataset_get(void *obj, H5VL_dataset_get_t get_type, hid_t d
         case H5VL_DATASET_GET_SPACE:
             {
 
+				debugI("%s: H5VL_DATASET_GET_SPACE \n", __func__);
             	/*
                 hid_t	*ret_id = va_arg (arguments, hid_t *);
 
@@ -177,6 +187,7 @@ static herr_t memvol_dataset_get(void *obj, H5VL_dataset_get_t get_type, hid_t d
             /* H5Dget_space_statuc */
         case H5VL_DATASET_GET_SPACE_STATUS:
             {
+				debugI("%s: H5VL_DATASET_GET_SPACE_STATUS \n", __func__);
             	/*
                 H5D_space_status_t *allocation = va_arg (arguments, H5D_space_status_t *);
 
@@ -191,6 +202,9 @@ static herr_t memvol_dataset_get(void *obj, H5VL_dataset_get_t get_type, hid_t d
             /* H5Dget_type */
         case H5VL_DATASET_GET_TYPE:
             {
+
+				debugI("%s: H5VL_DATASET_GET_TYPE \n", __func__);
+
             	/*
                 hid_t	*ret_id = va_arg (arguments, hid_t *);
 
@@ -204,6 +218,8 @@ static herr_t memvol_dataset_get(void *obj, H5VL_dataset_get_t get_type, hid_t d
             /* H5Dget_create_plist */
         case H5VL_DATASET_GET_DCPL:
             {
+
+				debugI("%s: H5VL_DATASET_GET_DCPL \n", __func__);
             	/*
                 hid_t	*ret_id = va_arg (arguments, hid_t *);
 
@@ -217,6 +233,7 @@ static herr_t memvol_dataset_get(void *obj, H5VL_dataset_get_t get_type, hid_t d
             /* H5Dget_access_plist */
         case H5VL_DATASET_GET_DAPL:
             {
+				debugI("%s: H5VL_DATASET_GET_DAPL \n", __func__);
             	/*
                 hid_t	*ret_id = va_arg (arguments, hid_t *);
 
@@ -229,6 +246,7 @@ static herr_t memvol_dataset_get(void *obj, H5VL_dataset_get_t get_type, hid_t d
             /* H5Dget_storage_size */
         case H5VL_DATASET_GET_STORAGE_SIZE:
             {
+				debugI("%s: H5VL_DATASET_GET_STORAGE_SIZE \n", __func__);
             	/*
                 hsize_t *ret = va_arg (arguments, hsize_t *);
 
@@ -243,6 +261,7 @@ static herr_t memvol_dataset_get(void *obj, H5VL_dataset_get_t get_type, hid_t d
             /* H5Dget_offset */
         case H5VL_DATASET_GET_OFFSET:
             {
+				debugI("%s: H5VL_DATASET_GET_OFFSET \n", __func__);
             	/*
                 haddr_t *ret = va_arg (arguments, haddr_t *);
 
