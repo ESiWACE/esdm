@@ -156,9 +156,11 @@ static herr_t memvol_dataset_get(void *obj, H5VL_dataset_get_t get_type, hid_t d
 	debugI("%s\n", __func__);
 	debugI("%s: obj=%p\n", __func__, obj);
 
+    memvol_object_t *object;
+    memvol_group_t  *group;
 	herr_t ret_value = SUCCEED;
 
-	
+
 	// H5VL_DATASET_GET_SPACE:         Returns an identifier for a copy of the dataspace for a dataset.  (indeed makes a copy)
 	// H5VL_DATASET_GET_SPACE_STATUS:  Determines whether space has been allocated for a dataset. 
 	//  '->  H5D_SPACE_STATUS_NOT_ALLOCATED, H5D_SPACE_STATUS_ALLOCATED, H5D_SPACE_STATUS_PART_ALLOCATED (e.g. chunked)
@@ -172,8 +174,12 @@ static herr_t memvol_dataset_get(void *obj, H5VL_dataset_get_t get_type, hid_t d
         /* H5Dget_space */
         case H5VL_DATASET_GET_SPACE:
             {
-
 				debugI("%s: H5VL_DATASET_GET_SPACE \n", __func__);
+
+                hid_t	*ret_id = va_arg (arguments, hid_t *);
+
+                
+
             	/*
                 hid_t	*ret_id = va_arg (arguments, hid_t *);
 
