@@ -20,7 +20,7 @@ An in-memory VOL plugin for HDF5.
   To build the project call:
 
         source dev/setenv.bash
-		./configure
+		./configure --debug
 		cd build
 		make -j
 

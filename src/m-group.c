@@ -115,6 +115,12 @@ static herr_t memvol_group_get(void *obj, H5VL_group_get_t get_type, hid_t dxpl_
 
 	memvol_group_t *group = (memvol_group_t *) ((memvol_object_t*)obj)->object;
 
+	// Variadic variables in HDF5 VOL implementation are used to expose HDF5
+	// high-level calls H5*_get_*() for the various APIs through a single
+	// callback from wihtin the plugins.
+
+
+
 	switch (get_type) {
 	case H5VL_GROUP_GET_GCPL:
 		{

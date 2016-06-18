@@ -69,6 +69,18 @@ static herr_t memvol_attribute_get (void *obj, H5VL_attr_get_t get_type, hid_t d
 	herr_t ret_value = SUCCEED;
 
 
+	// Variadic variables in HDF5 VOL implementation are used to expose HDF5
+	// high-level calls H5*_get_*() for the various APIs through a per API 
+	// single callback from within a plugins.
+
+	// H5VL_ATTR_GET_SPACE:        
+	// H5VL_ATTR_GET_TYPE:         
+	// H5VL_ATTR_GET_ACPL:         
+	// H5VL_ATTR_GET_NAME:         
+	// H5VL_ATTR_GET_INFO:         
+	// H5VL_ATTR_GET_STORAGE_SIZE: 
+
+
     switch (get_type) {
         case H5VL_ATTR_GET_SPACE:
             {

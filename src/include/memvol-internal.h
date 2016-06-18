@@ -127,16 +127,15 @@ typedef struct memvol_file_t {
 
 
 
-typedef union memvol_object_u {
-	memvol_group_t* group;
-	memvol_dataset_t* dataset;
-	memvol_datatype_t* datatype;
-} memvol_object_u;
 
 typedef struct memvol_object_t {
 	memvol_object_type_t type;
 	void * object;
-	//memvol_object_u obj;
+	/* * /union {
+		memvol_group_t* group;
+		memvol_dataset_t* dataset;
+		memvol_datatype_t* datatype;
+	} object; /* */
 } memvol_object_t;
 
 
