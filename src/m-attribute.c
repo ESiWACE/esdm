@@ -63,7 +63,75 @@ static herr_t memvol_attribute_get (void *obj, H5VL_attr_get_t get_type, hid_t d
 
 	debugI("%s: *obj = %p\n", __func__, obj) 
 
-	return 0;
+
+    memvol_object_t *object;
+    memvol_attribute_t *attribute;
+	herr_t ret_value = SUCCEED;
+
+
+    switch (get_type) {
+        case H5VL_ATTR_GET_SPACE:
+            {
+				debugI("%s: H5VL_ATTR_GET_SPACE \n", __func__);
+                //hid_t	*ret_id = va_arg (arguments, hid_t *);
+                //H5A_t   *attr = (H5A_t *)obj;
+
+                //if((*ret_id = H5A_get_space(attr)) < 0)
+                //    HGOTO_ERROR(H5E_ARGS, H5E_CANTGET, FAIL, "can't get space ID of attribute")
+                break;
+            }
+        /* H5Aget_type */
+        case H5VL_ATTR_GET_TYPE:
+            {
+				debugI("%s: H5VL_ATTR_GET_TYPE \n", __func__);
+                //hid_t	*ret_id = va_arg (arguments, hid_t *);
+                //H5A_t   *attr = (H5A_t *)obj;
+
+                //if((*ret_id = H5A_get_type(attr)) < 0)
+                //    HGOTO_ERROR(H5E_ARGS, H5E_CANTGET, FAIL, "can't get datatype ID of attribute")
+                break;
+            }
+        /* H5Aget_create_plist */
+        case H5VL_ATTR_GET_ACPL:
+            {
+				debugI("%s: H5VL_ATTR_GET_ACPL \n", __func__);
+                //hid_t	*ret_id = va_arg (arguments, hid_t *);
+                //H5A_t   *attr = (H5A_t *)obj;
+
+                //if((*ret_id = H5A_get_create_plist(attr)) < 0)
+                //    HGOTO_ERROR(H5E_ARGS, H5E_CANTGET, FAIL, "can't get creation property list for attr")
+
+                break;
+            }
+        /* H5Aget_name */
+        case H5VL_ATTR_GET_NAME:
+            {
+				debugI("%s: H5VL_ATTR_GET_NAME \n", __func__);
+                break;
+            }
+
+        /* H5Aget_info */
+        case H5VL_ATTR_GET_INFO:
+            {
+				debugI("%s: H5VL_ATTR_GET_INFO \n", __func__);
+				break;
+            }
+
+        case H5VL_ATTR_GET_STORAGE_SIZE:
+            {
+				debugI("%s: H5VL_ATTR_GET_STORAGE_SIZE \n", __func__);
+                break;
+            }
+
+        default:
+            //HGOTO_ERROR(H5E_VOL, H5E_CANTGET, FAIL, "can't get this type of information from attr")
+            break;
+    }
+
+
+
+
+	return ret_value;
 }
 
 static herr_t memvol_attribute_specific (void *obj, H5VL_loc_params_t loc_params, H5VL_attr_specific_t specific_type, hid_t dxpl_id, void **req, va_list arguments) 
