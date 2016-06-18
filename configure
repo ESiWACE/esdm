@@ -16,7 +16,7 @@ function help(){
 	echo
 	echo "Optional:"
 	echo "--build-dir=<dir>        : directory in which to build"
-	echo "--debug                  : build SIOX with debug flags"
+	echo "--debug                  : build with debug flags"
 	echo "--verbose                : output the command but do not execute it"
 	echo "--reconfigure            : run configure again with the parameters used the last time"
 	echo "--with-mpicc=<file>      : path to the MPI C compiler"
