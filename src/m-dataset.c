@@ -72,6 +72,16 @@ static void memvol_dataset_init(memvol_dataset_t * dataset){
 }
 
 
+
+herr_t print_property( hid_t id, const char *name, void *iter_data )
+{
+	debugI("%s: hid=%ld name=%s data=%p\n", __func__, id, name, iter_data);
+	return 0;
+}
+
+
+
+
 static void *memvol_dataset_create(
 		void *obj, 
 		H5VL_loc_params_t loc_params, 
@@ -87,6 +97,25 @@ static void *memvol_dataset_create(
 
 	debugI("%s\n", __func__);
 
+	// (gdb) bt
+	// #0  memvol_dataset_create (obj=0x95f9c0, loc_params=..., name=0x961db0 "lat", dcpl_id=792633534417207319,
+	//     dapl_id=792633534417207303, dxpl_id=792633534417207311, req=0x0) at /home/pq/ESiWACE/ESD-Middleware/src/m-dataset.c:86
+	// #1  0x00007ffff6c7face in H5VL_dataset_create (obj=0x95f9c0, loc_params=..., vol_cls=0x95eac0, name=0x961db0 "lat",
+	//     dcpl_id=792633534417207319, dapl_id=792633534417207303, dxpl_id=792633534417207311, req=0x0) at ../../src/H5VLint.c:1016
+	// #2  0x00007ffff6baebeb in H5Dcreate1 (loc_id=144115188075855872, name=0x961db0 "lat", type_id=216172782113783863,
+	//     space_id=288230376151711746, dcpl_id=792633534417207319) at ../../src/H5Ddeprec.c:156
+	// #3  0x00007ffff74223ed in write_dim (dim=dim@entry=0x95f840, grp=grp@entry=0x966ad0, write_dimid=write_dimid@entry=NC_FALSE)
+	//     at nc4hdf.c:2374
+	// #4  0x00007ffff7428072 in nc4_rec_write_metadata (grp=<optimized out>, bad_coord_order=NC_FALSE) at nc4hdf.c:2563
+	// #5  0x00007ffff741dad1 in sync_netcdf4_file (h5=0x95ecf0) at nc4file.c:3029
+	// #6  0x00007ffff7421602 in NC4_enddef (ncid=<optimized out>) at nc4file.c:2987
+	// #7  0x00007ffff73e8302 in nc_enddef (ncid=65536) at dfile.c:910
+	// #8  0x0000000000400e29 in main (argc=1, argv=0x7fffffffc8e8) at /home/pq/ESiWACE/ESD-Middleware/src/tools/netcdf-bench.c:53
+	// #9  0x00007ffff5cc1731 in __libc_start_main () from /lib64/libc.so.6
+	// #10 0x0000000000400b69 in ?? ()
+
+
+
 	// allocate resoources
     object  = (memvol_object_t*)  malloc(sizeof(memvol_object_t));
     dataset = (memvol_dataset_t*) malloc(sizeof(memvol_dataset_t));
@@ -96,7 +125,42 @@ static void *memvol_dataset_create(
 
     memvol_dataset_init(dataset);
     dataset->dcpl_id = H5Pcopy(dcpl_id);
-	dataset->loc_params = loc_params;
+	//dataset->loc_params = loc_params;
+
+
+	hid_t spaceid;
+	herr_t status = -1;
+
+	debugI("%s: spaceid=%p %ld \n", __func__, spaceid, spaceid, spaceid);
+	status = H5Pget(dcpl_id, H5VL_PROP_DSET_SPACE_ID, &spaceid);
+	debugI("%s: spaceid=%p %ld status=%d is_simple=%d\n", __func__, spaceid, spaceid, status, H5Sis_simple(spaceid));
+
+
+
+	dataset->dataspace = H5Scopy(spaceid);
+
+	//dataset->dataspace = spaceid;
+
+
+
+	// analyse property list
+	size_t nprops = 0;
+	H5Pget_nprops(dcpl_id, &nprops );
+    debugI("%s: dcpl_id=%ld nprops= %d \n", __func__, dcpl_id,  nprops);
+
+
+	void * iter_data;
+	H5Piterate(dcpl_id, NULL, print_property, iter_data);
+
+
+	// gather information about datatype
+	// fetch from cpl
+    debugI("%s: datatype: \n", __func__);
+
+	// gather information about dataspace
+	// fetch from cpl
+    debugI("%s: dataspace: \n", __func__);
+	
 
     if (name != NULL){ // anonymous object/datset
 		// check if the object exists already in the parent
@@ -161,11 +225,15 @@ static herr_t memvol_dataset_get(void *obj, H5VL_dataset_get_t get_type, hid_t d
 	herr_t ret_value = SUCCEED;
 
 
+
+    dataset = (memvol_dataset_t *) ((memvol_object_t*)obj)->object;
+
 	// Variadic variables in HDF5 VOL implementation are used to expose HDF5
 	// high-level calls H5*_get_*() for the various APIs through a per API 
 	// single callback from within a plugins.
 
 	// (gdb) bt
+
 	// #0  memvol_dataset_get (obj=0x967d90, get_type=H5VL_DATASET_GET_SPACE, dxpl_id=792633534417207311, req=0x0,
 	//     arguments=0x7fffffffc2c0) at /home/pq/ESiWACE/ESD-Middleware/src/m-dataset.c:156
 	// #1  0x00007ffff6c80669 in H5VL_dataset_get (dset=0x967d90, vol_cls=0x95eac0, get_type=H5VL_DATASET_GET_SPACE,
@@ -200,7 +268,19 @@ static herr_t memvol_dataset_get(void *obj, H5VL_dataset_get_t get_type, hid_t d
 				// va_args: &ret_value
                 hid_t	*ret_id = va_arg (arguments, hid_t *);
 
-                
+                hid_t spaceid;
+				herr_t status = -1;
+
+				debugI("%s: spaceid=%p %ld \n", __func__, spaceid, spaceid);
+				status = H5Pget(dataset->dcpl_id, H5VL_PROP_DSET_SPACE_ID, &spaceid);
+				debugI("%s: spaceid=%p %ld status=%d is_simple=%d\n", __func__, spaceid, spaceid, status, H5Sis_simple(spaceid));
+				debugI("%s: dataset->dataspace=%ld status=%d is_simple=%d\n", __func__, dataset->dataspace, status, H5Sis_simple(dataset->dataspace));
+
+			
+				*ret_id = H5Scopy(dataset->dataspace);
+				//*ret_id = spaceid;
+
+
 
             	/*
                 hid_t	*ret_id = va_arg (arguments, hid_t *);

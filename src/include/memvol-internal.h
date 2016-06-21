@@ -96,7 +96,9 @@ typedef struct memvol_dataset_t {
 	hid_t dxpl_id;
 
 	char * name;	
-    H5VL_loc_params_t loc_params;
+    //H5VL_loc_params_t loc_params;
+    hid_t dataspace;
+    hid_t datatype;
 } memvol_dataset_t;
 
 

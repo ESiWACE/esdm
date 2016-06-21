@@ -43,10 +43,13 @@ int main(int argc, char ** argv){
 
   ret = nc_def_dim(ncid, "lat", 100, & dimids[0]);
   assert(ret == NC_NOERR);
+
+
   ret = nc_def_dim(ncid, "lon", 100, & dimids[1]);
   assert(ret == NC_NOERR);
   ret = nc_def_dim(ncid, "time", NC_UNLIMITED, & dimids[2]);
   assert(ret == NC_NOERR);
+
 
   ret = nc_def_var(ncid, "var1", NC_INT, dimsize, dimids, & var);
   assert(ret == NC_NOERR);
