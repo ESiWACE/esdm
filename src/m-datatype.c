@@ -55,40 +55,71 @@ static void * memvol_datatype_open(void *obj, H5VL_loc_params_t loc_params, cons
 
 static herr_t memvol_datatype_get(void *obj, H5VL_datatype_get_t get_type, hid_t dxpl_id, void **req, va_list arguments)
 {
-  switch (get_type) {
-      case H5VL_DATATYPE_GET_BINARY:{ // serialize datatype
-        ssize_t *nalloc = va_arg (arguments, ssize_t *);
-        void *buf = va_arg (arguments, void *);
-        size_t size = va_arg (arguments, size_t);
-        break;
-      }
-      case H5VL_DATATYPE_GET_TCPL:{ // property list when the datatype has been created
-        hid_t *ret_id = va_arg (arguments, hid_t *);
-        *ret_id = H5P_DEFAULT;
-        break;
-      }
-  }
-  return 0;
+	herr_t ret_value = SUCCEED;
+
+	// /* types for datatype GET callback */
+	// typedef enum H5VL_datatype_get_t {
+	//     H5VL_DATATYPE_GET_BINARY,               /* get serialized form of transient type */ 
+	//     H5VL_DATATYPE_GET_TCPL	            /* datatype creation property list	   */
+	// } H5VL_datatype_get_t;
+
+	switch (get_type) {
+		case H5VL_DATATYPE_GET_BINARY:
+		{ 
+			// serialize datatype
+			ssize_t *nalloc = va_arg (arguments, ssize_t *);
+			void *buf = va_arg (arguments, void *);
+			size_t size = va_arg (arguments, size_t);
+			break;
+		}
+
+		case H5VL_DATATYPE_GET_TCPL:
+		{ 
+			// property list when the datatype has been created
+			hid_t *ret_id = va_arg (arguments, hid_t *);
+			*ret_id = H5P_DEFAULT;
+			break;
+		}
+
+		default:
+	        break;
+	}
+
+	return ret_value;
 }
 
 
 static herr_t memvol_datatype_specific(void *obj, H5VL_datatype_specific_t specific_type, hid_t dxpl_id, void **req, va_list arguments)
 {
+	herr_t ret_value = SUCCEED;
+
 	debugI("%s\n", __func__);
 
-	return -1;
+	// /* types for datatype GET callback */
+	// typedef enum H5VL_datatype_get_t {
+	//     H5VL_DATATYPE_GET_BINARY,               /* get serialized form of transient type */ 
+	//     H5VL_DATATYPE_GET_TCPL	            /* datatype creation property list	   */
+	// } H5VL_datatype_get_t;
+
+	return ret_value;
 }
 
 
 static herr_t memvol_datatype_optional(void *obj, hid_t dxpl_id, void **req, va_list arguments)
 {
+	herr_t ret_value = SUCCEED;
+
 	debugI("%s\n", __func__);
 
-	return -1;
+	return ret_value;
 }
 
 
 static herr_t memvol_datatype_close(void *dt, hid_t dxpl_id, void **req)
 {
-  return 0;
+	herr_t ret_value = SUCCEED;
+
+	debugI("%s\n", __func__);
+
+	return ret_value;
 }

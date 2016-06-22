@@ -120,6 +120,7 @@
 
 static GHashTable * files_tbl = NULL;
 
+
 static void * memvol_file_create(const char *name, unsigned flags, hid_t fcpl_id, hid_t fapl_id, hid_t dxpl_id, void **req)
 {
     memvol_object_t *object;
@@ -195,9 +196,9 @@ static void * memvol_file_create(const char *name, unsigned flags, hid_t fcpl_id
 	debugI("%s: files_tbl.size=%d\n", __func__, g_hash_table_size(files_tbl));
 
 
-
     return (void *)object;
 }
+
 
 static void * memvol_file_open(const char *name, unsigned flags, hid_t fapl_id, hid_t dxpl_id, void **req)
 {
@@ -210,11 +211,25 @@ static void * memvol_file_open(const char *name, unsigned flags, hid_t fapl_id, 
     return (void *)object;
 }
 
+
 static herr_t memvol_file_get(void *file, H5VL_file_get_t get_type, hid_t dxpl_id, void **req, va_list arguments)
 {
+	herr_t ret_value = SUCCEED;
     memvol_file_t *f = (memvol_file_t *)file;
 
 	debugI("%s\n", __func__);
+
+	// /* types for file GET callback */
+	// typedef enum H5VL_file_get_t {
+	//     H5VL_FILE_GET_FAPL,                     /* file access property list	*/
+	//     H5VL_FILE_GET_FCPL,	                    /* file creation property list	*/
+	//     H5VL_FILE_GET_INTENT,	            /* file intent           		*/
+	//     H5VL_FILE_GET_NAME,	                    /* file name             		*/
+	//     H5VL_FILE_GET_OBJ_COUNT,	            /* object count in file	       	*/
+	//     H5VL_FILE_GET_OBJ_IDS,	            /* object ids in file     		*/
+	//     H5VL_OBJECT_GET_FILE                    /* retrieve or resurrect file of object */
+	// } H5VL_file_get_t;
+
 
     switch (get_type) {
       /* H5Fget_access_plist */
@@ -314,12 +329,15 @@ static herr_t memvol_file_get(void *file, H5VL_file_get_t get_type, hid_t dxpl_i
         assert(0);
     } /* end switch */
 
-    return 1;
+    return ret_value;
 }
+
 
 static herr_t memvol_file_close(void *file, hid_t dxpl_id, void **req)
 {
+	herr_t ret_value = SUCCEED;
+
 	debugI("%s\n", __func__);
 
-    return 0;
+    return ret_value;
 }

@@ -29,21 +29,21 @@ void * memvol_object_open(void *obj, H5VL_loc_params_t loc_params, H5I_type_t *o
 herr_t memvol_object_copy(void *src_obj, H5VL_loc_params_t loc_params1, const char *src_name, void *dst_obj, H5VL_loc_params_t loc_params2, const char *dst_name, hid_t ocpypl_id, hid_t lcpl_id, hid_t dxpl_id, void **req)
 {
 	debugI("%s\n", __func__);
-	return -1;
+	return 0;
 }
 
 
 herr_t memvol_object_get(void *obj, H5VL_loc_params_t loc_params, H5VL_object_get_t get_type, hid_t dxpl_id, void **req, va_list arguments)
 {
 	debugI("%s\n", __func__);
-	return -1;
+	return 0;
 }
 
 
 herr_t memvol_object_specific(void *obj, H5VL_loc_params_t loc_params, H5VL_object_specific_t specific_type, hid_t dxpl_id, void **req, va_list arguments)
 {
 	debugI("%s\n", __func__);
-	return -1;
+	return 0;
 
 }
 

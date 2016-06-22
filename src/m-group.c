@@ -49,9 +49,6 @@ static void memvol_group_init(memvol_group_t * group)
 }
 
 
-
-
-
 static void * memvol_group_create(void *obj, H5VL_loc_params_t loc_params, const char *name, hid_t gcpl_id, hid_t gapl_id, hid_t dxpl_id, void **req)
 {
     memvol_object_t *object;

@@ -131,9 +131,9 @@ static void *memvol_dataset_create(
 	hid_t spaceid;
 	herr_t status = -1;
 
-	debugI("%s: spaceid=%p %ld \n", __func__, spaceid, spaceid, spaceid);
+	debugI("%s: spaceid=%ld \n", __func__, spaceid);
 	status = H5Pget(dcpl_id, H5VL_PROP_DSET_SPACE_ID, &spaceid);
-	debugI("%s: spaceid=%p %ld status=%d is_simple=%d\n", __func__, spaceid, spaceid, status, H5Sis_simple(spaceid));
+	debugI("%s: spaceid=%ld status=%d is_simple=%d\n", __func__, spaceid, status, H5Sis_simple(spaceid));
 
 
 
@@ -194,46 +194,40 @@ static void *memvol_dataset_open(void *obj, H5VL_loc_params_t loc_params, const 
 
 static herr_t memvol_dataset_read(void *dset, hid_t mem_type_id, hid_t mem_space_id, hid_t file_space_id, hid_t xfer_plist_id, void * buf, void **req)
 {
+	herr_t ret_value = SUCCEED;
+
 	debugI("%s\n", __func__);
 
-
-	debugI("%s: \n", __func__);
-
-
-
-	return 0;
+	return ret_value;
 }
 
 
 static herr_t memvol_dataset_write(void *dset, hid_t mem_type_id, hid_t mem_space_id, hid_t file_space_id, hid_t xfer_plist_id, const void * buf, void **req)
 {
-	debugI("%s\n", __func__);
-
 	herr_t ret_value = SUCCEED;
 
-	return 0;
+	debugI("%s\n", __func__);
+
+	return ret_value;
 }
 
 
 static herr_t memvol_dataset_get(void *obj, H5VL_dataset_get_t get_type, hid_t dxpl_id, void **req, va_list arguments)
 {
-	debugI("%s\n", __func__);
-	debugI("%s: obj=%p\n", __func__, obj);
-
     memvol_object_t *object;
     memvol_dataset_t  *dataset;
 	herr_t ret_value = SUCCEED;
-
-
-
     dataset = (memvol_dataset_t *) ((memvol_object_t*)obj)->object;
+
+
+	debugI("%s\n", __func__);
+	debugI("%s: obj=%p\n", __func__, obj);
 
 	// Variadic variables in HDF5 VOL implementation are used to expose HDF5
 	// high-level calls H5*_get_*() for the various APIs through a per API 
 	// single callback from within a plugins.
 
 	// (gdb) bt
-
 	// #0  memvol_dataset_get (obj=0x967d90, get_type=H5VL_DATASET_GET_SPACE, dxpl_id=792633534417207311, req=0x0,
 	//     arguments=0x7fffffffc2c0) at /home/pq/ESiWACE/ESD-Middleware/src/m-dataset.c:156
 	// #1  0x00007ffff6c80669 in H5VL_dataset_get (dset=0x967d90, vol_cls=0x95eac0, get_type=H5VL_DATASET_GET_SPACE,
@@ -249,6 +243,20 @@ static herr_t memvol_dataset_get(void *obj, H5VL_dataset_get_t get_type, hid_t d
 	// #9  0x0000000000400e29 in main (argc=1, argv=0x7fffffffc8e8) at /home/pq/ESiWACE/ESD-Middleware/src/tools/netcdf-bench.c:53
 	// #10 0x00007ffff5cc1731 in __libc_start_main () from /lib64/libc.so.6
 	// #11 0x0000000000400b69 in ?? ()
+
+
+	// extract fromm ../install/download/vol/src/H5VLpublic.h:72
+	// /* types for dataset GET callback */
+	// typedef enum H5VL_dataset_get_t {
+	//     H5VL_DATASET_GET_DAPL,                  /* access property list                */
+	//     H5VL_DATASET_GET_DCPL,                  /* creation property list              */
+	//     H5VL_DATASET_GET_OFFSET,                /* offset                              */
+	//     H5VL_DATASET_GET_SPACE,                 /* dataspace                           */
+	//     H5VL_DATASET_GET_SPACE_STATUS,          /* space  status                       */
+	//     H5VL_DATASET_GET_STORAGE_SIZE,          /* storage size                        */
+	//     H5VL_DATASET_GET_TYPE                   /* datatype                            */
+	// } H5VL_dataset_get_t;
+
 
 	// H5VL_DATASET_GET_SPACE:         Returns an identifier for a copy of the dataspace for a dataset.  (indeed makes a copy)
 	// H5VL_DATASET_GET_SPACE_STATUS:  Determines whether space has been allocated for a dataset. 
@@ -271,9 +279,9 @@ static herr_t memvol_dataset_get(void *obj, H5VL_dataset_get_t get_type, hid_t d
                 hid_t spaceid;
 				herr_t status = -1;
 
-				debugI("%s: spaceid=%p %ld \n", __func__, spaceid, spaceid);
+				debugI("%s: spaceid=%ld \n", __func__, spaceid, spaceid);
 				status = H5Pget(dataset->dcpl_id, H5VL_PROP_DSET_SPACE_ID, &spaceid);
-				debugI("%s: spaceid=%p %ld status=%d is_simple=%d\n", __func__, spaceid, spaceid, status, H5Sis_simple(spaceid));
+				debugI("%s: spaceid=%ld status=%d is_simple=%d\n", __func__, spaceid, spaceid, status, H5Sis_simple(spaceid));
 				debugI("%s: dataset->dataspace=%ld status=%d is_simple=%d\n", __func__, dataset->dataspace, status, H5Sis_simple(dataset->dataspace));
 
 			
@@ -366,7 +374,6 @@ static herr_t memvol_dataset_get(void *obj, H5VL_dataset_get_t get_type, hid_t d
                	// va_args: &ret_value
                 hsize_t *ret = va_arg (arguments, hsize_t *);
             	
-            	
             	/*
                 // Set return value 
                 if(H5D__get_storage_size(dset, dxpl_id, ret) < 0)
@@ -382,8 +389,6 @@ static herr_t memvol_dataset_get(void *obj, H5VL_dataset_get_t get_type, hid_t d
 
 				// var_args: &ret_value
                 haddr_t *ret = va_arg (arguments, haddr_t *);
-
-            	/*
 
                 /* Set return value 
                 *ret = H5D__get_offset(dset);
@@ -410,18 +415,44 @@ static herr_t memvol_dataset_specific(void *obj, H5VL_dataset_specific_t specifi
 
 	herr_t ret_value = SUCCEED;
 
-	return -1;
+	// extract from ../install/download/vol/src/H5VLpublic.h:83
+	// /* types for dataset SPECFIC callback */
+	// typedef enum H5VL_dataset_specific_t {
+	//     H5VL_DATASET_SET_EXTENT                 /* H5Dset_extent */
+	// } H5VL_dataset_specific_t;
+
+	switch (specific_type) {
+		case H5VL_DATASET_SET_EXTENT:
+		{
+			debugI("%s: H5VL_DATASET_SET_EXTENT \n", __func__);
+			break;
+		}
+
+		default:
+			break;
+	}
+
+	return ret_value;
 }
 
 
-static herr_t memvol_dataset_close (void *dset, hid_t dxpl_id, void **req)
-{
-    memvol_dataset_t *dataset = (memvol_dataset_t *)dset;
 
+static herr_t memvol_dataset_optional(void *obj, hid_t dxpl_id, void **req, va_list arguments)
+{
 	herr_t ret_value = SUCCEED;
 
 	debugI("%s\n", __func__);
 
+	return ret_value;
+}
+
+
+static herr_t memvol_dataset_close(void *dset, hid_t dxpl_id, void **req)
+{
+	herr_t ret_value = SUCCEED;
+    memvol_dataset_t *dataset = (memvol_dataset_t *)dset;
+
+	debugI("%s\n", __func__);
     debugI("%s: %p\n", __func__, (void*)  dataset);
 
 	return 0;

@@ -80,6 +80,17 @@ static herr_t memvol_attribute_get (void *obj, H5VL_attr_get_t get_type, hid_t d
 	// H5VL_ATTR_GET_INFO:         
 	// H5VL_ATTR_GET_STORAGE_SIZE: 
 
+	// extract from ../install/download/vol/src/H5VLpublic.h:54
+	// /* types for attribute GET callback */
+	// typedef enum H5VL_attr_get_t {
+	//     H5VL_ATTR_GET_ACPL,                     /* creation property list              */
+	//     H5VL_ATTR_GET_INFO,                     /* info                                */
+	//     H5VL_ATTR_GET_NAME,                     /* access property list                */
+	//     H5VL_ATTR_GET_SPACE,                    /* dataspace                           */
+	//     H5VL_ATTR_GET_STORAGE_SIZE,             /* storage size                        */
+	//     H5VL_ATTR_GET_TYPE                      /* datatype                            */
+	// } H5VL_attr_get_t;
+
 
     switch (get_type) {
         case H5VL_ATTR_GET_SPACE:
@@ -149,9 +160,17 @@ static herr_t memvol_attribute_get (void *obj, H5VL_attr_get_t get_type, hid_t d
 static herr_t memvol_attribute_specific (void *obj, H5VL_loc_params_t loc_params, H5VL_attr_specific_t specific_type, hid_t dxpl_id, void **req, va_list arguments) 
 {
 	debugI("%s\n", __func__);
+	
+	// /* types for attribute SPECFIC callback */
+	// typedef enum H5VL_attr_specific_t {
+	//     H5VL_ATTR_DELETE,                       /* H5Adelete(_by_name/idx)             */
+	//     H5VL_ATTR_EXISTS,                       /* H5Aexists(_by_name)                 */
+	//     H5VL_ATTR_ITER,                         /* H5Aiterate(_by_name)                */
+	//     H5VL_ATTR_RENAME                        /* H5Arename(_by_name)                 */
+	// } H5VL_attr_specific_t;
+
 
 	return 0;
-	return -1;
 }
 
 static herr_t memvol_attribute_optional (void *obj, hid_t dxpl_id, void **req, va_list arguments) 
