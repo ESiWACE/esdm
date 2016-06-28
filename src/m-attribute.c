@@ -27,7 +27,6 @@ int puipui;
 static void* memvol_attribute_create (void *obj, H5VL_loc_params_t loc_params, const char *attr_name, hid_t acpl_id, hid_t aapl_id, hid_t dxpl_id, void **req) 
 {
 	debugI("%s\n", __func__);
-
 	debugI("%s: Attach new attribute=TODO '%s' to obj=%p\n", __func__, attr_name, obj) 
 
 	return (void*) &puipui;
@@ -36,8 +35,6 @@ static void* memvol_attribute_create (void *obj, H5VL_loc_params_t loc_params, c
 static void* memvol_attribute_open (void *obj, H5VL_loc_params_t loc_params, const char *attr_name, hid_t aapl_id, hid_t dxpl_id, void **req) 
 {
 	debugI("%s\n", __func__);
-
-
 	debugI("%s: *obj = %p\n", __func__, obj) 
 
 	return NULL;
@@ -47,38 +44,32 @@ static herr_t memvol_attribute_read (void *attr, hid_t mem_type_id, void *buf, h
 {
 	debugI("%s\n", __func__);
 
-	return 0;
+	herr_t ret_value = SUCCEED;
+
+	return ret_value;
 }
 
 static herr_t memvol_attribute_write (void *attr, hid_t mem_type_id, const void *buf, hid_t dxpl_id, void **req) 
 {
 	debugI("%s\n", __func__);
 
-	return 0;
+	herr_t ret_value = SUCCEED;
+
+	return ret_value;
 }
 
 static herr_t memvol_attribute_get (void *obj, H5VL_attr_get_t get_type, hid_t dxpl_id, void **req, va_list arguments) 
 {
 	debugI("%s\n", __func__);
-
 	debugI("%s: *obj = %p\n", __func__, obj) 
-
 
     memvol_object_t *object;
     memvol_attribute_t *attribute;
 	herr_t ret_value = SUCCEED;
 
-
 	// Variadic variables in HDF5 VOL implementation are used to expose HDF5
 	// high-level calls H5*_get_*() for the various APIs through a per API 
 	// single callback from within a plugins.
-
-	// H5VL_ATTR_GET_SPACE:        
-	// H5VL_ATTR_GET_TYPE:         
-	// H5VL_ATTR_GET_ACPL:         
-	// H5VL_ATTR_GET_NAME:         
-	// H5VL_ATTR_GET_INFO:         
-	// H5VL_ATTR_GET_STORAGE_SIZE: 
 
 	// extract from ../install/download/vol/src/H5VLpublic.h:54
 	// /* types for attribute GET callback */
@@ -91,6 +82,12 @@ static herr_t memvol_attribute_get (void *obj, H5VL_attr_get_t get_type, hid_t d
 	//     H5VL_ATTR_GET_TYPE                      /* datatype                            */
 	// } H5VL_attr_get_t;
 
+	// H5VL_ATTR_GET_SPACE:          Gets a copy of the dataspace for an attribute.   
+	// H5VL_ATTR_GET_TYPE:           Gets an attribute datatype.
+	// H5VL_ATTR_GET_ACPL:           Gets an attribute creation property list identifier. 
+	// H5VL_ATTR_GET_NAME:           Gets an attribute name. 
+	// H5VL_ATTR_GET_INFO:           Retrieves attribute information, by attribute identifier. 
+	// H5VL_ATTR_GET_STORAGE_SIZE:   Returns the amount of storage required for an attribute. 
 
     switch (get_type) {
         case H5VL_ATTR_GET_SPACE:
@@ -151,15 +148,14 @@ static herr_t memvol_attribute_get (void *obj, H5VL_attr_get_t get_type, hid_t d
             break;
     }
 
-
-
-
 	return ret_value;
 }
 
 static herr_t memvol_attribute_specific (void *obj, H5VL_loc_params_t loc_params, H5VL_attr_specific_t specific_type, hid_t dxpl_id, void **req, va_list arguments) 
 {
 	debugI("%s\n", __func__);
+	
+	herr_t ret_value = SUCCEED;
 	
 	// /* types for attribute SPECFIC callback */
 	// typedef enum H5VL_attr_specific_t {
@@ -169,23 +165,31 @@ static herr_t memvol_attribute_specific (void *obj, H5VL_loc_params_t loc_params
 	//     H5VL_ATTR_RENAME                        /* H5Arename(_by_name)                 */
 	// } H5VL_attr_specific_t;
 
+	// H5VL_ATTR_DELETE:     Deletes an attribute from a specified location. 
+	// H5VL_ATTR_EXISTS:	 Determines whether an attribute with a given name exists on an object. 
+	// H5VL_ATTR_ITER:       Calls a user’s function for each attribute on an object. 
+	// H5VL_ATTR_RENAME:     Renames an attribute. 
 
-	return 0;
+	return ret_value;
 }
 
 static herr_t memvol_attribute_optional (void *obj, hid_t dxpl_id, void **req, va_list arguments) 
 {
 	debugI("%s\n", __func__);
 
-	return 0;
-	return -1;
+	herr_t ret_value = SUCCEED;
+
+	// We do not define any memvol specific functionality at the moment.
+	// Nothing to do.
+
+	return ret_value;
 }
 
 static herr_t memvol_attribute_close (void *attr, hid_t dxpl_id, void **req) 
 {
 	debugI("%s\n", __func__);
 
+	herr_t ret_value = SUCCEED;
 
-	return 0;
-	return -1;
+	return ret_value;
 }
