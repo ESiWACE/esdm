@@ -13,33 +13,51 @@
 // You should have received a copy of the GNU Lesser General Public License
 // along with h5-memvol.  If not, see <http://www.gnu.org/licenses/>.
 
-// test1
+
+#include <stdio.h>
+#include <string.h>
+
+
+memvol_file_t* g_file;
 
 static void * memvol_file_create(const char *name, unsigned flags, hid_t fcpl_id, hid_t fapl_id, hid_t dxpl_id, void **req)
 {
-    memvol_t *file;
-    file = (memvol_t *)calloc(1, sizeof(memvol_t));
+    g_file = (memvol_file_t *)calloc(1, sizeof(memvol_file_t));
+    printf("%s\n", name);
 
-    return (void *)file;
+    g_file->name = (char*)malloc(strlen(name));
+    g_file->root_group = (memvol_group_t*)malloc(sizeof(*g_file->root_group));
+    strcpy(g_file->name, name);
+
+    return (void *)g_file;
 }
 
 static void * memvol_file_open(const char *name, unsigned flags, hid_t fapl_id, hid_t dxpl_id, void **req)
 {
-    memvol_t *file;
-    file = (memvol_t *)calloc(1, sizeof(memvol_t));
+    memvol_file_t *f;
+    f = (memvol_file_t *)calloc(1, sizeof(memvol_file_t));
 
-    return (void *)file;
+    printf("memvol_file_open() called!\n");
+
+    return (void *)f;
 }
 
 static herr_t memvol_file_get(void *file, H5VL_file_get_t get_type, hid_t dxpl_id, void **req, va_list arguments)
 {
-    memvol_t *f = (memvol_t *)file;
+    memvol_file_t *f = (memvol_file_t *)file;
     return 1;
 }
 
 static herr_t memvol_file_close(void *file, hid_t dxpl_id, void **req)
 {
-    memvol_t *f = (memvol_t *)file;
+    memvol_file_t *f = (memvol_file_t *)file;
+    free(f->name);
+    free(f->root_group);
     free(f);
+
+    f->name = NULL;
+    f->root_group = NULL;
+    f = NULL;
+
     return 1;
 }

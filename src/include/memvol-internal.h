@@ -16,8 +16,17 @@
 #ifndef H5_MEMVOL_INTERNAL_HEADER__
 #define H5_MEMVOL_INTERNAL_HEADER__
 
-typedef struct {
-   int i;
-} memvol_t;
+//typedef struct {
+  //
+//} memvol_t;
 
+typedef struct {
+    char* name;
+    int* children;
+} memvol_group_t;
+
+typedef struct {
+    char* name;
+    memvol_group_t* root_group;
+} memvol_file_t;
 #endif
