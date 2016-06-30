@@ -409,8 +409,23 @@ static herr_t memvol_dataset_specific(void *obj, H5VL_dataset_specific_t specifi
 		
 			const hsize_t *size = va_arg (arguments, const hsize_t *); 
 
+			int rank;
+			rank = H5Sget_simple_extent_ndims(dataset->dataspace);
+
+			hsize_t* dims = (hsize_t*) malloc(rank * sizeof(hsize_t));
+			hsize_t* max = (hsize_t*) malloc(rank * sizeof(hsize_t));
+
+			for (int i = 0; i < rank; i++) {
+				debugI("%s: rank[i]=%d, dims=%lld, max=%lld   =>   size=%lld\n", __func__, i, dims[i], max[i], size[i]);
+			}
+			H5Sget_simple_extent_dims(dataset->dataspace, dims, max);
+			for (int i = 0; i < rank; i++) {
+				debugI("%s: rank[i]=%d, dims=%lld, max=%lld   =>   size=%lld\n", __func__, i, dims[i], max[i], size[i]);
+			}
+
+
 			// herr_t H5Sset_extent_simple( hid_t space_id, int rank, const hsize_t *current_size, const hsize_t *maximum_size ) 
-			//H5Sset_extent_simple(dataset->dataspace, RANK?, size)
+			H5Sset_extent_simple(dataset->dataspace, rank, size, max);
 			
 			break;
 		}
