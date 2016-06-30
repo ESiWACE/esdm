@@ -28,6 +28,14 @@
 #define MEMVOL_ID 503
 #define MEMVOL_NAME "h5-memvol"
 
+// helper to inspect property lists
+herr_t print_property( hid_t id, const char *name, void *iter_data )
+{
+	debugI("%s: hid=%ld name=%s data=%p\n", __func__, id, name, iter_data);
+	return 0;
+}
+
+
 #include "m-attribute.c"
 #include "m-dataset.c"
 #include "m-datatype.c"

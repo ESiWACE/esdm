@@ -65,19 +65,7 @@
 
 
 
-static void memvol_dataset_init(memvol_dataset_t * dataset){
-  //group->childs_tbl = g_hash_table_new (g_str_hash,g_str_equal);
-  //group->childs_ord_by_index_arr = g_array_new(0, 0, sizeof(void*));
-  //assert(group->childs_tbl != NULL);
-}
 
-
-
-herr_t print_property( hid_t id, const char *name, void *iter_data )
-{
-	debugI("%s: hid=%ld name=%s data=%p\n", __func__, id, name, iter_data);
-	return 0;
-}
 
 
 
@@ -123,35 +111,37 @@ static void *memvol_dataset_create(
 	object->type = MEMVOL_DATASET;
 	object->object = dataset;
 
-    memvol_dataset_init(dataset);
     dataset->dcpl_id = H5Pcopy(dcpl_id);
+    dataset->dapl_id = H5Pcopy(dapl_id);
+    dataset->dxpl_id = H5Pcopy(dxpl_id);
 	//dataset->loc_params = loc_params;
-
 
 	hid_t spaceid;
 	herr_t status = -1;
 
+	// analyse dataspace of this dataset
 	debugI("%s: spaceid=%ld \n", __func__, spaceid);
 	status = H5Pget(dcpl_id, H5VL_PROP_DSET_SPACE_ID, &spaceid);
 	debugI("%s: spaceid=%ld status=%d is_simple=%d\n", __func__, spaceid, status, H5Sis_simple(spaceid));
 
-
-
+	// get copy of space for future use (e.g. maybe required to satisfy get, specific and optional)
 	dataset->dataspace = H5Scopy(spaceid);
 
-	//dataset->dataspace = spaceid;
-
-
-
-	// analyse property list
+	// analyse property lists
 	size_t nprops = 0;
+	void * iter_data;
+
 	H5Pget_nprops(dcpl_id, &nprops );
     debugI("%s: dcpl_id=%ld nprops= %d \n", __func__, dcpl_id,  nprops);
-
-
-	void * iter_data;
 	H5Piterate(dcpl_id, NULL, print_property, iter_data);
 
+	H5Pget_nprops(dapl_id, &nprops );
+    debugI("%s: dapl_id=%ld nprops= %d \n", __func__, dapl_id,  nprops);
+	H5Piterate(dapl_id, NULL, print_property, iter_data);
+
+	H5Pget_nprops(dxpl_id, &nprops );
+    debugI("%s: dxpl_id=%ld nprops= %d \n", __func__, dxpl_id,  nprops);
+	H5Piterate(dxpl_id, NULL, print_property, iter_data);
 
 	// gather information about datatype
 	// fetch from cpl
@@ -217,9 +207,9 @@ static herr_t memvol_dataset_get(void *obj, H5VL_dataset_get_t get_type, hid_t d
 {
 	debugI("%s\n", __func__);
 
+	herr_t ret_value = SUCCEED;
     memvol_object_t *object;
     memvol_dataset_t  *dataset;
-	herr_t ret_value = SUCCEED;
     dataset = (memvol_dataset_t *) ((memvol_object_t*)obj)->object;
 
 
@@ -398,6 +388,10 @@ static herr_t memvol_dataset_specific(void *obj, H5VL_dataset_specific_t specifi
 	debugI("%s\n", __func__);
 
 	herr_t ret_value = SUCCEED;
+    memvol_object_t *object;
+    memvol_dataset_t  *dataset;
+    
+    dataset = (memvol_dataset_t *) ((memvol_object_t*)obj)->object;
 
 	// extract from ../install/download/vol/src/H5VLpublic.h:83
 	// /* types for dataset SPECFIC callback */
@@ -412,6 +406,12 @@ static herr_t memvol_dataset_specific(void *obj, H5VL_dataset_specific_t specifi
 		case H5VL_DATASET_SET_EXTENT:
 		{
 			debugI("%s: H5VL_DATASET_SET_EXTENT \n", __func__);
+		
+			const hsize_t *size = va_arg (arguments, const hsize_t *); 
+
+			// herr_t H5Sset_extent_simple( hid_t space_id, int rank, const hsize_t *current_size, const hsize_t *maximum_size ) 
+			//H5Sset_extent_simple(dataset->dataspace, RANK?, size)
+			
 			break;
 		}
 

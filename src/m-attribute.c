@@ -170,6 +170,38 @@ static herr_t memvol_attribute_specific (void *obj, H5VL_loc_params_t loc_params
 	// H5VL_ATTR_ITER:       Calls a user’s function for each attribute on an object. 
 	// H5VL_ATTR_RENAME:     Renames an attribute. 
 
+
+    switch (specific_type) {
+
+        case H5VL_ATTR_DELETE:
+            {
+				debugI("%s: H5VL_ATTR_DELETE \n", __func__);
+                break;
+            }
+
+        case H5VL_ATTR_EXISTS:
+            {
+				debugI("%s: H5VL_ATTR_EXISTS \n", __func__);
+                break;
+            }
+
+        case H5VL_ATTR_ITER:
+            {
+				debugI("%s: H5VL_ATTR_ITER \n", __func__);
+                break;
+            }
+
+        case H5VL_ATTR_RENAME:
+            {
+				debugI("%s: H5VL_ATTR_RENAME \n", __func__);
+                break;
+            }
+
+        default:
+        	break;
+	}
+
+
 	return ret_value;
 }
 

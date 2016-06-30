@@ -121,12 +121,30 @@
 static GHashTable * files_tbl = NULL;
 
 
-static void * memvol_file_create(const char *name, unsigned flags, hid_t fcpl_id, hid_t fapl_id, hid_t dxpl_id, void **req)
+static void * memvol_file_create(const char *name, unsigned flags, hid_t fcpl_id, hid_t fapl_id, hid_t fxpl_id, void **req)
 {
     memvol_object_t *object;
     memvol_file_t *file;
 
 	debugI("%s\n", __func__);
+
+
+
+	// analyse property lists
+	size_t nprops = 0;
+	void * iter_data;
+
+	H5Pget_nprops(fcpl_id, &nprops );
+    debugI("%s: fcpl_id=%ld nprops= %d \n", __func__, fcpl_id,  nprops);
+	H5Piterate(fcpl_id, NULL, print_property, iter_data);
+
+	H5Pget_nprops(fapl_id, &nprops );
+    debugI("%s: fapl_id=%ld nprops= %d \n", __func__, fapl_id,  nprops);
+	H5Piterate(fapl_id, NULL, print_property, iter_data);
+
+	H5Pget_nprops(fxpl_id, &nprops );
+    debugI("%s: fxpl_id=%ld nprops= %d \n", __func__, fcpl_id,  nprops);
+	H5Piterate(fxpl_id, NULL, print_property, iter_data);
 
 
 	// create files hash map if not already existent

@@ -40,6 +40,8 @@ herr_t memvol_object_get(void *obj, H5VL_loc_params_t loc_params, H5VL_object_ge
 {
 	debugI("%s\n", __func__);
 
+	herr_t ret_value = SUCCEED;
+
 	// /* types for object GET callback */
 	// typedef enum H5VL_object_get_t {
 	//     H5VL_REF_GET_NAME,                 /* object name                       */
@@ -47,7 +49,6 @@ herr_t memvol_object_get(void *obj, H5VL_loc_params_t loc_params, H5VL_object_ge
 	//     H5VL_REF_GET_TYPE                  /* type of object                    */
 	// } H5VL_object_get_t;
 
-	herr_t ret_value = SUCCEED;
 
 	return ret_value;
 }
@@ -57,6 +58,8 @@ herr_t memvol_object_specific(void *obj, H5VL_loc_params_t loc_params, H5VL_obje
 {
 	debugI("%s\n", __func__);
 
+	herr_t ret_value = SUCCEED;
+
 	// /* types for object SPECIFIC callback */
 	// typedef enum H5VL_object_specific_t {
 	//     H5VL_OBJECT_CHANGE_REF_COUNT,      /* H5Oincr/decr_refcount              */
@@ -65,7 +68,41 @@ herr_t memvol_object_specific(void *obj, H5VL_loc_params_t loc_params, H5VL_obje
 	//     H5VL_REF_CREATE                    /* H5Rcreate                          */
 	// } H5VL_object_specific_t;
 
-	herr_t ret_value = SUCCEED;
+
+	
+
+    switch (specific_type) {
+
+        case H5VL_OBJECT_CHANGE_REF_COUNT:
+            {
+				debugI("%s: H5VL_OBJECT_CHANGE_REF_COUNT \n", __func__);
+                break;
+            }
+
+        case H5VL_OBJECT_EXISTS:
+            {
+				debugI("%s: H5VL_OBJECT_EXISTS \n", __func__);
+                break;
+            }
+
+        case H5VL_OBJECT_VISIT:
+            {
+				debugI("%s: H5VL_OBJECT_VISIT \n", __func__);
+                break;
+            }
+
+        case H5VL_REF_CREATE:
+            {
+				debugI("%s: H5VL_REF_CREATE \n", __func__);
+                break;
+            }
+
+        default:
+        	break;
+	}
+
+
+
 
 	return ret_value;
 
