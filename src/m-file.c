@@ -22,8 +22,25 @@ memvol_file_t* g_file;
 
 static void * memvol_file_create(const char *name, unsigned flags, hid_t fcpl_id, hid_t fapl_id, hid_t dxpl_id, void **req)
 {
+    puts("memvol_file_create() called!");
+
     g_file = (memvol_file_t *)calloc(1, sizeof(memvol_file_t));
-    printf("%s\n", name);
+    printf("filename: %s\n", name);
+
+    int myvalue = 7;
+
+    GHashTable * table;
+    
+    table = g_hash_table_new (g_str_hash, g_str_equal ); 
+   
+    g_hash_table_insert(table,"mykey", &myvalue);
+    printf("Hash table size: %d\n", g_hash_table_size(table));
+  
+    g_hash_table_insert(table,"mykey2", &myvalue);
+    printf("Hash table size: %d\n", g_hash_table_size(table));
+
+    int* output1 = g_hash_table_lookup(table, "mykey");
+    printf("lookup1: %d\n", *output1);
 
     g_file->name = (char*)malloc(strlen(name));
     g_file->root_group = (memvol_group_t*)malloc(sizeof(*g_file->root_group));

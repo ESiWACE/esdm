@@ -36,17 +36,7 @@ int main(){
    group_id = H5Gcreate(fid, "/MyGroup1", H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
    group_id = H5Gcreate(fid, "/MyGroup2", H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
 
-   //H5Gget_info(fid, "/");
    H5Fclose(fid);
-
-//  fid = H5Fopen("test.h5", H5F_ACC_TRUNC, H5P_DEFAULT);
-//
-//
-//  H5VLget_plugin_name(fid, name, 1024);
-//  printf ("Using VOL %s\n", name);
-//
-//  H5Fclose(fid);
-
 
   H5VL_memvol_finalize();
 

@@ -15,6 +15,8 @@
 
 #include <stdlib.h>
 #include <assert.h>
+#include <glib.h>
+
 
 #pragma GCC diagnostic ignored "-Wunused-parameter"
 
@@ -89,7 +91,7 @@ static const H5VL_class_t H5VL_memvol = {
     {                                           /* group_cls */
         memvol_group_create,      /* create */
         NULL, //memvol_group_open,               /* open */
-        memvol_group_get,                /* get */
+        NULL, //memvol_group_get,                /* get */
         NULL, //memvol_group_specific,           /* specific */
         NULL, //memvol_group_optional,           /* optional */
         memvol_group_close         /* close */
