@@ -16,24 +16,37 @@
 #include <stdio.h>
 #include <string.h>
 
-memvol_group_t* g_group;//
 
 static void* memvol_group_create(void* obj, H5VL_loc_params_t loc_params, const char* name, hid_t gcpl_id, hid_t gapl_id, hid_t dxpl_id, void** req)
 {
-    g_group = (memvol_group_t *)calloc(1, sizeof(memvol_group_t));//
+    printf("function memvol_group_create called!\n");
 
-    g_group->name = (char*)malloc(strlen(name));//
-    g_group->children = (int*)malloc(sizeof(int));//
-    strcpy(g_group->name, name);//
+    memvol_group_t* grp;
+    grp = (memvol_group_t *)calloc(1, sizeof(memvol_group_t));//
+
+    grp->name = (char*)malloc(strlen(name));//
+    grp->children = (GHashTable*)malloc(sizeof(GHashTable*));//
+    strcpy(grp->name, name);//
+    GHashTable* table = g_hash_table_new(g_str_hash, g_str_equal);//
+    size_t size = sizeof(GHashTable*);
+    memcpy(grp->children, table, size);//
     
-    printf("%s\n", name);//
+    printf("%s\n", grp->name);//
+    printf("GHashTable size: %d\n", g_hash_table_size(grp->children));
+    // TODO
+    // Objekte richtig einfuegen (g_hash_table_lookup_node Error ?)
+    // Erstellen und suchen/oeffnen von groups ueber ihren Namen
+    //char* testing = "testing";
+    //g_hash_table_insert(grp->children, "dataset1", &testing);
+    //printf("GHashTable size: %d\n", g_hash_table_size(grp->children));
+    //printf("GHashTable content: \'%s\'\n", g_hash_table_lookup(grp->children, testing));
 
-    //printf("CALL: %s\n", __PRETTY_FUNCTION__);
-    //void* ret = malloc(10);
-    return (void*)g_group;//
+    return (void*)grp;//
 }
 
 static herr_t memvol_group_close(void* grp, hid_t dxpl_id, void** req) {
+
+    printf("function memvol_group_close called!\n");
 
     memvol_group_t *g = (memvol_group_t*)grp;//
     free(g->name);//
@@ -48,8 +61,8 @@ static herr_t memvol_group_close(void* grp, hid_t dxpl_id, void** req) {
     return 1;
 }
 
-static herr_t memvol_group_get(void *group, H5VL_group_get_t get_type, hid_t dxpl_id, void **req, va_list arguments)
+static void* memvol_group_get(void *group, H5VL_group_get_t get_type, hid_t dxpl_id, void **req, va_list arguments)
 {
     memvol_group_t *g = (memvol_group_t *)group;
-    return (herr_t)g->children;
+    return (void*)g->children;
 }

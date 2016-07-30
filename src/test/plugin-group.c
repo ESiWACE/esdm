@@ -58,29 +58,32 @@ int main()
 	//H5Gclose(g3);
 
 
+	// OPEN ////////////////////////////////////////////////////////////////////
+    // TODO
+
 
 	// GET ////////////////////////////////////////////////////////////////////
-	printf("Testing additional functions\n");
-	g1 = H5Gopen2(fid, "g1", H5P_DEFAULT );
-	plist = H5Gget_create_plist(g1);
-	H5G_info_t group_info;
-	H5Gget_info(g1, & group_info);
+	//printf("Testing additional functions\n");
+	//g1 = H5Gopen2(fid, "g1", H5P_DEFAULT );
+	//plist = H5Gget_create_plist(g1);
+	//H5G_info_t group_info;
+	//H5Gget_info(g1, & group_info);
 
-	H5Gget_info_by_idx(fid, "g1",  H5_INDEX_CRT_ORDER,  H5_ITER_NATIVE, 0, & group_info, H5P_DEFAULT);
-	H5Gget_info_by_idx(fid, "g1",  H5_INDEX_NAME,  H5_ITER_NATIVE, 0, & group_info, H5P_DEFAULT);
-	H5Gget_info_by_name(fid, "g1", & group_info, H5P_DEFAULT);
-	H5Pclose(plist);
+	//H5Gget_info_by_idx(fid, "g1",  H5_INDEX_CRT_ORDER,  H5_ITER_NATIVE, 0, & group_info, H5P_DEFAULT);
+	//H5Gget_info_by_idx(fid, "g1",  H5_INDEX_NAME,  H5_ITER_NATIVE, 0, & group_info, H5P_DEFAULT);
+	//H5Gget_info_by_name(fid, "g1", & group_info, H5P_DEFAULT);
+	//H5Pclose(plist);
 
 
 	// NESTING? ///////////////////////////////////////////////////////////////
-	H5Gclose(g1);
-	g1 = H5Gopen2(fid, "g2", H5P_DEFAULT);
-	H5Gclose(g1);
-	//g1 = H5Gopen2(fid, "INVALID", H5P_DEFAULT );
 	//H5Gclose(g1);
+	//g1 = H5Gopen2(fid, "g2", H5P_DEFAULT);
+	//H5Gclose(g1);
+	////g1 = H5Gopen2(fid, "INVALID", H5P_DEFAULT );
+	////H5Gclose(g1);
 
-	g1 =  H5Gcreate_anon(fid, H5P_DEFAULT, H5P_DEFAULT);
-	H5Gclose(g1);
+	//g1 =  H5Gcreate_anon(fid, H5P_DEFAULT, H5P_DEFAULT);
+	//H5Gclose(g1);
 
 
 	// Clean up ///////////////////////////////////////////////////////////////

@@ -16,13 +16,9 @@
 #ifndef H5_MEMVOL_INTERNAL_HEADER__
 #define H5_MEMVOL_INTERNAL_HEADER__
 
-//typedef struct {
-  //
-//} memvol_t;
-
 typedef struct {
     char* name;
-    int* children;
+    GHashTable* children;
 } memvol_group_t;
 
 typedef struct {
