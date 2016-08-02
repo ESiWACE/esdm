@@ -196,5 +196,9 @@ size_t lfs_read(size_t addr, size_t size, char * res){
 		//printf("chunk stack: (%d, %d, %d)\n",temp.addr,temp.size,temp.pos);
 		pread(fd, &res[(temp.addr - addr)/sizeof(char)]/*&res + temp.addr - addr*/, temp.size, temp.pos);
 	}
+	// Optimization: Write down the read query for futer reads!
+	if (1 == 0){
+		lfs_write(addr, res);
+	}
 	return size;
 }
