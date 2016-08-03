@@ -7,7 +7,8 @@
 #include <string.h>
 #include <stdint.h>
 
-#include "lfs.h"
+
+#include <lfs-internal.h>
 
 char * filename;
 char * lfsfilename;

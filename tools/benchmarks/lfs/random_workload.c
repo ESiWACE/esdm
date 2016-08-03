@@ -51,8 +51,7 @@ int main(){
 
 	fill_file = (char *)malloc(block_size * 100000);
 	memset(fill_file, 8, block_size * 100000);
-//	lfs_write(0, fill_file);
-	normal_write(0, fill_file);
+	lfs_write(0, fill_file);
 	clear_cache(); // clear the cache
 
 	char * test_write;
@@ -62,8 +61,7 @@ int main(){
 		if(i % 1000 == 0)
 			printf("writes done: %d\n", i);
 		memset(test_write, (i % 8) + 1, block_size * 10);
-//		lfs_write((rand() % 100000) * block_size, test_write);
-		normal_write((rand() % 204800) * block_size, test_write);
+		lfs_write((rand() % 100000) * block_size, test_write);
 		clear_cache(); // clear the cache
 	}
 	
@@ -78,8 +76,7 @@ int main(){
 	char * test_read;
 	size_t read_bytes;
 	test_read = (char *)malloc(block_size * 100000);
-//	read_bytes = lfs_read(0, block_size * 100000, test_read);
-	read_bytes = normal_read(0, block_size * 2000, test_read);
+	read_bytes = lfs_read(0, block_size * 100000, test_read);
 
 	gettimeofday(&tv, NULL);
 	finish = (unsigned long long)(tv.tv_sec) * 1000 + (unsigned long long)(tv.tv_usec) / 1000;
