@@ -7,32 +7,37 @@
 #include <assert.h>
 #include <string.h>
 #include <stdint.h>
-#include <fstream>
 //#include <mpi.h>
-#include <iostream>
-#include <vector>
 #include <sys/time.h>
 
 #include "lfs.h"
 
 void clear_cache(){
-sync();
+	sync();
 
-std::ofstream ofs("/proc/sys/vm/drop_caches");
-ofs << "3" << std::endl;
+	int fd = open("/proc/sys/vm/drop_caches", O_WRONLY);
+	write(fd, "3", 1);
+	close(fd);
 }
 
 
 int main(){
-	block_size = 16 * 1024;
+	size_t block_size = 16 * 1024;
+	lfs_set_blocksize(block_size);
+
 	//end_of_file = 0;
 	///---- setting files name ----///
-	std::string temp = "datafile.df";
+	
+	/*
+	char temp[] = "datafile.df";
 	filename = strdup(temp.c_str());
 	temp = "metafile.mf";
 	lfsfilename = strdup(temp.c_str());
 	printf("filename: %s\n", filename);
 	printf("lfsfilename: %s\n", lfsfilename);
+	*/
+
+	lfs_open("datafile.df", "metafile.mf");
 
 	///---- starting workload ----///
 	unsigned long long start, finish;
