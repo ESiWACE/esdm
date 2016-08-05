@@ -147,7 +147,7 @@ struct tup compare_tup(struct tup first, struct tup second){
 
 
 // recursive function that finds all of the areas that should be read to complete a read query
-int lfs_find_chunks(size_t a, size_t b, int index, lfs_record * my_recs, std::vector<lfs_record>& chunks_stack){
+int lfs_find_chunks(size_t a, size_t b, int index, struct lfs_record * my_recs, struct lfs_record * chunks_stack, int* ch_s){
 	//printf("check it out: %d, %d, %d\n", a, b, index);
 	
 	// this IF is for ending the recursion
@@ -158,29 +158,27 @@ int lfs_find_chunks(size_t a, size_t b, int index, lfs_record * my_recs, std::ve
 	res.b = -1;
 	query.a = a;
 	query.b = b;
-	rec.a = my_recs[index].addr;
-	rec.b = my_recs[index].addr + my_recs[index].size;
 	// search through the logs until you find a record that overlaps with the given query area
 	while(res.a == -1){
-		res = compare_tup(query, rec);
-		index--;
-		//printf("i is: %d\n", index);
 		if(index < 0){
-//			printf("didn't find\n");
+			printf("didn't find\n");
 			return 0;
 		}
 		rec.a = my_recs[index].addr;
 		rec.b = my_recs[index].addr + my_recs[index].size;
+		res = compare_tup(query, rec);
+		index--;
 	}
 	struct lfs_record found;
 	//printf("result: %d, %d\n", res.a, res.b);
 	found.addr = res.a;
 	found.size = res.b - res.a;
 	found.pos = my_recs[index + 1].pos + res.a - my_recs[index + 1].addr;
-	chunks_stack.push_back(found);
+	//chunks_stack.push_back(found);
+	lfs_vec_add(chunks_stack, ch_s, found);
 	// call yourself for the remaing areas of the query that have not been covered with the found record
-	lfs_find_chunks(a, res.a,index, my_recs, chunks_stack);
-	lfs_find_chunks(res.b, b,index, my_recs, chunks_stack);
+	lfs_find_chunks(a, res.a,index, my_recs, chunks_stack, ch_s);
+	lfs_find_chunks(res.b, b,index, my_recs, chunks_stack, ch_s);
 	return 0;
 }
 
@@ -194,26 +192,52 @@ size_t lfs_read(size_t addr, size_t size, char * res){
 	struct lfs_record * my_recs = read_record();
 	
 	// create the vector that acts like a stack for our finding chunks recursive function
-	std::vector<struct lfs_record> chunks_stack;
-	struct stat stats;
-
+	// std::vector<struct lfs_record> chunks_stack;
+	struct lfs_record * chunks_stack;
+	chunks_stack = (lfs_record *)malloc(sizeof(lfs_record) * 101);
+	int ch_s = 1;
 	// find the length of the log array
+	struct stat stats;
   stat(lfsfilename, & stats);
   int record_count = stats.st_size / sizeof(lfs_record_on_disk);
 	// call the recursive function to find which areas need to be read
-	lfs_find_chunks(addr, addr + size, record_count - 1, my_recs, chunks_stack);
-	int total_found_count = chunks_stack.size();
+	lfs_find_chunks(addr, addr + size, record_count - 1, my_recs, chunks_stack, &ch_s);
+	int total_found_count = ch_s - 1; //chunks_stack.size();
 
 	// perform the read
 	for(int i = 0; i < total_found_count; i++){
-		temp = chunks_stack.at(i);
+		temp = chunks_stack[i];
 		//printf("chunk stack: (%d, %d, %d)\n",temp.addr,temp.size,temp.pos);
 		pread(fd, &res[(temp.addr - addr)/sizeof(char)]/*&res + temp.addr - addr*/, temp.size, temp.pos);
 	}
-	// Optimization: Write down the read query for futer reads!
+	// Optimization: Write down the read query for future reads!
 	if (1 == 0){
 		lfs_write(addr, res);
 	}
+	free(chunks_stack);
 	return size;
 }
 
+void lfs_vec_add(struct lfs_record* chunks_stack, int * size, struct lfs_record chunk){
+	//printf("size is:%d\n", *size - 1);
+	if(*size % 100 == 0){
+		struct lfs_record* new_stack;
+		struct lfs_record* temp;
+		int rtd = *size + 100;
+		printf("allocating %d size\n", rtd);
+		new_stack = (lfs_record *)realloc(chunks_stack, sizeof(lfs_record) * rtd);
+		/*for(int i=0; i < *size - 1; i++){
+			new_stack[i].addr = chunks_stack[i].addr;
+			new_stack[i].size = chunks_stack[i].size;
+			new_stack[i].pos = chunks_stack[i].pos;
+		}*/
+		printf("done\n");
+		//free(chunks_stack);
+		chunks_stack = new_stack;
+		//free(temp);
+	}
+	chunks_stack[*size - 1] = chunk;
+	*size += 1;
+	//printf("added chunk: %d, %d, %d\n", chunk.addr, chunk.size, chunk.pos);
+	//printf("added chunk: %d, %d, %d\n", chunks_stack[*size - 2].addr, chunks_stack[*size - 2].size, chunks_stack[*size - 2].pos);
+}
