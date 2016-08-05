@@ -10,7 +10,11 @@
 //#include <mpi.h>
 #include <sys/time.h>
 
-#include "lfs.h"
+#ifdef LFS_DUMMY_OPERATION
+#include <lfs-dummy.h>
+#else
+#include <lfs.h>
+#endif
 
 void clear_cache(){
 	sync();
@@ -23,7 +27,6 @@ void clear_cache(){
 
 int main(){
 	size_t block_size = 10;
-	lfs_set_blocksize(block_size);
 
 	//end_of_file = 0;
 	///---- setting files name ----///

@@ -12,7 +12,6 @@
 
 char * filename;
 char * lfsfilename;
-size_t block_size;
 //std::string temp = "datafile.df";
 //filename = strdup(temp.c_str());
 //temp = "metafile.mf";
@@ -35,16 +34,6 @@ int lfs_open(char* df, char* mf)
 	
 	return current_index - 1;
 }
-
-
-int lfs_set_blocksize(size_t blocksize)
-{
-	block_size = blocksize;
-
-	// potential error code when setting new blocksize fails ;)
-	return 0;
-}
-
 
 // this is the LFS write function
 ssize_t lfs_write(int fd, void *buf, size_t count, off_t offset){

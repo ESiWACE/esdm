@@ -17,7 +17,7 @@ workload-random-lfs: lfs.o random_workload.o
 	${CC} ${CLFAGS} ${OBJECTS} -o $@ ${LDFLAGS}
 
 workload-random: lfs.o random_workload.o
-	${CC} ${CLFAGS} ${OBJECTS} -DLFS_DUMMY_OPERATION  -o $@ ${LDFLAGS}
+	${CC} ${CLFAGS} ${OBJECTS} -D LFS_DUMMY_OPERATION  -o $@ ${LDFLAGS}
 
 
 ## Built with shared library

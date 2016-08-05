@@ -2,9 +2,12 @@
 #define LFS_INTERNAL_H_
 
 #include <sys/types.h>
-#include <vector>
 
+#ifdef LFS_DUMMY_OPERATION
+#include <lfs-dummy.h>
+#else
 #include <lfs.h>
+#endif
 
 struct tup{
   size_t a;
