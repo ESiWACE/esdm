@@ -22,7 +22,7 @@ void clear_cache(){
 
 
 int main(){
-	size_t block_size = 16 * 1024;
+	size_t block_size = 10;
 	lfs_set_blocksize(block_size);
 
 	//end_of_file = 0;
@@ -37,7 +37,7 @@ int main(){
 	printf("lfsfilename: %s\n", lfsfilename);
 	*/
 
-	lfs_open("datafile.df", "metafile.mf");
+	int myfd = lfs_open("datafile.df", "metafile.mf");
 
 	///---- starting workload ----///
 	unsigned long long start, finish;
@@ -49,19 +49,19 @@ int main(){
 	gettimeofday(&tv, NULL);
 	start = (unsigned long long)(tv.tv_sec) * 1000 + (unsigned long long)(tv.tv_usec) / 1000;
 
-	fill_file = (char *)malloc(block_size * 100000);
-	memset(fill_file, 8, block_size * 100000);
-	lfs_write(0, fill_file);
+	fill_file = (char *)malloc(block_size * 10);
+	memset(fill_file, 8, block_size * 10);
+	lfs_write(myfd, fill_file, block_size * 10, 0);
 	clear_cache(); // clear the cache
 
 	char * test_write;
-	test_write = (char *)malloc(block_size * 10);
-	for(int i = 0; i < 10000; i ++)
+	test_write = (char *)malloc(block_size);
+	for(int i = 0; i < 5; i ++)
 	{
 		if(i % 1000 == 0)
 			printf("writes done: %d\n", i);
-		memset(test_write, (i % 8) + 1, block_size * 10);
-		lfs_write((rand() % 100000) * block_size, test_write);
+		memset(test_write, (i % 5) + 1, block_size);
+		lfs_write(myfd, test_write, block_size, i * block_size);
 		clear_cache(); // clear the cache
 	}
 	
@@ -75,8 +75,8 @@ int main(){
 
 	char * test_read;
 	size_t read_bytes;
-	test_read = (char *)malloc(block_size * 100000);
-	read_bytes = lfs_read(0, block_size * 100000, test_read);
+	test_read = (char *)malloc(block_size * 10);
+	read_bytes = lfs_read(myfd, test_read, block_size * 10, 0);
 
 	gettimeofday(&tv, NULL);
 	finish = (unsigned long long)(tv.tv_sec) * 1000 + (unsigned long long)(tv.tv_usec) / 1000;
@@ -84,8 +84,8 @@ int main(){
 
 	printf("read took %llu milli-seconds\n", seconds);
 	int fd = open("read.result", O_CREAT|O_APPEND|O_RDWR, S_IRUSR|S_IWUSR);
-	pwrite(fd, test_read, block_size * 100000, 0);
-
+	pwrite(fd, test_read, block_size * 10, 0);
+	close(fd);
 	return 0;
 }
 
