@@ -3,11 +3,7 @@
 
 #include <sys/types.h>
 
-#ifdef LFS_DUMMY_OPERATION
-#include <lfs-dummy.h>
-#else
 #include <lfs.h>
-#endif
 
 struct tup{
   size_t a;
@@ -19,16 +15,16 @@ struct lfs_files{
 	int data_file;
 };
 
-struct lfs_record_on_disk{
+typedef struct {
   size_t addr;
   size_t size;
-};
+} lfs_record_on_disk;
 
-struct lfs_record{
+typedef struct lfs_record{
   size_t addr;
   size_t size;
   size_t pos;
-};
+} lfs_record;
 
 // internal only?
 lfs_record * read_record(int fd);

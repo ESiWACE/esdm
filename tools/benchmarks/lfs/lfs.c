@@ -70,12 +70,10 @@ ssize_t lfs_write(int fd, void *buf, size_t count, off_t offset){
 
 // extracts the mapping dict from our metadata(log) file
 lfs_record * read_record(int fd){
-  int ret = 0;
-
+	int ret;
 	// find the number of items in the array by using the size of the metadata file
-  struct stat stats;	
-	//myfd = fileno(lfsfiles[fd].log_file);
-  //ret = fstat(myfd, & stats);
+  	//struct stat stats;	
+	//ret = fstat(myfd, & stats);
 	printf("this is FD %d\n",fd);
 	size_t fileLen;
 	fseek(lfsfiles[fd].log_file, 0, SEEK_END);
@@ -93,7 +91,7 @@ lfs_record * read_record(int fd){
   for(int i=0; i < record_count; i++){
     ret = fread(& records[i], sizeof(lfs_record_on_disk), 1, lfsfiles[fd].log_file);
     records[i].pos = file_position;
-    //assert(ret == 1);
+    assert(ret == 1);
     file_position += records[i].size;
   }
   //fclose(lfs);
@@ -135,7 +133,7 @@ struct tup compare_tup(struct tup first, struct tup second){
 
 // recursive function that finds all of the areas that should be read to complete a read query
 int lfs_find_chunks(size_t a, size_t b, int index, struct lfs_record * my_recs, struct lfs_record * chunks_stack, int* ch_s){
-	printf("check it out: %d, %d, %d\n", a, b, index);
+	printf("check it out: %zu %zu, %d\n", a, b, index);
 	
 	// this IF is for ending the recursion
 	if(a == b)
@@ -184,10 +182,10 @@ size_t lfs_read(int fd, char *buf, size_t count, off_t offset){
 	chunks_stack = (lfs_record *)malloc(sizeof(lfs_record) * 101);
 	int ch_s = 1;
 	// find the length of the log array
-	struct stat stats;
-  int	myfd;
+	//struct stat stats;
+	// int	myfd;
 	//myfd = fileno(lfsfiles[fd].log_file);
-  //	fstat(myfd, & stats);
+	//	fstat(myfd, & stats);
 	size_t fileLen;
 	fseek(lfsfiles[fd].log_file, 0, SEEK_END);
 	fileLen = ftell(lfsfiles[fd].log_file);
@@ -200,7 +198,7 @@ size_t lfs_read(int fd, char *buf, size_t count, off_t offset){
 	// perform the read
 	for(int i = 0; i < total_found_count; i++){
 		temp = chunks_stack[i];
-		printf("chunk stack: (%d, %d, %d)\n",temp.addr,temp.size,temp.pos);
+		printf("chunk stack: (%zu, %zu, %zu)\n",temp.addr,temp.size,temp.pos);
 		pread(lfsfiles[fd].data_file, &buf[(temp.addr - offset)/sizeof(char)], temp.size, temp.pos);
 	}
 	// Optimization: Write down the read query for future reads!

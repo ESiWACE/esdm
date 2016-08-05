@@ -1,11 +1,11 @@
-CC=g++
-CFLAGS=-g -Wall -I.
+CC=gcc
+CFLAGS=-g -Wall -I. -std=gnu99 -pedantic
 LDFLAGS=
 
 SOURCES=random_workload.c lfs.c
 OBJECTS=$(SOURCES:.c=.o)
 
-all: workload-random workload-random-dynamic workload-random-lfs
+all: workload-random-dummy workload-random-dynamic workload-random-lfs
 #all: workload-random workload-sequential workload-3dcube
 
 %.o : %.c
@@ -14,10 +14,10 @@ all: workload-random workload-random-dynamic workload-random-lfs
 
 ## Built simple
 workload-random-lfs: lfs.o random_workload.o
-	${CC} ${CLFAGS} ${OBJECTS} -o $@ ${LDFLAGS}
+	${CC} ${CFLAGS} ${OBJECTS} -o $@ ${LDFLAGS}
 
-workload-random: lfs.o random_workload.o
-	${CC} ${CLFAGS} ${OBJECTS} -D LFS_DUMMY_OPERATION  -o $@ ${LDFLAGS}
+workload-random-dummy: 
+	${CC} ${CFLAGS} random_workload.c -D LFS_DUMMY_OPERATION  -o $@ ${LDFLAGS}
 
 
 ## Built with shared library
@@ -33,7 +33,7 @@ run-workload-random-dynamic:
 
 clean:
 	rm -f *.o
-	rm -f workload-random
+	rm -f workload-random-dummy
 	rm -f workload-random-dynamic
 	rm -f workload-random-lfs
 	rm -f liblfs.so
