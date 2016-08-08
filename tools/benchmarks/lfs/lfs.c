@@ -21,13 +21,15 @@ char * lfsfilename;
 struct lfs_files lfsfiles[20];
 int current_index = 0;
 
-int lfs_open(char* df, char* mf)
+int lfs_open(char *df, int flags, mode_t mode)
 {
 	filename = strdup(df);
-	lfsfilename = strdup(mf);
+	char * metafile = (char *) malloc((strlen(df) + 4) * sizeof(char));
+	strcpy(metafile, df);
+	strcat(metafile, ".log");
 	printf("filename: %s\n", filename);
-	printf("lfsfilename: %s\n", lfsfilename);
-
+	printf("lfsfilename: %s\n", metafile);
+	lfsfilename = strdup(metafile);
 	lfsfiles[current_index].log_file = fopen(lfsfilename, "a+");
 	lfsfiles[current_index].data_file = open(filename, O_CREAT|O_APPEND|O_RDWR, S_IRUSR|S_IWUSR);
 	current_index++;

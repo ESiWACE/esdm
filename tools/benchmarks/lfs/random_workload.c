@@ -40,11 +40,7 @@ int main(){
 	printf("lfsfilename: %s\n", lfsfilename);
 	*/
 
-#ifdef LFS_DUMMY_OPERATION
-int myfd = lfs_open("datafile-dummy.df", O_CREAT|O_APPEND|O_RDWR, S_IRUSR|S_IWUSR);
-#else
-int myfd = lfs_open("datafile.df", "metafile.mf");
-#endif
+	int myfd = lfs_open("/tmp/datafile.df", O_CREAT|O_APPEND|O_RDWR, S_IRUSR|S_IWUSR);
 
 	///---- starting workload ----///
 	unsigned long long start;
@@ -66,12 +62,12 @@ int myfd = lfs_open("datafile.df", "metafile.mf");
 	char * test_write;
 	free(fill_file);
 	test_write = (char *)malloc(block_size * 10);
-	for(int i = 0; i < 100; i ++)
+	for(int i = 0; i < 1000; i ++)
 	{
-		if(i % 10 == 0)
+		if(i % 100 == 0)
 			printf("writes done: %d\n", i);
-		memset(test_write, (i % 5) + 1, block_size * 10);
-		lfs_write(myfd, test_write, block_size, i * block_size);
+		memset(test_write, (i % 8) + 1, block_size * 10);
+		lfs_write(myfd, test_write, block_size, (rand() % 1000) * block_size);
 		clear_cache(); // clear the cache
 	}
 	free(test_write);
@@ -87,7 +83,7 @@ int myfd = lfs_open("datafile.df", "metafile.mf");
 //	size_t read_bytes;
 	test_read = (char *)malloc(block_size * 100);
 	for(int iii = 0; iii < 10; iii++)
-		lfs_read(myfd, test_read, block_size * 100, iii * block_size * 10);
+		lfs_read(myfd, test_read, block_size * 100, iii * block_size * 100);
 	free(test_read);
 	gettimeofday(&tv, NULL);
 	finish = (unsigned long long)(tv.tv_sec) * 1000 + (unsigned long long)(tv.tv_usec) / 1000;
