@@ -18,10 +18,10 @@
 
 void clear_cache(){
 	sync();
-	system("sudo /home/hr/drop-caches.sh");
-	//int fd = open("/proc/sys/vm/drop_caches", O_WRONLY);
-	//write(fd, "3", 1);
-	//close(fd);
+//	system("sudo /home/hr/drop-caches.sh");
+	int fd = open("/proc/sys/vm/drop_caches", O_WRONLY);
+	write(fd, "3", 1);
+	close(fd);
 }
 
 
@@ -40,7 +40,7 @@ int main(){
 	printf("lfsfilename: %s\n", lfsfilename);
 	*/
 
-	int myfd = lfs_open("/tmp/datafile.df", O_CREAT|O_APPEND|O_RDWR, S_IRUSR|S_IWUSR);
+	int myfd = lfs_open("datafile.df", O_CREAT|O_APPEND|O_RDWR|O_SYNC|O_RSYNC, S_IRUSR|S_IWUSR);
 
 	///---- starting workload ----///
 	unsigned long long start;
@@ -53,10 +53,10 @@ int main(){
 	gettimeofday(&tv, NULL);
 	start = (unsigned long long)(tv.tv_sec) * 1000 + (unsigned long long)(tv.tv_usec) / 1000;
 	srand(start);
-	fill_file = (char *)malloc(block_size * 10);
-	memset(fill_file, 8, block_size * 10);
-	for(int iii = 0; iii < 128; iii++)
-		lfs_write(myfd, fill_file, block_size * 10, iii * block_size * 10);
+	fill_file = (char *)malloc(block_size * 100);
+	memset(fill_file, 8, block_size * 100);
+	for(int iii = 0; iii < 10; iii++)
+		lfs_write(myfd, fill_file, block_size * 100, iii * block_size * 100);
 	clear_cache(); // clear the cache
 
 	char * test_write;
@@ -67,7 +67,7 @@ int main(){
 		if(i % 100 == 0)
 			printf("writes done: %d\n", i);
 		memset(test_write, (i % 8) + 1, block_size * 10);
-		lfs_write(myfd, test_write, block_size, (rand() % 1000) * block_size);
+		lfs_write(myfd, test_write, block_size * 10, (rand() % 1000) * block_size * 10);
 		clear_cache(); // clear the cache
 	}
 	free(test_write);

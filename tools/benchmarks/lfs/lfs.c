@@ -31,7 +31,7 @@ int lfs_open(char *df, int flags, mode_t mode)
 	printf("lfsfilename: %s\n", metafile);
 	lfsfilename = strdup(metafile);
 	lfsfiles[current_index].log_file = fopen(lfsfilename, "a+");
-	lfsfiles[current_index].data_file = open(filename, O_CREAT|O_APPEND|O_RDWR, S_IRUSR|S_IWUSR);
+	lfsfiles[current_index].data_file = open(filename, O_CREAT|O_APPEND|O_RDWR|O_SYNC|O_RSYNC, S_IRUSR|S_IWUSR);
 	current_index++;
 
 	return current_index - 1;
@@ -39,16 +39,10 @@ int lfs_open(char *df, int flags, mode_t mode)
 
 // this is the LFS write function
 ssize_t lfs_write(int fd, void *buf, size_t count, off_t offset){
-//void lfs_write(size_t addr, char * data){
-	//struct lfs_files *fdp = (struct lfs_files *) fd;
-  //int d_file = open(fdp->data_file, O_CREAT|O_APPEND|O_RDWR, S_IRUSR|S_IWUSR);
-  //FILE * lfs = fopen(fdp->log_file, "a");
   size_t ret = 0;
-
   size_t data_size;
-  //size_t block_num;
   data_size = count;
-	// printf("give data size to lfs_write: %d\n", data_size);
+	// printf("given data size to lfs_write: %d\n", data_size);
   //block_num = data_size / block_size;  // we assume that data length is multiple of block_size !!!
   
 	// determining the END OF FILE exact address
