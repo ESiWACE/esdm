@@ -27,11 +27,11 @@ int lfs_open(char* df, char* mf)
 	lfsfilename = strdup(mf);
 	printf("filename: %s\n", filename);
 	printf("lfsfilename: %s\n", lfsfilename);
-	
+
 	lfsfiles[current_index].log_file = fopen(lfsfilename, "a+");
 	lfsfiles[current_index].data_file = open(filename, O_CREAT|O_APPEND|O_RDWR, S_IRUSR|S_IWUSR);
 	current_index++;
-	
+
 	return current_index - 1;
 }
 
@@ -72,18 +72,17 @@ ssize_t lfs_write(int fd, void *buf, size_t count, off_t offset){
 lfs_record * read_record(int fd){
 	int ret;
 	// find the number of items in the array by using the size of the metadata file
-  	//struct stat stats;	
+  	//struct stat stats;
 	//ret = fstat(myfd, & stats);
-	printf("this is FD %d\n",fd);
+	//printf("this is FD %d\n",fd);
 	size_t fileLen;
 	fseek(lfsfiles[fd].log_file, 0, SEEK_END);
 	fileLen = ftell(lfsfiles[fd].log_file);
 	fseek(lfsfiles[fd].log_file, 0, SEEK_SET);
   //assert(ret == 0);
   int record_count = fileLen / sizeof(lfs_record_on_disk);
-	printf("this is size %d\n",record_count);
+	//printf("this is size %d\n",record_count);
   lfs_record * records = (lfs_record *)malloc(sizeof(lfs_record) * record_count);
-  
   size_t file_position = 0;
 
 	// filling the created array with the values inside the metadata file
@@ -110,7 +109,7 @@ struct tup compare_tup(struct tup first, struct tup second){
 		if (first.b <= second.b){
 			res.a = second.a;
 			res.b = first.b;
-		} 
+		}
 		else{
 			res.a = second.a;
 			res.b = second.b;
@@ -120,7 +119,7 @@ struct tup compare_tup(struct tup first, struct tup second){
 		if (first.b <= second.b){
 			res.a = first.a;
 			res.b = first.b;
-		} 
+		}
 		else{
 			res.a = first.a;
 			res.b = second.b;
@@ -133,8 +132,8 @@ struct tup compare_tup(struct tup first, struct tup second){
 
 // recursive function that finds all of the areas that should be read to complete a read query
 int lfs_find_chunks(size_t a, size_t b, int index, struct lfs_record * my_recs, struct lfs_record * chunks_stack, int* ch_s){
-	printf("check it out: %zu %zu, %d\n", a, b, index);
-	
+//	printf("check it out: %zu %zu, %d\n", a, b, index);
+
 	// this IF is for ending the recursion
 	if(a == b)
 		return 0;
@@ -173,10 +172,10 @@ size_t lfs_read(int fd, char *buf, size_t count, off_t offset){
 //size_t lfs_read(size_t addr, size_t size, char * res){
 	//int fd = open(filename, O_RDONLY);
 	struct lfs_record temp;
-	
+
 	// get the latest updated logs
 	struct lfs_record * my_recs = read_record(fd);
-	
+
 	// create the vector that acts like a stack for our finding chunks recursive function
 	struct lfs_record * chunks_stack;
 	chunks_stack = (lfs_record *)malloc(sizeof(lfs_record) * 101);
@@ -198,7 +197,7 @@ size_t lfs_read(int fd, char *buf, size_t count, off_t offset){
 	// perform the read
 	for(int i = 0; i < total_found_count; i++){
 		temp = chunks_stack[i];
-		printf("chunk stack: (%zu, %zu, %zu)\n",temp.addr,temp.size,temp.pos);
+//		printf("chunk stack: (%zu, %zu, %zu)\n",temp.addr,temp.size,temp.pos);
 		pread(lfsfiles[fd].data_file, &buf[(temp.addr - offset)/sizeof(char)], temp.size, temp.pos);
 	}
 	// Optimization: Write down the read query for future reads!
@@ -215,14 +214,14 @@ void lfs_vec_add(struct lfs_record* chunks_stack, int * size, struct lfs_record 
 		struct lfs_record* new_stack;
 		//struct lfs_record* temp;
 		int rtd = *size + 100;
-		printf("allocating %d size\n", rtd);
+//		printf("allocating %d size\n", rtd);
 		new_stack = (lfs_record *)realloc(chunks_stack, sizeof(lfs_record) * rtd);
 		/*for(int i=0; i < *size - 1; i++){
 			new_stack[i].addr = chunks_stack[i].addr;
 			new_stack[i].size = chunks_stack[i].size;
 			new_stack[i].pos = chunks_stack[i].pos;
 		}*/
-		printf("done\n");
+//		printf("done\n");
 		//free(chunks_stack);
 		chunks_stack = new_stack;
 		//free(temp);
