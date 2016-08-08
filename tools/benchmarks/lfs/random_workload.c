@@ -18,10 +18,10 @@
 
 void clear_cache(){
 	sync();
-
-	int fd = open("/proc/sys/vm/drop_caches", O_WRONLY);
-	write(fd, "3", 1);
-	close(fd);
+	system("sudo /home/hr/drop-caches.sh");
+	//int fd = open("/proc/sys/vm/drop_caches", O_WRONLY);
+	//write(fd, "3", 1);
+	//close(fd);
 }
 
 
@@ -41,7 +41,7 @@ int main(){
 	*/
 
 #ifdef LFS_DUMMY_OPERATION
-int myfd = lfs_open("datafile.df", O_CREAT|O_APPEND|O_RDWR, S_IRUSR|S_IWUSR);
+int myfd = lfs_open("datafile-dummy.df", O_CREAT|O_APPEND|O_RDWR, S_IRUSR|S_IWUSR);
 #else
 int myfd = lfs_open("datafile.df", "metafile.mf");
 #endif
@@ -53,6 +53,7 @@ int myfd = lfs_open("datafile.df", "metafile.mf");
 	struct timeval tv;
 	char * fill_file;
 
+	clear_cache();
 	gettimeofday(&tv, NULL);
 	start = (unsigned long long)(tv.tv_sec) * 1000 + (unsigned long long)(tv.tv_usec) / 1000;
 	srand(start);
