@@ -31,7 +31,7 @@ int lfs_open(char *df, int flags, mode_t mode)
 	printf("lfsfilename: %s\n", metafile);
 	lfsfilename = strdup(metafile);
 	lfsfiles[current_index].log_file = fopen(lfsfilename, "a+");
-	lfsfiles[current_index].data_file = open(filename, O_CREAT|O_APPEND|O_RDWR|O_SYNC|O_RSYNC, S_IRUSR|S_IWUSR);
+	lfsfiles[current_index].data_file = open(filename, O_CREAT|O_RDWR, S_IRUSR|S_IWUSR);
 	current_index++;
 
 	return current_index - 1;
@@ -39,21 +39,21 @@ int lfs_open(char *df, int flags, mode_t mode)
 
 // this is the LFS write function
 ssize_t lfs_write(int fd, void *buf, size_t count, off_t offset){
-  size_t ret = 0;
+  int ret = 0;
   size_t data_size;
   data_size = count;
 	// printf("given data size to lfs_write: %d\n", data_size);
   //block_num = data_size / block_size;  // we assume that data length is multiple of block_size !!!
-  
+
 	// determining the END OF FILE exact address
 	struct stat stats;
   //stat(fdp->data_file, & stats);
 	fstat(lfsfiles[fd].data_file, &stats);
-  int end_of_file = stats.st_size;
-  
+  size_t  end_of_file = stats.st_size;
+//	printf("e of f is: %lu\n",end_of_file);
 	// perfoming the lfs write ---> appending the data into the END OF FILE
   ret = pwrite(lfsfiles[fd].data_file, buf, data_size, end_of_file);
-  
+//	printf("ret is: %d\n",ret);
 	// writing the mapping info for the written data to know it's exact address later
   fwrite(& offset, sizeof(offset), 1, lfsfiles[fd].log_file);
   fwrite(& data_size, sizeof(data_size), 1, lfsfiles[fd].log_file);
@@ -95,13 +95,13 @@ lfs_record * read_record(int fd){
 }
 
 
-// finds the common are between two given tuples 
+// finds the common are between two given tuples
 struct tup compare_tup(struct tup first, struct tup second){
 	struct tup res;
 	res.a = -1;
 	res.b = -1;
 	//printf("tups: (%d,%d) and (%d,%d)\n", first.a, first.b, second.a, second.b); 
-	if (first.a <= second.a && first.b >= second.a){
+	if (first.a <= second.a && first.b > second.a){
 		if (first.b <= second.b){
 			res.a = second.a;
 			res.b = first.b;
@@ -111,7 +111,7 @@ struct tup compare_tup(struct tup first, struct tup second){
 			res.b = second.b;
 		}
 	}
-	if (first.a >= second.a && first.a <= second.b){
+	if (first.a >= second.a && first.a < second.b){
 		if (first.b <= second.b){
 			res.a = first.a;
 			res.b = first.b;
@@ -128,7 +128,7 @@ struct tup compare_tup(struct tup first, struct tup second){
 
 // recursive function that finds all of the areas that should be read to complete a read query
 int lfs_find_chunks(size_t a, size_t b, int index, struct lfs_record * my_recs, struct lfs_record * chunks_stack, int* ch_s){
-//	printf("check it out: %zu %zu, %d\n", a, b, index);
+	//printf("check it out: %zu %zu, %d\n", a, b, index);
 
 	// this IF is for ending the recursion
 	if(a == b)
@@ -150,7 +150,7 @@ int lfs_find_chunks(size_t a, size_t b, int index, struct lfs_record * my_recs, 
 		index--;
 	}
 	struct lfs_record found;
-	//printf("result: %d, %d\n", res.a, res.b);
+	//printf("result: %lu, %lu\n", res.a, res.b);
 	found.addr = res.a;
 	found.size = res.b - res.a;
 	found.pos = my_recs[index + 1].pos + res.a - my_recs[index + 1].addr;
@@ -168,7 +168,7 @@ size_t lfs_read(int fd, char *buf, size_t count, off_t offset){
 //size_t lfs_read(size_t addr, size_t size, char * res){
 	//int fd = open(filename, O_RDONLY);
 	struct lfs_record temp;
-
+	//int rtrd;
 	// get the latest updated logs
 	struct lfs_record * my_recs = read_record(fd);
 
@@ -186,6 +186,8 @@ size_t lfs_read(int fd, char *buf, size_t count, off_t offset){
 	fileLen = ftell(lfsfiles[fd].log_file);
 	fseek(lfsfiles[fd].log_file, 0, SEEK_SET);
   int record_count = fileLen / sizeof(lfs_record_on_disk);
+	//for(int mm = 0; mm < record_count; mm++)
+	//	printf("rec: %lu, %lu, %lu\n", my_recs[mm].addr, my_recs[mm].size, my_recs[mm].pos);
 	// call the recursive function to find which areas need to be read
 	lfs_find_chunks(offset, offset + count, record_count - 1, my_recs, chunks_stack, &ch_s);
 	int total_found_count = ch_s - 1;
@@ -193,8 +195,9 @@ size_t lfs_read(int fd, char *buf, size_t count, off_t offset){
 	// perform the read
 	for(int i = 0; i < total_found_count; i++){
 		temp = chunks_stack[i];
-//		printf("chunk stack: (%zu, %zu, %zu)\n",temp.addr,temp.size,temp.pos);
+		//printf("chunk stack: (%zu, %zu, %zu)\n",temp.addr,temp.size,temp.pos);
 		pread(lfsfiles[fd].data_file, &buf[(temp.addr - offset)/sizeof(char)], temp.size, temp.pos);
+		//printf("rtrd is: %d\n",rtrd);
 	}
 	// Optimization: Write down the read query for future reads!
 	if (1 == 0){
@@ -226,4 +229,10 @@ void lfs_vec_add(struct lfs_record* chunks_stack, int * size, struct lfs_record 
 	*size += 1;
 	//printf("added chunk: %d, %d, %d\n", chunk.addr, chunk.size, chunk.pos);
 	//printf("added chunk: %d, %d, %d\n", chunks_stack[*size - 2].addr, chunks_stack[*size - 2].size, chunks_stack[*size - 2].pos);
+}
+
+int  lfs_close(int  handle){
+	fclose(lfsfiles[handle].log_file);
+	close(lfsfiles[handle].data_file);
+	return 0;
 }
