@@ -42,7 +42,7 @@ ssize_t lfs_write(int fd, void *buf, size_t count, off_t offset){
   int ret = 0;
   size_t data_size;
   data_size = count;
-	// printf("given data size to lfs_write: %d\n", data_size);
+//	printf("given data size to lfs_write: %lld\n", offset);
   //block_num = data_size / block_size;  // we assume that data length is multiple of block_size !!!
 
 	// determining the END OF FILE exact address
@@ -141,6 +141,7 @@ int lfs_find_chunks(size_t a, size_t b, int index, struct lfs_record * my_recs, 
 	// search through the logs until you find a record that overlaps with the given query area
 	while(res.a == -1){
 		if(index < 0){
+			//printf("check it out: %ll %ll, %d\n", a, b, index);
 			printf("didn't find\n");
 			return 0;
 		}

@@ -16,12 +16,12 @@ struct lfs_files{
 };
 
 typedef struct {
-  size_t addr;
+  off_t addr;
   size_t size;
 } lfs_record_on_disk;
 
 typedef struct lfs_record{
-  size_t addr;
+  off_t addr;
   size_t size;
   size_t pos;
 } lfs_record;

@@ -18,7 +18,7 @@
 
 void clear_cache(){
 	sync();
-	system("sync && echo 3 > /proc/sys/vm/drop_caches");
+	system("sudo /home/hr/drop-caches.sh");
 //	int fd = open("/proc/sys/vm/drop_caches", O_WRONLY);
 //	write(fd, "1", 1);
 //	close(fd);
@@ -26,7 +26,8 @@ void clear_cache(){
 
 
 int main ( int argc, char *argv[] ){
-
+	printf("---------------------\n");
+//	printf("sizeof(size_t)= %d\n", sizeof(size_t));
 	if ( argc != 3 ) /* argc should be 3 for correct execution */
 	{
         	/* We print argv[0] assuming it is the program name */
@@ -47,33 +48,39 @@ int main ( int argc, char *argv[] ){
 	unsigned long long finish;
 	unsigned long long seconds;
 	struct timeval tv;
-	char * fill_file;
-
+//	char * fill_file;
+	long long myrand;
 	clear_cache();
 //	int rett = 0;
 	gettimeofday(&tv, NULL);
 	start = (unsigned long long)(tv.tv_sec) * 1000 + (unsigned long long)(tv.tv_usec) / 1000;
 	srand(start);
-	size_t seq_io = 800 * 1024 * 1024;
-	fill_file = (char *)malloc(seq_io);
-	memset(fill_file, 4, seq_io);
-	for(int iii = 0; iii < 20; iii++)
-		lfs_write(myfd, fill_file, seq_io, seq_io * iii);
-	printf("16 GB datafile created!\n");
-	clear_cache(); // clear the cache
-	lfs_close(myfd); // closing the file
-	myfd = lfs_open(argv[1], O_CREAT|O_RDWR, S_IRUSR|S_IWUSR); // re-openning the file
+//	size_t seq_io = 800 * 1024 * 1024;
+//	fill_file = (char *)malloc(seq_io);
+//	memset(fill_file, 4, seq_io);
+//	for(int iii = 0; iii < 40; iii++)
+//		lfs_write(myfd, fill_file, seq_io, seq_io * iii);
+//	printf("32 GB datafile created!\n");
+//	clear_cache(); // clear the cache
+//	lfs_close(myfd); // closing the file
+//	myfd = lfs_open(argv[1], O_CREAT|O_RDWR, S_IRUSR|S_IWUSR); // re-openning the file
 	char * test_write;
-	free(fill_file);
+//	free(fill_file);
 	test_write = (char *)malloc(block_size);
-	for(int i = 0; i < 1000; i ++)
+	memset(test_write, 3, block_size);
+	int for_limit;
+	if(block_size > 64 * 1024)
+		for_limit = 1000;
+	else
+		for_limit = 1000000;
+	for(int i = 0; i < for_limit; i++)
 	{
-		if(i % 100 == 0)
-			printf("writes done: %d\n", i);
-		memset(test_write, (i % 8) + 1, block_size);
-		lfs_write(myfd, test_write, block_size, (rand() % 100) * block_size);
-		clear_cache(); // clear the cache
+		//if(i % 50 == 0)
+		myrand = (long long)(rand() % 8192) * 1048576 * 4;
+		//	printf("random offset : %lld\n", myrand);
+		lfs_write(myfd, test_write, block_size, myrand);
 	}
+        clear_cache(); // clear the cache
 	free(test_write);
 	lfs_close(myfd); // closing the file
 
@@ -86,10 +93,13 @@ int main ( int argc, char *argv[] ){
 	start = (unsigned long long)(tv.tv_sec) * 1000 + (unsigned long long)(tv.tv_usec) / 1000;
 	myfd = lfs_open(argv[1], O_CREAT|O_RDWR, S_IRUSR|S_IWUSR); // re-openning the file
 	char * test_read;
+	srand(start);
 //	size_t read_bytes;
-	test_read = (char *)malloc(block_size * 10);
-	for(int ii = 0; ii < 10; ii++)
-		lfs_read(myfd, test_read, block_size * 10, block_size * ii * 10);
+	test_read = (char *)malloc(8192 * 102400);
+	for(int ii = 0; ii < 40; ii++){
+		//myrand = (long long)(rand() % 8192) * 1048576 * 2;
+		lfs_read(myfd, test_read, 8192 * 102400, (long long)8192 * 102400 * ii);
+	}
 	//free(test_read);
 	gettimeofday(&tv, NULL);
 	finish = (unsigned long long)(tv.tv_sec) * 1000 + (unsigned long long)(tv.tv_usec) / 1000;
