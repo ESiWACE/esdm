@@ -18,35 +18,33 @@
 #include <string.h>
 
 
-memvol_file_t* g_file;
 
 static void * memvol_file_create(const char *name, unsigned flags, hid_t fcpl_id, hid_t fapl_id, hid_t dxpl_id, void **req)
 {
     puts("memvol_file_create() called!");
 
-    g_file = (memvol_file_t *)calloc(1, sizeof(memvol_file_t));
-    printf("filename: %s\n", name);
+    //speicher allocieren
+    memvol_file_t* file = (memvol_file_t *)malloc(sizeof(memvol_file_t));
 
-    int myvalue = 7;
+    file->root_group = (memvol_group_t *)malloc(sizeof(memvol_group_t));
+    file->name = (char*)malloc(strlen(name));
 
-    GHashTable * table;
+    //werte initialisieren
+    file->root_group->children = g_hash_table_new(g_str_hash, g_str_equal);
+    g_hash_table_insert(file->root_group->children, strdup("/"), file);
+    strcpy(file->name, name);
+
+    //debug ausgaben
+    puts("Datei erstellt!");
+    printf("Name: %s\n", file->name);
     
-    table = g_hash_table_new (g_str_hash, g_str_equal ); 
-   
-    g_hash_table_insert(table,"mykey", &myvalue);
-    printf("Hash table size: %d\n", g_hash_table_size(table));
-  
-    g_hash_table_insert(table,"mykey2", &myvalue);
-    printf("Hash table size: %d\n", g_hash_table_size(table));
+    if (file->root_group->children != NULL) {
+        printf("Root-Group erstellt: %p\n", (void*)file->root_group);
+    } else {
+        puts("Keine Root Gruppe erstellt!");
+    }
 
-    int* output1 = g_hash_table_lookup(table, "mykey");
-    printf("lookup1: %d\n", *output1);
-
-    g_file->name = (char*)malloc(strlen(name));
-    g_file->root_group = (memvol_group_t*)malloc(sizeof(*g_file->root_group));
-    strcpy(g_file->name, name);
-
-    return (void *)g_file;
+    return (void *)file;
 }
 
 static void * memvol_file_open(const char *name, unsigned flags, hid_t fapl_id, hid_t dxpl_id, void **req)
@@ -54,7 +52,7 @@ static void * memvol_file_open(const char *name, unsigned flags, hid_t fapl_id, 
     memvol_file_t *f;
     f = (memvol_file_t *)calloc(1, sizeof(memvol_file_t));
 
-    printf("memvol_file_open() called!\n");
+    puts("memvol_file_open() called!");
 
     return (void *)f;
 }
@@ -67,6 +65,7 @@ static herr_t memvol_file_get(void *file, H5VL_file_get_t get_type, hid_t dxpl_i
 
 static herr_t memvol_file_close(void *file, hid_t dxpl_id, void **req)
 {
+    puts("memvol_file_close() called!");
     memvol_file_t *f = (memvol_file_t *)file;
     free(f->name);
     free(f->root_group);
