@@ -18,27 +18,25 @@
 #include <memvol.h>
 
 int main(){
-  hid_t fprop;
-  hid_t fid, group_id;
-  hid_t vol_id = H5VL_memvol_init();
+    hid_t fprop;
+    hid_t fid, group_id;
+    hid_t vol_id = H5VL_memvol_init();
 
-  char name[1024];
+    char name[1024];
 
-  fprop = H5Pcreate(H5P_FILE_ACCESS);
-  H5Pset_vol(fprop, vol_id, &fprop);
+    fprop = H5Pcreate(H5P_FILE_ACCESS);
+    H5Pset_vol(fprop, vol_id, &fprop);
 
-  fid = H5Fcreate("test.h5", H5F_ACC_TRUNC, H5P_DEFAULT, fprop);
-  H5VLget_plugin_name(fid, name, 1024);
-  printf ("Using VOL %s\n", name);
+    fid = H5Fcreate("test.h5", H5F_ACC_TRUNC, H5P_DEFAULT, fprop);
+    H5VLget_plugin_name(fid, name, 1024);
+    printf ("Using VOL %s\n", name);
 
-     /* Create a group named "/MyGroup" in the file. */
-   group_id = H5Gcreate(fid, "/MyGroup", H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
-   group_id = H5Gcreate(fid, "/MyGroup1", H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
-   group_id = H5Gcreate(fid, "/MyGroup2", H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
+    /* Create a group named "/MyGroup" in the file. */
+    group_id = H5Gcreate(fid, "/MyGroup", H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
+    group_id = H5Gcreate(fid, "/MyGroup1", H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
+    group_id = H5Gcreate(fid, "/MyGroup2", H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
 
-   H5Fclose(fid);
+    H5VL_memvol_finalize();
 
-  H5VL_memvol_finalize();
-
-  return 0;
+    return 0;
 }

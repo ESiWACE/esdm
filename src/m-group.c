@@ -19,45 +19,40 @@
 
 static void* memvol_group_create(void* obj, H5VL_loc_params_t loc_params, const char* name, hid_t gcpl_id, hid_t gapl_id, hid_t dxpl_id, void** req)
 {
-    printf("function memvol_group_create called!\n");
+    puts("memvol_group_create() called!");
 
-    memvol_group_t* grp;
-    grp = (memvol_group_t *)calloc(1, sizeof(memvol_group_t));//
+    //speicher allocieren
+    memvol_group_t* group = (memvol_group_t *)malloc(sizeof(memvol_group_t));
 
-    grp->name = (char*)malloc(strlen(name));//
-    grp->children = (GHashTable*)malloc(sizeof(GHashTable*));//
-    strcpy(grp->name, name);//
-    GHashTable* table = g_hash_table_new(g_str_hash, g_str_equal);//
-    size_t size = sizeof(GHashTable*);
-    memcpy(grp->children, table, size);//
-    
-    printf("%s\n", grp->name);//
-    printf("GHashTable size: %d\n", g_hash_table_size(grp->children));
-    // TODO
-    // Objekte richtig einfuegen (g_hash_table_lookup_node Error ?)
-    // Erstellen und suchen/oeffnen von groups ueber ihren Namen
-    //char* testing = "testing";
-    //g_hash_table_insert(grp->children, "dataset1", &testing);
-    //printf("GHashTable size: %d\n", g_hash_table_size(grp->children));
-    //printf("GHashTable content: \'%s\'\n", g_hash_table_lookup(grp->children, testing));
+    group->name = (char*)malloc(strlen(name));
+    group->children = (GHashTable*)malloc(sizeof(GHashTable*));
 
-    return (void*)grp;//
+    //werte initialisieren
+    memvol_group_t* parent_group = (memvol_group_t *)obj;
+
+    strcpy(group->name, name);
+    group->children = g_hash_table_new(g_str_hash, g_str_equal);
+
+    //debug ausgaben
+    printf("Gruppe erstellt: %p\n", (void*)group);
+    printf("Parent-Group-Name: %s\n", parent_group->name);
+
+    return (void*)group;
 }
 
 static herr_t memvol_group_close(void* grp, hid_t dxpl_id, void** req) {
 
-    printf("function memvol_group_close called!\n");
+    puts("memvol_group_close() called!");
 
-    memvol_group_t *g = (memvol_group_t*)grp;//
-    free(g->name);//
-    free(g->children);//
-    free(g);//
+    memvol_group_t *g = (memvol_group_t*)grp;
+    free(g->name);
+    free(g->children);
+    free(g);
 
-    g->name = NULL;//
-    g->children = NULL;//
-    g = NULL;//
+    g->name = NULL;
+    g->children = NULL;
+    g = NULL;
 
-    //printf("CALL: %s\n", __PRETTY_FUNCTION__);
     return 1;
 }
 

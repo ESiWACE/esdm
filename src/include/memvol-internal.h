@@ -17,12 +17,16 @@
 #define H5_MEMVOL_INTERNAL_HEADER__
 
 typedef struct {
-    char* name;
     GHashTable* children;
+    char* name;
 } memvol_group_t;
 
 typedef struct {
     char* name;
+} memvol_dataset_t;
+
+typedef struct {
     memvol_group_t* root_group;
+    char* name;
 } memvol_file_t;
 #endif
