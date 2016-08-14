@@ -21,7 +21,7 @@
 
 static void * memvol_file_create(const char *name, unsigned flags, hid_t fcpl_id, hid_t fapl_id, hid_t dxpl_id, void **req)
 {
-    puts("memvol_file_create() called!");
+    puts("------------ memvol_file_create() called ------------");
 
     //speicher allocieren
     memvol_file_t* file = (memvol_file_t *)malloc(sizeof(memvol_file_t));
@@ -38,21 +38,28 @@ static void * memvol_file_create(const char *name, unsigned flags, hid_t fcpl_id
     file->root_group->children = g_hash_table_new(g_str_hash, g_str_equal);
     strcpy(file->root_group->name, "/");
 
-    object->type = GROUP_T;
-    object->subclass = file->root_group;
+    //object->type = GROUP_T;
+    //object->subclass = file->root_group;
+    object->type = FILE_T;
+    object->subclass = file;
 
     g_hash_table_insert(file->root_group->children, strdup("/"), object);
 
     strcpy(file->name, name);
 
     //debug ausgaben
-    printf("Datei %s erstellt!\n", file->name);
+    printf("Datei %s (%p) erstellt!\n", file->name, (void*)file);
     
     if (file->root_group != NULL) {
-        printf("Root-Group erstellt: %p\n", (void*)file->root_group);
+        printf("Root-Group '/' (%p)\n", (void*)file->root_group);
+
     } else {
         puts("Keine Root Gruppe erstellt!");
+
     }
+
+    puts("------------------------------------------------------");
+    puts("");
 
     return (void *)object;
 }
@@ -76,15 +83,20 @@ static herr_t memvol_file_get(void *file, H5VL_file_get_t get_type, hid_t dxpl_i
 static herr_t memvol_file_close(void *file, hid_t dxpl_id, void **req)
 {
     puts("memvol_file_close() called!");
-    /*
-    memvol_file_t *f = (memvol_file_t *)file;
-    free(f->name);
-    free(f->root_group);
-    free(f);
 
-    f->name = NULL;
+    memvol_file_t* f = (memvol_file_t *)((memvol_object_t *)file)->subclass;
+
+    //free(f->root_group->name);
+    //g_hash_table_remove(f->root_group->children, "/");
+    //g_free(f->root_group->children);                     /* SEG FAULT */
+    //free(f->root_group);
+    free(f->name);
+    free(f);
+    //f->root_group->children = NULL;
+    //f->root_group->name = NULL;
     f->root_group = NULL;
+    f->name = NULL;
     f = NULL;
-    */
+
     return 1;
 }

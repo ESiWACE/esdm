@@ -28,8 +28,10 @@ int main(){
     H5Pset_vol(fprop, vol_id, &fprop);
 
     fid = H5Fcreate("test.h5", H5F_ACC_TRUNC, H5P_DEFAULT, fprop);
+
     H5VLget_plugin_name(fid, name, 1024);
     printf ("Using VOL %s\n", name);
+    puts("");
 
     /* Create a group named "/MyGroup" in the file. */
     group_id = H5Gcreate(fid, "/MyGroup", H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
