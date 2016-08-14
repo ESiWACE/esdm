@@ -23,21 +23,45 @@ static void* memvol_group_create(void* obj, H5VL_loc_params_t loc_params, const 
 
     //speicher allocieren
     memvol_group_t* group = (memvol_group_t *)malloc(sizeof(memvol_group_t));
+    memvol_object_t* object = (memvol_object_t *)malloc(sizeof(memvol_object_t));
 
     group->name = (char*)malloc(strlen(name));
     group->children = (GHashTable*)malloc(sizeof(GHashTable*));
 
+    object->type = (memvol_object_type)malloc(sizeof(memvol_object_type));
+    object->subclass = (memvol_group_t *)malloc(sizeof(memvol_group_t));
+
     //werte initialisieren
-    memvol_group_t* parent_group = (memvol_group_t *)obj;
+    memvol_object_t* o = (memvol_object_t *)obj;
+    memvol_group_t* parent_group;
+    if (o->type == GROUP_T) {
+        parent_group = (memvol_group_t *)o->subclass;
+    } else if (o->type == FILE_T){
+        parent_group = (memvol_group_t *)((memvol_file_t *)o->subclass)->root_group;
+    } else {
+        return (void*)0;
+    }
+
+    object->type = GROUP_T;
+    object->subclass = group;
 
     strcpy(group->name, name);
     group->children = g_hash_table_new(g_str_hash, g_str_equal);
 
+    g_hash_table_insert(parent_group->children, strdup(name), object);
+
     //debug ausgaben
     printf("Gruppe erstellt: %p\n", (void*)group);
     printf("Parent-Group-Name: %s\n", parent_group->name);
+    GList* children_keys = g_hash_table_get_values(parent_group->children);
+    printf("Children of Parent: ");
+    GList* l;
+    for (l = children_keys; l != NULL; l = l->next) {
+        printf("%s  ", l->data);
+    }
+    puts("\n");
 
-    return (void*)group;
+    return (void*)object;
 }
 
 static herr_t memvol_group_close(void* grp, hid_t dxpl_id, void** req) {
@@ -46,8 +70,8 @@ static herr_t memvol_group_close(void* grp, hid_t dxpl_id, void** req) {
 
     memvol_group_t *g = (memvol_group_t*)grp;
     free(g->name);
-    free(g->children);
-    free(g);
+    //free(g->children);
+    //free(g);
 
     g->name = NULL;
     g->children = NULL;

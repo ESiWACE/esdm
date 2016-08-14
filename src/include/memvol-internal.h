@@ -29,4 +29,14 @@ typedef struct {
     memvol_group_t* root_group;
     char* name;
 } memvol_file_t;
+
+typedef enum {
+    GROUP_T,
+    FILE_T
+} memvol_object_type;
+
+typedef struct {
+    memvol_object_type type;
+    void* subclass; //entweder memvol_group_t* oder memvol_file_t* -> type member
+} memvol_object_t;
 #endif
