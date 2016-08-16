@@ -37,8 +37,8 @@ static void* memvol_group_create(void* obj, H5VL_loc_params_t loc_params, const 
     if (o->type == GROUP_T) {
         parent_group = (memvol_group_t *)o->subclass;
 
-    } else if (o->type == FILE_T){
-        parent_group = ((memvol_file_t *)o->subclass)->root_group;
+    //} else if (o->type == FILE_T){
+    //    parent_group = ((memvol_file_t *)o->subclass)->root_group;
 
     } else {
         return (void *)0;
@@ -65,8 +65,8 @@ static void* memvol_group_create(void* obj, H5VL_loc_params_t loc_params, const 
         if (obj->type == GROUP_T) {
             printf("%s  ", ((memvol_group_t *)obj->subclass)->name);
 
-        } else if (obj->type == FILE_T) {
-            printf("%s  ", ((memvol_file_t *)obj->subclass)->root_group->name);
+        //} else if (obj->type == FILE_T) {
+        //    printf("%s  ", ((memvol_file_t *)obj->subclass)->root_group->name);
 
         }
         children_keys = children_keys->next;
@@ -78,6 +78,32 @@ static void* memvol_group_create(void* obj, H5VL_loc_params_t loc_params, const 
     puts("");
 
     return (void *)object;
+}
+
+static void * memvol_group_open(void* object, H5VL_loc_params_t loc_params, const char* name, hid_t gapl_id, hid_t dxpl_id, void **req)
+{
+    puts("------------ memvol_group_open() called --------------");
+
+    memvol_object_t* obj = (memvol_object_t *)object;
+    memvol_group_t* parent;
+
+    if (obj->type == GROUP_T) {
+        parent = (memvol_group_t *)obj->subclass;
+
+    //} else if (obj->type == FILE_T) {
+    //    parent = (memvol_group_t *)((memvol_file_t *)obj->subclass)->root_group;
+
+    }
+    memvol_object_t* ret = g_hash_table_lookup(parent->children, name);
+
+    //debug asugaben
+    memvol_group_t* found = (memvol_group_t *)ret->subclass;
+    printf("Group %s (%p) im Parent %s (%p) geoeffnet\n", found->name, (void*)found, parent->name, (void*) parent);
+
+    puts("------------------------------------------------------");
+    puts("");
+
+    return (void *)ret;
 }
 
 static herr_t memvol_group_close(void* grp, hid_t dxpl_id, void** req) {
@@ -96,8 +122,19 @@ static herr_t memvol_group_close(void* grp, hid_t dxpl_id, void** req) {
     return 1;
 }
 
-static void* memvol_group_get(void *group, H5VL_group_get_t get_type, hid_t dxpl_id, void **req, va_list arguments)
+static herr_t memvol_group_get(void *group, H5VL_group_get_t get_type, hid_t dxpl_id, void **req, va_list arguments)
 {
-    memvol_group_t *g = (memvol_group_t *)group;
-    return (void*)g->children;
+    memvol_group_t *g = (memvol_group_t *)((memvol_object_t *)group)->subclass;
+
+    //get_type entweder 'group creation property list' oder 'group info'
+    //--> vol/src/H5VLpublic.h
+    if (get_type == H5VL_GROUP_GET_GCPL) {
+        return 0;
+
+    } else if (get_type == H5VL_GROUP_GET_INFO) {
+        return 0;
+
+    } else {
+        return -1;
+    }
 }
