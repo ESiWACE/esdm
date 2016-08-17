@@ -28,13 +28,17 @@ void clear_cache(){
 int main ( int argc, char *argv[] ){
 	printf("---------------------\n");
 //	printf("sizeof(size_t)= %d\n", sizeof(size_t));
-	if ( argc != 3 ) /* argc should be 3 for correct execution */
+	if ( argc != 5 ) /* argc should be 3 for correct execution */
 	{
         	/* We print argv[0] assuming it is the program name */
-        	printf( "correct usage: %s <path to datafile> <random I/O size in Bytes>\n NOTE: I/O size should be multiple of 512 bytes (one sector)\n", argv[0] );
+        	printf( "correct usage: %s <path to datafile> <random I/O size in Bytes> <file size in Bytes> <iterations>\n NOTE: I/O size should be multiple of 512 bytes (one sector)\n", argv[0] );
 		return -1;
 	}
 	size_t block_size = atoi(argv[2]);
+	size_t file_size = (size_t) atoll(argv[3]);
+	int iterations = atoi(argv[4]);
+
+	assert(block_size < 2^30);
 
 	///---- setting files name ----///
 
@@ -77,18 +81,15 @@ int main ( int argc, char *argv[] ){
 //	free(fill_file);
 	test_write = (char *)malloc(block_size);
 	memset(test_write, 3, block_size);
-	rett = lfs_write(myfd, test_write, block_size, (long long) 32 * 1024 * 1048576);
-	if(rett <= 0)
-		printf("something is not right %d\n", rett);
-	int for_limit;
-	if(block_size > 64 * 1024)
-		for_limit = 1000;
-	else
-		for_limit = 10000;
-	for(int i = 0; i < for_limit; i++)
+	rett = lfs_write(myfd, test_write, 1, file_size - 1);
+	if(rett <= 0){
+		printf("Could not create the proper file size of %zu, %d\n", file_size, rett);
+	}
+
+	for(int i = 0; i < iterations; i++)
 	{
 		//if(i % 50 == 0)
-		myrand = (long long)(rand() % 8192) * 1048576 * 4;
+		myrand = ((rand() * block_size) % file_size);
 		//	printf("random offset : %lld\n", myrand);
 		rett = lfs_write(myfd, test_write, block_size, myrand);
 		if(rett <= 0)
@@ -119,9 +120,14 @@ int main ( int argc, char *argv[] ){
 	system("free -m | sed \"s/  */ /g\" | cut -d \" \" -f 7|tail -n 3");
 //	size_t read_bytes;
 	test_read = (char *)malloc(8192 * 102400);
-	for(int ii = 0; ii < 40; ii++){
+	
+	size_t blocksize = 8192 * 102400;
+	for(size_t pos = 0; pos < file_size; pos += block_size){
 		//myrand = (long long)(rand() % 8192) * 1048576 * 2;
-		lfs_read(myfd, test_read, 8192 * 102400, (long long)8192 * 102400 * ii);
+		lfs_read(myfd, test_read, blocksize, pos);
+		if (pos + blocksize > file_size){
+			blocksize = file_size - pos;
+		}
 	}
 	//free(test_read);
 //	system("cat /proc/%d/io", my_pid);
