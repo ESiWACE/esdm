@@ -21,30 +21,47 @@
 
 static void * memvol_file_create(const char *name, unsigned flags, hid_t fcpl_id, hid_t fapl_id, hid_t dxpl_id, void **req)
 {
-    puts("memvol_file_create() called!");
+    puts("------------ memvol_file_create() called ------------");
 
     //speicher allocieren
     memvol_file_t* file = (memvol_file_t *)malloc(sizeof(memvol_file_t));
+    memvol_object_t* object = (memvol_object_t *)malloc(sizeof(memvol_object_t));
 
     file->root_group = (memvol_group_t *)malloc(sizeof(memvol_group_t));
-    file->name = (char*)malloc(strlen(name));
+    file->name = (char *)malloc(strlen(name));
+    file->root_group->name = (char *)malloc(strlen("/"));
+
+    object->type = (memvol_object_type)malloc(sizeof(memvol_object_type));
+    object->subclass = (memvol_group_t *)malloc(sizeof(memvol_group_t));
 
     //werte initialisieren
-    file->root_group->children = g_hash_table_new(g_str_hash, g_str_equal);
-    g_hash_table_insert(file->root_group->children, strdup("/"), file);
     strcpy(file->name, name);
 
+    file->root_group->children = g_hash_table_new(g_str_hash, g_str_equal);
+    strcpy(file->root_group->name, "/");
+
+    object->type = GROUP_T;
+    object->subclass = (memvol_group_t *)file->root_group;
+    //object->type = FILE_T;
+    //object->subclass = file;
+
+    g_hash_table_insert(file->root_group->children, strdup("/"), object);
+
     //debug ausgaben
-    puts("Datei erstellt!");
-    printf("Name: %s\n", file->name);
+    printf("Datei %s (%p) erstellt!\n", file->name, (void*)file);
     
-    if (file->root_group->children != NULL) {
-        printf("Root-Group erstellt: %p\n", (void*)file->root_group);
+    if (file->root_group != NULL) {
+        printf("Root-Group '/' (%p)\n", (void*)file->root_group);
+
     } else {
         puts("Keine Root Gruppe erstellt!");
+
     }
 
-    return (void *)file;
+    puts("------------------------------------------------------");
+    puts("");
+
+    return (void *)object;
 }
 
 static void * memvol_file_open(const char *name, unsigned flags, hid_t fapl_id, hid_t dxpl_id, void **req)
@@ -66,14 +83,20 @@ static herr_t memvol_file_get(void *file, H5VL_file_get_t get_type, hid_t dxpl_i
 static herr_t memvol_file_close(void *file, hid_t dxpl_id, void **req)
 {
     puts("memvol_file_close() called!");
-    memvol_file_t *f = (memvol_file_t *)file;
-    free(f->name);
-    free(f->root_group);
-    free(f);
 
-    f->name = NULL;
-    f->root_group = NULL;
-    f = NULL;
+    //memvol_file_t* f = (memvol_file_t *)((memvol_object_t *)file)->subclass;
+    //
+    //free(f->root_group->name);
+    //g_hash_table_remove(f->root_group->children, "/");
+    //g_free(f->root_group->children);                     /* SEG FAULT */
+    //free(f->root_group);
+    //free(f->name);
+    //free(f);
+    //f->root_group->children = NULL;
+    //f->root_group->name = NULL;
+    //f->root_group = NULL;
+    //f->name = NULL;
+    //f = NULL;
 
     return 1;
 }

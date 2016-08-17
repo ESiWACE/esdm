@@ -19,7 +19,7 @@
 
 int main(){
     hid_t fprop;
-    hid_t fid, group_id;
+    hid_t fid, group_id, group_id2;
     hid_t vol_id = H5VL_memvol_init();
 
     char name[1024];
@@ -28,13 +28,15 @@ int main(){
     H5Pset_vol(fprop, vol_id, &fprop);
 
     fid = H5Fcreate("test.h5", H5F_ACC_TRUNC, H5P_DEFAULT, fprop);
+
     H5VLget_plugin_name(fid, name, 1024);
     printf ("Using VOL %s\n", name);
+    puts("");
 
     /* Create a group named "/MyGroup" in the file. */
     group_id = H5Gcreate(fid, "/MyGroup", H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
-    group_id = H5Gcreate(fid, "/MyGroup1", H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
-    group_id = H5Gcreate(fid, "/MyGroup2", H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
+    /* Create a group named "/MyOtherGroup" in "/MyGroup". */
+    group_id2 = H5Gcreate(group_id, "/MyOtherGroup", H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
 
     H5VL_memvol_finalize();
 
