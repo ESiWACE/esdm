@@ -142,8 +142,17 @@ int lfs_find_chunks(size_t a, size_t b, int index, struct lfs_record * my_recs, 
 	while(res.a == -1){
 		if(index < 0){
 			//printf("check it out: %ll %ll, %d\n", a, b, index);
-			printf("didn't find\n");
-			return 0;
+			//printf("didn't find\n");
+			//return 0;
+			struct lfs_record found;
+        		//printf("result: %lu, %lu\n", res.a, res.b);
+		        found.addr = a;
+		        found.size = b - a;
+	        	found.pos = a;
+        		//chunks_stack.push_back(found);
+	        	lfs_vec_add(chunks_stack, ch_s, found);
+       			return 0;
+
 		}
 		rec.a = my_recs[index].addr;
 		rec.b = my_recs[index].addr + my_recs[index].size;
