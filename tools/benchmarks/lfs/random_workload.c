@@ -38,7 +38,7 @@ int main ( int argc, char *argv[] ){
 	size_t file_size = (size_t) atoll(argv[3]);
 	int iterations = atoi(argv[4]);
 
-	assert(block_size < 2^30);
+	assert(block_size < (2^30));
 
 	///---- setting files name ----///
 
@@ -81,7 +81,7 @@ int main ( int argc, char *argv[] ){
 //	free(fill_file);
 	test_write = (char *)malloc(block_size);
 	memset(test_write, 3, block_size);
-	rett = lfs_write(myfd, test_write, 1, file_size - 1);
+	rett = lfs_write(myfd, test_write, block_size, file_size);
 	if(rett <= 0){
 		printf("Could not create the proper file size of %zu, %d\n", file_size, rett);
 	}
@@ -93,7 +93,7 @@ int main ( int argc, char *argv[] ){
 		//	printf("random offset : %lld\n", myrand);
 		rett = lfs_write(myfd, test_write, block_size, myrand);
 		if(rett <= 0)
-	                printf("some is not right %d\n", rett);
+	                printf("write transaction failed!!! lfs_write returned %d!!!\n", rett);
 	}
         clear_cache(); // clear the cache
 	free(test_write);
@@ -116,18 +116,19 @@ int main ( int argc, char *argv[] ){
 	start = (unsigned long long)(tv.tv_sec) * 1000 + (unsigned long long)(tv.tv_usec) / 1000;
 	myfd = lfs_open(argv[1], O_CREAT|O_RDWR, S_IRUSR|S_IWUSR); // re-openning the file
 	char * test_read;
-	srand(start);
-	system("free -m | sed \"s/  */ /g\" | cut -d \" \" -f 7|tail -n 3");
+	//srand(start);
+	//system("free -m | sed \"s/  */ /g\" | cut -d \" \" -f 7|tail -n 3");
 //	size_t read_bytes;
 	test_read = (char *)malloc(8192 * 102400);
-	
 	size_t blocksize = 8192 * 102400;
-	for(size_t pos = 0; pos < file_size; pos += block_size){
+	for(size_t pos = 0; pos < file_size; pos += blocksize){
 		//myrand = (long long)(rand() % 8192) * 1048576 * 2;
+		//printf("block size is: %lu\n",blocksize);
 		lfs_read(myfd, test_read, blocksize, pos);
 		if (pos + blocksize > file_size){
 			blocksize = file_size - pos;
 		}
+		//printf("block size is: %lu\n",blocksize);
 	}
 	//free(test_read);
 //	system("cat /proc/%d/io", my_pid);
