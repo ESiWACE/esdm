@@ -31,7 +31,8 @@ typedef struct {
 } memvol_file_t;
 
 typedef enum {
-    GROUP_T
+    GROUP_T,
+    DATASET_T
 } memvol_object_type;
 
 typedef struct {

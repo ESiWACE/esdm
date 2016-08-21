@@ -129,7 +129,7 @@ static herr_t memvol_group_get(void *group, H5VL_group_get_t get_type, hid_t dxp
         ret = 0;
 
     } else if (get_type == H5VL_GROUP_GET_INFO) {
-        puts("H5Gget_info");
+        printf("H5Gget_info %p\n", va_arg(arguments, void*));
         ret = 0;
 
     } else {
