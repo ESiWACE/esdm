@@ -32,7 +32,7 @@ typedef struct {
 
 typedef enum {
     GROUP_T,
-    FILE_T
+    DATASET_T
 } memvol_object_type;
 
 typedef struct {

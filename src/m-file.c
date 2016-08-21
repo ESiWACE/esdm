@@ -42,8 +42,6 @@ static void * memvol_file_create(const char *name, unsigned flags, hid_t fcpl_id
 
     object->type = GROUP_T;
     object->subclass = (memvol_group_t *)file->root_group;
-    //object->type = FILE_T;
-    //object->subclass = file;
 
     g_hash_table_insert(file->root_group->children, strdup("/"), object);
 

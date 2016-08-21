@@ -63,6 +63,7 @@ static const H5VL_class_t H5VL_memvol = {
         NULL  //memvol_attr_close                  /* close */
     },
     {                                           /* dataset_cls */
+<<<<<<< HEAD
         memvol_dataset_create,                    /* create */
         NULL,                      /* open */
         NULL,                      /* read */
@@ -71,6 +72,16 @@ static const H5VL_class_t H5VL_memvol = {
         NULL, //memvol_dataset_specific,          /* specific */
         NULL, //memvol_dataset_optional,          /* optional */
         memvol_dataset_close                      /* close */
+=======
+        NULL, //memvol_dataset_create,                    /* create */
+        NULL, //memvol_dataset_open,                      /* open */
+        NULL, //memvol_dataset_read,                      /* read */
+        NULL, //memvol_dataset_write,                     /* write */
+        NULL, //memvol_dataset_get,               /* get */
+        NULL, //memvol_dataset_specific,          /* specific */
+        NULL, //memvol_dataset_optional,          /* optional */
+        NULL //memvol_dataset_close                      /* close */
+>>>>>>> b01137ad5943053a6a8087247a294e9913671f78
     },
     {                                               /* datatype_cls */
         memvol_datatype_commit,                   /* commit */
