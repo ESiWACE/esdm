@@ -35,10 +35,10 @@ int main ( int argc, char *argv[] ){
 		return -1;
 	}
 	size_t block_size = atoi(argv[2]);
-	size_t file_size = (size_t) atoll(argv[3]);
+	long long file_size = (long long) atoll(argv[3]);
 	int iterations = atoi(argv[4]);
 
-	assert(block_size < (2^30));
+//	assert(block_size < (2^30));
 
 	///---- setting files name ----///
 
@@ -83,17 +83,19 @@ int main ( int argc, char *argv[] ){
 	memset(test_write, 3, block_size);
 	rett = lfs_write(myfd, test_write, block_size, file_size);
 	if(rett <= 0){
-		printf("Could not create the proper file size of %zu, %d\n", file_size, rett);
+		printf("Could not create the proper file size of %lld, %d\n", file_size, rett);
+		return 0;
 	}
 
 	for(int i = 0; i < iterations; i++)
 	{
 		//if(i % 50 == 0)
-		myrand = ((rand() * block_size) % file_size);
+		myrand = (((long long)rand() * block_size) % file_size);
 		//	printf("random offset : %lld\n", myrand);
 		rett = lfs_write(myfd, test_write, block_size, myrand);
 		if(rett <= 0)
 	                printf("write transaction failed!!! lfs_write returned %d!!!\n", rett);
+			return 0;
 	}
         clear_cache(); // clear the cache
 	free(test_write);
