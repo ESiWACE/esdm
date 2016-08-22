@@ -52,7 +52,7 @@ int main ( int argc, char *argv[] ){
 	unsigned long long finish;
 	unsigned long long seconds;
 	struct timeval tv;
-//	char * fill_file;
+	char * fill_file;
 	long long myrand;
 	clear_cache();
 	//char c;
@@ -65,15 +65,23 @@ int main ( int argc, char *argv[] ){
 	//}
 //	pid_t my_pid = getpid();
 //	system("cat /proc/%d/io", my_pid);
-//	size_t seq_io = 800 * 1024 * 1024;
-//	fill_file = (char *)malloc(seq_io);
-//	memset(fill_file, 4, seq_io);
-//	for(int iii = 0; iii < 40; iii++)
-//		lfs_write(myfd, fill_file, seq_io, seq_io * iii);
+	size_t seq_io = 800 * 1024 * 1024;
+	fill_file = (char *)malloc(seq_io);
+	memset(fill_file, 4, seq_io);
+	for(long long iii = 0; iii < file_size; iii += seq_io){
+                //myrand = (long long)(rand() % 8192) * 1048576 * 2;
+                //printf("block size is: %lu\n",blocksize);
+		lfs_write(myfd, fill_file, seq_io, iii);
+                if (iii + seq_io > file_size){
+                        seq_io = file_size - iii;
+                }
+                //printf("block size is: %lu\n",blocksize);
+        }
+
 //	printf("32 GB datafile created!\n");
-//	clear_cache(); // clear the cache
-//	lfs_close(myfd); // closing the file
-//	myfd = lfs_open(argv[1], O_CREAT|O_RDWR, S_IRUSR|S_IWUSR); // re-openning the file
+	clear_cache(); // clear the cache
+	lfs_close(myfd); // closing the file
+	myfd = lfs_open(argv[1], O_CREAT|O_RDWR, S_IRUSR|S_IWUSR); // re-openning the file
 	gettimeofday(&tv, NULL);
         start = (unsigned long long)(tv.tv_sec) * 1000 + (unsigned long long)(tv.tv_usec) / 1000;
         srand(666);
@@ -118,18 +126,20 @@ int main ( int argc, char *argv[] ){
 	start = (unsigned long long)(tv.tv_sec) * 1000 + (unsigned long long)(tv.tv_usec) / 1000;
 	myfd = lfs_open(argv[1], O_CREAT|O_RDWR, S_IRUSR|S_IWUSR); // re-openning the file
 	char * test_read;
-	//srand(start);
+	srand(666);
 	//system("free -m | sed \"s/  */ /g\" | cut -d \" \" -f 7|tail -n 3");
 //	size_t read_bytes;
-	test_read = (char *)malloc(8192 * 102400);
-	size_t blocksize = 8192 * 102400;
-	for(size_t pos = 0; pos < file_size; pos += blocksize){
-		//myrand = (long long)(rand() % 8192) * 1048576 * 2;
+	//test_read = (char *)malloc(8192 * 102400);
+	test_read = (char *)malloc(block_size);
+	long long blocksize = 8192 * 102400;
+//	for(long long pos = 0; pos < file_size; pos += blocksize){
+	for(int i = 0; i < iterations; i++){
+		myrand = (((long long)rand() * block_size) % file_size);
 		//printf("block size is: %lu\n",blocksize);
-		lfs_read(myfd, test_read, blocksize, pos);
-		if (pos + blocksize > file_size){
-			blocksize = file_size - pos;
-		}
+		lfs_read(myfd, test_read, block_size, myrand);
+		//if (pos + blocksize > file_size){
+		//	blocksize = file_size - pos;
+		//}
 		//printf("block size is: %lu\n",blocksize);
 	}
 	//free(test_read);
