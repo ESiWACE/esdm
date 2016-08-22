@@ -211,6 +211,8 @@ size_t lfs_read(int fd, char *buf, size_t count, off_t offset){
 		pread(lfsfiles[fd].data_file, &buf[(temp.addr - offset)/sizeof(char)], temp.size, temp.pos);
 		//printf("rtrd is: %d\n",rtrd);
 	}
+	//free(chunks_stack);
+	free(my_recs);
 	// Optimization: Write down the read query for future reads!
 	if (1 == 0){
 		lfs_write(fd, buf, count, offset);
