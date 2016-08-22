@@ -93,9 +93,9 @@ int main ( int argc, char *argv[] ){
 		myrand = (((long long)rand() * block_size) % file_size);
 		//	printf("random offset : %lld\n", myrand);
 		rett = lfs_write(myfd, test_write, block_size, myrand);
-		if(rett <= 0)
+		if(rett <= 0){
 	                printf("write transaction failed!!! lfs_write returned %d!!!\n", rett);
-			return 0;
+			return 0;}
 	}
         clear_cache(); // clear the cache
 	free(test_write);
