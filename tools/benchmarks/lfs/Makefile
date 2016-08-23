@@ -16,7 +16,7 @@ all: workload-random-dummy workload-random-dynamic workload-random-lfs
 workload-random-lfs: lfs.o random_workload.o
 	${CC} ${CFLAGS} ${OBJECTS} -o $@ ${LDFLAGS}
 
-workload-random-dummy: random_workload.c
+workload-random-dummy: random_workload.c lfs-dummy.h
 	${CC} ${CFLAGS} random_workload.c -D LFS_DUMMY_OPERATION  -o $@ ${LDFLAGS}
 
 
