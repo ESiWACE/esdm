@@ -65,7 +65,7 @@ int main ( int argc, char *argv[] ){
 	//}
 //	pid_t my_pid = getpid();
 //	system("cat /proc/%d/io", my_pid);
-/*	size_t seq_io = 800 * 1024 * 1024;
+	size_t seq_io = 800 * 1024 * 1024;
 	fill_file = (char *)malloc(seq_io);
 	memset(fill_file, 4, seq_io);
 	for(long long iii = 0; iii < file_size; iii += seq_io){
@@ -77,7 +77,7 @@ int main ( int argc, char *argv[] ){
                 }
                 //printf("block size is: %lu\n",blocksize);
         }
-*/
+
 //	printf("32 GB datafile created!\n");
 	clear_cache(); // clear the cache
 	lfs_close(myfd); // closing the file
@@ -86,7 +86,7 @@ int main ( int argc, char *argv[] ){
         start = (unsigned long long)(tv.tv_sec) * 1000 + (unsigned long long)(tv.tv_usec) / 1000;
         srand(666);
 	char * test_write;
-//	free(fill_file);
+	free(fill_file);
 	test_write = (char *)malloc(block_size);
 	memset(test_write, 3, block_size);
 	rett = lfs_write(myfd, test_write, block_size, file_size);
@@ -99,7 +99,7 @@ int main ( int argc, char *argv[] ){
 	{
 		//if(i % 50 == 0)
 		myrand = (((long long)rand() * block_size) % file_size);
-		printf("random offset : %lld\n", myrand);
+		//printf("random offset : %lld\n", myrand);
 		rett = lfs_write(myfd, test_write, block_size, myrand);
 		if(rett <= 0){
 	                printf("write transaction failed!!! lfs_write returned %d!!!\n", rett);
@@ -113,6 +113,8 @@ int main ( int argc, char *argv[] ){
 	finish = (unsigned long long)(tv.tv_sec) * 1000 + (unsigned long long)(tv.tv_usec) / 1000;
 	seconds = finish - start;
 	printf("writes took %llu milli-seconds\n", seconds);
+	printf("write bandwidth: %llu MB/s\n", (((unsigned long long)block_size * iterations * 1000) / (1024 * 1024)) / seconds);
+	printf("write IOPS: %llu\n", ((unsigned long long)iterations * 1000) / seconds);
 	//system("cat /proc/%d/io", my_pid);
 	//system("cat /proc/self/io");
 	/*my_io = fopen("/proc/self/io", "r");
@@ -130,17 +132,17 @@ int main ( int argc, char *argv[] ){
 	//system("free -m | sed \"s/  */ /g\" | cut -d \" \" -f 7|tail -n 3");
 //	size_t read_bytes;
 	//test_read = (char *)malloc(8192 * 102400);
-	long long blocksize = 8192 * 102400;
-	test_read = (char *)malloc(blocksize);
+	//long long blocksize = 8192 * 102400;
+	test_read = (char *)malloc(block_size);
 
-	for(long long pos = 0; pos < file_size; pos += blocksize){
-//	for(int i = 0; i < iterations; i++){
-//		myrand = (((long long)rand() * block_size) % file_size);
+//	for(long long pos = 0; pos < file_size; pos += blocksize){
+	for(int i = 0; i < iterations; i++){
+		myrand = (((long long)rand() * block_size) % file_size);
 		//printf("block size is: %lu\n",blocksize);
-		lfs_read(myfd, test_read, blocksize, pos);
-		if (pos + blocksize > file_size){
-			blocksize = file_size - pos;
-		}
+		lfs_read(myfd, test_read, block_size, myrand);
+		//if (pos + blocksize > file_size){
+		//	blocksize = file_size - pos;
+		//}
 		//printf("block size is: %lu\n",blocksize);
 	}
 	//free(test_read);
@@ -159,6 +161,8 @@ int main ( int argc, char *argv[] ){
 	lfs_close(myfd); // closing the file
 	clear_cache(); // clear the cache
 	printf("read took %llu milli-seconds\n", seconds);
+	printf("read bandwidth: %llu MB/s\n", (((unsigned long long)file_size * 1000) / (1024 * 1024)) / seconds);
+        printf("read IOPS: %llu\n", ((unsigned long long)iterations * 1000) / seconds);
 	system("free -m | sed \"s/  */ /g\" | cut -d \" \" -f 7|tail -n 3");
 //	system("cat /proc/%d/io", my_pid);
 //	system("cat /proc/self/io");

@@ -14,8 +14,7 @@ static size_t lfs_read(int fd, char* buf, size_t count, off_t offset){
 	off_t offset1 = offset;
 	size_t ret;
 	while(count1 > 0){
-                printf("%zu\n", count1);
-		ret =  pread(fd, buf, count1, offset1);
+                ret =  pread(fd, buf, count1, offset1);
 		if (ret != count){
 		  if (ret == -1){
 		    if(errno == EINTR){
@@ -29,7 +28,7 @@ static size_t lfs_read(int fd, char* buf, size_t count, off_t offset){
                 }
 		buf += ret;
 		count1 -= ret;
-		offset1 += ret;  
+		offset1 += ret;
 	}
 	return count;
 }
@@ -51,7 +50,7 @@ static size_t lfs_write(int fd, char* buf, size_t count, off_t offset){
                 }
 		buf += ret;
 		count1 -= ret;
-		offset1 += ret;  
+		offset1 += ret;
 	}
 	return count;
 }
