@@ -139,7 +139,7 @@ int main ( int argc, char *argv[] ){
 //	for(int i = 0; i < iterations; i++){
 //		myrand = (((long long)rand() * block_size) % file_size);
 		//printf("block size is: %lu\n",blocksize);
-		lfs_read(myfd, test_read, block_size, pos);
+		lfs_read(myfd, test_read, blocksize, pos);
 		if (pos + blocksize > file_size){
 			blocksize = file_size - pos;
 		}
