@@ -17,7 +17,7 @@
 #include <stdio.h>
 #include <string.h>
 
-
+static GHashTable* file_table;
 
 static void * memvol_file_create(const char *name, unsigned flags, hid_t fcpl_id, hid_t fapl_id, hid_t dxpl_id, void **req)
 {
@@ -45,6 +45,12 @@ static void * memvol_file_create(const char *name, unsigned flags, hid_t fcpl_id
 
     g_hash_table_insert(file->root_group->children, strdup("/"), object);
 
+    if (file_table == NULL) {
+        file_table = g_hash_table_new(g_str_hash, g_str_equal);
+    }
+
+    g_hash_table_insert(file_table, strdup(name), file);
+
     //debug ausgaben
     printf("Datei %s (%p) erstellt!\n", file->name, (void*)file);
     
@@ -64,12 +70,20 @@ static void * memvol_file_create(const char *name, unsigned flags, hid_t fcpl_id
 
 static void * memvol_file_open(const char *name, unsigned flags, hid_t fapl_id, hid_t dxpl_id, void **req)
 {
-    memvol_file_t *f;
-    f = (memvol_file_t *)calloc(1, sizeof(memvol_file_t));
+    puts("------------ memvol_file_open() called ---------------");
 
-    puts("memvol_file_open() called!");
+    memvol_file_t* ret = g_hash_table_lookup(file_table, name);
 
-    return (void *)f;
+    if (ret == NULL) {
+        puts("File existiert nicht!");
+    } else {
+        printf("Datei %s (%p) geoeffnet.\n", ret->name, (void*)ret);
+    }
+
+    puts("------------------------------------------------------");
+    puts("");
+
+    return (void *)ret;
 }
 
 static herr_t memvol_file_get(void *file, H5VL_file_get_t get_type, hid_t dxpl_id, void **req, va_list arguments)
@@ -78,22 +92,18 @@ static herr_t memvol_file_get(void *file, H5VL_file_get_t get_type, hid_t dxpl_i
     return 1;
 }
 
-static herr_t memvol_file_close(void *file, hid_t dxpl_id, void **req)
+static herr_t memvol_file_close(void *obj, hid_t dxpl_id, void **req)
 {
     puts("memvol_file_close() called!");
 
-    //memvol_file_t* f = (memvol_file_t *)((memvol_object_t *)file)->subclass;
-    //
-    //free(f->root_group->name);
-    //g_hash_table_remove(f->root_group->children, "/");
-    //g_free(f->root_group->children);                     /* SEG FAULT */
-    //free(f->root_group);
+    memvol_group_t* f = (memvol_group_t *)((memvol_object_t *)obj)->subclass;
+    printf("Root-Group-Pointer %p\n", (void*)f);
+    
     //free(f->name);
+    //g_free(f->children);
     //free(f);
-    //f->root_group->children = NULL;
-    //f->root_group->name = NULL;
-    //f->root_group = NULL;
     //f->name = NULL;
+    //f->children = NULL;
     //f = NULL;
 
     return 1;
