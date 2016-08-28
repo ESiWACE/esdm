@@ -26,17 +26,16 @@ static void* memvol_dataset_create(void* obj, H5VL_loc_params_t loc_params, cons
 {
 	puts("------------ memvol_dataset_create() called -------------\n");
 
-//Memory allocation for creating dataset structure
-	memvol_dataset_t*  dataset = (memvol_dataset_t*)calloc(1, sizeof(memvol_dataset_t));
-        dataset->name = (char*)malloc(strlen(name) + 1);
+//Memory allocation for creating object 
+	memvol_object_t* dset_object = (memvol_object_t*)malloc(sizeof(memvol_object_t));
 
-//Memory allocation for creating object
-	memvol_object_t* dset_object = (memvol_object_t*)calloc(1, sizeof(memvol_object_t));
         dset_object->type = (memvol_object_type)malloc(sizeof(memvol_object_type));
 
-
-//Memory allocation for dataset structure
-       dset_object->subclass = (memvol_dataset_t *)calloc(1, sizeof(memvol_dataset_t));
+//Memory allocation for creating dataset structure
+        dset_object->subclass = (memvol_dataset_t *)malloc(sizeof(memvol_dataset_t));
+         
+       
+//-------------------------------------------------------------------------------------------
 
         memvol_group_t* parent_group;
         memvol_object_t* object = (memvol_object_t *)obj;
@@ -56,10 +55,11 @@ static void* memvol_dataset_create(void* obj, H5VL_loc_params_t loc_params, cons
 
     
         dset_object->type = DATASET_T;
- DEBUG_MESSAGE("dset_object->type %zu\n", dset_object->type);
+      DEBUG_MESSAGE("dset_object->type %zu\n", dset_object->type);
 
-        dset_object->subclass = dataset;
+        memvol_dataset_t*  dataset = dset_object->subclass;
 
+        dataset->name = (char*)malloc(strlen(name) + 1);
 	strcpy(dataset->name, name);
 
        // retrieving of dataset, dataspace and link creation property lists
@@ -84,23 +84,24 @@ static void* memvol_dataset_open(void *obj, H5VL_loc_params_t loc_params, const 
                   hid_t dapl_id, hid_t dxpl_id, void **req){
 
 puts("------------ memvol_dataset_open() called -------------\n");
-/*
-//Memory allocation for dataset structure being opend
-    memvol_dataset_t*  dset = (memvol_dataset_t*)calloc(1, sizeof(memvol_dataset_t));
-    dset->name = (char*)malloc(strlen(name) +1);
 
+ 
 //Memory allocation for dataset object being opened
-     memvol_object_t* dset_object = (memvol_object_t* )calloc(1, sizeof(memvol_object_t* ));
+     memvol_object_t* dset_object = (memvol_object_t* )malloc(sizeof(memvol_object_t* ));
+
    dset_object->type = (memvol_object_type)malloc(sizeof(memvol_object_type));
-  dset_object->subclass = (memvol_dataset_t *)calloc(1, sizeof(memvol_dataset_t));
+
+//Memory allocation for dataset structure being opend
+  dset_object->subclass = (memvol_dataset_t *)malloc(sizeof(memvol_dataset_t));
 //--------------------------------------------------------------------------------- 
-**/
+
+  
    memvol_object_t* loc_object = (memvol_object_t *)obj;
    
     memvol_group_t* parent = (memvol_group_t *)loc_object->subclass;
 
 // opening
-    memvol_object_t* dset_object = g_hash_table_lookup(parent->children, name);
+     dset_object = g_hash_table_lookup(parent->children, name);
 
      
     //debug Ausgaben
@@ -110,7 +111,7 @@ puts("------------ memvol_dataset_open() called -------------\n");
     } else {
       memvol_dataset_t* dset = (memvol_dataset_t *)dset_object->subclass;
 
-     
+      dset->name = (char*)malloc(strlen(name) +1);
       strcpy(dset->name, name);
 
 //bebug
@@ -240,25 +241,19 @@ static herr_t memvol_dataset_close(void* dset, hid_t dxpl_id, void** req) {
     puts("------------ memvol_dataset_close() called -------------\n");
   
     memvol_object_t *object = (memvol_object_t*) dset;
-    
-    
+        
     memvol_dataset_t *dataset = object->subclass;
-/*
-   free(dataset->name);
-  // free(object->type);
 
-  
-   free(object->subclass);
-
+    free(dataset->name);
+   
     free(dataset);
     free(object);
 
     dataset->name = NULL;
     
-   dataset = NULL;
+    dataset = NULL;
     object = NULL;
- 
-**/      
+       
 
     return 1;
 }
