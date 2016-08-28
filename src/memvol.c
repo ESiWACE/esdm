@@ -60,36 +60,27 @@ static const H5VL_class_t H5VL_memvol = {
         NULL, //memvol_attr_get,                   /* get */
         NULL, //memvol_attr_specific,              /* specific */
         NULL, //memvol_attr_optional,              /* optional */
-        NULL  //memvol_attr_close                  /* close */
+        NULL, //memvol_attr_close                  /* close */
     },
     {                                           /* dataset_cls */
-<<<<<<< HEAD
+
         memvol_dataset_create,                    /* create */
-        NULL,                      /* open */
-        NULL,                      /* read */
-        NULL,                     /* write */
-        NULL, //memvol_dataset_get,               /* get */
+        memvol_dataset_open,                      /* open */
+        memvol_dataset_read,                      /* read */
+        memvol_dataset_write,                     /* write */
+        memvol_dataset_get,                          /* get */
         NULL, //memvol_dataset_specific,          /* specific */
         NULL, //memvol_dataset_optional,          /* optional */
-        memvol_dataset_close                      /* close */
-=======
-        NULL, //memvol_dataset_create,                    /* create */
-        NULL, //memvol_dataset_open,                      /* open */
-        NULL, //memvol_dataset_read,                      /* read */
-        NULL, //memvol_dataset_write,                     /* write */
-        NULL, //memvol_dataset_get,               /* get */
-        NULL, //memvol_dataset_specific,          /* specific */
-        NULL, //memvol_dataset_optional,          /* optional */
-        NULL //memvol_dataset_close                      /* close */
->>>>>>> b01137ad5943053a6a8087247a294e9913671f78
+        memvol_dataset_close,                      /* close */
+
     },
     {                                               /* datatype_cls */
-        memvol_datatype_commit,                   /* commit */
-        memvol_datatype_open,                     /* open */
-        memvol_datatype_get,                      /* get_size */
+        NULL,                                   /* commit */
+        NULL,                                     /* open */
+        NULL,                                    /* get_size */
         NULL, //H5VL_log_datatype_specific,         /* specific */
         NULL, //H5VL_log_datatype_optional,         /* optional */
-        memvol_datatype_close                     /* close */
+        NULL,                                    /* close */
     },
     {                                           /* file_cls */
         memvol_file_create,                      /* create */
@@ -97,15 +88,15 @@ static const H5VL_class_t H5VL_memvol = {
         memvol_file_get,                         /* get */
         NULL, //memvol_file_specific,            /* specific */
         NULL, //memvol_file_optional,            /* optional */
-        memvol_file_close                        /* close */
+        memvol_file_close,                        /* close */
     },
     {                                           /* group_cls */
-        memvol_group_create,      /* create */
-        memvol_group_open,               /* open */
-        memvol_group_get,                /* get */
+        memvol_group_create,                  /* create */
+        memvol_group_open,                    /* open */
+        memvol_group_get,                     /* get */
         NULL, //memvol_group_specific,           /* specific */
         NULL, //memvol_group_optional,           /* optional */
-        memvol_group_close         /* close */
+        memvol_group_close,        /* close */
     },
     {                                           /* link_cls */
         NULL, //memvol_link_create,                /* create */
@@ -120,12 +111,12 @@ static const H5VL_class_t H5VL_memvol = {
         NULL, //memvol_object_copy,                /* copy */
         NULL, //memvol_object_get,                 /* get */
         NULL,                    /* specific */
-        NULL, //memvol_object_optional,            /* optional */
+        NULL,  //memvol_object_optional,            /* optional */
     },
     {
         NULL,
         NULL,
-        NULL
+        NULL,
     },
     NULL
 };

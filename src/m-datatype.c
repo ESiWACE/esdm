@@ -13,10 +13,10 @@
 // You should have received a copy of the GNU Lesser General Public License
 // along with h5-memvol.  If not, see <http://www.gnu.org/licenses/>.
 
-
+/*
 static void * memvol_datatype_commit(void *obj, H5VL_loc_params_t loc_params, const char *name, hid_t type_id, hid_t lcpl_id, hid_t tcpl_id, hid_t tapl_id, hid_t dxpl_id, void **req)
 {
-  return NULL;
+  return 0;
 }
 
 static void * memvol_datatype_open(void *obj, H5VL_loc_params_t loc_params, const char *name, hid_t tapl_id, hid_t dxpl_id, void **req)
@@ -36,3 +36,4 @@ static herr_t memvol_datatype_close(void *dt, hid_t dxpl_id, void **req)
   //free(type);
   return 0;
 }
+*/

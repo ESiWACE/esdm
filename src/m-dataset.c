@@ -15,77 +15,112 @@
 
 #include <stdio.h>
 #include <string.h>
+//#include <assert.h>
+#include "include/memvol.h"
+#include "include/debug.h"
+#include "include/memvol-internal.h"
 
 
-static void* memvol_dataset_create(void* object, H5VL_loc_params_t loc_params, const char* name, hid_t dcpl_id, hid_t dapl_id, hid_t dxpl_id, void** req)
-   
+static void* memvol_dataset_create(void* obj, H5VL_loc_params_t loc_params, const char* name, hid_t dcpl_id, hid_t dapl_id, hid_t dxpl_id, void** req)
+
 {
-    hid_t* datatype_value = NULL;
-    hid_t* dataspace_value = NULL;
-    herr_t t,t1;
+	puts("------------ memvol_dataset_create() called -------------\n");
 
+	memvol_dataset_t*  dataset = (memvol_dataset_t*)calloc(1, sizeof(memvol_dataset_t));
+	memvol_object_t* dset_object = (memvol_object_t*)calloc(1, sizeof(memvol_object_t));
 
-    puts("------------ memvol_dataset_create() called ------------");    
-    printf("dcpl_id %p \n ", dcpl_id);
-   
-   memvol_dataset_t*  dataset = (memvol_dataset_t*)malloc(sizeof(memvol_dataset_t));
-printf("dataset %p \n ", dataset);
+        dset_object->type = (memvol_object_type)calloc(1, sizeof(memvol_object_type));
+        dset_object->subclass = (memvol_dataset_t *)calloc(1, sizeof(memvol_dataset_t));
 
+        memvol_group_t* parent_group;
+        memvol_object_t* object = (memvol_object_t *)obj;
 
-// name of dataset
-     dataset->name = (char*)malloc(strlen(name));
+        if (object->type == GROUP_T) {
+             
+          parent_group = (memvol_group_t *)object->subclass;
 
-//------------Debug Ausgabe-------------------------
-printf("dataset->name %p \n ", dataset->name);
-printf("name %s \n ", name);
-//--------------------------------------------------
+            DEBUG_MESSAGE("parent_group %zu\n", parent_group);
+            DEBUG_MESSAGE("parent_group name %d\n", parent_group->name);
 
+        } 
+        else if(object->type == DATASET_T) { 
+          
+           return 0; 
+        }
 
-// retrieving of datatype
- printf("datatype_value %p \n ", datatype_value);
+    
+        dset_object->type = DATASET_T;
+ DEBUG_MESSAGE("dset_object->type %zu\n", dset_object->type);
 
-    H5Pget(dcpl_id, H5VL_PROP_DSET_TYPE_ID, &datatype_value);
+        dset_object->subclass = dataset;
 
-//------------Degub Ausbage-------------------------
-printf("datatype_value %p \n ", datatype_value);
-printf("datatype_value %p \n ", &datatype_value);
-//--------------------------------------------------
-   
-    dataset->datatype = (hid_t*) malloc(sizeof(datatype_value));
-printf("dataset->datatype %p \n ", dataset->datatype);
+	dataset->name = (char*)malloc(strlen(name) + 1);
+	strcpy(dataset->name, name);
 
+       // retrieving of dataset, dataspace and link creation property lists
+	H5Pget(dcpl_id, H5VL_PROP_DSET_TYPE_ID, &dataset->datatype);
+	H5Pget(dcpl_id, H5VL_PROP_DSET_SPACE_ID, &dataset->dataspace);
+        H5Pget(dcpl_id, H5VL_PROP_DSET_LCPL_ID, &dataset->lcpl);
+	
+        DEBUG_MESSAGE("datatype_name %s\n", dataset->name);
+	DEBUG_MESSAGE("datatype_value %zu\n", dataset->datatype);
+	DEBUG_MESSAGE("dataspace_value %zu\n", dataset->dataspace);
+        DEBUG_MESSAGE("link_creation_property_list %zu\n", dataset->lcpl);
 
+		
+        DEBUG_MESSAGE("dataset %zu\n", dataset);
 
-// retrieving of dataspace
- printf("dataspace_value %p \n ", dataspace_value);
-
-    H5Pget(dcpl_id, H5VL_PROP_DSET_SPACE_ID, &dataspace_value);
-
-//------------Debug Ausgabe-------------------------
- printf("dataspace_value %p \n ", dataspace_value);
-printf("dataspace_value %p \n ", &dataspace_value);
-//--------------------------------------------------
-
-    dataset->dataspace = (void*) malloc(sizeof(dataspace_value));
-
-// retrieving of link creation property list´s
-//   H5Pget(dcpl_id, H5VL_PROP_DSET_LCPL_ID, &lcpl);
-//   dataset->lcpl = malloc(sizeof(*lcpl));
-
-printf("dataset %p \n ", dataset);
- return (void *)dataset;
+        g_hash_table_insert(parent_group->children, strdup(name), dset_object);
+       DEBUG_MESSAGE("dataset_object %zu\n", dset_object);
+	return (void *)dset_object;
 }
 
 static void* memvol_dataset_open(void *obj, H5VL_loc_params_t loc_params, const char *name, 
                   hid_t dapl_id, hid_t dxpl_id, void **req){
-memvol_dataset_t*  dataset; 
+
+puts("------------ memvol_dataset_open() called -------------\n");
+
+
+   
+    memvol_object_t* loc_object = (memvol_object_t *)obj;
+
+ //   memvol_dataset_t*  dataset = (memvol_dataset_t*)malloc(sizeof(memvol_dataset_t));
+  //  memvol_object_type* type =
+
+ //    dataset->name = (char*)malloc(strlen(name) +1);
+    strcpy(dataset->name, name);
+
+    memvol_group_t* parent = (memvol_group_t *)loc_object->subclass;
+
+    memvol_object_t* dset_object = g_hash_table_lookup(parent->children, name);
+
+     
+    //debug Ausgaben
+    if (dset_object == NULL) {
+        puts("Dataset nicht im angegebenen Parent gefunden!\n");
+
+    } else {
+       memvol_dataset_t*  dset = (memvol_dataset_t *)dset_object->subclass;
+
+//bebug
+ 
+
+      DEBUG_MESSAGE("Opened dataset object %zu \n", dset_object);
+      DEBUG_MESSAGE("dataset subclass %zu \n", dset_object->subclass);
+      DEBUG_MESSAGE("dataset name %s \n", ((memvol_dataset_t*) dset_object->subclass)->name);
+      DEBUG_MESSAGE("dataset type %zu \n", (memvol_object_type*)dset_object->type);
+    }
+
 //to do 
 
-return (void*) dataset;
+return (void *)dset_object;
+
 }
 
 static herr_t memvol_dataset_read(void *dset, hid_t mem_type_id, hid_t mem_space_id, hid_t file_space_id,
                    hid_t xfer_plist_id, void * buf, void **req){
+
+puts("------------ memvol_dataset_read() called -------------\n");
 
 //to do
 return 1;
@@ -93,6 +128,17 @@ return 1;
 
 static herr_t memvol_dataset_write(void *dset, hid_t mem_type_id, hid_t mem_space_id, hid_t file_space_id,
                     hid_t xfer_plist_id, const void * buf, void **req){
+puts("------------ memvol_dataset_write() called -------------\n");
+
+memvol_dataset_t * dataset = (memvol_dataset_t*) dset;
+
+//assert( mem_space_id <= dset.dataspace );
+
+//number = get(mem_space_id);
+//dataset->datatype* data = (dataset->datatype*)calloc(mem_space_id, sizeof(mem_type_id));
+
+ //DEBUG_MESSAGE("data %zu\n", data);
+
 
 //to do
 return 1;
@@ -100,66 +146,99 @@ return 1;
 
 static  herr_t memvol_dataset_get(void *dset, H5VL_dataset_get_t get_type, hid_t dxpl_id, void **req, va_list arguments){
 
+puts("------------ memvol_dataset_get() called -------------\n");
+
   
-   hid_t *ret_id;
-   haddr_t *ret;
    memvol_dataset_t*  dataset; 
-   H5D_space_status_t *allocation;
+   herr_t ret_value = 1;
 
    dataset = (memvol_dataset_t* )dset;
 
+   switch(get_type) {
 
-if(get_type ==  H5VL_DATASET_GET_DAPL){
+           case H5VL_DATASET_GET_DAPL: 
+           {	
+		hid_t *ret_id = va_arg (arguments, hid_t *);
+                printf("Access property list %p\n", *ret_id);
+                DEBUG_MESSAGE("known type found\n");
+               
+		break;
+           }
+           case H5VL_DATASET_GET_DCPL:
+           {
+		hid_t *ret_id = va_arg (arguments, hid_t *);
+		printf("Creation property list %p\n", *ret_id);
+                DEBUG_MESSAGE("known type found\n");
+         
+		break;
 
-   //to do
-    return 1;
-}
-                 
- else if(get_type == H5VL_DATASET_GET_DCPL) {
+           }
 
-   //to do 
-    return 1;
- }                
- else if(get_type == H5VL_DATASET_GET_OFFSET) {
+	   case H5VL_DATASET_GET_OFFSET:
+           {
+	         haddr_t *ret = va_arg (arguments, haddr_t *);
+		printf("The offset of the dataset %p \n", *ret);
+		 DEBUG_MESSAGE("known type found\n");
 
-    //to do
-    return 1;
- }              
- else if(get_type == H5VL_DATASET_GET_SPACE) {
-   //
-    return 1;
+			   /* Set return value */
+			   //*ret = H5D__get_offset(dset);
+			   //if(!H5F_addr_defined(*ret))
+			//	   *ret = HADDR_UNDEF;
+		break;
+           }
+           case H5VL_DATASET_GET_SPACE:
+           {
+		hid_t *ret_id = va_arg (arguments, hid_t *);
+		printf("Dataspace %p\n", *ret_id);
+                DEBUG_MESSAGE("known type found\n");
 
- }                 
- else if(get_type == H5VL_DATASET_GET_SPACE_STATUS) {
+  		break;
 
-   //
-   return 1;
-
- }          
- else if(get_type == H5VL_DATASET_GET_STORAGE_SIZE) {
-//
-    return 1;
- }  
- else if(get_type == H5VL_DATASET_GET_TYPE) {
-//
-    return 1;
- }                   
- else {
-    printf("Error");
-    return -1;
- }
+           }
+	   case H5VL_DATASET_GET_SPACE_STATUS:
+	   {
+		H5D_space_status_t *allocation = va_arg (arguments, H5D_space_status_t *);
+		printf("Space status %p\n", *allocation);
+                DEBUG_MESSAGE("known type found\n");
+		break;
+           }
+           case H5VL_DATASET_GET_STORAGE_SIZE:
+           {
+		hsize_t *ret = va_arg (arguments, hsize_t *);
+		printf("Storage size %p\n", *ret);
+                DEBUG_MESSAGE("known type found\n");
+		break;
+           }
+           case H5VL_DATASET_GET_TYPE:
+           {
+      		hid_t *ret_id = va_arg (arguments, hid_t *);
+		printf("Datatype %p\n", *ret_id);
+                DEBUG_MESSAGE("known type found\n");
+		break;
+           }
+	   default:
+	   {	DEBUG_MESSAGE("unknown type found\n");
+		ret_value = 0;
+	   }
+   }
+    return ret_value;       
 }
  
 static herr_t memvol_dataset_close(void* dset, hid_t dxpl_id, void** req) {
 
-    printf("------------ memvol_dataset_close() called -------------\n");
+    puts("------------ memvol_dataset_close() called -------------\n");
+  
+    memvol_object_t *dataset = (memvol_object_t*) dset;
+    
+    free(dataset->subclass);
+   
 
-    memvol_dataset_t *dataset = (memvol_dataset_t*) dset;
+    
+    dataset = NULL;
+ 
+  //     ((memvol_dataset_t *)dataset->subclass)->name = NULL;
 
-    free(dataset->name);
-    free(dataset->datatype);
-    free(dataset->dataspace);
-    free(dataset);
+      
 
     return 1;
 }

@@ -25,7 +25,7 @@ static void* memvol_group_create(void* obj, H5VL_loc_params_t loc_params, const 
     memvol_group_t* group = (memvol_group_t *)malloc(sizeof(memvol_group_t));
     memvol_object_t* object = (memvol_object_t *)malloc(sizeof(memvol_object_t));
 
-    group->name = (char *)malloc(strlen(name));
+    group->name = (char *)malloc(strlen(name) + 1);
     group->children = (GHashTable*)malloc(sizeof(GHashTable*));
 
     object->type = (memvol_object_type)malloc(sizeof(memvol_object_type));

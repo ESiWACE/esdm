@@ -18,9 +18,15 @@
 #include <memvol.h>
 
 int main(){
+
+    herr_t status;
     hid_t fprop;
     hid_t fid, group_id, group_id2;
     hid_t vol_id = H5VL_memvol_init();
+
+    hsize_t dim[2];
+    hid_t  dataset_id, datatype_id, dataspace_id;   
+
 
     char name[1024];
 
@@ -38,6 +44,37 @@ int main(){
     /* Create a group named "/MyOtherGroup" in "/MyGroup". */
     group_id2 = H5Gcreate(group_id, "/MyOtherGroup", H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
 
+//---------Dataset create Test--------------------
+
+
+    dim[0] = 3;
+    dim[1] = 4;
+
+    datatype_id = H5Tcopy(H5T_NATIVE_INT);
+    
+
+    dataspace_id = H5Screate_simple(2, dim, NULL); 
+
+//Debug Ausgabe
+    printf("dataspace_id %zu\n", dataspace_id);
+    printf("datatype_id %zu\n", datatype_id);
+
+    dataset_id = H5Dcreate2(fid, "/MyDataset",  datatype_id, dataspace_id, H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
+
+printf("Test: Creating, dataset_id: %zu \n", dataset_id);
+
+    status = H5Dclose(dataset_id);
+    status = H5Sclose(dataspace_id);
+    status = H5Tclose(datatype_id);
+
+dataset_id = H5Dopen2(fid, "/MyDataset", H5P_DEFAULT);
+
+printf("Test: Opening, dataset_id: %zu \n", dataset_id);
+
+
+    status = H5Dclose(dataset_id);
+    status = H5Fclose(fid);
+//-------------------------------------------------
     H5VL_memvol_finalize();
 
     return 0;
