@@ -87,18 +87,18 @@ puts("------------ memvol_dataset_open() called -------------\n");
 
  
 //Memory allocation for dataset object being opened
-     memvol_object_t* dset_object = (memvol_object_t* )malloc(sizeof(memvol_object_t* ));
 
+   memvol_object_t* dset_object = (memvol_object_t* )malloc(sizeof(memvol_object_t* ));
    dset_object->type = (memvol_object_type)malloc(sizeof(memvol_object_type));
 
 //Memory allocation for dataset structure being opend
-  dset_object->subclass = (memvol_dataset_t *)malloc(sizeof(memvol_dataset_t));
+   dset_object->subclass = (memvol_dataset_t *)malloc(sizeof(memvol_dataset_t));
 //--------------------------------------------------------------------------------- 
 
   
    memvol_object_t* loc_object = (memvol_object_t *)obj;
-   
-    memvol_group_t* parent = (memvol_group_t *)loc_object->subclass;
+
+   memvol_group_t* parent = (memvol_group_t *)loc_object->subclass;
 
 // opening
      dset_object = g_hash_table_lookup(parent->children, name);
@@ -111,19 +111,13 @@ puts("------------ memvol_dataset_open() called -------------\n");
     } else {
       memvol_dataset_t* dset = (memvol_dataset_t *)dset_object->subclass;
 
-      dset->name = (char*)malloc(strlen(name) +1);
-      strcpy(dset->name, name);
-
-//bebug
+//bebug ausgabe
  
-
       DEBUG_MESSAGE("Opened dataset object %zu \n", dset_object);
-      DEBUG_MESSAGE("dataset subclass %zu \n", dset_object->subclass);
+      DEBUG_MESSAGE("dataset %zu \n", dset_object->subclass);
       DEBUG_MESSAGE("dataset name %s \n", dset->name);
-      DEBUG_MESSAGE("dataset type %zu \n", (memvol_object_type*)dset_object->type);
+      DEBUG_MESSAGE("dataset datatype %zu \n", dset->datatype);
     }
-
-//to do 
 
 return (void *)dset_object;
 
