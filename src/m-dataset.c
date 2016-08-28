@@ -88,7 +88,7 @@ puts("------------ memvol_dataset_open() called -------------\n");
   //  memvol_object_type* type =
 
  //    dataset->name = (char*)malloc(strlen(name) +1);
-    strcpy(dataset->name, name);
+ //   strcpy(dataset->name, name);
 
     memvol_group_t* parent = (memvol_group_t *)loc_object->subclass;
 
@@ -148,12 +148,12 @@ static  herr_t memvol_dataset_get(void *dset, H5VL_dataset_get_t get_type, hid_t
 
 puts("------------ memvol_dataset_get() called -------------\n");
 
-  
-   memvol_dataset_t*  dataset; 
+   memvol_object_t* object = (memvol_object_t*)dset;
+   memvol_dataset_t*  dataset = (memvol_dataset_t* )object->subclass;
+
    herr_t ret_value = 1;
 
-   dataset = (memvol_dataset_t* )dset;
-
+   
    switch(get_type) {
 
            case H5VL_DATASET_GET_DAPL: 
