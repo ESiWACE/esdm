@@ -15,7 +15,7 @@
 
 #include <stdio.h>
 #include <string.h>
-//#include <assert.h>
+#include <assert.h>
 #include "include/memvol.h"
 #include "include/debug.h"
 #include "include/memvol-internal.h"
@@ -52,10 +52,10 @@ static void* memvol_dataset_create(void* obj, H5VL_loc_params_t loc_params, cons
           
            return 0; 
         }
-
     
         dset_object->type = DATASET_T;
-      DEBUG_MESSAGE("dset_object->type %zu\n", dset_object->type);
+
+        DEBUG_MESSAGE("dset_object->type %zu\n", dset_object->type);
 
         memvol_dataset_t*  dataset = dset_object->subclass;
 
@@ -76,7 +76,8 @@ static void* memvol_dataset_create(void* obj, H5VL_loc_params_t loc_params, cons
         DEBUG_MESSAGE("dataset %zu\n", dataset);
 
         g_hash_table_insert(parent_group->children, strdup(name), dset_object);
-       DEBUG_MESSAGE("dataset_object %zu\n", dset_object);
+        DEBUG_MESSAGE("dataset_object %zu\n", dset_object);
+
 	return (void *)dset_object;
 }
 
@@ -111,6 +112,8 @@ puts("------------ memvol_dataset_open() called -------------\n");
     } else {
       memvol_dataset_t* dset = (memvol_dataset_t *)dset_object->subclass;
 
+        dset->name = (char*)malloc(strlen(name) + 1);
+	strcpy(dset->name, name);
 //bebug ausgabe
  
       DEBUG_MESSAGE("Opened dataset object %zu \n", dset_object);
@@ -136,16 +139,21 @@ static herr_t memvol_dataset_write(void *dset, hid_t mem_type_id, hid_t mem_spac
                     hid_t xfer_plist_id, const void * buf, void **req){
 puts("------------ memvol_dataset_write() called -------------\n");
 
-memvol_dataset_t * dataset = (memvol_dataset_t*) dset;
-
-//assert( mem_space_id <= dset.dataspace );
-
-//number = get(mem_space_id);
-//dataset->datatype* data = (dataset->datatype*)calloc(mem_space_id, sizeof(mem_type_id));
-
- //DEBUG_MESSAGE("data %zu\n", data);
+ memvol_object_t* object = (memvol_object_t*)dset;
+ memvol_dataset_t*  dataset = (memvol_dataset_t* )object->subclass;
 
 
+ //hssize_t space_number = H5Sget_simple_extent_npoints(dataset->dataspace); /* number of elements in dataspace */
+
+//size_t type_size = H5Tget_size(mem_type_id); /*size of the type in Bytes*/
+
+//hssize_t write_number = H5Sget_simple_extent_npoints(mem_space_id); /*number of elements to write*/
+
+//assert(write_number <= space_number);
+
+//?* data = ( ?*)calloc(write_number, type_size));
+
+ 
 //to do
 return 1;
 }
