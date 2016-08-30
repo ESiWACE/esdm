@@ -26,6 +26,7 @@ typedef struct {
     hid_t datatype;
     hid_t dataspace;
     hid_t lcpl;
+    void* data;
 } memvol_dataset_t;
 
 typedef struct {
