@@ -135,6 +135,8 @@ return (void *)dset_object;
 static herr_t memvol_dataset_read(void *dset, hid_t mem_type_id, hid_t mem_space_id, hid_t file_space_id,
                    hid_t xfer_plist_id, void * buf, void **req){
 
+
+htri_t ret;
 puts("------------ memvol_dataset_read() called -------------\n");
 
  memvol_object_t* object = (memvol_object_t*)dset;
@@ -142,41 +144,59 @@ puts("------------ memvol_dataset_read() called -------------\n");
 
  if (dataset->data == NULL) {
   
-  printf("Dataset is empty\n");
+    printf("Dataset is empty\n");
 
-  return 0;
- }
-  else {
-
-// to do
   }
+  else {
+     assert(H5Tget_class(mem_type_id) == H5Tget_class(dataset->datatype));
+// to do
+  DEBUG_MESSAGE("dataset->data %d\n", dataset->data);
 
+//read data
+ buf = dataset->data;
  //H5Tget_native_type ?
-
+}
 
 return 1;
 }
 
 static herr_t memvol_dataset_write(void *dset, hid_t mem_type_id, hid_t mem_space_id, hid_t file_space_id,
                     hid_t xfer_plist_id, const void * buf, void **req){
+
 puts("------------ memvol_dataset_write() called -------------\n");
 
+
+ htri_t ret;
  memvol_object_t* object = (memvol_object_t*)dset;
  memvol_dataset_t*  dataset = (memvol_dataset_t* )object->subclass;
 
 
- //hssize_t space_number = H5Sget_simple_extent_npoints(dataset->dataspace); /* number of elements in dataspace */
+ hssize_t space_number = H5Sget_simple_extent_npoints(dataset->dataspace); /* number of elements in dataspace */
 
-//size_t type_size = H5Tget_size(mem_type_id); /*size of the type in Bytes*/
+size_t type_size = H5Tget_size(mem_type_id); /*size of the type in Bytes*/
 
-//hssize_t write_number = H5Sget_simple_extent_npoints(mem_space_id); /*number of elements to write*/
+hssize_t write_number = H5Sget_simple_extent_npoints(mem_space_id); /*number of elements to write*/
 
-//assert(write_number <= space_number);
+//assert, that data passt in dataset container
+assert(write_number <= space_number);
 
-//?* data = ( ?*)calloc(write_number, type_size));
+//assert, that datatype class is equal 
+assert(H5Tget_class(mem_type_id) == H5Tget_class(dataset->datatype));
+
+
+if(dataset->data == NULL) {
+
+   hid_t* data = dataset->data;
+
+//memory allocation for data
+   data = (hid_t*) calloc(write_number, type_size);
+  
+}
+
+// writes from buffer
+dataset->data = &buf;
 
  
-//to do write
 return 1;
 }
 
@@ -265,12 +285,13 @@ static herr_t memvol_dataset_close(void* dset, hid_t dxpl_id, void** req) {
     memvol_dataset_t *dataset = object->subclass;
 
     free(dataset->name);
-   
+    free(dataset->data);
+
     free(dataset);
     free(object);
 
     dataset->name = NULL;
-// dataset->data: to do
+    dataset->data = NULL;
     
     dataset = NULL;
     object = NULL;

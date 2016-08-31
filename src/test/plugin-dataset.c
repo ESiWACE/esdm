@@ -79,8 +79,9 @@ int main()
 
 	/* Write the dataset. */
 	status = H5Dwrite(dataset_id, H5T_NATIVE_INT, H5S_ALL, H5S_ALL, H5P_DEFAULT, dset_data);
+        printf("write status %d\n", status);
 
-
+     
 	// READ ///////////////////////////////////////////////////////////////////
 	int dset_data_read[4][5];
 
