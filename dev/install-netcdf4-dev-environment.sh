@@ -32,7 +32,7 @@ patch -b --verbose $PWD/include/netcdf.h $DIR/netcdf4-include-netcdf-h.patch
 
 # build, check and install
 
-CC=mpicc CPPFLAGS="-I${H5DIR}/include -g" LDFLAGS=-L${H5DIR}/lib ./configure --prefix=$prefix
+CC=mpicc CPPFLAGS="-I${H5DIR}/include -g3 -O0" LDFLAGS=-L${H5DIR}/lib ./configure --prefix=$prefix
 
 make -j
 make check
