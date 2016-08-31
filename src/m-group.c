@@ -56,17 +56,18 @@ static void* memvol_group_create(void* obj, H5VL_loc_params_t loc_params, const 
 
     GList* children_keys = g_hash_table_get_values(parent_group->children);
 
-    printf("ls ../ : ");
+    puts("\nGroup Listing:");
+    printf("%s\n", parent_group->name);
     while (children_keys != NULL) {
         memvol_object_t* obj = (memvol_object_t *)children_keys->data;
+
         if (obj->type == GROUP_T) {
-            printf("%s  ", ((memvol_group_t *)obj->subclass)->name);
+            printf("|\t%s\n", ((memvol_group_t *)obj->subclass)->name);
 
         }
         children_keys = children_keys->next;
     }
     g_list_free(children_keys);
-    printf("\n");
 
     puts("------------------------------------------------------");
     puts("");
@@ -101,18 +102,36 @@ static void * memvol_group_open(void* object, H5VL_loc_params_t loc_params, cons
 
 static herr_t memvol_group_close(void* grp, hid_t dxpl_id, void** req) {
 
-    puts("memvol_group_close() called!");
+    puts("------------ memvol_group_close() called -------------");
 
-    memvol_group_t* g = (memvol_group_t *)grp;
-    free(g->name);
-    //g_free(g->children); /* SEG FAULT */
-    free(g);
+    memvol_object_t* obj = (memvol_object_t *)grp;
 
-    g->name = NULL;
-    g->children = NULL;
-    g = NULL;
+    if (obj->type == GROUP_T) {
+        memvol_group_t* g = (memvol_group_t *)obj->subclass;
 
-    return 1;
+        printf("Group %s (%p) closing...\n", (char*)g->name, (void*)g);
+
+        free(g->name);
+        g_hash_table_destroy(g->children); /* SEG FAULT */
+        free(g);
+
+        g->name = NULL;
+        g->children = NULL;
+        g = NULL;
+
+        puts("------------------------------------------------------");
+        puts("");
+
+        return 1;
+
+    } else {
+        puts("ERROR: Kein Group Pointer!");
+        puts("------------------------------------------------------");
+        puts("");
+
+        return -1;
+
+    }
 }
 
 static herr_t memvol_group_get(void *group, H5VL_group_get_t get_type, hid_t dxpl_id, void **req, va_list arguments)

@@ -59,8 +59,8 @@ int main()
 
 
 	// OPEN ////////////////////////////////////////////////////////////////////
-    g1 = H5Gopen2(fid, "g1", H5P_DEFAULT);
-    H5Gclose(g1);
+    //g1 = H5Gopen2(fid, "g1", H5P_DEFAULT);
+    //H5Gclose(g1);
 
 	// GET ////////////////////////////////////////////////////////////////////
 	//printf("Testing additional functions\n");

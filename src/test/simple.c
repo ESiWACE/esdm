@@ -21,7 +21,7 @@ int main(){
 
     herr_t status;
     hid_t fprop;
-    hid_t fid, group_id, group_id2;
+    hid_t fid, group_id, group_id2, group_id3, group_id4;
     hid_t vol_id = H5VL_memvol_init();
 
     hsize_t dim[2];
@@ -39,10 +39,14 @@ int main(){
     printf ("Using VOL %s\n", name);
     puts("");
 
-    /* Create a group named "/MyGroup" in the file. */
-    group_id = H5Gcreate(fid, "/MyGroup", H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
-    /* Create a group named "/MyOtherGroup" in "/MyGroup". */
-    group_id2 = H5Gcreate(group_id, "/MyOtherGroup", H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
+    /* Create a group named "MyGroup" in the file. */
+    group_id = H5Gcreate(fid, "MyGroup", H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
+    /* Create a group named "MyGroup1" in "MyGroup". */
+    group_id2 = H5Gcreate(group_id, "MyGroup1", H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
+    /* Create a group named "MyGroup2" in "MyGroup". */
+    group_id3 = H5Gcreate(group_id, "MyGroup2", H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
+    /* Create a group named "MyOtherGroup" in "MyGroup2". */
+    group_id4 = H5Gcreate(group_id3, "MyGroup3", H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
 
 //---------Dataset create Test--------------------
 
