@@ -15,7 +15,7 @@ static size_t lfs_read(int fd, char* buf, size_t count, off_t offset){
 	size_t ret;
 	while(count1 > 0){
                 ret =  pread(fd, buf, count1, offset1);
-		if (ret != count){
+		if (ret != count1){
 		  if (ret == -1){
 		    if(errno == EINTR){
 		      continue;
@@ -40,7 +40,7 @@ static size_t lfs_write(int fd, char* buf, size_t count, off_t offset){
 	size_t ret;
 	while(count1 > 0){
 		ret = pwrite(fd, buf, count1, offset1);
-		if (ret != count){
+		if (ret != count1){
 		  if (ret == -1){
 		    if(errno == EINTR){
 		      continue;
