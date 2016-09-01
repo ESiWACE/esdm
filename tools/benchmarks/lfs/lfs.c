@@ -214,7 +214,7 @@ size_t lfs_read(int fd, char *buf, size_t count, off_t offset){
 	//free(chunks_stack);
 	free(my_recs);
 	// Optimization: Write down the read query for future reads!
-	if (1 == 0){
+	if (total_found_count == -3 /* THRESHOLD */){
 		lfs_write(fd, buf, count, offset);
 	}
 	free(chunks_stack);

@@ -12,8 +12,10 @@
 
 #ifdef LFS_DUMMY_OPERATION
 #include <lfs-dummy.h>
+char *bench_type = "dummy version";
 #else
 #include <lfs.h>
+char *bench_type = "LFS version";
 #endif
 
 void clear_cache(){
@@ -65,6 +67,8 @@ int main ( int argc, char *argv[] ){
 	//}
 //	pid_t my_pid = getpid();
 //	system("cat /proc/%d/io", my_pid);
+	printf("Initializing the benchmcark with %s with following configurations:\n  File: %s\n  File Size: %lld Bytes\n  Iterations: %d\n  I/O Size: %zu Bytes\n", bench_type, argv[1], file_size, iterations, block_size);
+        printf("---------------------\n");
 	size_t seq_io = 800 * 1024 * 1024;
 	fill_file = (char *)malloc(seq_io);
 	memset(fill_file, 4, seq_io);
@@ -132,14 +136,14 @@ int main ( int argc, char *argv[] ){
 	//system("free -m | sed \"s/  */ /g\" | cut -d \" \" -f 7|tail -n 3");
 //	size_t read_bytes;
 	//test_read = (char *)malloc(8192 * 102400);
-	//long long blocksize = 8192 * 102400;
-	test_read = (char *)malloc(block_size);
+	long long blocksize = 2048 * 102400;
+	test_read = (char *)malloc(blocksize);
 
 //	for(long long pos = 0; pos < file_size; pos += blocksize){
-	for(int i = 0; i < iterations; i++){
-		myrand = (((long long)rand() * block_size) % file_size);
+	for(int i = 0; i < 50; i++){
+		myrand = (((long long)rand() * blocksize) % file_size);
 		//printf("block size is: %lu\n",blocksize);
-		lfs_read(myfd, test_read, block_size, myrand);
+		lfs_read(myfd, test_read, blocksize, myrand);
 		//if (pos + blocksize > file_size){
 		//	blocksize = file_size - pos;
 		//}
@@ -172,6 +176,46 @@ int main ( int argc, char *argv[] ){
                         putchar(c);
                 fclose(my_io);
         }*/
+	system("free -m | sed \"s/  */ /g\" | cut -d \" \" -f 7|tail -n 3");
+        gettimeofday(&tv, NULL);
+        start = (unsigned long long)(tv.tv_sec) * 1000 + (unsigned long long)(tv.tv_usec) / 1000;
+        myfd = lfs_open(argv[1], O_CREAT|O_RDWR, S_IRUSR|S_IWUSR); // re-openning the file
+        //char * test_read;
+        srand(666);
+        //system("free -m | sed \"s/  */ /g\" | cut -d \" \" -f 7|tail -n 3");
+//      size_t read_bytes;
+        //test_read = (char *)malloc(8192 * 102400);
+        blocksize = 8192 * 102400;
+        test_read = (char *)malloc(blocksize);
+
+	for(long long pos = 0; pos < file_size; pos += blocksize){
+        //for(int i = 0; i < iterations; i++){
+          //      myrand = (((long long)rand() * blocksize) % file_size);
+	                //printf("block size is: %lu\n",blocksize);
+                lfs_read(myfd, test_read, blocksize, pos);
+                if (pos + blocksize > file_size){
+                      blocksize = file_size - pos;
+                }
+                //printf("block size is: %lu\n",blocksize);
+        }
+        //free(test_read);
+//      system("cat /proc/%d/io", my_pid);
+        //system("cat /proc/self/io");
+        /*my_io = fopen("/proc/self/io", "r");
+        if (my_io) {
+                while ((c = getc(my_io)) != EOF)
+                        putchar(c);
+                fclose(my_io);
+        }*/
+        gettimeofday(&tv, NULL);
+        finish = (unsigned long long)(tv.tv_sec) * 1000 + (unsigned long long)(tv.tv_usec) / 1000;
+        seconds = finish - start;
+        system("free -m | sed \"s/  */ /g\" | cut -d \" \" -f 7|tail -n 3");
+        lfs_close(myfd); // closing the file
+        clear_cache(); // clear the cache
+        printf("read took %llu milli-seconds\n", seconds);
+        printf("read bandwidth: %llu MB/s\n", (((unsigned long long)file_size * 1000) / (1024 * 1024)) / seconds);
+        printf("read IOPS: %llu\n", ((unsigned long long)iterations * 1000) / seconds);
 	//int fd = open("read.result", O_CREAT|O_RDWR, S_IRUSR|S_IWUSR);
 	//pwrite(fd, test_read, block_size * 10, 0);
 	//close(fd);
