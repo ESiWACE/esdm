@@ -28,8 +28,8 @@ static void * memvol_file_create(const char *name, unsigned flags, hid_t fcpl_id
     memvol_object_t* object = (memvol_object_t *)malloc(sizeof(memvol_object_t));
 
     file->root_group = (memvol_group_t *)malloc(sizeof(memvol_group_t));
-    file->name = (char *)malloc(strlen(name));
-    file->root_group->name = (char *)malloc(strlen("/"));
+    file->name = (char *)malloc(strlen(name) + 1);
+    file->root_group->name = (char *)malloc(strlen("/") + 1);
 
     object->type = (memvol_object_type)malloc(sizeof(memvol_object_type));
     object->subclass = (memvol_group_t *)malloc(sizeof(memvol_group_t));
