@@ -165,7 +165,7 @@ static herr_t memvol_group_get(void *obj, H5VL_group_get_t get_type, hid_t dxpl_
 					relevant_group = g_array_index(group->childs_ord_by_index_arr, memvol_group_t*, loc_params.loc_data.loc_by_idx.n);
 					relevant_group = (memvol_group_t*) ((memvol_object_t*)relevant_group)->object;
 
-				} else{
+				} else {
 					assert(0);
 				}
 			}
