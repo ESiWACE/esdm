@@ -12,10 +12,10 @@
 
 #ifdef LFS_DUMMY_OPERATION
 #include <lfs-dummy.h>
-char *bench_type = "dummy version";
+char *bench_type = "dummy";
 #else
 #include <lfs.h>
-char *bench_type = "LFS version";
+char *bench_type = "LFS";
 #endif
 
 void clear_cache(){
@@ -67,7 +67,7 @@ int main ( int argc, char *argv[] ){
 	//}
 //	pid_t my_pid = getpid();
 //	system("cat /proc/%d/io", my_pid);
-	printf("Initializing the benchmcark with %s with following configurations:\n  File: %s\n  File Size: %lld Bytes\n  Iterations: %d\n  I/O Size: %zu Bytes\n", bench_type, argv[1], file_size, iterations, block_size);
+	printf("Initializing the benchmcark for %s version with following configurations:\n  File: %s\n  File Size: %lld Bytes\n  Iterations: %d\n  I/O Size: %zu Bytes\n", bench_type, argv[1], file_size, iterations, block_size);
         printf("---------------------\n");
 	size_t seq_io = 800 * 1024 * 1024;
 	fill_file = (char *)malloc(seq_io);
@@ -98,7 +98,7 @@ int main ( int argc, char *argv[] ){
 		printf("Could not create the proper file size of %lld, %d\n", file_size, rett);
 		return 0;
 	}
-
+	printf("---- performing Random writes ----\n");
 	for(int i = 0; i < iterations; i++)
 	{
 		//if(i % 50 == 0)
@@ -133,6 +133,7 @@ int main ( int argc, char *argv[] ){
 	myfd = lfs_open(argv[1], O_CREAT|O_RDWR, S_IRUSR|S_IWUSR); // re-openning the file
 	char * test_read;
 	srand(666);
+	printf("---- performing Random Read ----\n");
 	//system("free -m | sed \"s/  */ /g\" | cut -d \" \" -f 7|tail -n 3");
 //	size_t read_bytes;
 	//test_read = (char *)malloc(8192 * 102400);
@@ -182,6 +183,7 @@ int main ( int argc, char *argv[] ){
         myfd = lfs_open(argv[1], O_CREAT|O_RDWR, S_IRUSR|S_IWUSR); // re-openning the file
         //char * test_read;
         srand(666);
+	printf("---- performing Sequential Read (Reading entire file) ----\n");
         //system("free -m | sed \"s/  */ /g\" | cut -d \" \" -f 7|tail -n 3");
 //      size_t read_bytes;
         //test_read = (char *)malloc(8192 * 102400);

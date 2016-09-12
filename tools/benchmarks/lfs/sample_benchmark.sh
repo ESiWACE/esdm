@@ -2,7 +2,7 @@
 
 echo "batching slurm files!!!"
 
-sbatch --nodelist=west[1] rand_lfs.slurm /tmp/datafile7.df 8192 8192000 100
+sbatch --nodelist=west[1] rand_lfs.slurm /tmp/datafile7.df 8192 8192000 10
 
 echo "batching slurm files finished!"
 

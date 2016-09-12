@@ -27,8 +27,8 @@ int lfs_open(char *df, int flags, mode_t mode)
 	char * metafile = (char *) malloc((strlen(df) + 4) * sizeof(char));
 	strcpy(metafile, df);
 	strcat(metafile, ".log");
-	printf("filename: %s\n", filename);
-	printf("lfsfilename: %s\n", metafile);
+	//printf("filename: %s\n", filename);
+	//printf("lfsfilename: %s\n", metafile);
 	lfsfilename = strdup(metafile);
 	lfsfiles[current_index].log_file = fopen(lfsfilename, "a+");
 	lfsfiles[current_index].data_file = open(filename, O_CREAT|O_RDWR, S_IRUSR|S_IWUSR);
