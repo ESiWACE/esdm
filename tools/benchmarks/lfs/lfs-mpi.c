@@ -22,7 +22,7 @@ struct lfs_files lfsfiles[20];
 int current_index = 1;
 char * mother_file;
 
-int lfs_mpi_open(int proc_num, char *df, int flags, mode_t mode)
+int lfs_mpi_open(char *df, int flags, mode_t mode, int proc_num)
 {
 	int length_num = snprintf(NULL, 0, "%d", proc_num);
 	printf("length: %d\n", length_num);
@@ -237,39 +237,46 @@ size_t lfs_mpi_read(int fd, char *buf, size_t count, off_t offset){
                 size_t fileLen2;
                 int record_count2;
                 int total_found_count2;
+		int not_found_in_files = 1;
 		fscanf(meta_file, "%d", &proc_rank);
 		while(!feof(meta_file)) {
 			printf("this is rank: %d !!!\n", proc_rank);
-			for (int j = current_index - 1; j >= 1; j--)
+			for (int j = current_index - 1; j >= 1; j--){
+				printf("here %d %d %d\n", lfsfiles[j].proc_num, proc_rank, j);
 				if(lfsfiles[j].proc_num == proc_rank){
 					if(fcntl(lfsfiles[j].data_file, F_GETFL) != -1){
 						found_index = j;
 						printf("found_open\n");
+						not_found_in_files = 0;
 						break;
 					} else {
-						printf("found_not_open\n");
-						length_num = snprintf(NULL, 0, "%d", proc_rank);
-						proc_name = malloc(length_num + 1);
-						snprintf(proc_name, length_num + 1, "%d", proc_rank);
-						printf("proc_name: %s !!!\n", proc_name);
-					        lfsfilename2 = malloc((strlen(mother_file) + strlen(proc_name) + 4) * sizeof(char));
-					        strcpy(lfsfilename2, mother_file);
-					        strcat(lfsfilename2, proc_name);
-		        			strcat(lfsfilename2, ".log");
-						filename2 = malloc((strlen(mother_file) + strlen(proc_name)) * sizeof(char));
-                        	                strcpy(filename2, mother_file);
-                               	        	strcat(filename2, proc_name);
-						printf("filename: %s\n", filename2);
-                                                printf("lfsfilename: %s\n", lfsfilename2);
-						lfsfiles[current_index].log_file = fopen(lfsfilename2, "a+");
-						lfsfiles[current_index].data_file = open(filename2, O_CREAT|O_RDWR, S_IRUSR|S_IWUSR);
-						lfsfiles[current_index].proc_num = proc_rank;
-						current_index++;
-						found_index = current_index - 1;
+						not_found_in_files = 1;
 						break;
 					} //end of IF/ELSE
 				} // end of IF
-			// end of FOR
+			}// end of FOR
+			if(not_found_in_files == 1){
+                                                printf("found_not_open\n");
+                                                length_num = snprintf(NULL, 0, "%d", proc_rank);
+                                                proc_name = malloc(length_num + 1);
+                                                snprintf(proc_name, length_num + 1, "%d", proc_rank);
+                                                printf("proc_name: %s !!!\n", proc_name);
+                                                lfsfilename2 = malloc((strlen(mother_file) + strlen(proc_name) + 4) * sizeof(char));
+                                                strcpy(lfsfilename2, mother_file);
+                                                strcat(lfsfilename2, proc_name);
+                                                strcat(lfsfilename2, ".log");
+                                                filename2 = malloc((strlen(mother_file) + strlen(proc_name)) * sizeof(char));
+                                                strcpy(filename2, mother_file);
+                                                strcat(filename2, proc_name);
+                                                printf("filename: %s\n", filename2);
+                                                printf("lfsfilename: %s\n", lfsfilename2);
+                                                lfsfiles[current_index].log_file = fopen(lfsfilename2, "a+");
+                                                lfsfiles[current_index].data_file = open(filename2, O_CREAT|O_RDWR, S_IRUSR|S_IWUSR);
+                                                lfsfiles[current_index].proc_num = proc_rank;
+                                                current_index++;
+                                                found_index = current_index - 1;
+
+			}
 			my_recs2 = read_record(found_index);
 		        chunks_stack2 = (lfs_record *)malloc(sizeof(lfs_record) * 1001);
 		        ch_s2 = 1;

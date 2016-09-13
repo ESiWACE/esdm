@@ -1,3 +1,4 @@
+MPICC=mpicc
 CC=gcc
 CFLAGS=-g -Wall -I. -std=gnu99 -pedantic
 LDFLAGS=
@@ -15,7 +16,7 @@ all: workload-random-dummy workload-random-dynamic workload-random-lfs workload-
 
 ## Built simple
 workload-mpi: lfs-mpi.o random_workload_mpi.o
-	${CC} ${CFLAGS} $? -o $@ ${LDFLAGS}
+	${MPICC} ${CFLAGS} $? -o $@ ${LDFLAGS}
 
 workload-random-lfs: lfs.o random_workload.o
 	${CC} ${CFLAGS} $? -o $@ ${LDFLAGS}
