@@ -102,16 +102,52 @@ static void * memvol_group_open(void* object, H5VL_loc_params_t loc_params, cons
 
 static herr_t memvol_group_close(void* grp, hid_t dxpl_id, void** req) {
 
+   
     puts("------------ memvol_group_close() called -------------");
+       
+    GHashTableIter iter;
+    gpointer value, key;
+    memvol_object_t* object;
 
     memvol_object_t* obj = (memvol_object_t *)grp;
 
     if (obj->type == GROUP_T) {
+
         memvol_group_t* g = (memvol_group_t *)obj->subclass;
+        
 
         printf("Group %s (%p) closing...\n", (char*)g->name, (void*)g);
 
+        g_hash_table_iter_init (&iter, g->children);
+
+       //free memory allocated for datasets
+
+        while(g_hash_table_iter_next (&iter, &key, &value))  {
+
+           object = (memvol_object_t *)value;
+
+           if(object->type == DATASET_T) {
+
+              memvol_dataset_t* dataset = (memvol_dataset_t *)object->subclass;
+
+              free(dataset->name);
+              free(dataset->data);
+
+              free(dataset);
+              free(object);
+ 
+              dataset->name = NULL;
+              dataset->data = NULL;
+    
+              dataset = NULL;
+              object = NULL;
+
+           }
+        }
+
         free(g->name);
+        
+
         g_hash_table_destroy(g->children); /* SEG FAULT */
         free(g);
 
