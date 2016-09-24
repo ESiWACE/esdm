@@ -62,7 +62,7 @@ static void* memvol_group_create(void* obj, H5VL_loc_params_t loc_params, const 
         memvol_object_t* obj = (memvol_object_t *)children_keys->data;
 
         if (obj->type == GROUP_T) {
-            printf("|\t%s\n", ((memvol_group_t *)obj->subclass)->name);
+            printf("|  %s\n", ((memvol_group_t *)obj->subclass)->name);
 
         }
         children_keys = children_keys->next;
@@ -100,40 +100,6 @@ static void * memvol_group_open(void* object, H5VL_loc_params_t loc_params, cons
     return (void *)ret;
 }
 
-static herr_t memvol_group_close(void* grp, hid_t dxpl_id, void** req) {
-
-    puts("------------ memvol_group_close() called -------------");
-
-    memvol_object_t* obj = (memvol_object_t *)grp;
-
-    if (obj->type == GROUP_T) {
-        memvol_group_t* g = (memvol_group_t *)obj->subclass;
-
-        printf("Group %s (%p) closing...\n", (char*)g->name, (void*)g);
-
-        free(g->name);
-        g_hash_table_destroy(g->children); /* SEG FAULT */
-        free(g);
-
-        g->name = NULL;
-        g->children = NULL;
-        g = NULL;
-
-        puts("------------------------------------------------------");
-        puts("");
-
-        return 1;
-
-    } else {
-        puts("ERROR: Kein Group Pointer!");
-        puts("------------------------------------------------------");
-        puts("");
-
-        return -1;
-
-    }
-}
-
 static herr_t memvol_group_get(void *group, H5VL_group_get_t get_type, hid_t dxpl_id, void **req, va_list arguments)
 {
     puts("------------ memvol_group_get() called ---------------");
@@ -160,4 +126,10 @@ static herr_t memvol_group_get(void *group, H5VL_group_get_t get_type, hid_t dxp
     puts("");
 
     return ret;
+}
+
+static herr_t memvol_group_close(void* grp, hid_t dxpl_id, void** req) {
+
+    puts("------------ memvol_group_close() called -------------");
+    return 0;
 }

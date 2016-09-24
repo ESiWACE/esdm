@@ -279,23 +279,5 @@ puts("------------ memvol_dataset_get() called -------------\n");
 static herr_t memvol_dataset_close(void* dset, hid_t dxpl_id, void** req) {
 
     puts("------------ memvol_dataset_close() called -------------\n");
-  
-    memvol_object_t *object = (memvol_object_t*) dset;
-        
-    memvol_dataset_t *dataset = object->subclass;
-
-    free(dataset->name);
-    free(dataset->data);
-
-    free(dataset);
-    free(object);
-
-    dataset->name = NULL;
-    dataset->data = NULL;
-    
-    dataset = NULL;
-    object = NULL;
-       
-
-    return 1;
+    return 0;
 }
