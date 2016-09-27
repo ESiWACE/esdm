@@ -100,7 +100,7 @@ static void * memvol_group_open(void* object, H5VL_loc_params_t loc_params, cons
     return (void *)ret;
 }
 
-<<<<<<< HEAD
+
 static herr_t memvol_group_close(void* grp, hid_t dxpl_id, void** req) {
 
    
