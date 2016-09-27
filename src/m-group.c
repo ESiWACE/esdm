@@ -120,7 +120,7 @@ static herr_t memvol_group_close(void* grp, hid_t dxpl_id, void** req) {
 
         g_hash_table_iter_init (&iter, g->children);
 
-       //free memory allocated for datasets
+       //make free memory allocated for datasets 
 
         while(g_hash_table_iter_next (&iter, &key, &value))  {
 

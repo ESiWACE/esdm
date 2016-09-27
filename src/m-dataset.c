@@ -29,12 +29,17 @@ static void* memvol_dataset_create(void* obj, H5VL_loc_params_t loc_params, cons
 //Memory allocation for creating object 
 	memvol_object_t* dset_object = (memvol_object_t*)malloc(sizeof(memvol_object_t));
 
-        dset_object->type = (memvol_object_type)malloc(sizeof(memvol_object_type));
+        if( dset_object != NULL) {
+            dset_object->type = (memvol_object_type)malloc(sizeof(memvol_object_type));
 
 //Memory allocation for creating dataset structure
-        dset_object->subclass = (memvol_dataset_t *)malloc(sizeof(memvol_dataset_t));
+            dset_object->subclass = (memvol_dataset_t *)malloc(sizeof(memvol_dataset_t));
          
-       
+        }
+        else {
+	    printf("Can't allocate memory");
+	    return 0;
+	}
 //-------------------------------------------------------------------------------------------
 
         memvol_group_t* parent_group;
@@ -60,14 +65,21 @@ static void* memvol_dataset_create(void* obj, H5VL_loc_params_t loc_params, cons
         memvol_dataset_t*  dataset = dset_object->subclass;
 
         dataset->name = (char*)malloc(strlen(name) + 1);
-	strcpy(dataset->name, name);
+	strcpy(dataset->name, name);   // name of the dataset
 
        // retrieving of dataset, dataspace and link creation property lists
-	H5Pget(dcpl_id, H5VL_PROP_DSET_TYPE_ID, &dataset->datatype);
-	H5Pget(dcpl_id, H5VL_PROP_DSET_SPACE_ID, &dataset->dataspace);
-        H5Pget(dcpl_id, H5VL_PROP_DSET_LCPL_ID, &dataset->lcpl);
+	H5Pget(dcpl_id, H5VL_PROP_DSET_TYPE_ID, &dataset->datatype);    // datatype of the dataset
+ 
+	H5Pget(dcpl_id, H5VL_PROP_DSET_SPACE_ID, &dataset->dataspace);  // dataspace
 
-	dataset->data = NULL;
+ hssize_t space_number = H5Sget_simple_extent_npoints(dataset->dataspace); 
+DEBUG_MESSAGE("1. space_number = %d\n", space_number);
+
+        H5Pget(dcpl_id, H5VL_PROP_DSET_LCPL_ID, &dataset->lcpl);        // link creation property list
+
+	H5Pclose(dcpl_id);
+
+        dataset->data = NULL;       // raw data 
 
         DEBUG_MESSAGE("datatype_name %s\n", dataset->name);
 	DEBUG_MESSAGE("datatype_value %zu\n", dataset->datatype);
@@ -78,7 +90,8 @@ static void* memvol_dataset_create(void* obj, H5VL_loc_params_t loc_params, cons
 		
         DEBUG_MESSAGE("dataset %zu\n", dataset);
 
-        g_hash_table_insert(parent_group->children, strdup(name), dset_object);
+       
+        g_hash_table_insert(parent_group->children, strdup(name), dset_object);  // insertion in the table 
         DEBUG_MESSAGE("dataset_object %zu\n", dset_object);
 
 	return (void *)dset_object;
@@ -90,22 +103,13 @@ static void* memvol_dataset_open(void *obj, H5VL_loc_params_t loc_params, const 
 puts("------------ memvol_dataset_open() called -------------\n");
 
  
-//Memory allocation for dataset object being opened
-
-   memvol_object_t* dset_object = (memvol_object_t* )malloc(sizeof(memvol_object_t* ));
-   dset_object->type = (memvol_object_type)malloc(sizeof(memvol_object_type));
-
-//Memory allocation for dataset structure being opend
-   dset_object->subclass = (memvol_dataset_t *)malloc(sizeof(memvol_dataset_t));
-//--------------------------------------------------------------------------------- 
-
   
    memvol_object_t* loc_object = (memvol_object_t *)obj;
 
    memvol_group_t* parent = (memvol_group_t *)loc_object->subclass;
 
 // opening
-     dset_object = g_hash_table_lookup(parent->children, name);
+    memvol_object_t* dset_object = g_hash_table_lookup(parent->children, name);
 
      
     //debug Ausgaben
@@ -113,31 +117,37 @@ puts("------------ memvol_dataset_open() called -------------\n");
         puts("Dataset nicht im angegebenen Parent gefunden!\n");
 
     } else {
+
       memvol_dataset_t* dset = (memvol_dataset_t *)dset_object->subclass;
 
-        dset->name = (char*)malloc(strlen(name) + 1);
-	strcpy(dset->name, name);
+      strcpy(dset->name, name);
 //bebug ausgabe
  
       DEBUG_MESSAGE("Opened dataset object %zu \n", dset_object);
       DEBUG_MESSAGE("dataset %zu \n", dset_object->subclass);
       DEBUG_MESSAGE("dataset name %s \n", dset->name);
       DEBUG_MESSAGE("dataset datatype %zu \n", dset->datatype);
+      DEBUG_MESSAGE("dataset_dataspace %zu\n", dset->dataspace);
 
     DEBUG_MESSAGE("dataset data %zu \n", dset->data);
 
+hssize_t space_number = H5Sget_simple_extent_npoints(dset->dataspace); 
+DEBUG_MESSAGE("\n 2. space_number = %d\n", space_number);
+
     }
 
-return (void *)dset_object;
+return (void *) dset_object;
 
 }
 
 static herr_t memvol_dataset_read(void *dset, hid_t mem_type_id, hid_t mem_space_id, hid_t file_space_id,
                    hid_t xfer_plist_id, void * buf, void **req){
 
-
-htri_t ret;
 puts("------------ memvol_dataset_read() called -------------\n");
+
+ htri_t ret;
+ hssize_t write_number, n_points;
+
 
  memvol_object_t* object = (memvol_object_t*)dset;
  memvol_dataset_t*  dataset = (memvol_dataset_t* )object->subclass;
@@ -145,19 +155,43 @@ puts("------------ memvol_dataset_read() called -------------\n");
  if (dataset->data == NULL) {
   
     printf("Dataset is empty\n");
-
+    return 0;
   }
   else {
-     assert(H5Tget_class(mem_type_id) == H5Tget_class(dataset->datatype));
-// to do
-  DEBUG_MESSAGE("dataset->data %d\n", dataset->data);
+   assert(H5Tget_class(mem_type_id) == H5Tget_class(dataset->datatype));
 
-//read data
- buf = dataset->data;
+  
  //H5Tget_native_type ?
-}
+
+  if(file_space_id == H5S_ALL){
+
+      if(mem_space_id == H5S_ALL){
+
+      assert(write_number == n_points);
+     
+      //read data
+      buf = dataset->data;
+      
+      }
+      else { /*valid mem_space_id*/
+
+
+
+      } 
+   }
+   else { /*valid file_space_id*/
+
+      if(mem_space_id == H5S_ALL){
+
+
+      }
+      else {/*valid mem_space_id*/
+
+      } 
+   }
 
 return 1;
+}
 }
 
 static herr_t memvol_dataset_write(void *dset, hid_t mem_type_id, hid_t mem_space_id, hid_t file_space_id,
@@ -165,38 +199,111 @@ static herr_t memvol_dataset_write(void *dset, hid_t mem_type_id, hid_t mem_spac
 
 puts("------------ memvol_dataset_write() called -------------\n");
 
-
+ int dims;
  htri_t ret;
- memvol_object_t* object = (memvol_object_t*)dset;
+ hsize_t *dim;
+ hsize_t *maxdim;
+ hssize_t write_number, n_points;
+ herr_t status;
+ size_t type_size, size; 
+ H5T_class_t class;
+
+
+ memvol_object_t* object = (memvol_object_t*) dset;
  memvol_dataset_t*  dataset = (memvol_dataset_t* )object->subclass;
 
 
- hssize_t space_number = H5Sget_simple_extent_npoints(dataset->dataspace); /* number of elements in dataspace */
+/* class of datatype */
+ class = H5Tget_class(dataset->datatype); 
 
-size_t type_size = H5Tget_size(mem_type_id); /*size of the type in Bytes*/
+/*size of datatype in dataset*/
 
-hssize_t write_number = H5Sget_simple_extent_npoints(mem_space_id); /*number of elements to write*/
+ size = H5Tget_size(dataset->datatype);
+  
+/*number of points in dataset*/
+ n_points = H5Sget_simple_extent_npoints(dataset->dataspace);
 
-//assert, that data passt in dataset container
-assert(write_number <= space_number);
+if(dataset->data == NULL) {
+
+    /*memory allocation for data*/  //to do
+     dataset->data = calloc(n_points,size);
+
+}
+
+/*rank of the dataset dataspace*/
+dims = H5Sget_simple_extent_ndims(dataset->dataspace); 
+
+/* dimention size and maximal size*/
+status = H5Sget_simple_extent_dims(dataset->dataspace, dim, maxdim);
+
+/* number of elements to write */
+write_number = H5Sget_select_npoints(mem_space_id); 
+
+/*size of the mem_type in Bytes*/
+type_size = H5Tget_size(mem_type_id); 
 
 //assert, that datatype class is equal 
 assert(H5Tget_class(mem_type_id) == H5Tget_class(dataset->datatype));
 
+//assert, that data passt in dataset container
+assert(write_number <= n_points);
 
-if(dataset->data == NULL) {
+if(file_space_id == H5S_ALL){
 
-   hid_t* data = dataset->data;
+   if(mem_space_id == H5S_ALL){
 
-//memory allocation for data
-   data = (hid_t*) calloc(write_number, type_size);
-  
+     assert(write_number == n_points);
+     //complete write
+     // writes from buffer
+       for(int index = 0; index <= write_number; index++){
+          *(dataset->data + index) = buf[index];
+       }
+    }
+   else { /*valid mem_space_id*/
+
+
+
+   } 
+}
+else { /*valid file_space_id*/
+
+    if(mem_space_id == H5S_ALL){
+
+
+    }
+    else {/*valid mem_space_id*/
+
+    } 
 }
 
-// writes from buffer
-dataset->data = &buf;
-
+H5S_sel_type sel_type = H5Sget_select_type(file_space_id); 
  
+switch(sel_type){
+
+	case H5S_SEL_NONE:
+	{
+          break;
+	}
+	case H5S_SEL_POINTS:
+	{
+         break;
+	}
+	case H5S_SEL_HYPERSLABS: 
+	{
+         break;
+	}
+	case H5S_SEL_ALL:
+	{
+          break;
+	}
+	default:
+	{
+             DEBUG_MESSAGE("unknown selection type\n");
+	     ret = 0;
+	}
+}
+
+
 return 1;
 }
 
@@ -209,7 +316,7 @@ puts("------------ memvol_dataset_get() called -------------\n");
 
    herr_t ret_value = 1;
 
-   
+ //  va_start(arguments, 7);
    switch(get_type) {
 
            case H5VL_DATASET_GET_DAPL: 
@@ -264,7 +371,7 @@ puts("------------ memvol_dataset_get() called -------------\n");
            case H5VL_DATASET_GET_TYPE:
            {
       		hid_t *ret_id = va_arg (arguments, hid_t *);
-		printf("Datatype %p\n", *ret_id);
+		printf("Datatype %d\n", *ret_id);
                 
 		break;
            }
@@ -273,7 +380,8 @@ puts("------------ memvol_dataset_get() called -------------\n");
 		ret_value = 0;
 	   }
    }
-    return ret_value;       
+   va_end(arguments);
+   return ret_value;       
 }
  
 static herr_t memvol_dataset_close(void* dset, hid_t dxpl_id, void** req) {
@@ -283,19 +391,9 @@ static herr_t memvol_dataset_close(void* dset, hid_t dxpl_id, void** req) {
     memvol_object_t *object = (memvol_object_t*) dset;
         
     memvol_dataset_t *dataset = object->subclass;
-
-    free(dataset->name);
-    free(dataset->data);
-
-    free(dataset);
-    free(object);
-
-    dataset->name = NULL;
-    dataset->data = NULL;
-    
-    dataset = NULL;
-    object = NULL;
+/*
+    allocated memory will be free by closing of the location group
        
-
+**/
     return 1;
 }
