@@ -62,7 +62,7 @@ static void* memvol_group_create(void* obj, H5VL_loc_params_t loc_params, const 
         memvol_object_t* obj = (memvol_object_t *)children_keys->data;
 
         if (obj->type == GROUP_T) {
-            printf("|\t%s\n", ((memvol_group_t *)obj->subclass)->name);
+            printf("|  %s\n", ((memvol_group_t *)obj->subclass)->name);
 
         }
         children_keys = children_keys->next;
@@ -100,6 +100,7 @@ static void * memvol_group_open(void* object, H5VL_loc_params_t loc_params, cons
     return (void *)ret;
 }
 
+<<<<<<< HEAD
 static herr_t memvol_group_close(void* grp, hid_t dxpl_id, void** req) {
 
    
@@ -170,6 +171,7 @@ static herr_t memvol_group_close(void* grp, hid_t dxpl_id, void** req) {
     }
 }
 
+
 static herr_t memvol_group_get(void *group, H5VL_group_get_t get_type, hid_t dxpl_id, void **req, va_list arguments)
 {
     puts("------------ memvol_group_get() called ---------------");
@@ -196,4 +198,10 @@ static herr_t memvol_group_get(void *group, H5VL_group_get_t get_type, hid_t dxp
     puts("");
 
     return ret;
+}
+
+static herr_t memvol_group_close(void* grp, hid_t dxpl_id, void** req) {
+
+    puts("------------ memvol_group_close() called -------------");
+    return 0;
 }

@@ -148,34 +148,5 @@ static herr_t memvol_file_get(void *file, H5VL_file_get_t get_type, hid_t dxpl_i
 static herr_t memvol_file_close(void *obj, hid_t dxpl_id, void **req)
 {
     puts("------------ memvol_file_close() called --------------");
-
-    memvol_object_t* object = (memvol_object_t *)obj;
-
-    if (object->type == GROUP_T) {
-        memvol_group_t* f = (memvol_group_t *)object->subclass;
-
-        printf("Root-Group-Pointer %p\n", (void*)f);
-
-        free(f->name);
-        //g_hash_table_destroy(f->children);
-        free(f);
-
-        f->name = NULL;
-        f->children = NULL;
-        f = NULL;
-
-        puts("------------------------------------------------------");
-        puts("");
-        
-        return 1;
-        
-    } else {
-        puts("ERROR: Kein Root-Group Pointer!");
-
-        puts("------------------------------------------------------");
-        puts("");
-
-        return -1;
-
-    }
+    return 0;
 }
