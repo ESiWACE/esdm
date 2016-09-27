@@ -200,8 +200,4 @@ static herr_t memvol_group_get(void *group, H5VL_group_get_t get_type, hid_t dxp
     return ret;
 }
 
-static herr_t memvol_group_close(void* grp, hid_t dxpl_id, void** req) {
 
-    puts("------------ memvol_group_close() called -------------");
-    return 0;
-}
