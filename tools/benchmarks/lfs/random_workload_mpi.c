@@ -56,7 +56,7 @@ int main ( int argc, char *argv[] ){
 
 	printf("Hello world! I'm process %i out of %i processes\n", my_id, num_procs);
 
-	int myfd = lfs_mpi_open("MP.data", O_CREAT|O_RDWR, S_IRUSR|S_IWUSR, my_id);
+	int myfd = lfs_mpi_open("MP.data", O_CREAT|O_RDWR, S_IRUSR|S_IWUSR, MPI_COMM_WORLD);
 
 	size_t seq_io = 800;
 	if(my_id == 0 ){
@@ -88,4 +88,3 @@ int main ( int argc, char *argv[] ){
 	ierr = MPI_Finalize();
 	return 0;
 }
-

@@ -11,7 +11,7 @@ all: workload-random-dummy workload-random-dynamic workload-random-lfs workload-
 
 %.o : %.c
 	@echo $?
-	${CC} -c $(CFLAGS) $< -o $@
+	${MPICC} -c $(CFLAGS) $< -o $@
 
 
 ## Built simple
@@ -32,7 +32,7 @@ workload-sequential-dummy: sequential_workload.c lfs-dummy.h
 
 ## Built with shared library
 liblfs.so:
-	${CC} -fPIC ${CFLAGS} -c -Wall lfs.c -shared -o $@ 
+	${CC} -fPIC ${CFLAGS} -c -Wall lfs.c -shared -o $@
 
 workload-random-dynamic: liblfs.so
 	${CC} random_workload.c ${CFLAGS} -o $@ -L. -llfs
@@ -50,4 +50,3 @@ clean:
 	rm -f workload-sequential-dummy
 	rm -f workload-sequential-lfs
 	rm -f liblfs.so
-

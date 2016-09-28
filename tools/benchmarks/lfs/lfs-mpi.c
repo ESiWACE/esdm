@@ -7,93 +7,89 @@
 #include <string.h>
 #include <time.h>
 #include <stdint.h>
-//#include "/usr/src/linux-headers-4.4.0-38/include/linux/mpi.h"
 #include <mpi.h>
+#include <sys/time.h>
 
 #include <lfs-mpi-internal.h>
+#include <lfs-mpi.h>
 
-char * filename;
-char * lfsfilename;
-//std::string temp = "datafile.df";
-//filename = strdup(temp.c_str());
-//temp = "metafile.mf";
-//lfsfilename = strdup(temp.c_str());
-
-
-struct lfs_files lfsfiles[20];
-int current_index = 1;
-char * mother_file;
-int current_epoch = 0;
-
-int lfs_mpi_open(char *df, int flags, mode_t mode, int proc_rank)
+int lfs_mpi_open(lfs_mpi_file_p * fd_p, char *df, int flags, mode_t mode, MPI_Comm com)
 {
-	int length_rank = snprintf(NULL, 0, "%d", proc_rank);
-//	printf("length: %d\n", length_rank);
-	char * proc_name = malloc(length_rank + 1);
-	snprintf(proc_name, length_rank + 1, "%d", proc_rank);
-//        printf("proc_name: %s !!!\n", proc_name);
-	filename = malloc((strlen(df) + strlen(proc_name)) * sizeof(char));
-	strcpy(filename, df);
-        strcat(filename, proc_name);
-	lfsfilename = (char *) malloc((strlen(filename) + 4) * sizeof(char));
-	strcpy(lfsfilename, filename);
-	strcat(lfsfilename, ".log");
-//	printf("filename: %s\n", filename);
-//	printf("lfsfilename: %s\n", lfsfilename);
-	mother_file = strdup(df);
-	if(access(filename, F_OK ) == -1) {
-		FILE * meta_file = fopen (df, "a+");
-		fwrite(proc_name, sizeof(char) * length_rank, 1, meta_file);
-		fwrite("\n", sizeof(char), 1, meta_file);
+	*fd_p = (lfs_mpi_file_p) malloc(sizeof(struct lfs_file));
+
+	lfs_mpi_file_p fd = *fd_p;
+	int ret, rank, size;
+
+	MPI_Comm_rank(MPI_COMM_WORLD, & rank);
+
+	char * lfsfilename;
+	lfsfilename = malloc((strlen(df) + 100) * sizeof(char));
+	sprintf(lfsfilename, "%s%d.log", df, rank);
+	fd->filename = strdup(lfsfilename);
+	fd->filename[strlen(fd->filename) - 4] = 0;
+
+	fd->mother_file = strdup(df);
+
+	// TODO work for read-only, write/read workflows, too.
+	ret = access(fd->filename, F_OK ) == -1;
+	MPI_Allreduce(MPI_IN_PLACE, &ret, 1, MPI_INT, MPI_MIN, com);
+
+	if( ! ret ) { // no file does exist so far
+		return -1;
+	}
+
+	if(rank == 0) {
+		MPI_Comm_size(MPI_COMM_WORLD, & size);
+
+		FILE * meta_file = fopen (df, "w");
+		fprintf(meta_file, "%d", size);
 		fclose(meta_file);
 	}
-	lfsfiles[current_index].log_file = fopen(lfsfilename, "a+");
-	lfsfiles[current_index].data_file = open(filename, O_CREAT|O_RDWR, S_IRUSR|S_IWUSR);
-	lfsfiles[current_index].proc_rank = proc_rank;
-	//current_index++;
-	free(filename);
-	free(lfsfilename);
-	free(proc_name);
-	return current_index;
+
+	fd->log_file = fopen(lfsfilename, "w"); // this is not working concurrently my friend
+	fd->data_file = open(fd->filename, O_CREAT|O_RDWR|O_TRUNC, S_IRUSR|S_IWUSR);
+	fd->file_position = 0;
+	fd->proc_rank = rank;
+	fd->current_epoch = 0;
+	ret = MPI_Comm_dup(com, & fd->com);
+	assert(ret == MPI_SUCCESS);
+	return 0;
 }
 
-void lfs_mpi_next_epoch(){
-	int world_rank;
-	MPI_Comm_rank(MPI_COMM_WORLD, &world_rank);
-	int world_size;
-	MPI_Status status;
-	MPI_Comm_size(MPI_COMM_WORLD, &world_size);
-	current_epoch++;
+void lfs_mpi_next_epoch(lfs_mpi_file_p fd){
+	fd->current_epoch++;
 	off_t offset_zero = 0;
 	size_t size_zero = 0;
 
-	fwrite(& offset_zero, sizeof(offset_zero), 1, lfsfiles[current_index].log_file);
-	fwrite(& size_zero, sizeof(size_zero), 1, lfsfiles[current_index].log_file);
+	fwrite(& offset_zero, sizeof(offset_zero), 1, fd->log_file);
+	fwrite(& size_zero, sizeof(size_zero), 1, fd->log_file);
 
 	struct timeval  tv;
 	gettimeofday(&tv, NULL);
 	long long time_in_mill = tv.tv_sec*1000 + tv.tv_usec/1000;
-	printf("I'm Proc %d and I've reached the barrier! %lld\n", world_rank, time_in_mill);
+	printf("I'm Proc %d and I've reached the barrier! %lld\n", fd->proc_rank, time_in_mill);
+
+	// Probably we do not need it for write only.
 	MPI_Barrier(MPI_COMM_WORLD);
+
 	gettimeofday(&tv, NULL);
 	time_in_mill = (tv.tv_sec) * 1000 + (tv.tv_usec) / 1000 ;
-	printf("Proc %d released! %lld\n", world_rank, time_in_mill);
+	printf("Proc %d released! %lld\n", fd->proc_rank, time_in_mill);
 }
+
 // this is the LFS write function
-size_t lfs_mpi_write(int fd, void *buf, size_t count, off_t offset){
+size_t lfs_mpi_write(lfs_mpi_file_p fd, void *buf, size_t count, off_t offset){
 	int ret = 0;
 	size_t data_size;
 	data_size = count;
-	// determining the END OF FILE exact address
-	struct stat stats;
 
-	fstat(lfsfiles[fd].data_file, &stats);
-	size_t  end_of_file = stats.st_size;
 	// perfoming the lfs write ---> appending the data into the END OF FILE
-	ret = pwrite(lfsfiles[fd].data_file, buf, data_size, end_of_file);
+	// TODO PROPER POSIX WRITE CYCLE LOOP, SEE MY CHANGES IN LFS.c
+	ret = pwrite(fd->data_file, buf, data_size, fd->file_position);
+	fd->file_position += ret;
 	// writing the mapping info for the written data to know it's exact address later
-	fwrite(& offset, sizeof(offset), 1, lfsfiles[fd].log_file);
-	fwrite(& data_size, sizeof(data_size), 1, lfsfiles[fd].log_file);
+	fwrite(& offset, sizeof(offset), 1, fd->log_file);
+	fwrite(& data_size, sizeof(data_size), 1, fd->log_file);
 	return ret;
 }
 
@@ -226,7 +222,7 @@ int lfs_mpi_find_chunks(size_t a, size_t b, int index, struct lfs_record * my_re
 	return 0;
 }
 
-size_t lfs_mpi_internal_read(int fd, char *buf, struct lfs_record ** query, int* q_index, struct lfs_record * rec, int record_count, struct lfs_record ** missing_chunks, int* m_ch_s, off_t main_addr){
+size_t lfs_mpi_internal_read(lfs_mpi_file_p fd, char *buf, struct lfs_record ** query, int* q_index, struct lfs_record * rec, int record_count, struct lfs_record ** missing_chunks, int* m_ch_s, off_t main_addr){
 	struct lfs_record * chunks_stack;
 	struct lfs_record temp;
         chunks_stack = (lfs_record *)malloc(sizeof(lfs_record) * 1001);
@@ -252,7 +248,7 @@ size_t lfs_mpi_internal_read(int fd, char *buf, struct lfs_record ** query, int*
 }
 
 // main function for read query
-size_t lfs_mpi_read(int fd, char *buf, size_t count, off_t offset){
+size_t lfs_mpi_read(lfs_mpi_file_p fd, char *buf, size_t count, off_t offset){
 //	printf("entering mpi read\n");
 	struct lfs_record temp;
         struct lfs_record * my_recs;
@@ -402,11 +398,12 @@ void lfs_vec_add(struct lfs_record** chunks_stack, int * size, struct lfs_record
 	//printf("added chunk: %d, %d, %d\n", chunks_stack[*size - 2].addr, chunks_stack[*size - 2].size, chunks_stack[*size - 2].pos);
 }
 
-int  lfs_mpi_close(int  handle){
+int  lfs_mpi_close(lfs_mpi_file_p fd){
 //	printf("IN THE LFS_MPI_CLOSE\n");
 	fclose(lfsfiles[handle].log_file);
 //printf("IN middle of THE LFS_MPI_CLOSE\n");
 	close(lfsfiles[handle].data_file);
 //printf("IN THE end of the LFS_MPI_CLOSE\n");
+  MPI_Comm_free(& lfsfiles[current_index].com);
 	return 0;
 }
