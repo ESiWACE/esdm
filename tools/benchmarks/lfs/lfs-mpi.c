@@ -5,7 +5,9 @@
 #include <unistd.h>
 #include <assert.h>
 #include <string.h>
+#include <time.h>
 #include <stdint.h>
+//#include "/usr/src/linux-headers-4.4.0-38/include/linux/mpi.h"
 #include <mpi.h>
 
 #include <lfs-mpi-internal.h>
@@ -21,47 +23,70 @@ char * lfsfilename;
 struct lfs_files lfsfiles[20];
 int current_index = 1;
 char * mother_file;
+int current_epoch = 0;
 
-int lfs_mpi_open(char *df, int flags, mode_t mode, int proc_num)
+int lfs_mpi_open(char *df, int flags, mode_t mode, int proc_rank)
 {
-	int length_num = snprintf(NULL, 0, "%d", proc_num);
-	printf("length: %d\n", length_num);
-	char * proc_name = malloc(length_num + 1);
-	snprintf(proc_name, length_num + 1, "%d", proc_num);
-        printf("proc_name: %s !!!\n", proc_name);
+	int length_rank = snprintf(NULL, 0, "%d", proc_rank);
+//	printf("length: %d\n", length_rank);
+	char * proc_name = malloc(length_rank + 1);
+	snprintf(proc_name, length_rank + 1, "%d", proc_rank);
+//        printf("proc_name: %s !!!\n", proc_name);
 	filename = malloc((strlen(df) + strlen(proc_name)) * sizeof(char));
 	strcpy(filename, df);
         strcat(filename, proc_name);
 	lfsfilename = (char *) malloc((strlen(filename) + 4) * sizeof(char));
 	strcpy(lfsfilename, filename);
 	strcat(lfsfilename, ".log");
-	printf("filename: %s\n", filename);
-	printf("lfsfilename: %s\n", lfsfilename);
+//	printf("filename: %s\n", filename);
+//	printf("lfsfilename: %s\n", lfsfilename);
 	mother_file = strdup(df);
 	if(access(filename, F_OK ) == -1) {
 		FILE * meta_file = fopen (df, "a+");
-		fwrite(proc_name, sizeof(char) * length_num, 1, meta_file);
+		fwrite(proc_name, sizeof(char) * length_rank, 1, meta_file);
 		fwrite("\n", sizeof(char), 1, meta_file);
 		fclose(meta_file);
 	}
 	lfsfiles[current_index].log_file = fopen(lfsfilename, "a+");
 	lfsfiles[current_index].data_file = open(filename, O_CREAT|O_RDWR, S_IRUSR|S_IWUSR);
-	lfsfiles[current_index].proc_num = proc_num;
-	current_index++;
+	lfsfiles[current_index].proc_rank = proc_rank;
+	//current_index++;
 	free(filename);
 	free(lfsfilename);
 	free(proc_name);
-	return current_index - 1;
+	return current_index;
 }
 
+void lfs_mpi_next_epoch(){
+	int world_rank;
+	MPI_Comm_rank(MPI_COMM_WORLD, &world_rank);
+	int world_size;
+	MPI_Status status;
+	MPI_Comm_size(MPI_COMM_WORLD, &world_size);
+	current_epoch++;
+	off_t offset_zero = 0;
+	size_t size_zero = 0;
+
+	fwrite(& offset_zero, sizeof(offset_zero), 1, lfsfiles[current_index].log_file);
+	fwrite(& size_zero, sizeof(size_zero), 1, lfsfiles[current_index].log_file);
+
+	struct timeval  tv;
+	gettimeofday(&tv, NULL);
+	long long time_in_mill = tv.tv_sec*1000 + tv.tv_usec/1000;
+	printf("I'm Proc %d and I've reached the barrier! %lld\n", world_rank, time_in_mill);
+	MPI_Barrier(MPI_COMM_WORLD);
+	gettimeofday(&tv, NULL);
+	time_in_mill = (tv.tv_sec) * 1000 + (tv.tv_usec) / 1000 ;
+	printf("Proc %d released! %lld\n", world_rank, time_in_mill);
+}
 // this is the LFS write function
-ssize_t lfs_mpi_write(int fd, void *buf, size_t count, off_t offset){
+size_t lfs_mpi_write(int fd, void *buf, size_t count, off_t offset){
 	int ret = 0;
 	size_t data_size;
 	data_size = count;
 	// determining the END OF FILE exact address
 	struct stat stats;
-	//stat(fdp->data_file, & stats);
+
 	fstat(lfsfiles[fd].data_file, &stats);
 	size_t  end_of_file = stats.st_size;
 	// perfoming the lfs write ---> appending the data into the END OF FILE
@@ -74,32 +99,45 @@ ssize_t lfs_mpi_write(int fd, void *buf, size_t count, off_t offset){
 
 
 // extracts the mapping dict from our metadata(log) file
-lfs_record * read_record(int fd){
+int read_record(struct lfs_record ** rec, FILE* fd, int depth){
 	int ret;
 	// find the number of items in the array by using the size of the metadata file
-  	//struct stat stats;
-	//ret = fstat(myfd, & stats);
-	//printf("this is FD %d\n",fd);
-	size_t fileLen;
-	fseek(lfsfiles[fd].log_file, 0, SEEK_END);
-	fileLen = ftell(lfsfiles[fd].log_file);
-	fseek(lfsfiles[fd].log_file, 0, SEEK_SET);
-	//assert(ret == 0);
+  	size_t fileLen;
+	fseek(fd, 0, SEEK_END);
+	fileLen = ftell(fd);
+	fseek(fd, 0, SEEK_SET);
 	int record_count = fileLen / sizeof(lfs_record_on_disk);
-	//printf("this is size %d\n",record_count);
 	lfs_record * records = (lfs_record *)malloc(sizeof(lfs_record) * record_count);
 	size_t file_position = 0;
-
+//	printf("here rec_count: %d\n", record_count);
 	// filling the created array with the values inside the metadata file
-	//  FILE * lfs = fopen(lfsfilename, "r");
 	for(int i=0; i < record_count; i++){
-		ret = fread(& records[i], sizeof(lfs_record_on_disk), 1, lfsfiles[fd].log_file);
+		ret = fread(&records[i], sizeof(lfs_record_on_disk), 1, fd);
 		records[i].pos = file_position;
 		assert(ret == 1);
 		file_position += records[i].size;
-	}
-	//fclose(lfs);
-	return records;
+//		printf("this is record in read_rec_func: (%zu, %zu, %zu)\n", records[i].addr, records[i].size, records[i].pos);
+	} // end of FOR
+	// selecting the wanted EPOCH in the recod
+	int begin = record_count - 1, end = record_count - 1;
+	for(int i = record_count - 1; i >= 0; i--){
+		if(records[i].addr == 0 && records[i].size == 0){
+			depth--;
+			end = begin;
+			begin = i;
+			if(depth < 0)
+				break;
+			// end of IF
+		} // end of IF
+		if(i == 0){
+			end = begin;
+			begin = -1;
+		} // end of IF
+	} // end of FOR
+//	printf("begin: %d, end: %d\n", begin, end);
+	*rec = (lfs_record *)malloc(sizeof(lfs_record) * (end - begin));
+	memcpy(*rec, &records[begin + 1], sizeof(lfs_record) * (end - begin));
+	return end - begin;
 }
 
 
@@ -136,7 +174,7 @@ struct tup compare_tup(struct tup first, struct tup second){
 
 // recursive function that finds all of the areas that should be read to complete a read query
 int lfs_mpi_find_chunks(size_t a, size_t b, int index, struct lfs_record * my_recs, struct lfs_record ** chunks_stack, int* ch_s, struct lfs_record ** missing_chunks, int* m_ch_s){
-	//printf("check it out: %zu %zu, %d\n", a, b, index);
+//	printf("check it out: %zu %zu, %d\n", a, b, index);
 
 	// this IF is for ending the recursion
 	if(a == b)
@@ -188,139 +226,146 @@ int lfs_mpi_find_chunks(size_t a, size_t b, int index, struct lfs_record * my_re
 	return 0;
 }
 
+size_t lfs_mpi_internal_read(int fd, char *buf, struct lfs_record ** query, int* q_index, struct lfs_record * rec, int record_count, struct lfs_record ** missing_chunks, int* m_ch_s, off_t main_addr){
+	struct lfs_record * chunks_stack;
+	struct lfs_record temp;
+        chunks_stack = (lfs_record *)malloc(sizeof(lfs_record) * 1001);
+	int ch_s = 1;
+	*missing_chunks = (lfs_record *)malloc(sizeof(lfs_record) * 1001);
+//	printf("internal_read: allocations are done, q_index is %d\n", *q_index - 1);
+	for(int i = 0; i < (*q_index - 1); i++){
+		temp = (*query)[i];
+//		printf("internal_read: query is: %zu %zu %zu\n", temp.addr, temp.size ,temp.pos);
+		lfs_mpi_find_chunks(temp.addr, temp.addr + temp.size, record_count - 1, rec, &chunks_stack, &ch_s, missing_chunks, m_ch_s);
+	} // end of FOR
+//	printf("internal_read: total found chunks = %d\n", ch_s - 1);
+	int total_found_count = ch_s - 1;
+        // perform the read
+        for(int i = 0; i < total_found_count; i++){
+                temp = chunks_stack[i];
+//                printf("chunk stack: (%zu, %zu, %zu)\n", temp.addr, temp.size, temp.pos);
+                pread(fd, &buf[(temp.addr - main_addr)/sizeof(char)], temp.size, temp.pos);
+                } // end of FOR
+//	printf("internal_read: freeing\n");
+        free(chunks_stack);
+        return 0;
+}
 
 // main function for read query
 size_t lfs_mpi_read(int fd, char *buf, size_t count, off_t offset){
-//size_t lfs_read(size_t addr, size_t size, char * res){
-	//int fd = open(filename, O_RDONLY);
+//	printf("entering mpi read\n");
 	struct lfs_record temp;
-	//int rtrd;
-	// get the latest updated logs
-	struct lfs_record * my_recs = read_record(fd);
-
-	// create the vector that acts like a stack for our finding chunks recursive function
-	struct lfs_record * chunks_stack;
-	chunks_stack = (lfs_record *)malloc(sizeof(lfs_record) * 1001);
-	int ch_s = 1;
+        struct lfs_record * my_recs;
+	int my_recs_size;
+	int length_num;
+	char * proc_name;
+	struct lfs_record * query;
+	struct lfs_record * swap_help;
 	struct lfs_record * missing_chunks;
-        missing_chunks = (lfs_record *)malloc(sizeof(lfs_record) * 1001);
         int m_ch_s = 1;
-	// find the length of the log array
-	//struct stat stats;
-	// int	myfd;
-	//myfd = fileno(lfsfiles[fd].log_file);
-	//	fstat(myfd, & stats);
-	size_t fileLen;
-	fseek(lfsfiles[fd].log_file, 0, SEEK_END);
-	fileLen = ftell(lfsfiles[fd].log_file);
-	fseek(lfsfiles[fd].log_file, 0, SEEK_SET);
-	int record_count = fileLen / sizeof(lfs_record_on_disk);
-//	for(int mm = 0; mm < record_count; mm++)
-//		printf("rec: %lu, %lu, %lu\n", my_recs[mm].addr, my_recs[mm].size, my_recs[mm].pos);
-	// call the recursive function to find which areas need to be read
-	lfs_mpi_find_chunks(offset, offset + count, record_count - 1, my_recs, &chunks_stack, &ch_s, &missing_chunks, &m_ch_s);
-	int total_miss_count = m_ch_s - 1;
-	if(total_miss_count > 0){
-		printf("miss count > 0 \n");
-		FILE * meta_file = fopen (mother_file, "r");
-		int proc_rank, length_num;
-		char * proc_name;
-		char * lfsfilename2;
-		char * filename2;
-		int found_index;
-		struct lfs_record temp2;
-                struct lfs_record * my_recs2;
-                struct lfs_record * chunks_stack2;
-                int ch_s2 = 1;
-                struct lfs_record * missing_chunks2;
-                int m_ch_s2 = 1;
-                size_t fileLen2;
-                int record_count2;
-                int total_found_count2;
-		int not_found_in_files = 1;
-		fscanf(meta_file, "%d", &proc_rank);
-		while(!feof(meta_file)) {
-			printf("this is rank: %d !!!\n", proc_rank);
-			for (int j = current_index - 1; j >= 1; j--){
-				printf("here %d %d %d\n", lfsfiles[j].proc_num, proc_rank, j);
-				if(lfsfiles[j].proc_num == proc_rank){
-					if(fcntl(lfsfiles[j].data_file, F_GETFL) != -1){
-						found_index = j;
-						printf("found_open\n");
-						not_found_in_files = 0;
-						break;
-					} else {
-						not_found_in_files = 1;
-						break;
-					} //end of IF/ELSE
+	int proc_rank;
+	int query_index = 1;
+	int missing_count = 1;
+	FILE * temp_log_file;
+        int temp_data_file;
+	FILE * meta_file;
+	char * filename2;
+	char * lfsfilename2;
+	temp.addr = offset;
+	temp.size = count;
+	temp.pos = 0;
+	// filling the query stack with the main query information.
+	query = (lfs_record *)malloc(sizeof(lfs_record) * 1001);
+	lfs_vec_add(&query, &query_index, temp);
+	for(int i = 0; i <= current_epoch && missing_count > 0; i++){
+		// get the records log with the epoch depth of i for the main file.
+//		printf("get the records log with the epoch depth of %d for the main file\n", i);
+		my_recs_size = read_record(&my_recs, lfsfiles[fd].log_file, i);
+//		printf("this is record in read_func: (%zu, %zu, %zu)\n", my_recs[0].addr, my_recs[0].size, my_recs[0].pos);
+		// read from the main file, with epoch depth of i.
+//		printf("read from the main file, with epoch depth of %d\n", i);
+		lfs_mpi_internal_read(lfsfiles[fd].data_file, buf, &query, &query_index, my_recs, my_recs_size, &missing_chunks, &m_ch_s, offset);
+		// we no longer need the log so we free it.
+//		printf("free 1\n");
+		//my_recs[0];
+//		printf("SDFSDFSDF\n");
+		free(my_recs);
+		missing_count = m_ch_s - 1;
+//		printf("original missing_count is %d \n", missing_count);
+//		printf("before if \n");
+		if(missing_count > 0){
+			// so we have some missing chunks, we have to find them in other files, WITH the SAME epoch depth.
+//			printf("we have some missing chunks %d\n", missing_count);
+			// now we free the query stack and replace it with the missing stack (swap missing and query).
+//			printf("swap missing and query\n");
+	                free(query);
+                        swap_help = query;
+                        query = missing_chunks;
+                        query_index = m_ch_s;
+                        missing_chunks = swap_help;
+                        m_ch_s = 1;
+			// checking all of the files and opening them to process the read.
+			meta_file = fopen (mother_file, "r");
+			fscanf(meta_file, "%d", &proc_rank);
+                	while(!feof(meta_file)) {
+				// check if it's not the same main file that belongs to this process.
+                        	if(lfsfiles[fd].proc_rank != proc_rank){
+//					printf("prepare the name of the data and log files for %d.\n", proc_rank);
+					// prepare the name of the data and log files for the selected proc_rank.
+	                                length_num = snprintf(NULL, 0, "%d", proc_rank);
+        	                        proc_name = (char *)malloc(length_num + 1);
+                	                snprintf(proc_name, length_num + 1, "%d", proc_rank);
+                        	        lfsfilename2 = (char *)malloc((strlen(mother_file) + strlen(proc_name) + 4) * sizeof(char));
+                        	        strcpy(lfsfilename2, mother_file);
+                        	        strcat(lfsfilename2, proc_name);
+                        	        strcat(lfsfilename2, ".log");
+                        	        filename2 = (char *)malloc((strlen(mother_file) + strlen(proc_name)) * sizeof(char));
+                        	        strcpy(filename2, mother_file);
+                        	        strcat(filename2, proc_name);
+					free(proc_name);
+					// open both data and log files for the selected proc_rank.
+                        	        temp_log_file = fopen(lfsfilename2, "r");
+                        	        temp_data_file = open(filename2, O_RDONLY);
+					// now the file is open, so we start reading the query stack (previously missing stack) from the file.
+					// first we need to get the records log with the epoch depth of i for the selected file.
+					my_recs_size = read_record(&my_recs, temp_log_file, i);
+//					printf("rec size is: %d now perform the read\n", my_recs_size);
+					// perform the read.
+					lfs_mpi_internal_read(temp_data_file, buf, &query, &query_index, my_recs, my_recs_size, &missing_chunks, &m_ch_s, offset);
+					// now we free the file names and close the related files.
+					fclose(temp_log_file);
+					close(temp_data_file);
+					free(filename2);
+					free(lfsfilename2);
+					free(query);
+					// we no longer need the log so we free it.
+//					printf("free 2\n");
+					free(my_recs);
+					//printf("HIIIIIII\n");
+					// now again, we free the query stack and replace it with the missing stack (swap missing and query).
+					missing_count = m_ch_s - 1;
+ //                                       printf("HIIIIIII44444, missing_count = %d\n", missing_count);
+                                        if(missing_count == 0)
+                                                break;
+					swap_help = query;
+                                        query = missing_chunks;
+                                        query_index = m_ch_s;
+                                        missing_chunks = swap_help;
+					//printf("HIIIIIII22222\n");
+                                        m_ch_s = 1;
+//					printf("HIIIIIII333333\n");
 				} // end of IF
-			}// end of FOR
-			if(not_found_in_files == 1){
-                                                printf("found_not_open\n");
-                                                length_num = snprintf(NULL, 0, "%d", proc_rank);
-                                                proc_name = malloc(length_num + 1);
-                                                snprintf(proc_name, length_num + 1, "%d", proc_rank);
-                                                printf("proc_name: %s !!!\n", proc_name);
-                                                lfsfilename2 = malloc((strlen(mother_file) + strlen(proc_name) + 4) * sizeof(char));
-                                                strcpy(lfsfilename2, mother_file);
-                                                strcat(lfsfilename2, proc_name);
-                                                strcat(lfsfilename2, ".log");
-                                                filename2 = malloc((strlen(mother_file) + strlen(proc_name)) * sizeof(char));
-                                                strcpy(filename2, mother_file);
-                                                strcat(filename2, proc_name);
-                                                printf("filename: %s\n", filename2);
-                                                printf("lfsfilename: %s\n", lfsfilename2);
-                                                lfsfiles[current_index].log_file = fopen(lfsfilename2, "a+");
-                                                lfsfiles[current_index].data_file = open(filename2, O_CREAT|O_RDWR, S_IRUSR|S_IWUSR);
-                                                lfsfiles[current_index].proc_num = proc_rank;
-                                                current_index++;
-                                                found_index = current_index - 1;
-
-			}
-			my_recs2 = read_record(found_index);
-		        chunks_stack2 = (lfs_record *)malloc(sizeof(lfs_record) * 1001);
-		        ch_s2 = 1;
-		        missing_chunks2 = (lfs_record *)malloc(sizeof(lfs_record) * 1001);
-		        m_ch_s2 = 1;
-			fseek(lfsfiles[found_index].log_file, 0, SEEK_END);
-		        fileLen2 = ftell(lfsfiles[found_index].log_file);
-		        fseek(lfsfiles[found_index].log_file, 0, SEEK_SET);
-		        record_count2 = fileLen2 / sizeof(lfs_record_on_disk);
-			for(int jj = 0; jj <= total_miss_count; jj++){
-				temp2 = missing_chunks[jj];
-				lfs_mpi_find_chunks(temp.addr, temp2.addr + temp2.size, record_count2 - 1, my_recs2, &chunks_stack2, &ch_s2, &missing_chunks2, &m_ch_s2);
-				total_found_count2 = ch_s2 - 1;
-				for(int p = 0; p < total_found_count2; p++){
-			                temp2 = chunks_stack2[p];
-			                printf("chunk stack: (%zu, %zu, %zu)\n",temp2.addr,temp2.size,temp2.pos);
-					printf("found proc num: %d !!!\n", lfsfiles[found_index].proc_num);
-			                pread(lfsfiles[found_index].data_file, &buf[(temp2.addr - offset)/sizeof(char)], temp2.size, temp2.pos);
-			                //printf("rtrd is: %d\n",rtrd);
-        			} // end of FOR
-			} // end of FOR
-			free(chunks_stack2);
-			free(missing_chunks2);
-			free(my_recs2);
-		fscanf(meta_file, "%d", &proc_rank);
-		} // end of WHILE
-	} //end of IF
-	int total_found_count = ch_s - 1;
-	//printf("recursive func finished\n");
-	// perform the read
-	for(int i = 0; i < total_found_count; i++){
-		temp = chunks_stack[i];
-		//printf("chunk stack: (%zu, %zu, %zu)\n",temp.addr,temp.size,temp.pos);
-		pread(lfsfiles[fd].data_file, &buf[(temp.addr - offset)/sizeof(char)], temp.size, temp.pos);
-		//printf("rtrd is: %d\n",rtrd);
+				fscanf(meta_file, "%d", &proc_rank);
+			} // end of WHILE
+			fclose(meta_file);
+		}// end of IF
 	} // end of FOR
-	//free(chunks_stack);
-	free(my_recs);
-	// Optimization: Write down the read query for future reads!
-	if (total_found_count == -3 /* THRESHOLD */){
-		lfs_mpi_write(fd, buf, count, offset);
-	} // end of IF
-	free(chunks_stack);
-	return count;
+        // Optimization: Write down the read query for future reads!
+        /*if (total_found_count == -3){
+                lfs_write(fd, buf, count, offset);
+        }*/
+//	printf("salamaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\n");
+        return count;
 }
 
 void lfs_vec_add(struct lfs_record** chunks_stack, int * size, struct lfs_record chunk){
@@ -352,13 +397,16 @@ void lfs_vec_add(struct lfs_record** chunks_stack, int * size, struct lfs_record
 	(*chunks_stack)[*size - 1] = chunk;
 	*size += 1;
 	//printf("%d\n",*size);
-	//printf("five\n");
+//	printf("five\n");
 	//printf("added chunk: %d, %d, %d\n", chunk.addr, chunk.size, chunk.pos);
 	//printf("added chunk: %d, %d, %d\n", chunks_stack[*size - 2].addr, chunks_stack[*size - 2].size, chunks_stack[*size - 2].pos);
 }
 
 int  lfs_mpi_close(int  handle){
+//	printf("IN THE LFS_MPI_CLOSE\n");
 	fclose(lfsfiles[handle].log_file);
+//printf("IN middle of THE LFS_MPI_CLOSE\n");
 	close(lfsfiles[handle].data_file);
+//printf("IN THE end of the LFS_MPI_CLOSE\n");
 	return 0;
 }
