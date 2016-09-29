@@ -131,8 +131,6 @@ puts("------------ memvol_dataset_open() called -------------\n");
 
     DEBUG_MESSAGE("dataset data %zu \n", dset->data);
 
-hssize_t space_number = H5Sget_simple_extent_npoints(dset->dataspace); 
-DEBUG_MESSAGE("\n 2. space_number = %d\n", space_number);
 
     }
 
@@ -160,8 +158,8 @@ puts("------------ memvol_dataset_read() called -------------\n");
   else {
    assert(H5Tget_class(mem_type_id) == H5Tget_class(dataset->datatype));
 
-  
- //H5Tget_native_type ?
+ /*native datatype of dataset datatype*/ 
+ hid_t nativ_type = H5Tget_native_type(dataset->datatype, H5T_DIR_ASCEND);
 
   if(file_space_id == H5S_ALL){
 
@@ -170,7 +168,7 @@ puts("------------ memvol_dataset_read() called -------------\n");
       assert(write_number == n_points);
      
       //read data
-      buf = dataset->data;
+      buf = &dataset->data;
       
       }
       else { /*valid mem_space_id*/
@@ -195,7 +193,7 @@ return 1;
 }
 
 static herr_t memvol_dataset_write(void *dset, hid_t mem_type_id, hid_t mem_space_id, hid_t file_space_id,
-                    hid_t xfer_plist_id, const void * buf, void **req){
+                    hid_t xfer_plist_id, const void * buf, void **req) {
 
 puts("------------ memvol_dataset_write() called -------------\n");
 
@@ -207,7 +205,9 @@ puts("------------ memvol_dataset_write() called -------------\n");
  herr_t status;
  size_t type_size, size; 
  H5T_class_t class;
-
+ ssize_t length;
+ char* type_name;
+ static H5S_sel_type file_sel_type, mem_sel_type;
 
  memvol_object_t* object = (memvol_object_t*) dset;
  memvol_dataset_t*  dataset = (memvol_dataset_t* )object->subclass;
@@ -217,17 +217,18 @@ puts("------------ memvol_dataset_write() called -------------\n");
  class = H5Tget_class(dataset->datatype); 
 
 /*size of datatype in dataset*/
-
  size = H5Tget_size(dataset->datatype);
   
 /*number of points in dataset*/
  n_points = H5Sget_simple_extent_npoints(dataset->dataspace);
 
+//assert, that datatype class is equal 
+assert(H5Tget_class(mem_type_id) == H5Tget_class(dataset->datatype));
+
 if(dataset->data == NULL) {
 
-    /*memory allocation for data*/  //to do
-     dataset->data = calloc(n_points,size);
 
+   dataset->data =  malloc(n_points * size); 
 }
 
 /*rank of the dataset dataspace*/
@@ -242,69 +243,91 @@ write_number = H5Sget_select_npoints(mem_space_id);
 /*size of the mem_type in Bytes*/
 type_size = H5Tget_size(mem_type_id); 
 
-//assert, that datatype class is equal 
-assert(H5Tget_class(mem_type_id) == H5Tget_class(dataset->datatype));
+/*name of type*/
+length = H5Iget_name(mem_type_id, type_name, 10);
+length = H5Iget_name(mem_type_id, type_name, length+1);
 
-//assert, that data passt in dataset container
+/*type of file selection*/
+file_sel_type = H5Sget_select_type(file_space_id);
+ 
+/*type of memory selection*/
+ mem_sel_type = H5Sget_select_type(mem_space_id); 
+
+// unsigned char *src = (unsigned char *)buf;
+
+/*assert, that data passt in dataset container*/
 assert(write_number <= n_points);
+
 
 if(file_space_id == H5S_ALL){
 
    if(mem_space_id == H5S_ALL){
 
-     assert(write_number == n_points);
-     //complete write
-     // writes from buffer
-       for(int index = 0; index <= write_number; index++){
-          *(dataset->data + index) = buf[index];
+       assert(write_number == n_points);
+       /*complete write*/
+     
+       for(int i = 0; i < write_number; i++){
+           dataset->data =  &buf;  //to do !!
        }
-    }
+   }
    else { /*valid mem_space_id*/
 
+       switch(mem_sel_type) {
 
-
-   } 
+	  case H5S_SEL_NONE: /* no selection */ break;
+	  case H5S_SEL_POINTS: 
+          /* to do */   break;
+	
+	  case H5S_SEL_HYPERSLABS: 
+          /*to do*/   break; 
+	  
+	  case H5S_SEL_ALL: 
+            for(int i = 0; i < write_number; i++){
+               dataset->data =  &buf;  /*to do !!*/
+            }
+          break;
+	  
+	  default: 
+             DEBUG_MESSAGE("unknown selection type\n");
+	     ret = 0;
+          break;
+	} 
+        
+    } 
 }
 else { /*valid file_space_id*/
 
     if(mem_space_id == H5S_ALL){
 
+       switch(file_sel_type){
 
+	case H5S_SEL_NONE:   /*no points selected*/  break; 
+        case H5S_SEL_POINTS:   /* to do*/
+          break;
+	
+	case H5S_SEL_HYPERSLABS: /* to do */
+         break;
+	
+	case H5S_SEL_ALL: 
+          for(int i = 0; i <= write_number; i++){
+               dataset->data =  &buf;
+          }
+          break;
+	default: 
+           DEBUG_MESSAGE("unknown selection type\n");
+	   ret = 0;
+	   break;   
+       }
     }
     else {/*valid mem_space_id*/
+ /*combination POINTS-POINTS, POINTS-HYPERSLAB, POINTS-SELL_ALL, HYP-POINTS, HYP-HYP, HYP-SEL_ALL,
+  SEL_ALL-POINTS, SEL_ALL-HYPER, SEL_ALL-SEL_ALL; NONE mit anderen*/
 
+/*to do*/
     } 
 }
 
-H5S_sel_type sel_type = H5Sget_select_type(file_space_id); 
- 
-switch(sel_type){
-
-	case H5S_SEL_NONE:
-	{
-          break;
-	}
-	case H5S_SEL_POINTS:
-	{
-         break;
-	}
-	case H5S_SEL_HYPERSLABS: 
-	{
-         break;
-	}
-	case H5S_SEL_ALL:
-	{
-          break;
-	}
-	default:
-	{
-             DEBUG_MESSAGE("unknown selection type\n");
-	     ret = 0;
-	}
-}
-
-
-return 1;
+ return 1;
 }
 
 static  herr_t memvol_dataset_get(void *dset, H5VL_dataset_get_t get_type, hid_t dxpl_id, void **req, va_list arguments){
@@ -315,7 +338,7 @@ puts("------------ memvol_dataset_get() called -------------\n");
    memvol_dataset_t*  dataset = (memvol_dataset_t* )object->subclass;
 
    herr_t ret_value = 1;
-
+   
  //  va_start(arguments, 7);
    switch(get_type) {
 
@@ -332,10 +355,8 @@ puts("------------ memvol_dataset_get() called -------------\n");
 		printf("Creation property list %p\n", *ret_id);
                         
 		break;
-
            }
-
-	   case H5VL_DATASET_GET_OFFSET:
+           case H5VL_DATASET_GET_OFFSET:
            {
 	         haddr_t *ret = va_arg (arguments, haddr_t *);
 		printf("The offset of the dataset %p \n", *ret);
@@ -375,10 +396,11 @@ puts("------------ memvol_dataset_get() called -------------\n");
                 
 		break;
            }
-	   default:
-	   {	DEBUG_MESSAGE("unknown type found\n");
+	   default:{
+	   	DEBUG_MESSAGE("unknown type found\n");
 		ret_value = 0;
-	   }
+	        break;
+           }   
    }
    va_end(arguments);
    return ret_value;       
