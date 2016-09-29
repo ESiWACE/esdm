@@ -244,8 +244,8 @@ write_number = H5Sget_select_npoints(mem_space_id);
 type_size = H5Tget_size(mem_type_id); 
 
 /*name of type*/
-length = H5Iget_name(mem_type_id, type_name, 10);
-length = H5Iget_name(mem_type_id, type_name, length+1);
+//length = H5Iget_name(mem_type_id, type_name, 10);
+//length = H5Iget_name(mem_type_id, type_name, length+1);
 
 /*type of file selection*/
 file_sel_type = H5Sget_select_type(file_space_id);
@@ -260,15 +260,19 @@ assert(write_number <= n_points);
 
 
 if(file_space_id == H5S_ALL){
-
    if(mem_space_id == H5S_ALL){
-
-       assert(write_number == n_points);
-       /*complete write*/
-     
-       for(int i = 0; i < write_number; i++){
-           dataset->data =  &buf;  //to do !!
-       }
+	   /*complete write*/
+	   if (mem_type_id == H5T_NATIVE_INT) {
+		   for(int i = 0; i < write_number; i++){
+			   dataset->data =  &buf;  //to do !!
+			   memcpy(dataset->data, buf, n_points * size);
+		   }
+	   }
+	   else {
+		   DEBUG_MESSAGE("Unhandled type\n");
+		   exit(1);
+	   }
+	DEBUG_MESSAGE("Data is written\n");
    }
    else { /*valid mem_space_id*/
 
