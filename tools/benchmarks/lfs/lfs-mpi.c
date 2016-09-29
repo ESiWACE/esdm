@@ -240,7 +240,7 @@ size_t lfs_mpi_internal_read(lfs_mpi_file_p fd, char *buf, struct lfs_record ** 
         for(int i = 0; i < total_found_count; i++){
                 temp = chunks_stack[i];
 //                printf("chunk stack: (%zu, %zu, %zu)\n", temp.addr, temp.size, temp.pos);
-                pread(fd, &buf[(temp.addr - main_addr)/sizeof(char)], temp.size, temp.pos);
+                pread(fd->data_file, &buf[(temp.addr - main_addr)/sizeof(char)], temp.size, temp.pos);
                 } // end of FOR
 //	printf("internal_read: freeing\n");
         free(chunks_stack);
@@ -273,14 +273,14 @@ size_t lfs_mpi_read(lfs_mpi_file_p fd, char *buf, size_t count, off_t offset){
 	// filling the query stack with the main query information.
 	query = (lfs_record *)malloc(sizeof(lfs_record) * 1001);
 	lfs_vec_add(&query, &query_index, temp);
-	for(int i = 0; i <= current_epoch && missing_count > 0; i++){
+	for(int i = 0; i <= fd->current_epoch && missing_count > 0; i++){
 		// get the records log with the epoch depth of i for the main file.
 //		printf("get the records log with the epoch depth of %d for the main file\n", i);
-		my_recs_size = read_record(&my_recs, lfsfiles[fd].log_file, i);
+		my_recs_size = read_record(&my_recs, fd->log_file, i);
 //		printf("this is record in read_func: (%zu, %zu, %zu)\n", my_recs[0].addr, my_recs[0].size, my_recs[0].pos);
 		// read from the main file, with epoch depth of i.
 //		printf("read from the main file, with epoch depth of %d\n", i);
-		lfs_mpi_internal_read(lfsfiles[fd].data_file, buf, &query, &query_index, my_recs, my_recs_size, &missing_chunks, &m_ch_s, offset);
+		lfs_mpi_internal_read(fd->data_file, buf, &query, &query_index, my_recs, my_recs_size, &missing_chunks, &m_ch_s, offset);
 		// we no longer need the log so we free it.
 //		printf("free 1\n");
 		//my_recs[0];
@@ -301,22 +301,22 @@ size_t lfs_mpi_read(lfs_mpi_file_p fd, char *buf, size_t count, off_t offset){
                         missing_chunks = swap_help;
                         m_ch_s = 1;
 			// checking all of the files and opening them to process the read.
-			meta_file = fopen (mother_file, "r");
+			meta_file = fopen (fd->mother_file, "r");
 			fscanf(meta_file, "%d", &proc_rank);
                 	while(!feof(meta_file)) {
 				// check if it's not the same main file that belongs to this process.
-                        	if(lfsfiles[fd].proc_rank != proc_rank){
+                        	if(fd->proc_rank != proc_rank){
 //					printf("prepare the name of the data and log files for %d.\n", proc_rank);
 					// prepare the name of the data and log files for the selected proc_rank.
 	                                length_num = snprintf(NULL, 0, "%d", proc_rank);
         	                        proc_name = (char *)malloc(length_num + 1);
                 	                snprintf(proc_name, length_num + 1, "%d", proc_rank);
-                        	        lfsfilename2 = (char *)malloc((strlen(mother_file) + strlen(proc_name) + 4) * sizeof(char));
-                        	        strcpy(lfsfilename2, mother_file);
+                        	        lfsfilename2 = (char *)malloc((strlen(fd->mother_file) + strlen(proc_name) + 4) * sizeof(char));
+                        	        strcpy(lfsfilename2, fd->mother_file);
                         	        strcat(lfsfilename2, proc_name);
                         	        strcat(lfsfilename2, ".log");
-                        	        filename2 = (char *)malloc((strlen(mother_file) + strlen(proc_name)) * sizeof(char));
-                        	        strcpy(filename2, mother_file);
+                        	        filename2 = (char *)malloc((strlen(fd->mother_file) + strlen(proc_name)) * sizeof(char));
+                        	        strcpy(filename2, fd->mother_file);
                         	        strcat(filename2, proc_name);
 					free(proc_name);
 					// open both data and log files for the selected proc_rank.
@@ -399,11 +399,11 @@ void lfs_vec_add(struct lfs_record** chunks_stack, int * size, struct lfs_record
 }
 
 int  lfs_mpi_close(lfs_mpi_file_p fd){
-//	printf("IN THE LFS_MPI_CLOSE\n");
-	fclose(lfsfiles[handle].log_file);
-//printf("IN middle of THE LFS_MPI_CLOSE\n");
-	close(lfsfiles[handle].data_file);
-//printf("IN THE end of the LFS_MPI_CLOSE\n");
-  MPI_Comm_free(& lfsfiles[current_index].com);
+	//printf("IN THE LFS_MPI_CLOSE\n");
+	fclose(fd->log_file);
+	//printf("IN middle of THE LFS_MPI_CLOSE\n");
+	close(fd->data_file);
+	//printf("IN THE end of the LFS_MPI_CLOSE\n");
+	MPI_Comm_free(& fd->com);
 	return 0;
 }

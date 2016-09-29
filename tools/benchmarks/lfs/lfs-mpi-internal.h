@@ -9,10 +9,10 @@ struct tup{
 };
 
 struct lfs_file{
-	FILE* log_file;
+  FILE* log_file;
   MPI_Comm com;
-	int data_file;
-	int proc_rank;
+  int data_file;
+  int proc_rank;
   char * mother_file;
   int current_epoch;
   off_t file_position;
