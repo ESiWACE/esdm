@@ -24,7 +24,7 @@
 static void* memvol_dataset_create(void* obj, H5VL_loc_params_t loc_params, const char* name, hid_t dcpl_id, hid_t dapl_id, hid_t dxpl_id, void** req)
 
 {
-	puts("------------ memvol_dataset_create() called -------------\n");
+	//puts("------------ memvol_dataset_create() called -------------\n");
 
 //Memory allocation for creating object 
 	memvol_object_t* dset_object = (memvol_object_t*)malloc(sizeof(memvol_object_t));
@@ -37,7 +37,7 @@ static void* memvol_dataset_create(void* obj, H5VL_loc_params_t loc_params, cons
          
         }
         else {
-	    printf("Can't allocate memory");
+	    //printf("Can't allocate memory");
 	    return 0;
 	}
 //-------------------------------------------------------------------------------------------
@@ -100,7 +100,7 @@ DEBUG_MESSAGE("1. space_number = %d\n", space_number);
 static void* memvol_dataset_open(void *obj, H5VL_loc_params_t loc_params, const char *name, 
                   hid_t dapl_id, hid_t dxpl_id, void **req){
 
-puts("------------ memvol_dataset_open() called -------------\n");
+//puts("------------ memvol_dataset_open() called -------------\n");
 
  
   
@@ -114,14 +114,14 @@ puts("------------ memvol_dataset_open() called -------------\n");
      
     //debug Ausgaben
     if (dset_object == NULL) {
-        puts("Dataset nicht im angegebenen Parent gefunden!\n");
+        //puts("Dataset nicht im angegebenen Parent gefunden!\n");
 
     } else {
 
       memvol_dataset_t* dset = (memvol_dataset_t *)dset_object->subclass;
 
       strcpy(dset->name, name);
-//bebug ausgabe
+    //bebug ausgabe
  
       DEBUG_MESSAGE("Opened dataset object %zu \n", dset_object);
       DEBUG_MESSAGE("dataset %zu \n", dset_object->subclass);
@@ -141,7 +141,7 @@ return (void *) dset_object;
 static herr_t memvol_dataset_read(void *dset, hid_t mem_type_id, hid_t mem_space_id, hid_t file_space_id,
                    hid_t xfer_plist_id, void * buf, void **req){
 
-puts("------------ memvol_dataset_read() called -------------\n");
+//puts("------------ memvol_dataset_read() called -------------\n");
 
  htri_t ret;
  hssize_t write_number, n_points;
@@ -152,7 +152,7 @@ puts("------------ memvol_dataset_read() called -------------\n");
 
  if (dataset->data == NULL) {
   
-    printf("Dataset is empty\n");
+    //printf("Dataset is empty\n");
     return 0;
   }
   else {
@@ -195,7 +195,7 @@ return 1;
 static herr_t memvol_dataset_write(void *dset, hid_t mem_type_id, hid_t mem_space_id, hid_t file_space_id,
                     hid_t xfer_plist_id, const void * buf, void **req) {
 
-puts("------------ memvol_dataset_write() called -------------\n");
+//puts("------------ memvol_dataset_write() called -------------\n");
 
  int dims;
  htri_t ret;
@@ -336,7 +336,7 @@ else { /*valid file_space_id*/
 
 static  herr_t memvol_dataset_get(void *dset, H5VL_dataset_get_t get_type, hid_t dxpl_id, void **req, va_list arguments){
 
-puts("------------ memvol_dataset_get() called -------------\n");
+//puts("------------ memvol_dataset_get() called -------------\n");
 
    memvol_object_t* object = (memvol_object_t*)dset;
    memvol_dataset_t*  dataset = (memvol_dataset_t* )object->subclass;
@@ -349,21 +349,21 @@ puts("------------ memvol_dataset_get() called -------------\n");
            case H5VL_DATASET_GET_DAPL: 
            {	
 		hid_t *ret_id = va_arg (arguments, hid_t *);
-                printf("Access property list %p\n", *ret_id);
+                //printf("Access property list %p\n", *ret_id);
                               
 		break;
            }
            case H5VL_DATASET_GET_DCPL:
            {
 		hid_t *ret_id = va_arg (arguments, hid_t *);
-		printf("Creation property list %p\n", *ret_id);
+		//printf("Creation property list %p\n", *ret_id);
                         
 		break;
            }
            case H5VL_DATASET_GET_OFFSET:
            {
 	         haddr_t *ret = va_arg (arguments, haddr_t *);
-		printf("The offset of the dataset %p \n", *ret);
+		//printf("The offset of the dataset %p \n", *ret);
 		 
 			   /* Set return value */
 			   //*ret = H5D__get_offset(dset);
@@ -374,7 +374,7 @@ puts("------------ memvol_dataset_get() called -------------\n");
            case H5VL_DATASET_GET_SPACE:
            {
 		hid_t *ret_id = va_arg (arguments, hid_t *);
-		printf("Dataspace %p\n", *ret_id);
+		//printf("Dataspace %p\n", *ret_id);
                 
   		break;
 
@@ -382,21 +382,21 @@ puts("------------ memvol_dataset_get() called -------------\n");
 	   case H5VL_DATASET_GET_SPACE_STATUS:
 	   {
 		H5D_space_status_t *allocation = va_arg (arguments, H5D_space_status_t *);
-		printf("Space status %p\n", *allocation);
+		//printf("Space status %p\n", *allocation);
                 
 		break;
            }
            case H5VL_DATASET_GET_STORAGE_SIZE:
            {
 		hsize_t *ret = va_arg (arguments, hsize_t *);
-		printf("Storage size %p\n", *ret);
+		//printf("Storage size %p\n", *ret);
                 
 		break;
            }
            case H5VL_DATASET_GET_TYPE:
            {
       		hid_t *ret_id = va_arg (arguments, hid_t *);
-		printf("Datatype %d\n", *ret_id);
+		//printf("Datatype %d\n", *ret_id);
                 
 		break;
            }
@@ -412,7 +412,7 @@ puts("------------ memvol_dataset_get() called -------------\n");
  
 static herr_t memvol_dataset_close(void* dset, hid_t dxpl_id, void** req) {
 
-    puts("------------ memvol_dataset_close() called -------------\n");
+    //puts("------------ memvol_dataset_close() called -------------\n");
   
     memvol_object_t *object = (memvol_object_t*) dset;
         

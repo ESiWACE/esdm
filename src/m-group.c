@@ -19,7 +19,7 @@
 
 static void* memvol_group_create(void* obj, H5VL_loc_params_t loc_params, const char* name, hid_t gcpl_id, hid_t gapl_id, hid_t dxpl_id, void** req)
 {
-    puts("------------ memvol_group_create() called ------------");
+    //puts("------------ memvol_group_create() called ------------");
 
     //speicher allocieren
     memvol_group_t* group = (memvol_group_t *)malloc(sizeof(memvol_group_t));
@@ -51,33 +51,33 @@ static void* memvol_group_create(void* obj, H5VL_loc_params_t loc_params, const 
     g_hash_table_insert(parent_group->children, strdup(name), object);
 
     //debug ausgaben
-    printf("Gruppe %s (%p) erstellt!\n",group->name, (void *)group);
-    printf("Parent-Group: %s\n", parent_group->name);
+    //printf("Gruppe %s (%p) erstellt!\n",group->name, (void *)group);
+    //printf("Parent-Group: %s\n", parent_group->name);
 
-    GList* children_keys = g_hash_table_get_values(parent_group->children);
+    //GList* children_keys = g_hash_table_get_values(parent_group->children);
 
-    puts("\nGroup Listing:");
-    printf("%s\n", parent_group->name);
-    while (children_keys != NULL) {
-        memvol_object_t* obj = (memvol_object_t *)children_keys->data;
+    //puts("\nGroup Listing:");
+    //printf("%s\n", parent_group->name);
+    //while (children_keys != NULL) {
+    //    memvol_object_t* obj = (memvol_object_t *)children_keys->data;
 
-        if (obj->type == GROUP_T) {
-            printf("|  %s\n", ((memvol_group_t *)obj->subclass)->name);
+    //    if (obj->type == GROUP_T) {
+    //        printf("|  %s\n", ((memvol_group_t *)obj->subclass)->name);
 
-        }
-        children_keys = children_keys->next;
-    }
-    g_list_free(children_keys);
+    //    }
+    //    children_keys = children_keys->next;
+    //}
+    //g_list_free(children_keys);
 
-    puts("------------------------------------------------------");
-    puts("");
+    //puts("------------------------------------------------------");
+    //puts("");
 
     return (void *)object;
 }
 
 static void * memvol_group_open(void* object, H5VL_loc_params_t loc_params, const char* name, hid_t gapl_id, hid_t dxpl_id, void **req)
 {
-    puts("------------ memvol_group_open() called --------------");
+    //puts("------------ memvol_group_open() called --------------");
 
     memvol_object_t* obj = (memvol_object_t *)object;
     memvol_group_t* parent = (memvol_group_t *)obj->subclass;
@@ -85,17 +85,17 @@ static void * memvol_group_open(void* object, H5VL_loc_params_t loc_params, cons
     memvol_object_t* ret = g_hash_table_lookup(parent->children, name);
 
     //debug asugaben
-    if (ret == NULL) {
-        puts("Gruppe nicht im angegebenen Parent gefunden!");
+    //if (ret == NULL) {
+    //    puts("Gruppe nicht im angegebenen Parent gefunden!");
 
-    } else {
-        memvol_group_t* found = (memvol_group_t *)ret->subclass;
-        printf("Group %s (%p) im Parent %s (%p) geoeffnet\n", (char*)found->name, (void*)found, parent->name, (void*) parent);
+    //} else {
+    //    memvol_group_t* found = (memvol_group_t *)ret->subclass;
+    //    printf("Group %s (%p) im Parent %s (%p) geoeffnet\n", (char*)found->name, (void*)found, parent->name, (void*) parent);
 
-    }
+    //}
 
-    puts("------------------------------------------------------");
-    puts("");
+    //puts("------------------------------------------------------");
+    //puts("");
 
     return (void *)ret;
 }
@@ -104,7 +104,7 @@ static void * memvol_group_open(void* object, H5VL_loc_params_t loc_params, cons
 static herr_t memvol_group_close(void* grp, hid_t dxpl_id, void** req) {
 
    
-    puts("------------ memvol_group_close() called -------------");
+    //puts("------------ memvol_group_close() called -------------");
        
     GHashTableIter iter;
     gpointer value, key;
@@ -117,7 +117,7 @@ static herr_t memvol_group_close(void* grp, hid_t dxpl_id, void** req) {
         memvol_group_t* g = (memvol_group_t *)obj->subclass;
         
 
-        printf("Group %s (%p) closing...\n", (char*)g->name, (void*)g);
+        //printf("Group %s (%p) closing...\n", (char*)g->name, (void*)g);
 
         g_hash_table_iter_init (&iter, g->children);
 
@@ -156,15 +156,15 @@ static herr_t memvol_group_close(void* grp, hid_t dxpl_id, void** req) {
         g->children = NULL;
         g = NULL;
 
-        puts("------------------------------------------------------");
-        puts("");
+        //puts("------------------------------------------------------");
+        //puts("");
 
         return 1;
 
     } else {
-        puts("ERROR: Kein Group Pointer!");
-        puts("------------------------------------------------------");
-        puts("");
+        //puts("ERROR: Kein Group Pointer!");
+        //puts("------------------------------------------------------");
+        //puts("");
 
         return -1;
 
@@ -174,7 +174,7 @@ static herr_t memvol_group_close(void* grp, hid_t dxpl_id, void** req) {
 
 static herr_t memvol_group_get(void *group, H5VL_group_get_t get_type, hid_t dxpl_id, void **req, va_list arguments)
 {
-    puts("------------ memvol_group_get() called ---------------");
+    //puts("------------ memvol_group_get() called ---------------");
 
     memvol_group_t *g = (memvol_group_t *)((memvol_object_t *)group)->subclass;
     herr_t ret = 0;
@@ -182,20 +182,20 @@ static herr_t memvol_group_get(void *group, H5VL_group_get_t get_type, hid_t dxp
     //get_type entweder 'group creation property list' oder 'group info'
     //--> vol/src/H5VLpublic.h
     if (get_type == H5VL_GROUP_GET_GCPL) {
-        printf("H5Gget_create_plist %p\n", va_arg(arguments, void*));
+        //printf("H5Gget_create_plist %p\n", va_arg(arguments, void*));
         ret = 0;
 
     } else if (get_type == H5VL_GROUP_GET_INFO) {
-        printf("H5Gget_info %p\n", va_arg(arguments, void*));
+        //printf("H5Gget_info %p\n", va_arg(arguments, void*));
         ret = 0;
 
     } else {
-        puts("ERROR");
+        //puts("ERROR");
         ret =  -1;
     }
 
-    puts("------------------------------------------------------");
-    puts("");
+    //puts("------------------------------------------------------");
+    //puts("");
 
     return ret;
 }

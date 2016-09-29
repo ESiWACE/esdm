@@ -21,7 +21,7 @@ static GHashTable* file_table;
 
 static void * memvol_file_create(const char *name, unsigned flags, hid_t fcpl_id, hid_t fapl_id, hid_t dxpl_id, void **req)
 {
-    puts("------------ memvol_file_create() called -------------");
+    //puts("------------ memvol_file_create() called -------------");
 
     //speicher allocieren
     memvol_file_t* file = (memvol_file_t *)malloc(sizeof(memvol_file_t));
@@ -52,46 +52,46 @@ static void * memvol_file_create(const char *name, unsigned flags, hid_t fcpl_id
     g_hash_table_insert(file_table, strdup(name), object);
 
     //debug ausgaben
-    printf("Datei %s (%p) erstellt!\n", file->name, (void*)file);
-    
-    if (file->root_group != NULL) {
-        printf("Root-Group '/' (%p)\n", (void*)file->root_group);
+    //printf("Datei %s (%p) erstellt!\n", file->name, (void*)file);
+    //
+    //if (file->root_group != NULL) {
+    //    printf("Root-Group '/' (%p)\n", (void*)file->root_group);
 
-    } else {
-        puts("Keine Root Gruppe erstellt!");
+    //} else {
+    //    //puts("Keine Root Gruppe erstellt!");
 
-    }
+    //}
 
-    puts("------------------------------------------------------");
-    puts("");
+    //puts("------------------------------------------------------");
+    //puts("");
 
     return (void *)object;
 }
 
 static void * memvol_file_open(const char *name, unsigned flags, hid_t fapl_id, hid_t dxpl_id, void **req)
 {
-    puts("------------ memvol_file_open() called ---------------");
+    //puts("------------ memvol_file_open() called ---------------");
 
     memvol_object_t* ret = g_hash_table_lookup(file_table, name);
 
     if (ret == NULL) {
-        puts("File existiert nicht!");
+        //puts("File existiert nicht!");
 
     } else {
         memvol_file_t* f = (memvol_file_t *)ret->subclass;
-        printf("Datei %s (%p) geoeffnet.\n", name, (void*)f);
+        //printf("Datei %s (%p) geoeffnet.\n", name, (void*)f);
 
     }
 
-    puts("------------------------------------------------------");
-    puts("");
+    //puts("------------------------------------------------------");
+    //puts("");
 
     return (void *)ret;
 }
 
 static herr_t memvol_file_get(void *file, H5VL_file_get_t get_type, hid_t dxpl_id, void **req, va_list arguments)
 {
-    puts("------------ memvol_file_get() called ----------------");
+    //puts("------------ memvol_file_get() called ----------------");
 
     memvol_file_t *f = (memvol_file_t *)((memvol_object_t *)file)->subclass;
     herr_t ret = 0;
@@ -99,54 +99,54 @@ static herr_t memvol_file_get(void *file, H5VL_file_get_t get_type, hid_t dxpl_i
     //get_type => H5VL_file_get_t -> vol/src/H5VLpublic.h
     switch (get_type) {
         case H5VL_FILE_GET_FAPL: {
-                printf("H5Fget_access_plist %p\n", va_arg(arguments, void*));
+                //printf("H5Fget_access_plist %p\n", va_arg(arguments, void*));
                 ret = 0;
                 break;
             }
         case H5VL_FILE_GET_FCPL: {
-                printf("H5Fget_create_plist %p\n", va_arg(arguments, void*));
+                //printf("H5Fget_create_plist %p\n", va_arg(arguments, void*));
                 ret = 0;
                 break;
             }
         case H5VL_FILE_GET_INTENT: {
-                printf("H5Fget_intent %p\n", va_arg(arguments, void*));
+                //printf("H5Fget_intent %p\n", va_arg(arguments, void*));
                 ret = 0;
                 break;
             }
         case H5VL_FILE_GET_NAME: {
-                printf("H5Fget_name %p\n", va_arg(arguments, void*));
+                //printf("H5Fget_name %p\n", va_arg(arguments, void*));
                 ret = 0;
                 break;
             }
         case H5VL_FILE_GET_OBJ_COUNT: {
-                printf("H5Fget_obj_count %p\n", va_arg(arguments, void*));
+                //printf("H5Fget_obj_count %p\n", va_arg(arguments, void*));
                 ret = 0;
                 break;
             }
         case H5VL_FILE_GET_OBJ_IDS: {
-                printf("H5Fget_obj_ids %p\n", va_arg(arguments, void*));
+                //printf("H5Fget_obj_ids %p\n", va_arg(arguments, void*));
                 ret = 0;
                 break;
             }
         case H5VL_OBJECT_GET_FILE: {
-                printf("H5VL_OBJECT_GET_FILE %p\n", va_arg(arguments, void*));
+                //printf("H5VL_OBJECT_GET_FILE %p\n", va_arg(arguments, void*));
                 ret = 0;
                 break;
             }
         default: {
-                puts("ERROR");
+                //puts("ERROR");
                 ret = -1;
             }
     }
 
-    puts("------------------------------------------------------");
-    puts("");
+    //puts("------------------------------------------------------");
+    //puts("");
 
     return ret;
 }
 
 static herr_t memvol_file_close(void *obj, hid_t dxpl_id, void **req)
 {
-    puts("------------ memvol_file_close() called --------------");
+    //puts("------------ memvol_file_close() called --------------");
     return 0;
 }
