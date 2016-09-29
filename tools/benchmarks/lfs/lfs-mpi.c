@@ -222,7 +222,7 @@ int lfs_mpi_find_chunks(size_t a, size_t b, int index, struct lfs_record * my_re
 	return 0;
 }
 
-size_t lfs_mpi_internal_read(lfs_mpi_file_p fd, char *buf, struct lfs_record ** query, int* q_index, struct lfs_record * rec, int record_count, struct lfs_record ** missing_chunks, int* m_ch_s, off_t main_addr){
+size_t lfs_mpi_internal_read(int fd, char *buf, struct lfs_record ** query, int* q_index, struct lfs_record * rec, int record_count, struct lfs_record ** missing_chunks, int* m_ch_s, off_t main_addr){
 	struct lfs_record * chunks_stack;
 	struct lfs_record temp;
         chunks_stack = (lfs_record *)malloc(sizeof(lfs_record) * 1001);
@@ -240,7 +240,7 @@ size_t lfs_mpi_internal_read(lfs_mpi_file_p fd, char *buf, struct lfs_record ** 
         for(int i = 0; i < total_found_count; i++){
                 temp = chunks_stack[i];
 //                printf("chunk stack: (%zu, %zu, %zu)\n", temp.addr, temp.size, temp.pos);
-                pread(fd->data_file, &buf[(temp.addr - main_addr)/sizeof(char)], temp.size, temp.pos);
+                pread(fd, &buf[(temp.addr - main_addr)/sizeof(char)], temp.size, temp.pos);
                 } // end of FOR
 //	printf("internal_read: freeing\n");
         free(chunks_stack);

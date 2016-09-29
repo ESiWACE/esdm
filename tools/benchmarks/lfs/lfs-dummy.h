@@ -3,7 +3,7 @@
 
 #include <errno.h>
 
-#warning Using LFS Dummy
+// warning Using LFS Dummy
 
 
 #define lfs_close close

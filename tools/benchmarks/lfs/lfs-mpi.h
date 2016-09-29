@@ -4,7 +4,7 @@
 #include <errno.h>
 #include <mpi.h>
 
-#warning Using LFS Dummy
+// warning Using LFS Dummy
 
 typedef struct lfs_file* lfs_mpi_file_p;
 
