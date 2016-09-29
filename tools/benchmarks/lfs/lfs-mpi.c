@@ -78,15 +78,32 @@ void lfs_mpi_next_epoch(lfs_mpi_file_p fd){
 }
 
 // this is the LFS write function
-size_t lfs_mpi_write(lfs_mpi_file_p fd, void *buf, size_t count, off_t offset){
-	int ret = 0;
+size_t lfs_mpi_write(lfs_mpi_file_p fd, char *buf, size_t count, off_t offset){
+	size_t count1 = count;
+	off_t offset1 = offset;
+	size_t ret;
 	size_t data_size;
 	data_size = count;
 
 	// perfoming the lfs write ---> appending the data into the END OF FILE
 	// TODO PROPER POSIX WRITE CYCLE LOOP, SEE MY CHANGES IN LFS.c
-	ret = pwrite(fd->data_file, buf, data_size, fd->file_position);
-	fd->file_position += ret;
+	while(count1 > 0){
+		ret = pwrite(fd->data_file, buf, data_size, fd->file_position);
+		fd->file_position += ret;
+		if (ret != count1){
+		  if (ret == -1){
+		    if(errno == EINTR){
+		      continue;
+		    }
+		    return count - count1;
+		  }
+                }
+		buf += ret;
+		count1 -= ret;
+		offset1 += ret;
+	}
+
+
 	// writing the mapping info for the written data to know it's exact address later
 	fwrite(& offset, sizeof(offset), 1, fd->log_file);
 	fwrite(& data_size, sizeof(data_size), 1, fd->log_file);
@@ -224,6 +241,9 @@ int lfs_mpi_find_chunks(size_t a, size_t b, int index, struct lfs_record * my_re
 
 size_t lfs_mpi_internal_read(int fd, char *buf, struct lfs_record ** query, int* q_index, struct lfs_record * rec, int record_count, struct lfs_record ** missing_chunks, int* m_ch_s, off_t main_addr){
 	struct lfs_record * chunks_stack;
+	size_t count1 = count;
+	off_t offset1 = offset;
+	size_t ret;
 	struct lfs_record temp;
         chunks_stack = (lfs_record *)malloc(sizeof(lfs_record) * 1001);
 	int ch_s = 1;
@@ -240,7 +260,29 @@ size_t lfs_mpi_internal_read(int fd, char *buf, struct lfs_record ** query, int*
         for(int i = 0; i < total_found_count; i++){
                 temp = chunks_stack[i];
 //                printf("chunk stack: (%zu, %zu, %zu)\n", temp.addr, temp.size, temp.pos);
-                pread(fd, &buf[(temp.addr - main_addr)/sizeof(char)], temp.size, temp.pos);
+
+		buf = &buf[(temp.addr - main_addr)/sizeof(char)];
+
+		while(count1 > 0){
+			ret = pread(fd, buf, temp.size, temp.pos);
+			if (ret != count1){
+				if (ret == -1){
+					if(errno == EINTR){
+						continue;
+					}
+					return count - count1;
+				}
+				if (ret == 0 && errno == 0){
+					return count - count1;
+				}
+			}
+			buf += ret;
+			count1 -= ret;
+			offset1 += ret;
+		}
+
+
+
                 } // end of FOR
 //	printf("internal_read: freeing\n");
         free(chunks_stack);
