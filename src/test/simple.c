@@ -10,6 +10,7 @@ int main(int argc, char** argv) {
     double delta_write = 0.0;
     double delta_read= 0.0;
     double delta_close = 0.0;
+    double delta_gclose = 0.0;
     hid_t fid, fprop, vol_id;
     fprop = H5Pcreate(H5P_FILE_ACCESS);
     vol_id = H5VL_memvol_init();
@@ -37,7 +38,9 @@ int main(int argc, char** argv) {
         end = clock();
         delta_create += (double)(end-begin) / CLOCKS_PER_SEC;
 
-        hid_t did = H5Dcreate(fid, "test", H5T_NATIVE_INT, space, H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);	
+        hid_t gid = H5Gcreate(fid, "group1", H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
+
+        hid_t did = H5Dcreate(gid, "test", H5T_NATIVE_INT, space, H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);	
 
         begin = clock();
         H5Dwrite(did, H5T_NATIVE_INT, H5S_ALL, H5S_ALL, H5P_DEFAULT, data);
@@ -48,6 +51,11 @@ int main(int argc, char** argv) {
         H5Dclose(did);
         end = clock();
         delta_close += (double)(end-begin) / CLOCKS_PER_SEC;
+
+        begin = clock();
+        H5Gclose(gid);
+        end = clock();
+        delta_gclose += (double)(end - begin) / CLOCKS_PER_SEC;
     }
 
     /* calculate means */
@@ -56,7 +64,9 @@ int main(int argc, char** argv) {
     double avg_write = (double)delta_write / nloops;
     printf("Average Execution Time for H5Dwrite: %.16f\n", avg_write);
     double avg_close = (double)delta_close / nloops;
-    printf("Average Execution Time for H5Fclose: %.16f\n", avg_close);
+    printf("Average Execution Time for H5Dclose: %.16f\n", avg_close);
+    double avg_gclose = (double)delta_gclose / nloops;
+    printf("Average Execution Time for H5Gclose: %.16f\n", avg_gclose);
      
 	H5VL_memvol_finalize();
 }
