@@ -18,7 +18,7 @@ int lfs_mpi_open(lfs_mpi_file_p * fd_p, char *df, int flags, mode_t mode, MPI_Co
 	*fd_p = (lfs_mpi_file_p) malloc(sizeof(struct lfs_file));
 
 	lfs_mpi_file_p fd = *fd_p;
-	int ret, rank, size;
+	int ret, rank;//, size;
 
 	MPI_Comm_rank(MPI_COMM_WORLD, & rank);
 
@@ -29,24 +29,27 @@ int lfs_mpi_open(lfs_mpi_file_p * fd_p, char *df, int flags, mode_t mode, MPI_Co
 	fd->filename[strlen(fd->filename) - 4] = 0;
 
 	fd->mother_file = strdup(df);
-
 	// TODO work for read-only, write/read workflows, too.
-	ret = access(fd->filename, F_OK ) == -1;
+	ret = access(fd->filename, F_OK );
 	MPI_Allreduce(MPI_IN_PLACE, &ret, 1, MPI_INT, MPI_MIN, com);
 
-	if( ! ret ) { // no file does exist so far
-		return -1;
+	if(ret == -1) { // no file does exist so far
+//		return -1;
+//	}
+		if(rank == 0) {
+			//MPI_Comm_size(MPI_COMM_WORLD, & size);
+			FILE * meta_file = fopen (df, "w");
+			fprintf(meta_file, "%d\n", rank);
+			fclose(meta_file);
+		}
+		else {
+			printf("proc %d sending message to proc 0\n", rank);
+			MPI_Request request;
+			MPI_Isend(df, strlen(df), MPI_CHAR, 0, 1, com, &request); // XXX: IS IT OK? later I want to do MPI_Iprobe in proc 0 to get find it.
+			// send info about file creation to proc 0
+		}
 	}
-
-	if(rank == 0) {
-		MPI_Comm_size(MPI_COMM_WORLD, & size);
-
-		FILE * meta_file = fopen (df, "w");
-		fprintf(meta_file, "%d", size);
-		fclose(meta_file);
-	}
-
-	fd->log_file = fopen(lfsfilename, "w"); // this is not working concurrently my friend
+	fd->log_file = fopen(lfsfilename, "a+"); // XXX: I had to change it to a+ from w. because for readying I want to read it and with w I couldn't! is it has to be w then I'll open it in r for the read as temp variable and close it when reading ends.
 	fd->data_file = open(fd->filename, O_CREAT|O_RDWR|O_TRUNC, S_IRUSR|S_IWUSR);
 	fd->file_position = 0;
 	fd->proc_rank = rank;
@@ -64,6 +67,32 @@ void lfs_mpi_next_epoch(lfs_mpi_file_p fd){
 	fwrite(& offset_zero, sizeof(offset_zero), 1, fd->log_file);
 	fwrite(& size_zero, sizeof(size_zero), 1, fd->log_file);
 
+	// proc 0 should update its information about other proc's state!
+	if(fd->proc_rank == 0){
+		int world_size;
+		int flag;
+		int count;
+		MPI_Status status;
+		char * temp;
+		MPI_Request request;
+		FILE * meta_file;
+		MPI_Comm_size(fd->com, &world_size);
+		for(int i = 1; i < world_size; i++){
+			MPI_Iprobe(i, 1, fd->com, &flag, &status);
+			if(flag){
+				MPI_Get_count(&status, MPI_CHAR, &count);
+				temp = (char *)malloc(count * sizeof(char));
+				printf("proc 0 just got an update for status from proc %d\n", i);
+				MPI_Irecv(temp, count, MPI_CHAR, i, 1, fd->com, &request);
+				MPI_Wait(&request, &status);
+				printf("proc 0 recieved message from proc %d: %s\n", i, temp);
+				meta_file = fopen (temp, "w");
+	                        fprintf(meta_file, "%d", i);
+	                        fclose(meta_file);
+				free(temp);
+			} // end of IF
+		} // end of FOR
+	} // end of IF
 	struct timeval  tv;
 	gettimeofday(&tv, NULL);
 	long long time_in_mill = tv.tv_sec*1000 + tv.tv_usec/1000;
@@ -80,15 +109,12 @@ void lfs_mpi_next_epoch(lfs_mpi_file_p fd){
 // this is the LFS write function
 size_t lfs_mpi_write(lfs_mpi_file_p fd, char *buf, size_t count, off_t offset){
 	size_t count1 = count;
-	off_t offset1 = offset;
+	off_t offset1 = fd->file_position;
 	size_t ret;
-	size_t data_size;
-	data_size = count;
 
 	// perfoming the lfs write ---> appending the data into the END OF FILE
-	// TODO PROPER POSIX WRITE CYCLE LOOP, SEE MY CHANGES IN LFS.c
 	while(count1 > 0){
-		ret = pwrite(fd->data_file, buf, data_size, fd->file_position);
+		ret = pwrite(fd->data_file, buf, count1, offset1);
 		fd->file_position += ret;
 		if (ret != count1){
 		  if (ret == -1){
@@ -106,7 +132,7 @@ size_t lfs_mpi_write(lfs_mpi_file_p fd, char *buf, size_t count, off_t offset){
 
 	// writing the mapping info for the written data to know it's exact address later
 	fwrite(& offset, sizeof(offset), 1, fd->log_file);
-	fwrite(& data_size, sizeof(data_size), 1, fd->log_file);
+	fwrite(& count, sizeof(count), 1, fd->log_file);
 	return ret;
 }
 
@@ -127,7 +153,7 @@ int read_record(struct lfs_record ** rec, FILE* fd, int depth){
 	for(int i=0; i < record_count; i++){
 		ret = fread(&records[i], sizeof(lfs_record_on_disk), 1, fd);
 		records[i].pos = file_position;
-		assert(ret == 1);
+		//assert(ret == 1);
 		file_position += records[i].size;
 //		printf("this is record in read_rec_func: (%zu, %zu, %zu)\n", records[i].addr, records[i].size, records[i].pos);
 	} // end of FOR
@@ -241,8 +267,8 @@ int lfs_mpi_find_chunks(size_t a, size_t b, int index, struct lfs_record * my_re
 
 size_t lfs_mpi_internal_read(int fd, char *buf, struct lfs_record ** query, int* q_index, struct lfs_record * rec, int record_count, struct lfs_record ** missing_chunks, int* m_ch_s, off_t main_addr){
 	struct lfs_record * chunks_stack;
-	size_t count1 = count;
-	off_t offset1 = offset;
+	size_t count1; //= count;
+	off_t offset1; //= offset;
 	size_t ret;
 	struct lfs_record temp;
         chunks_stack = (lfs_record *)malloc(sizeof(lfs_record) * 1001);
@@ -261,29 +287,27 @@ size_t lfs_mpi_internal_read(int fd, char *buf, struct lfs_record ** query, int*
                 temp = chunks_stack[i];
 //                printf("chunk stack: (%zu, %zu, %zu)\n", temp.addr, temp.size, temp.pos);
 
-		buf = &buf[(temp.addr - main_addr)/sizeof(char)];
-
+		//buf = &buf[(temp.addr - main_addr)/sizeof(char)];
+		count1 = temp.size;
+		offset1 = temp.pos;
 		while(count1 > 0){
-			ret = pread(fd, buf, temp.size, temp.pos);
+			ret = pread(fd, &buf[(temp.addr - main_addr)/sizeof(char)], count1, offset1);
 			if (ret != count1){
 				if (ret == -1){
 					if(errno == EINTR){
 						continue;
-					}
-					return count - count1;
-				}
+					} // end of IF
+					return temp.size - count1;
+				} // end of IF
 				if (ret == 0 && errno == 0){
-					return count - count1;
-				}
-			}
-			buf += ret;
+					return temp.size - count1;
+				} // end of IF
+			} // end of IF
+			temp.addr += ret * sizeof(char);
 			count1 -= ret;
 			offset1 += ret;
-		}
-
-
-
-                } // end of FOR
+		} // end of WHILE
+	} // end of FOR
 //	printf("internal_read: freeing\n");
         free(chunks_stack);
         return 0;
@@ -382,7 +406,7 @@ size_t lfs_mpi_read(lfs_mpi_file_p fd, char *buf, size_t count, off_t offset){
 					//printf("HIIIIIII\n");
 					// now again, we free the query stack and replace it with the missing stack (swap missing and query).
 					missing_count = m_ch_s - 1;
- //                                       printf("HIIIIIII44444, missing_count = %d\n", missing_count);
+  //                                      printf("HIIIIIII44444, missing_count = %d\n", missing_count);
                                         if(missing_count == 0)
                                                 break;
 					swap_help = query;
