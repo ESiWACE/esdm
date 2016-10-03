@@ -34,14 +34,13 @@ static void* memvol_dataset_create(void* obj, H5VL_loc_params_t loc_params, cons
 
 //Memory allocation for creating dataset structure
             dset_object->subclass = (memvol_dataset_t *)malloc(sizeof(memvol_dataset_t));
-         
+      
         }
         else {
 	    printf("Can't allocate memory");
 	    return 0;
 	}
 //-------------------------------------------------------------------------------------------
-
         memvol_group_t* parent_group;
         memvol_object_t* object = (memvol_object_t *)obj;
 
@@ -88,7 +87,6 @@ static void* memvol_dataset_create(void* obj, H5VL_loc_params_t loc_params, cons
 	DEBUG_MESSAGE("dataspace_value %zu\n", dataset->dataspace);
         DEBUG_MESSAGE("link_creation_property_list %zu\n", dataset->lcpl);
         DEBUG_MESSAGE("dataset data %zu \n", dataset->data);
-
 		
         DEBUG_MESSAGE("dataset %zu\n", dataset);
 
@@ -136,13 +134,9 @@ puts("------------ memvol_dataset_open() called -------------\n");
       DEBUG_MESSAGE("dataset datatype %zu \n", dset->datatype);
       DEBUG_MESSAGE("dataset_dataspace %zu\n", dset->dataspace);
 
-    DEBUG_MESSAGE("dataset data %zu \n", dset->data);
-
-
+      DEBUG_MESSAGE("dataset data %zu \n", dset->data);
     }
-
 return (void *) dset_object;
-
 }
 
 static herr_t memvol_dataset_read(void *dset, hid_t mem_type_id, hid_t mem_space_id, hid_t file_space_id,
@@ -173,8 +167,7 @@ puts("------------ memvol_dataset_read() called -------------\n");
  n_points = H5Sget_simple_extent_npoints(dataset->dataspace);
 
 if(mem_space_id == H5S_ALL) {
-     read_number = sizeof(dataset->data)/size;
-DEBUG_MESSAGE("read nummer %d \n", read_number);
+     read_number = n_points;   //spaces must match
 }
 else if(mem_space_id > 0){
  /* number of elements to write (if not H5S_ALL)*/
@@ -187,42 +180,34 @@ else {
  /*native datatype of dataset datatype*/ 
  hid_t nativ_type = H5Tget_native_type(dataset->datatype, H5T_DIR_ASCEND);
 
+assert(read_number <= n_points);
+
   if(file_space_id == H5S_ALL){
 
       if(mem_space_id == H5S_ALL){
-
-      assert(read_number <= n_points);
-     
             if (mem_type_id == H5T_NATIVE_INT) {
-		   for(int i = 0; i < n_points; i++){
-                           
-                           /*read data*/
-			//   buf = &dataset->data;  
-                           memcpy(buf, dataset->data, n_points * size);
-		   }
+		 for(int i = 0; i < read_number; i++){
+                     /*read data*/
+	             memcpy(buf, dataset->data, n_points * size);
+		 }
 	    }
-         DEBUG_MESSAGE("Data is read\n");   
       }
       else { /*valid mem_space_id*/
-      
-
-
+      // to do
       } 
    }
    else { /*valid file_space_id*/
-
+   
       if(mem_space_id == H5S_ALL){
 
-
+      // to do
       }
       else {/*valid mem_space_id*/
-
+       // to do
       } 
    }
-
 return 1;
-
-}
+} 
 
 static herr_t memvol_dataset_write(void *dset, hid_t mem_type_id, hid_t mem_space_id, hid_t file_space_id,
                     hid_t xfer_plist_id, const void * buf, void **req) {
@@ -249,15 +234,14 @@ DEBUG_MESSAGE("datatype %zu\n", dataset->datatype);
 
 /* class of datatype */
  class = H5Tget_class(dataset->datatype); 
-DEBUG_MESSAGE("class %d\n", class);
+
 
 /*size of datatype in dataset*/
  size = H5Tget_size(dataset->datatype);
-DEBUG_MESSAGE("size %d\n", size);
+
   
 /*number of points in dataset*/
  n_points = H5Sget_simple_extent_npoints(dataset->dataspace);
-DEBUG_MESSAGE("npoints %d\n", n_points);
 
 
 //assert, that datatype class is equal 
@@ -265,24 +249,20 @@ assert(H5Tget_class(mem_type_id) == H5Tget_class(dataset->datatype));
 
 /*size of the mem_type in Bytes*/
 type_size = H5Tget_size(mem_type_id); 
-DEBUG_MESSAGE("size_mem %d\n", type_size);
 
 if(mem_space_id == H5S_ALL) { 
- //  write_number = sizeof(buf)/type_size;
+   write_number = n_points;
   mem_sel_type = H5S_SEL_ALL;
   
-  DEBUG_MESSAGE("mem_H5S_ALL \n");
 }
 else {
  /* number of elements to write (if not H5S_ALL)*/
     write_number = H5Sget_simple_extent_npoints(mem_space_id);
-
 }
 if(file_space_id == H5S_ALL) { 
- //  write_number = sizeof(buf)/type_size;
+ 
   file_sel_type = H5S_SEL_ALL;
   
-  DEBUG_MESSAGE("file_H5S_ALL \n");
 }
 else {
  
@@ -290,12 +270,8 @@ else {
    file_sel_type = H5Sget_select_type(file_space_id);
 }
 
-
 if(dataset->data == NULL) {
-
-DEBUG_MESSAGE("data NULL \n");
    dataset->data =  malloc(n_points * size); 
-DEBUG_MESSAGE("data %zu\n", dataset->data);
 }
 
 
@@ -312,24 +288,22 @@ status = H5Sget_simple_extent_dims(dataset->dataspace, dim, maxdim);
 
 
 /*assert, that data passt in dataset container*/
-//assert(write_number <= n_points);
+//assert(write_number <= n_points); Funktioniert
 
 if(file_space_id == H5S_ALL){
    if(mem_space_id == H5S_ALL){
 	   /*complete write*/
 	   if (mem_type_id == H5T_NATIVE_INT) {
-		   for(int i = 0; i < n_points; i++){
-                        //  dataset->data =  &buf;  
- 	     		  memcpy(dataset->data, buf, n_points * size);
-                    }
-            write_number = n_points;
-            DEBUG_MESSAGE("write \n");
-	   }
+                        
+		   for(int i = 0; i < write_number; i++){
+                   	  memcpy(dataset->data, buf, n_points * size);
+                   }
+                   write_number = n_points;
+            }
 	   else {
 		   DEBUG_MESSAGE("Unhandled type\n");
 		   exit(1);
 	   }
-	DEBUG_MESSAGE("Data is written\n");
    }
    else if (mem_space_id > 0){ /*valid mem_space_id*/
 
@@ -389,7 +363,7 @@ else { /*valid file_space_id*/
 }
 memvol_object_t* parent = dataset->loc_group;
 memvol_group_t* parent_group = (memvol_group_t*)parent->subclass; 
-g_hash_table_insert(parent_group->children, strdup(dataset->name), object);  // insertion in the table 
+g_hash_table_insert(parent_group->children, strdup(dataset->name), object);  // insertion of the actual dataset in the table 
  return 1;
 }
 

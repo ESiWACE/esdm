@@ -74,7 +74,7 @@ int main(int argc, char** argv) {
 
     /* calculate means */
 
-        printf("BUFFER: ");
+        printf("\n BUFFER: ");
 	
        for (int i = 0; i < 3; i++) {
 		for (int j = 0; j < 4; j++) {
@@ -83,7 +83,7 @@ int main(int argc, char** argv) {
 	}
 	printf("\n");
     double avg_create = (double)delta_create / nloops;
-    printf("Average Execution Time for H5Fcreate: %.10f\n", avg_create);
+    printf("\nAverage Execution Time for H5Fcreate: %.10f\n", avg_create);
 
     double avg_dataset_create = (double)delta_dataset_create / nloops;
     printf("Average Execution Time for H5Dcreate: %.10f\n", avg_dataset_create); 
