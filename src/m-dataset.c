@@ -72,13 +72,15 @@ static void* memvol_dataset_create(void* obj, H5VL_loc_params_t loc_params, cons
  
 	H5Pget(dcpl_id, H5VL_PROP_DSET_SPACE_ID, &dataset->dataspace);  // dataspace
 
- hssize_t space_number = H5Sget_simple_extent_npoints(dataset->dataspace); 
-DEBUG_MESSAGE("1. space_number = %d\n", space_number);
+        hssize_t space_number = H5Sget_simple_extent_npoints(dataset->dataspace); 
+        DEBUG_MESSAGE("1. space_number = %d\n", space_number);
 
         H5Pget(dcpl_id, H5VL_PROP_DSET_LCPL_ID, &dataset->lcpl);        // link creation property list
 
+        
 	H5Pclose(dcpl_id);
 
+        dataset->loc_group = object; // location group
         dataset->data = NULL;       // raw data 
 
         DEBUG_MESSAGE("datatype_name %s\n", dataset->name);
@@ -385,8 +387,9 @@ else { /*valid file_space_id*/
 /*to do*/
     } 
 }
-
-//g_hash_table_insert(parent_group->children, strdup(name), dset_object);  // insertion in the table 
+memvol_object_t* parent = dataset->loc_group;
+memvol_group_t* parent_group = (memvol_group_t*)parent->subclass; 
+g_hash_table_insert(parent_group->children, strdup(dataset->name), object);  // insertion in the table 
  return 1;
 }
 

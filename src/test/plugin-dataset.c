@@ -50,7 +50,8 @@ int main()
 	dataspace_id = H5Screate_simple(2, dims, NULL);
 
 	/* Create the dataset. */
-	dataset_id = H5Dcreate2(file_id, "/dset", H5T_STD_I32BE, dataspace_id, H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
+//	dataset_id = H5Dcreate2(file_id, "/dset", H5T_STD_I32BE, dataspace_id, H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
+dataset_id = H5Dcreate2(file_id, "/dset", H5T_NATIVE_INT, dataspace_id, H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
 
 	status = H5Dget_offset(dataset_id);
 

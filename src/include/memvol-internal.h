@@ -21,19 +21,6 @@ typedef struct {
     char* name;
 } memvol_group_t;
 
-typedef struct {
-    char* name;
-    hid_t datatype;
-    hid_t dataspace;
-    hid_t lcpl;
-    void* data;
-} memvol_dataset_t;
-
-typedef struct {
-    memvol_group_t* root_group;
-    char* name;
-} memvol_file_t;
-
 typedef enum {
     GROUP_T,
     DATASET_T
@@ -43,4 +30,21 @@ typedef struct {
     memvol_object_type type;
     void* subclass; //entweder memvol_group_t*, memvol_file_t* oder memvol_dataset_t -> type member
 } memvol_object_t;
+
+typedef struct {
+    char* name;
+    hid_t datatype;
+    hid_t dataspace;
+    hid_t lcpl;
+    void* data;
+    memvol_object_t* loc_group;
+} memvol_dataset_t;
+
+typedef struct {
+    memvol_group_t* root_group;
+    char* name;
+} memvol_file_t;
+
+
+
 #endif
