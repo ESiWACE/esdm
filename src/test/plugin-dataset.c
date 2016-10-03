@@ -83,13 +83,13 @@ int main()
 
      
 	// READ ///////////////////////////////////////////////////////////////////
-	int dset_data_read[4][5];
+	int dset_data_read[4][6];
 
 	status = H5Dread(dataset_id, H5T_NATIVE_INT, H5S_ALL, H5S_ALL, H5P_DEFAULT, dset_data_read);
 	
 	printf("BUFFER: ");
 	for (i = 0; i < 4; i++) {
-		for (j = 0; j < 5; j++) {
+		for (j = 0; j < 6; j++) {
 			printf("%d,", dset_data_read[i][j]);
 		}
 	}
