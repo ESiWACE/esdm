@@ -185,7 +185,8 @@ assert(read_number <= n_points);
   if(file_space_id == H5S_ALL){
 
       if(mem_space_id == H5S_ALL){
-            if (mem_type_id == H5T_NATIVE_INT) {
+            if (mem_type_id == H5T_NATIVE_INT || mem_type_id == H5T_NATIVE_FLOAT) {
+
 		 for(int i = 0; i < read_number; i++){
                      /*read data*/
 	             memcpy(buf, dataset->data, n_points * size);
@@ -253,6 +254,8 @@ type_size = H5Tget_size(mem_type_id);
 if(mem_space_id == H5S_ALL) { 
    write_number = n_points;
   mem_sel_type = H5S_SEL_ALL;
+
+DEBUG_MESSAGE("write_number %zu\n", write_number);
   
 }
 else {
@@ -272,15 +275,19 @@ else {
 
 if(dataset->data == NULL) {
    dataset->data =  malloc(n_points * size); 
+
+DEBUG_MESSAGE("data %zu\n", dataset->data);
 }
 
 
 /*rank of the dataset dataspace*/
 dims = H5Sget_simple_extent_ndims(dataset->dataspace); 
+DEBUG_MESSAGE("dims %d\n", dims);
 
 /* dimention size and maximal size*/
-status = H5Sget_simple_extent_dims(dataset->dataspace, dim, maxdim);
+//status = H5Sget_simple_extent_dims(dataset->dataspace, dim, maxdim);
 
+DEBUG_MESSAGE("w 2 %d\n", status);
 
 /*name of type*/
 //length = H5Iget_name(mem_type_id, type_name, 10);
@@ -288,15 +295,18 @@ status = H5Sget_simple_extent_dims(dataset->dataspace, dim, maxdim);
 
 
 /*assert, that data passt in dataset container*/
-//assert(write_number <= n_points); Funktioniert
+//assert(write_number <= n_points); 
+
 
 if(file_space_id == H5S_ALL){
-   if(mem_space_id == H5S_ALL){
+      if(mem_space_id == H5S_ALL){
 	   /*complete write*/
-	   if (mem_type_id == H5T_NATIVE_INT) {
+ 
+	   if (mem_type_id == H5T_NATIVE_INT || mem_type_id == H5T_NATIVE_FLOAT) {
                         
 		   for(int i = 0; i < write_number; i++){
                    	  memcpy(dataset->data, buf, n_points * size);
+                 DEBUG_MESSAGE("i %d\n", i);
                    }
                    write_number = n_points;
             }
