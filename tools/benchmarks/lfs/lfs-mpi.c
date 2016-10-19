@@ -31,8 +31,7 @@ int lfs_mpi_open(lfs_mpi_file_p * fd_p, char *df, int flags, mode_t mode, MPI_Co
 	fd->mother_file = strdup(df);
 	// TODO work for read-only, write/read workflows, too.
 	ret = access(fd->filename, F_OK );
-	MPI_Allreduce(MPI_IN_PLACE, &ret, 1, MPI_INT, MPI_MIN, com);
-
+	//MPI_Allreduce(MPI_IN_PLACE, &ret, 1, MPI_INT, MPI_MIN, com);
 	if(ret == -1) { // no file does exist so far
 //		return -1;
 //	}
@@ -43,10 +42,16 @@ int lfs_mpi_open(lfs_mpi_file_p * fd_p, char *df, int flags, mode_t mode, MPI_Co
 			fclose(meta_file);
 		}
 		else {
-			printf("proc %d sending message to proc 0\n", rank);
+			//MPI_Comm_size(fd->com, &world_size);
+			printf("my ranks is not 0 mine is: %d\n", rank);
+	                unsigned int stats = (unsigned int)1 << (fd->proc_rank);
+			printf("SIZEOF: %d \n",sizeof(stats));
+			unsigned int results;
+	                MPI_Allreduce(&stats, &results, 1, MPI_UNSIGNED, MPI_BOR, com);
+			/*printf("proc %d sending message to proc 0\n", rank);
 			MPI_Request request;
 			MPI_Isend(df, strlen(df), MPI_CHAR, 0, 1, com, &request); // XXX: IS IT OK? later I want to do MPI_Iprobe in proc 0 to get find it.
-			// send info about file creation to proc 0
+			*/// send info about file creation to proc 0
 		}
 	}
 	fd->log_file = fopen(lfsfilename, "a+"); // XXX: I had to change it to a+ from w. because for readying I want to read it and with w I couldn't! is it has to be w then I'll open it in r for the read as temp variable and close it when reading ends.
@@ -63,20 +68,58 @@ void lfs_mpi_next_epoch(lfs_mpi_file_p fd){
 	fd->current_epoch++;
 	off_t offset_zero = 0;
 	size_t size_zero = 0;
+	int world_size, rank;
+	FILE * meta_file;
 
 	fwrite(& offset_zero, sizeof(offset_zero), 1, fd->log_file);
 	fwrite(& size_zero, sizeof(size_zero), 1, fd->log_file);
 
+	MPI_Comm_size(fd->com, &world_size);
+
+	struct timeval  tv;
+        gettimeofday(&tv, NULL);
+        long long time_in_mill = tv.tv_sec*1000 + tv.tv_usec/1000;
+        printf("I'm Proc %d and I've reached the barrier! %lld\n", fd->proc_rank, time_in_mill);
+
+        // Probably we do not need it for write only.
+        MPI_Barrier(MPI_COMM_WORLD);
+
+        gettimeofday(&tv, NULL);
+        time_in_mill = (tv.tv_sec) * 1000 + (tv.tv_usec) / 1000 ;
+        printf("Proc %d released! %lld\n", fd->proc_rank, time_in_mill);
+
+	// using mpi_allreduce to inform others (mainly proc 0) about next epoch status
+	/*if(fd->proc_rank != 0){
+		MPI_Comm_size(fd->com, &world_size);
+		int *stats = (int *)malloc(world_size * sizeof(int));
+		for(int i = 0; i < world_rank; i++)
+			stats[i] = 0;
+		stats[fd->proc_rank] = 1;
+		MPI_Allreduce(&mytime, &maxtime, world_size, MPI_INT, MPI_MAX, fd->com);
+	}*/
 	// proc 0 should update its information about other proc's state!
-	if(fd->proc_rank == 0){
-		int world_size;
-		int flag;
+	if(fd->proc_rank ==0) {
+		unsigned int stats = fd->proc_rank;
+		unsigned int results;
+                MPI_Allreduce(&stats, &results, 1, MPI_UNSIGNED, MPI_BOR, fd->com);
+		unsigned int temp = 0;
+		for(int i = world_size; i >= 0 ; i--){
+			if(results <= 0)
+				break;
+			if(temp % 2 == 1){
+				printf("in next EPOCH function: proc %d has been found!!!\n", i);
+				meta_file = fopen (fd->mother_file, "w");
+                                fprintf(meta_file, "%d", i);
+                                fclose(meta_file);
+			}
+			temp = results >> i;
+		} // end of FOR
+/*		int flag;
 		int count;
 		MPI_Status status;
 		char * temp;
 		MPI_Request request;
 		FILE * meta_file;
-		MPI_Comm_size(fd->com, &world_size);
 		for(int i = 1; i < world_size; i++){
 			MPI_Iprobe(i, 1, fd->com, &flag, &status);
 			if(flag){
@@ -87,23 +130,14 @@ void lfs_mpi_next_epoch(lfs_mpi_file_p fd){
 				MPI_Wait(&request, &status);
 				printf("proc 0 recieved message from proc %d: %s\n", i, temp);
 				meta_file = fopen (temp, "w");
+                                fprintf(meta_file, "%d", i);
+                                fclose(meta_file);meta_file = fopen (temp, "w");
 	                        fprintf(meta_file, "%d", i);
 	                        fclose(meta_file);
 				free(temp);
 			} // end of IF
-		} // end of FOR
+		} // end of FOR*/
 	} // end of IF
-	struct timeval  tv;
-	gettimeofday(&tv, NULL);
-	long long time_in_mill = tv.tv_sec*1000 + tv.tv_usec/1000;
-	printf("I'm Proc %d and I've reached the barrier! %lld\n", fd->proc_rank, time_in_mill);
-
-	// Probably we do not need it for write only.
-	MPI_Barrier(MPI_COMM_WORLD);
-
-	gettimeofday(&tv, NULL);
-	time_in_mill = (tv.tv_sec) * 1000 + (tv.tv_usec) / 1000 ;
-	printf("Proc %d released! %lld\n", fd->proc_rank, time_in_mill);
 }
 
 // this is the LFS write function
