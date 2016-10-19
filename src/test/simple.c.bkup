@@ -1,17 +1,15 @@
 #include <stdio.h>
-#include <memvol.h>
 #include <time.h>
+#include <memvol.h>
 
 void benchmark(FILE *f, int mode) {
-    puts("Benchmark started...");
     /* setup */
-    struct timespec begin;
-    struct timespec end;
-    long delta_create;
-    long delta_dataset_create;
-    long delta_write;
-    long delta_read;
-    long delta_close;
+    clock_t begin, end;
+    double delta_create = 0.0;
+    double delta_dataset_create = 0.0;
+    double delta_write = 0.0;
+    double delta_read= 0.0;
+    double delta_close = 0.0;
     hid_t fid, fprop, space, did;
     herr_t status;
 
@@ -26,10 +24,8 @@ void benchmark(FILE *f, int mode) {
  	const int nloops = 10000;
     
     
-    //for (int i = 0; i < nloops; i++) {
+    for (int i = 0; i < nloops; i++) {
         char name[12];
-        /* temp */
-        int i = 0;
         sprintf(name, "test%d.h5", i);
 
 	hsize_t dims[2] = {3, 4};	
@@ -43,38 +39,38 @@ void benchmark(FILE *f, int mode) {
 
 	space = H5Screate_simple(2, dims, NULL);
 
-        clock_gettime(CLOCK_MONOTONIC, &begin);
-    fid = H5Fcreate(name, H5F_ACC_TRUNC, H5P_DEFAULT, fprop);
-        clock_gettime(CLOCK_MONOTONIC, &end);
-        delta_create += (end.tv_nsec - begin.tv_nsec);
+        begin = clock();
+        fid = H5Fcreate(name, H5F_ACC_TRUNC, H5P_DEFAULT, fprop);
+        end = clock();
+        delta_create += (double)(end-begin) / CLOCKS_PER_SEC;
 
-        clock_gettime(CLOCK_MONOTONIC, &begin);
+        begin = clock();
 	did = H5Dcreate2(fid, "/test", H5T_NATIVE_INT, space, H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);	
-        clock_gettime(CLOCK_MONOTONIC, &end);
-        delta_dataset_create += (end.tv_nsec - begin.tv_nsec);
+        end = clock();
+        delta_dataset_create += (double)(end-begin) / CLOCKS_PER_SEC;
 
-        clock_gettime(CLOCK_MONOTONIC, &begin);
+        begin = clock();
 	status = H5Dwrite(did, H5T_NATIVE_INT, H5S_ALL, H5S_ALL, H5P_DEFAULT, data);
-        clock_gettime(CLOCK_MONOTONIC, &end);
-        delta_write += (end.tv_nsec - begin.tv_nsec);
+        end = clock();
+        delta_write += (double)(end-begin) / CLOCKS_PER_SEC;
 
 
-        clock_gettime(CLOCK_MONOTONIC, &begin);
+        begin = clock();
 	status = H5Dread(did, H5T_NATIVE_INT, H5S_ALL, H5S_ALL, H5P_DEFAULT, data_read);
-        clock_gettime(CLOCK_MONOTONIC, &end);
-        delta_read += (end.tv_nsec - begin.tv_nsec);
+        end = clock();
+        delta_read += (double)(end-begin) / CLOCKS_PER_SEC;
 
      
 
-        clock_gettime(CLOCK_MONOTONIC, &begin);
+        begin = clock();
 	status = H5Dclose(did);
-        clock_gettime(CLOCK_MONOTONIC, &end);
-        delta_close += (end.tv_nsec - begin.tv_nsec);
+        end = clock();
+        delta_close += (double)(end-begin) / CLOCKS_PER_SEC;
 
          status = H5Sclose(space);
          status = H5Fclose(fid);
 
-    //}
+    }
 
     /* calculate means */
 
@@ -86,34 +82,30 @@ void benchmark(FILE *f, int mode) {
 		}
 	}
     
-    const char* hardware;
+    const char* header;
     if (mode == 1) {
-        hardware = "memvol";
+        header = "HDF5 memvol benchmark ##########";
     } else {
-        hardware = "standard";
+        header = "HDF5 standard benchmark ##########";
     }
 
-    /* Dataframe Outline:
-     * "HDFversion" "Hardware" "H5Fcreate" "H5Dcreate" "H5Dwrite" "H5Dread" "H5Dclose"
-     */
-    fprintf(f, "\"%s\" %lu %lu %lu %lu %lu", hardware, delta_create, delta_dataset_create, delta_write, delta_read, delta_close);
+    fprintf(f, "%s\n", header);
 
-    /*
-    double avg_create = (double)delta_create;// / nloops;
+	printf("\n");
+    double avg_create = (double)delta_create / nloops;
     fprintf(f, "\nAverage Execution Time for H5Fcreate: %.10f\n", avg_create);
 
-    double avg_dataset_create = (double)delta_dataset_create;// / nloops;
+    double avg_dataset_create = (double)delta_dataset_create / nloops;
     fprintf(f, "Average Execution Time for H5Dcreate: %.10f\n", avg_dataset_create); 
 
-    double avg_write = (double)delta_write;// / nloops;
+    double avg_write = (double)delta_write / nloops;
     fprintf(f, "Average Execution Time for H5Dwrite: %.10f\n", avg_write);
 
-    double avg_read = (double)delta_read;// / nloops;
+    double avg_read = (double)delta_read / nloops;
     fprintf(f, "Average Execution Time for H5read: %.10f\n", avg_read);
 
-    double avg_close = (double)delta_close;// / nloops;
+    double avg_close = (double)delta_close / nloops;
     fprintf(f, "Average Execution Time for H5Fclose: %.10f\n", avg_close);
-    */
 }
 
 
