@@ -157,7 +157,7 @@ puts("------------ memvol_dataset_read() called -------------\n");
     return 0;
   
   }
-  
+/*assert, that datatype classes are equal*/  
    assert(H5Tget_class(mem_type_id) == H5Tget_class(dataset->datatype));
 
 /*size of datatype in dataset*/
@@ -245,7 +245,7 @@ DEBUG_MESSAGE("datatype %zu\n", dataset->datatype);
  n_points = H5Sget_simple_extent_npoints(dataset->dataspace);
 
 
-//assert, that datatype class is equal 
+//assert, that datatype classes are equal 
 assert(H5Tget_class(mem_type_id) == H5Tget_class(dataset->datatype));
 
 /*size of the mem_type in Bytes*/
@@ -306,7 +306,6 @@ if(file_space_id == H5S_ALL){
                         
 		   for(int i = 0; i < write_number; i++){
                    	  memcpy(dataset->data, buf, n_points * size);
-                 DEBUG_MESSAGE("i %d\n", i);
                    }
                    write_number = n_points;
             }
