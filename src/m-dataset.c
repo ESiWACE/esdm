@@ -287,12 +287,6 @@ DEBUG_MESSAGE("dims %d\n", dims);
 /* dimention size and maximal size*/
 //status = H5Sget_simple_extent_dims(dataset->dataspace, dim, maxdim);
 
-DEBUG_MESSAGE("w 2 %d\n", status);
-
-/*name of type*/
-//length = H5Iget_name(mem_type_id, type_name, 10);
-//length = H5Iget_name(mem_type_id, type_name, length+1);
-
 
 /*assert, that data passt in dataset container*/
 //assert(write_number <= n_points); 
@@ -303,9 +297,10 @@ if(file_space_id == H5S_ALL){
 	   /*complete write*/
  
 	   if (mem_type_id == H5T_NATIVE_INT || mem_type_id == H5T_NATIVE_FLOAT) {
-                        
+                                    
 		   for(int i = 0; i < write_number; i++){
                    	  memcpy(dataset->data, buf, n_points * size);
+                       
                    }
                    write_number = n_points;
             }
