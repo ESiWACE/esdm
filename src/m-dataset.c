@@ -82,6 +82,7 @@ static void* memvol_dataset_create(void* obj, H5VL_loc_params_t loc_params, cons
         dataset->loc_group = object; // location group
         dataset->data = NULL;       // raw data 
 
+
         DEBUG_MESSAGE("datatype_name %s\n", dataset->name);
 	DEBUG_MESSAGE("datatype_value %zu\n", dataset->datatype);
 	DEBUG_MESSAGE("dataspace_value %zu\n", dataset->dataspace);
