@@ -56,7 +56,7 @@ void benchmark(FILE *f, int mode) {
         fid = H5Fcreate(name, H5F_ACC_TRUNC, H5P_DEFAULT, fprop);
 
         clock_gettime(CLOCK_MONOTONIC, &end);
-        delta_create += (end.tv_nsec - begin.tv_nsec);
+        delta_create = (end.tv_nsec - begin.tv_nsec);
 
         /* H5Dcreate int */
         clock_gettime(CLOCK_MONOTONIC, &begin);
@@ -64,7 +64,7 @@ void benchmark(FILE *f, int mode) {
 	    did_int = H5Dcreate2(fid, "/test", H5T_NATIVE_INT, space, H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);	
 
         clock_gettime(CLOCK_MONOTONIC, &end);
-        delta_dataset_create += (end.tv_nsec - begin.tv_nsec);
+        delta_dataset_create = (end.tv_nsec - begin.tv_nsec);
 
         /* H5Dwrite int */
         clock_gettime(CLOCK_MONOTONIC, &begin);
@@ -72,7 +72,7 @@ void benchmark(FILE *f, int mode) {
 	    status = H5Dwrite(did_int, H5T_NATIVE_INT, H5S_ALL, H5S_ALL, H5P_DEFAULT, data);
 
         clock_gettime(CLOCK_MONOTONIC, &end);
-        delta_write += (end.tv_nsec - begin.tv_nsec);
+        delta_write = (end.tv_nsec - begin.tv_nsec);
 
         /* H5Dread int */
         clock_gettime(CLOCK_MONOTONIC, &begin);
@@ -80,7 +80,7 @@ void benchmark(FILE *f, int mode) {
 	    status = H5Dread(did_int, H5T_NATIVE_INT, H5S_ALL, H5S_ALL, H5P_DEFAULT, data_read);
 
         clock_gettime(CLOCK_MONOTONIC, &end);
-        delta_read += (end.tv_nsec - begin.tv_nsec);
+        delta_read = (end.tv_nsec - begin.tv_nsec);
 
 
 	    status = H5Dclose(did_int);
@@ -92,7 +92,7 @@ void benchmark(FILE *f, int mode) {
 	    did_float = H5Dcreate2(fid, "/test_float", H5T_NATIVE_FLOAT, space_f, H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);	
 
         clock_gettime(CLOCK_MONOTONIC, &end);
-        delta_dataset_f_create += (end.tv_nsec - begin.tv_nsec);
+        delta_dataset_f_create = (end.tv_nsec - begin.tv_nsec);
        
         /* H5Dwrite float */
         clock_gettime(CLOCK_MONOTONIC, &begin);
@@ -100,7 +100,7 @@ void benchmark(FILE *f, int mode) {
 	    status = H5Dwrite(did_float, H5T_NATIVE_FLOAT, H5S_ALL, H5S_ALL, H5P_DEFAULT, data_float);
 
         clock_gettime(CLOCK_MONOTONIC, &end);
-        delta_f_write += (end.tv_nsec - begin.tv_nsec); 
+        delta_f_write = (end.tv_nsec - begin.tv_nsec); 
 
         /* H5Dread float */
         clock_gettime(CLOCK_MONOTONIC, &begin);
@@ -108,7 +108,7 @@ void benchmark(FILE *f, int mode) {
 	    status = H5Dread(did_float, H5T_NATIVE_FLOAT, H5S_ALL, H5S_ALL, H5P_DEFAULT, data_f_read);
 
         clock_gettime(CLOCK_MONOTONIC, &end);
-        delta_f_read += (end.tv_nsec - begin.tv_nsec);
+        delta_f_read = (end.tv_nsec - begin.tv_nsec);
     
         status = H5Dclose(did_float);
         status = H5Sclose(space_f);
@@ -124,7 +124,7 @@ void benchmark(FILE *f, int mode) {
         }
 
         clock_gettime(CLOCK_MONOTONIC, &end);
-        delta_close += (end.tv_nsec - begin.tv_nsec);
+        delta_close = (end.tv_nsec - begin.tv_nsec);
 
         const char* version;
         if (mode == 1) {
