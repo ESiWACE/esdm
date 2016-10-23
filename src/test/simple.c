@@ -61,7 +61,7 @@ void benchmark(FILE *f, int mode) {
         /* H5Dcreate int */
         clock_gettime(CLOCK_MONOTONIC, &begin);
 
-	    did_int = H5Dcreate2(fid, "/test", H5T_NATIVE_INT, space, H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);	
+	    did = H5Dcreate2(fid, "/test", H5T_NATIVE_INT, space, H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);	
 
         clock_gettime(CLOCK_MONOTONIC, &end);
         delta_dataset_create += (end.tv_nsec - begin.tv_nsec);
@@ -69,7 +69,7 @@ void benchmark(FILE *f, int mode) {
         /* H5Dwrite int */
         clock_gettime(CLOCK_MONOTONIC, &begin);
 
-	    status = H5Dwrite(did_int, H5T_NATIVE_INT, H5S_ALL, H5S_ALL, H5P_DEFAULT, data);
+	    status = H5Dwrite(did, H5T_NATIVE_INT, H5S_ALL, H5S_ALL, H5P_DEFAULT, data);
 
         clock_gettime(CLOCK_MONOTONIC, &end);
         delta_write += (end.tv_nsec - begin.tv_nsec);
@@ -77,13 +77,13 @@ void benchmark(FILE *f, int mode) {
         /* H5Dread int */
         clock_gettime(CLOCK_MONOTONIC, &begin);
 
-	    status = H5Dread(did_int, H5T_NATIVE_INT, H5S_ALL, H5S_ALL, H5P_DEFAULT, data_read);
+	    status = H5Dread(did, H5T_NATIVE_INT, H5S_ALL, H5S_ALL, H5P_DEFAULT, data_read);
 
         clock_gettime(CLOCK_MONOTONIC, &end);
         delta_read += (end.tv_nsec - begin.tv_nsec);
 
 
-	    status = H5Dclose(did_int);
+	    status = H5Dclose(did);
         status = H5Sclose(space);
 
         /* H5Dcreate float */
@@ -117,7 +117,11 @@ void benchmark(FILE *f, int mode) {
         /* H5Fclose */
         clock_gettime(CLOCK_MONOTONIC, &begin);
 
-        status = H5Fclose(fid);
+        if (mode == 1) {
+            status = H5Gclose(fid);
+        } else {
+            status = H5Fclose(fid);
+        }
 
         clock_gettime(CLOCK_MONOTONIC, &end);
         delta_close += (end.tv_nsec - begin.tv_nsec);
@@ -147,7 +151,8 @@ int main(int argc, char** argv) {
         puts("Error opening file!");
         return 1;
     }
-    fprintf(f, "\"Hardware\" \"Memory\" \"DataSize\" \"HDFversion\" \"H5Fcreate\" \"H5Dcreate int\" \"H5Dwrite int\" \"H5Dread int\" \"H5Dcreate float\" \"H5Dwrite float\" \"H5Dread float\" \"H5Fclose\"\n");
+
+    fprintf(f, "\"Hardware\" \"Memory\" \"DataSize\" \"HDFversion\" \"H5Fcreate\" \"H5Dcreate int\" \"H5Dwrite int\" \"H5Dread int\" \"H5Dcreate float\" \"H5Dwrite float\" \"H5Dread float\" \"H5Fclose\""\n);
   
     /* HDF standard */
     benchmark(f, 0);
