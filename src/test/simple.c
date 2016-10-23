@@ -152,7 +152,7 @@ int main(int argc, char** argv) {
         return 1;
     }
 
-    fprintf(f, "\"Hardware\" \"Memory\" \"DataSize\" \"HDFversion\" \"H5Fcreate\" \"H5Dcreate int\" \"H5Dwrite int\" \"H5Dread int\" \"H5Dcreate float\" \"H5Dwrite float\" \"H5Dread float\" \"H5Fclose\""\n);
+    fprintf(f, "\"Hardware\" \"Memory\" \"DataSize\" \"HDFversion\" \"H5Fcreate\" \"H5Dcreate int\" \"H5Dwrite int\" \"H5Dread int\" \"H5Dcreate float\" \"H5Dwrite float\" \"H5Dread float\" \"H5Fclose\"\n");
   
     /* HDF standard */
     benchmark(f, 0);
