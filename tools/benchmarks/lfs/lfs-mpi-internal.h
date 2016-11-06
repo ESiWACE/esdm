@@ -17,6 +17,7 @@ struct lfs_file{
   int current_epoch;
   off_t file_position;
   char * filename;
+  char is_new;
 };
 
 typedef struct {

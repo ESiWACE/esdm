@@ -33,9 +33,13 @@ int lfs_mpi_open(lfs_mpi_file_p * fd_p, char *df, int flags, mode_t mode, MPI_Co
 	ret = access(fd->filename, F_OK );
 	//MPI_Allreduce(MPI_IN_PLACE, &ret, 1, MPI_INT, MPI_MIN, com);
 	if(ret == -1) { // no file does exist so far
+        fd->is_new = 1;
+	} else {
+	    fd->is_new = 0;
+	}
 //		return -1;
 //	}
-		if(rank == 0) {
+/*		if(rank == 0) {
 			//MPI_Comm_size(MPI_COMM_WORLD, & size);
 			FILE * meta_file = fopen (df, "w");
 			fprintf(meta_file, "%d\n", rank);
@@ -43,7 +47,7 @@ int lfs_mpi_open(lfs_mpi_file_p * fd_p, char *df, int flags, mode_t mode, MPI_Co
 		}
 		else {
 			//MPI_Comm_size(fd->com, &world_size);
-			printf("my ranks is not 0 mine is: %d\n", rank);
+		//	printf("my ranks is not 0 mine is: %d\n", rank);
 	                unsigned int stats = (unsigned int)1 << (fd->proc_rank);
 			printf("SIZEOF: %d \n",sizeof(stats));
 			unsigned int results;
@@ -52,8 +56,6 @@ int lfs_mpi_open(lfs_mpi_file_p * fd_p, char *df, int flags, mode_t mode, MPI_Co
 			MPI_Request request;
 			MPI_Isend(df, strlen(df), MPI_CHAR, 0, 1, com, &request); // XXX: IS IT OK? later I want to do MPI_Iprobe in proc 0 to get find it.
 			*/// send info about file creation to proc 0
-		}
-	}
 	fd->log_file = fopen(lfsfilename, "a+"); // XXX: I had to change it to a+ from w. because for readying I want to read it and with w I couldn't! is it has to be w then I'll open it in r for the read as temp variable and close it when reading ends.
 	fd->data_file = open(fd->filename, O_CREAT|O_RDWR|O_TRUNC, S_IRUSR|S_IWUSR);
 	fd->file_position = 0;
@@ -70,6 +72,8 @@ void lfs_mpi_next_epoch(lfs_mpi_file_p fd){
 	size_t size_zero = 0;
 	int world_size, rank;
 	FILE * meta_file;
+    unsigned int stats = 0;
+    unsigned int results;
 
 	fwrite(& offset_zero, sizeof(offset_zero), 1, fd->log_file);
 	fwrite(& size_zero, sizeof(size_zero), 1, fd->log_file);
@@ -81,6 +85,12 @@ void lfs_mpi_next_epoch(lfs_mpi_file_p fd){
         long long time_in_mill = tv.tv_sec*1000 + tv.tv_usec/1000;
         printf("I'm Proc %d and I've reached the barrier! %lld\n", fd->proc_rank, time_in_mill);
 
+        if(fd->is_new == 1) {
+            fd->is_new = 0;
+            printf("my ranks is: %d\n", fd->proc_rank);
+            stats = (unsigned int)1 << (fd->proc_rank);
+        }
+        MPI_Allreduce(&stats, &results, 1, MPI_UNSIGNED, MPI_BOR, fd->com);
         // Probably we do not need it for write only.
         MPI_Barrier(MPI_COMM_WORLD);
 
@@ -99,21 +109,19 @@ void lfs_mpi_next_epoch(lfs_mpi_file_p fd){
 	}*/
 	// proc 0 should update its information about other proc's state!
 	if(fd->proc_rank ==0) {
-		unsigned int stats = fd->proc_rank;
-		unsigned int results;
-                MPI_Allreduce(&stats, &results, 1, MPI_UNSIGNED, MPI_BOR, fd->com);
-		unsigned int temp = 0;
-		for(int i = world_size; i >= 0 ; i--){
-			if(results <= 0)
+        unsigned int temp = results;
+		printf("results is: %d\n",results);
+		meta_file = fopen (fd->mother_file, "w");
+		for(int i = world_size; i > 0 ; i--){
+            if(temp <= 0)
 				break;
 			if(temp % 2 == 1){
-				printf("in next EPOCH function: proc %d has been found!!!\n", i);
-				meta_file = fopen (fd->mother_file, "w");
-                                fprintf(meta_file, "%d", i);
-                                fclose(meta_file);
+				printf("in next EPOCH function: proc %d has been found!!!\n", i - 1);
+                fprintf(meta_file, "%d\n", i - 1);
 			}
-			temp = results >> i;
+			temp = temp >> 1;
 		} // end of FOR
+        fclose(meta_file);
 /*		int flag;
 		int count;
 		MPI_Status status;
@@ -138,6 +146,7 @@ void lfs_mpi_next_epoch(lfs_mpi_file_p fd){
 			} // end of IF
 		} // end of FOR*/
 	} // end of IF
+	return;
 }
 
 // this is the LFS write function
