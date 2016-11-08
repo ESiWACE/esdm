@@ -62,7 +62,7 @@ main (int argc, char *argv[])
 
 
   lfs_mpi_file_p myfd;
-  int ret = lfs_mpi_open (&myfd, "MP.data", O_CREAT | O_RDWR, S_IRUSR | S_IWUSR, MPI_COMM_WORLD);
+  int ret = lfs_mpi_open (&myfd, "MP.data", O_TRUNC | O_CREAT | O_RDWR, S_IRUSR | S_IWUSR, MPI_COMM_WORLD);
 
   size_t seq_io = 800;
   if (my_id == 0) {
@@ -78,19 +78,22 @@ main (int argc, char *argv[])
     lfs_mpi_next_epoch (myfd);
   }
   if (my_id == 2) {
-    sleep (3);
+    sleep (1);
     char *fill_file = (char *) malloc (seq_io);
     memset (fill_file, 3, seq_io);
     lfs_mpi_write (myfd, fill_file, seq_io, 400);
     lfs_mpi_next_epoch (myfd);
-    char *test_read = (char *) malloc (seq_io * 2);
-    lfs_mpi_read (myfd, test_read, seq_io * 2, 0);
-    FILE *res = fopen ("mpi-result", "a+");
-    fwrite (test_read, sizeof (char), (seq_io * 2) / sizeof (char), res);
-    fclose (res);
   }
-
   lfs_mpi_close (myfd);
+
+	ret = lfs_mpi_open (&myfd, "MP.data", O_RDONLY, S_IRUSR | S_IWUSR, MPI_COMM_WORLD);
+	if (my_id == 2) {
+		char *test_read = (char *) malloc (seq_io * 2);
+		lfs_mpi_read (myfd, test_read, seq_io * 2, 0);
+		FILE *res = fopen ("mpi-result", "a+");
+		fwrite (test_read, sizeof (char), (seq_io * 2) / sizeof (char), res);
+		fclose (res);
+	}
   ierr = MPI_Finalize ();
   return 0;
 }
