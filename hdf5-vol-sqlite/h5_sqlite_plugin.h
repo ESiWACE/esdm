@@ -9,8 +9,6 @@
 
 #define FILE_DEFAULT_PATH "/root"
 
-
-
 typedef struct h5sqlite_fapl_t {
   int mpi_size;
   int mpi_rank;
@@ -32,14 +30,8 @@ typedef struct SQO_t {
 typedef struct SQF_t {
 	SQO_t object;
 	int fd;
-  off64_t offset; // global offset
-#ifdef SMARTFILE
-	int fd_shm;
-  off64_t offset_shm;
-	int fd_ssh;
-  off64_t offset_ssd;
-#endif
 	void* db;
+  off64_t offset; // global offset
 } SQF_t;    /* structure for file*/
 
 typedef struct SQD_t {

@@ -29,7 +29,6 @@ LDFLAGS=" \
 	#-g3 -DDEBUG -DTRACE \
 CFLAGS=" \
 	-std=gnu11 \
-	-g3 -DDEBUG -DTRACE \
 	-D_LARGEFILE64_SOURCE \
 	-I${ROOTDIR}/hdf5-vol-install/include \
 	-I$MPIPWD/include \
@@ -42,6 +41,7 @@ CFLAGS=" \
 [ ! -d multifile ] && mkdir -p multifile
 
 set -x
-$CC $CFLAGS $LDFLAGS -shared -fpic -o shared/libh5-sqlite-plugin.so  h5_sqlite_plugin.c db_sqlite.c base.c
-$CC $CFLAGS $LDFLAGS -shared -fpic -DMULTIFILE -o multifile/libh5-sqlite-plugin.so  h5_sqlite_plugin.c db_sqlite.c base.c
+#$CC $CFLAGS $LDFLAGS -shared -fpic -o shared/libh5-sqlite-plugin.so  h5_sqlite_plugin.c db_sqlite.c base.c
+#$CC $CFLAGS $LDFLAGS -shared -fpic -DMULTIFILE -o multifile/libh5-sqlite-plugin.so  h5_sqlite_plugin.c db_sqlite.c base.c
+$CC $CFLAGS $LDFLAGS -shared -fpic -DADAPTIVE -o adaptive/libh5-sqlite-plugin.so  h5_sqlite_plugin.c db_sqlite.c esdm.c base.c
 set +x

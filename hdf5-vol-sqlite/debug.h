@@ -10,7 +10,7 @@
  *       Revision:  none
  *       Compiler:  gcc
  *
- *         Author:  Eugen Betke, Olga Perevalova
+ *         Author:  YOUR NAME (), 
  *   Organization:  
  *
  * =====================================================================================

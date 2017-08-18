@@ -62,19 +62,16 @@ void DB_disconnect(void* db_ptr) {
 //    H5T_cset_t          cset;           /* Character set of attribute name */
 //    hsize_t             data_size;      /* Size of raw data		  */
 //} H5A_info_t;
-int DBA_get_info (SQO_t* obj, const char* attr_name, H5A_info_t* ainfo) {
-	int ret = 0;
+void DBA_get_info (SQO_t* obj, const char* attr_name, H5A_info_t* ainfo) {
   ainfo->corder_valid = false;
   ainfo->corder = 0;
   ainfo->cset = H5T_CSET_ASCII; // possible: H5T_CSET_ASCII, H5T_CSET_UTF8
   ainfo->data_size = 100;
-	return ret;
 }
 
 
 
-int DBF_create(SQF_t* file, unsigned flags, void* db_ptr, hid_t fcpl_id, hid_t fapl_id) {
-	int ret = 0;
+void DBF_create(SQF_t* file, unsigned flags, void* db_ptr, hid_t fcpl_id, hid_t fapl_id) {
 	sqlite3* db = (sqlite3*) db_ptr;
 	char *sql = "CREATE TABLE FILE("
 	"path TEXT, "
@@ -118,10 +115,9 @@ int DBF_create(SQF_t* file, unsigned flags, void* db_ptr, hid_t fcpl_id, hid_t f
 	"PRIMARY KEY(path, name ASC));";
 
 	char *sql6 = "CREATE TABLE ATTR_DATA("
-	"path TEXT, "
-	"name TEXT,"
-	"data BLOB, "
-	"PRIMARY KEY(path, name ASC));";
+	"Path TEXT, "
+	"Data BLOB, "
+	"PRIMARY KEY(Path ASC));";
 
 	char *sql2 =  "INSERT INTO FILE VALUES(?,?,?,?,?);";
 	sqlite3_stmt *res;
@@ -181,19 +177,16 @@ int DBF_create(SQF_t* file, unsigned flags, void* db_ptr, hid_t fcpl_id, hid_t f
 	sqlite3_bind_blob(res, 5, fapl_buf, fapl_size, NULL);
 	rc = sqlite3_step(res);
 	if (rc == SQLITE_BUSY) {
-		DEBUGMSG("Busy");
-		ret = -1;
+		ERRORMSG("Busy");
 	}
+	sqlite3_finalize(res);
 	sqlite3_db_cacheflush(db);
-	REPEAT_UNTIL_OK(sqlite3_finalize(res));
-	return ret;
 }
 
 
 
-int DBF_get_fapl(SQF_t* file, hid_t* plist) {
+void DBF_get_fapl(SQF_t* file, hid_t* plist) {
 	TRACEMSG("");
-	int ret = 0;
 	sqlite3* db = (sqlite3*) file->object.root->db;
 	sqlite3_stmt *res;
 	const char *pzTest;
@@ -211,26 +204,22 @@ int DBF_get_fapl(SQF_t* file, hid_t* plist) {
 	sqlite3_bind_text(res, 2, file->object.name, strlen(file->object.name), 0);
 	rc=sqlite3_step(res);
 	if (rc == SQLITE_BUSY) {
-		DEBUGMSG("Busy");
-		ret = -1;
-	}
-	else {
-		int data_size = sqlite3_column_bytes(res, 0);
-		unsigned char* buf = malloc(data_size);
-		const void * data =  sqlite3_column_blob(res, 0);
-		memcpy(buf, data, data_size);
-		*plist = H5Pdecode(buf);
+		ERRORMSG("Busy");
 	}
 
-	REPEAT_UNTIL_OK(sqlite3_finalize(res));
-	return ret;
+	int data_size = sqlite3_column_bytes(res, 0);
+	unsigned char* buf = malloc(data_size);
+	const void * data =  sqlite3_column_blob(res, 0);
+	memcpy(buf, data, data_size);
+	*plist = H5Pdecode(buf);
+
+	sqlite3_finalize(res);
 }
 
 
 
-int DBF_get_fcpl(SQF_t* file, hid_t* plist) {
+void DBF_get_fcpl(SQF_t* file, hid_t* plist) {
 	TRACEMSG("");
-	int ret = 0;
 	sqlite3* db = (sqlite3*) file->object.root->db;
 	sqlite3_stmt *res;
 	const char *pzTest;
@@ -248,24 +237,21 @@ int DBF_get_fcpl(SQF_t* file, hid_t* plist) {
 	sqlite3_bind_text(res, 2, file->object.name, strlen(file->object.name), 0);
 	rc=sqlite3_step(res);
 	if (rc == SQLITE_BUSY) {
-		DEBUGMSG("Busy");
-		ret = -1;
-	}
-	else {
-		int data_size = sqlite3_column_bytes(res, 0);
-		unsigned char* buf = malloc(data_size);
-		const void * data =  sqlite3_column_blob(res, 0);
-		memcpy(buf, data, data_size);
-		*plist = H5Pdecode(buf);
+		ERRORMSG("Busy");
 	}
 
-	REPEAT_UNTIL_OK(sqlite3_finalize(res));
-	return ret;
+	int data_size = sqlite3_column_bytes(res, 0);
+	unsigned char* buf = malloc(data_size);
+	const void * data =  sqlite3_column_blob(res, 0);
+	memcpy(buf, data, data_size);
+	*plist = H5Pdecode(buf);
+
+	sqlite3_finalize(res);
 }
 
 
 
-int DB_entry_exists(SQO_t* obj, const char* table, const char* name, int* exists) {
+int DB_entry_exists(SQO_t* obj, const char* table, const char* name) {
 	TRACEMSG("");
 	sqlite3* db = (sqlite3*) obj->root->db;
 	sqlite3_stmt *res;
@@ -286,23 +272,27 @@ int DB_entry_exists(SQO_t* obj, const char* table, const char* name, int* exists
 	sqlite3_bind_text(res, 1, path, strlen(path), 0);
 	sqlite3_bind_text(res, 2, name, strlen(name), 0);
 
-	switch (rc = sqlite3_step(res)) {
-		case SQLITE_ROW: // record found
-			*exists = 1;
-			break;
-		default: // no record found
-			*exists = 0;
+	if (sqlite3_step(res) == SQLITE_ROW) {
+		// record found
+		rc = 1;
+	}
+	else{
+		// no record found
+		rc = 0;
 	}
 
-	REPEAT_UNTIL_OK(sqlite3_finalize(res));
-	destroy_path(path);
+//	DEBUGMSG("%s -> result %d", sql_query, rc);
 	free(sql_query);
-	return ret;
+	destroy_path(path);
+
+	sqlite3_finalize(res);
+	return rc;
 }
 
 
 
-int DB_create_name_list(SQO_t* parent, H5VL_loc_params_t loc_params, const char* tab_name, char*** attr_list, size_t* attr_list_size) {
+void DB_create_name_list(SQO_t* parent, H5VL_loc_params_t loc_params, const char* tab_name, char*** attr_list, size_t* attr_list_size) {
+      
 	sqlite3* db = (sqlite3*) parent->root->db;
 	sqlite3_stmt *res;
 	int ret = 0;
@@ -320,30 +310,19 @@ int DB_create_name_list(SQO_t* parent, H5VL_loc_params_t loc_params, const char*
 	} 
 
 	char* path = create_path(parent);
+//	sqlite3_bind_text(res, 1, tab_name, strlen(tab_name), 0);
 	sqlite3_bind_text(res, 1, path, strlen(path), 0);
-	*attr_list_size = 0;
 
-	switch (rc = sqlite3_step(res)) {
-		case SQLITE_ROW:
-			*attr_list_size = sqlite3_column_int64(res, 0);
-			break;
-		default:
-			DEBUGMSG("Cannot count attr_list: %s, errcode %d", sqlite3_errmsg(db), rc);
-			*attr_list = NULL;
-			ret = -1;
+	if (SQLITE_ROW == (rc = sqlite3_step(res))) {
+		*attr_list_size = sqlite3_column_int64(res, 0);
+	}
+	else if (SQLITE_BUSY == rc) {
+		ERRORMSG("Busy");
 	}
 
-	REPEAT_UNTIL_OK(sqlite3_finalize(res));
-	destroy_path(path);
-	free(sql_query_count);
+	*attr_list = (char**) malloc(sizeof(**attr_list) * *attr_list_size); 
+	sqlite3_finalize(res);
 
-	if (-1 == ret) {
-		return ret;
-	}
-
-// ****
-
-	char* path2 = create_path(parent);
 	sqlite3_stmt *res2;
 	const char *pzTest2;
 	int rc2;
@@ -352,54 +331,43 @@ int DB_create_name_list(SQO_t* parent, H5VL_loc_params_t loc_params, const char*
 	char* sql_query = (char*) malloc(strlen(sql_query_template) + strlen(tab_name) + 1);
 	sprintf(sql_query, sql_query_template, tab_name);
 
-	rc2 = sqlite3_prepare(db, sql_query, strlen(sql_query), &res2, &pzTest2);
+	rc2 = sqlite3_prepare(db, sql_query, strlen(sql_query), &res, &pzTest2);
 	if (rc2 != SQLITE_OK) {
 		ERRORMSG("Cannot prepare statement: %s\n", sqlite3_errmsg(db));
 		sqlite3_close(db);
 	} 
 
-	sqlite3_bind_text(res2, 1, path2, strlen(path2), 0);
+//	sqlite3_bind_text(res, 1, tab_name, strlen(tab_name), 0);
+	sqlite3_bind_text(res, 1, path, strlen(path), 0);
 
-	*attr_list = (char**) malloc(sizeof(**attr_list) * *attr_list_size); 
 	for (size_t i = 0; i < *attr_list_size; ++i) {
-		rc2 = sqlite3_step(res2);
-		if (rc2 !=SQLITE_OK || rc2 != SQLITE_ROW) {
-			DEBUGMSG("Cannot create attr_list: %s, errcode %d", sqlite3_errmsg(db), rc2);
-			free(*attr_list);
-			*attr_list = NULL;
-			attr_list_size = 0;
-			ret = -1;
+		rc = sqlite3_step(res);
+		if (rc == SQLITE_BUSY) {
+			ERRORMSG("Busy");
 		}
-		else {
-			(*attr_list)[i] = strdup(sqlite3_column_text(res2, 0));
-		}
+		(*attr_list)[i] = strdup(sqlite3_column_text(res, 0));
 	}
-
-	REPEAT_UNTIL_OK(sqlite3_finalize(res2));
-	destroy_path(path2);
-	free(sql_query);
-	return ret;
+	sqlite3_finalize(res);
+	destroy_path(path);
 }
 
 
 
-int DB_destroy_name_list(char** list, size_t size) {
+void DB_destroy_name_list(char** list, size_t size) {
 	for (size_t i = 0; i < size; ++i) {
 		free(list[i]);
 		list[i] = NULL;
 	}
 	free(list);
 	list = NULL;
-	return 0;
 }
 
 
 
-int DBA_create(SQA_t* attr, H5VL_loc_params_t loc_params, hid_t acpl_id, hid_t aapl_id, hid_t dxpl_id)
+void DBA_create(SQA_t* attr, H5VL_loc_params_t loc_params, hid_t acpl_id, hid_t aapl_id, hid_t dxpl_id)
 {
 	TRACEMSG("");
 	sqlite3* db = (sqlite3*) attr->object.root->db;
-	int ret = 0;
 
 	char *sql2=  "INSERT INTO ATTRIBUTES VALUES(?,?,?,?,?,?);";
 
@@ -459,28 +427,24 @@ int DBA_create(SQA_t* attr, H5VL_loc_params_t loc_params, hid_t acpl_id, hid_t a
 //	sqlite3_bind_blob(res, 7, aapl_buf, aapl_size, NULL);
 //	sqlite3_bind_blob(res, 8, dxpl_buf, dxpl_size, NULL);
 
-	switch (rc = sqlite3_step(res)) {
-		case  SQLITE_BUSY:
-			DEBUGMSG("Busy");
-			ret = -1;
-			break;
+	rc = sqlite3_step(res);
+	if (rc == SQLITE_BUSY) {
+		ERRORMSG("Busy");
 	}
 
-	REPEAT_UNTIL_OK(sqlite3_finalize(res));
-	sqlite3_db_cacheflush(db);
+	sqlite3_finalize(res);
 	free(space_buf);
 	free(type_buf);
 	free(acpl_buf);
-	return ret;
+	sqlite3_db_cacheflush(db);
 }
 
 
 
-int DBA_open(SQO_t* parent, H5VL_loc_params_t loc_params, const char* attr_name, SQA_t* attr) {
+SQA_t* DBA_open(SQO_t* parent, H5VL_loc_params_t loc_params, const char* attr_name) {
 	TRACEMSG("");
 	sqlite3* db = (sqlite3*) parent->root->db;
 	sqlite3_stmt *res;
-	int ret = 0;
 
 	const char *pzTest;
 	int rc;
@@ -492,6 +456,7 @@ int DBA_open(SQO_t* parent, H5VL_loc_params_t loc_params, const char* attr_name,
 		sqlite3_close(db);
 	}
 
+	SQA_t* attr = (SQA_t *) malloc(sizeof(*attr));
 	attr->object.location = create_path(parent);
 	attr->object.name = strdup(attr_name);
 	attr->object.fapl = parent->fapl;
@@ -500,30 +465,26 @@ int DBA_open(SQO_t* parent, H5VL_loc_params_t loc_params, const char* attr_name,
 	sqlite3_bind_text(res, 1, attr->object.location, strlen(attr->object.location), 0);
 	sqlite3_bind_text(res, 2, attr->object.name, strlen(attr->object.name), 0);
 	rc = sqlite3_step(res);
-	switch (rc) {
-		case SQLITE_BUSY:
-			DEBUGMSG("Busy");
-			ret = -1;
-		default:
-			{
-				size_t data_size = sqlite3_column_int64(res, 0);
-				attr->data_size = data_size;
-			}
+	if (rc == SQLITE_BUSY) {
+		ERRORMSG("Busy");
 	}
-	REPEAT_UNTIL_OK(sqlite3_finalize(res));
-	return ret;
+
+	size_t data_size = sqlite3_column_int64(res, 0);
+	sqlite3_finalize(res);
+
+	attr->data_size = data_size;
+	return attr;
 }
 
 
 
-int DBA_open_by_idx(SQO_t* obj, H5VL_loc_params_t loc_params, const unsigned int idx, SQA_t* attr) {
+SQA_t* DBA_open_by_idx(SQO_t* obj, H5VL_loc_params_t loc_params, const unsigned int idx) {
 	TRACEMSG("");
-	int ret = 0;
 	sqlite3* db = (sqlite3*) obj->root->db;
 
 	char** attr_list = NULL;
 	size_t attr_list_size = 0;
-	REPEAT(DB_create_name_list(obj, loc_params, "ATTRIBUTES", &attr_list, &attr_list_size));
+	DB_create_name_list(obj, loc_params, "ATTRIBUTES", &attr_list, &attr_list_size);
 	const unsigned int test =  attr_list_size;
 	if ((idx + 1) > test) {
 //		return NULL;
@@ -552,14 +513,15 @@ int DBA_open_by_idx(SQO_t* obj, H5VL_loc_params_t loc_params, const unsigned int
 	sqlite3_bind_text(res, 2, attr_list[idx], strlen(attr_list[idx]), 0);
 	rc = sqlite3_step(res);
 	if (rc == SQLITE_BUSY) {
-		DEBUGMSG("Busy");
-		ret = -1;
+		ERRORMSG("Busy");
 	}
 
 	size_t data_size = sqlite3_column_int64(res, 0);
-	REPEAT_UNTIL_OK(sqlite3_finalize(res));
+	sqlite3_finalize(res);
 
+	SQA_t* attr = NULL;
 	if (attr_list_size > 0) {
+		attr = (SQA_t *) malloc(sizeof(*attr));
 		attr->object.location = create_path(obj);
 		attr->object.name = strdup(attr_list[idx]);
 		attr->data_size = data_size;
@@ -571,14 +533,13 @@ int DBA_open_by_idx(SQO_t* obj, H5VL_loc_params_t loc_params, const unsigned int
 	}
 	destroy_path(path);
 	DB_destroy_name_list(attr_list, attr_list_size);
-	return ret;
+	return attr;
 }
 
 
 
-int DBA_get_acpl(SQA_t* attr, hid_t* acpl_id) {
+void DBA_get_acpl(SQA_t* attr, hid_t* acpl_id) {
 	TRACEMSG("");
-	int ret = 0;
 	sqlite3* db = (sqlite3*) attr->object.root->db;
 	sqlite3_stmt *res;
 	const char *pzTest;
@@ -597,31 +558,26 @@ int DBA_get_acpl(SQA_t* attr, hid_t* acpl_id) {
 
 	rc=sqlite3_step(res);
 	if (rc == SQLITE_BUSY) {
-		DEBUGMSG("Busy");
-		ret = -1;
+		ERRORMSG("Busy");
 	}
 
 	int data_size = sqlite3_column_bytes(res, 0);
 	if (0 == data_size) {
 		ERRORMSG("Couldn't read acpl.");
 	}
-	else {
-		unsigned char* acpl_buf = malloc(data_size);
-		const void * data =  sqlite3_column_blob(res, 0);
-		memcpy(acpl_buf, data, data_size);
-		*acpl_id = H5Pdecode(acpl_buf);
-		assert(-1 != *acpl_id);
-	}
+	unsigned char* acpl_buf = malloc(data_size);
+	const void * data =  sqlite3_column_blob(res, 0);
+	memcpy(acpl_buf, data, data_size);
+	*acpl_id = H5Pdecode(acpl_buf);
+	assert(-1 != *acpl_id);
 
-	REPEAT_UNTIL_OK(sqlite3_finalize(res));
-	return ret;
+	sqlite3_finalize(res);
 }
 
 
 
-int DBA_get_type(SQA_t* attr, hid_t* type_id) {
+void DBA_get_type(SQA_t* attr, hid_t* type_id) {
 	TRACEMSG("");
-	int ret = 0;
 	sqlite3* db = (sqlite3*) attr->object.root->db;
 	sqlite3_stmt *res;
 	const char *pzTest;
@@ -640,31 +596,26 @@ int DBA_get_type(SQA_t* attr, hid_t* type_id) {
 
 	rc=sqlite3_step(res);
 	if (rc == SQLITE_BUSY) {
-		DEBUGMSG("Busy");
-		ret = -1;
+		ERRORMSG("Busy");
 	}
 
 	int data_size = sqlite3_column_bytes(res, 0);
 	if (0 == data_size) {
 		ERRORMSG("Couldn't read type.");
 	}
-	else {
-		unsigned char* type_buf = malloc(data_size);
-		const void * data =  sqlite3_column_blob(res, 0);
-		memcpy(type_buf, data, data_size);
-		*type_id = H5Tdecode(type_buf);
-		assert(-1 != *type_id);
-	}
+	unsigned char* type_buf = malloc(data_size);
+	const void * data =  sqlite3_column_blob(res, 0);
+	memcpy(type_buf, data, data_size);
+	*type_id = H5Tdecode(type_buf);
+	assert(-1 != *type_id);
 
-	REPEAT_UNTIL_OK(sqlite3_finalize(res));
-	return ret;
+	sqlite3_finalize(res);
 }
 
 
 
-int DBA_get_space(SQA_t* attr, hid_t* space_id) {
+void DBA_get_space(SQA_t* attr, hid_t* space_id) {
 	TRACEMSG("");
-	int ret = 0;
 	sqlite3* db = (sqlite3*) attr->object.root->db;
 	sqlite3_stmt *res;
 	const char *pzTest;
@@ -683,34 +634,29 @@ int DBA_get_space(SQA_t* attr, hid_t* space_id) {
 
 	rc=sqlite3_step(res);
 	if (rc == SQLITE_BUSY) {
-		DEBUGMSG("Busy");
-		ret = -1;
+		ERRORMSG("Busy");
 	}
 
 	int data_size = sqlite3_column_bytes(res, 0);
 	if (0 == data_size) {
 		ERRORMSG("Couldn't read space.");
 	}
-	else {
-		unsigned char* space_buf = malloc(data_size);
-		const void * data =  sqlite3_column_blob(res, 0);
-		memcpy(space_buf, data, data_size);
-		*space_id = H5Sdecode(space_buf);
-		assert(-1 != *space_id);
-	}
+	unsigned char* space_buf = malloc(data_size);
+	const void * data =  sqlite3_column_blob(res, 0);
+	memcpy(space_buf, data, data_size);
+	*space_id = H5Sdecode(space_buf);
+	assert(-1 != *space_id);
 
-	REPEAT_UNTIL_OK(sqlite3_finalize(res))
-	return ret;
+	sqlite3_finalize(res);
 }
 
 
 
-int DBA_write(SQA_t* attr, const void *data) {
+void DBA_write( const char *location, const void *data, int size, void* db_ptr) {
 	TRACEMSG("");
-	int ret = 0;
-	sqlite3* db = (sqlite3*) attr->object.root->db;
+	sqlite3* db = (sqlite3*) db_ptr;
 
-	char *sql2=  "INSERT INTO ATTR_DATA VALUES(?,?,?);";
+	char *sql2=  "INSERT INTO ATTR_DATA VALUES(?,?);";
 	sqlite3_stmt *res;
 	int rc;
 
@@ -718,25 +664,21 @@ int DBA_write(SQA_t* attr, const void *data) {
 	if (rc != SQLITE_OK) {
 		ERRORMSG("Cannot prepare statement: %s\n", sqlite3_errmsg(db));
 	}
-	sqlite3_bind_text(res, 1, attr->object.location, strlen(attr->object.location), 0);
-	sqlite3_bind_text(res, 2, attr->object.name, strlen(attr->object.name), 0);
-	sqlite3_bind_blob(res, 3, data, attr->data_size, SQLITE_STATIC);
+	sqlite3_bind_text(res, 1, location, strlen(location), 0);
+	sqlite3_bind_blob(res, 2, data, size, SQLITE_STATIC);
 	rc = sqlite3_step(res);
 	if (rc == SQLITE_BUSY) {
-		DEBUGMSG("Busy");
-		ret = -1;
+		ERRORMSG("Busy");
 	}
-	REPEAT_UNTIL_OK(sqlite3_finalize(res));
-	return ret;
+	sqlite3_finalize(res);
 }
 
 
 
-int DBA_read(SQA_t* attr, void *data) {
+void DBA_read( const char *location, /*OUT*/void *buf, void* db_ptr) {
 	TRACEMSG("");
-	int ret = 0;
-	sqlite3* db = (sqlite3*) attr->object.root->db;
-	char *sql = "SELECT data FROM ATTR_DATA WHERE path = ? AND name = ?;";
+	sqlite3* db = (sqlite3*) db_ptr;
+	char *sql = "SELECT data FROM ATTR_DATA WHERE Path=?;";
 	sqlite3_stmt *res;
 	int rc;
 
@@ -745,25 +687,22 @@ int DBA_read(SQA_t* attr, void *data) {
 		ERRORMSG("Cannot prepare statement: %s\n", sqlite3_errmsg(db));
 	}
 
-	sqlite3_bind_text(res, 1, attr->object.location, strlen(attr->object.location), 0);
-	sqlite3_bind_text(res, 2, attr->object.name, strlen(attr->object.name), 0);
+	sqlite3_bind_text(res, 1, location, strlen(location), 0);
 	rc = sqlite3_step(res);
 	if (rc == SQLITE_BUSY) {
-		DEBUGMSG("Busy");
+		ERRORMSG("Busy");
 	}
 	int data_size = sqlite3_column_bytes(res, 0);
-	const void * buf =  sqlite3_column_blob(res, 0);
-	memcpy(data, buf, data_size);
+	const void * data =  sqlite3_column_blob(res, 0);
+	memcpy(buf, data, data_size);
 
-	REPEAT_UNTIL_OK(sqlite3_finalize(res));
-	return ret;
+	sqlite3_finalize(res);
 }
 
 
 
-int DBG_create(SQG_t* group, H5VL_loc_params_t loc_params, hid_t gcpl_id, hid_t gapl_id, hid_t gxpl_id) {
+void DBG_create(SQG_t* group, H5VL_loc_params_t loc_params, hid_t gcpl_id, hid_t gapl_id, hid_t gxpl_id) {
 	TRACEMSG("");
-	int ret = 0;
 	sqlite3* db = (sqlite3*) group->object.root->db;
 
 	char *sql2=  "INSERT INTO GROUPS VALUES(?,?,?,?,?);";
@@ -797,19 +736,16 @@ int DBG_create(SQG_t* group, H5VL_loc_params_t loc_params, hid_t gcpl_id, hid_t 
 
 	rc = sqlite3_step(res);
 	if (rc == SQLITE_BUSY) {
-		DEBUGMSG("Busy");
-		ret = -1;
+		ERRORMSG("Busy");
 	}
+	sqlite3_finalize(res);
 	sqlite3_db_cacheflush(db);
-	REPEAT_UNTIL_OK(sqlite3_finalize(res));
-	return ret;
 }
 
 
 
-int DBG_open(SQO_t* parent, H5VL_loc_params_t loc_params, const char* group_name, SQG_t* group) {
+SQG_t* DBG_open(SQO_t* parent, H5VL_loc_params_t loc_params, const char* group_name) {
 	TRACEMSG("");
-	int ret = 0;
 	sqlite3* db = (sqlite3*) parent->root->db;
 	sqlite3_stmt *res;
 
@@ -823,6 +759,7 @@ int DBG_open(SQO_t* parent, H5VL_loc_params_t loc_params, const char* group_name
 		sqlite3_close(db);
 	}
 
+	SQG_t* group = (SQG_t *) malloc(sizeof(*group));
 	group->object.location = create_path(parent);
 	group->object.name = strdup(group_name);
 	group->object.fapl = parent->fapl;
@@ -832,28 +769,26 @@ int DBG_open(SQO_t* parent, H5VL_loc_params_t loc_params, const char* group_name
 	sqlite3_bind_text(res, 2, group->object.name, strlen(group->object.name), 0);
 	rc = sqlite3_step(res);
 	if (rc == SQLITE_BUSY) {
-		DEBUGMSG("Busy");
-		ret = -1;
+		ERRORMSG("Busy");
 	}
 
 	int data_size = sqlite3_column_bytes(res, 0);
 	if (0 == data_size) {
-		DEBUGMSG("Couldn't read info.");
-		ret = -1;
+		ERRORMSG("Couldn't read info.");
 	}
 	assert(data_size == sizeof(group->object.info));
 	const void * data =  sqlite3_column_blob(res, 0);
 	memcpy(&group->object.info, data, data_size);
 
-	REPEAT_UNTIL_OK(sqlite3_finalize(res));
-	return ret;
+	sqlite3_finalize(res);
+
+	return group;
 }
 
 
 
-int DBG_get_gcpl(SQG_t* group, hid_t* plist) {
+void DBG_get_gcpl(SQG_t* group, hid_t* plist) {
 	TRACEMSG("");
-	int ret = 0;
 	sqlite3* db = (sqlite3*) group->object.root->db;
 	sqlite3_stmt *res;
 	const char *pzTest;
@@ -871,8 +806,7 @@ int DBG_get_gcpl(SQG_t* group, hid_t* plist) {
 	sqlite3_bind_text(res, 2, group->object.name, strlen(group->object.name), 0);
 	rc=sqlite3_step(res);
 	if (rc == SQLITE_BUSY) {
-		DEBUGMSG("Busy");
-		ret = -1;
+		ERRORMSG("Busy");
 	}
 
 	int data_size = sqlite3_column_bytes(res, 0);
@@ -881,8 +815,7 @@ int DBG_get_gcpl(SQG_t* group, hid_t* plist) {
 	memcpy(buf, data, data_size);
 	*plist = H5Pdecode(buf);
 
-	REPEAT_UNTIL_OK(sqlite3_finalize(res));
-	return ret;
+	sqlite3_finalize(res);
 }
 
 
@@ -894,9 +827,8 @@ static int busy_handler (void* parm, int n) {
 
 
 
-int DBD_create(SQD_t* dset, H5VL_loc_params_t loc_params, hid_t dcpl_id, hid_t dapl_id, hid_t dxpl_id) {
+void DBD_create(SQD_t* dset, H5VL_loc_params_t loc_params, hid_t dcpl_id, hid_t dapl_id, hid_t dxpl_id) {
 	TRACEMSG("");
-	int ret = 0;
 	herr_t err;
 	sqlite3* db = (sqlite3*) dset->object.root->db;
 
@@ -955,25 +887,23 @@ int DBD_create(SQD_t* dset, H5VL_loc_params_t loc_params, hid_t dcpl_id, hid_t d
 
 	rc = sqlite3_step(res);
 	if (rc == SQLITE_BUSY) {
-		DEBUGMSG("Busy");
-		ret = -1;
+		ERRORMSG("Busy");
 	}
 
+	sqlite3_finalize(res);
 	sqlite3_db_cacheflush(db);
-	REPEAT_UNTIL_OK(sqlite3_finalize(res));
-	return ret;
 }
 
 
 
-int DBD_open(SQO_t* parent, H5VL_loc_params_t loc_params, const char *name, SQD_t* dset) {
+SQD_t* DBD_open(SQO_t* parent, H5VL_loc_params_t loc_params, const char *name) {
 	TRACEMSG("");
-	int ret = 0;
 	sqlite3* db = (sqlite3*) parent->root->db;
 	sqlite3_stmt *res;
 	const char *pzTest;
 	int rc;
 
+	SQD_t* dset = (SQD_t*) malloc(sizeof(*dset));
 	dset->object.root = parent->root;
 	dset->object.fapl = parent->fapl;
 	dset->object.location = create_path(parent);
@@ -992,8 +922,7 @@ int DBD_open(SQO_t* parent, H5VL_loc_params_t loc_params, const char *name, SQD_
 
 	rc = sqlite3_step(res);
 	if (rc == SQLITE_BUSY) {
-		DEBUGMSG("Busy");
-		ret = -1;
+		ERRORMSG("Busy");
 	}
 
 	dset->offset = sqlite3_column_int64(res, 0);
@@ -1007,15 +936,14 @@ int DBD_open(SQO_t* parent, H5VL_loc_params_t loc_params, const char *name, SQD_
 	const void * data =  sqlite3_column_blob(res, 2);
 	memcpy(&dset->object.info, data, data_size);
 
-	REPEAT_UNTIL_OK(sqlite3_finalize(res));
-	return ret;
+	sqlite3_finalize(res);
+	return dset;
 }
 
 
 
-int DBD_get_dcpl(SQD_t* dset, hid_t* plist) {
+void DBD_get_dcpl(SQD_t* dset, hid_t* plist) {
 	TRACEMSG("");
-	int ret = 0;
 	sqlite3* db = (sqlite3*) dset->object.root->db;
 	sqlite3_stmt *res;
 	const char *pzTest;
@@ -1033,33 +961,28 @@ int DBD_get_dcpl(SQD_t* dset, hid_t* plist) {
 	sqlite3_bind_text(res, 2, dset->object.name, strlen(dset->object.name), 0);
 	rc=sqlite3_step(res);
 	if (rc == SQLITE_BUSY) {
-		DEBUGMSG("Busy");
-		ret = -1;
+		ERRORMSG("Busy");
 	}
 
 	int data_size = sqlite3_column_bytes(res, 0);
 	if (0 == data_size) {
 		ERRORMSG("Couldn't read dcpl.");
 	}
-	else {
-		unsigned char* buf = malloc(data_size);
-		const void * data =  sqlite3_column_blob(res, 0);
-		memcpy(buf, data, data_size);
-		*plist = H5Pdecode(buf);
-		if (-1 == *plist) {
-			ERRORMSG("Couldn't read dcpl");
-		}
+	unsigned char* buf = malloc(data_size);
+	const void * data =  sqlite3_column_blob(res, 0);
+	memcpy(buf, data, data_size);
+	*plist = H5Pdecode(buf);
+	if (-1 == *plist) {
+		ERRORMSG("Couldn't read dcpl");
 	}
 
-	REPEAT_UNTIL_OK(sqlite3_finalize(res));
-	return ret;
+	sqlite3_finalize(res);
 }
 
 
 
-int DBD_get_dapl(SQD_t* dset, hid_t* plist) {
+void DBD_get_dapl(SQD_t* dset, hid_t* plist) {
 	TRACEMSG("");
-	int ret = 0;
 	sqlite3* db = (sqlite3*) dset->object.root->db;
 	sqlite3_stmt *res;
 	const char *pzTest;
@@ -1077,33 +1000,28 @@ int DBD_get_dapl(SQD_t* dset, hid_t* plist) {
 	sqlite3_bind_text(res, 2, dset->object.name, strlen(dset->object.name), 0);
 	rc=sqlite3_step(res);
 	if (rc == SQLITE_BUSY) {
-		DEBUGMSG("Busy");
-		ret = -1;
+		ERRORMSG("Busy");
 	}
 
 	int data_size = sqlite3_column_bytes(res, 0);
 	if (0 == data_size) {
 		ERRORMSG("Couldn't read dapl.");
 	}
-	else {
-		unsigned char* buf = malloc(data_size);
-		const void * data =  sqlite3_column_blob(res, 0);
-		memcpy(buf, data, data_size);
-		*plist = H5Pdecode(buf);
-		if (-1 == *plist) {
-			ERRORMSG("Couldn't read dapl");
-		}
+	unsigned char* buf = malloc(data_size);
+	const void * data =  sqlite3_column_blob(res, 0);
+	memcpy(buf, data, data_size);
+	*plist = H5Pdecode(buf);
+	if (-1 == *plist) {
+		ERRORMSG("Couldn't read dapl");
 	}
 
-	REPEAT_UNTIL_OK(sqlite3_finalize(res));
-	return ret;
+	sqlite3_finalize(res);
 }
 
 
 
-int DBD_get_type(SQD_t* dset, hid_t* type_id) {
+void DBD_get_type(SQD_t* dset, hid_t* type_id) {
 	TRACEMSG("");
-	int ret = 0;
 	sqlite3* db = (sqlite3*) dset->object.root->db;
 	sqlite3_stmt *res;
 	const char *pzTest;
@@ -1122,31 +1040,25 @@ int DBD_get_type(SQD_t* dset, hid_t* type_id) {
 
 	rc=sqlite3_step(res);
 	if (rc == SQLITE_BUSY) {
-		DEBUGMSG("Busy");
-		ret = -1;
+		ERRORMSG("Busy");
 	}
 
 	int data_size = sqlite3_column_bytes(res, 0);
 	if (0 == data_size) {
 		ERRORMSG("Couldn't read type.");
 	}
-	else {
-		unsigned char* type_buf = malloc(data_size);
-		const void * data =  sqlite3_column_blob(res, 0);
-		memcpy(type_buf, data, data_size);
-		*type_id = H5Tdecode(type_buf);
-		assert(-1 != *type_id);
-	}
+	unsigned char* type_buf = malloc(data_size);
+	const void * data =  sqlite3_column_blob(res, 0);
+	memcpy(type_buf, data, data_size);
+	*type_id = H5Tdecode(type_buf);
+	assert(-1 != *type_id);
 
-	REPEAT_UNTIL_OK(sqlite3_finalize(res));
-	return ret;
+	sqlite3_finalize(res);
 }
 
 
-
-int DBD_get_space(SQD_t* dset, hid_t* space_id) {
+void DBD_get_space(SQD_t* dset, hid_t* space_id) {
 	TRACEMSG("");
-	int ret = 0;
 	sqlite3* db = (sqlite3*) dset->object.root->db;
 	sqlite3_stmt *res;
 	const char *pzTest;
@@ -1164,25 +1076,56 @@ int DBD_get_space(SQD_t* dset, hid_t* space_id) {
 	sqlite3_bind_text(res, 2, dset->object.name, strlen(dset->object.name), 0);
 
 	rc = sqlite3_step(res);
-	if (rc != SQLITE_OK || rc != SQLITE_ROW) {
-		DEBUGMSG("Busy");
-		ret = -1;
-	}
-	else {
-		int data_size = sqlite3_column_bytes(res, 0);
-		if (0 == data_size) {
-			ERRORMSG("Couldn't read space.");
-		}
-		unsigned char* space_buf = malloc(data_size);
-		const void * data =  sqlite3_column_blob(res, 0);
-		memcpy(space_buf, data, data_size);
-		*space_id = H5Sdecode(space_buf);
-		assert(-1 != *space_id);
+	if (rc == SQLITE_BUSY) {
+		ERRORMSG("Busy");
 	}
 
-	REPEAT_UNTIL_OK(sqlite3_finalize(res));
-	return ret;
+	int data_size = sqlite3_column_bytes(res, 0);
+	if (0 == data_size) {
+		ERRORMSG("Couldn't read space.");
+	}
+	unsigned char* space_buf = malloc(data_size);
+	const void * data =  sqlite3_column_blob(res, 0);
+	memcpy(space_buf, data, data_size);
+	*space_id = H5Sdecode(space_buf);
+	assert(-1 != *space_id);
+
+	sqlite3_finalize(res);
 }
+
+
+
+//
+//void DBD_get(const char* path, /*OUT*/ hid_t* type_id, /*OUT*/ hid_t* space_id, void* db_ptr) {
+//	TRACEMSG("");
+//	sqlite3* db = (sqlite3*) db_ptr;
+//	sqlite3_stmt *res;
+//	const char *pzTest;
+//	int rc;
+//	char *sql=  "SELECT type, space FROM DATASETS WHERE Path = ?;";
+//
+//	rc = sqlite3_prepare(db, sql, strlen(sql), &res, &pzTest);
+//	if (rc != SQLITE_OK) {
+//		ERRORMSG("Cannot prepare statement: %s", sqlite3_errmsg(db));
+//		sqlite3_close(db);
+//	}
+//
+//	sqlite3_bind_text(res, 1, path, strlen(path), 0);
+//
+//	rc=sqlite3_step(res);
+//
+//	char* type_buf = (char*) sqlite3_column_blob(res, 0);
+//	*type_id = H5Tdecode(type_buf);
+//	assert(-1 != H5Tget_class(*type_id));
+//
+//	int data_size = sqlite3_column_bytes(res, 1);
+//	unsigned char* space_buf = malloc(data_size);
+//	const void * data =  sqlite3_column_blob(res, 1);
+//	memcpy(space_buf, data, data_size);
+//
+//	*space_id = H5Sdecode(space_buf);
+//	sqlite3_finalize(res);
+//}
 
 
 
