@@ -1,3 +1,8 @@
+
+//Autor Olga
+
+// Author: Eugen Betke
+
 #include <errno.h>
 #include <assert.h>
 #include <fcntl.h>
@@ -18,13 +23,15 @@
 #include "debug.h"
 #include "base.h"
 
-
 #ifdef ADAPTIVE
 #include "esdm.h"
 #endif /* adaptive */
 
 
+
 #define COUNT_MAX 2147479552
+#define SSDDIR "/tmp"
+#define SHMDIR "/dev/shm"
 
 
 static herr_t H5VL_extlog_fapl_free (void* info);
@@ -236,9 +243,6 @@ static herr_t H5VL_log_init(hid_t vipl_id)
 	native_plugin_id = H5VLget_plugin_id("native");
 	assert(native_plugin_id > 0);
 	printf("------- LOG INIT\n");
-
-
-
 	return 0;
 }
 
@@ -304,6 +308,7 @@ H5VL_extlog_attr_create(void *obj, H5VL_loc_params_t loc_params, const char *att
 				MPI_Barrier(MPI_COMM_WORLD);
 				if (0 == sqo->fapl->mpi_rank) {
 					DBA_create(attribute, loc_params, acpl_id, aapl_id, dxpl_id);
+//					DBA_create(attribute, loc_params, acpl_id, aapl_id, dxpl_id);
 				}
 				MPI_Barrier(MPI_COMM_WORLD);
 			}
@@ -354,7 +359,7 @@ H5VL_extlog_attr_create(void *obj, H5VL_loc_params_t loc_params, const char *att
 			ERRORMSG("Not supported");
 	} /* end switch */
 
-	return (void *)attribute;
+	return attribute;
 }
 
 
@@ -369,7 +374,7 @@ H5VL_extlog_attr_create(void *obj, H5VL_loc_params_t loc_params, const char *att
 H5VL_extlog_attr_open(void *obj, H5VL_loc_params_t loc_params, const char *attr_name, hid_t aapl_id, hid_t dxpl_id, void  **req)
 {
 	TRACEMSG("");
-	SQA_t *attribute;
+	SQA_t *attribute = (SQA_t *) malloc(sizeof(*attribute));
 	SQO_t* sqo = (SQO_t*) obj;
 
 	switch(loc_params.obj_type)
@@ -379,19 +384,20 @@ H5VL_extlog_attr_open(void *obj, H5VL_loc_params_t loc_params, const char *attr_
 			switch (loc_params.type) {
 				case H5VL_OBJECT_BY_IDX:
 					{
-						if (NULL == (attribute = DBA_open_by_idx(obj, loc_params, loc_params.loc_data.loc_by_idx.n))) {
+						DBA_open_by_idx(obj, loc_params, loc_params.loc_data.loc_by_idx.n, attribute);
+						if (NULL == attribute) {
 							ERRORMSG("Couldn't open attribute by idx");
 						}
 					}
 					break;
 				case H5VL_OBJECT_BY_NAME:
 					{
-						attribute = DBA_open(obj, loc_params, attr_name);
+						DBA_open(obj, loc_params, attr_name, attribute);
 					}
 					break;
 				case H5VL_OBJECT_BY_SELF:
 					{
-						attribute = DBA_open(obj, loc_params, attr_name);
+						DBA_open(obj, loc_params, attr_name, attribute);
 					}
 					break;
 				default:
@@ -429,12 +435,12 @@ H5VL_extlog_attr_open(void *obj, H5VL_loc_params_t loc_params, const char *attr_
  *-------------------------------------------------------------------------
  */
 	static herr_t
-H5VL_extlog_attr_read(void *attr, hid_t dtype_id, void *buf, hid_t dxpl_id, void  **req)
+H5VL_extlog_attr_read(void *obj, hid_t dtype_id, void *buf, hid_t dxpl_id, void  **req)
 {
 	TRACEMSG("");
 	assert(NULL != buf);
-	SQA_t *d = (SQA_t *)attr;
-	DBA_read(d->object.location, buf, d->object.root->db);
+	SQA_t *attr = (SQA_t *)obj;
+	DBA_read(attr, buf);
 	return 1;
 }
 
@@ -451,7 +457,8 @@ H5VL_extlog_attr_write(void *obj, hid_t dtype_id, const void *buf, hid_t dxpl_id
 
 	MPI_Barrier(MPI_COMM_WORLD);
 	if (0 == attr->object.fapl->mpi_rank) {
-		DBA_write(attr->object.location, buf, attr->data_size, attr->object.root->db);
+		DBA_write(attr, buf);
+//		DBA_write(attr, buf);
 	}
 	MPI_Barrier(MPI_COMM_WORLD);
 	return 1;
@@ -528,7 +535,7 @@ H5VL_extlog_attr_get(void *obj, H5VL_attr_get_t get_type, hid_t dxpl_id, void  *
 
 
 static htri_t 
-SQA_exists_by_self(void* obj, H5VL_loc_params_t loc_params, const char* attr_name, hid_t dxpl_id, void* db) {
+SQA_exists_by_self(void* obj, H5VL_loc_params_t loc_params, const char* attr_name, hid_t dxpl_id) {
 	TRACEMSG("");
 	htri_t ret_val = false;
 	switch (loc_params.obj_type) {
@@ -539,7 +546,11 @@ SQA_exists_by_self(void* obj, H5VL_loc_params_t loc_params, const char* attr_nam
 		case H5I_DATASET:
 			{
 				SQO_t* sqo = (SQO_t*) obj;
-				ret_val = DB_entry_exists(sqo, "ATTRIBUTES", attr_name);
+				int exists = 0;
+				DB_entry_exists(sqo, "ATTRIBUTES", attr_name, &exists);
+				if (1 == exists) {
+					ret_val = true;
+				}
 			}
 			break;
 		default:
@@ -681,7 +692,7 @@ static herr_t H5VL_extlog_attr_specific(void *obj, H5VL_loc_params_t loc_params,
 					case H5VL_OBJECT_BY_SELF:
 						{
 							SQO_t* sqo = (SQO_t*) obj;
-							*ret_id = SQA_exists_by_self(obj, loc_params, attr_name, dxpl_id, sqo->root->db);
+							*ret_id = SQA_exists_by_self(obj, loc_params, attr_name, dxpl_id);
 						}
 						break;
 					case H5VL_OBJECT_BY_NAME:
@@ -801,26 +812,24 @@ H5VL_extlog_file_create(const char *fname, unsigned flags, hid_t fcpl_id, hid_t 
 	file->fd = open64(rfname, O_RDWR | O_CREAT, 0666 );
 	real_filename_destroy(rfname);
 #elif ADAPTIVE
-    // FILE CREATE
+	// FILE CREATE
+	// typedef struct SQF_t {
+	//     SQO_t object;
+	//     int fd;
+	//     void* db;
+	//     off64_t offset; // global offset
+	// } SQF_t; 
+	//
+	// file is => SQF_T* file;
 
-    // typedef struct SQF_t {
-    //     SQO_t object;
-    //     int fd;
-    //     void* db;
-    //     off64_t offset; // global offset
-    // } SQF_t; 
-    //
-    // file is => SQF_T* file;
+	// TODO: check if this is really needed
 
-    // TODO: check if this is really needed
-	
-    //char* rfname = real_filename_create(fapl);
+	//char* rfname = real_filename_create(fapl);
 	//file->fd = open64(rfname, O_RDWR | O_CREAT, 0666 );
-    //real_filename_destroy(rfname);
+	//real_filename_destroy(rfname);
 	file->fd = -1;
-
-    // this is to early for tier selection, defer until read/write
-    // Option 1: Set invalid file handle?  -1   => then read/write knows it has to invoke esdm_suggest_tier()
+	// this is to early for tier selection, defer until read/write
+	// Option 1: Set invalid file handle?  -1   => then read/write knows it has to invoke esdm_suggest_tier()
 #else
 	file->fd = open64(fapl->data_fn, O_RDWR | O_CREAT, 0666 );
 #endif
@@ -828,6 +837,7 @@ H5VL_extlog_file_create(const char *fname, unsigned flags, hid_t fcpl_id, hid_t 
 
 	MPI_Barrier(MPI_COMM_WORLD);
 	if (0 == fapl->mpi_rank) {
+//		DBF_create(file, flags, file->db, fcpl_id, fapl_id);
 		DBF_create(file, flags, file->db, fcpl_id, fapl_id);
 	}
 	MPI_Barrier(MPI_COMM_WORLD);
@@ -847,6 +857,7 @@ H5VL_extlog_file_create(const char *fname, unsigned flags, hid_t fcpl_id, hid_t 
 	MPI_Barrier(MPI_COMM_WORLD);
 	if (0 == fapl->mpi_rank) {
 		DBG_create(&group, loc_params, gcpl_id, gapl_id, dxpl_id);
+//		DBG_create(&group, loc_params, gcpl_id, gapl_id, dxpl_id);
 	}
 	MPI_Barrier(MPI_COMM_WORLD);
 
@@ -872,27 +883,25 @@ H5VL_extlog_file_open(const char *fname, unsigned flags, hid_t fapl_id, hid_t dx
 	file->fd = open64(rfname, O_RDWR | O_CREAT, 0666 );
 	real_filename_destroy(rfname);
 #elif ADAPTIVE
-    // FILE OPEN
-    
-    // typedef struct SQF_t {
-    //     SQO_t object;
-    //     int fd;
-    //     void* db;
-    //     off64_t offset; // global offset
-    // } SQF_t; 
-    //
-    // file is => SQF_T* file;
+	// FILE OPEN
 
-    // TODO: check if this is really needed
+	// typedef struct SQF_t {
+	//     SQO_t object;
+	//     int fd;
+	//     void* db;
+	//     off64_t offset; // global offset
+	// } SQF_t; 
+	//
+	// file is => SQF_T* file;
+
+	// TODO: check if this is really needed
 	//char* rfname = real_filename_create(info);
 	//file->fd = open64(rfname, O_RDWR | O_CREAT, 0666 );
 	//real_filename_destroy(rfname);
 	file->fd = -1;
-
-    // if this would only read everything is decided already, we just have rediscover which tier applies
-    
-    // this is to early for tier selection, defer until read/write
-    // Option 1: Set invalid file handle?  -1   => then read/write knows it has to invoke esdm_suggest_tier()
+	// if this would only read everything is decided already, we just have rediscover which tier applies
+	// this is to early for tier selection, defer until read/write
+	// Option 1: Set invalid file handle?  -1   => then read/write knows it has to invoke esdm_suggest_tier()
 #else
 	file->fd = open64(info->data_fn, O_RDWR | O_CREAT, 0666);
 #endif
@@ -975,7 +984,6 @@ static herr_t H5VL_extlog_file_specific(void *obj, H5VL_file_specific_t specific
 
 	switch(specific_type) {
 		case H5VL_FILE_FLUSH:
-            // TODO: ADAPTIVE: remove?
 			fsync(file->object.root->fd);
 			break;
 		case H5VL_FILE_IS_ACCESSIBLE:
@@ -1061,7 +1069,8 @@ static void * H5VL_extlog_group_open(void *obj, H5VL_loc_params_t loc_params, co
 	switch(loc_params.obj_type) {
 		case H5I_FILE:
 		case H5I_GROUP:
-			group = DBG_open(obj, loc_params, name);
+			MPI_Barrier(MPI_COMM_WORLD);
+			DBG_open(obj, loc_params, name, group);
 			break;
 		case H5I_DATATYPE:
 			ERRORMSG("Not implemented");
@@ -1089,8 +1098,7 @@ static void * H5VL_extlog_group_open(void *obj, H5VL_loc_params_t loc_params, co
 			ERRORMSG("Not supported");
 	} /* end switch */
 
-	group->object.name = strdup(name);
-	return (void *)group;
+	return group;
 }
 
 
@@ -1104,7 +1112,7 @@ static herr_t H5VL_extlog_group_get(void *obj, H5VL_group_get_t get_type, hid_t 
 		case H5VL_GROUP_GET_GCPL:
 			{
 				hid_t* gcpl_id = va_arg (arguments, hid_t *);                                   
-				DBG_get_gcpl(group, gcpl_id);;
+				DBG_get_gcpl(group, gcpl_id);
 			}
 			break;
 		case H5VL_GROUP_GET_INFO:
@@ -1240,15 +1248,12 @@ H5VL_extlog_dataset_create(void *obj, H5VL_loc_params_t loc_params, const char *
 #ifdef MULTIFILE
 				dset->object.root->offset += data_size / dset->object.fapl->mpi_size;
 #elif ADAPTIVE
-                // DATASET CREATE
+				// DATASET CREATE
 				dset->object.root->offset += data_size / dset->object.fapl->mpi_size;
 
-                // at this time the create property would be known for the write case
-                // but there seems to be no benefit to already decide on a tier..
-
-                // also the SQF_t is not availabe here yet.. would need to traverse the tree
-
-
+				// at this time the create property would be known for the write case
+				// but there seems to be no benefit to already decide on a tier..
+				// also the SQF_t is not availabe here yet.. would need to traverse the tree
 #else
 				dset->object.root->offset += data_size; // free position for the next datasets
 #endif
@@ -1300,13 +1305,13 @@ H5VL_extlog_dataset_create(void *obj, H5VL_loc_params_t loc_params, const char *
 H5VL_extlog_dataset_open(void *obj, H5VL_loc_params_t loc_params, const char *name, hid_t dapl_id, hid_t dxpl_id, void **req)
 {
 	DEBUGMSG("%s", name);
-	SQD_t* dset = NULL;
+	SQD_t* dset = (SQD_t*) malloc(sizeof(*dset));
 
 	switch(loc_params.obj_type) {
 		case H5I_FILE:
 		case H5I_GROUP:
 			{
-				dset = DBD_open(obj, loc_params, name);
+				DBD_open(obj, loc_params, name, dset);
 			}
 			break;
 		case H5I_DATATYPE:
@@ -1336,7 +1341,7 @@ H5VL_extlog_dataset_open(void *obj, H5VL_loc_params_t loc_params, const char *na
 			ERRORMSG("Not supported");
 	} /* end switch */
 
-	return (void *)dset;
+	return dset;
 }
 
 
@@ -1565,20 +1570,20 @@ H5VL_extlog_dataset_write(void *dset, hid_t mem_type_id, hid_t mem_space_id,
 #ifdef MULTIFILE
 	off64_t rel_offset = start[0] * block_size * d->object.fapl->mpi_size;
 #elif ADAPTIVE
-    // DATASET WRITE
+	// DATASET WRITE
 
-    // block_size is:   sizeof(datatype) * dim[0] * ... * dim[n]   -> here cuboid  x*y*z
-    // call to ESDM Decision Component
+	// block_size is:   sizeof(datatype) * dim[0] * ... * dim[n]   -> here cuboid  x*y*z
+	// call to ESDM Decision Component
 
-    // Make tier decision if not already set.
-    // TODO: alternative?: d->object.root->fd
-    SQO_t* esdm_sqo = (SQO_t*) dset;
-    if ( esdm_sqo->root->fd == -1 )
-    {
-        char* esdm_tiername = esdm_suggest_tier(d->object.fapl, d->object.fapl->mpi_size, block_size);
-        esdm_sqo->root->fd = open64(esdm_tiername, O_RDWR | O_CREAT, 0666 );
-        real_filename_destroy(esdm_tiername);
-    }
+	// Make tier decision if not already set.
+	// TODO: alternative?: d->object.root->fd
+	SQO_t* esdm_sqo = (SQO_t*) dset;
+	if ( esdm_sqo->root->fd == -1 )
+	{
+		char* esdm_tiername = esdm_suggest_tier(d->object.fapl, d->object.fapl->mpi_size, block_size);
+		esdm_sqo->root->fd = open64(esdm_tiername, O_RDWR | O_CREAT, 0666 );
+		real_filename_destroy(esdm_tiername);
+	}
 
 	off64_t rel_offset = start[0] * block_size * d->object.fapl->mpi_size;
 #else
@@ -1752,9 +1757,11 @@ H5VL_extlog_object_open(void *obj, H5VL_loc_params_t loc_params, H5I_type_t *ope
 			switch (loc_params.obj_type) {
 				case H5I_GROUP:
 					{
-						if (DB_entry_exists(obj, "DATASETS", loc_params.loc_data.loc_by_name.name)) {
-							ret_obj = DBD_open(obj, loc_params, loc_params.loc_data.loc_by_name.name);
-							SQD_t* sqd = (SQD_t*) ret_obj;
+						int entry_exists = false;
+						DB_entry_exists(obj, "DATASETS", loc_params.loc_data.loc_by_name.name, &entry_exists);
+						if (entry_exists) {
+							ret_obj = (SQD_t*) malloc(sizeof(SQD_t));
+							DBD_open(obj, loc_params, loc_params.loc_data.loc_by_name.name, ret_obj);
 							*opened_type = H5I_DATASET;
 						}
 						else {
