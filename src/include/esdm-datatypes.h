@@ -1,3 +1,7 @@
+/**
+ * @file
+ * @brief Datatype primitives provided by ESDM.
+ */
 #ifndef ESDM_DATATYPES_H
 #define ESDM_DATATYPES_H
 

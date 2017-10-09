@@ -13,3 +13,12 @@
  * You should have received a copy of the GNU Lesser General Public License        
  * along with ESDM.  If not, see <http://www.gnu.org/licenses/>.           
  */                                                                         
+
+
+/**
+ * @file
+ * @brief Test for the generic functionality of a backend.
+ *
+ * All backends have to support core functionalities (e.g. allocate, open, put,
+ * get, append, close). Either via callbacks or  symbol or else.
+ */

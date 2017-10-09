@@ -13,3 +13,12 @@
  * You should have received a copy of the GNU Lesser General Public License        
  * along with ESDM.  If not, see <http://www.gnu.org/licenses/>.           
  */                                                                         
+
+
+/**
+ * @file
+ * @brief The scheduler receives application requests and schedules subsequent
+ *        I/O requests as a are necessary for metadata lookups and data 
+ *        reconstructions.
+ *
+ */
