@@ -1,7 +1,7 @@
 cmake_minimum_required (VERSION 3.0)
 set (CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} ${CMAKE_SOURCE_DIR}/cmake)
 
-set (PROJECT_NAME h5-memvol)
+set (PROJECT_NAME esdm)
 project (${PROJECT_NAME})
 
 set (VERSION_MAJOR 0)
@@ -16,29 +16,9 @@ include(FeatureSummary)
 include(CheckCSourceCompiles)
 
 find_package(PkgConfig REQUIRED)
-find_package(HDF5 REQUIRED)
-find_package(MPI REQUIRED)
 
 pkg_search_module(GLIB REQUIRED glib-2.0>=2.40)
 set_package_properties(GLIB PROPERTIES URL "http://www.gtk.org" TYPE REQUIRED PURPOSE "data structures")
-
-
-set(CMAKE_REQUIRED_INCLUDES ${HDF5_INCLUDE_DIR} ${MPI_INCLUDE_PATH})
-set(CMAKE_REQUIRED_LIBRARIES ${HDF5_LIBRARIES} ${MPI_LIBRARIES})
-
-CHECK_C_SOURCE_COMPILES("
-  #include <hdf5.h>
-  const H5VL_class_t H5VL_memvol = {};
-  int main(){
-    return 0;
-  }
-  " HDF5_VOL_TEST)
-
-if( ${HDF5_VOL_TEST} )
-else()
-    message( FATAL_ERROR "HDF5 library does not support VOL interface. Please check dev/install-dev-environment.sh" )
-endif()
-####
 
 
 # compile flags
@@ -80,16 +60,17 @@ option(plantuml "Plantuml support" ${PLANTUML_ON})
 add_feature_info(plantuml plantuml  "PlantUML for documentation" URL http://de.plantuml.com/ TYPE OPTIONAL)
 ##### END Documentation
 
+add_library(esdm SHARED esdm-datatypes.c  esdm-layout.c  esdm-performancemodel.c  esdm-scheduler.c  esdm-siteconfiguration.c)
+target_link_libraries(esdm ${GLIB_LIBRARIES})
+link_directories(esdm ${GLIB_LIBRARIES})
+include_directories(${CMAKE_SOURCE_DIR}/include/ ${CMAKE_BINARY_DIR} ${GLIB_INCLUDE_DIRS})
 
-add_library(h5-memvol SHARED memvol.c)
-target_link_libraries(h5-memvol ${HDF5_LIBRARIES} ${GLIB_LIBRARIES})
-link_directories(h5-memvol ${HDF5_LIBRARY_DIRS} ${MPI_LIBRARIES} ${GLIB_LIBRARIES})
-include_directories(${CMAKE_SOURCE_DIR}/include/ ${CMAKE_BINARY_DIR} ${HDF5_INCLUDE_DIR} ${MPI_INCLUDE_PATH} ${GLIB_INCLUDE_DIRS})
-
+SUBDIRS (data-backends)
+SUBDIRS (utils)
 SUBDIRS (test)
-SUBDIRS (tools)
+# SUBDIRS (hdf5-interface)
 
 feature_summary(WHAT ALL)
 
 ## Installation
-install(TARGETS h5-memvol LIBRARY DESTINATION lib)
+install(TARGETS esdm LIBRARY DESTINATION lib)
