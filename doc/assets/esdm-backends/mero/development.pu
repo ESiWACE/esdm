@@ -1,0 +1,15 @@
+@startuml
+
+node ESDMApp1 {
+	node App1 {
+	control "UserApp"
+	control "ESDM"
+	control "Clovis Instance" as clovis
+	}
+}
+
+UserApp --> ESDM   : use
+ESDM    --> clovis : use
+
+
+@enduml

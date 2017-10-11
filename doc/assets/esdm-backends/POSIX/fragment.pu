@@ -1,0 +1,19 @@
+@startuml
+
+class Fragment {
+	Fragment Metadata
+	Data (blob)
+}
+
+
+
+class PosixFragment {
+	Posix Metadata
+}
+
+
+
+PosixFragment -right-> Fragment : wraps
+
+
+@enduml

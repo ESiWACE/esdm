@@ -1,0 +1,47 @@
+@startuml
+
+class “WOS Cluster” as Storage
+class “WOS Backend” as Backend
+
+class Datatypes
+class Progress
+class Layout
+class "Performance Model" as Performance
+class "Site Configuration" as SiteConfig
+
+interface "ESDM API" as ESDMAPI
+
+Storage <-left- Backend
+
+Backend <-left- Progress
+note top
+	Progress processes read/write calls for Fragments.
+end note
+
+Backend --> Performance: provides
+Backend --> SiteConfig: provides
+
+Datatypes -down-> Progress
+
+Layout <--> Performance
+note bottom
+	e.g. Latency/Throughput
+end note
+
+Layout <--> SiteConfig
+note bottom
+	SiteConfig has data center description.
+	Available backends.
+end note
+
+Layout <-down- Progress
+
+
+Progress <-right-> ESDMAPI
+note right
+	sync
+	async
+end note
+
+
+@enduml

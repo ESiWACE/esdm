@@ -1,0 +1,44 @@
+@startuml
+
+package StorageSystem {
+	class Mero
+	class Clovis
+}
+
+
+package ApplicationProc {
+	class Datatypes
+	class Progress
+	class Layout
+	class "Mero Backend" as Backend
+}
+
+class "Performance Model" as Performance
+class "Site Configuration" as SiteConfig
+
+
+Mero <-- Clovis
+
+
+
+
+Clovis --> Performance: provides
+Clovis --> SiteConfig: provides
+
+
+Backend --> Clovis
+
+Backend <-- Progress
+
+Datatypes --> Progress
+
+Layout <--> Performance
+
+
+Layout <--> SiteConfig
+Layout <-- Progress
+
+
+
+
+@enduml

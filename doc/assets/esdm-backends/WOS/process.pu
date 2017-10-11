@@ -1,0 +1,46 @@
+@startuml
+
+node App1 {
+	node Proc11 {
+	control "ESDM Progress" as progress11
+	control "ESDM WOS Service" as service11
+	}
+
+	node Proc12 {
+	control "ESDM Progress" as progress12
+	control "ESDM WOS Service" as service12
+	}
+}
+
+progress11 <--> service11
+progress12 <--> service12
+
+node App2 {
+	node Proc21 {
+	control "ESDM Progress" as progress21
+	control "ESDM WOS Service" as service21
+	}
+
+	node Proc22 {
+	control "ESDM Progress" as progress22
+	control "ESDM WOS Service" as service22
+	}
+}
+
+progress21 <--> service21
+progress22 <--> service22
+
+storage “WOS Cluster System” {
+	control “WOS Service” as woss
+}
+
+service11 <--> woss
+
+service12 <--> woss
+
+service21 <--> woss
+
+service22 <--> woss
+
+
+@enduml

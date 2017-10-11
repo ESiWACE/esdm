@@ -1,0 +1,44 @@
+@startuml
+
+package StorageSystem {
+	class “WOS Storage” as wosstorage
+	class “WOS Service” as woss
+}
+
+
+package ApplicationProc {
+	class Datatypes
+	class Progress
+	class Layout
+	class “WOS Backend" as Backend
+}
+
+class "Performance Model" as Performance
+class "Site Configuration" as SiteConfig
+
+
+wosstorage <-- woss
+
+
+
+
+woss --> Performance: provides
+woss --> SiteConfig: provides
+
+
+Backend --> woss
+
+Backend <-- Progress
+
+Datatypes --> Progress
+
+Layout <--> Performance
+
+
+Layout <--> SiteConfig
+Layout <-- Progress
+
+
+
+
+@enduml

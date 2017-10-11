@@ -1,0 +1,64 @@
+@startuml
+
+node App1 {
+	node Proc11 {
+	control "ESDM Progress" as progress11
+	control "ESDM Clovis Instance" as clovis11
+	control "ESDM MeroSrvMgmt" as mgmt11
+	}
+
+	node Proc12 {
+	control "ESDM Progress" as progress12
+	control "ESDM Clovis Instance" as clovis12
+	control "ESDM MeroSrvMgmt" as mgmt12
+	}
+}
+
+progress11 --> clovis11 : use
+progress12 --> clovis12 : use
+
+node App2 {
+	node Proc21 {
+	control "ESDM Progress" as progress21
+	control "ESDM Clovis Instance" as clovis21
+	control "ESDM MeroSrvMgmt" as mgmt21
+	}
+
+	node Proc22 {
+	control "ESDM Progress" as progress22
+	control "ESDM Clovis Instance" as clovis22
+	control "ESDM MeroSrvMgmt" as mgmt22
+	}
+}
+progress21 --> clovis21 : use
+progress22 --> clovis22 : use
+
+storage MeroStorageSystem {
+	control MeroConfd
+	control MeroRMS
+	control MeroIOS
+}
+
+clovis11 <--> MeroConfd
+clovis11 <--> MeroRMS
+clovis11 <--> MeroIOS
+
+clovis12 <--> MeroConfd
+clovis12 <--> MeroRMS
+clovis12 <--> MeroIOS
+
+clovis21 <--> MeroConfd
+clovis21 <--> MeroRMS
+clovis21 <--> MeroIOS
+
+
+clovis22 <--> MeroConfd
+clovis22 <--> MeroRMS
+clovis22 <--> MeroIOS
+
+mgmt11 --> MeroConfd
+mgmt12 --> MeroConfd
+mgmt21 --> MeroConfd
+mgmt22 --> MeroConfd
+
+@enduml

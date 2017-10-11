@@ -1,0 +1,54 @@
+@startuml
+
+participant "App/Process" as proc
+participant "ESDM API" as ESDM
+
+participant "ESDM Progress” as progress
+participant "ESDM Layout" as layout
+
+participant "WOS Backend" as backend
+participant "Backend B" as backend1
+
+participant "WOS Storage” as storage
+
+
+
+proc -> ESDM: write
+
+ESDM <- progress: return
+ESDM -> progress
+
+...
+
+proc <- ESDM: return
+
+...
+
+progress -> layout: lookup
+layout -> progress: choose fragmentation
+layout -> backend: performance estimate 
+layout <- backend: return 
+
+...
+
+layout -> backend1: performance estimate 
+layout <- backend1: return 
+
+layout -> layout: determine winner
+
+progress <- layout: return fragmentation
+
+
+progress -> backend: write data
+...
+progress <- backend: return
+
+backend -> storage: create wos object
+backend <- storage: return OID
+backend -> storage: put data
+backend <- storage: return
+
+progress <- backend: return OID
+
+
+@enduml

@@ -1,0 +1,44 @@
+@startuml
+
+package StorageSystem {
+	class Lustre
+	class POSIX
+}
+
+
+package ApplicationProc {
+	class Datatypes
+	class Scheduler
+	class Layout
+	class "POSIX Backend" as Backend
+}
+
+class "Performance Model" as Performance
+class "Site Configuration" as SiteConfig
+
+
+Lustre <-- POSIX
+
+
+
+
+POSIX --> Performance: provides
+POSIX --> SiteConfig: provides
+
+
+Backend --> POSIX
+
+Backend <-- Scheduler
+
+Datatypes --> Scheduler
+
+Layout <--> Performance
+
+
+Layout <--> SiteConfig
+Layout <-- Scheduler
+
+
+
+
+@enduml

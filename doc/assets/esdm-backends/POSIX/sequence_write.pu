@@ -1,0 +1,54 @@
+@startuml
+
+participant "App/Process" as proc
+participant "ESDM API" as ESDM
+
+participant "ESDM Scheduler" as scheduler
+participant "ESDM Layout" as layout
+
+participant "POSIX Backend" as backend
+participant "Backend B" as backend1
+
+participant "Storage" as storage
+database Device1
+
+
+
+
+proc -> ESDM: write
+
+ESDM <- scheduler: return
+ESDM -> scheduler
+
+...
+
+proc <- ESDM: return
+
+...
+
+scheduler -> layout: lookup
+layout -> scheduler: choose fragmentation
+layout -> backend: performance estimate 
+layout <- backend: return 
+
+...
+
+layout -> backend1: performance estimate 
+layout <- backend1: return 
+
+layout -> layout: determine winner
+
+scheduler <- layout: return fragmentation
+
+
+scheduler -> backend: subrequests
+...
+scheduler <- backend: return
+
+backend -> storage: file I/O
+backend <- storage: return
+
+scheduler <- backend
+
+
+@enduml

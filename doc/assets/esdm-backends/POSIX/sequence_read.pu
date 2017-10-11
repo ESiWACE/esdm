@@ -1,0 +1,40 @@
+@startuml
+
+participant "App/Process" as proc
+participant "ESDM API" as ESDM
+
+participant "ESDM Scheduler" as scheduler
+participant "ESDM Layout" as layout
+
+participant "POSIX Backend" as backend
+participant "Storage" as storage
+database Device1
+
+
+
+
+proc -> ESDM: read
+ESDM -> scheduler
+scheduler -> layout: lookup
+layout -> scheduler: chosen fragment candidates
+scheduler -> backend: subrequest
+scheduler -> backend: subrequest
+
+...
+scheduler <- backend: return
+scheduler <- backend: return
+
+backend -> storage: file I/O
+backend <- storage: return
+
+scheduler <- backend
+
+scheduler -> layout: reconstruct domain into addr
+scheduler <- layout: return
+
+ESDM <- scheduler: return
+proc <- ESDM: return
+
+
+
+@enduml

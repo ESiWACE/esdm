@@ -1,0 +1,50 @@
+@startuml
+
+class Lustre
+class POSIX
+
+class Datatypes
+class Progress
+class Layout
+class "Performance Model" as Performance
+class "Site Configuration" as SiteConfig
+
+interface "ESDM API" as ESDMAPI
+
+
+
+Lustre <-left- POSIX
+
+POSIX <-left- Progress
+note top
+	Progress processes read/write calls for Fragments.
+end note
+
+POSIX --> Performance: provides
+POSIX --> SiteConfig: provides
+
+
+Datatypes -down-> Progress
+
+Layout <--> Performance
+note bottom
+	e.g. Latency/Throughput
+end note
+
+Layout <--> SiteConfig
+note bottom
+	SiteConfig has data center description.
+	Available backends.
+end note
+
+Layout <-down- Progress
+
+
+Progress <-right-> ESDMAPI
+note right
+	sync
+	async
+end note
+
+
+@enduml

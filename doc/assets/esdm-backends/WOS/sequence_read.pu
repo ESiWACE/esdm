@@ -1,0 +1,40 @@
+@startuml
+
+participant "App/Process" as proc
+participant "ESDM API" as ESDM
+
+participant "ESDM Progress” as progress
+participant "ESDM Layout" as layout
+
+participant "WOS Backend" as backend
+participant “WOS Storage" as storage
+
+
+
+
+proc -> ESDM: read
+ESDM -> progress
+progress -> layout: lookup
+layout -> progress: chosen fragment candidates
+progress -> backend: read fragment (OID)
+progress -> backend: read fragment (OID)
+...
+progress <- backend: return
+progress <- backend: return
+
+backend -> storage: get WOS Object
+backend <- storage: return
+backend -> storage: get data
+backend <- storage: return
+
+progress <- backend
+
+progress -> layout: reconstruct domain into addr
+progress <- layout: return
+
+ESDM <- progress: return
+proc <- ESDM: return
+
+
+
+@enduml

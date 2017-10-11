@@ -1,0 +1,50 @@
+@startuml
+
+class Mero
+class Clovis
+
+class Datatypes
+class Scheduler
+class Layout
+class "Performance Model" as Performance
+class "Site Configuration" as SiteConfig
+
+interface "ESDM API" as ESDMAPI
+
+
+
+Mero <-left- Clovis
+
+Clovis <-left- Scheduler
+note top
+	Scheduler processes read/write calls for Fragments.
+end note
+
+Clovis --> Performance: provides
+Clovis --> SiteConfig: provides
+
+
+Datatypes -down-> Scheduler
+
+Layout <--> Performance
+note bottom
+	e.g. Latency/Throughput
+end note
+
+Layout <--> SiteConfig
+note bottom
+	SiteConfig has data center description.
+	Available backends.
+end note
+
+Layout <-down- Scheduler
+
+
+Scheduler <-right-> ESDMAPI
+note right
+	sync
+	async
+end note
+
+
+@enduml

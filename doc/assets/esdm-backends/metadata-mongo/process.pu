@@ -1,0 +1,28 @@
+@startuml
+
+node App1 {
+	node Proc1 {
+	control "ESDM Scheduler" as scheduler1
+	control "ESDM Compactificator" as compactor1
+	}
+
+	node Proc2 {
+	control "ESDM Progress" as scheduler2
+	control "ESDM Compactificator" as compactor2
+	}	
+}
+
+scheduler1 --> compactor1 : use
+scheduler2 --> compactor2 : use
+
+node App2 {
+	control "Competing I/O" as io
+}
+
+
+storage StorageSystem {
+	control ServiceLoads1
+	control ServiceLoads2
+}
+
+@enduml

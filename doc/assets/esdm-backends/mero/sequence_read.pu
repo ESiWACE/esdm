@@ -1,0 +1,43 @@
+@startuml
+
+participant "App/Process" as proc
+participant "ESDM API" as ESDM
+
+participant "ESDM Progress" as progress
+participant "ESDM Layout" as layout
+
+participant "Mero Backend" as backend
+participant "Mero Storage" as storage
+
+
+proc -> ESDM: read
+ESDM -> progress: read
+progress -> layout: lookup
+layout -> progress: Mero identifier of metadata
+
+progress -> backend: GET metadata key-values
+backend -> storage:  Mero Clovis index operations
+backend <- storage:  Mero Clovis reply
+progress <- backend: return with metadata
+
+progress -> backend: subrequest to object for raw data
+progress -> backend: subrequest to object for raw data
+
+...
+
+backend -> storage:  Mero Clovis object operations
+backend <- storage:  Mero Clovis reply
+
+...
+
+progress <- backend: return with data
+progress <- backend: return with data
+
+progress -> progress: filling data
+
+ESDM <- progress: return
+proc <- ESDM: return
+
+
+
+@enduml

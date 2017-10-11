@@ -1,0 +1,124 @@
+graph changed {
+
+  graph [fontname = "sans serif"];
+  node [fontname = "sans serif", shape=box];
+  node [fontname = "sans serif", shape=box, style="filled, rounded", fillcolor="white"];
+  edge [fontname = "sans serif"];
+
+
+  {rank = same;
+  Application1 [shape="invhouse"];
+  Application2 [shape="invhouse"];
+  Application3 [shape="invhouse"];
+  jobsched [label="Job scheduler",shape="invhouse"];
+  }
+  Application1 -- NetCDF4 ;
+  Application2 -- NetCDF4 ;
+
+  Application3 -- GRIB;
+
+  {rank = same;
+  GRIB  [shape="component",fillcolor="orchid",style=filled];
+  NetCDF4;
+  }
+
+  NetCDF4 [label="NetCDF4 (patched)",shape="component",fillcolor="cornsilk",style=filled];
+  NetCDF4 -- "HDF5 VOL (unmodified)";
+
+  "ESD (Plugin)" [shape="component",fillcolor="gray",style=filled];
+  "HDF5 VOL (unmodified)" -- "ESD (Plugin)";
+  "ESD (Plugin)" -- "ESD interface";
+
+   jobsched -- "ESD interface";
+
+
+
+  subgraph cluster_tools {
+  "cp-esd" [shape="invhouse", fillcolor="cornflowerblue"];
+  "esd-daemon" [shape="house", fillcolor="lightcyan"];
+  "esd-FUSE"  [shape="house", fillcolor="lightcyan"];
+
+    label="Tools and services";
+    graph[style=dotted];
+  }
+
+
+  GRIB -- "ESD interface";
+  "cp-esd" -- "ESD interface";
+  "esd-daemon" -- "ESD interface";
+  "esd-FUSE" -- "ESD interface";
+
+
+
+
+  subgraph cluster_esd {
+
+  {rank = same;
+    "ESD interface" [shape="ellipse", style="dotted"];
+    "Site configuration" [shape="note",fillcolor="gold",style=filled];
+  }
+
+  {rank = same;
+    "Scheduler" [fillcolor="palegreen"];
+	    "Datatypes" [fillcolor="palegreen"];
+}
+
+  {rank = same;
+    "Layout" [fillcolor="palegreen"];
+    "Performance model"  [fillcolor="palegreen"];
+}
+
+
+
+    "ESD interface" -- "Scheduler";
+    "ESD interface" -- "Layout";
+    "ESD interface" -- "Datatypes";
+
+
+
+
+
+    "Site configuration" -- "Layout" [style="dotted"];
+    "Site configuration" -- "Performance model" [style="dotted"];
+
+
+    "Layout" -- "Performance model";
+    "Layout" -- "Datatypes";
+
+    "Scheduler" -- "Layout";
+
+    "Metadata backend" [shape="oval", style="dotted"];
+
+    "Storage backend" [shape="oval", style="dotted"];
+    "Storage backend" -- "POSIX-IO";
+
+    "Object storage" [shape="component",fillcolor="tomato",style=filled];
+    "POSIX-IO" [shape="component",fillcolor="tomato",style=filled];
+    "Lustre" [shape="component",fillcolor="tomato",style=filled];
+
+    "RDBMS" [shape="component",fillcolor="orchid",style=filled];
+    "NoSQL" [shape="component",fillcolor="orchid",style=filled];
+
+
+
+    "Scheduler" -- "Storage backend";
+    "Scheduler" -- "Metadata backend";
+
+    "Performance model" -- "Storage backend" [style="dotted"];
+    "Performance model" -- "Metadata backend" [style="dotted"];
+
+
+    "Storage backend" -- "Object storage";
+    "Storage backend" -- "Lustre";
+
+
+    "Metadata backend" -- "RDBMS";
+    "Metadata backend" -- "NoSQL";
+
+    label="ESD";
+    graph[style=dotted];
+  }
+
+
+
+}
