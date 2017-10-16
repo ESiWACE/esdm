@@ -65,7 +65,7 @@ target_link_libraries(esdm ${GLIB_LIBRARIES})
 link_directories(esdm ${GLIB_LIBRARIES})
 include_directories(${CMAKE_SOURCE_DIR}/include/ ${CMAKE_BINARY_DIR} ${GLIB_INCLUDE_DIRS})
 
-SUBDIRS(data-backends)
+SUBDIRS(data-backends)<
 SUBDIRS(utils)
 SUBDIRS(test)
 # SUBDIRS (hdf5-interface)
