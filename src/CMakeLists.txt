@@ -59,8 +59,10 @@ endif(DOXYGEN_FOUND)
 option(plantuml "Plantuml support" ${PLANTUML_ON})
 add_feature_info(plantuml plantuml  "PlantUML for documentation" URL http://de.plantuml.com/ TYPE OPTIONAL)
 
+
+
 ## Application
-add_library(esdm SHARED esdm-datatypes.c  esdm-layout.c  esdm-performancemodel.c  esdm-scheduler.c  esdm-siteconfiguration.c)
+add_library(esdm SHARED esdm.c  esdm-datatypes.c  esdm-layout.c  esdm-performancemodel.c  esdm-scheduler.c  esdm-siteconfiguration.c)
 target_link_libraries(esdm ${GLIB_LIBRARIES})
 link_directories(esdm ${GLIB_LIBRARIES})
 include_directories(${CMAKE_SOURCE_DIR}/include/ ${CMAKE_BINARY_DIR} ${GLIB_INCLUDE_DIRS})

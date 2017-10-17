@@ -1,24 +1,33 @@
 # Earth System Data Middleware
 
-## H5-MEMVOL
-An in-memory VOL plugin for HDF5.
+The middleware for earth system data is 
 
 ## Requirements
 
-### Installation for an Ubuntu system
+ * glib2
+ * a variant of MPI (for parallel support with ESDM and HDF5)
 
-  * libglib2.0-dev
+
+#### Installation for Ubuntu/Debian Systems
+
+  * apt-get install libglib2.0-dev
+
+#### Installation for Fedora/CentOS/RHEL Systems
+
+  * dnf install glib2 glib2-devel mpi
+
+
 
 ## Development
 
 ### Directory structure
 
-- dev contains stuff for development purpose
-  To install hdf5-vol required by this project, 
+- `dev` contains helpers for development purpose
+  e.g., to install hdf5-vol which is required by this project you can use 
 
         ./dev/install-dev-environment.sh
 
-- src contains the source code...
+- `src` contains the source code...
   To build the project call:
 
         source dev/setenv.bash
@@ -34,5 +43,24 @@ An in-memory VOL plugin for HDF5.
 
 		./configure --with-hdf5=$PWD/install
 
-- tools contains separate programs, e.g., for benchmarking HDF5. 
+
+
+- `doc` contains the documentation which requires doxygen to build
+
+	
+	For the HTML Reference use the following commands:
+
+		cd build
+		doxygen
+		build/doc/html/index.html
+
+	For a PDF Reference (requries LaTeX) run:
+
+		cd build
+		doxygen
+		cd /doc/latex
+		make
+
+
+- `tools` contains separate programs, e.g., for benchmarking HDF5. 
   They should only be loosly coupled with the source code and allow to be used with the regular HDF5.

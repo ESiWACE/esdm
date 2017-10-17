@@ -22,3 +22,16 @@
  *        reconstructions.
  *
  */
+
+#include <esdm.h>
+
+
+
+ESDM_status_t esdm_scheduler_init() {
+	return ESDM_SUCCESS;
+}
+
+
+ESDM_status_t esdm_scheduler_finalize() {
+	return ESDM_SUCCESS;
+}

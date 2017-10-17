@@ -22,3 +22,17 @@
  *        backends and picks a winner depending on an objective.
  *
  */
+
+
+#include <esdm.h>
+
+
+
+ESDM_status_t esdm_performance_init() {
+	return ESDM_SUCCESS;
+}
+
+
+ESDM_status_t esdm_performance_finalize() {
+	return ESDM_SUCCESS;
+}

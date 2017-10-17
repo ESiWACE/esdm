@@ -22,3 +22,18 @@
  * This file contains the layout implementation.
  */
 
+
+
+
+#include <esdm.h>
+
+
+
+ESDM_status_t esdm_layout_init() {
+	return ESDM_SUCCESS;
+}
+
+
+ESDM_status_t esdm_layout_finalize() {
+	return ESDM_SUCCESS;
+}

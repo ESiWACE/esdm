@@ -10,14 +10,14 @@
 #include <esdm-metadata-backend.h>
 
 /**
-* @param buff The pointer to a contiguous memory region that shall be written
-* @param dset TODO, currently a stub, we assume it has been identified/created before....
-* @param dims The number of dimensions, needed for size and offset
-* @param size ...
+* @param [in] buff The pointer to a contiguous memory region that shall be written
+* @param [in] dset TODO, currently a stub, we assume it has been identified/created before....
+* @param [in] dims The number of dimensions, needed for size and offset
+* @param [in] size ...
 *
 * @return Status.
 */
-ESDM_status_t esdm_write(void * buff, ESDM_datatset dset, int dims, uint64_t * size, uint64_t* offset);
+ESDM_status_t esdm_write(void * buf, ESDM_dataset_t dset, int dims, uint64_t * size, uint64_t* offset);
 
 
 #endif

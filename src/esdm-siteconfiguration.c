@@ -19,3 +19,20 @@
  * @brief The site configuration describes the data center or subcomponents.
  *
  */
+
+
+
+
+#include <esdm.h>
+
+
+
+ESDM_status_t esdm_siteconfig_init() {
+	return ESDM_SUCCESS;
+}
+
+
+ESDM_status_t esdm_siteconfig_finalize() {
+	return ESDM_SUCCESS;
+}
+

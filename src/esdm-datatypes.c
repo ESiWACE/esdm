@@ -18,5 +18,34 @@
 /**
  * @file
  * @brief This file implements ESDM datatypes, and associated methods.
+ */
+
+
+#include <esdm.h>
+
+
+/**
+ * ESDM Fragments
  *
  */
+ESDM_status_t esdm_fragment_create() {
+	return ESDM_SUCCESS;
+}
+
+ESDM_status_t esdm_fragment_destroy() {
+	return ESDM_SUCCESS;
+}
+
+
+
+/**
+ * ESDM Fragments
+ *
+ */
+ESDM_status_t esdm_dataset_create() {
+	return ESDM_SUCCESS;
+}
+
+ESDM_status_t esdm_dataset_destroy() {
+	return ESDM_SUCCESS;
+}
