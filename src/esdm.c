@@ -17,23 +17,15 @@
 
 /**
  * @file
- * @brief The scheduler receives application requests and schedules subsequent
- *        I/O requests as a are necessary for metadata lookups and data 
- *        reconstructions.
- *
+ * @brief Entry point for ESDM API Implementation
  */
-
 
 
 #include <esdm.h>
 
 
 
-ESDM_status_t esdm_scheduler_init() {
-	return ESDM_SUCCESS;
-}
-
-
-ESDM_status_t esdm_scheduler_finalize() {
+ESDM_status_t esdm_write(void * buf, ESDM_dataset_t dset, int dims, uint64_t * size, uint64_t* offset) 
+{
 	return ESDM_SUCCESS;
 }
