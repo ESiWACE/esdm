@@ -1,6 +1,11 @@
-# Earth System Data Middleware
+# Earth System Data Middleware [![Build Status](https://travis-ci.org/ESiWACE/esdm.svg?branch=master)](https://travis-ci.org/ESiWACE/esdm)
 
-The middleware for earth system data is 
+
+The middleware for earth system data is a prototype to improve I/O performance
+for earth system modellers such as climate and weather applications.
+ESDM exploits structural information exposed by workflows, applications and 
+data description formats such as HDF5 and NetCDF to more efficiently organize 
+metadata and data across a variety of storage backends.
 
 ## Requirements
 
@@ -64,3 +69,6 @@ The middleware for earth system data is
 
 - `tools` contains separate programs, e.g., for benchmarking HDF5. 
   They should only be loosly coupled with the source code and allow to be used with the regular HDF5.
+
+
+
