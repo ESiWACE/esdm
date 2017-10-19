@@ -35,7 +35,7 @@ metadata and data across a variety of storage backends.
 - `src` contains the source code...
   To build the project call:
 
-        source dev/setenv.bash
+        source dev/activate-development-environment.bash
 		./configure --debug
 		cd build
 		make -j
