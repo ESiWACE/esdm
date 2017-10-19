@@ -6,5 +6,6 @@ echo "This scripts installs the necessary development environment $DIR/../instal
 
 source $DIR/setenv.bash
 
-$DIR/install-hdf5-dev-environment.sh || exit 1
-$DIR/install-netcdf4-dev-environment.sh || exit 1
+$DIR/devenv-install-hdf5.sh || exit 1
+$DIR/devenv-install-netcdf.sh || exit 1
+$DIR/devenv-install-jansson.sh || exit 1

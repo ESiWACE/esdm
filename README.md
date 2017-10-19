@@ -25,7 +25,7 @@ The middleware for earth system data is
 - `dev` contains helpers for development purpose
   e.g., to install hdf5-vol which is required by this project you can use 
 
-        ./dev/install-dev-environment.sh
+        ./dev/setup-development-environment.sh
 
 - `src` contains the source code...
   To build the project call:

@@ -16,14 +16,14 @@ H5DIR=$prefix
 
 # Download and unpack NetCDF4
 if [[ ! -e netcdf-4.4.0 ]] ; then
-  echo "Downloading source code for NetCDF 4"
-  wget ftp://ftp.unidata.ucar.edu/pub/netcdf/netcdf-4.4.0.tar.gz || exit 1
-  tar xvf netcdf-4.4.0.tar.gz || exit 1
+	echo "Downloading source code for NetCDF 4"
+	wget ftp://ftp.unidata.ucar.edu/pub/netcdf/netcdf-4.4.0.tar.gz || exit 1
+	tar xvf netcdf-4.4.0.tar.gz || exit 1
 fi
 
 cd netcdf-4.4.0
 
-# patch netcdf
+# patch netcdf 
 patch -b --verbose $PWD/libsrc4/nc4file.c $DIR/netcdf4-libsrc4-nc4file-c.patch
 patch -b --verbose $PWD/include/netcdf.h $DIR/netcdf4-include-netcdf-h.patch
 
