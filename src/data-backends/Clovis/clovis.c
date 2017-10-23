@@ -24,6 +24,23 @@
 
 #include<esdm.h>
 
+static struct esdm_backend mero_esdm_backend = {
+	eb_magic = 0x3333550033335500,
+	eb_name  = "Mero Clovis",
+	eb_id    = 1234,
+	eb_blocksize = 4096,
+
+	esdm_backend_init = NULL,
+	esdm_backend_fini = NULL,
+
+	esdm_backend_obj_alloc = NULL,
+	esdm_backend_obj_open  = NULL,
+	esdm_backend_obj_write = NULL,
+	esdm_backend_obj_read  = NULL,
+	esdm_backend_obj_close = NULL
+};
+
+
 #if 0
 
 int esdm_backend_mero_init(char * conf, struct esdm_backend_generic **eb_out)
