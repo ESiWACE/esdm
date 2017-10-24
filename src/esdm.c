@@ -26,9 +26,18 @@
 
 
 
+
+
+
 ESDM_status_t esdm_write(void * buf, ESDM_dataset_t dset, int dims, uint64_t * size, uint64_t* offset)
 {
 	ESDM_DEBUG(0, "received write request");
+
+
+	esdm_scheduler_submit();
+
+
+
 	return ESDM_SUCCESS;
 }
 
@@ -37,6 +46,11 @@ ESDM_status_t esdm_write(void * buf, ESDM_dataset_t dset, int dims, uint64_t * s
 ESDM_status_t esdm_read(void * buf, ESDM_dataset_t dset, int dims, uint64_t * size, uint64_t* offset)
 {
 	ESDM_DEBUG(0, "received read request");
+
+
+	esdm_scheduler_submit();
+
+
 	return ESDM_SUCCESS;
 }
 

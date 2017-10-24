@@ -26,6 +26,7 @@
 
 
 #include <esdm.h>
+#include <esdm-internal.h>
 
 
 
@@ -35,5 +36,16 @@ ESDM_status_t esdm_scheduler_init() {
 
 
 ESDM_status_t esdm_scheduler_finalize() {
+	return ESDM_SUCCESS;
+}
+
+
+
+
+ESDM_status_t esdm_scheduler_submit() {
+
+	ESDM_DEBUG(0, "Scheduler add request.");
+
+
 	return ESDM_SUCCESS;
 }

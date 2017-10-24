@@ -22,6 +22,7 @@
 
 
 #include <esdm.h>
+#include <esdm-internal.h>
 
 
 /**
@@ -29,17 +30,19 @@
  *
  */
 ESDM_status_t esdm_fragment_create() {
+	ESDM_DEBUG(0, "Creating Fragment.");
 	return ESDM_SUCCESS;
 }
 
 ESDM_status_t esdm_fragment_destroy() {
+	ESDM_DEBUG(0, "Destroying Fragment.");
 	return ESDM_SUCCESS;
 }
 
 
 
 /**
- * ESDM Fragments
+ * ESDM Datasets
  *
  */
 ESDM_status_t esdm_dataset_create() {

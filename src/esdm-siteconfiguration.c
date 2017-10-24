@@ -36,3 +36,25 @@ ESDM_status_t esdm_siteconfig_finalize() {
 	return ESDM_SUCCESS;
 }
 
+
+
+
+
+
+
+
+
+
+
+ESDM_status_t esdm_siteconfig_parse_json() {
+
+	char* keywords[] = {"systems", "subsystem", "type"};
+
+
+
+
+
+
+	return ESDM_SUCCESS;
+}
+

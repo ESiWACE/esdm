@@ -25,7 +25,7 @@
 
 
 #include <esdm.h>
-
+#include <esdm-internal.h>
 
 
 ESDM_status_t esdm_performance_init() {
@@ -36,3 +36,9 @@ ESDM_status_t esdm_performance_init() {
 ESDM_status_t esdm_performance_finalize() {
 	return ESDM_SUCCESS;
 }
+
+
+
+
+
+
