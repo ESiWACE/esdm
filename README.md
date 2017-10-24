@@ -1,4 +1,5 @@
 # Earth System Data Middleware [![Build Status](https://travis-ci.org/ESiWACE/esdm.svg?branch=master)](https://travis-ci.org/ESiWACE/esdm)
+{#mainpage}
 
 
 The middleware for earth system data is a prototype to improve I/O performance
@@ -40,8 +41,9 @@ metadata and data across a variety of storage backends.
 		cd build
 		make -j
 
-  To run the tests call:
+  To run the test suite call:
 
+		cd build
 		make test
   
   You may also choose to configure with a different hdf5 installation (see ./configure --help) e.g.:

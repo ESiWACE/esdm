@@ -14,31 +14,24 @@
  * along with ESDM.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-/**
- * @file
- * @brief Debug adds functionality for logging and inspection of ESDM datatypes
- *        during development.
- *
+/*
+ * Test to check the metadata APIs of ESDM.
  */
 
+#include <stdio.h>
+#include <stdlib.h>
 
- #include <stdio.h>
- #include <stdarg.h>
+#include <esdm.h>
 
-#include <esdm-internal.h>
-
-
+int main(){
+	ESDM_status_t ret;
 
 
+	char desc[] = "{\"dataset\": \"abcdef\", \"dims\": 3}";
 
-void esdm_log(uint32_t loglevel, const char* format, ...)
-{
-    uint32_t active_loglevel = 99;
 
-	if ( loglevel <= active_loglevel ) {
-		va_list args;
-		va_start(args,format);
-		vprintf(format,args);
-		va_end(args);
-	}
+	ret = esdm_lookup(desc);
+
+
+	return 0;
 }
