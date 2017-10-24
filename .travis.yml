@@ -1,7 +1,7 @@
 language: c
 install:
   - sudo apt-get update -qq
-  - sudo apt-get install -y -qq libglib2.0 libglib2.0-dev
+  - sudo apt-get install -y -qq libglib2.0 libglib2.0-dev libjansson libjansson-dev
 script:
   - ./configure && cd build && make && make test
 

@@ -1,5 +1,5 @@
 # Earth System Data Middleware [![Build Status](https://travis-ci.org/ESiWACE/esdm.svg?branch=master)](https://travis-ci.org/ESiWACE/esdm)
-{#mainpage}
+<> {#mainpage}
 
 
 The middleware for earth system data is a prototype to improve I/O performance
