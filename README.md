@@ -1,5 +1,5 @@
 # Earth System Data Middleware [![Build Status](https://travis-ci.org/ESiWACE/esdm.svg?branch=master)](https://travis-ci.org/ESiWACE/esdm)
-<> {#mainpage}
+<!-- {#mainpage} -->
 
 
 The middleware for earth system data is a prototype to improve I/O performance
@@ -16,11 +16,11 @@ metadata and data across a variety of storage backends.
 
 #### Installation for Ubuntu/Debian Systems
 
-  * apt-get install libglib2.0-dev
+  * apt-get install libglib2 libglib2.0-dev libjansson4 libjansson-dev
 
 #### Installation for Fedora/CentOS/RHEL Systems
 
-  * dnf install glib2 glib2-devel mpi
+  * dnf install glib2 glib2-devel mpi jansson jansson-devel
 
 
 
