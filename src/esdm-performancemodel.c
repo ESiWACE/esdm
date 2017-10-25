@@ -14,8 +14,6 @@
  * along with ESDM.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-
-
 /**
  * @file
  * @brief The performance component collects performance estimates from
@@ -28,20 +26,39 @@
 #include <esdm-internal.h>
 
 
-ESDM_status_t esdm_performance_init() {
+esdm_status_t esdm_performance_init() {
 	return ESDM_SUCCESS;
 }
 
 
-ESDM_status_t esdm_performance_finalize() {
+esdm_status_t esdm_performance_finalize() {
 	return ESDM_SUCCESS;
 }
 
-esdm_perf_model_split_io(io){
+
+esdm_status_t esdm_perf_model_split_io(
+		esdm_pending_io_t io,
+		esdm_fragment_t* fragments)
+{
+	esdm_module_type_array_t * backends;
+
 	// pickup the performance estimate for each backend module
-	esdm_module_type_array_t * backends = esdm_module_get_per_type(ESDM_TYPE_BACKEND);
+	esdm_module_get_by_type(ESDM_TYPE_BACKEND, backends);
 	for(int i=0; i < backends->count; i++){
 		esdm_backend_estimate_performance((esdm_backend_t*) backends->module, io);
 	}
+
 	// now choice the best module
+}
+
+
+
+
+
+esdm_status_t esdm_backend_estimate_performance(
+		esdm_backend_t* backend, 
+		esdm_pending_io_t request)
+{
+
+	return ESDM_SUCCESS;
 }

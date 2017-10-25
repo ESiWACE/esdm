@@ -8,7 +8,6 @@
 
 
 #include <esdm.h>
-#include <esdm-utils.h>
 
 
 
@@ -19,9 +18,30 @@ void esdm_log(uint32_t loglevel, const char* format, ...);
 
 
 
+// Data
 
 
-ESDM_status_t esdm_scheduler_submit();
+// Metadata
+esdm_status_t esdm_metadata_t_alloc();
+
+
+
+// I/O Scheduler
+esdm_status_t esdm_scheduler_submit();
+
+
+// Layout
+
+
+
+// Performance Model
+esdm_status_t esdm_perf_model_split_io(esdm_pending_io_t io, esdm_fragment_t* fragments);
+
+
+// Backend (generic)
+esdm_status_t esdm_backend_estimate_performance(esdm_backend_t* backend, esdm_pending_io_t);
+esdm_status_t esdm_backend_io(esdm_backend_t* backend, esdm_fragment_t, int metadata);
+
 
 
 

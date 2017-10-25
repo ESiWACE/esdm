@@ -10,18 +10,35 @@
 #include <esdm-data-backend.h>
 #include <esdm-metadata-backend.h>
 
+
+
+// ESDM
+esdm_status_t esdm_init();
+
+
+// Module
+esdm_status_t esdm_module_init();
+esdm_status_t esdm_module_finalize();
+
+esdm_status_t esdm_module_get_by_type(esdm_module_type_t type, esdm_module_type_array_t * array);
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+esdm_status_t esdm_lookup(char* desc);
+
+
 /**
-*
-* @startuml{ZipCmd_ZipComp_Communication.png}
-*
-* ZipCmd -> ZipComp: First Compute Request
-* ZipCmd <-- ZipComp: First Compute Response
-*
-* ZipCmd -> ZipComp: Second Compute Request
-* ZipCmd <-- ZipComp: Second Compute Response
-*
-* @enduml
-*
 *
 * @param [in] buf	The pointer to a contiguous memory region that shall be written
 * @param [in] dset	TODO, currently a stub, we assume it has been identified/created before...., json description?
@@ -30,7 +47,7 @@
 *
 * @return Status.
 */
-ESDM_status_t esdm_write(void * buf, ESDM_dataset_t dset, int dims, uint64_t * size, uint64_t* offset);
+esdm_status_t esdm_write(void * buf, esdm_dataset_t dset, int dims, uint64_t * size, uint64_t* offset);
 
 
 
@@ -44,13 +61,7 @@ ESDM_status_t esdm_write(void * buf, ESDM_dataset_t dset, int dims, uint64_t * s
 *
 * @return Status.
 */
-ESDM_status_t esdm_read(void * buf, ESDM_dataset_t dset, int dims, uint64_t * size, uint64_t* offset);
-
-
-
-ESDM_status_t esdm_lookup(char* desc);
-
-
+esdm_status_t esdm_read(void * buf, esdm_dataset_t dset, int dims, uint64_t * size, uint64_t* offset);
 
 
 

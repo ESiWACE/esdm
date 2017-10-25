@@ -46,14 +46,14 @@ int verify_data(uint64_t* a, uint64_t* b) {
 
 
 int main(){
-	ESDM_status_t ret;
+	esdm_status_t ret;
 	int mismatches;
 	// offset in the actual ND dimensions
 	uint64_t offset[2] = {0, 0};
 	// the size of the data to write
 	uint64_t size[2] = {10, 20};
 
-	ESDM_dataset_t dataset;
+	esdm_dataset_t dataset;
 
 
 	// Prepare dummy data.

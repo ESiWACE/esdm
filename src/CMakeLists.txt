@@ -104,7 +104,7 @@ set (CMAKE_C_FLAGS_RELEASE "-O3")
 # _____________________________________________________________________________ 
 
 ## Application
-add_library(esdm SHARED esdm.c  esdm-datatypes.c  esdm-layout.c  esdm-performancemodel.c  esdm-scheduler.c  esdm-siteconfiguration.c  utils/debug.c)
+add_library(esdm SHARED esdm.c  esdm-datatypes.c  esdm-layout.c  esdm-performancemodel.c  esdm-scheduler.c  esdm-siteconfig.c  esdm-modules.c  utils/debug.c)
 target_link_libraries(esdm ${GLIB_LIBRARIES} ${Jansson_LIBRARIES})
 link_directories(esdm ${GLIB_LIBRARIES} ${Jansson_LIBRARIES})
 include_directories(${CMAKE_SOURCE_DIR}/include/ ${CMAKE_BINARY_DIR} ${GLIB_INCLUDE_DIRS} ${Jansson_INCLUDE_DIRS})

@@ -24,7 +24,7 @@
 #include <esdm.h>
 
 int main(){
-	ESDM_status_t ret;
+	esdm_status_t ret;
 
 
 	char desc[] = "{\"dataset\": \"abcdef\", \"dims\": 3}";

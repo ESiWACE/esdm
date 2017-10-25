@@ -30,37 +30,53 @@
 
 
 
-ESDM_status_t esdm_scheduler_init() {
+esdm_status_t esdm_scheduler_init() {
 	return ESDM_SUCCESS;
 }
 
 
-ESDM_status_t esdm_scheduler_finalize() {
+esdm_status_t esdm_scheduler_finalize() {
 	return ESDM_SUCCESS;
 }
 
 
-typedef struct{
-	int thread_count;
-	esdm_backend_t * backend;
-	esdm_pending_IO_t * io;
-} esdm_pending_fragments_t;
 
-ESDM_status_t esdm_scheduler_submit(esdm_pending_IO_t * io) {
+
+esdm_status_t esdm_scheduler_submit(esdm_pending_io_t * io) {
 	ESDM_DEBUG(0, "Scheduler add request.");
 
-	int fragments;
+	esdm_fragment_t* fragments;
 	esdm_pending_fragments_t * b_ios;
-	esdm_perf_model_split_io(io, & fragments, & b_ios);
+
+
+	//esdm_perf_model_split_io(b_ios, fragments);
 
 	// no threads here
-	esdm_int_status_t ret;
-	esdm_metadata_t * metadata = esdm_metadata_t_alloc();
+	esdm_status_t ret;
+	
+	//esdm_metadata_t * metadata = esdm_metadata_t_alloc();
+	esdm_metadata_t * metadata;
+
+
+	/*
 	for(int i=0 ; i < fragments; i++){
 		ret = esdm_backend_io(b_ios[i]->backend, b_ios[i]->io, metadata);
 	}
 	esdm_metata_backend_update(metadata);
 	free(metadata);
 
+	return ESDM_SUCCESS;
+	*/
+}
+
+
+
+
+
+esdm_status_t esdm_backend_io(
+		esdm_backend_t* backend,
+		esdm_fragment_t fragment,
+		esdm_metadata_t metadata)
+{
 	return ESDM_SUCCESS;
 }

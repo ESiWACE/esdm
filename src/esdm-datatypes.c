@@ -29,12 +29,12 @@
  * ESDM Fragments
  *
  */
-ESDM_status_t esdm_fragment_create() {
+esdm_status_t esdm_fragment_create() {
 	ESDM_DEBUG(0, "Creating Fragment.");
 	return ESDM_SUCCESS;
 }
 
-ESDM_status_t esdm_fragment_destroy() {
+esdm_status_t esdm_fragment_destroy() {
 	ESDM_DEBUG(0, "Destroying Fragment.");
 	return ESDM_SUCCESS;
 }
@@ -45,10 +45,10 @@ ESDM_status_t esdm_fragment_destroy() {
  * ESDM Datasets
  *
  */
-ESDM_status_t esdm_dataset_create() {
+esdm_status_t esdm_dataset_create() {
 	return ESDM_SUCCESS;
 }
 
-ESDM_status_t esdm_dataset_destroy() {
+esdm_status_t esdm_dataset_destroy() {
 	return ESDM_SUCCESS;
 }

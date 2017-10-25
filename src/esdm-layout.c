@@ -31,12 +31,12 @@
 #include <stdlib.h>
 #include <jansson.h>
 
-ESDM_status_t esdm_layout_init() {
+esdm_status_t esdm_layout_init() {
 	return ESDM_SUCCESS;
 }
 
 
-ESDM_status_t esdm_layout_finalize() {
+esdm_status_t esdm_layout_finalize() {
 	return ESDM_SUCCESS;
 }
 
@@ -230,7 +230,7 @@ char *read_line(char *line, int max_chars) {
 
 
 
-ESDM_status_t esdm_lookup(char* desc) {
+esdm_status_t esdm_lookup(char* desc) {
 	ESDM_DEBUG(0, "received metadata lookup request");
 
 
