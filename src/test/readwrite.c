@@ -32,7 +32,7 @@ int verify_data(uint64_t* a, uint64_t* b) {
 	for(int x=0; x < 10; x++){
 		for(int y=0; y < 20; y++){
 			idx = y*10+x;
-		
+
 			if (a[idx] != b[idx]) {
 				mismatches++;
 				printf("idx=%04d, x=%04d, y=%04d should be %10ld but is %10ld\n", idx, x, y, a[idx], b[idx]);
@@ -72,7 +72,6 @@ int main(){
 
 	// Write the data to the dataset
 	ret = esdm_write(buf_w, dataset, 2, size, offset);
-
 
 	// Read the data to the dataset
 	ret = esdm_read(buf_r, dataset, 2, size, offset);

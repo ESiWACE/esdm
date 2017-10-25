@@ -1,24 +1,24 @@
-/* This file is part of ESDM.                                              
- *                                                                              
- * This program is is free software: you can redistribute it and/or modify         
- * it under the terms of the GNU Lesser General Public License as published by  
- * the Free Software Foundation, either version 3 of the License, or            
- * (at your option) any later version.                                          
- *                                                                              
- * This program is is distributed in the hope that it will be useful,           
- * but WITHOUT ANY WARRANTY; without even the implied warranty of               
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the                
- * GNU General Public License for more details.                                 
- *                                                                                 
- * You should have received a copy of the GNU Lesser General Public License        
- * along with ESDM.  If not, see <http://www.gnu.org/licenses/>.           
- */                                                                         
+/* This file is part of ESDM.
+ *
+ * This program is is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Lesser General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public License
+ * along with ESDM.  If not, see <http://www.gnu.org/licenses/>.
+ */
 
 
 /**
  * @file
  * @brief The scheduler receives application requests and schedules subsequent
- *        I/O requests as a are necessary for metadata lookups and data 
+ *        I/O requests as a are necessary for metadata lookups and data
  *        reconstructions.
  *
  */
@@ -40,12 +40,27 @@ ESDM_status_t esdm_scheduler_finalize() {
 }
 
 
+typedef struct{
+	int thread_count;
+	esdm_backend_t * backend;
+	esdm_pending_IO_t * io;
+} esdm_pending_fragments_t;
 
-
-ESDM_status_t esdm_scheduler_submit() {
-
+ESDM_status_t esdm_scheduler_submit(esdm_pending_IO_t * io) {
 	ESDM_DEBUG(0, "Scheduler add request.");
 
+	int fragments;
+	esdm_pending_fragments_t * b_ios;
+	esdm_perf_model_split_io(io, & fragments, & b_ios);
+
+	// no threads here
+	esdm_int_status_t ret;
+	esdm_metadata_t * metadata = esdm_metadata_t_alloc();
+	for(int i=0 ; i < fragments; i++){
+		ret = esdm_backend_io(b_ios[i]->backend, b_ios[i]->io, metadata);
+	}
+	esdm_metata_backend_update(metadata);
+	free(metadata);
 
 	return ESDM_SUCCESS;
 }
