@@ -34,6 +34,9 @@ typedef enum {
   ESDM_TYPE_LAST
 } esdm_module_type_t;
 
+
+
+
 typedef struct {
   int count;
   esdm_module_type_t * module;

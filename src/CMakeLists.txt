@@ -29,7 +29,7 @@ set(DEPS_DIR "${CMAKE_SOURCE_DIR}/../deps")
 
 
 #
-# CNAKE MODULES & PROJECT DEPENDENCIES
+# CNAKE MODULES & DEPENDENCIES
 # _____________________________________________________________________________ 
 
 include(CTest)
@@ -53,6 +53,12 @@ set_package_properties(Jansson PROPERTIES
 	TYPE REQUIRED
 	PURPOSE "Support for JSON metadata description."
 )
+
+
+
+# Optional
+find_package(HDF5)
+
 
 
 
@@ -110,21 +116,33 @@ link_directories(esdm ${GLIB_LIBRARIES} ${Jansson_LIBRARIES})
 include_directories(${CMAKE_SOURCE_DIR}/include/ ${CMAKE_BINARY_DIR} ${GLIB_INCLUDE_DIRS} ${Jansson_INCLUDE_DIRS})
 
 #TODO: if hdf5 available.. build add hdf5-interface
-#SUBDIRS(hdf5-interface)
+
+
 
 enable_testing()
 add_subdirectory(data-backends)
 add_subdirectory(utils)
 add_subdirectory(test)
 
+if(HDF5_FOUND)
+	#SUBDIRS(hdf5-interface)
+endif(HDF5_FOUND)
 
-install(TARGETS esdm LIBRARY DESTINATION lib)
+
+
+
+
+
+
 
 
 #
-# SYSTEM PACKAGING (RPM, TGZ, ...)
+# INSTALL & SYSTEM PACKAGING (RPM, TGZ, ...)
 # _____________________________________________________________________________ 
 
+install(TARGETS esdm LIBRARY DESTINATION lib)
+
+# System Packaging
 #include(CPackConfig)
 
 

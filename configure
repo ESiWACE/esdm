@@ -7,7 +7,7 @@ CURPATH="$PWD"
 
 function help(){
 	echo ""
-	echo "h5-memvol uses the CMake (http://www.cmake.org) buildsystem instead of configure."
+	echo "ESDM uses the CMake (http://www.cmake.org) buildsystem instead of configure."
 	echo "CMake uses different options than configure, but you can use this script to "
 	echo "specify them in the traditional way and get the equivalent cmake command."
 	echo "Use the following options to change default paths."

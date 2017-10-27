@@ -20,3 +20,21 @@
  */
 
 #include<esdm.h>
+
+
+
+/*
+esdm_status_t posix_backend_init() {
+	
+	esdm_backend_t* backend = {
+		.name = ,
+		.type = ESDM_BACKEND
+	};
+
+	esdm_module_register(&backend);
+	
+	
+
+
+}
+*/
