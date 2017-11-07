@@ -4,8 +4,8 @@
 
 The middleware for earth system data is a prototype to improve I/O performance
 for earth system simulation as used in climate and weather applications.
-ESDM exploits structural information exposed by workflows, applications and 
-utilizes information from data description formats such as HDF5 and NetCDF to 
+ESDM exploits structural information exposed by workflows, applications as well
+as data description formats such as HDF5 and NetCDF to 
 more efficiently organize metadata and data across a variety of storage backends.
 
 ## Requirements
