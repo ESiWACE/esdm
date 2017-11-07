@@ -5,6 +5,7 @@
 #ifndef ESDM_H
 #define ESDM_H
 
+#include <stddef.h>
 
 #include <esdm-datatypes.h>
 #include <esdm-data-backend.h>
@@ -19,6 +20,9 @@ esdm_status_t esdm_init();
 // Module
 esdm_status_t esdm_module_init();
 esdm_status_t esdm_module_finalize();
+esdm_status_t esdm_module_register();
+
+
 
 esdm_status_t esdm_module_get_by_type(esdm_module_type_t type, esdm_module_type_array_t * array);
 
@@ -34,7 +38,7 @@ esdm_status_t esdm_module_get_by_type(esdm_module_type_t type, esdm_module_type_
 
 
 
-
+// API to be used by applications
 esdm_status_t esdm_lookup(char* desc);
 
 

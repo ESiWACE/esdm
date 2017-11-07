@@ -18,4 +18,9 @@
 
 // Internal functions used by this backend.
 
+
+int posix_backend_performance_estimate();
+esdm_status_t posix_backend_init();
+
+
 #endif

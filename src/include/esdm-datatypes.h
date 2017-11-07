@@ -13,40 +13,88 @@
 typedef int esdm_metadata_t;
 typedef int esdm_dataset_t;
 typedef int esdm_fragment_t;
-typedef int esdm_backend_t;
 
 
 
+
+
+/**
+ * ESDM Status codes and failure modes.
+ *
+ *
+ *
+ *
+ */
 typedef enum {
 	ESDM_SUCCESS,
 	ESDM_ERROR
 } esdm_status_t;
 
 
-
-
-
-
-
 typedef enum {
-  ESDM_TYPE_BACKEND,
-  ESDM_TYPE_METADATA,
-  ESDM_TYPE_LAST
+	ESDM_TYPE_BACKEND,
+	ESDM_TYPE_METADATA,
+	ESDM_TYPE_LAST
 } esdm_module_type_t;
+
+
+
+// Callbacks
+typedef struct {
+	int (*finalize)();
+	int (*performance_estimate)();
+//} esdm_backend_callbacks_esdm_t;
+//
+// Data Callbacks
+//typedef struct {
+	int (*create)();
+	int (*open)();
+	int (*write)();
+	int (*read)();
+	int (*close)();
+//} esdm_backend_callbacks_data_t;
+//
+// Metadata Callbacks
+//typedef struct {
+	int (*allocate)();
+	int (*update)();
+	int (*lookup)();
+//} esdm_module_callbacks_metadata_t;
+} esdm_backend_callbacks_t;
+
+
+
+
+
+
+
 
 
 
 
 typedef struct {
-  int count;
-  esdm_module_type_t * module;
+	char* name;
+	esdm_module_type_t type;
+	esdm_backend_callbacks_t callbacks;
+} esdm_backend_t;
+
+
+
+
+
+
+
+// INTERNAL
+///////////////////////////////////////////////////////////////////////////////
+
+// Module Management
+typedef struct {
+	int count;
+	esdm_module_type_t * module;
 } esdm_module_type_array_t;
 
 
-
-
-
-
+// Scheduler
 typedef struct {
 	int member;
 } esdm_pending_io_t;
@@ -59,6 +107,10 @@ typedef struct{
 	esdm_pending_io_t * io;
 } esdm_pending_fragments_t;
 
+
+
+
+// Performance Model
 
 
 #endif

@@ -40,6 +40,8 @@ esdm_status_t esdm_perf_model_split_io(
 		esdm_pending_io_t io,
 		esdm_fragment_t* fragments)
 {
+	ESDM_DEBUG(0, "Fetch performance estimates from backends.");
+
 	esdm_module_type_array_t * backends;
 
 	// pickup the performance estimate for each backend module

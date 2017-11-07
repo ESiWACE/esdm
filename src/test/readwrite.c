@@ -35,7 +35,7 @@ int verify_data(uint64_t* a, uint64_t* b) {
 
 			if (a[idx] != b[idx]) {
 				mismatches++;
-				printf("idx=%04d, x=%04d, y=%04d should be %10ld but is %10ld\n", idx, x, y, a[idx], b[idx]);
+				//printf("idx=%04d, x=%04d, y=%04d should be %10ld but is %10ld\n", idx, x, y, a[idx], b[idx]);
 			}
 		}
 	}
@@ -77,8 +77,12 @@ int main(){
 	ret = esdm_read(buf_r, dataset, 2, size, offset);
 
 
-	// verify data and fail test if mistaches are found
+	// verify data and fail test if mismatches are found
 	mismatches = verify_data(buf_w, buf_r);
+	printf("Mismatches: %d\n", mismatches);
+	if ( mismatches > 0 ) {
+		printf("FAILED\n");
+	}
 	//assert(mismatches == 0);
 
 	// clean up

@@ -30,7 +30,11 @@
 
 
 
+
+
 esdm_status_t esdm_scheduler_init() {
+
+
 	return ESDM_SUCCESS;
 }
 
@@ -43,7 +47,11 @@ esdm_status_t esdm_scheduler_finalize() {
 
 
 esdm_status_t esdm_scheduler_submit(esdm_pending_io_t * io) {
-	ESDM_DEBUG(0, "Scheduler add request.");
+	ESDM_DEBUG(0, "Scheduler submit request.");
+
+
+	esdm_init();
+
 
 	esdm_fragment_t* fragments;
 	esdm_pending_fragments_t * b_ios;

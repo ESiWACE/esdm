@@ -25,10 +25,29 @@
 
 
 
+
+// TODO: Decide on initialization mechanism.
+static int is_initialized = 0;
+
+
+
 esdm_status_t esdm_init(){
 	// for all linked configurations and modules initialize
 	// on compile time determined which modules exist
-	return esdm_module_init();
+	//return esdm_module_init();
+
+	if (!is_initialized) {
+		ESDM_DEBUG(0, "Initializing ESDM.");
+
+		
+		esdm_module_init();
+
+
+
+		is_initialized = 1;
+	}
+
+	return ESDM_SUCCESS;
 }
 
 esdm_status_t esdm_finalize(){
@@ -38,7 +57,7 @@ esdm_status_t esdm_finalize(){
 
 esdm_status_t esdm_write(void * buf, esdm_dataset_t dset, int dims, uint64_t * size, uint64_t* offset)
 {
-	ESDM_DEBUG(0, "received write request");
+	ESDM_DEBUG(0, "Received write request.");
 
 
 
@@ -52,7 +71,7 @@ esdm_status_t esdm_write(void * buf, esdm_dataset_t dset, int dims, uint64_t * s
 
 esdm_status_t esdm_read(void * buf, esdm_dataset_t dset, int dims, uint64_t * size, uint64_t* offset)
 {
-	ESDM_DEBUG(0, "received read request");
+	ESDM_DEBUG(0, "Received read request.");
 
 
 	esdm_pending_io_t io;

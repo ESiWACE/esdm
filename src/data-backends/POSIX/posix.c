@@ -19,22 +19,64 @@
  * @brief A data backend to provide POSIX compatibility.
  */
 
+
+
+#include <stdio.h>
+#include <stdarg.h>
+
 #include<esdm.h>
 
 
+void log(uint32_t loglevel, const char* format, ...)
+{
+	uint32_t active_loglevel = 99;
 
-/*
-esdm_status_t posix_backend_init() {
-	
-	esdm_backend_t* backend = {
-		.name = ,
-		.type = ESDM_BACKEND
-	};
+	if ( loglevel <= active_loglevel ) {
+		va_list args;
+		va_start(args,format);
+		vprintf(format,args);
+		va_end(args);
+	}
+}
+#define DEBUG(loglevel, msg) log(loglevel, "[POSIX] %-30s %s:%d\n", msg, __FILE__, __LINE__)
 
-	esdm_module_register(&backend);
-	
-	
 
+int posix_backend_performance_estimate() 
+{
+	DEBUG(0, "Calculating performance estimate.");
+
+	return 0;
+}
+
+
+
+static esdm_backend_t backend = {
+	.name = "POSIX",
+	.type = ESDM_TYPE_BACKEND,
+	.callbacks = {
+		NULL, // finalize
+		posix_backend_performance_estimate, // performance_estimate
+
+		NULL, // create
+		NULL, // open
+		NULL, // write
+		NULL, // read
+		NULL, // close
+
+		NULL, // allocate
+		NULL, // update
+		NULL, // lookup
+	}
+};
+
+
+
+
+
+esdm_backend_t* posix_backend_init() {
+	
+	DEBUG(0, "Initializing POSIX backend.");
+	
+	return &backend;
 
 }
-*/

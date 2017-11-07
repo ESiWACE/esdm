@@ -109,9 +109,16 @@ set (CMAKE_C_FLAGS_RELEASE "-O3")
 # TARGETS
 # _____________________________________________________________________________ 
 
+enable_testing()
+add_subdirectory(data-backends)
+add_subdirectory(utils)
+add_subdirectory(test)
+
+
+
 ## Application
 add_library(esdm SHARED esdm.c  esdm-datatypes.c  esdm-layout.c  esdm-performancemodel.c  esdm-scheduler.c  esdm-siteconfig.c  esdm-modules.c  utils/debug.c)
-target_link_libraries(esdm ${GLIB_LIBRARIES} ${Jansson_LIBRARIES})
+target_link_libraries(esdm ${GLIB_LIBRARIES} ${Jansson_LIBRARIES} esdmposix)
 link_directories(esdm ${GLIB_LIBRARIES} ${Jansson_LIBRARIES})
 include_directories(${CMAKE_SOURCE_DIR}/include/ ${CMAKE_BINARY_DIR} ${GLIB_INCLUDE_DIRS} ${Jansson_INCLUDE_DIRS})
 
@@ -119,13 +126,8 @@ include_directories(${CMAKE_SOURCE_DIR}/include/ ${CMAKE_BINARY_DIR} ${GLIB_INCL
 
 
 
-enable_testing()
-add_subdirectory(data-backends)
-add_subdirectory(utils)
-add_subdirectory(test)
-
 if(HDF5_FOUND)
-	#SUBDIRS(hdf5-interface)
+	SUBDIRS(hdf5-interface)
 endif(HDF5_FOUND)
 
 

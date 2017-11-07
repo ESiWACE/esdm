@@ -7,7 +7,7 @@
  *                                                                              
  * This program is is distributed in the hope that it will be useful,           
  * but WITHOUT ANY WARRANTY; without even the implied warranty of               
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the                
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the                S
  * GNU General Public License for more details.                                 
  *                                                                                 
  * You should have received a copy of the GNU Lesser General Public License        
@@ -24,6 +24,28 @@
 
 #include <esdm.h>
 #include <esdm-internal.h>
+
+
+#define ESDM_HAS_POSIX
+//#define ESDM_HAS_CLOVIS
+//#define ESDM_HAS_WOS
+
+
+
+#ifdef ESDM_HAS_POSIX
+	#include "data-backends/POSIX/posix.h"
+	#pragma message ("Building ESDM with POSIX!")
+#endif
+
+#ifdef ESDM_HAS_CLOVIS
+	#include "data-backends/Clovis/clovis.h"
+	#pragma message ("Building ESDM with Clovis!")
+#endif
+
+#ifdef ESDM_HAS_WOS
+	#include "data-backends/Mero/wos.h"
+	#pragma message ("Building ESDM with WOS!")
+#endif
 
 
 /*
@@ -47,7 +69,14 @@ static esdm_module_type_array_t modules_per_type[ESDM_TYPE_LAST];
 */
 
 
-esdm_status_t esdm_module_init() {
+esdm_status_t esdm_module_init()
+{
+	ESDM_DEBUG(0, "Initializing modules.");
+
+
+
+	posix_backend_init();
+
 
 	/*
 	module_count = 0;
@@ -56,13 +85,21 @@ esdm_status_t esdm_module_init() {
 		cur->init();
 		modules_per_type[cur->type()]++;
 	}
+
+
+
+
+
 	*/
 	// place the module into the right list
 	//
 	return ESDM_SUCCESS;
 }
 
-esdm_status_t esdm_module_finalize(){
+esdm_status_t esdm_module_finalize()
+{
+	ESDM_DEBUG(0, "Finalizing. Cleaning up modules.");
+
 	// reverse finalization of modules
 	//
 	/*
@@ -77,6 +114,8 @@ esdm_status_t esdm_module_finalize(){
 
 esdm_status_t esdm_module_get_by_type(esdm_module_type_t type, esdm_module_type_array_t * array)
 {
+	ESDM_DEBUG(0, "Module get by type.");
+
 	return ESDM_SUCCESS;
 }
 

@@ -31,6 +31,27 @@
 #include <stdlib.h>
 #include <jansson.h>
 
+
+// forward declarations for parsing helpers
+static void print_json(json_t *root);
+static void print_json_aux(json_t *element, int indent);
+static void print_json_indent(int indent);
+static const char *json_plural(int count);
+static void print_json_object(json_t *element, int indent);
+static void print_json_array(json_t *element, int indent);
+static void print_json_string(json_t *element, int indent);
+static void print_json_integer(json_t *element, int indent);
+static void print_json_real(json_t *element, int indent);
+static void print_json_true(json_t *element, int indent);
+static void print_json_false(json_t *element, int indent);
+static void print_json_null(json_t *element, int indent);
+static json_t *load_json(const char *text);
+static char *read_line(char *line, int max_chars);
+
+
+
+
+
 esdm_status_t esdm_layout_init() {
 	return ESDM_SUCCESS;
 }
@@ -43,22 +64,22 @@ esdm_status_t esdm_layout_finalize() {
 
 
 
+esdm_status_t esdm_lookup(char* desc) {
+	ESDM_DEBUG(0, "received metadata lookup request");
 
 
-/* forward refs */
-void print_json(json_t *root);
-void print_json_aux(json_t *element, int indent);
-void print_json_indent(int indent);
-const char *json_plural(int count);
-void print_json_object(json_t *element, int indent);
-void print_json_array(json_t *element, int indent);
-void print_json_string(json_t *element, int indent);
-void print_json_integer(json_t *element, int indent);
-void print_json_real(json_t *element, int indent);
-void print_json_true(json_t *element, int indent);
-void print_json_false(json_t *element, int indent);
-void print_json_null(json_t *element, int indent);
+        // parse text into JSON structure
+        json_t *root = load_json(desc);
 
+        if (root) {
+            // print and release the JSON structure
+            print_json(root);
+            json_decref(root);
+        }
+
+
+
+}
 
 
 
@@ -228,21 +249,3 @@ char *read_line(char *line, int max_chars) {
 
 
 
-
-
-esdm_status_t esdm_lookup(char* desc) {
-	ESDM_DEBUG(0, "received metadata lookup request");
-
-
-        /* parse text into JSON structure */
-        json_t *root = load_json(desc);
-
-        if (root) {
-            /* print and release the JSON structure */
-            print_json(root);
-            json_decref(root);
-        }
-
-
-
-}
