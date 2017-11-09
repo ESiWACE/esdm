@@ -38,11 +38,11 @@ esdm_status_t esdm_scheduler_submit();
 
 
 // Performance Model
-esdm_status_t esdm_perf_model_split_io(esdm_pending_io_t io, esdm_fragment_t* fragments);
+esdm_status_t esdm_perf_model_split_io(esdm_pending_fragments_t* io, esdm_fragment_t* fragments);
 
 
 // Backend (generic)
-esdm_status_t esdm_backend_estimate_performance(esdm_backend_t* backend, esdm_pending_io_t);
+esdm_status_t esdm_backend_estimate_performance(esdm_backend_t* backend, int fragment);
 esdm_status_t esdm_backend_io(esdm_backend_t* backend, esdm_fragment_t, int metadata);
 
 

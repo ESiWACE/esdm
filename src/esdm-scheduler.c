@@ -46,18 +46,18 @@ esdm_status_t esdm_scheduler_finalize() {
 
 
 
-esdm_status_t esdm_scheduler_submit(esdm_pending_io_t * io) {
+esdm_status_t esdm_scheduler_submit(esdm_pending_fragment_t * io) {
 	ESDM_DEBUG(0, "Scheduler submit request.");
 
 
 	esdm_init();
 
 
+	esdm_pending_fragments_t* pending_fragments;
 	esdm_fragment_t* fragments;
-	esdm_pending_fragments_t * b_ios;
 
 
-	//esdm_perf_model_split_io(b_ios, fragments);
+	esdm_perf_model_split_io(pending_fragments, fragments);
 
 	// no threads here
 	esdm_status_t ret;

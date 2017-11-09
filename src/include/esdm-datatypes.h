@@ -94,23 +94,27 @@ typedef struct {
 } esdm_module_type_array_t;
 
 
-// Scheduler
+// Layout
 typedef struct {
 	int member;
-} esdm_pending_io_t;
+} esdm_pending_fragment_t;
 
 
-
+// Scheduler
 typedef struct{
 	int thread_count;
 	esdm_backend_t * backend;
-	esdm_pending_io_t * io;
+	esdm_pending_fragment_t * io;
 } esdm_pending_fragments_t;
 
 
-
-
 // Performance Model
+typedef struct {
+	int latency;
+	int throughout;
+	int max_bytes;
+	int min_bytes;
+} esdm_performance_estimate;
 
 
 #endif

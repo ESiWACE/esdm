@@ -61,8 +61,8 @@ esdm_status_t esdm_write(void * buf, esdm_dataset_t dset, int dims, uint64_t * s
 
 
 
-	esdm_pending_io_t io;
-	esdm_scheduler_submit(& io);
+	esdm_pending_fragment_t fragment;
+	esdm_scheduler_submit(& fragment);
 
 	return ESDM_SUCCESS;
 }
@@ -74,8 +74,8 @@ esdm_status_t esdm_read(void * buf, esdm_dataset_t dset, int dims, uint64_t * si
 	ESDM_DEBUG(0, "Received read request.");
 
 
-	esdm_pending_io_t io;
-	esdm_scheduler_submit(& io);
+	esdm_pending_fragment_t fragment;
+	esdm_scheduler_submit(& fragment);
 
 
 	return ESDM_SUCCESS;

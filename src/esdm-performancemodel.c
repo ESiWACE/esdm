@@ -36,18 +36,25 @@ esdm_status_t esdm_performance_finalize() {
 }
 
 
+
+/**
+ * Splits pending requests into one or more requests based on performance
+ * estimates obtained from available backends.
+ *
+ */
 esdm_status_t esdm_perf_model_split_io(
-		esdm_pending_io_t io,
-		esdm_fragment_t* fragments)
-{
+	esdm_pending_fragments_t* pending_fragments,
+	esdm_fragment_t* fragments
+) {
 	ESDM_DEBUG(0, "Fetch performance estimates from backends.");
+
 
 	esdm_module_type_array_t * backends;
 
 	// pickup the performance estimate for each backend module
 	esdm_module_get_by_type(ESDM_TYPE_BACKEND, backends);
 	for(int i=0; i < backends->count; i++){
-		esdm_backend_estimate_performance((esdm_backend_t*) backends->module, io);
+		//esdm_backend_estimate_performance((esdm_backend_t*) backends->module, 1234);
 	}
 
 	// now choice the best module
@@ -58,9 +65,10 @@ esdm_status_t esdm_perf_model_split_io(
 
 
 esdm_status_t esdm_backend_estimate_performance(
-		esdm_backend_t* backend, 
-		esdm_pending_io_t request)
-{
+	esdm_backend_t* backend, 
+	int request
+) {
+	ESDM_DEBUG(0, "Estimate performance call dummy");
 
 	return ESDM_SUCCESS;
 }
