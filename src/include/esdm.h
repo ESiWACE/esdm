@@ -12,6 +12,7 @@
 #include <esdm-metadata-backend.h>
 
 
+typedef int esdm_type;
 
 // ESDM
 esdm_status_t esdm_init();
