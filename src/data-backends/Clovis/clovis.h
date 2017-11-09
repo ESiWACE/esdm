@@ -19,6 +19,11 @@
 #ifndef CLOVIS_H
 #define CLOVIS_H
 
+#include "esdm.h"
+
+#include "clovis/clovis.h"
+#include "clovis/clovis_idx.h"
+
 // Internal functions used by this backend.
 
 struct esdm_backend_generic;
@@ -39,7 +44,7 @@ struct esdm_backend {
 	 * Block size. Offset and count of every read/write requests
 	 * should be multiple of block size.
 	 */
-	uint32_t       eb_blocksize;
+	uint64_t       eb_blocksize;
 
 	/* backend operations start here */
 
@@ -120,7 +125,6 @@ struct esdm_backend_generic {
 
 };
 
-#if 0
 struct esdm_backend_mero {
 	struct esdm_backend_generic ebm_base;
 
@@ -132,8 +136,6 @@ struct esdm_backend_mero {
 	struct m0_fid               ebm_last_fid;
 
 };
-
-#endif
 
 extern struct esdm_backend mero_esdm_backend;
 
