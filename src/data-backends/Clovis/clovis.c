@@ -32,11 +32,49 @@
 #define BLOCKSIZE (PAGE_4K)
 #define BLOCKMASK (BLOCKSIZE - 1)
 
+static struct m0_uint128 gid;
+
+
 static int conf_parse(char * conf, struct esdm_backend_mero *ebm)
 {
     /*
      * Parse the conf string into ebm->ebm_clovis_conf.
      */
+    static char *clovis_local_addr;
+    static char *clovis_ha_addr;
+    static char *clovis_prof;
+    static char *clovis_proc_fid;
+    static char *clovis_index_dir = "/tmp/";
+
+    if ((clovis_local_addr = strsep(&conf, " ")) == NULL) {
+        return -EINVAL;
+    }
+    ebm->ebm_clovis_conf.cc_local_addr = strdup(clovis_local_addr);
+    if ((clovis_ha_addr = strsep(&conf, " ")) == NULL) {
+        return -EINVAL;
+    }
+    ebm->ebm_clovis_conf.cc_ha_addr = strdup(clovis_ha_addr);
+    if ((clovis_prof = strsep(&conf, " ")) == NULL) {
+        return -EINVAL;
+    }
+    ebm->ebm_clovis_conf.cc_profile = strdup(clovis_prof);
+    if ((clovis_proc_fid = strsep(&conf, " ")) == NULL) {
+        return -EINVAL;
+    }
+    ebm->ebm_clovis_conf.cc_process_fid = strdup(clovis_proc_fid);
+
+    ebm->ebm_clovis_conf.cc_is_oostore            = false;
+    ebm->ebm_clovis_conf.cc_is_read_verify        = false;
+    ebm->ebm_clovis_conf.cc_tm_recv_queue_min_len = M0_NET_TM_RECV_QUEUE_DEF_LEN;
+    ebm->ebm_clovis_conf.cc_max_rpc_msg_size      = M0_RPC_DEF_MAX_RPC_MSG_SIZE;
+    ebm->ebm_clovis_conf.cc_idx_service_id        = M0_CLOVIS_IDX_MOCK;
+    ebm->ebm_clovis_conf.cc_idx_service_conf      = clovis_index_dir;
+    ebm->ebm_clovis_conf.cc_layout_id             = 0;
+
+    printf("local addr = %s\n", ebm->ebm_clovis_conf.cc_local_addr);
+    printf("ha addr = %s\n",    ebm->ebm_clovis_conf.cc_ha_addr);
+    printf("profile = %s\n",    ebm->ebm_clovis_conf.cc_profile);
+    printf("process id = %s\n", ebm->ebm_clovis_conf.cc_process_fid);
     return 0;
 }
 
@@ -75,6 +113,7 @@ int esdm_backend_mero_init(char * conf, struct esdm_backend_generic **eb_out)
         return rc;
     }
 
+    gid = M0_CLOVIS_ID_APP;
 	*eb_out = &ebm->ebm_base;
 	return 0;
 }
@@ -90,7 +129,11 @@ int esdm_backend_mero_fini(struct esdm_backend_generic *eb)
 	struct esdm_backend_mero *ebm;
 
 	ebm = eb2ebm(eb);
-	m0_clovis_fini(ebm->ebm_clovis_instance, true);
+    m0_clovis_fini(ebm->ebm_clovis_instance, true);
+    free((char*)ebm->ebm_clovis_conf.cc_local_addr);
+    free((char*)ebm->ebm_clovis_conf.cc_ha_addr);
+    free((char*)ebm->ebm_clovis_conf.cc_profile);
+    free((char*)ebm->ebm_clovis_conf.cc_process_fid);
 	free(ebm);
 	return 0;
 }
@@ -139,30 +182,55 @@ static int create_object(struct esdm_backend_mero *ebm,
 	return rc;
 }
 
+/**
+ * We need a mechansim to allocate id globally, uniquely.
+ * We may need to store the last allocated id in store and
+ * read it on start.
+ */
 static struct m0_uint128 object_id_alloc()
 {
-    static struct m0_uint128 gid;
-
     gid.u_lo++;
+    gid.u_hi++;
     return gid;
 }
 
+/**
+ * A memroy of OBJECT_NAME_LENGTH length is allocated, and
+ * the caller needs to free it after use.
+ */
 static char* object_id_encode(const struct m0_uint128 *obj_id)
 {
     enum { OBJECT_NAME_LENGTH = 64};
+    /* "oid=<0x1234567812345678:0x1234567812345678>" */
     char *json = malloc(OBJECT_NAME_LENGTH);
+    struct m0_fid fid;
+
+    fid.f_container = obj_id->u_hi;
+    fid.f_key = obj_id->u_lo;
 
     if (json != NULL) {
         memset(json, 0, OBJECT_NAME_LENGTH);
-        snprintf(json, OBJECT_NAME_LENGTH, "oid='%llu:%llu'",
-                 (unsigned long long)obj_id->u_hi,
-                 (unsigned long long)obj_id->u_lo);
+        snprintf(json, OBJECT_NAME_LENGTH, "oid="FID_F, FID_P(&fid));
     }
     return json;
 }
 
-static int object_id_decode(char * oid_json, struct m0_uint128 *obj_id)
+static int object_id_decode(char *oid_json, struct m0_uint128 *obj_id)
 {
+    struct m0_fid fid;
+    int           rc;
+    char          *oid = strchr(oid_json, '=');
+
+    if (oid == NULL)
+        return -EINVAL;
+
+    oid++;
+    rc = m0_fid_sscanf(oid, &fid);
+    if (rc != 0)
+        return rc;
+
+    obj_id->u_hi = fid.f_container;
+    obj_id->u_lo = fid.f_key;
 
     return 0;
 }
@@ -266,12 +334,17 @@ int esdm_backend_mero_rdwr (struct esdm_backend_generic *eb,
 	 * this allocates <clovis_block_count> empty buffers for data.
 	 */
 	rc = m0_bufvec_empty_alloc(&data_buf, clovis_block_count);
-	if (rc != 0)
+	if (rc != 0) {
+        m0_indexvec_free(&ext);
 		return rc;
+    }
 
 	rc = m0_bufvec_alloc(&attr_buf, clovis_block_count, 1);
-	if(rc != 0)
+	if(rc != 0) {
+        m0_indexvec_free(&ext);
+        m0_bufvec_free2(&data_buf);
 		return rc;
+    }
 
 	for (i = 0; i < clovis_block_count; i++) {
 		ext.iv_index[i]            = start + clovis_block_size * i;

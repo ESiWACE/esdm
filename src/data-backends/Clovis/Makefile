@@ -24,4 +24,4 @@ ${TGT}:${OBJ} test.o
 	gcc ${AM_CFLAGS} ${AM_LDFLAGS} -o ${TGT} ${OBJ} test.o ${AM_LIBS}
 
 clean:
-	rm -f ${OBJ} ${TGT} test.o
+	rm -f ${OBJ} ${TGT} test.o m0trace.*
