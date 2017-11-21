@@ -1,4 +1,5 @@
 #include <stdio.h>
+#include <stdlib.h>
 
 #include "clovis.h"
 /*
@@ -98,6 +99,9 @@ close:
     printf("Clovis object closed: %s\n", object_id);
 
 fini:
+    free(object_id); /* free(NULL) is OK. */
+    free(object_meta);
+
     rc = mero_esdm_backend.esdm_backend_fini(eb);
     if (rc != 0) {
         printf("mero_esdm_backend fini failed rc=%d\n", rc);
