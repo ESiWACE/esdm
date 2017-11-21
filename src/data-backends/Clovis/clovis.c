@@ -114,6 +114,8 @@ int esdm_backend_mero_init(char * conf, struct esdm_backend_generic **eb_out)
     }
 
     gid = M0_CLOVIS_ID_APP;
+    /* FIXME this makes the gid not reused. */
+    gid.u_lo = time(NULL);
 	*eb_out = &ebm->ebm_base;
 	return 0;
 }
@@ -257,6 +259,7 @@ int esdm_backend_mero_alloc(struct esdm_backend_generic *eb,
 
 	/* First step: alloc a new fid for this new object. */
 	obj_id = object_id_alloc();
+	printf("new obj id = "FID_F"\n", FID_P((struct m0_fid*)&obj_id));
 
 	/* Then create object */
 	rc = create_object(ebm, obj_id);
@@ -358,7 +361,7 @@ int esdm_backend_mero_rdwr (struct esdm_backend_generic *eb,
 	}
 
 	/* Create the read request */
-	m0_clovis_obj_op(obj, M0_CLOVIS_OC_READ, &ext, &data_buf,
+	m0_clovis_obj_op(obj, rdwr_op, &ext, &data_buf,
                      &attr_buf, 0, &ops[0]);
 	M0_ASSERT(rc == 0);
 	M0_ASSERT(ops[0] != NULL);
