@@ -41,6 +41,8 @@ void log(uint32_t loglevel, const char* format, ...)
 #define DEBUG(loglevel, msg) log(loglevel, "[POSIX] %-30s %s:%d\n", msg, __FILE__, __LINE__)
 
 
+int posix_finalize() {}
+
 int posix_backend_performance_estimate() 
 {
 	DEBUG(0, "Calculating performance estimate.");
@@ -49,10 +51,65 @@ int posix_backend_performance_estimate()
 }
 
 
+int posix_create() 
+{
+	DEBUG(0, "Create");
+	return 0;
+}
+
+
+int posix_open() 
+{
+	DEBUG(0, "Open");
+	return 0;
+}
+
+int posix_write() 
+{
+	DEBUG(0, "Write");
+	return 0;
+}
+
+int posix_read() 
+{
+	DEBUG(0, "Read");
+	return 0;
+}
+
+int posix_close() 
+{
+	DEBUG(0, "Close");
+	return 0;
+}
+
+
+
+int posix_allocate() 
+{
+	DEBUG(0, "Allocate");
+	return 0;
+}
+
+
+int posix_update() 
+{
+	DEBUG(0, "Update");
+	return 0;
+}
+
+
+int posix_lookup() 
+{
+	DEBUG(0, "Lookup");
+	return 0;
+}
+
+
+
 
 static esdm_backend_t backend = {
 	.name = "POSIX",
-	.type = ESDM_TYPE_BACKEND,
+	.type = ESDM_TYPE_DATA,
 	.callbacks = {
 		NULL, // finalize
 		posix_backend_performance_estimate, // performance_estimate

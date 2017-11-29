@@ -50,6 +50,28 @@ static char *read_line(char *line, int max_chars);
 
 
 
+// layout component may like to have following capabilites:
+//
+// domain decomposition
+//
+// adaptive mesh refinements
+//		e.g.  refine and coarsen operations on regular grid
+//
+//
+// minimization surface vs volume
+
+
+// space filling curves
+//	hilber curve
+//	z-ordering?
+
+
+
+// also have a look at device data environments from openmp
+// openmp:  map clause
+
+
+
 
 
 esdm_status_t esdm_layout_init() {
@@ -60,7 +82,6 @@ esdm_status_t esdm_layout_init() {
 esdm_status_t esdm_layout_finalize() {
 	return ESDM_SUCCESS;
 }
-
 
 
 

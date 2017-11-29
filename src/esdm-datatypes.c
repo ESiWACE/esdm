@@ -21,6 +21,8 @@
  */
 
 
+#include <stdlib.h>
+
 #include <esdm.h>
 #include <esdm-internal.h>
 
@@ -30,7 +32,10 @@
  *
  */
 esdm_status_t esdm_fragment_create() {
-	ESDM_DEBUG(0, "Creating Fragment.");
+	ESDM_DEBUG(0, "Creating fragment");
+	esdm_fragment_t* new_fragment = (esdm_fragment_t*) malloc(sizeof(esdm_fragment_t));
+
+
 	return ESDM_SUCCESS;
 }
 
@@ -46,9 +51,17 @@ esdm_status_t esdm_fragment_destroy() {
  *
  */
 esdm_status_t esdm_dataset_create() {
+	ESDM_DEBUG(0, "Creating dataset");
+	esdm_dataset_t* new_dataset = (esdm_dataset_t*) malloc(sizeof(esdm_dataset_t));
+
 	return ESDM_SUCCESS;
 }
 
 esdm_status_t esdm_dataset_destroy() {
 	return ESDM_SUCCESS;
 }
+
+
+
+
+

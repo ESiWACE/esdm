@@ -73,9 +73,13 @@ esdm_status_t esdm_module_init()
 {
 	ESDM_DEBUG(0, "Initializing modules.");
 
+	
+	esdm_backend_t* backend = NULL;
+
+	backend = posix_backend_init();
 
 
-	posix_backend_init();
+	backend->callbacks.performance_estimate();
 
 
 	/*
@@ -115,6 +119,12 @@ esdm_status_t esdm_module_finalize()
 esdm_status_t esdm_module_get_by_type(esdm_module_type_t type, esdm_module_type_array_t * array)
 {
 	ESDM_DEBUG(0, "Module get by type.");
+
+
+
+
+
+
 
 	return ESDM_SUCCESS;
 }

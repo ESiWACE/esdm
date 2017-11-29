@@ -22,6 +22,7 @@ function help(){
 	echo "--with-mpicc=<file>      : path to the MPI C compiler"
 	echo "--with-mpicxx=<file>     : path to the MPI C++ compiler"
 	echo "--plantuml-jar-dir=<dir> : directory containing plantuml.jar, useful for building the documentation"
+	echo "--without-hdf            : disable HDF5 frontend (do not build VOL plugin)."
 	echo
 }
 

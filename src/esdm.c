@@ -39,11 +39,7 @@ esdm_status_t esdm_init(){
 	if (!is_initialized) {
 		ESDM_DEBUG(0, "Initializing ESDM.");
 
-		
 		esdm_module_init();
-
-
-
 		is_initialized = 1;
 	}
 
@@ -51,15 +47,19 @@ esdm_status_t esdm_init(){
 }
 
 esdm_status_t esdm_finalize(){
+	// ESDM data data structures that require proper cleanup..
+	// in particular this effects data and cache state which is not yet persistent
+
 	return esdm_module_finalize();
 }
 
 
 esdm_status_t esdm_write(void * buf, esdm_dataset_t dset, int dims, uint64_t * size, uint64_t* offset)
 {
-	ESDM_DEBUG(0, "Received write request.");
+	ESDM_DEBUG(0, "Received write request.");	
 
 
+	esdm_fragment_create();
 
 	esdm_pending_fragment_t fragment;
 	esdm_scheduler_submit(& fragment);
@@ -72,7 +72,6 @@ esdm_status_t esdm_write(void * buf, esdm_dataset_t dset, int dims, uint64_t * s
 esdm_status_t esdm_read(void * buf, esdm_dataset_t dset, int dims, uint64_t * size, uint64_t* offset)
 {
 	ESDM_DEBUG(0, "Received read request.");
-
 
 	esdm_pending_fragment_t fragment;
 	esdm_scheduler_submit(& fragment);

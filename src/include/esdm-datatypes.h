@@ -32,7 +32,7 @@ typedef enum {
 
 
 typedef enum {
-	ESDM_TYPE_BACKEND,
+	ESDM_TYPE_DATA,
 	ESDM_TYPE_METADATA,
 	ESDM_TYPE_LAST
 } esdm_module_type_t;
@@ -69,9 +69,6 @@ typedef struct {
 
 
 
-
-
-
 typedef struct {
 	char* name;
 	esdm_module_type_t type;
@@ -98,6 +95,10 @@ typedef struct {
 typedef struct {
 	int member;
 } esdm_pending_fragment_t;
+
+
+
+
 
 
 // Scheduler

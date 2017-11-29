@@ -21,7 +21,13 @@ void esdm_log(uint32_t loglevel, const char* format, ...);
 
 
 
-// Data
+// Datatypes
+esdm_status_t esdm_fragment_create();
+esdm_status_t esdm_fragment_destroy();
+
+esdm_status_t esdm_dataset_create();
+esdm_status_t esdm_dataset_destroy();
+
 
 
 // Metadata
