@@ -62,7 +62,7 @@ find_package(HDF5)
 
 
 
-# Documentation
+# For documentation (optional)
 find_package(Doxygen)
 if(DOXYGEN_FOUND)
     add_custom_target(doc
@@ -118,17 +118,18 @@ add_subdirectory(test)
 
 ## Application
 add_library(esdm SHARED esdm.c  esdm-datatypes.c  esdm-layout.c  esdm-performancemodel.c  esdm-scheduler.c  esdm-siteconfig.c  esdm-modules.c  utils/debug.c)
+link_directories(esdm ${GLIB_LIBRARIES} ${Jansson_LIBRARY_DIR})
 target_link_libraries(esdm ${GLIB_LIBRARIES} ${Jansson_LIBRARIES} esdmposix)
-link_directories(esdm ${GLIB_LIBRARIES} ${Jansson_LIBRARIES})
 include_directories(${CMAKE_SOURCE_DIR}/include/ ${CMAKE_BINARY_DIR} ${GLIB_INCLUDE_DIRS} ${Jansson_INCLUDE_DIRS})
+
+
+
 
 #TODO: if hdf5 available.. build add hdf5-interface
 
-
-
-if(HDF5_FOUND)
-	SUBDIRS(hdf5-interface)
-endif(HDF5_FOUND)
+#if(HDF5_FOUND)
+#	SUBDIRS(hdf5-interface)
+#endif(HDF5_FOUND)
 
 
 
