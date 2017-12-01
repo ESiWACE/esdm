@@ -115,7 +115,7 @@ int esdm_backend_mero_init(char * conf, struct esdm_backend_generic **eb_out)
 
     gid = M0_CLOVIS_ID_APP;
     /* FIXME this makes the gid not reused. */
-    gid.u_lo = time(NULL);
+    gid.u_hi = gid.u_lo = time(NULL);
 	*eb_out = &ebm->ebm_base;
 	return 0;
 }
@@ -191,8 +191,8 @@ static int create_object(struct esdm_backend_mero *ebm,
  */
 static struct m0_uint128 object_id_alloc()
 {
+    /* gid.u_hi keeps unchanged in a one session. */
     gid.u_lo++;
-    gid.u_hi++;
     return gid;
 }
 
