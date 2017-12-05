@@ -19,6 +19,8 @@ function help(){
 	echo "--debug                  : build with debug flags"
 	echo "--verbose                : output the command but do not execute it"
 	echo "--reconfigure            : run configure again with the parameters used the last time"
+	echo "--with-cc=<file>         : path to the C compiler"
+	echo "--with-cxx=<file>        : path to the C++ compiler"
 	echo "--with-mpicc=<file>      : path to the MPI C compiler"
 	echo "--with-mpicxx=<file>     : path to the MPI C++ compiler"
 	echo "--plantuml-jar-dir=<dir> : directory containing plantuml.jar, useful for building the documentation"
@@ -47,7 +49,6 @@ do
 		--version) cmake --version; exit;;
 		--prefix) prefix="$2"; shift;;
 		--debug) debug="yes"; ;;
-		--with-boost) boostdir="$2"; shift;;
 		--with-cc) ccbin="$2"; shift;;
 		--with-cxx) cxxbin="$2"; shift;;
 		--with-hdf5) hdf5="$2"; echo "$2"; shift;;
@@ -97,7 +98,7 @@ fi
 COMMAND="mkdir -p $buildDIR && cd $buildDIR && echo $PARAMETERS > configure.log ; rm CMakeCache.txt 2>/dev/null; cmake $CMAKEFLAGS $SRCDIR"
 
 if [[ "$VERBOSE" == "YES" ]] ; then
-	echo "Your current configure options translate more or less to:"
+	echo "Your current configure options translate to:"
 	echo "$COMMAND"
 	exit 0
 else
