@@ -38,6 +38,8 @@ include(CheckCSourceCompiles)
 
 find_package(PkgConfig REQUIRED)
 
+
+
 pkg_search_module(GLIB REQUIRED glib-2.0>=2.40)
 set_package_properties(GLIB PROPERTIES
 	DESCRIPTION "Implementation of common data structures, portabilitiy wrappers for standard OS features."
@@ -163,8 +165,7 @@ add_subdirectory(test)
 
 ## Application
 add_library(esdm SHARED esdm.c  esdm-datatypes.c  esdm-layout.c  esdm-performancemodel.c  esdm-scheduler.c  esdm-siteconfig.c  esdm-modules.c  utils/debug.c)
-link_directories(esdm ${GLIB_LIBRARIES} ${JANSSON_LIBRARY_DIR})
-target_link_libraries(esdm ${GLIB_LIBRARIES} ${JANSSON_LIBRARIES} esdmposix)
+target_link_libraries(esdm ${GLIB_LDFLAGS} ${JANSSON_LDFLAGS} esdmposix)
 include_directories(${CMAKE_SOURCE_DIR}/include/ ${CMAKE_BINARY_DIR} ${GLIB_INCLUDE_DIRS} ${JANSSON_INCLUDE_DIRS})
 
 
