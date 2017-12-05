@@ -21,12 +21,19 @@ fi
 cd vol
 echo "Preparing Configure"
 
-mkdir build
 
-./autogen.sh || exit 1
+# build H5Edefin.h and other headers
+#   Cannot find source file:    <PATH>/esdm/install/download/vol/src/H5Edefin.h
+./bin/make_err
+
+
+mkdir build
 cd build
+
+cmake -DCMAKE_C_COMPILER:FILEPATH=gcc --enable-parallel ..
+
 #../configure --prefix=$prefix --enable-parallel --with-default-plugindir=$DIR/../build/ --enable-build-mode=debug --enable-hl   CFLAGS="-g" || exit 1
-../configure --prefix=$prefix --with-default-plugindir=$DIR/../build/ --enable-build-mode=debug --enable-hl   CFLAGS="-g" || exit 1
+#../configure --prefix=$prefix --with-default-plugindir=$DIR/../build/ --enable-build-mode=debug --enable-hl   CFLAGS="-g" || exit 1
 make -j 8 || exit 1
 make -j install
 

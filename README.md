@@ -52,7 +52,7 @@ more efficiently organize metadata and data across a variety of storage backends
 
 
 
-- `doc` contains the documentation which requires doxygen to build
+- `doc` contains documentation which uses doxygen to build a HTML or a PDF version:
 
 	
 	For the HTML Reference use the following commands:
