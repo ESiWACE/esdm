@@ -31,9 +31,14 @@ endif()
 # _____________________________________________________________________________ 
 
 add_library(h5-esdm SHARED h5-esdm.c)
-target_link_libraries(h5-esdm ${HDF5_LIBRARIES} ${GLIB_LIBRARIES})
+target_link_libraries(h5-esdm ${HDF5_LIBRARIES} ${GLIB_LIBRARIES} esdm)
 link_directories(h5-esdm ${HDF5_LIBRARY_DIRS} ${MPI_LIBRARIES} ${GLIB_LIBRARIES})
 include_directories(${CMAKE_SOURCE_DIR}/include/ ${CMAKE_BINARY_DIR} ${HDF5_INCLUDE_DIR} ${MPI_INCLUDE_PATH} ${GLIB_INCLUDE_DIRS})
+
+
+#
+# Testing
+# _____________________________________________________________________________ 
 
 SUBDIRS (test)
 

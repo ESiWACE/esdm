@@ -12,7 +12,7 @@
 
 
 #ifdef DEBUG
-	#define info(...) fprintf(stderr, "[H5 ESDM] "__VA_ARGS__);
+	#define info(...) fprintf(stderr, "[H5 ESDM] Info: "__VA_ARGS__);
 #else
  	#define info(...)
 #endif

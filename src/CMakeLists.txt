@@ -173,9 +173,9 @@ include_directories(${CMAKE_SOURCE_DIR}/include/ ${CMAKE_BINARY_DIR} ${GLIB_INCL
 
 #TODO: if hdf5 available.. build add hdf5-interface
 
-#if(HDF5_FOUND)
-#	SUBDIRS(hdf5-interface)
-#endif(HDF5_FOUND)
+if(HDF5_FOUND)
+	SUBDIRS(hdf5-interface)
+endif(HDF5_FOUND)
 
 
 

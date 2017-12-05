@@ -39,6 +39,7 @@
 
 
 #include "h5-esdm.h"
+#include "esdm.h"
 
 
 

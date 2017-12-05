@@ -970,6 +970,8 @@ static void * H5VL_esdm_file_create(const char *name, unsigned flags, hid_t fcpl
 	info("%s\n", __func__);
 
 
+	esdm_init();
+
 
 	// analyse property lists
 	size_t nprops = 0;

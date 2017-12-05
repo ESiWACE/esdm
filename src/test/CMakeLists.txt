@@ -1,3 +1,6 @@
+#
+# Tests
+# _____________________________________________________________________________ 
 
 # Generic tests, that only require libesdm
 file(GLOB TESTFILES "${CMAKE_CURRENT_SOURCE_DIR}" "*.c")
