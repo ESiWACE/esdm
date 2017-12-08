@@ -54,6 +54,96 @@ static void* H5VL_esdm_attribute_create (void *obj, H5VL_loc_params_t loc_params
 	info("%s\n", __func__);
 	info("%s: Attach new attribute=TODO '%s' to obj=%p\n", __func__, attr_name, obj) 
 
+	
+//	hid_t space_id;
+//	H5Pget(acpl_id, "attr_space_id", &space_id);
+//	int ndims = H5Sget_simple_extent_ndims(space_id);
+//	hsize_t maxdims[ndims];
+//	hsize_t dims[ndims];
+//	H5Sget_simple_extent_dims(/* in */ space_id, /* out */ dims, /* out */maxdims);
+//
+//
+//	hid_t type_id;
+//	H5Pget(acpl_id, "attr_type_id", &type_id);
+//	size_t type_size = H5Tget_size(type_id);
+//	size_t data_size = type_size;
+//	for(int i = 0; i < ndims; ++i) {
+//		data_size *= dims[i];
+//	}
+//
+//	switch(loc_params.obj_type)
+//	{
+//		case H5I_FILE:
+//			ERRORMSG("Not implemented");
+//			break;
+//		case H5I_GROUP:
+//		case H5I_DATASET:
+//			{ 
+//				SQO_t* sqo = (SQO_t*) obj;
+//				sqo->info.num_attrs++;
+//				attribute->object.location = create_path(sqo);
+//				attribute->object.name = strdup(attr_name);
+//				attribute->object.root = sqo->root;
+//				attribute->object.fapl = sqo->fapl;
+//				attribute->data_size = data_size;
+//
+//				MPI_Barrier(MPI_COMM_WORLD);
+//				if (0 == sqo->fapl->mpi_rank) {
+//					DBA_create(attribute, loc_params, acpl_id, aapl_id, dxpl_id);
+////					DBA_create(attribute, loc_params, acpl_id, aapl_id, dxpl_id);
+//				}
+//				MPI_Barrier(MPI_COMM_WORLD);
+//			}
+//			break;
+//		case H5I_DATATYPE:
+//			ERRORMSG("Not implemented");
+//			break;
+//		case H5I_ATTR:
+//			ERRORMSG("Not implemented");
+//			break;
+//		case H5I_UNINIT:
+//			ERRORMSG("Not implemented");
+//			break;
+//		case H5I_BADID:
+//			ERRORMSG("Not implemented");
+//			break;
+//		case H5I_DATASPACE:
+//			ERRORMSG("Not implemented");
+//			break;
+//		case H5I_REFERENCE:
+//			ERRORMSG("Not implemented");
+//			break;
+//		case H5I_VFL:
+//			ERRORMSG("Not implemented");
+//			break;
+//		case H5I_VOL:
+//			ERRORMSG("Not implemented");
+//			break;
+//		case H5I_GENPROP_CLS:
+//			ERRORMSG("Not implemented");
+//			break;
+//		case H5I_GENPROP_LST:
+//			ERRORMSG("Not implemented");
+//			break;
+//		case H5I_ERROR_CLASS:
+//			ERRORMSG("Not implemented");
+//			break;
+//		case H5I_ERROR_MSG:
+//			ERRORMSG("Not implemented");
+//			break;
+//		case H5I_ERROR_STACK:
+//			ERRORMSG("Not implemented");
+//			break;
+//		case H5I_NTYPES:
+//			ERRORMSG("Not implemented");
+//			break;
+//		default:
+//			ERRORMSG("Not supported");
+//	} /* end switch */
+//
+//	return attribute;
+
+
 	return (void*) &puipui;
 }
 
