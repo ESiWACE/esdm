@@ -1,5 +1,8 @@
 project (${PROJECT_NAME})
 
+# Copy environment to set HDF5_PLUIGN_PATH (convienience only)
+file(COPY ${CMAKE_CURRENT_SOURCE_DIR}/env.bash DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
+
 
 file(GLOB TESTFILES "${CMAKE_CURRENT_SOURCE_DIR}" "*.c")
 foreach(TESTFILE ${TESTFILES})

@@ -152,6 +152,77 @@ static void* H5VL_esdm_attribute_open (void *obj, H5VL_loc_params_t loc_params, 
 	info("%s\n", __func__);
 	info("%s: *obj = %p\n", __func__, obj) 
 
+
+	void *attribute;
+
+	switch(loc_params.obj_type)
+	{
+		case H5I_GROUP:
+			// Are Group and Dataset handled the same?
+		case H5I_DATASET:
+			switch (loc_params.type) {
+				case H5VL_OBJECT_BY_IDX:
+					{
+						//DBA_open_by_idx(obj, loc_params, loc_params.loc_data.loc_by_idx.n, attribute);
+						if (NULL == attribute) {
+							info("Couldn't open attribute by idx");
+						}
+					}
+					break;
+				case H5VL_OBJECT_BY_NAME:
+					{
+						//DBA_open(obj, loc_params, attr_name, attribute);
+					}
+					break;
+				case H5VL_OBJECT_BY_SELF:
+					{
+						//DBA_open(obj, loc_params, attr_name, attribute);
+					}
+					break;
+				default:
+					fail("Not supported");
+			}
+			break;
+
+		case H5I_FILE:
+			info("%s: H5I_FILE \n", __func__);
+			break;
+
+		case H5I_DATATYPE:
+			info("%s: H5I_DATATYPE \n", __func__);
+			break;
+
+		case H5I_ATTR:
+			info("%s: H5I_ATTR \n", __func__);
+			break;
+
+		case H5I_UNINIT:
+			info("%s: H5I_ \n", __func__);
+			break;
+
+		case H5I_BADID:
+			info("%s: H5I_ \n", __func__);
+			break;
+
+		case H5I_DATASPACE:
+		case H5I_REFERENCE:
+		case H5I_VFL:
+		case H5I_VOL:
+		case H5I_GENPROP_CLS:
+		case H5I_GENPROP_LST:
+		case H5I_ERROR_CLASS:
+		case H5I_ERROR_MSG:
+		case H5I_ERROR_STACK:
+		case H5I_NTYPES:
+			fail("Not implemented");
+		default:
+			fail("unsupported type");
+	} /* end switch */
+
+	return (void *)attribute;
+
+
+
 	return NULL;
 }
 
@@ -161,6 +232,14 @@ static herr_t H5VL_esdm_attribute_read (void *attr, hid_t mem_type_id, void *buf
 
 	herr_t ret_value = SUCCEED;
 
+
+//	TRACEMSG("");
+//	assert(NULL != buf);
+//	SQA_t *attr = (SQA_t *)obj;
+//	DBA_read(attr, buf);
+//	return 1;
+
+
 	return ret_value;
 }
 
@@ -169,6 +248,17 @@ static herr_t H5VL_esdm_attribute_write (void *attr, hid_t mem_type_id, const vo
 	info("%s\n", __func__);
 
 	herr_t ret_value = SUCCEED;
+
+//	SQA_t *attr = (SQA_t *)obj;
+//
+//	MPI_Barrier(MPI_COMM_WORLD);
+//	if (0 == attr->object.fapl->mpi_rank) {
+//		DBA_write(attr, buf);
+//		DBA_write(attr, buf);
+//	}
+//	MPI_Barrier(MPI_COMM_WORLD);
+//	return 1;
+
 
 	return ret_value;
 }
@@ -260,6 +350,7 @@ static herr_t H5VL_esdm_attribute_get (void *obj, H5VL_attr_get_t get_type, hid_
 
         default:
             //HGOTO_ERROR(H5E_VOL, H5E_CANTGET, FAIL, "can't get this type of information from attr")
+			fail("Cannot get this type of information from attr. %s\n", __func__);
             break;
     }
 
@@ -335,6 +426,11 @@ static herr_t H5VL_esdm_attribute_optional (void *obj, hid_t dxpl_id, void **req
 static herr_t H5VL_esdm_attribute_close (void *attr, hid_t dxpl_id, void **req) 
 {
 	info("%s\n", __func__);
+
+
+	// Ensure persitence
+	// Free memory
+	// inform ESDM, ESDM may decide to keep things cached?
 
 	herr_t ret_value = SUCCEED;
 
@@ -1296,6 +1392,28 @@ herr_t H5VL_esdm_file_specific(void *obj, H5VL_file_specific_t specific_type, hi
 	info("%s\n", __func__);
 	
 	herr_t ret_value = SUCCEED;
+
+
+//	TRACEMSG("");
+//	SQF_t *file = (SQF_t *)obj;
+//
+//	switch(specific_type) {
+//		case H5VL_FILE_FLUSH:
+//			fsync(file->object.root->fd);
+//			break;
+//		case H5VL_FILE_IS_ACCESSIBLE:
+//			ERRORMSG("Not implemented");
+//			break;
+//		case H5VL_FILE_MOUNT:
+//			ERRORMSG("Not implemented");
+//			break;
+//		case H5VL_FILE_UNMOUNT:
+//			ERRORMSG("Not implemented");
+//			break;
+//		default:
+//			ERRORMSG("Uknown type");
+//	}
+//
 
     return ret_value;
 }
