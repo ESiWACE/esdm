@@ -156,7 +156,7 @@ set (CMAKE_C_FLAGS_RELEASE "-O3")
 
 enable_testing()
 add_subdirectory(backends-data)
-add_subdirectory(backends-metadata)
+#add_subdirectory(backends-metadata)
 add_subdirectory(utils)
 add_subdirectory(test)
 

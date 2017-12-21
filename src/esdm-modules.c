@@ -33,17 +33,17 @@
 
 
 #ifdef ESDM_HAS_POSIX
-	#include "data-backends/POSIX/posix.h"
+	#include "backends-data/POSIX/posix.h"
 	#pragma message ("Building ESDM with POSIX!")
 #endif
 
 #ifdef ESDM_HAS_CLOVIS
-	#include "data-backends/Clovis/clovis.h"
+	#include "backends-data/Clovis/clovis.h"
 	#pragma message ("Building ESDM with Clovis!")
 #endif
 
 #ifdef ESDM_HAS_WOS
-	#include "data-backends/Mero/wos.h"
+	#include "backends-data/Mero/wos.h"
 	#pragma message ("Building ESDM with WOS!")
 #endif
 
