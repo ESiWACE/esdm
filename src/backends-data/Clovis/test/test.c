@@ -1,24 +1,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-#include "clovis.h"
-/*
-struct esdm_backend mero_esdm_backend = {
-    .eb_magic = 0x3333550033335500,
-	.eb_name  = "Mero Clovis",
-	.eb_id    = 1234,
-	.eb_blocksize = BLOCKSIZE,
+#include "../clovis.h"
 
-	.esdm_backend_init = esdm_backend_mero_init,
-	.esdm_backend_fini = esdm_backend_mero_fini,
-
-	.esdm_backend_obj_alloc = esdm_backend_mero_alloc,
-	.esdm_backend_obj_open  = esdm_backend_mero_open,
-	.esdm_backend_obj_write = esdm_backend_mero_write,
-	.esdm_backend_obj_read  = esdm_backend_mero_read,
-	.esdm_backend_obj_close = esdm_backend_mero_close
-};
-*/
 int main(int argc, char* argv[])
 {
                 //"local_addr ha_addr profile process_fid"
