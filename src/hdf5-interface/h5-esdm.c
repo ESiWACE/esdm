@@ -68,7 +68,7 @@ herr_t print_property( hid_t id, const char *name, void *iter_data )
 
 
 // Forward declaration of init and terminate.
-hid_t H5VL_esdm_init();
+herr_t H5VL_esdm_init(hid_t vipl_id);
 int H5VL_esdm_term();
 
 
@@ -158,14 +158,14 @@ static const H5VL_class_t H5VL_esdm = {
 static hid_t vol_id = -1;
 
 
-hid_t H5VL_esdm_init()
+herr_t H5VL_esdm_init(hid_t vipl_id)
 {
 	vol_id = H5VLregister (&H5VL_esdm);
 	H5VLinitialize(vol_id, H5P_DEFAULT);
 
 	assert(H5VLget_plugin_id(VOL_PLUGIN_NAME) != -1);
 
-	return vol_id;
+	return (herr_t)vol_id;
 }
 
 
