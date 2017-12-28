@@ -21,9 +21,6 @@ typedef int esdm_fragment_t;
 /**
  * ESDM Status codes and failure modes.
  *
- *
- *
- *
  */
 typedef enum {
 	ESDM_SUCCESS,
@@ -39,7 +36,40 @@ typedef enum {
 
 
 
+
+
+/**
+ * ESDM provides logging helpers, the available loglevels are defined here.
+ *
+ */
+typedef enum {
+	ESDM_LOGLEVEL_CRITICAL,
+	ESDM_LOGLEVEL_ERROR,
+	ESDM_LOGLEVEL_WARNING,
+	ESDM_LOGLEVEL_INFO,
+	ESDM_LOGLEVEL_DEBUG,
+	ESDM_LOGLEVEL_NOTSET
+} esdm_loglevel_t;
+
+
+
+
+
 // Callbacks
+/**
+ *
+ * finalize:
+ *		before ESDM exits, it will call the finalize function for every module
+ *
+ * performance_estimate:
+ *		
+ *	
+ *
+ * 
+ * Notes:
+ *	* No callback is expected for initialization as ESDM calls it on discovery.
+ *
+ */
 typedef struct {
 	int (*finalize)();
 	int (*performance_estimate)();
@@ -68,10 +98,18 @@ typedef struct {
 
 
 
-
+/**
+ * On backend registration ESDM expects the backend to return a pointer to 
+ * a esdm_backend_t struct.
+ *
+ * Each backend provides
+ *
+ */
 typedef struct {
 	char* name;
 	esdm_module_type_t type;
+	char* version; // 0.0.0
+	void* data;
 	esdm_backend_callbacks_t callbacks;
 } esdm_backend_t;
 
@@ -92,16 +130,16 @@ typedef struct {
 
 
 // Layout
-typedef struct {
-	int member;
-} esdm_pending_fragment_t;
-
-
 
 
 
 
 // Scheduler
+typedef struct {
+	int member;
+} esdm_pending_fragment_t;
+
+
 typedef struct{
 	int thread_count;
 	esdm_backend_t * backend;
@@ -115,7 +153,8 @@ typedef struct {
 	int throughout;
 	int max_bytes;
 	int min_bytes;
-} esdm_performance_estimate;
+	int concurrency;
+} esdm_performance_estimate_t;
 
 
 #endif

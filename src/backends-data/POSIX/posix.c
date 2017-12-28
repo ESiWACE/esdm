@@ -20,9 +20,11 @@
  */
 
 
-
-#include <stdio.h>
 #include <stdarg.h>
+#include <stdio.h>
+#include <sys/stat.h>
+#include <sys/types.h>
+#include <unistd.h>
 
 #include<esdm.h>
 
@@ -41,7 +43,39 @@ void log(uint32_t loglevel, const char* format, ...)
 #define DEBUG(loglevel, msg) log(loglevel, "[POSIX] %-30s %s:%d\n", msg, __FILE__, __LINE__)
 
 
-int posix_finalize() {}
+///////////////////////////////////////////////////////////////////////////////
+// Helper and utility /////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////////
+
+int mkfs() 
+{
+	struct stat st = {0};
+
+	if (stat("_esdm-fs", &st) == -1)
+	{
+		mkdir("_esdm-fs", 0700);
+		mkdir("_esdm-fs/containers", 0700);
+		mkdir("_esdm-fs/datasets-shared", 0700);
+		mkdir("_esdm-fs/fragments-shared", 0700);
+		
+	}
+}
+
+
+int fsck()
+{
+
+	return 0;
+}
+
+
+
+
+
+
+///////////////////////////////////////////////////////////////////////////////
+// ESDM Callbacks /////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////////
 
 int posix_backend_performance_estimate() 
 {
@@ -51,12 +85,23 @@ int posix_backend_performance_estimate()
 }
 
 
+
 int posix_create() 
 {
 	DEBUG(0, "Create");
+
+
+	// check if container already exists
+
+	struct stat st = {0};
+	if (stat("_esdm-fs", &st) == -1)
+	{
+		mkdir("_esdm-fs/containers", 0700);
+	}
+
+
 	return 0;
 }
-
 
 int posix_open() 
 {
@@ -106,34 +151,69 @@ int posix_lookup()
 
 
 
+///////////////////////////////////////////////////////////////////////////////
+// ESDM Module Registration ///////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////////
 
 static esdm_backend_t backend = {
 	.name = "POSIX",
 	.type = ESDM_TYPE_DATA,
+	.version = "0.0.1",
+	.data = NULL,
 	.callbacks = {
 		NULL, // finalize
 		posix_backend_performance_estimate, // performance_estimate
 
-		NULL, // create
-		NULL, // open
-		NULL, // write
-		NULL, // read
-		NULL, // close
+		posix_create, // create
+		posix_open, // open
+		posix_write, // write
+		posix_read, // read
+		posix_close, // close
 
 		NULL, // allocate
 		NULL, // update
 		NULL, // lookup
-	}
+	},
 };
 
-
-
-
-
+/**
+* Initializes the POSIX plugin. In particular this involves:
+*
+*	* Load configuration of this backend
+*	* Load and potenitally calibrate performance model
+*
+*	* Connect with support services e.g. for technical metadata
+*	* Setup directory structures used by this POSIX specific backend
+*
+*	* Poopulate esdm_backend_t struct and callbacks required for registration
+*
+* @return pointer to backend struct
+*/
 esdm_backend_t* posix_backend_init() {
 	
 	DEBUG(0, "Initializing POSIX backend.");
+
 	
+	// todo check posix style persitency structure available?
+	mkfs();	
+
+
+
+
+
+
 	return &backend;
 
 }
+
+/**
+* Initializes the POSIX plugin. In particular this involves:
+*
+*/
+int posix_finalize()
+{
+
+	return 0;
+}
+
+

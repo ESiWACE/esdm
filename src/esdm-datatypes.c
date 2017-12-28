@@ -32,7 +32,7 @@
  *
  */
 esdm_status_t esdm_fragment_create() {
-	ESDM_DEBUG(0, "Creating fragment");
+	ESDM_DEBUG("Creating fragment");
 	esdm_fragment_t* new_fragment = (esdm_fragment_t*) malloc(sizeof(esdm_fragment_t));
 
 
@@ -40,7 +40,7 @@ esdm_status_t esdm_fragment_create() {
 }
 
 esdm_status_t esdm_fragment_destroy() {
-	ESDM_DEBUG(0, "Destroying Fragment.");
+	ESDM_DEBUG("Destroying Fragment.");
 	return ESDM_SUCCESS;
 }
 
@@ -51,7 +51,7 @@ esdm_status_t esdm_fragment_destroy() {
  *
  */
 esdm_status_t esdm_dataset_create() {
-	ESDM_DEBUG(0, "Creating dataset");
+	ESDM_DEBUG("Creating dataset");
 	esdm_dataset_t* new_dataset = (esdm_dataset_t*) malloc(sizeof(esdm_dataset_t));
 
 	return ESDM_SUCCESS;

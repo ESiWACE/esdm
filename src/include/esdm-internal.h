@@ -13,7 +13,19 @@
 
 void esdm_log(uint32_t loglevel, const char* format, ...);
 
-#define ESDM_DEBUG(loglevel, msg) esdm_log(loglevel, "[ESDM] %-30s %s:%d\n", msg, __FILE__, __LINE__)
+/* see esdm-datatypes.h for definition
+typedef enum {
+	ESDM_LOGLEVEL_CRITICAL,
+	ESDM_LOGLEVEL_ERROR,
+	ESDM_LOGLEVEL_WARNING,
+	ESDM_LOGLEVEL_INFO,
+	ESDM_LOGLEVEL_DEBUG,
+	ESDM_LOGLEVEL_NOTSET
+} esdm_loglevel_t;
+*/
+
+#define ESDM_DEBUG(msg) esdm_log(ESDM_LOGLEVEL_DEBUG, "[ESDM] %-30s %s:%d\n", msg, __FILE__, __LINE__)
+#define ESDM_ERROR(msg) esdm_log(ESDM_LOGLEVEL_ERROR, "[ESDM] %-30s %s:%d\n", msg, __FILE__, __LINE__)
 #define ESDM_LOG(loglevel, msg) esdm_log(loglevel, "[ESDM] %-30s %s:%d\n", msg, __FILE__, __LINE__)
 
 
@@ -40,7 +52,7 @@ esdm_status_t esdm_scheduler_submit();
 
 
 // Layout
-
+esdm_status_t esdm_layout_stat(char * desc);
 
 
 // Performance Model

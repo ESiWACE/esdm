@@ -47,7 +47,7 @@ esdm_status_t esdm_scheduler_finalize() {
 
 
 esdm_status_t esdm_scheduler_submit(esdm_pending_fragment_t * io) {
-	ESDM_DEBUG(0, "Scheduler submit request.");
+	ESDM_DEBUG("Scheduler submit request.");
 
 
 	esdm_init();

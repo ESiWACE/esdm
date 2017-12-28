@@ -31,13 +31,23 @@ static int is_initialized = 0;
 
 
 
-esdm_status_t esdm_init(){
+/**
+* Display status information for objects stored in ESDM.
+*
+* @param [in] desc	name or descriptor of object
+*
+* @return status
+*/
+esdm_status_t esdm_init()
+{	
+	ESDM_DEBUG("esdm_init()");
+
 	// for all linked configurations and modules initialize
 	// on compile time determined which modules exist
 	//return esdm_module_init();
 
 	if (!is_initialized) {
-		ESDM_DEBUG(0, "Initializing ESDM.");
+		ESDM_DEBUG("Initializing ESDM.");
 
 		esdm_module_init();
 		is_initialized = 1;
@@ -46,7 +56,17 @@ esdm_status_t esdm_init(){
 	return ESDM_SUCCESS;
 }
 
-esdm_status_t esdm_finalize(){
+
+/**
+* Display status information for objects stored in ESDM.
+*
+* @param [in] desc	name or descriptor of object
+*
+* @return status
+*/
+esdm_status_t esdm_finalize()
+{
+	ESDM_DEBUG("esdm_finalize()");	
 	// ESDM data data structures that require proper cleanup..
 	// in particular this effects data and cache state which is not yet persistent
 
@@ -54,9 +74,75 @@ esdm_status_t esdm_finalize(){
 }
 
 
+
+
+
+
+///////////////////////////////////////////////////////////////////////////////
+// Application facing API /////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////////
+
+
+
+
+/**
+* Display status information for objects stored in ESDM.
+*
+* @param [in] desc	name or descriptor of object
+*
+* @return TODO
+*/
+esdm_status_t esdm_stat(char* desc, char* result)
+{
+	ESDM_DEBUG("Call to esdm_stat");	
+	esdm_layout_stat(desc);
+
+	return ESDM_SUCCESS;
+}
+
+
+
+
+/**
+* 
+*
+* @param [in] buf	TODO
+*
+* @return TODO
+*/
+esdm_status_t esdm_create(char* desc, int mode)
+{
+	ESDM_DEBUG("Call to esdm_create");	
+
+
+	return ESDM_SUCCESS;
+}
+
+
+/**
+* 
+*
+* @param [in] buf	TODO
+*
+* @return TODO
+*/
+esdm_status_t esdm_open(char* desc, int mode)
+{
+	ESDM_DEBUG("Call to esdm_open");	
+
+	return ESDM_SUCCESS;
+}
+
+/**
+* 
+*
+* @param [in] buf	TODO
+*
+* @return TODO
+*/
 esdm_status_t esdm_write(void * buf, esdm_dataset_t dset, int dims, uint64_t * size, uint64_t* offset)
 {
-	ESDM_DEBUG(0, "Received write request.");	
+	ESDM_DEBUG("Call to esdm_write");	
 
 
 	esdm_fragment_create();
@@ -69,9 +155,16 @@ esdm_status_t esdm_write(void * buf, esdm_dataset_t dset, int dims, uint64_t * s
 
 
 
+/**
+* 
+*
+* @param [in] buf	TODO
+*
+* @return TODO
+*/
 esdm_status_t esdm_read(void * buf, esdm_dataset_t dset, int dims, uint64_t * size, uint64_t* offset)
 {
-	ESDM_DEBUG(0, "Received read request.");
+	ESDM_DEBUG("Call to esdm_read");	
 
 	esdm_pending_fragment_t fragment;
 	esdm_scheduler_submit(& fragment);
@@ -79,3 +172,24 @@ esdm_status_t esdm_read(void * buf, esdm_dataset_t dset, int dims, uint64_t * si
 
 	return ESDM_SUCCESS;
 }
+
+
+
+
+
+/**
+* 
+*
+* @param [in] buf	TODO
+*
+* @return TODO
+*/
+esdm_status_t esdm_close(void * buf) 
+{
+	ESDM_DEBUG("Call to esdm_close");	
+	return ESDM_SUCCESS;
+}
+
+
+
+

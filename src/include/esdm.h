@@ -21,8 +21,6 @@ esdm_status_t esdm_init();
 
 
 // Module
-
-
 esdm_status_t esdm_module_init();
 esdm_status_t esdm_module_finalize();
 esdm_status_t esdm_module_register();
@@ -41,10 +39,41 @@ esdm_status_t esdm_module_get_by_type(esdm_module_type_t type, esdm_module_type_
 
 
 
+///////////////////////////////////////////////////////////////////////////////
+// Application facing API /////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////////
+
+/**
+* Display status information for objects stored in ESDM.
+*
+* @param [in] desc	name or descriptor of object
+*
+* @return TODO
+*/
+esdm_status_t esdm_stat(char* desc, char* result);
 
 
-// API to be used by applications
-esdm_status_t esdm_lookup(char* desc);
+
+
+/**
+* 
+*
+* @param [in] buf	TODO
+*
+* @return TODO
+*/
+esdm_status_t esdm_create(char* desc, int mode);
+
+
+
+/**
+* 
+*
+* @param [in] buf	TODO
+*
+* @return TODO
+*/
+esdm_status_t esdm_open(char* desc, int mode);
 
 
 /**
@@ -59,7 +88,6 @@ esdm_status_t esdm_lookup(char* desc);
 esdm_status_t esdm_write(void * buf, esdm_dataset_t dset, int dims, uint64_t * size, uint64_t* offset);
 
 
-
 /**
 * Reads a data fragment described by desc to the dataset dset.
 *
@@ -71,6 +99,17 @@ esdm_status_t esdm_write(void * buf, esdm_dataset_t dset, int dims, uint64_t * s
 * @return Status.
 */
 esdm_status_t esdm_read(void * buf, esdm_dataset_t dset, int dims, uint64_t * size, uint64_t* offset);
+
+
+/**
+* 
+*
+* @param [in] buf	TODO
+*
+* @return TODO
+*/
+esdm_status_t esdm_close(void * buf);
+
 
 
 

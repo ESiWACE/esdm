@@ -71,7 +71,7 @@ static esdm_module_type_array_t modules_per_type[ESDM_TYPE_LAST];
 
 esdm_status_t esdm_module_init()
 {
-	ESDM_DEBUG(0, "Initializing modules.");
+	ESDM_DEBUG("Initializing modules.");
 
 	
 	esdm_backend_t* backend = NULL;
@@ -102,7 +102,7 @@ esdm_status_t esdm_module_init()
 
 esdm_status_t esdm_module_finalize()
 {
-	ESDM_DEBUG(0, "Finalizing. Cleaning up modules.");
+	ESDM_DEBUG("Finalizing. Cleaning up modules.");
 
 	// reverse finalization of modules
 	//
@@ -118,7 +118,7 @@ esdm_status_t esdm_module_finalize()
 
 esdm_status_t esdm_module_get_by_type(esdm_module_type_t type, esdm_module_type_array_t * array)
 {
-	ESDM_DEBUG(0, "Module get by type.");
+	ESDM_DEBUG("Module get by type.");
 
 
 

@@ -28,9 +28,11 @@ int main(){
 
 
 	char desc[] = "{\"dataset\": \"abcdef\", \"dims\": 3}";
+	char* result;
 
 
-	ret = esdm_lookup(desc);
+
+	ret = esdm_stat(desc, result);
 
 
 	return 0;
