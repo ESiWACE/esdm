@@ -1,7 +1,7 @@
 
 
 SUBDIRS(POSIX)
-SUBDIRS(Clovis)
+#SUBDIRS(Clovis)
 #SUBDIRS(WOS)
 
 #SUBDIRS(test)
