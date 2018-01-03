@@ -19,6 +19,13 @@
  * @brief The performance component collects performance estimates from
  *        backends and picks a winner depending on an objective.
  *
+ *
+ * TODO: cache performance estimates
+ *
+ *
+ *
+ *
+ *
  */
 
 
@@ -34,6 +41,13 @@ esdm_status_t esdm_performance_init() {
 esdm_status_t esdm_performance_finalize() {
 	return ESDM_SUCCESS;
 }
+
+
+
+
+
+
+
 
 
 

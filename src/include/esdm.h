@@ -7,8 +7,6 @@
 
 #include <stddef.h>
 
-
-
 #include <esdm-datatypes.h>
 #include <esdm-data-backend.h>
 #include <esdm-metadata-backend.h>
@@ -16,26 +14,42 @@
 
 typedef int esdm_type;
 
-// ESDM
+
+///////////////////////////////////////////////////////////////////////////////
+// ESDM ///////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////////
+/**
+* Initialize ESDM:
+*	- allocate data structures for ESDM
+*	- allocate memory for node local caches
+*	- initialize submodules
+*	- initialize threadpool
+*
+* @return status
+*/
 esdm_status_t esdm_init();
 
 
-// Module
+/**
+* Initialize ESDM:
+*  - finalize submodules
+*  - free data structures
+*
+* @return status
+*/
+esdm_status_t esdm_finalize();
+
+
+
+///////////////////////////////////////////////////////////////////////////////
+// Module /////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////////
+
 esdm_status_t esdm_module_init();
 esdm_status_t esdm_module_finalize();
 esdm_status_t esdm_module_register();
 
-
-
 esdm_status_t esdm_module_get_by_type(esdm_module_type_t type, esdm_module_type_array_t * array);
-
-
-
-
-
-
-
-
 
 
 

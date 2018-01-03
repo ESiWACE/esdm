@@ -23,18 +23,18 @@ typedef int esdm_fragment_t;
  *
  */
 typedef enum {
+	ESDM_OVERWRITE,
+	ESDM_CREATE
+} esdm_mode_t;
+
+/**
+ * ESDM Status codes and failure modes.
+ *
+ */
+typedef enum {
 	ESDM_SUCCESS,
 	ESDM_ERROR
 } esdm_status_t;
-
-
-typedef enum {
-	ESDM_TYPE_DATA,
-	ESDM_TYPE_METADATA,
-	ESDM_TYPE_LAST
-} esdm_module_type_t;
-
-
 
 
 
@@ -50,6 +50,21 @@ typedef enum {
 	ESDM_LOGLEVEL_DEBUG,
 	ESDM_LOGLEVEL_NOTSET
 } esdm_loglevel_t;
+
+
+
+// MODULES ////////////////////////////////////////////////////////////////////
+
+/**
+ *	
+ */
+typedef enum {
+	ESDM_TYPE_DATA,
+	ESDM_TYPE_METADATA,
+	ESDM_TYPE_HYBRID
+} esdm_module_type_t;
+
+
 
 
 

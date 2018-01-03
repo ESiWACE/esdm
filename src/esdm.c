@@ -40,7 +40,7 @@ static int is_initialized = 0;
 */
 esdm_status_t esdm_init()
 {	
-	ESDM_DEBUG("esdm_init()");
+	ESDM_DEBUG(__func__);	
 
 	// for all linked configurations and modules initialize
 	// on compile time determined which modules exist
@@ -48,6 +48,8 @@ esdm_status_t esdm_init()
 
 	if (!is_initialized) {
 		ESDM_DEBUG("Initializing ESDM.");
+
+		esdm_scheduler_init();
 
 		esdm_module_init();
 		is_initialized = 1;
@@ -66,7 +68,8 @@ esdm_status_t esdm_init()
 */
 esdm_status_t esdm_finalize()
 {
-	ESDM_DEBUG("esdm_finalize()");	
+	ESDM_DEBUG(__func__);	
+
 	// ESDM data data structures that require proper cleanup..
 	// in particular this effects data and cache state which is not yet persistent
 
@@ -94,7 +97,8 @@ esdm_status_t esdm_finalize()
 */
 esdm_status_t esdm_stat(char* desc, char* result)
 {
-	ESDM_DEBUG("Call to esdm_stat");	
+	ESDM_DEBUG(__func__);	
+
 	esdm_layout_stat(desc);
 
 	return ESDM_SUCCESS;
@@ -112,7 +116,7 @@ esdm_status_t esdm_stat(char* desc, char* result)
 */
 esdm_status_t esdm_create(char* desc, int mode)
 {
-	ESDM_DEBUG("Call to esdm_create");	
+	ESDM_DEBUG(__func__);	
 
 
 	return ESDM_SUCCESS;
@@ -128,7 +132,7 @@ esdm_status_t esdm_create(char* desc, int mode)
 */
 esdm_status_t esdm_open(char* desc, int mode)
 {
-	ESDM_DEBUG("Call to esdm_open");	
+	ESDM_DEBUG(__func__);	
 
 	return ESDM_SUCCESS;
 }
@@ -142,7 +146,7 @@ esdm_status_t esdm_open(char* desc, int mode)
 */
 esdm_status_t esdm_write(void * buf, esdm_dataset_t dset, int dims, uint64_t * size, uint64_t* offset)
 {
-	ESDM_DEBUG("Call to esdm_write");	
+	ESDM_DEBUG(__func__);	
 
 
 	esdm_fragment_create();
@@ -164,7 +168,7 @@ esdm_status_t esdm_write(void * buf, esdm_dataset_t dset, int dims, uint64_t * s
 */
 esdm_status_t esdm_read(void * buf, esdm_dataset_t dset, int dims, uint64_t * size, uint64_t* offset)
 {
-	ESDM_DEBUG("Call to esdm_read");	
+	ESDM_DEBUG(__func__);	
 
 	esdm_pending_fragment_t fragment;
 	esdm_scheduler_submit(& fragment);
@@ -186,7 +190,9 @@ esdm_status_t esdm_read(void * buf, esdm_dataset_t dset, int dims, uint64_t * si
 */
 esdm_status_t esdm_close(void * buf) 
 {
-	ESDM_DEBUG("Call to esdm_close");	
+	ESDM_DEBUG(__func__);	
+
+
 	return ESDM_SUCCESS;
 }
 

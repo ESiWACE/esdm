@@ -68,7 +68,8 @@ int main(){
 	}
 
 
-	// TODO: locate dataset metadata... We assume here the dataset is an uint64_t dataset
+	esdm_open("mydataset", ESDM_CREATE);
+
 
 	// Write the data to the dataset
 	ret = esdm_write(buf_w, dataset, 2, size, offset);

@@ -48,6 +48,7 @@ esdm_status_t esdm_metadata_t_alloc();
 
 
 // I/O Scheduler
+esdm_status_t esdm_scheduler_init();
 esdm_status_t esdm_scheduler_submit();
 
 

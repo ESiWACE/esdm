@@ -94,7 +94,9 @@ add_feature_info(plantuml plantuml  "PlantUML for documentation" URL http://de.p
 
 
 
-
+# Threading support
+set(THREADS_PREFER_PTHREAD_FLAG ON)
+find_package(Threads REQUIRED)
 
 
 
@@ -150,6 +152,8 @@ set (CMAKE_C_FLAGS_DEBUG   "-O0 -g")
 set (CMAKE_C_FLAGS_RELEASE "-O3")
 
 
+
+
 #
 # TARGETS
 # _____________________________________________________________________________ 
@@ -166,7 +170,7 @@ add_subdirectory(test)
 
 ## Application
 add_library(esdm SHARED esdm.c  esdm-datatypes.c  esdm-layout.c  esdm-performancemodel.c  esdm-scheduler.c  esdm-siteconfig.c  esdm-modules.c  utils/debug.c)
-target_link_libraries(esdm ${GLIB_LDFLAGS} ${JANSSON_LDFLAGS} esdmposix)
+target_link_libraries(esdm ${GLIB_LDFLAGS} ${JANSSON_LDFLAGS} esdmposix Threads::Threads)
 include_directories(${CMAKE_SOURCE_DIR}/include/ ${CMAKE_BINARY_DIR} ${GLIB_INCLUDE_DIRS} ${JANSSON_INCLUDE_DIRS})
 
 

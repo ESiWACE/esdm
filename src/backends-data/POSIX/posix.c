@@ -62,8 +62,20 @@ int mkfs()
 }
 
 
+
+
+
+/**
+ * Similar to the command line counterpart fsck for ESDM plugins is responsible
+ * to check and potentially repair the "filesystem".
+ *
+ *
+ *
+ *
+ */
 int fsck()
 {
+
 
 	return 0;
 }
@@ -99,6 +111,10 @@ int posix_create()
 		mkdir("_esdm-fs/containers", 0700);
 	}
 
+
+    //#include <unistd.h>
+    //ssize_t pread(int fd, void *buf, size_t count, off_t offset);
+    //ssize_t pwrite(int fd, const void *buf, size_t count, off_t offset);
 
 	return 0;
 }

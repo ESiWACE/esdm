@@ -28,11 +28,42 @@
 #include <esdm.h>
 #include <esdm-internal.h>
 
+#include <pthread.h>
+#include <stdio.h>
+#include <stdlib.h>
+#define NUM_THREADS	5
+
+
+void *PrintHello(void *threadid)
+{
+   long tid;
+   tid = (long)threadid;
+   printf("Hello World! It's me, thread #%ld!\n", tid);
+   pthread_exit(NULL);
+}
 
 
 
+esdm_status_t esdm_scheduler_init()
+{
 
-esdm_status_t esdm_scheduler_init() {
+   ESDM_DEBUG("esdm_scheduler_init()");
+
+   pthread_t threads[NUM_THREADS];
+   int rc;
+   long t;
+   for(t=0;t<NUM_THREADS;t++){
+     printf("In main: creating thread %ld\n", t);
+     rc = pthread_create(&threads[t], NULL, PrintHello, (void *)t);
+     if (rc){
+       printf("ERROR; return code from pthread_create() is %d\n", rc);
+       exit(-1);
+       }
+     }
+
+   /* Last thing that main() should do */
+   //pthread_exit(NULL);
+
 
 
 	return ESDM_SUCCESS;
@@ -86,5 +117,8 @@ esdm_status_t esdm_backend_io(
 		esdm_fragment_t fragment,
 		esdm_metadata_t metadata)
 {
+
+
+
 	return ESDM_SUCCESS;
 }

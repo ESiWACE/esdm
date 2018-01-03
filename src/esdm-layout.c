@@ -20,6 +20,28 @@
  * @brief The layout component fragments and reconstructs logical data.
  *
  * This file contains the layout implementation.
+ *
+ *
+ *
+ *
+ * TODO:
+ *
+ *
+ *	JSON: helper
+ *		required fields, and mapper to struct
+ *		carry along json?
+ *
+ *
+ *
+ *	mapper:
+ *		1d in => (reorder?) (single/multiple) sequence
+ *			index,   blocksize[dim], filling curve
+ *
+ *
+ *		2d in => (reorder?) (single/multiple) sequence
+ *			decoupling of indexes?
+ *
+ *
  */
 
 
