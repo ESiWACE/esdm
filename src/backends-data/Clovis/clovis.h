@@ -24,30 +24,7 @@
 #include "clovis/clovis.h"
 #include "clovis/clovis_idx.h"
 
-// Internal functions used by this backend.
-
-struct esdm_backend_generic;
-
-struct esdm_backend {
-	uint64_t       eb_magic;
-	/**
-	 * Name of this backend.
-	 */
-	const char*    eb_name;
-
-	/**
-	 * ID of this backend.
-	 */
-	uint64_t       eb_id;
-
-	/**
-	 * Block size. Offset and count of every read/write requests
-	 * should be multiple of block size.
-	 */
-	uint64_t       eb_blocksize;
-
-	/* backend operations start here */
-
+struct esdm_backend_xxxops {
 	/**
 	 * Allocate the backend context and initialise it.
 	 * In this interface, Clovis connects to Mero cluster.
@@ -57,12 +34,12 @@ struct esdm_backend {
 	 * The format of conf string would like this:
 	 * "laddr ha_addr prof_opt proc_fid".
 	 */
-	int (*esdm_backend_init)(char * conf, struct esdm_backend_generic **eb_out);
+	int (*esdm_backend_init)(char * conf, esdm_backend_t *eb);
 
 	/**
 	 * Finalise the backend.
 	 */
-	int (*esdm_backend_fini)(struct esdm_backend_generic *eb);
+	int (*esdm_backend_fini)(esdm_backend_t *eb);
 
 	/* object operations start here */
 	/**
@@ -77,7 +54,7 @@ struct esdm_backend {
 	 * @param [out] out_object_id, the returned objects.
 	 * @param [out] out_mero_metadata, the returned metadata.
 	 */
-	int (*esdm_backend_obj_alloc)(struct esdm_backend_generic *eb,
+	int (*esdm_backend_obj_alloc)(esdm_backend_t *eb,
 				      int       n_dims,
 				      int*      dims_size,
 				      esdm_type type,
@@ -91,14 +68,14 @@ struct esdm_backend {
 	 *
 	 * return object handle in [out] obj_handle;
 	 */
-	int (*esdm_backend_obj_open) (struct esdm_backend_generic *eb,
+	int (*esdm_backend_obj_open) (esdm_backend_t *eb,
 				      char*    object_id,
 				      void**   obj_handle);
 
 	/**
 	 * Write to an object.
 	 */
-	int (*esdm_backend_obj_write)(struct esdm_backend_generic *eb,
+	int (*esdm_backend_obj_write)(esdm_backend_t *eb,
 				      void*    obj_handle,
 				      uint64_t start,
 				      uint64_t count,
@@ -107,7 +84,7 @@ struct esdm_backend {
 	/**
 	 * Read from object.
 	 */
-	int (*esdm_backend_obj_read) (struct esdm_backend_generic *eb,
+	int (*esdm_backend_obj_read) (esdm_backend_t *eb,
 				      void*    obj_handle,
 				      uint64_t start,
 				      uint64_t count,
@@ -116,17 +93,13 @@ struct esdm_backend {
 	/**
 	 * Close an object.
 	 */
-	int (*esdm_backend_obj_close)(struct esdm_backend_generic *eb,
+	int (*esdm_backend_obj_close)(esdm_backend_t *eb,
 				      void*  obj_handle);
 
 };
 
-struct esdm_backend_generic {
-
-};
-
-struct esdm_backend_mero {
-	struct esdm_backend_generic ebm_base;
+typedef struct {
+	esdm_backend_t              ebm_base;
 
 	/* Mero Clovis */
 	struct m0_clovis*           ebm_clovis_instance;
@@ -135,8 +108,12 @@ struct esdm_backend_mero {
 
 	struct m0_fid               ebm_last_fid;
 
-};
+    /* for test */
+    struct esdm_backend_xxxops  ebm_ops;
+} esdm_backend_clovis_t;
 
-extern struct esdm_backend mero_esdm_backend;
+esdm_backend_t* clovis_backend_init();
+
+extern esdm_backend_clovis_t esdm_backend_clovis;
 
 #endif

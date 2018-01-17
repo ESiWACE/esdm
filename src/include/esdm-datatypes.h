@@ -125,6 +125,7 @@ typedef struct {
 	esdm_module_type_t type;
 	char* version; // 0.0.0
 	void* data;
+	uint32_t blocksize; /* any io must be multiple of 'blocksize' and aligned. */
 	esdm_backend_callbacks_t callbacks;
 } esdm_backend_t;
 
