@@ -26,7 +26,11 @@
 #include <stdlib.h>
 #include <assert.h>
 #include <errno.h>
+
+#include <esdm.h>
+
 #include "clovis.h"
+
 
 #define PAGE_4K (4096ULL)
 #define BLOCKSIZE (PAGE_4K)
@@ -34,8 +38,13 @@
 
 static struct m0_uint128 gid;
 
+static inline
+esdm_backend_clovis_t *eb2ebm(esdm_backend_t *eb)
+{
+    return container_of(eb, esdm_backend_clovis_t, ebm_base);
+}
 
-static int conf_parse(char * conf, struct esdm_backend_mero *ebm)
+static int conf_parse(char * conf, esdm_backend_clovis_t *ebm)
 {
     /*
      * Parse the conf string into ebm->ebm_clovis_conf.
@@ -78,18 +87,15 @@ static int conf_parse(char * conf, struct esdm_backend_mero *ebm)
     return 0;
 }
 
-int esdm_backend_mero_init(char * conf, struct esdm_backend_generic **eb_out)
+int esdm_backend_clovis_init(char * conf, esdm_backend_t *eb)
 {
-	struct esdm_backend_mero *ebm;
+	esdm_backend_clovis_t *ebm;
 	int                       rc;
 
-	ebm = malloc(sizeof *ebm);
-	if (ebm == NULL)
-		return -ENOMEM;
+    ebm = eb2ebm(eb);
 
 	rc = conf_parse(conf, ebm);
 	if (rc != 0) {
-		free(ebm);
 		return rc;
 	}
 
@@ -97,7 +103,6 @@ int esdm_backend_mero_init(char * conf, struct esdm_backend_generic **eb_out)
     rc = m0_clovis_init(&ebm->ebm_clovis_instance, &ebm->ebm_clovis_conf, true);
     if (rc != 0) {
         printf("Failed to initilise Clovis\n");
-        free(ebm);
 		return rc;
     }
 
@@ -109,26 +114,18 @@ int esdm_backend_mero_init(char * conf, struct esdm_backend_generic **eb_out)
 
     if (rc != 0) {
         printf("Failed to open uber realm\n");
-        free(ebm);
         return rc;
     }
 
     gid = M0_CLOVIS_ID_APP;
     /* FIXME this makes the gid not reused. */
     gid.u_hi = gid.u_lo = time(NULL);
-	*eb_out = &ebm->ebm_base;
 	return 0;
 }
 
-static inline
-struct esdm_backend_mero *eb2ebm(struct esdm_backend_generic *eb)
+int esdm_backend_clovis_fini(esdm_backend_t *eb)
 {
-    return container_of(eb, struct esdm_backend_mero, ebm_base);
-}
-
-int esdm_backend_mero_fini(struct esdm_backend_generic *eb)
-{
-	struct esdm_backend_mero *ebm;
+	esdm_backend_clovis_t *ebm;
 
 	ebm = eb2ebm(eb);
     m0_clovis_fini(ebm->ebm_clovis_instance, true);
@@ -154,7 +151,7 @@ static void open_entity(struct m0_clovis_obj *obj)
 	ops[0] = NULL;
 }
 
-static int create_object(struct esdm_backend_mero *ebm,
+static int create_object(esdm_backend_clovis_t *ebm,
                          struct m0_uint128 id)
 {
 	int                  rc = 0;
@@ -242,7 +239,7 @@ static char* object_meta_encode(const struct m0_uint128 *obj_id)
     return NULL;
 }
 
-int esdm_backend_mero_alloc(struct esdm_backend_generic *eb,
+int esdm_backend_clovis_alloc(esdm_backend_t *eb,
                             int       n_dims,
                             int*      dims_size,
                             esdm_type type,
@@ -251,7 +248,7 @@ int esdm_backend_mero_alloc(struct esdm_backend_generic *eb,
 			                char**    out_object_id,
 			                char**    out_mero_metadata)
 {
-	struct esdm_backend_mero *ebm;
+	esdm_backend_clovis_t *ebm;
 	struct m0_uint128         obj_id;
 	int                       rc;
 
@@ -271,11 +268,11 @@ int esdm_backend_mero_alloc(struct esdm_backend_generic *eb,
 	return rc;
 }
 
-int esdm_backend_mero_open (struct esdm_backend_generic *eb,
+int esdm_backend_clovis_open (esdm_backend_t *eb,
 	                        char*     object_id,
 			                void**    obj_handle)
 {
-	struct esdm_backend_mero *ebm;
+	esdm_backend_clovis_t *ebm;
 	struct m0_clovis_obj     *obj;
 	struct m0_uint128         obj_id;
 	int                       rc = 0;
@@ -300,7 +297,7 @@ int esdm_backend_mero_open (struct esdm_backend_generic *eb,
 	return rc;
 }
 
-int esdm_backend_mero_rdwr (struct esdm_backend_generic *eb,
+int esdm_backend_clovis_rdwr (esdm_backend_t *eb,
                             void*    obj_handle,
                             uint64_t start,
                             uint64_t count,
@@ -389,7 +386,7 @@ int esdm_backend_mero_rdwr (struct esdm_backend_generic *eb,
     return rc;
 }
 
-int esdm_backend_mero_write(struct esdm_backend_generic *eb,
+int esdm_backend_clovis_write(esdm_backend_t *eb,
                             void*    obj_handle,
                             uint64_t start,
                             uint64_t count,
@@ -398,12 +395,12 @@ int esdm_backend_mero_write(struct esdm_backend_generic *eb,
     int rc;
 	assert((start & BLOCKMASK) == 0);
 	assert(((start + count) & BLOCKMASK) == 0);
-    rc = esdm_backend_mero_rdwr(eb, obj_handle, start, count,
+    rc = esdm_backend_clovis_rdwr(eb, obj_handle, start, count,
                                 data, M0_CLOVIS_OC_WRITE);
     return rc;
 }
 
-int esdm_backend_mero_read (struct esdm_backend_generic *eb,
+int esdm_backend_clovis_read (esdm_backend_t *eb,
                             void*    obj_handle,
                             uint64_t start,
                             uint64_t count,
@@ -412,12 +409,12 @@ int esdm_backend_mero_read (struct esdm_backend_generic *eb,
     int rc;
 	assert((start & BLOCKMASK) == 0);
 	assert(((start + count) & BLOCKMASK) == 0);
-    rc = esdm_backend_mero_rdwr(eb, obj_handle, start, count,
+    rc = esdm_backend_clovis_rdwr(eb, obj_handle, start, count,
                                 data, M0_CLOVIS_OC_READ);
     return rc;
 }
 
-int esdm_backend_mero_close(struct esdm_backend_generic *eb,
+int esdm_backend_clovis_close(esdm_backend_t *eb,
                             void                        *obj_handle)
 {
 	struct m0_clovis_obj     *obj;
@@ -430,18 +427,70 @@ int esdm_backend_mero_close(struct esdm_backend_generic *eb,
 	return rc;
 }
 
-struct esdm_backend mero_esdm_backend = {
-    .eb_magic = 0x3333550033335500,
-	.eb_name  = "Mero Clovis",
-	.eb_id    = 1234,
-	.eb_blocksize = BLOCKSIZE,
+int clovis_backend_performance_estimate()
+{
+    return 0;
+}
 
-	.esdm_backend_init = esdm_backend_mero_init,
-	.esdm_backend_fini = esdm_backend_mero_fini,
+///////////////////////////////////////////////////////////////////////////////
+// ESDM Module Registration ///////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////////
+esdm_backend_clovis_t esdm_backend_clovis = {
+    .ebm_base = {
+	    .name      = "CLOVIS",
+    	.type      = ESDM_TYPE_DATA,
+    	.version   = "0.0.1",
+    	.data      = NULL,
+        .blocksize = BLOCKSIZE,
+        .callbacks = {
+    		(int (*)())esdm_backend_clovis_fini, // finalize
+    		clovis_backend_performance_estimate, // performance_estimate
 
-	.esdm_backend_obj_alloc = esdm_backend_mero_alloc,
-	.esdm_backend_obj_open  = esdm_backend_mero_open,
-	.esdm_backend_obj_write = esdm_backend_mero_write,
-	.esdm_backend_obj_read  = esdm_backend_mero_read,
-	.esdm_backend_obj_close = esdm_backend_mero_close
+    		(int (*)())esdm_backend_clovis_alloc,
+    		(int (*)())esdm_backend_clovis_open,
+    		(int (*)())esdm_backend_clovis_write,
+    		(int (*)())esdm_backend_clovis_read,
+    		(int (*)())esdm_backend_clovis_close,
+
+    		NULL, // allocate
+    		NULL, // update
+    		NULL, // lookup
+    	},
+    },
+    .ebm_ops = {
+    	.esdm_backend_init      = esdm_backend_clovis_init,
+    	.esdm_backend_fini      = esdm_backend_clovis_fini,
+
+    	.esdm_backend_obj_alloc = esdm_backend_clovis_alloc,
+    	.esdm_backend_obj_open  = esdm_backend_clovis_open,
+    	.esdm_backend_obj_write = esdm_backend_clovis_write,
+    	.esdm_backend_obj_read  = esdm_backend_clovis_read,
+    	.esdm_backend_obj_close = esdm_backend_clovis_close
+    },
 };
+
+/**
+* Initializes the CLOVIS plugin. In particular this involves:
+*
+*	* Load configuration of this backend
+*	* Load and potenitally calibrate performance model
+*
+*	* Connect with support services e.g. for technical metadata
+*	* Setup directory structures used by this CLOVIS specific backend
+*
+*	* Poopulate esdm_backend_t struct and callbacks required for registration
+*
+* @return pointer to backend struct
+*/
+esdm_backend_t* clovis_backend_init()
+{
+    esdm_backend_t *eb = &esdm_backend_clovis.ebm_base;
+    int rc;
+
+    rc = esdm_backend_clovis_init("conf string", eb);
+
+    if (rc != 0)
+        return NULL;
+    else
+	    return eb;
+}
