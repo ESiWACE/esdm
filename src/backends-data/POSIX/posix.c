@@ -22,6 +22,8 @@
 
 #include <stdarg.h>
 #include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
 #include <sys/stat.h>
 #include <sys/types.h>
 #include <unistd.h>
@@ -182,7 +184,10 @@ int posix_lookup()
 // ESDM Module Registration ///////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////
 
-static esdm_backend_t backend = {
+static esdm_backend_t backend_template = {
+///////////////////////////////////////////////////////////////////////////////
+// WARNING: This serves as a template for the posix plugin and is memcpied!  //
+///////////////////////////////////////////////////////////////////////////////
 	.name = "POSIX",
 	.type = ESDM_TYPE_DATA,
 	.version = "0.0.1",
@@ -207,20 +212,22 @@ static esdm_backend_t backend = {
 * Initializes the POSIX plugin. In particular this involves:
 *
 *	* Load configuration of this backend
-*	* Load and potenitally calibrate performance model
+*	* Load and potentially calibrate performance model
 *
 *	* Connect with support services e.g. for technical metadata
 *	* Setup directory structures used by this POSIX specific backend
 *
-*	* Poopulate esdm_backend_t struct and callbacks required for registration
+*	* Populate esdm_backend_t struct and callbacks required for registration
 *
 * @return pointer to backend struct
 */
-esdm_backend_t* posix_backend_init() {
+esdm_backend_t* posix_backend_init(void* data) {
 	
 	DEBUG(0, "Initializing POSIX backend.");
 
-	
+	esdm_backend_t* backend = (esdm_backend_t*) malloc(sizeof(esdm_backend_t));
+	memcpy(backend, &backend_template, sizeof(esdm_backend_t));
+
 	// todo check posix style persitency structure available?
 	mkfs();	
 
@@ -229,7 +236,7 @@ esdm_backend_t* posix_backend_init() {
 
 
 
-	return &backend;
+	return backend;
 
 }
 

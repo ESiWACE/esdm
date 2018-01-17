@@ -61,7 +61,6 @@ esdm_config_t* esdm_config_init(esdm_instance_t* esdm)
 	esdm_config_t* config = NULL;
 	config = (esdm_config_t*) malloc(sizeof(esdm_config_t));
 
-
 	config->json = esdm_config_gather(0, NULL);
 
 
@@ -69,7 +68,13 @@ esdm_config_t* esdm_config_init(esdm_instance_t* esdm)
 }
 
 
-esdm_status_t esdm_config_finalize() {
+esdm_status_t esdm_config_finalize(esdm_instance_t* esdm) {
+
+
+	json_decref(esdm->config->json);
+		
+	free(esdm->config);
+
 	return ESDM_SUCCESS;
 }
 
@@ -138,7 +143,7 @@ json_t* esdm_config_gather(int argc, char const* argv[])
 
 
 
-void* esdm_config_get_backends(esdm_instance_t* esdm)
+esdm_config_backends_t* esdm_config_get_backends(esdm_instance_t* esdm)
 {
 	ESDM_DEBUG(__func__);	
 
@@ -149,30 +154,50 @@ void* esdm_config_get_backends(esdm_instance_t* esdm)
 	element = json_object_get(root, "esdm");
 	element = json_object_get(element, "backends");
 
-
 	size_t i;
-	size_t size = json_array_size(element);
+	size_t size;;
+
+	esdm_config_backends_t* config_backends = (esdm_config_backends_t*) malloc(sizeof(esdm_config_backends_t));
+
 	if (element)
 	{
-		switch (json_typeof(element)) {
-		    case JSON_ARRAY:
-				// Element is array, therefor may contain valid backend configurations
-				size = json_array_size(element);
+		if (json_typeof(element) == JSON_ARRAY)
+		{
+			// Element is array, therefor may contain valid backend configurations
+			size = json_array_size(element);
 
-				printf("JSON Array of %ld element%s:\n", size, json_plural(size));
-				for (i = 0; i < size; i++) {
-					json_t* backend = json_array_get(element, i);
-					print_json_aux(json_array_get(element, i), 0);
-				}	
+			esdm_config_backend_t* backends;
+			backends = (esdm_config_backend_t*) malloc(sizeof(esdm_config_backend_t)*size);
 
-				break;
-			default:
-				ESDM_ERROR("Invalid configuration! /esdm/backends is not an array.");
+
+			printf("JSON Array of %ld element%s:\n", size, json_plural(size));
+
+			for (i = 0; i < size; i++) {
+				print_json_aux(json_array_get(element, i), 0);
+
+				json_t *backend = json_array_get(element, i);
+				json_t *elem = NULL;
+				
+				elem = json_object_get(backend, "type");
+				backends[i].type = json_string_value(elem);
+
+				elem = json_object_get(backend, "name");
+				backends[i].name = json_string_value(elem);
+
+				elem = json_object_get(backend, "target");
+				backends[i].target = json_string_value(elem);
+			}	
+
+			config_backends->count = size;
+			config_backends->backends = backends;
+
 		}
+	} else {
+				ESDM_ERROR("Invalid configuration! /esdm/backends is not an array.");
 	}
 
 
-	return NULL;
+	return config_backends;
 }
 
 

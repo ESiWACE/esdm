@@ -24,6 +24,7 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 
 #include <esdm.h>
 #include <esdm-internal.h>
@@ -83,16 +84,44 @@ esdm_modules_t* esdm_modules_init(esdm_instance_t* esdm)
 	esdm_modules_t* modules = NULL;
 	modules = (esdm_modules_t*) malloc(sizeof(esdm_modules_t));
 
-	
-	int backendc = 0;
-	esdm_backend_t* backendv = NULL;
-	
-	esdm_config_get_backends(esdm);
+	modules->bcount = 0;
+	modules->mcount = 0;
+
+	esdm_config_backends_t* config_backends = esdm_config_get_backends(esdm);
+	esdm_config_backend_t* b = NULL;
+
+
+	modules->bcount = 0;
+	modules->backends = (esdm_backend_t**) malloc(sizeof(esdm_backend_t*)*config_backends->count);
+
+	for (int i = 0; i < config_backends->count; i++) {
+		b = &(config_backends->backends[i]);
+
+		printf("Backend config: %d, %s, %s, %s\n", i,
+				b->type,	
+				b->name,	
+				b->target
+			);
+
+		if (strncmp (b->type,"POSIX",5) == 0)
+		{
+			posix_backend_options_t data;
+			data.name = b->name;
+			data.target = b->target;
+
+			modules->backends[i] = posix_backend_init((void*)&data);
+		} else {
+			ESDM_ERROR("Unknown backend type. Please check your ESDM configuration.");
+		}
+
+	}
 
 
 	esdm_backend_t* backend = NULL;
 
-	backend = posix_backend_init();
+	void* data = NULL;
+
+	backend = posix_backend_init((void*)data);
 	backend->callbacks.performance_estimate();
 
 	// place the module into the right list

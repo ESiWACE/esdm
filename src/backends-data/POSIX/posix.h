@@ -17,10 +17,16 @@
 #define POSIX_H
 
 // Internal functions used by this backend.
+typedef struct {
+	const char* type;
+	const char* name;
+	const char* target;
+} posix_backend_options_t;
+
 
 
 int posix_backend_performance_estimate();
-esdm_backend_t* posix_backend_init();
+esdm_backend_t* posix_backend_init(void* data);
 
 
 #endif

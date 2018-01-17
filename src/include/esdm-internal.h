@@ -51,9 +51,9 @@ esdm_status_t esdm_metadata_t_alloc();
 
 // Configuration
 esdm_config_t* esdm_config_init(esdm_instance_t* esdm);
-esdm_status_t esdm_config_finalize();
+esdm_status_t esdm_config_finalize(esdm_instance_t* esdm);
 
-void* esdm_config_get_backends(esdm_instance_t* esdm);
+esdm_config_backends_t* esdm_config_get_backends(esdm_instance_t* esdm);
 
 // Modules
 esdm_modules_t* esdm_modules_init(esdm_instance_t* esdm);

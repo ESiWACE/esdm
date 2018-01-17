@@ -168,49 +168,29 @@ typedef struct {
 // INTERNAL
 ///////////////////////////////////////////////////////////////////////////////
 
-// Entry points and state for core components /////////////////////////////////
 
-typedef struct {
-	int info;
-	void* json;
-} esdm_config_t;
-
-typedef struct {
-	int info;
-} esdm_modules_t;
-
-typedef struct {
-	int info;
-} esdm_layout_t;
-
-typedef struct {
-	int info;
-} esdm_scheduler_t;
-
-typedef struct {
-	int info;
-} esdm_performance_t;
-
-
-typedef struct {
-	int is_initialized;
-	esdm_config_t* config;
-	esdm_modules_t* modules;
-	esdm_layout_t* layout;
-	esdm_scheduler_t* scheduler;
-	esdm_performance_t* performance;
-} esdm_instance_t;
 
 // Organisation structures of core components /////////////////////////////////
+
+// Config
+typedef struct {
+	const char* type;
+	const char* name;
+	const char* target;
+} esdm_config_backend_t;
+
+typedef struct {
+	int count;
+	esdm_config_backend_t* backends;
+} esdm_config_backends_t;
+
+
 
 // Modules
 typedef struct {
 	int count;
 	esdm_module_type_t * module;
 } esdm_module_type_array_t;
-
-
-
 
 
 // Scheduler
@@ -234,6 +214,45 @@ typedef struct {
 	int min_bytes;
 	int concurrency;
 } esdm_performance_estimate_t;
+
+
+
+// Entry points and state for core components /////////////////////////////////
+
+typedef struct {
+	int info;
+	void* json;
+} esdm_config_t;
+
+typedef struct {
+	int info;
+	int bcount;
+	int mcount;
+	esdm_backend_t** backends;
+	//esdm_modules_t** modules;
+} esdm_modules_t;
+
+typedef struct {
+	int info;
+} esdm_layout_t;
+
+typedef struct {
+	int info;
+} esdm_scheduler_t;
+
+typedef struct {
+	int info;
+} esdm_performance_t;
+
+
+typedef struct {
+	int is_initialized;
+	esdm_config_t* config;
+	esdm_modules_t* modules;
+	esdm_layout_t* layout;
+	esdm_scheduler_t* scheduler;
+	esdm_performance_t* performance;
+} esdm_instance_t;
 
 
 #endif
