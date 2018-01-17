@@ -10,14 +10,45 @@
 
 
 
-typedef int esdm_metadata_t;
-typedef int esdm_dataset_t;
-typedef int esdm_fragment_t;
+
+// LOGICAL/DOMAIN DATATYPES ///////////////////////////////////////////////////
+
+typedef struct {
+	char * json;
+} esdm_metadata_t;
+
+typedef struct {
+	char * json;
+	int type;
+	int inspect_callback;
+} esdm_dataspace_t;
+
+
+
+typedef struct {
+	esdm_metadata_t* metadata;
+	esdm_dataspace_t* dataspace;
+} esdm_fragment_t;
+
+
+typedef struct {
+	esdm_metadata_t* metadata;
+	esdm_dataspace_t* dataspace;
+	esdm_fragment_t* fragments;
+} esdm_dataset_t;
+
+
+typedef struct {
+	esdm_metadata_t* metadata;	
+	esdm_dataset_t* datasets;
+} esdm_container_t;
 
 
 
 
 
+
+// ESDM Parameters and Status /////////////////////////////////////////////////
 /**
  * ESDM Status codes and failure modes.
  *
@@ -37,7 +68,6 @@ typedef enum {
 } esdm_status_t;
 
 
-
 /**
  * ESDM provides logging helpers, the available loglevels are defined here.
  *
@@ -50,8 +80,6 @@ typedef enum {
 	ESDM_LOGLEVEL_DEBUG,
 	ESDM_LOGLEVEL_NOTSET
 } esdm_loglevel_t;
-
-
 
 // MODULES ////////////////////////////////////////////////////////////////////
 
@@ -96,6 +124,7 @@ typedef struct {
 	int (*open)();
 	int (*write)();
 	int (*read)();
+
 	int (*close)();
 //} esdm_backend_callbacks_data_t;
 //
@@ -134,17 +163,51 @@ typedef struct {
 
 
 
+///////////////////////////////////////////////////////////////////////////////
 // INTERNAL
 ///////////////////////////////////////////////////////////////////////////////
 
-// Module Management
+// Entry points and state for core components /////////////////////////////////
+
+typedef struct {
+	int info;
+	void* json;
+} esdm_config_t;
+
+typedef struct {
+	int info;
+} esdm_modules_t;
+
+typedef struct {
+	int info;
+} esdm_layout_t;
+
+typedef struct {
+	int info;
+} esdm_scheduler_t;
+
+typedef struct {
+	int info;
+} esdm_performance_t;
+
+
+typedef struct {
+	int is_initialized;
+	esdm_config_t* config;
+	esdm_modules_t* modules;
+	esdm_layout_t* layout;
+	esdm_scheduler_t* scheduler;
+	esdm_performance_t* performance;
+} esdm_instance_t;
+
+// Organisation structures of core components /////////////////////////////////
+
+// Modules
 typedef struct {
 	int count;
 	esdm_module_type_t * module;
 } esdm_module_type_array_t;
 
-
-// Layout
 
 
 
@@ -156,7 +219,7 @@ typedef struct {
 
 
 typedef struct{
-	int thread_count;
+	int thread_count; // Why!?
 	esdm_backend_t * backend;
 	esdm_pending_fragment_t * io;
 } esdm_pending_fragments_t;

@@ -20,6 +20,9 @@
  * @brief Entry point for ESDM API Implementation
  */
 
+
+#include <stdio.h>
+
 #include <esdm.h>
 #include <esdm-internal.h>
 
@@ -28,7 +31,7 @@
 
 // TODO: Decide on initialization mechanism.
 static int is_initialized = 0;
-
+static esdm_instance_t esdm;
 
 
 /**
@@ -42,18 +45,29 @@ esdm_status_t esdm_init()
 {	
 	ESDM_DEBUG(__func__);	
 
-	// for all linked configurations and modules initialize
-	// on compile time determined which modules exist
-	//return esdm_module_init();
-
 	if (!is_initialized) {
 		ESDM_DEBUG("Initializing ESDM.");
 
-		esdm_scheduler_init();
+		// find configuration
+		esdm.config = esdm_config_init(&esdm);
 
-		esdm_module_init();
+		// optional modules
+		esdm.modules = esdm_modules_init(&esdm);
+
+		// core components
+		esdm.layout = esdm_layout_init(&esdm);
+		esdm.performance = esdm_performance_init(&esdm);
+		esdm.scheduler = esdm_scheduler_init(&esdm);
+
+
+		printf("[ESDM] esdm = {config = %p, modules = %p, scheduler = %p, layout = %p, performance = %p}\n", esdm.config, esdm.modules, esdm.scheduler, esdm.layout, esdm.performance);
 		is_initialized = 1;
 	}
+
+
+
+
+
 
 	return ESDM_SUCCESS;
 }
@@ -73,7 +87,7 @@ esdm_status_t esdm_finalize()
 	// ESDM data data structures that require proper cleanup..
 	// in particular this effects data and cache state which is not yet persistent
 
-	return esdm_module_finalize();
+	return esdm_modules_finalize();
 }
 
 

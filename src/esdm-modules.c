@@ -22,6 +22,9 @@
  */
 
 
+#include <stdio.h>
+#include <stdlib.h>
+
 #include <esdm.h>
 #include <esdm-internal.h>
 
@@ -69,40 +72,37 @@ static esdm_module_type_array_t modules_per_type[ESDM_TYPE_LAST];
 */
 
 
-esdm_status_t esdm_module_init()
+
+
+
+
+esdm_modules_t* esdm_modules_init(esdm_instance_t* esdm)
 {
-	ESDM_DEBUG("Initializing modules.");
+	ESDM_DEBUG(__func__);	
+
+	esdm_modules_t* modules = NULL;
+	modules = (esdm_modules_t*) malloc(sizeof(esdm_modules_t));
 
 	
+	int backendc = 0;
+	esdm_backend_t* backendv = NULL;
+	
+	esdm_config_get_backends(esdm);
+
+
 	esdm_backend_t* backend = NULL;
 
 	backend = posix_backend_init();
-
-
 	backend->callbacks.performance_estimate();
 
-
-	/*
-	module_count = 0;
-	esdm_module_t * cur = modules;
-	for( ; cur != NULL ; cur++){
-		cur->init();
-		modules_per_type[cur->type()]++;
-	}
-
-
-
-
-
-	*/
 	// place the module into the right list
 	//
-	return ESDM_SUCCESS;
+	return modules;
 }
 
-esdm_status_t esdm_module_finalize()
+esdm_status_t esdm_modules_finalize()
 {
-	ESDM_DEBUG("Finalizing. Cleaning up modules.");
+	ESDM_DEBUG(__func__);	
 
 	// reverse finalization of modules
 	//
@@ -116,9 +116,9 @@ esdm_status_t esdm_module_finalize()
 
 
 
-esdm_status_t esdm_module_get_by_type(esdm_module_type_t type, esdm_module_type_array_t * array)
+esdm_status_t esdm_modules_get_by_type(esdm_module_type_t type, esdm_module_type_array_t * array)
 {
-	ESDM_DEBUG("Module get by type.");
+	ESDM_DEBUG(__func__);	
 
 
 

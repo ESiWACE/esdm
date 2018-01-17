@@ -28,58 +28,65 @@
 #include <esdm.h>
 #include <esdm-internal.h>
 
-#include <pthread.h>
 #include <stdio.h>
 #include <stdlib.h>
-#define NUM_THREADS	5
+
+#include <glib.h>
 
 
-void *PrintHello(void *threadid)
+void TaskHandler (gpointer data, gpointer user_data)
 {
-   long tid;
-   tid = (long)threadid;
-   printf("Hello World! It's me, thread #%ld!\n", tid);
+   printf("Hello from TaskHandler gthread! data = %p => %d,  user_data = %p => %d!\n", data, *(int*)(data), user_data, *(int*)(user_data));
    pthread_exit(NULL);
 }
 
 
 
-esdm_status_t esdm_scheduler_init()
+static int useable_user_data = 42;
+static int useable_task_data[] = { 0,1,2,3,4,5,6,7,8,9,10.11,12,13,14,15,16,17,18,19,20 };
+
+esdm_scheduler_t* esdm_scheduler_init(esdm_instance_t* esdm)
+{
+	ESDM_DEBUG(__func__);	
+
+	esdm_scheduler_t* scheduler = NULL;
+	scheduler = (esdm_scheduler_t*) malloc(sizeof(esdm_scheduler_t));
+
+	// init thread pool
+    gpointer user_data = &useable_user_data;
+	gint max_threads = 5;
+	gboolean exclusive = 0;
+	GThreadPool* pool =  g_thread_pool_new (TaskHandler, user_data, max_threads, exclusive, NULL /* ignore errors */);
+
+	// spawn a few tasks
+    gpointer task_data = NULL;
+	for(int t = 0; t < 7 /* num_threads */; t++)
+	{
+		printf("Adding task: %p, %p, %d, %d\n", useable_task_data[t], useable_task_data+t, *(useable_task_data+t), useable_task_data[t]);
+		task_data = &useable_task_data[t];
+		g_thread_pool_push(pool, task_data, NULL /* ignore errors */);
+	}
+
+
+
+	return scheduler;
+}
+
+
+esdm_status_t esdm_scheduler_finalize()
 {
 
-   ESDM_DEBUG("esdm_scheduler_init()");
-
-   pthread_t threads[NUM_THREADS];
-   int rc;
-   long t;
-   for(t=0;t<NUM_THREADS;t++){
-     printf("In main: creating thread %ld\n", t);
-     rc = pthread_create(&threads[t], NULL, PrintHello, (void *)t);
-     if (rc){
-       printf("ERROR; return code from pthread_create() is %d\n", rc);
-       exit(-1);
-       }
-     }
-
-   /* Last thing that main() should do */
-   //pthread_exit(NULL);
-
-
-
-	return ESDM_SUCCESS;
-}
-
-
-esdm_status_t esdm_scheduler_finalize() {
+	ESDM_DEBUG(__func__);	
 	return ESDM_SUCCESS;
 }
 
 
 
 
-esdm_status_t esdm_scheduler_submit(esdm_pending_fragment_t * io) {
-	ESDM_DEBUG("Scheduler submit request.");
+esdm_status_t esdm_scheduler_submit(esdm_pending_fragment_t * io)
+{
 
+	ESDM_DEBUG(__func__);	
 
 	esdm_init();
 
@@ -112,12 +119,9 @@ esdm_status_t esdm_scheduler_submit(esdm_pending_fragment_t * io) {
 
 
 
-esdm_status_t esdm_backend_io(
-		esdm_backend_t* backend,
-		esdm_fragment_t fragment,
-		esdm_metadata_t metadata)
+esdm_status_t esdm_backend_io(esdm_backend_t* backend, esdm_fragment_t* fragment, esdm_metadata_t* metadata)
 {
-
+	ESDM_DEBUG(__func__);	
 
 
 	return ESDM_SUCCESS;

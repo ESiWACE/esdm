@@ -24,6 +24,8 @@ more efficiently organize metadata and data across a variety of storage backends
   * dnf install mpich-3.0 mpich-3.0-devel
 
 
+  * dnf install gcc-c++ gcc libtool cmake
+
 
 ## Development
 

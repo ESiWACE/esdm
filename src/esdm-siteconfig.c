@@ -20,13 +20,15 @@
  *
  */
 
-#include <esdm.h>
-#include <esdm-internal.h>
-
 #include <stdio.h>
 #include <stdlib.h>
+#include <fcntl.h>
+#include <unistd.h>
+
 #include <jansson.h>
 
+#include <esdm.h>
+#include <esdm-internal.h>
 
 
 // forward declarations for parsing helpers
@@ -48,41 +50,129 @@ static char *read_line(char *line, int max_chars);
 
 
 
+json_t* esdm_config_gather(int argc, char const* argv[]);
 
-esdm_status_t esdm_siteconfig_init() {
+
+
+esdm_config_t* esdm_config_init(esdm_instance_t* esdm)
+{
+	ESDM_DEBUG(__func__);	
+
+	esdm_config_t* config = NULL;
+	config = (esdm_config_t*) malloc(sizeof(esdm_config_t));
+
+
+	config->json = esdm_config_gather(0, NULL);
+
+
+	return config;
+}
+
+
+esdm_status_t esdm_config_finalize() {
 	return ESDM_SUCCESS;
 }
 
 
-esdm_status_t esdm_siteconfig_finalize() {
-	return ESDM_SUCCESS;
+
+
+
+// TODO: move to utils?
+int read_file(char* filepath, char** buf)
+{
+	if (*buf != NULL)
+	{
+		ESDM_ERROR("read_file(): Potential memory leak. Overwriting existing pointer with value != NULL.");
+		exit(1);
+	}
+
+	FILE *f = fopen(filepath, "rb");
+	fseek(f, 0, SEEK_END);
+	long fsize = ftell(f);
+	fseek(f, 0, SEEK_SET);  //same as rewind(f);
+
+	char *string = malloc(fsize + 1);
+	fread(string, fsize, 1, f);
+	fclose(f);
+
+	string[fsize] = 0;
+
+
+	*buf = string;
+
+	printf("read_file(): %s\n", string);
 }
 
 
 
 
+/**
+ * Gathers ESDM configuration settings from multiple locations:
+ *
+ *	/etc/esdm/esdm.conf
+ *	~/.config/esdm/esdm.conf
+ *	~/.esdm.conf
+ *  ./esdm.conf
+ *  environment variable
+ *  arguments
+ *
+ */
+json_t* esdm_config_gather(int argc, char const* argv[]) 
+{
+	ESDM_DEBUG(__func__);	
+
+	char* config_json = NULL;
 
 
+	read_file("_esdm.conf", &config_json);
 
-
-esdm_status_t esdm_siteconfig_parse_json() {
-
-	char* keywords[] = {"systems", "subsystem", "type", "targets"};
-
-
-	char config_raw[] = "{\"system\": \"storage1\", \"targets\": 3}";
 
 	// parse text into JSON structure
-	json_t *root = load_json(config_raw);
+	json_t *root = load_json(config_json);
 
-	if (root) {
-		// print and release the JSON structure
-		print_json(root);
-		json_decref(root);
+	return root;
+}
+
+
+
+
+
+
+void* esdm_config_get_backends(esdm_instance_t* esdm)
+{
+	ESDM_DEBUG(__func__);	
+
+	json_t *root = (json_t*) esdm->config->json;
+
+	// fetch configured backends
+	json_t *element = NULL;
+	element = json_object_get(root, "esdm");
+	element = json_object_get(element, "backends");
+
+
+	size_t i;
+	size_t size = json_array_size(element);
+	if (element)
+	{
+		switch (json_typeof(element)) {
+		    case JSON_ARRAY:
+				// Element is array, therefor may contain valid backend configurations
+				size = json_array_size(element);
+
+				printf("JSON Array of %ld element%s:\n", size, json_plural(size));
+				for (i = 0; i < size; i++) {
+					json_t* backend = json_array_get(element, i);
+					print_json_aux(json_array_get(element, i), 0);
+				}	
+
+				break;
+			default:
+				ESDM_ERROR("Invalid configuration! /esdm/backends is not an array.");
+		}
 	}
 
 
-	return ESDM_SUCCESS;
+	return NULL;
 }
 
 

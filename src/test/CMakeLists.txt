@@ -2,6 +2,11 @@
 # Tests
 # _____________________________________________________________________________ 
 
+# Copy some prepared files such as a ESDM configuration to the build test directory
+file(COPY ${CMAKE_CURRENT_SOURCE_DIR}/_esdm.conf DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
+
+
+
 # Generic tests, that only require libesdm
 file(GLOB TESTFILES "${CMAKE_CURRENT_SOURCE_DIR}" "*.c")
 foreach(TESTFILE ${TESTFILES})

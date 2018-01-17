@@ -44,8 +44,8 @@ int verify_data(uint64_t* a, uint64_t* b) {
 	return mismatches;
 }
 
-
-int main(){
+int main(int argc, char const* argv[])
+{
 	esdm_status_t ret;
 	int mismatches;
 	// offset in the actual ND dimensions
@@ -68,7 +68,9 @@ int main(){
 	}
 
 
-	esdm_open("mydataset", ESDM_CREATE);
+	esdm_open("mycontainer", ESDM_CREATE);
+	
+	//esdm_open("mycontainer/mydataset", ESDM_CREATE);
 
 
 	// Write the data to the dataset

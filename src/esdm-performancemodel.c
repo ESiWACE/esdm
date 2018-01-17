@@ -32,13 +32,20 @@
 #include <esdm.h>
 #include <esdm-internal.h>
 
+#include <stdio.h>
+#include <stdlib.h>
 
-esdm_status_t esdm_performance_init() {
-	return ESDM_SUCCESS;
+
+esdm_performance_t* esdm_performance_init(esdm_instance_t* esdm) {
+	esdm_performance_t* performance = NULL;
+	performance = (esdm_performance_t*) malloc(sizeof(esdm_performance_t));
+
+	return performance;
 }
 
 
-esdm_status_t esdm_performance_finalize() {
+esdm_status_t esdm_performance_finalize(esdm_performance_t* performance) {
+
 	return ESDM_SUCCESS;
 }
 
@@ -66,7 +73,7 @@ esdm_status_t esdm_perf_model_split_io(
 	esdm_module_type_array_t * backends;
 
 	// pickup the performance estimate for each backend module
-	esdm_module_get_by_type(ESDM_TYPE_DATA, backends);
+	esdm_modules_get_by_type(ESDM_TYPE_DATA, backends);
 	for(int i=0; i < backends->count; i++){
 		//esdm_backend_estimate_performance((esdm_backend_t*) backends->module, 1234);
 	}

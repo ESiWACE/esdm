@@ -62,15 +62,9 @@ int mkfs()
 }
 
 
-
-
-
 /**
  * Similar to the command line counterpart fsck for ESDM plugins is responsible
  * to check and potentially repair the "filesystem".
- *
- *
- *
  *
  */
 int fsck()
@@ -81,6 +75,15 @@ int fsck()
 }
 
 
+
+
+
+
+///////////////////////////////////////////////////////////////////////////////
+// Internal Handlers //////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////////
+
+// find_fragment
 
 
 
@@ -119,6 +122,14 @@ int posix_create()
 	return 0;
 }
 
+
+/**
+ *	
+ *	handle
+ *	mode
+ *	owner?	
+ *
+ */
 int posix_open() 
 {
 	DEBUG(0, "Open");

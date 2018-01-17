@@ -45,13 +45,14 @@
  */
 
 
+#include <stdio.h>
+#include <stdlib.h>
+
+#include <jansson.h>
+
 #include <esdm.h>
 #include <esdm-internal.h>
 
-
-#include <stdio.h>
-#include <stdlib.h>
-#include <jansson.h>
 
 
 // forward declarations for parsing helpers
@@ -96,18 +97,24 @@ static char *read_line(char *line, int max_chars);
 
 
 
-esdm_status_t esdm_layout_init() {
-	return ESDM_SUCCESS;
+esdm_layout_t* esdm_layout_init(esdm_instance_t* esdm) {
+	ESDM_DEBUG(__func__);	
+
+	esdm_layout_t* layout = NULL;
+	layout = (esdm_layout_t*) malloc(sizeof(esdm_layout_t));
+	return layout;
 }
 
 
 esdm_status_t esdm_layout_finalize() {
+	ESDM_DEBUG(__func__);	
 	return ESDM_SUCCESS;
 }
 
 
 
 esdm_status_t esdm_layout_stat(char* desc) {
+	ESDM_DEBUG(__func__);	
 	ESDM_DEBUG("received metadata lookup request");
 
 
