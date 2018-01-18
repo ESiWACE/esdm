@@ -12,13 +12,33 @@
  *                                                                                 
  * You should have received a copy of the GNU Lesser General Public License        
  * along with ESDM.  If not, see <http://www.gnu.org/licenses/>.           
- */                                                                         
+ */   
+#ifndef METADUMMY_H
+#define METADUMMY_H
+
+#include <esdm.h>
+
+// Internal functions used by this backend.
+typedef struct {
+	const char* type;
+	const char* name;
+	const char* target;
+} metadummy_backend_options_t;
 
 
-/**
- * @file
- * @brief Test for the generic functionality of a backend.
- *
- * All backends have to support core functionalities (e.g. allocate, open, put,
- * get, append, close). Either via callbacks or  symbol or else.
- */
+
+// Internal functions used by this backend.
+typedef struct {
+	metadummy_backend_options_t* options;
+	int other;
+} metadummy_backend_data_t;
+
+
+
+
+
+int metadummy_backend_performance_estimate(esdm_backend_t* backend);
+esdm_backend_t* metadummy_backend_init(void* data);
+
+
+#endif

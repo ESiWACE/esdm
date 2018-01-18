@@ -227,6 +227,7 @@ typedef struct {
 	int bcount;
 	int mcount;
 	esdm_backend_t** backends;
+	esdm_backend_t* metadata;
 	//esdm_modules_t** modules;
 } esdm_modules_t;
 

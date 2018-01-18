@@ -4,4 +4,3 @@ SUBDIRS(POSIX)
 #SUBDIRS(Clovis)
 #SUBDIRS(WOS)
 
-#SUBDIRS(test)

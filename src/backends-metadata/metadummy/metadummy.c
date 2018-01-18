@@ -31,7 +31,7 @@
 #include <sys/types.h>
 #include <unistd.h>
 
-#include "posix.h"
+#include "metadummy.h"
 
 
 void log(uint32_t loglevel, const char* format, ...)
@@ -45,7 +45,7 @@ void log(uint32_t loglevel, const char* format, ...)
 		va_end(args);
 	}
 }
-#define DEBUG(loglevel, msg) log(loglevel, "[POSIX] %-30s %s:%d\n", msg, __FILE__, __LINE__)
+#define DEBUG(loglevel, msg) log(loglevel, "[METADUMMY] %-30s %s:%d\n", msg, __FILE__, __LINE__)
 
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -54,39 +54,19 @@ void log(uint32_t loglevel, const char* format, ...)
 
 static int mkfs(esdm_backend_t* backend) 
 {
+	DEBUG(0, "metadummy setup");
 
-	posix_backend_data_t* data = (posix_backend_data_t*)backend->data;
-	posix_backend_options_t* options = data->options;
-
-	printf("mkfs: backend->(void*)data->options->target = %s\n", options->target);
-	printf("\n\n\n");
-
-
-	const char* tgt = options->target;
+	//const char* tgt = options->target;
+	const char* tgt = "./_metadummy";
 
 	struct stat st = {0};
 
 	if (stat(tgt, &st) == -1)
 	{
 		char* root; 
-		char* cont;
-		char* sdat;
-		char* sfra;
-		
 		asprintf(&root, "%s", tgt);
-		asprintf(&cont, "%s/containers", tgt);
-		asprintf(&sdat, "%s/shared-datasets", tgt);
-		asprintf(&sfra, "%s/shared-fragments", tgt);
-		
 		mkdir(root, 0700);
-		mkdir(cont, 0700);
-		mkdir(sdat, 0700);
-		mkdir(sfra, 0700);
-	
 		free(root);
-		free(cont);
-		free(sdat);
-		free(sfra);
 	}
 }
 
@@ -121,22 +101,16 @@ static int fsck()
 // ESDM Callbacks /////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////
 
-int posix_backend_performance_estimate(esdm_backend_t* backend) 
+int metadummy_backend_performance_estimate(esdm_backend_t* backend) 
 {
 	DEBUG(0, "Calculating performance estimate.");
-
-	posix_backend_data_t* data = (posix_backend_data_t*)backend->data;
-	posix_backend_options_t* options = data->options;
-
-	printf("perf_estimate: backend->(void*)data->options->target = %s\n", options->target);
-	printf("\n\n\n");
 
 
 	return 0;
 }
 
 
-int posix_create() 
+int metadummy_create() 
 {
 	DEBUG(0, "Create");
 
@@ -165,25 +139,25 @@ int posix_create()
  *	owner?	
  *
  */
-int posix_open() 
+int metadummy_open() 
 {
 	DEBUG(0, "Open");
 return 0;
 }
 
-int posix_write() 
+int metadummy_write() 
 {
 	DEBUG(0, "Write");
 	return 0;
 }
 
-int posix_read() 
+int metadummy_read() 
 {
 	DEBUG(0, "Read");
 	return 0;
 }
 
-int posix_close() 
+int metadummy_close() 
 {
 	DEBUG(0, "Close");
 	return 0;
@@ -191,21 +165,21 @@ int posix_close()
 
 
 
-int posix_allocate() 
+int metadummy_allocate() 
 {
 	DEBUG(0, "Allocate");
 	return 0;
 }
 
 
-int posix_update() 
+int metadummy_update() 
 {
 	DEBUG(0, "Update");
 	return 0;
 }
 
 
-int posix_lookup() 
+int metadummy_lookup() 
 {
 	DEBUG(0, "Lookup");
 	return 0;
@@ -219,21 +193,21 @@ int posix_lookup()
 
 static esdm_backend_t backend_template = {
 ///////////////////////////////////////////////////////////////////////////////
-// WARNING: This serves as a template for the posix plugin and is memcpied!  //
+// WARNING: This serves as a template for the metadummy plugin and is memcpied!  //
 ///////////////////////////////////////////////////////////////////////////////
-	.name = "POSIX",
-	.type = ESDM_TYPE_DATA,
+	.name = "metadummy",
+	.type = ESDM_TYPE_METADATA,
 	.version = "0.0.1",
 	.data = NULL,
 	.callbacks = {
 		NULL, // finalize
-		posix_backend_performance_estimate, // performance_estimate
+		metadummy_backend_performance_estimate, // performance_estimate
 
-		posix_create, // create
-		posix_open, // open
-		posix_write, // write
-		posix_read, // read
-		posix_close, // close
+		metadummy_create, // create
+		metadummy_open, // open
+		metadummy_write, // write
+		metadummy_read, // read
+		metadummy_close, // close
 
 		NULL, // allocate
 		NULL, // update
@@ -254,29 +228,18 @@ static esdm_backend_t backend_template = {
 *
 * @return pointer to backend struct
 */
-esdm_backend_t* posix_backend_init(void* init_data) {
+esdm_backend_t* metadummy_backend_init(void* init_data) {
 	
-	DEBUG(0, "Initializing POSIX backend.");
+	DEBUG(0, "Initializing metadummy backend.");
 
 	esdm_backend_t* backend = (esdm_backend_t*) malloc(sizeof(esdm_backend_t));
 	memcpy(backend, &backend_template, sizeof(esdm_backend_t));
 
-	backend->data = (void*) malloc(sizeof(posix_backend_data_t));
-	posix_backend_data_t* data = (posix_backend_data_t*) backend->data;
-	posix_backend_options_t* options = (posix_backend_options_t*) init_data;
-	data->options = options;
-
-	// valid refs for backend, data, options available now
+	backend->data = init_data;
 
 
-	data->other = 47;
-
-
-	// todo check posix style persitency structure available?
+	// todo check metadummy style persitency structure available?
 	mkfs(backend);	
-
-
-
 
 
 
@@ -288,7 +251,7 @@ esdm_backend_t* posix_backend_init(void* init_data) {
 * Initializes the POSIX plugin. In particular this involves:
 *
 */
-int posix_finalize()
+int metadummy_finalize()
 {
 
 	return 0;

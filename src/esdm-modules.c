@@ -35,6 +35,9 @@
 //#define ESDM_HAS_WOS
 
 
+#define ESDM_HAS_METADUMMY
+
+
 
 #ifdef ESDM_HAS_POSIX
 	#include "backends-data/POSIX/posix.h"
@@ -50,6 +53,15 @@
 	#include "backends-data/Mero/wos.h"
 	#pragma message ("Building ESDM with WOS!")
 #endif
+
+
+
+#ifdef ESDM_HAS_METADUMMY
+	#include "backends-metadata/metadummy/metadummy.h"
+	#pragma message ("Building ESDM with metadummy!")
+#endif
+
+
 
 
 /*
@@ -91,10 +103,15 @@ esdm_modules_t* esdm_modules_init(esdm_instance_t* esdm)
 	esdm_config_backend_t* b = NULL;
 
 
-	modules->bcount = 0;
-	modules->backends = (esdm_backend_t**) malloc(sizeof(esdm_backend_t*)*config_backends->count);
+	modules->bcount = config_backends->count;
+	modules->backends = (esdm_backend_t**) malloc(sizeof(esdm_backend_t*)*(modules->bcount));
 
-	for (int i = 0; i < config_backends->count; i++) {
+	
+	// add a metadummy backend
+	modules->metadata = metadummy_backend_init(NULL);
+
+
+	for (int i = 0; i < modules->bcount; i++) {
 		b = &(config_backends->backends[i]);
 
 		printf("Backend config: %d, %s, %s, %s\n", i,
@@ -117,6 +134,10 @@ esdm_modules_t* esdm_modules_init(esdm_instance_t* esdm)
 		}
 
 	}
+
+
+
+
 
 
 	// place the module into the right list

@@ -74,9 +74,9 @@ esdm_status_t esdm_perf_model_split_io(
 
 	// pickup the performance estimate for each backend module
 	esdm_modules_get_by_type(ESDM_TYPE_DATA, backends);
-	for(int i=0; i < backends->count; i++){
-		//esdm_backend_estimate_performance((esdm_backend_t*) backends->module, 1234);
-	}
+	//for(int i=0; i < backends->count; i++){
+	//	//esdm_backend_estimate_performance((esdm_backend_t*) backends->module, 1234);
+	//}
 
 	// now choice the best module
 }

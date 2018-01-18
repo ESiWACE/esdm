@@ -160,7 +160,7 @@ set (CMAKE_C_FLAGS_RELEASE "-O3")
 
 enable_testing()
 add_subdirectory(backends-data)
-#add_subdirectory(backends-metadata)
+add_subdirectory(backends-metadata)
 add_subdirectory(utils)
 add_subdirectory(test)
 
@@ -170,7 +170,7 @@ add_subdirectory(test)
 
 ## Application
 add_library(esdm SHARED esdm.c  esdm-datatypes.c  esdm-layout.c  esdm-performancemodel.c  esdm-scheduler.c  esdm-siteconfig.c  esdm-modules.c  utils/debug.c)
-target_link_libraries(esdm ${GLIB_LDFLAGS} ${JANSSON_LDFLAGS} esdmposix Threads::Threads)
+target_link_libraries(esdm ${GLIB_LDFLAGS} ${JANSSON_LDFLAGS} esdmposix esdmmetadummy Threads::Threads)
 include_directories(${CMAKE_SOURCE_DIR}/include/ ${CMAKE_BINARY_DIR} ${GLIB_INCLUDE_DIRS} ${JANSSON_INCLUDE_DIRS})
 
 
