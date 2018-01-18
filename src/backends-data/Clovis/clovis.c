@@ -440,6 +440,7 @@ esdm_backend_clovis_t esdm_backend_clovis = {
 	    .name      = "CLOVIS",
     	.type      = ESDM_TYPE_DATA,
     	.version   = "0.0.1",
+    	.options   = NULL,
     	.data      = NULL,
         .blocksize = BLOCKSIZE,
         .callbacks = {

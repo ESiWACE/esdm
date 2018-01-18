@@ -16,6 +16,8 @@
 #ifndef POSIX_H
 #define POSIX_H
 
+#include <esdm.h>
+
 // Internal functions used by this backend.
 typedef struct {
 	const char* type;
@@ -25,7 +27,17 @@ typedef struct {
 
 
 
-int posix_backend_performance_estimate();
+// Internal functions used by this backend.
+typedef struct {
+	posix_backend_options_t* options;
+	int other;
+} posix_backend_data_t;
+
+
+
+
+
+int posix_backend_performance_estimate(esdm_backend_t* backend);
 esdm_backend_t* posix_backend_init(void* data);
 
 

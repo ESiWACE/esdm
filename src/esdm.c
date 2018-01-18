@@ -51,7 +51,7 @@ esdm_status_t esdm_init()
 		// find configuration
 		esdm.config = esdm_config_init(&esdm);
 
-		// optional modules
+		// optional modules (e.g. data and metadata backends)
 		esdm.modules = esdm_modules_init(&esdm);
 
 		// core components
@@ -87,7 +87,12 @@ esdm_status_t esdm_finalize()
 	// ESDM data data structures that require proper cleanup..
 	// in particular this effects data and cache state which is not yet persistent
 
-	return esdm_modules_finalize();
+	//esdm_scheduler_finalize();
+	//esdm_performance_finalize();
+	//esdm_layout_finalize();
+	esdm_modules_finalize();
+
+	return ESDM_SUCCESS;
 }
 
 

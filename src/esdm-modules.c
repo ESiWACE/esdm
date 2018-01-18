@@ -101,28 +101,23 @@ esdm_modules_t* esdm_modules_init(esdm_instance_t* esdm)
 				b->type,	
 				b->name,	
 				b->target
-			);
+			  );
 
 		if (strncmp (b->type,"POSIX",5) == 0)
 		{
-			posix_backend_options_t data;
-			data.name = b->name;
-			data.target = b->target;
+			posix_backend_options_t* data = (posix_backend_options_t*) malloc(sizeof(posix_backend_options_t));
+			data->type = b->type;
+			data->name = b->name;
+			data->target = b->target;
 
-			modules->backends[i] = posix_backend_init((void*)&data);
+			modules->backends[i] = posix_backend_init((void*)data);
+			modules->backends[i]->callbacks.performance_estimate(modules->backends[i]);
 		} else {
 			ESDM_ERROR("Unknown backend type. Please check your ESDM configuration.");
 		}
 
 	}
 
-
-	esdm_backend_t* backend = NULL;
-
-	void* data = NULL;
-
-	backend = posix_backend_init((void*)data);
-	backend->callbacks.performance_estimate();
 
 	// place the module into the right list
 	//

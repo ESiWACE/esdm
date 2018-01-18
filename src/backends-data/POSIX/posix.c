@@ -20,6 +20,9 @@
  */
 
 
+#define _GNU_SOURCE         /* See feature_test_macros(7) */
+
+
 #include <stdarg.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -28,7 +31,7 @@
 #include <sys/types.h>
 #include <unistd.h>
 
-#include <esdm.h>
+#include "posix.h"
 
 
 void log(uint32_t loglevel, const char* format, ...)
@@ -49,17 +52,41 @@ void log(uint32_t loglevel, const char* format, ...)
 // Helper and utility /////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////
 
-int mkfs() 
+int mkfs(esdm_backend_t* backend) 
 {
+
+	posix_backend_data_t* data = (posix_backend_data_t*)backend->data;
+	posix_backend_options_t* options = data->options;
+
+	printf("mkfs: backend->(void*)data->options->target = %s\n", options->target);
+	printf("\n\n\n");
+
+
+	const char* tgt = options->target;
+
 	struct stat st = {0};
 
-	if (stat("_esdm-fs", &st) == -1)
+	if (stat(tgt, &st) == -1)
 	{
-		mkdir("_esdm-fs", 0700);
-		mkdir("_esdm-fs/containers", 0700);
-		mkdir("_esdm-fs/datasets-shared", 0700);
-		mkdir("_esdm-fs/fragments-shared", 0700);
+		char* root; 
+		char* cont;
+		char* sdat;
+		char* sfra;
 		
+		asprintf(&root, "%s", tgt);
+		asprintf(&cont, "%s/containers", tgt);
+		asprintf(&sdat, "%s/shared-datasets", tgt);
+		asprintf(&sfra, "%s/shared-fragments", tgt);
+		
+		mkdir(root, 0700);
+		mkdir(cont, 0700);
+		mkdir(sdat, 0700);
+		mkdir(sfra, 0700);
+	
+		free(root);
+		free(cont);
+		free(sdat);
+		free(sfra);
 	}
 }
 
@@ -94,13 +121,19 @@ int fsck()
 // ESDM Callbacks /////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////
 
-int posix_backend_performance_estimate() 
+int posix_backend_performance_estimate(esdm_backend_t* backend) 
 {
 	DEBUG(0, "Calculating performance estimate.");
 
+	posix_backend_data_t* data = (posix_backend_data_t*)backend->data;
+	posix_backend_options_t* options = data->options;
+
+	printf("perf_estimate: backend->(void*)data->options->target = %s\n", options->target);
+	printf("\n\n\n");
+
+
 	return 0;
 }
-
 
 
 int posix_create() 
@@ -135,7 +168,7 @@ int posix_create()
 int posix_open() 
 {
 	DEBUG(0, "Open");
-	return 0;
+return 0;
 }
 
 int posix_write() 
@@ -221,15 +254,26 @@ static esdm_backend_t backend_template = {
 *
 * @return pointer to backend struct
 */
-esdm_backend_t* posix_backend_init(void* data) {
+esdm_backend_t* posix_backend_init(void* init_data) {
 	
 	DEBUG(0, "Initializing POSIX backend.");
 
 	esdm_backend_t* backend = (esdm_backend_t*) malloc(sizeof(esdm_backend_t));
 	memcpy(backend, &backend_template, sizeof(esdm_backend_t));
 
+	backend->data = (void*) malloc(sizeof(posix_backend_data_t));
+	posix_backend_data_t* data = (posix_backend_data_t*) backend->data;
+	posix_backend_options_t* options = (posix_backend_options_t*) init_data;
+	data->options = options;
+
+	// valid refs for backend, data, options available now
+
+
+	data->other = 47;
+
+
 	// todo check posix style persitency structure available?
-	mkfs();	
+	mkfs(backend);	
 
 
 

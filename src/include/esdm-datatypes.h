@@ -95,6 +95,8 @@ typedef enum {
 
 
 
+typedef struct esdm_backend_t esdm_backend_t;
+typedef struct esdm_backend_callbacks_t esdm_backend_callbacks_t;
 
 
 
@@ -113,9 +115,9 @@ typedef enum {
  *	* No callback is expected for initialization as ESDM calls it on discovery.
  *
  */
-typedef struct {
+struct esdm_backend_callbacks_t {
 	int (*finalize)();
-	int (*performance_estimate)();
+	int (*performance_estimate)(esdm_backend_t*);
 //} esdm_backend_callbacks_esdm_t;
 //
 // Data Callbacks
@@ -134,11 +136,7 @@ typedef struct {
 	int (*update)();
 	int (*lookup)();
 //} esdm_module_callbacks_metadata_t;
-} esdm_backend_callbacks_t;
-
-
-
-
+};
 
 
 
@@ -149,14 +147,14 @@ typedef struct {
  * Each backend provides
  *
  */
-typedef struct {
+struct esdm_backend_t {
 	char* name;
 	esdm_module_type_t type;
 	char* version; // 0.0.0
 	void* data;
 	uint32_t blocksize; /* any io must be multiple of 'blocksize' and aligned. */
 	esdm_backend_callbacks_t callbacks;
-} esdm_backend_t;
+};
 
 
 
