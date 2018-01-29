@@ -169,13 +169,13 @@ add_subdirectory(test)
 
 
 ## Application
-add_library(esdmutils SHARED esdm.c  esdm-datatypes.c  esdm-layout.c  esdm-performancemodel.c  esdm-config.c  esdm-modules.c  utils/debug.c)
+add_library(esdmutils SHARED esdm.c  esdm-datatypes.c  esdm-layout.c  esdm-performancemodel.c esdm-config.c  esdm-modules.c  utils/debug.c)
 target_link_libraries(esdmutils ${GLIB_LDFLAGS} ${JANSSON_LDFLAGS} Threads::Threads)
 include_directories(${CMAKE_SOURCE_DIR}/include/ ${CMAKE_BINARY_DIR} ${GLIB_INCLUDE_DIRS} ${JANSSON_INCLUDE_DIRS})
 
 
 
-add_library(esdm SHARED esdm.c)
+add_library(esdm SHARED esdm.c esdm-scheduler.c)
 target_link_libraries(esdm ${GLIB_LDFLAGS} ${JANSSON_LDFLAGS} esdmutils esdmposix esdmmetadummy Threads::Threads)
 include_directories(${CMAKE_SOURCE_DIR}/include/ ${CMAKE_BINARY_DIR} ${GLIB_INCLUDE_DIRS} ${JANSSON_INCLUDE_DIRS})
 
