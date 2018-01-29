@@ -31,15 +31,26 @@ typedef enum {
 
 
 
-// Datatypes
-esdm_status_t esdm_fragment_create();
+// Fragment
+esdm_fragment_t* esdm_fragment_create();
 esdm_status_t esdm_fragment_destroy();
+esdm_status_t esdm_fragment_serialize();
+esdm_status_t esdm_fragment_deserialize();
 
-esdm_status_t esdm_dataset_create();
+// Datset
+esdm_dataset_t* esdm_dataset_create();
 esdm_status_t esdm_dataset_destroy();
 
-esdm_status_t esdm_container_create();
+// Container
+esdm_container_t* esdm_container_create();
 esdm_status_t esdm_container_destroy();
+
+// Dataspace
+esdm_dataspace_t* esdm_dataspace_create();
+esdm_status_t esdm_dataspace_destroy();
+esdm_status_t esdm_dataspace_serialize();
+esdm_status_t esdm_dataspace_deserialize();
+
 
 
 // Metadata

@@ -24,7 +24,6 @@ typedef struct {
 } esdm_dataspace_t;
 
 
-
 typedef struct {
 	esdm_metadata_t* metadata;
 	esdm_dataspace_t* dataspace;

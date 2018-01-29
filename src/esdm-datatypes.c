@@ -28,16 +28,41 @@
 
 
 /**
+ * ESDM container
+ *
+ */
+esdm_container_t* esdm_container_create()
+{
+	ESDM_DEBUG(__func__);	
+	esdm_container_t* new_container = (esdm_container_t*) malloc(sizeof(esdm_container_t));
+
+
+	return new_container;
+}
+
+esdm_status_t esdm_container_destroy(esdm_container_t* container)
+{
+	ESDM_DEBUG(__func__);	
+	return ESDM_SUCCESS;
+}
+
+
+
+
+
+
+
+/**
  * ESDM Fragments
  *
  */
-esdm_status_t esdm_fragment_create()
+esdm_fragment_t* esdm_fragment_create()
 {
 	ESDM_DEBUG(__func__);	
 	esdm_fragment_t* new_fragment = (esdm_fragment_t*) malloc(sizeof(esdm_fragment_t));
 
 
-	return ESDM_SUCCESS;
+	return new_fragment;
 }
 
 esdm_status_t esdm_fragment_destroy()
@@ -47,17 +72,47 @@ esdm_status_t esdm_fragment_destroy()
 }
 
 
+/**
+ *
+ * @startuml{fragment_serialization.png}
+ *
+ * User -> Fragment: serialize()
+ *
+ * Fragment -> Dataspace: serialize()
+ * Fragment <- Dataspace: (status, string)
+ *
+ * User <- Fragment: (status, string)
+ *
+ * @enduml
+ *
+ */
+esdm_status_t esdm_fragment_serialize()
+{
+	ESDM_DEBUG(__func__);	
+
+	return ESDM_SUCCESS;
+}
+
+
+esdm_status_t esdm_fragment_deserialize()
+{
+	ESDM_DEBUG(__func__);	
+	return ESDM_SUCCESS;
+}
+
+
+
 
 /**
  * ESDM Datasets
  *
  */
-esdm_status_t esdm_dataset_create()
+esdm_dataset_t* esdm_dataset_create()
 {
 	ESDM_DEBUG(__func__);	
 	esdm_dataset_t* new_dataset = (esdm_dataset_t*) malloc(sizeof(esdm_dataset_t));
 
-	return ESDM_SUCCESS;
+	return new_dataset;
 }
 
 esdm_status_t esdm_dataset_destroy() 
@@ -70,3 +125,35 @@ esdm_status_t esdm_dataset_destroy()
 
 
 
+/**
+ * Dataspace
+ *
+ */
+esdm_dataspace_t* esdm_dataspace_create()
+{
+	ESDM_DEBUG(__func__);	
+	esdm_dataspace_t* new_dataspace = (esdm_dataspace_t*) malloc(sizeof(esdm_dataspace_t));
+
+
+	return new_dataspace;
+}
+
+esdm_status_t esdm_dataspace_destroy()
+{
+	ESDM_DEBUG(__func__);	
+	return ESDM_SUCCESS;
+}
+
+esdm_status_t esdm_dataspace_serialize()
+{
+	ESDM_DEBUG(__func__);	
+
+	return ESDM_SUCCESS;
+}
+
+
+esdm_status_t esdm_dataspace_deserialize()
+{
+	ESDM_DEBUG(__func__);	
+	return ESDM_SUCCESS;
+}
