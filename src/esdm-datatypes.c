@@ -73,6 +73,7 @@ esdm_status_t esdm_fragment_destroy()
 
 
 /**
+ * Serializes fragment for storage.
  *
  * @startuml{fragment_serialization.png}
  *
@@ -86,7 +87,7 @@ esdm_status_t esdm_fragment_destroy()
  * @enduml
  *
  */
-esdm_status_t esdm_fragment_serialize()
+esdm_status_t esdm_fragment_serialize(esdm_fragment_t* fragment, char** out)
 {
 	ESDM_DEBUG(__func__);	
 
@@ -94,7 +95,10 @@ esdm_status_t esdm_fragment_serialize()
 }
 
 
-esdm_status_t esdm_fragment_deserialize()
+/**
+ * Reinstantiate fragment from serialization.
+ */
+esdm_fragment_t* esdm_fragment_deserialize(char* serialized_fragment)
 {
 	ESDM_DEBUG(__func__);	
 	return ESDM_SUCCESS;
@@ -144,15 +148,17 @@ esdm_status_t esdm_dataspace_destroy()
 	return ESDM_SUCCESS;
 }
 
-esdm_status_t esdm_dataspace_serialize()
+esdm_status_t esdm_dataspace_serialize(esdm_dataspace_t* dataspace, char** out)
 {
 	ESDM_DEBUG(__func__);	
 
 	return ESDM_SUCCESS;
 }
 
-
-esdm_status_t esdm_dataspace_deserialize()
+/**
+ * Reinstantiate dataspace from serialization.
+ */
+esdm_dataspace_t* esdm_dataspace_deserialize(char* serialized_dataspace)
 {
 	ESDM_DEBUG(__func__);	
 	return ESDM_SUCCESS;

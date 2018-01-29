@@ -34,8 +34,8 @@ typedef enum {
 // Fragment
 esdm_fragment_t* esdm_fragment_create();
 esdm_status_t esdm_fragment_destroy();
-esdm_status_t esdm_fragment_serialize();
-esdm_status_t esdm_fragment_deserialize();
+esdm_status_t esdm_fragment_serialize(esdm_fragment_t*, char** out);
+esdm_fragment_t* esdm_fragment_deserialize(char* serialized_fragment);
 
 // Datset
 esdm_dataset_t* esdm_dataset_create();
@@ -48,8 +48,8 @@ esdm_status_t esdm_container_destroy();
 // Dataspace
 esdm_dataspace_t* esdm_dataspace_create();
 esdm_status_t esdm_dataspace_destroy();
-esdm_status_t esdm_dataspace_serialize();
-esdm_status_t esdm_dataspace_deserialize();
+esdm_status_t esdm_dataspace_serialize(esdm_dataspace_t* dataspace, char** out);
+esdm_dataspace_t* esdm_dataspace_deserialize(char* serialized_dataspace);
 
 
 

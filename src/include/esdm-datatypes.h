@@ -25,6 +25,13 @@ typedef struct {
 
 
 typedef struct {
+	char * json;
+	int dummy;
+} esdm_fragment_index_t;
+
+
+
+typedef struct {
 	esdm_metadata_t* metadata;
 	esdm_dataspace_t* dataspace;
 } esdm_fragment_t;
