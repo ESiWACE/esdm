@@ -7,51 +7,7 @@
 
 
 #include <stdint.h>
-
-
-
-
-// LOGICAL/DOMAIN DATATYPES ///////////////////////////////////////////////////
-
-typedef struct {
-	char * json;
-} esdm_metadata_t;
-
-typedef struct {
-	char * json;
-	int type;
-	int inspect_callback;
-} esdm_dataspace_t;
-
-
-typedef struct {
-	char * json;
-	int dummy;
-} esdm_fragment_index_t;
-
-
-
-typedef struct {
-	esdm_metadata_t* metadata;
-	esdm_dataspace_t* dataspace;
-} esdm_fragment_t;
-
-
-typedef struct {
-	esdm_metadata_t* metadata;
-	esdm_dataspace_t* dataspace;
-	esdm_fragment_t* fragments;
-} esdm_dataset_t;
-
-
-typedef struct {
-	esdm_metadata_t* metadata;	
-	esdm_dataset_t* datasets;
-} esdm_container_t;
-
-
-
-
+#include <glib.h>
 
 
 // ESDM Parameters and Status /////////////////////////////////////////////////
@@ -61,7 +17,8 @@ typedef struct {
  */
 typedef enum {
 	ESDM_OVERWRITE,
-	ESDM_CREATE
+	ESDM_CREATE,
+	ESDM_AUTOCOMMIT
 } esdm_mode_t;
 
 /**
@@ -70,7 +27,9 @@ typedef enum {
  */
 typedef enum {
 	ESDM_SUCCESS,
-	ESDM_ERROR
+	ESDM_ERROR,
+	ESDM_DIRTY,
+	ESDM_PERSISTENT
 } esdm_status_t;
 
 
@@ -86,6 +45,53 @@ typedef enum {
 	ESDM_LOGLEVEL_DEBUG,
 	ESDM_LOGLEVEL_NOTSET
 } esdm_loglevel_t;
+
+// LOGICAL/DOMAIN DATATYPES ///////////////////////////////////////////////////
+
+typedef struct {
+	char *json;
+} esdm_metadata_t;
+
+typedef struct {
+	char *json;
+	int type;
+	int inspect_callback;
+} esdm_dataspace_t;
+
+
+typedef struct {
+	char *json;
+	int dummy;
+} esdm_fragment_index_t;
+
+
+
+typedef struct {
+	esdm_metadata_t *metadata;
+	esdm_dataspace_t *dataspace;
+	esdm_status_t status;
+} esdm_fragment_t;
+
+
+typedef struct {
+	esdm_metadata_t *metadata;
+	esdm_dataspace_t *dataspace;
+	esdm_fragment_t *fragments;
+	esdm_status_t status;
+} esdm_dataset_t;
+
+
+typedef struct {
+	esdm_metadata_t *metadata;	
+	esdm_dataset_t *datasets;
+	esdm_status_t status;
+} esdm_container_t;
+
+
+
+
+
+
 
 // MODULES ////////////////////////////////////////////////////////////////////
 
@@ -154,10 +160,10 @@ struct esdm_backend_callbacks_t {
  *
  */
 struct esdm_backend_t {
-	char* name;
+	char *name;
 	esdm_module_type_t type;
-	char* version; // 0.0.0
-	void* data;
+	char *version; // 0.0.0
+	void *data;
 	uint32_t blocksize; /* any io must be multiple of 'blocksize' and aligned. */
 	esdm_backend_callbacks_t callbacks;
 };
@@ -178,14 +184,14 @@ struct esdm_backend_t {
 
 // Config
 typedef struct {
-	const char* type;
-	const char* name;
-	const char* target;
+	const char *type;
+	const char *name;
+	const char *target;
 } esdm_config_backend_t;
 
 typedef struct {
 	int count;
-	esdm_config_backend_t* backends;
+	esdm_config_backend_t *backends;
 } esdm_config_backends_t;
 
 
@@ -193,7 +199,7 @@ typedef struct {
 // Modules
 typedef struct {
 	int count;
-	esdm_module_type_t * module;
+	esdm_module_type_t *module;
 } esdm_module_type_array_t;
 
 
@@ -205,8 +211,8 @@ typedef struct {
 
 typedef struct{
 	int thread_count; // Why!?
-	esdm_backend_t * backend;
-	esdm_pending_fragment_t * io;
+	esdm_backend_t *backend;
+	esdm_pending_fragment_t *io;
 } esdm_pending_fragments_t;
 
 
@@ -225,7 +231,7 @@ typedef struct {
 
 typedef struct {
 	int info;
-	void* json;
+	void *json;
 } esdm_config_t;
 
 typedef struct {
@@ -239,6 +245,7 @@ typedef struct {
 
 typedef struct {
 	int info;
+	GHashTable *containers;
 } esdm_layout_t;
 
 typedef struct {
@@ -247,16 +254,17 @@ typedef struct {
 
 typedef struct {
 	int info;
+	GHashTable *cache;
 } esdm_performance_t;
 
 
 typedef struct {
 	int is_initialized;
-	esdm_config_t* config;
-	esdm_modules_t* modules;
-	esdm_layout_t* layout;
-	esdm_scheduler_t* scheduler;
-	esdm_performance_t* performance;
+	esdm_config_t *config;
+	esdm_modules_t *modules;
+	esdm_layout_t *layout;
+	esdm_scheduler_t *scheduler;
+	esdm_performance_t *performance;
 } esdm_instance_t;
 
 

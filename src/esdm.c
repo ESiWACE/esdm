@@ -114,7 +114,7 @@ esdm_status_t esdm_finalize()
 *
 * @return TODO
 */
-esdm_status_t esdm_stat(char* desc, char* result)
+esdm_status_t esdm_stat(char *desc, char *result)
 {
 	ESDM_DEBUG(__func__);	
 
@@ -133,7 +133,7 @@ esdm_status_t esdm_stat(char* desc, char* result)
 *
 * @return TODO
 */
-esdm_status_t esdm_create(char* desc, int mode)
+esdm_status_t esdm_create(char *desc, int mode)
 {
 	ESDM_DEBUG(__func__);	
 
@@ -149,7 +149,7 @@ esdm_status_t esdm_create(char* desc, int mode)
 *
 * @return TODO
 */
-esdm_status_t esdm_open(char* desc, int mode)
+esdm_status_t esdm_open(char *desc, int mode)
 {
 	ESDM_DEBUG(__func__);	
 
@@ -163,7 +163,7 @@ esdm_status_t esdm_open(char* desc, int mode)
 *
 * @return TODO
 */
-esdm_status_t esdm_write(void * buf, esdm_dataset_t dset, int dims, uint64_t * size, uint64_t* offset)
+esdm_status_t esdm_write(void *buf, esdm_dataset_t dset, int dims, uint64_t *size, uint64_t *offset)
 {
 	ESDM_DEBUG(__func__);	
 
@@ -185,7 +185,7 @@ esdm_status_t esdm_write(void * buf, esdm_dataset_t dset, int dims, uint64_t * s
 *
 * @return TODO
 */
-esdm_status_t esdm_read(void * buf, esdm_dataset_t dset, int dims, uint64_t * size, uint64_t* offset)
+esdm_status_t esdm_read(void *buf, esdm_dataset_t dset, int dims, uint64_t *size, uint64_t *offset)
 {
 	ESDM_DEBUG(__func__);	
 
@@ -207,7 +207,7 @@ esdm_status_t esdm_read(void * buf, esdm_dataset_t dset, int dims, uint64_t * si
 *
 * @return TODO
 */
-esdm_status_t esdm_close(void * buf) 
+esdm_status_t esdm_close(void *buf) 
 {
 	ESDM_DEBUG(__func__);	
 

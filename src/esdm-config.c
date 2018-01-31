@@ -50,11 +50,11 @@ static char *read_line(char *line, int max_chars);
 
 
 
-json_t* esdm_config_gather(int argc, char const* argv[]);
+json_t* esdm_config_gather(int argc, char const *argv[]);
 
 
 
-esdm_config_t* esdm_config_init(esdm_instance_t* esdm)
+esdm_config_t* esdm_config_init(esdm_instance_t *esdm)
 {
 	ESDM_DEBUG(__func__);	
 
@@ -68,7 +68,7 @@ esdm_config_t* esdm_config_init(esdm_instance_t* esdm)
 }
 
 
-esdm_status_t esdm_config_finalize(esdm_instance_t* esdm) {
+esdm_status_t esdm_config_finalize(esdm_instance_t *esdm) {
 
 
 	json_decref(esdm->config->json);
@@ -83,7 +83,7 @@ esdm_status_t esdm_config_finalize(esdm_instance_t* esdm) {
 
 
 // TODO: move to utils?
-int read_file(char* filepath, char** buf)
+int read_file(char *filepath, char **buf)
 {
 	if (*buf != NULL)
 	{

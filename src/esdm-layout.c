@@ -118,14 +118,14 @@ esdm_status_t esdm_layout_stat(char* desc) {
 	ESDM_DEBUG("received metadata lookup request");
 
 
-        // parse text into JSON structure
-        json_t *root = load_json(desc);
+	// parse text into JSON structure
+	json_t *root = load_json(desc);
 
-        if (root) {
-            // print and release the JSON structure
-            print_json(root);
-            json_decref(root);
-        }
+	if (root) {
+		// print and release the JSON structure
+		print_json(root);
+		json_decref(root);
+	}
 
 
 
