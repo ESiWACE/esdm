@@ -42,7 +42,7 @@ int wos_sizeof(esdm_type type)
 {
 	// Return the size (in bytes) corresponding to data type 'type'
 	// TODO: change the reference to correct core function
-	return (int)type;
+	return (int) type;
 }
 
 int wos_get_param(const char *conf, char **output, const char *param)
@@ -149,6 +149,7 @@ int esdm_backend_wos_init(char *conf, esdm_backend_t * eb)
 	ebm->wos_policy = NULL;
 	ebm->wos_meta_obj = NULL;
 	ebm->oid_list = NULL;
+	ebm->size_list = NULL;
 
 	char *host = NULL;
 	if (wos_get_host(conf, &host) || !host) {
@@ -197,12 +198,21 @@ int esdm_backend_wos_fini(esdm_backend_t * eb)
 			DeleteWosWoid(ebm->oid_list[i]);
 		}
 		free(ebm->oid_list);
+		ebm->oid_list = NULL;
+	}
+	if (ebm->size_list) {
+		free(ebm->size_list);
+		ebm->size_list = NULL;
 	}
 
-	if (ebm->wos_cluster)
+	if (ebm->wos_cluster) {
 		DeleteWosCluster(ebm->wos_cluster);
-	if (ebm->wos_policy)
+		ebm->wos_cluster = NULL;
+	}
+	if (ebm->wos_policy) {
 		DeleteWosPolicy(ebm->wos_policy);
+		ebm->wos_policy = NULL;
+	}
 
 	return 0;
 }
@@ -330,7 +340,7 @@ int esdm_backend_wos_open(esdm_backend_t * eb, char *object_id, void **obj_handl
 	}
 */
 
-	*obj_handle = (void *)oid;
+	*obj_handle = (void *) oid;
 
 	DeleteWosStatus(wos_status);
 
@@ -363,12 +373,12 @@ int esdm_backend_wos_write(esdm_backend_t * eb, void *obj_handle, uint64_t start
 	}
 	uint64_t obj_size = ebm->size_list[0];
 
-	esdm_type type = 1; // TODO: data type should be extracted from metadata associated to WOS object
+	esdm_type type = 1;	// TODO: data type should be extracted from metadata associated to WOS object
 	int item_size = wos_sizeof(type);
 
 	// TODO: start and count has to be used to write the appropriate objects; only one object is now created
-	start *=  item_size;
-	count *=  item_size;
+	start *= item_size;
+	count *= item_size;
 	if (obj_size < start + count) {
 		ESDM_DEBUG("Wrong parameters start or count");
 		return 1;
@@ -402,7 +412,7 @@ int esdm_backend_wos_write(esdm_backend_t * eb, void *obj_handle, uint64_t start
 		/* Fill data */
 		// TODO: start and count has to be used to write the appropriate objects; only one object is now created
 		bzero(buffer, ebm->size_list[i]);
-		memcpy(buffer + start, data, count);
+		memcpy(buffer, data + start, count);
 		SetDataObj(buffer, ebm->size_list[i], wobj);
 
 		PutOID_b(wos_status, ebm->oid_list[i], wobj, ebm->wos_cluster);
@@ -458,7 +468,7 @@ int esdm_backend_wos_read(esdm_backend_t * eb, void *obj_handle, uint64_t start,
 	}
 	ESDM_DEBUG("New hook created");
 
-	Get_b(wos_status, (t_WosOID *)obj_handle, wobj, ebm->wos_cluster);
+	Get_b(wos_status, (t_WosOID *) obj_handle, wobj, ebm->wos_cluster);
 	if (GetStatus(wos_status)) {
 		DeleteWosObj(wobj);
 		ESDM_DEBUG("Hook removed");
@@ -479,12 +489,12 @@ int esdm_backend_wos_read(esdm_backend_t * eb, void *obj_handle, uint64_t start,
 		return 1;
 	}
 
-	esdm_type type = 1; // TODO: data type should be extracted from metadata associated to WOS object
+	esdm_type type = 1;	// TODO: data type should be extracted from metadata associated to WOS object
 	int item_size = wos_sizeof(type);
 
 	// TODO: start and count has to be used to select the appropriate objects, get data and aggregate the result to be outputed; now there is only one object
-	start *=  item_size;
-	count *=  item_size;
+	start *= item_size;
+	count *= item_size;
 	if (len < start + count) {
 		DeleteWosObj(wobj);
 		ESDM_DEBUG("Hook removed");
@@ -492,7 +502,7 @@ int esdm_backend_wos_read(esdm_backend_t * eb, void *obj_handle, uint64_t start,
 		return 1;
 	}
 
-	memcpy(data + start, buffer, count);
+	memcpy(data, buffer + start, count);
 
 	DeleteWosObj(wobj);
 	ESDM_DEBUG("Hook removed");
@@ -507,7 +517,7 @@ int esdm_backend_wos_close(esdm_backend_t * eb, void *obj_handle)
 		return 1;
 	}
 
-	DeleteWosWoid((t_WosOID *)obj_handle);
+	DeleteWosWoid((t_WosOID *) obj_handle);
 
 	return 0;
 }
