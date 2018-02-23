@@ -12,88 +12,89 @@
  *                                                                                 
  * You should have received a copy of the GNU Lesser General Public License        
  * along with ESDM.  If not, see <http://www.gnu.org/licenses/>.           
- */   
+ *
+ */
 #ifndef WOS_H
 #define WOS_H
 
-// Internal functions used by this backend.
+#include "esdm.h"
+
+#include "wrapper/wos_wrapper.h"
+
+struct esdm_backend_wos_ops {
+	/**
+	 * Allocate the backend context and initialise it.
+	 * In this interface, Wos connects to Wos cluster.
+	 * @param [in] conf, the connection parameters.
+	 * @param [out] eb_out, returned the backend context.
+	 *
+	 * The format of conf string would like this:
+	 * "laddr ha_addr prof_opt proc_fid".
+	 */
+	int (*esdm_backend_init) (char *conf, esdm_backend_t * eb);
+
+	/**
+	 * Finalise the backend.
+	 */
+	int (*esdm_backend_fini) (esdm_backend_t * eb);
+
+	/* object operations start here */
+	/**
+	 * Allocate an object or objects in backend and return them
+	 * in @out out_object_id and their internal attributes @out out_mero_metadata.
+	 * @param [in] eb, the backend pointer.
+	 * @param [in] n_dims, number of dimensions.
+	 * @param [in] dims_size, dimension array.
+	 * @param [in] type, type of esdm.
+	 * @param [in] md1, metadata.
+	 * @param [in] md2, metadata.
+	 * @param [out] out_object_id, the returned objects.
+	 * @param [out] out_mero_metadata, the returned metadata.
+	 */
+	int (*esdm_backend_obj_alloc) (esdm_backend_t * eb, int n_dims, int *dims_size, esdm_type type, char *md1, char *md2, char **out_object_id, char **out_wos_metadata);
+
+	/**
+	 * Open an object for read/write.
+	 *
+	 * return object handle in [out] obj_handle;
+	 */
+	int (*esdm_backend_obj_open) (esdm_backend_t * eb, char *object_id, void **obj_handle);
+
+	/**
+	 * Write to an object.
+	 */
+	int (*esdm_backend_obj_write) (esdm_backend_t * eb, void *obj_handle, uint64_t start, uint64_t count, void *data);
+
+	/**
+	 * Read from object.
+	 */
+	int (*esdm_backend_obj_read) (esdm_backend_t * eb, void *obj_handle, uint64_t start, uint64_t count, void *data);
+
+	/**
+	 * Close an object.
+	 */
+	int (*esdm_backend_obj_close) (esdm_backend_t * eb, void *obj_handle);
+
+};
 
 typedef struct {
-        //struct esdm_backend_generic ebm_base;
 
-        /* WOS */
-	t_WosClusterPtr*	      wos_cluster;	//Pointer to WOS cluster
-	t_WosPolicy* 		      wos_policy;	//Policy
-	t_WosObjPtr* 		      wos_meta_obj;	//Used for internal purposes to store metadata info
-	t_WosOID** 		      oid_list;		//List of objects ids
+	esdm_backend_t ebm_base;
 
-} esdm_backend_wos;
+	/* WOS */
+	t_WosClusterPtr *wos_cluster;	// Pointer to WOS cluster
+	t_WosPolicy *wos_policy;	// Policy
+	t_WosObjPtr *wos_meta_obj;	// Used for internal purposes to store metadata info
+	t_WosOID **oid_list;	// List of object ids
+	uint64_t *size_list;	// List of object sizes
 
-/**
- * Open a connection to the WOS cluster
- * return a handle in wos_handle
- *
- * @param [out] wos_handle		The pointer to a wos specific handle
- *
- * @return Status.
- */
-esdm_status_t esdm_backend_wos_open (void*   wos_handle);
+	/* for test */
+	struct esdm_backend_wos_ops ebm_ops;
 
+} esdm_backend_wos_t;
 
-/**
- * Allocate a pool of objects in wos backend and return the related oids
- * in @out out_object_id and their internal attributes in @out out_wos_metadata.
- *
- * @param [in] n_dims 			number of dimensions.
- * @param [in] dims_size		array of dimensions' size.
- * @param [in] type			type of data to be stored.
- * @param [in] md1			metadata.
- * @param [in] md2			metadata.
- * @param [in] w_handle			Pointer to a wos specific handle.
- * @param [out] out_object_id		the returned objects list.
- * @param [out] out_wos_metadata	the returned metadata.
- *
- * @return Status.
- */
-esdm_status_t esdm_backend_wos_alloc(int       n_dims,
-                            int*      dims_size,
-                            esdm_type type,
-                            char*     md1,
-                            char*     md2,
-                            void*     w_handle,
-			    char**    out_object_id,
-                            char**    out_wos_metadata);
-/**
- * Close a connection to the WOS cluster
- * 
- * @param [in] wos_handle              The pointer to a wos specific handle
- *
- * @return Status.
- */
-esdm_status_t esdm_backend_wos_close(void*    w_handle);
+esdm_backend_t *wos_backend_init();
 
-/**
- * Write a data fragment in a WOS object
- * 
- * @param [in] obj_id			Object to be stored with data
- * @param [in] n_dims			number of dimensions.
- * @param [in] dims_size		array of dimensions' size.
- * @param [in] offset			array of dimensions' offset
- * @param [in] type			type of data to be stored.
- * @param [in] w_handle			Pointer to a wos specific handle.
- * @param [in] data			The pointer to a contiguous memory region that shall be written
- * @param [out] out_wos_metadata	the returned metadata.
- *
- * @return Status.
- */
-esdm_status_t esdm_backend_wos_append(char*     obj_id,
-                            int       n_dims,
-                            int*      dims_size,
-                            int*      offset,
-                            esdm_type type,
-                            void*     w_handle,
-                            void*     data,
-                            char**    out_wos_metadata);
-
+extern esdm_backend_wos_t esdm_backend_wos;
 
 #endif

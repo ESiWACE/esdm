@@ -9,4 +9,6 @@ install2/*
 *.log
 
 plantuml.jar
+wos_client
+test
 
