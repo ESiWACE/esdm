@@ -69,9 +69,10 @@ esdm_status_t esdm_open(char* desc, int mode);
 /**
 * Display status information for objects stored in ESDM.
 *
-* @param [in] desc	name or descriptor of object
+* @param [in]	desc	name or descriptor of object
+* @param [out]	result	where to write result of query
 *
-* @return TODO
+* @return status
 */
 esdm_status_t esdm_stat(char* desc, char* result);
 
@@ -112,7 +113,13 @@ esdm_status_t esdm_close(void * buf);
 
 
 
-
+/**
+* Ensure all remaining data is syncronized with backends. If not called at the
+* end of an application, ESDM can not guarantee all data was written.
+*
+* @return status
+*/
+esdm_status_t esdm_sync();
 
 
 

@@ -34,18 +34,14 @@
 #include "posix.h"
 
 
-void log(uint32_t loglevel, const char* format, ...)
+void log(const char* format, ...)
 {
-	uint32_t active_loglevel = 99;
-
-	if ( loglevel <= active_loglevel ) {
-		va_list args;
-		va_start(args,format);
-		vprintf(format,args);
-		va_end(args);
-	}
+	va_list args;
+	va_start(args,format);
+	vprintf(format,args);
+	va_end(args);
 }
-#define DEBUG(loglevel, msg) log(loglevel, "[POSIX] %-30s %s:%d\n", msg, __FILE__, __LINE__)
+#define DEBUG(msg) log("[POSIX] %-30s %s:%d\n", msg, __FILE__, __LINE__)
 
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -123,7 +119,7 @@ static int fsck()
 
 int posix_backend_performance_estimate(esdm_backend_t* backend) 
 {
-	DEBUG(0, "Calculating performance estimate.");
+	DEBUG("Calculating performance estimate.");
 
 	posix_backend_data_t* data = (posix_backend_data_t*)backend->data;
 	posix_backend_options_t* options = data->options;
@@ -138,7 +134,7 @@ int posix_backend_performance_estimate(esdm_backend_t* backend)
 
 int posix_create() 
 {
-	DEBUG(0, "Create");
+	DEBUG("Create");
 
 
 	// check if container already exists
@@ -167,25 +163,25 @@ int posix_create()
  */
 int posix_open() 
 {
-	DEBUG(0, "Open");
+	DEBUG("Open");
 return 0;
 }
 
 int posix_write() 
 {
-	DEBUG(0, "Write");
+	DEBUG("Write");
 	return 0;
 }
 
 int posix_read() 
 {
-	DEBUG(0, "Read");
+	DEBUG("Read");
 	return 0;
 }
 
 int posix_close() 
 {
-	DEBUG(0, "Close");
+	DEBUG("Close");
 	return 0;
 }
 
@@ -193,21 +189,21 @@ int posix_close()
 
 int posix_allocate() 
 {
-	DEBUG(0, "Allocate");
+	DEBUG("Allocate");
 	return 0;
 }
 
 
 int posix_update() 
 {
-	DEBUG(0, "Update");
+	DEBUG("Update");
 	return 0;
 }
 
 
 int posix_lookup() 
 {
-	DEBUG(0, "Lookup");
+	DEBUG("Lookup");
 	return 0;
 }
 
@@ -256,7 +252,7 @@ static esdm_backend_t backend_template = {
 */
 esdm_backend_t* posix_backend_init(void* init_data) {
 	
-	DEBUG(0, "Initializing POSIX backend.");
+	DEBUG("Initializing POSIX backend.");
 
 	esdm_backend_t* backend = (esdm_backend_t*) malloc(sizeof(esdm_backend_t));
 	memcpy(backend, &backend_template, sizeof(esdm_backend_t));
@@ -290,6 +286,7 @@ esdm_backend_t* posix_backend_init(void* init_data) {
 */
 int posix_finalize()
 {
+	DEBUG("POSIX finalize");
 
 	return 0;
 }

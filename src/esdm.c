@@ -110,9 +110,10 @@ esdm_status_t esdm_finalize()
 /**
 * Display status information for objects stored in ESDM.
 *
-* @param [in] desc	name or descriptor of object
+* @param [in]	desc	name or descriptor of object
+* @param [out]	result	where to write result of query
 *
-* @return TODO
+* @return status
 */
 esdm_status_t esdm_stat(char *desc, char *result)
 {
@@ -127,12 +128,12 @@ esdm_status_t esdm_stat(char *desc, char *result)
 
 
 /**
-* 
-*
-* @param [in] buf	TODO
-*
-* @return TODO
-*/
+ * 
+ *
+ * @param [in] buf	TODO
+ *
+ * @return TODO
+ */
 esdm_status_t esdm_create(char *desc, int mode)
 {
 	ESDM_DEBUG(__func__);	
@@ -143,12 +144,12 @@ esdm_status_t esdm_create(char *desc, int mode)
 
 
 /**
-* 
-*
-* @param [in] buf	TODO
-*
-* @return TODO
-*/
+ * 
+ *
+ * @param [in] buf	TODO
+ *
+ * @return TODO
+ */
 esdm_status_t esdm_open(char *desc, int mode)
 {
 	ESDM_DEBUG(__func__);	
@@ -157,12 +158,12 @@ esdm_status_t esdm_open(char *desc, int mode)
 }
 
 /**
-* 
-*
-* @param [in] buf	TODO
-*
-* @return TODO
-*/
+ * 
+ *
+ * @param [in] buf	TODO
+ *
+ * @return TODO
+ */
 esdm_status_t esdm_write(void *buf, esdm_dataset_t dset, int dims, uint64_t *size, uint64_t *offset)
 {
 	ESDM_DEBUG(__func__);	
@@ -179,12 +180,12 @@ esdm_status_t esdm_write(void *buf, esdm_dataset_t dset, int dims, uint64_t *siz
 
 
 /**
-* 
-*
-* @param [in] buf	TODO
-*
-* @return TODO
-*/
+ * 
+ *
+ * @param [in] buf	TODO
+ *
+ * @return TODO
+ */
 esdm_status_t esdm_read(void *buf, esdm_dataset_t dset, int dims, uint64_t *size, uint64_t *offset)
 {
 	ESDM_DEBUG(__func__);	
@@ -199,13 +200,12 @@ esdm_status_t esdm_read(void *buf, esdm_dataset_t dset, int dims, uint64_t *size
 
 
 /**
-* 
-*
-* @param [in] buf	TODO
-*
-* @return TODO
-*/
-esdm_status_t esdm_close(void *buf) 
+ * 
+ * @param [in] buf	TODO
+ *
+ * @return TODO
+ */
+esdm_status_t esdm_close(void *descriptor) 
 {
 	ESDM_DEBUG(__func__);	
 
@@ -213,6 +213,15 @@ esdm_status_t esdm_close(void *buf)
 	return ESDM_SUCCESS;
 }
 
+
+/**
+ *
+ */
+esdm_status_t esdm_sync() 
+{
+	ESDM_DEBUG(__func__);	
+	return ESDM_SUCCESS;
+}
 
 
 

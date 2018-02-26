@@ -26,12 +26,23 @@ typedef struct {
 } metadummy_backend_options_t;
 
 
-
 // Internal functions used by this backend.
 typedef struct {
 	metadummy_backend_options_t* options;
 	int other;
 } metadummy_backend_data_t;
+
+
+
+
+
+
+typedef struct md_entry_struct md_entry_t;
+
+struct md_entry_struct  {	
+	int type;
+};
+
 
 
 

@@ -31,6 +31,10 @@
 #include <sys/stat.h>
 #include <sys/types.h>
 #include <unistd.h>
+#include <assert.h>
+
+#include <jansson.h>
+
 #include "metadummy.h"
 
 
@@ -87,6 +91,33 @@ static int fsck()
 
 
 
+int print_stat(struct stat sb)
+{
+	printf("File type:                ");
+	switch (sb.st_mode & S_IFMT) {
+		case S_IFBLK:  printf("block device\n");      break;
+		case S_IFCHR:  printf("character device\n");  break;
+		case S_IFDIR:  printf("directory\n");         break;
+		case S_IFIFO:  printf("FIFO/pipe\n");         break;
+		case S_IFLNK:  printf("symlink\n");           break;
+		case S_IFREG:  printf("regular file\n");      break;
+		case S_IFSOCK: printf("socket\n");            break;
+		default:       printf("unknown?\n");          break;
+	}
+	printf("I-node number:            %ld\n", (long) sb.st_ino);
+	printf("Mode:                     %lo (octal)\n", (unsigned long) sb.st_mode);
+	printf("Link count:               %ld\n", (long) sb.st_nlink);
+	printf("Ownership:                UID=%ld   GID=%ld\n", (long) sb.st_uid, (long) sb.st_gid);
+	printf("Preferred I/O block size: %ld bytes\n", (long) sb.st_blksize);
+	printf("File size:                %lld bytes\n", (long long) sb.st_size);
+	printf("Blocks allocated:         %lld\n", (long long) sb.st_blocks);
+	printf("Last status change:       %s", ctime(&sb.st_ctime));
+	printf("Last file access:         %s", ctime(&sb.st_atime));
+	printf("Last file modification:   %s", ctime(&sb.st_mtime));
+}
+
+
+
 
 ///////////////////////////////////////////////////////////////////////////////
 // Internal Handlers //////////////////////////////////////////////////////////
@@ -97,14 +128,21 @@ static int fsck()
 
 int entry_create(const char *name)
 {
-	struct stat st = {0};
+	int status;
+	struct stat sb;
 	const char* tgt = "./_metadummy";
 	char *path;
 
 	asprintf(&path, "%s/%s", tgt, name);
+	printf("\nentry_create(%s)\n", path);
 
-	if (stat(path, &st) == -1)
-	{
+	// ENOENT => allow to create
+
+	status = stat(path, &sb);
+	if (status == -1) {
+		perror("stat");
+
+		print_stat(sb);
 
 		// write to non existing file
 		int fd = open(path,	O_WRONLY | O_CREAT, S_IWUSR | S_IRUSR | S_IWGRP | S_IRGRP | S_IROTH);
@@ -112,49 +150,130 @@ int entry_create(const char *name)
 		// everything ok? write and close
 		if ( fd != -1 )
 		{
-			// write some metadata
-			write(fd, "abc", 3);
 			close(fd);
 		}
+
+		free(path);
+		return 0;
+
+	} else {
+		// already exists
+		return -1;
 	}
-	
-	free(path);
+
 }
 
 
-int entry_receive(const char *name) {
-	struct stat st = {0};
+int entry_receive(const char *name)
+{
+	int status;
+	struct stat sb;
+	const char* tgt = "./_metadummy";
+	char *path;
+	char *buf;
+
+	asprintf(&path, "%s/%s", tgt, name);
+	printf("\nentry_receive(%s)\n", path);
+
+	status = stat(path, &sb);
+	if (status == -1) {
+		perror("stat");
+
+		// does not exist
+		return -1;
+	}
+
+	print_stat(sb);
+
+
+	// write to non existing file
+	int fd = open(path,	O_RDONLY | S_IWUSR | S_IRUSR | S_IWGRP | S_IRGRP | S_IROTH);
+
+	// everything ok? write and close
+	if ( fd != -1 )
+	{
+		// write some metadata
+		buf = (char*) malloc(sb.st_size + 1);
+		buf[sb.st_size] = 0;
+
+		read(fd, buf, sb.st_size);
+		close(fd);
+	}
+
+
+	printf("Entry content: %s\n", buf);
+
+
+
+	
+	free(path);
+
+	return 0;
+}
+
+
+int entry_update(const char *name, char *buf, size_t len)
+{
+	int status;
+	struct stat sb;
 	const char* tgt = "./_metadummy";
 	char *path;
 
 	asprintf(&path, "%s/%s", tgt, name);
+	printf("\nentry_update(%s)\n", path);
 
-	if (stat(path, &st) == -1)
-	{
-
-		// write to non existing file
-		int fd = open(path,	O_WRONLY | O_CREAT, S_IWUSR | S_IRUSR | S_IWGRP | S_IRGRP | S_IROTH);
-
-		// everything ok? write and close
-		if ( fd != -1 )
-		{
-			// write some metadata
-			read(fd, "abc", 3);
-			close(fd);
-		}
+	status = stat(path, &sb);
+	if (status == -1) {
+		perror("stat");
+		return -1;
 	}
-	
+
+	print_stat(sb);
+
+	// write to non existing file
+	int fd = open(path,	O_WRONLY | O_CREAT, S_IWUSR | S_IRUSR | S_IWGRP | S_IRGRP | S_IROTH);
+
+	// everything ok? write and close
+	if ( fd != -1 )
+	{
+		// write some metadata
+		write(fd, buf, len);
+		close(fd);
+	}
+
 	free(path);
+
+	return 0;
 }
 
 
-int entry_update() {
+int entry_destroy(const char *name) 
+{
+	int status;
+	struct stat sb;
+	const char* tgt = "./_metadummy";
+	char *path;
 
-}
+	asprintf(&path, "%s/%s", tgt, name);
+	printf("\nentry_destroy(%s)\n", path);
 
+	status = stat(path, &sb);
+	if (status == -1) {
+		perror("stat");
+		return -1;
+	}
 
-int entry_destroy() {
+	print_stat(sb);
 
+	status = unlink(path);
+	if (status == -1) {
+		perror("unlink");
+		return -1;
+	}
+
+	free(path);
+
+	return 0;
 }
 
 
@@ -310,18 +429,36 @@ esdm_backend_t* metadummy_backend_init(void* init_data) {
 
 	// create entry and test
 	ret = entry_create("abc");
-	ret = entry_receive("abc");
+	assert(ret == 0);
 
-	/*
+	ret = entry_receive("abc");
+	assert(ret == 0);
+
+
+	// double create
+	ret = entry_create("def");
+	assert(ret == 0);
+
+	ret = entry_create("def");
+	assert(ret == -1);
+
+
 	// perform update and test
-	ret = entry_update("abc");
+	ret = entry_update("abc", "huhuhuhuh", 5);
 	ret = entry_receive("abc");
 
 	// delete entry and expect receive to fail
-	ret = entry_delete("abc");
+	ret = entry_destroy("abc");
 	ret = entry_receive("abc");
+	assert(ret == -1);
 
-	*/
+	// clean up
+	ret = entry_destroy("def");
+	assert(ret == 0);
+
+	ret = entry_destroy("def");
+	assert(ret == -1);
+	
 
 
 	return backend;
