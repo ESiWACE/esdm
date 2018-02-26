@@ -23,6 +23,7 @@
 #define _GNU_SOURCE         /* See feature_test_macros(7) */
 
 
+#include <fcntl.h>
 #include <stdarg.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -30,7 +31,6 @@
 #include <sys/stat.h>
 #include <sys/types.h>
 #include <unistd.h>
-
 #include "metadummy.h"
 
 
@@ -94,6 +94,68 @@ static int fsck()
 
 // find_fragment
 
+
+int entry_create(const char *name)
+{
+	struct stat st = {0};
+	const char* tgt = "./_metadummy";
+	char *path;
+
+	asprintf(&path, "%s/%s", tgt, name);
+
+	if (stat(path, &st) == -1)
+	{
+
+		// write to non existing file
+		int fd = open(path,	O_WRONLY | O_CREAT, S_IWUSR | S_IRUSR | S_IWGRP | S_IRGRP | S_IROTH);
+
+		// everything ok? write and close
+		if ( fd != -1 )
+		{
+			// write some metadata
+			write(fd, "abc", 3);
+			close(fd);
+		}
+	}
+	
+	free(path);
+}
+
+
+int entry_receive(const char *name) {
+	struct stat st = {0};
+	const char* tgt = "./_metadummy";
+	char *path;
+
+	asprintf(&path, "%s/%s", tgt, name);
+
+	if (stat(path, &st) == -1)
+	{
+
+		// write to non existing file
+		int fd = open(path,	O_WRONLY | O_CREAT, S_IWUSR | S_IRUSR | S_IWGRP | S_IRGRP | S_IROTH);
+
+		// everything ok? write and close
+		if ( fd != -1 )
+		{
+			// write some metadata
+			read(fd, "abc", 3);
+			close(fd);
+		}
+	}
+	
+	free(path);
+}
+
+
+int entry_update() {
+
+}
+
+
+int entry_destroy() {
+
+}
 
 
 
@@ -241,6 +303,25 @@ esdm_backend_t* metadummy_backend_init(void* init_data) {
 	// todo check metadummy style persitency structure available?
 	mkfs(backend);	
 
+
+	int ret = -1;
+
+
+
+	// create entry and test
+	ret = entry_create("abc");
+	ret = entry_receive("abc");
+
+	/*
+	// perform update and test
+	ret = entry_update("abc");
+	ret = entry_receive("abc");
+
+	// delete entry and expect receive to fail
+	ret = entry_delete("abc");
+	ret = entry_receive("abc");
+
+	*/
 
 
 	return backend;

@@ -69,6 +69,9 @@ esdm_scheduler_t* esdm_scheduler_init(esdm_instance_t* esdm)
 
 
 
+	// TODO: create Task / I/O queue
+	// TODO: create thread pool
+
 	return scheduler;
 }
 

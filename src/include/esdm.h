@@ -8,11 +8,8 @@
 #include <stddef.h>
 
 #include <esdm-datatypes.h>
-#include <esdm-data-backend.h>
-#include <esdm-metadata-backend.h>
 
 
-typedef int esdm_type;
 
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -46,16 +43,6 @@ esdm_status_t esdm_finalize();
 // Application facing API /////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////
 
-/**
-* Display status information for objects stored in ESDM.
-*
-* @param [in] desc	name or descriptor of object
-*
-* @return TODO
-*/
-esdm_status_t esdm_stat(char* desc, char* result);
-
-
 
 
 /**
@@ -77,6 +64,16 @@ esdm_status_t esdm_create(char* desc, int mode);
 * @return TODO
 */
 esdm_status_t esdm_open(char* desc, int mode);
+
+
+/**
+* Display status information for objects stored in ESDM.
+*
+* @param [in] desc	name or descriptor of object
+*
+* @return TODO
+*/
+esdm_status_t esdm_stat(char* desc, char* result);
 
 
 /**

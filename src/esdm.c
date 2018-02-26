@@ -198,8 +198,6 @@ esdm_status_t esdm_read(void *buf, esdm_dataset_t dset, int dims, uint64_t *size
 
 
 
-
-
 /**
 * 
 *

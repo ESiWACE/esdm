@@ -54,6 +54,9 @@ do
 		--with-hdf5) hdf5="$2"; echo "$2"; shift;;
 		--with-mpicc) mpicc="$2"; shift;;
 		--with-mpicxx) mpicxx="$2"; shift;;
+		--enable-lustre) lustre="$2"; shift;;
+		--enable-clovis) clovis="$2"; shift;;
+		--enable-wos) wos="$2"; shift;;
 		--build-dir) buildDIR="$2"; shift;;
 		--plantuml-jar-dir) export PLANTUML_JAR_PATH="$2"; shift;;
 		--verbose) VERBOSE="YES";;

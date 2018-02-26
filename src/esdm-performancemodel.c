@@ -40,6 +40,11 @@ esdm_performance_t* esdm_performance_init(esdm_instance_t* esdm) {
 	esdm_performance_t* performance = NULL;
 	performance = (esdm_performance_t*) malloc(sizeof(esdm_performance_t));
 
+
+	// TODO: allocate hash map that serves as perf estimate cache
+	//  => backend, estimate_timestamp, estimate question?, an actual estimate
+
+
 	return performance;
 }
 

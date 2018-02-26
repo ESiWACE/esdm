@@ -10,6 +10,14 @@
 #include <glib.h>
 
 
+
+
+
+typedef int esdm_type;
+
+
+
+
 // ESDM Parameters and Status /////////////////////////////////////////////////
 /**
  * ESDM Status codes and failure modes.
@@ -63,8 +71,6 @@ typedef struct {
 	char *json;
 	int dummy;
 } esdm_fragment_index_t;
-
-
 
 typedef struct {
 	esdm_metadata_t *metadata;

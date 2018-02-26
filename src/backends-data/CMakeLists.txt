@@ -4,3 +4,6 @@ SUBDIRS(POSIX)
 #SUBDIRS(Clovis)
 #SUBDIRS(WOS)
 
+
+
+message(STATUS "XXX   ${XXX}")

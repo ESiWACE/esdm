@@ -172,6 +172,30 @@ esdm_dataset_t* esdm_dataset_create()
 	return new_dataset;
 }
 
+
+esdm_dataset_t* esdm_dataset_receive()
+{
+	ESDM_DEBUG(__func__);	
+	esdm_dataset_t* new_dataset = (esdm_dataset_t*) malloc(sizeof(esdm_dataset_t));
+
+	return new_dataset;
+}
+
+
+esdm_status_t esdm_dataset_update(esdm_dataset_t *dataset) 
+{
+	ESDM_DEBUG(__func__);	
+	return ESDM_SUCCESS;
+}
+
+
+
+esdm_status_t esdm_dataset_destroy(esdm_dataset_t *dataset) 
+{
+	ESDM_DEBUG(__func__);	
+	return ESDM_SUCCESS;
+}
+
 /**
  * Make dataset persistent to storage.
  * Schedule for writing to backends.
@@ -182,11 +206,7 @@ esdm_status_t esdm_dataset_commit(esdm_dataset_t *dataset)
 	return ESDM_SUCCESS;
 }
 
-esdm_status_t esdm_dataset_destroy(esdm_dataset_t *dataset) 
-{
-	ESDM_DEBUG(__func__);	
-	return ESDM_SUCCESS;
-}
+
 
 
 // Dataspace //////////////////////////////////////////////////////////////////
