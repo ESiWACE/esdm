@@ -89,6 +89,13 @@ esdm_layout_t* esdm_layout_init(esdm_instance_t* esdm) {
 }
 
 
+/**
+* Shutdown ESDM:
+*  - finalize submodules
+*  - free data structures
+*
+* @return status
+*/
 esdm_status_t esdm_layout_finalize() {
 	ESDM_DEBUG(__func__);	
 	return ESDM_SUCCESS;

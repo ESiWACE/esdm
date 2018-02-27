@@ -113,7 +113,6 @@ json_t* esdm_config_gather(int argc, char const* argv[])
 
 	read_file("_esdm.conf", &config_json);
 
-
 	// parse text into JSON structure
 	json_t *root = load_json(config_json);
 
@@ -122,14 +121,21 @@ json_t* esdm_config_gather(int argc, char const* argv[])
 
 
 
-
-
-
+/**
+ *	Fetches backends
+ *
+ *
+ */
 esdm_config_backends_t* esdm_config_get_backends(esdm_instance_t* esdm)
 {
 	ESDM_DEBUG(__func__);	
 
 	json_t *root = (json_t*) esdm->config->json;
+
+	json_t *elem = json_path_get(root, "$.esdm.backends[0]");
+	printf("json_path_get => %p\n",  elem);
+	print_json(elem);
+	printf("\n\n");
 
 	// fetch configured backends
 	json_t *element = NULL;

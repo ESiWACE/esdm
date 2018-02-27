@@ -35,9 +35,11 @@ static esdm_instance_t esdm;
 
 
 /**
-* Display status information for objects stored in ESDM.
-*
-* @param [in] desc	name or descriptor of object
+* Initialize ESDM:
+*	- allocate data structures for ESDM
+*	- allocate memory for node local caches
+*	- initialize submodules
+*	- initialize threadpool
 *
 * @return status
 */
@@ -64,11 +66,6 @@ esdm_status_t esdm_init()
 		is_initialized = 1;
 	}
 
-
-
-
-
-
 	return ESDM_SUCCESS;
 }
 
@@ -78,7 +75,7 @@ esdm_status_t esdm_init()
 *
 * @param [in] desc	name or descriptor of object
 *
-* @return status
+* @return Status
 */
 esdm_status_t esdm_finalize()
 {
@@ -113,7 +110,7 @@ esdm_status_t esdm_finalize()
 * @param [in]	desc	name or descriptor of object
 * @param [out]	result	where to write result of query
 *
-* @return status
+* @return Status
 */
 esdm_status_t esdm_stat(char *desc, char *result)
 {
@@ -125,14 +122,13 @@ esdm_status_t esdm_stat(char *desc, char *result)
 }
 
 
-
-
 /**
- * 
+ * Create a new object.
  *
- * @param [in] buf	TODO
+ * @param [in] desc		string object identifier
+ * @param [in] mode		mode flags for creation
  *
- * @return TODO
+ * @return Status
  */
 esdm_status_t esdm_create(char *desc, int mode)
 {
@@ -144,11 +140,12 @@ esdm_status_t esdm_create(char *desc, int mode)
 
 
 /**
- * 
+ * Open a existing object. (Can be also used to create).
  *
- * @param [in] buf	TODO
+ * @param [in] desc		string object identifier
+ * @param [in] mode		mode flags for open/creation
  *
- * @return TODO
+ * @return Status
  */
 esdm_status_t esdm_open(char *desc, int mode)
 {
@@ -158,11 +155,14 @@ esdm_status_t esdm_open(char *desc, int mode)
 }
 
 /**
- * 
+ * Write data  of size starting from offset.
  *
- * @param [in] buf	TODO
+ * @param [in] buf	The pointer to a contiguous memory region that shall be written
+ * @param [in] dset	TODO, currently a stub, we assume it has been identified/created before...., json description?
+ * @param [in] dims	The number of dimensions, needed for size and offset
+ * @param [in] size	...
  *
- * @return TODO
+ * @return Status
  */
 esdm_status_t esdm_write(void *buf, esdm_dataset_t dset, int dims, uint64_t *size, uint64_t *offset)
 {
@@ -180,11 +180,14 @@ esdm_status_t esdm_write(void *buf, esdm_dataset_t dset, int dims, uint64_t *siz
 
 
 /**
- * 
+ * Reads a data fragment described by desc to the dataset dset.
  *
- * @param [in] buf	TODO
+ * @param [out] buf	The pointer to a contiguous memory region that shall be written
+ * @param [in] dset	TODO, currently a stub, we assume it has been identified/created before.... , json description?
+ * @param [in] dims	The number of dimensions, needed for size and offset
+ * @param [in] size	...
  *
- * @return TODO
+ * @return Status
  */
 esdm_status_t esdm_read(void *buf, esdm_dataset_t dset, int dims, uint64_t *size, uint64_t *offset)
 {
@@ -200,12 +203,13 @@ esdm_status_t esdm_read(void *buf, esdm_dataset_t dset, int dims, uint64_t *size
 
 
 /**
+ * Close opened object.
  * 
- * @param [in] buf	TODO
+ * @param [in] desc		String Object Identifier
  *
- * @return TODO
+ * @return Status
  */
-esdm_status_t esdm_close(void *descriptor) 
+esdm_status_t esdm_close(void *desc) 
 {
 	ESDM_DEBUG(__func__);	
 
@@ -214,8 +218,12 @@ esdm_status_t esdm_close(void *descriptor)
 }
 
 
+
 /**
+ * Ensure all remaining data is syncronized with backends. If not called at the
+ * end of an application, ESDM can not guarantee all data was written.
  *
+ * @return status
  */
 esdm_status_t esdm_sync() 
 {
