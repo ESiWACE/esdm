@@ -11,12 +11,7 @@
 
 
 
-
-
 typedef int esdm_type;
-
-
-
 
 // ESDM Parameters and Status /////////////////////////////////////////////////
 /**
@@ -56,47 +51,52 @@ typedef enum {
 
 // LOGICAL/DOMAIN DATATYPES ///////////////////////////////////////////////////
 
-typedef struct {
-	char *json;
-} esdm_metadata_t;
+typedef struct esdm_container_t esdm_container_t;
+typedef struct esdm_metadata_t esdm_metadata_t;
+typedef struct esdm_dataset_t esdm_dataset_t;
+typedef struct esdm_dataspace_t esdm_dataspace_t;
+typedef struct esdm_fragment_t esdm_fragment_t;
 
-typedef struct {
+
+
+struct esdm_container_t {
+	esdm_metadata_t *metadata;	
+	GHashTable *datasets;
+	esdm_status_t status;
+};
+
+struct esdm_metadata_t {
+	char *json;
+};
+
+struct esdm_dataset_t {
+	esdm_metadata_t *metadata;
+	esdm_dataspace_t *dataspace;
+	GHashTable *fragments;
+	esdm_status_t status;
+};
+
+struct esdm_dataspace_t {
 	char *json;
 	int type;
 	int inspect_callback;
-} esdm_dataspace_t;
+};
+
+struct esdm_fragment_t {
+	esdm_metadata_t *metadata;
+	esdm_dataset_t *dataset;
+	esdm_dataspace_t *dataspace;
+	char *data;
+	esdm_status_t status;
+};
+
+
 
 
 typedef struct {
 	char *json;
-	int dummy;
+	GHashTable *fragments;
 } esdm_fragment_index_t;
-
-typedef struct {
-	esdm_metadata_t *metadata;
-	esdm_dataspace_t *dataspace;
-	esdm_status_t status;
-} esdm_fragment_t;
-
-
-typedef struct {
-	esdm_metadata_t *metadata;
-	esdm_dataspace_t *dataspace;
-	esdm_fragment_t *fragments;
-	esdm_status_t status;
-} esdm_dataset_t;
-
-
-typedef struct {
-	esdm_metadata_t *metadata;	
-	esdm_dataset_t *datasets;
-	esdm_status_t status;
-} esdm_container_t;
-
-
-
-
-
 
 
 // MODULES ////////////////////////////////////////////////////////////////////

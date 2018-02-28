@@ -21,7 +21,7 @@ esdm_status_t esdm_finalize();
 
 
 ///////////////////////////////////////////////////////////////////////////////
-// Application facing API /////////////////////////////////////////////////////
+// Public API: POSIX Legacy Compaitbility /////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////
 
 // General Helpers
@@ -30,11 +30,41 @@ esdm_status_t esdm_stat(char* desc, char* result);
 
 // Object Manipulation
 esdm_status_t esdm_open(char* desc, int mode);
-esdm_status_t esdm_create(char* desc, int mode);
+esdm_status_t esdm_create(char* desc, int mode, esdm_container_t**);
 esdm_status_t esdm_close(void * buf);
 
-esdm_status_t esdm_write(void * buf, esdm_dataset_t dset, int dims, uint64_t * size, uint64_t* offset);
-esdm_status_t esdm_read(void * buf, esdm_dataset_t dset, int dims, uint64_t * size, uint64_t* offset);
+esdm_status_t esdm_write(esdm_dataset_t *dset, void *buf, int dims, uint64_t * size, uint64_t* offset);
+esdm_status_t esdm_read(esdm_dataset_t *dset, void *buf, int dims, uint64_t * size, uint64_t* offset);
+
+
+///////////////////////////////////////////////////////////////////////////////
+// Public API: Data Model Manipulators ////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////////
+
+// Container
+esdm_container_t* esdm_container_create(const char *name);
+esdm_status_t esdm_container_commit(esdm_container_t *container);
+esdm_status_t esdm_container_destroy(esdm_container_t *container);
+
+// Datset
+esdm_dataset_t* esdm_dataset_create(esdm_container_t* container, char * name, esdm_dataspace_t* dataspace);
+esdm_status_t esdm_dataset_commit(esdm_dataset_t *dataset);
+esdm_status_t esdm_dataset_destroy(esdm_dataset_t *dataset);
+
+// Dataspace
+esdm_dataspace_t* esdm_dataspace_create();
+esdm_status_t esdm_dataspace_destroy(esdm_dataspace_t *dataspace);
+esdm_status_t esdm_dataspace_serialize(esdm_dataspace_t *dataspace, char **out);
+esdm_dataspace_t* esdm_dataspace_deserialize(char *serialized_dataspace);
+
+// Fragment
+esdm_fragment_t* esdm_fragment_create(esdm_dataset_t *dataset, esdm_dataspace_t *subspace, char *data);
+esdm_status_t esdm_fragment_commit(esdm_fragment_t *fragment);
+esdm_status_t esdm_fragment_destroy(esdm_fragment_t *fragment);
+esdm_status_t esdm_fragment_serialize(esdm_fragment_t *fragment, char **out);
+esdm_fragment_t* esdm_fragment_deserialize(char *serialized_fragment);
+
+
 
 
 ///////////////////////////////////////////////////////////////////////////////

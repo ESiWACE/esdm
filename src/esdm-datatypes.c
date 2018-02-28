@@ -38,22 +38,33 @@
  *	@return Pointer to new container.
  *
  */
-esdm_container_t* esdm_container_create()
+esdm_container_t* esdm_container_create(const char* name)
 {
 	ESDM_DEBUG(__func__);	
-	esdm_container_t* new_container = (esdm_container_t*) malloc(sizeof(esdm_container_t));
+	esdm_container_t* container = (esdm_container_t*) malloc(sizeof(esdm_container_t));
 
+	container->metadata = NULL;
+	container->datasets = g_hash_table_new(g_direct_hash,  g_direct_equal);
+	container->status = ESDM_DIRTY;
 
-	return new_container;
+	return container;
 }
+
 
 /**
  * Make container persistent to storage.
  * Schedule for writing to backends.
+ *
+ * Calling container commit may trigger subsequent commits for datasets that
+ * are part of the container.
+ *
  */
 esdm_status_t esdm_container_commit(esdm_container_t* container)
 {
 	ESDM_DEBUG(__func__);	
+
+	g_hash_table_foreach (container->datasets, print_hashtable_entry, NULL);
+
 	return ESDM_SUCCESS;
 }
 
@@ -91,13 +102,15 @@ esdm_status_t esdm_container_destroy(esdm_container_t *container)
  *	@return Pointer to new fragment.
  *
  */
-esdm_fragment_t* esdm_fragment_create()
+esdm_fragment_t* esdm_fragment_create(esdm_dataset_t* dataset, esdm_dataspace_t* subspace, char *data)
 {
 	ESDM_DEBUG(__func__);	
-	esdm_fragment_t* new_fragment = (esdm_fragment_t*) malloc(sizeof(esdm_fragment_t));
+	esdm_fragment_t* fragment = (esdm_fragment_t*) malloc(sizeof(esdm_fragment_t));
+
+	fragment->dataset = dataset;
 
 
-	return new_fragment;
+	return fragment;
 }
 
 
@@ -164,12 +177,18 @@ esdm_fragment_t* esdm_fragment_deserialize(char *serialized_fragment)
  *	@return Pointer to new dateset.
  *
  */
-esdm_dataset_t* esdm_dataset_create()
+esdm_dataset_t* esdm_dataset_create(esdm_container_t* container, char* name, esdm_dataspace_t* dataspace)
 {
 	ESDM_DEBUG(__func__);	
-	esdm_dataset_t* new_dataset = (esdm_dataset_t*) malloc(sizeof(esdm_dataset_t));
+	esdm_dataset_t* dataset = (esdm_dataset_t*) malloc(sizeof(esdm_dataset_t));
 
-	return new_dataset;
+	dataset->metadata = NULL;
+	dataset->dataspace = dataspace;
+	dataset->fragments = g_hash_table_new(g_direct_hash,  g_direct_equal);
+
+	g_hash_table_insert(container->datasets, name, &dataset);
+
+	return dataset;
 }
 
 
@@ -219,7 +238,7 @@ esdm_status_t esdm_dataset_commit(esdm_dataset_t *dataset)
  *	@return Pointer to new dateset.
  *
  */
-esdm_dataspace_t* esdm_dataspace_create()
+esdm_dataspace_t* esdm_dataspace_create(uint64_t dimensions)
 {
 	ESDM_DEBUG(__func__);	
 	esdm_dataspace_t* new_dataspace = (esdm_dataspace_t*) malloc(sizeof(esdm_dataspace_t));

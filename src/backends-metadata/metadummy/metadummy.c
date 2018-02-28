@@ -38,18 +38,19 @@
 #include "metadummy.h"
 
 
-void log(uint32_t loglevel, const char* format, ...)
+void log(const char* format, ...)
 {
-	uint32_t active_loglevel = 99;
-
-	if ( loglevel <= active_loglevel ) {
-		va_list args;
-		va_start(args,format);
-		vprintf(format,args);
-		va_end(args);
-	}
+	va_list args;
+	va_start(args,format);
+	vprintf(format,args);
+	va_end(args);
 }
-#define DEBUG(loglevel, msg) log(loglevel, "[METADUMMY] %-30s %s:%d\n", msg, __FILE__, __LINE__)
+#define DEBUG(msg) log("[METADUMMY] %-30s %s:%d\n", msg, __FILE__, __LINE__)
+
+
+// forward declarations
+void metadummy_test();
+
 
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -58,7 +59,7 @@ void log(uint32_t loglevel, const char* format, ...)
 
 static int mkfs(esdm_backend_t* backend) 
 {
-	DEBUG(0, "metadummy setup");
+	DEBUG("metadummy setup");
 
 	//const char* tgt = options->target;
 	const char* tgt = "./_metadummy";
@@ -93,6 +94,7 @@ static int fsck()
 
 int print_stat(struct stat sb)
 {
+	printf("\n");
 	printf("File type:                ");
 	switch (sb.st_mode & S_IFMT) {
 		case S_IFBLK:  printf("block device\n");      break;
@@ -114,6 +116,7 @@ int print_stat(struct stat sb)
 	printf("Last status change:       %s", ctime(&sb.st_ctime));
 	printf("Last file access:         %s", ctime(&sb.st_atime));
 	printf("Last file modification:   %s", ctime(&sb.st_mtime));
+	printf("\n");
 }
 
 
@@ -123,26 +126,18 @@ int print_stat(struct stat sb)
 // Internal Handlers //////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////
 
-// find_fragment
-
-
-int entry_create(const char *name)
+int entry_create(const char *path)
 {
 	int status;
 	struct stat sb;
-	const char* tgt = "./_metadummy";
-	char *path;
-
-	asprintf(&path, "%s/%s", tgt, name);
-	printf("\nentry_create(%s)\n", path);
+	
+	printf("entry_create(%s)\n", path);
 
 	// ENOENT => allow to create
 
 	status = stat(path, &sb);
 	if (status == -1) {
 		perror("stat");
-
-		print_stat(sb);
 
 		// write to non existing file
 		int fd = open(path,	O_WRONLY | O_CREAT, S_IWUSR | S_IRUSR | S_IWGRP | S_IRGRP | S_IROTH);
@@ -153,7 +148,6 @@ int entry_create(const char *name)
 			close(fd);
 		}
 
-		free(path);
 		return 0;
 
 	} else {
@@ -164,26 +158,22 @@ int entry_create(const char *name)
 }
 
 
-int entry_receive(const char *name)
+int entry_receive(const char *path)
 {
 	int status;
 	struct stat sb;
-	const char* tgt = "./_metadummy";
-	char *path;
-	char *buf;
+	char* buf;
 
-	asprintf(&path, "%s/%s", tgt, name);
-	printf("\nentry_receive(%s)\n", path);
+	printf("entry_receive(%s)\n", path);
 
 	status = stat(path, &sb);
 	if (status == -1) {
 		perror("stat");
-
 		// does not exist
 		return -1;
 	}
 
-	print_stat(sb);
+	//print_stat(sb);
 
 
 	// write to non existing file
@@ -203,24 +193,16 @@ int entry_receive(const char *name)
 
 	printf("Entry content: %s\n", buf);
 
-
-
-	
-	free(path);
-
 	return 0;
 }
 
 
-int entry_update(const char *name, char *buf, size_t len)
+int entry_update(const char *path, char *buf, size_t len)
 {
 	int status;
 	struct stat sb;
-	const char* tgt = "./_metadummy";
-	char *path;
 
-	asprintf(&path, "%s/%s", tgt, name);
-	printf("\nentry_update(%s)\n", path);
+	printf("entry_update(%s)\n", path);
 
 	status = stat(path, &sb);
 	if (status == -1) {
@@ -228,7 +210,7 @@ int entry_update(const char *name, char *buf, size_t len)
 		return -1;
 	}
 
-	print_stat(sb);
+	//print_stat(sb);
 
 	// write to non existing file
 	int fd = open(path,	O_WRONLY | O_CREAT, S_IWUSR | S_IRUSR | S_IWGRP | S_IRGRP | S_IROTH);
@@ -241,21 +223,16 @@ int entry_update(const char *name, char *buf, size_t len)
 		close(fd);
 	}
 
-	free(path);
-
 	return 0;
 }
 
 
-int entry_destroy(const char *name) 
+int entry_destroy(const char *path) 
 {
 	int status;
 	struct stat sb;
-	const char* tgt = "./_metadummy";
-	char *path;
 
-	asprintf(&path, "%s/%s", tgt, name);
-	printf("\nentry_destroy(%s)\n", path);
+	printf("entry_destroy(%s)\n", path);
 
 	status = stat(path, &sb);
 	if (status == -1) {
@@ -271,8 +248,6 @@ int entry_destroy(const char *name)
 		return -1;
 	}
 
-	free(path);
-
 	return 0;
 }
 
@@ -284,8 +259,7 @@ int entry_destroy(const char *name)
 
 int metadummy_backend_performance_estimate(esdm_backend_t* backend) 
 {
-	DEBUG(0, "Calculating performance estimate.");
-
+	DEBUG("Calculating performance estimate.");
 
 	return 0;
 }
@@ -293,7 +267,7 @@ int metadummy_backend_performance_estimate(esdm_backend_t* backend)
 
 int metadummy_create() 
 {
-	DEBUG(0, "Create");
+	DEBUG("Create");
 
 
 	// check if container already exists
@@ -322,25 +296,25 @@ int metadummy_create()
  */
 int metadummy_open() 
 {
-	DEBUG(0, "Open");
-return 0;
+	DEBUG("Open");
+	return 0;
 }
 
 int metadummy_write() 
 {
-	DEBUG(0, "Write");
+	DEBUG("Write");
 	return 0;
 }
 
 int metadummy_read() 
 {
-	DEBUG(0, "Read");
+	DEBUG("Read");
 	return 0;
 }
 
 int metadummy_close() 
 {
-	DEBUG(0, "Close");
+	DEBUG("Close");
 	return 0;
 }
 
@@ -348,21 +322,21 @@ int metadummy_close()
 
 int metadummy_allocate() 
 {
-	DEBUG(0, "Allocate");
+	DEBUG("Allocate");
 	return 0;
 }
 
 
 int metadummy_update() 
 {
-	DEBUG(0, "Update");
+	DEBUG("Update");
 	return 0;
 }
 
 
 int metadummy_lookup() 
 {
-	DEBUG(0, "Lookup");
+	DEBUG("Lookup");
 	return 0;
 }
 
@@ -411,7 +385,7 @@ static esdm_backend_t backend_template = {
 */
 esdm_backend_t* metadummy_backend_init(void* init_data) {
 	
-	DEBUG(0, "Initializing metadummy backend.");
+	DEBUG("Initializing metadummy backend.");
 
 	esdm_backend_t* backend = (esdm_backend_t*) malloc(sizeof(esdm_backend_t));
 	memcpy(backend, &backend_template, sizeof(esdm_backend_t));
@@ -423,42 +397,10 @@ esdm_backend_t* metadummy_backend_init(void* init_data) {
 	mkfs(backend);	
 
 
-	int ret = -1;
 
 
+	metadummy_test();
 
-	// create entry and test
-	ret = entry_create("abc");
-	assert(ret == 0);
-
-	ret = entry_receive("abc");
-	assert(ret == 0);
-
-
-	// double create
-	ret = entry_create("def");
-	assert(ret == 0);
-
-	ret = entry_create("def");
-	assert(ret == -1);
-
-
-	// perform update and test
-	ret = entry_update("abc", "huhuhuhuh", 5);
-	ret = entry_receive("abc");
-
-	// delete entry and expect receive to fail
-	ret = entry_destroy("abc");
-	ret = entry_receive("abc");
-	assert(ret == -1);
-
-	// clean up
-	ret = entry_destroy("def");
-	assert(ret == 0);
-
-	ret = entry_destroy("def");
-	assert(ret == -1);
-	
 
 
 	return backend;
@@ -476,3 +418,55 @@ int metadummy_finalize()
 }
 
 
+
+
+
+
+
+
+void metadummy_test() 
+{
+	int ret = -1;
+
+
+	char* abc;
+	char* def;
+
+	const char* tgt = "./_metadummy";
+	asprintf(&abc, "%s/%s", tgt, "abc");
+	asprintf(&def, "%s/%s", tgt, "def");
+
+
+	// create entry and test
+	ret = entry_create(abc);
+	assert(ret == 0);
+
+	ret = entry_receive(abc);
+	assert(ret == 0);
+
+
+	// double create
+	ret = entry_create(def);
+	assert(ret == 0);
+
+	ret = entry_create(def);
+	assert(ret == -1);
+
+
+	// perform update and test
+	ret = entry_update(abc, "huhuhuhuh", 5);
+	ret = entry_receive(abc);
+
+	// delete entry and expect receive to fail
+	ret = entry_destroy(abc);
+	ret = entry_receive(abc);
+	assert(ret == -1);
+
+	// clean up
+	ret = entry_destroy(def);
+	assert(ret == 0);
+
+	ret = entry_destroy(def);
+	assert(ret == -1);
+	
+}

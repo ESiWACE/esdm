@@ -13,6 +13,28 @@ set(VERSION_MINOR "1")
 set(VERSION_PATCH "0")
 set(VERSION ${VERSION_MAJOR}.${VERSION_MINOR}.${VERSION_PATCH})
 
+#
+# OPTIONS
+# _____________________________________________________________________________
+
+# General Options
+option(ENABLE_MPI "Compile with MPI Support?" OFF)
+
+# Frontends
+option(ENABLE_HDF5 "Compile Plugin for HDF5 Virtual Object Layer?" OFF)
+
+# Data Backends
+option(BACKEND_POSIX "Compile backend for POSIX support?" ON)
+option(BACKEND_LUSTRE "Compile backend for Lustre support?" OFF)
+option(BACKEND_CLOVIS "Compile backend for Clovis support?" OFF)
+option(BACKEND_WOS "Compile backend for WOS support?" OFF)
+
+# Metadata Backends
+option(BACKEND_MONGODB "Compile metadata backend for MongoDB support?" OFF)
+
+
+
+
 
 #
 # USEFUL PROJECT VARIABLES

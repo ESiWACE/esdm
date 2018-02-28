@@ -98,7 +98,7 @@ esdm_status_t esdm_scheduler_submit(esdm_pending_fragment_t * io)
 	esdm_fragment_t* fragments;
 
 
-	esdm_perf_model_split_io(pending_fragments, fragments);
+	esdm_performance_split_io(pending_fragments, fragments);
 
 	// no threads here
 	esdm_status_t ret;

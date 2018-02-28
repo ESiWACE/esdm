@@ -48,7 +48,7 @@ esdm_status_t esdm_init()
 	ESDM_DEBUG(__func__);	
 
 	if (!is_initialized) {
-		ESDM_DEBUG("Initializing ESDM.");
+		ESDM_DEBUG("Initializing ESDM");
 
 		// find configuration
 		esdm.config = esdm_config_init(&esdm);
@@ -62,7 +62,13 @@ esdm_status_t esdm_init()
 		esdm.scheduler = esdm_scheduler_init(&esdm);
 
 
-		printf("[ESDM] esdm = {config = %p, modules = %p, scheduler = %p, layout = %p, performance = %p}\n", esdm.config, esdm.modules, esdm.scheduler, esdm.layout, esdm.performance);
+		printf("[ESDM] esdm = {config = %p, modules = %p, scheduler = %p, layout = %p, performance = %p}\n", 
+						  (void*)esdm.config,
+						  (void*)esdm.modules,
+						  (void*)esdm.scheduler,
+						  (void*)esdm.layout, 
+						  (void*)esdm.performance);
+
 		is_initialized = 1;
 	}
 
@@ -97,12 +103,10 @@ esdm_status_t esdm_finalize()
 
 
 
+
 ///////////////////////////////////////////////////////////////////////////////
-// Application facing API /////////////////////////////////////////////////////
+// Public API: POSIX Legacy Compaitbility /////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////
-
-
-
 
 /**
 * Display status information for objects stored in ESDM.
@@ -125,29 +129,38 @@ esdm_status_t esdm_stat(char *desc, char *result)
 /**
  * Create a new object.
  *
- * @param [in] desc		string object identifier
- * @param [in] mode		mode flags for creation
+ * @param [in]	desc		string object identifier
+ * @param [in]	mode		mode flags for creation
+ * @param [out] container	pointer to new container
  *
  * @return Status
  */
-esdm_status_t esdm_create(char *desc, int mode)
+esdm_status_t esdm_create(char *name, int mode, esdm_container_t **container)
 {
 	ESDM_DEBUG(__func__);	
 
+	*container = esdm_container_create(name);
+	esdm_dataspace_t* dataspace = esdm_dataspace_create(1 /* dims */);
+	esdm_dataset_t* dataset = esdm_dataset_create(*container, "bytestream", dataspace);
+
+	esdm_dataset_commit(dataset);
+	esdm_container_commit(*container);
 
 	return ESDM_SUCCESS;
 }
 
 
 /**
- * Open a existing object. (Can be also used to create).
+ * Open a existing object.
+ *
+ * TODO: decide if also useable to create?
  *
  * @param [in] desc		string object identifier
  * @param [in] mode		mode flags for open/creation
  *
  * @return Status
  */
-esdm_status_t esdm_open(char *desc, int mode)
+esdm_status_t esdm_open(char *name, int mode)
 {
 	ESDM_DEBUG(__func__);	
 
@@ -164,12 +177,14 @@ esdm_status_t esdm_open(char *desc, int mode)
  *
  * @return Status
  */
-esdm_status_t esdm_write(void *buf, esdm_dataset_t dset, int dims, uint64_t *size, uint64_t *offset)
+
+esdm_status_t esdm_write(esdm_dataset_t *dataset, void *buf, int dims, uint64_t * size, uint64_t* offset)
 {
 	ESDM_DEBUG(__func__);	
 
+	esdm_dataspace_t *subspace = esdm_dataspace_create();
 
-	esdm_fragment_create();
+	esdm_fragment_create(dataset, subspace, buf);
 
 	esdm_pending_fragment_t fragment;
 	esdm_scheduler_submit(& fragment);
@@ -189,12 +204,12 @@ esdm_status_t esdm_write(void *buf, esdm_dataset_t dset, int dims, uint64_t *siz
  *
  * @return Status
  */
-esdm_status_t esdm_read(void *buf, esdm_dataset_t dset, int dims, uint64_t *size, uint64_t *offset)
+esdm_status_t esdm_read(esdm_dataset_t *dataset, void * buf, int dims, uint64_t * size, uint64_t* offset)
 {
 	ESDM_DEBUG(__func__);	
 
 	esdm_pending_fragment_t fragment;
-	esdm_scheduler_submit(& fragment);
+	esdm_scheduler_submit(&fragment);
 
 
 	return ESDM_SUCCESS;

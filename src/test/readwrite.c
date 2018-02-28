@@ -48,12 +48,12 @@ int main(int argc, char const* argv[])
 {
 	esdm_status_t ret;
 	int mismatches;
-	// offset in the actual ND dimensions
-	uint64_t offset[2] = {0, 0};
-	// the size of the data to write
-	uint64_t size[2] = {10, 20};
 
-	esdm_dataset_t dataset;
+	uint64_t dims[2] = {10, 20};
+	uint64_t offset[2] = {0, 0};
+
+	esdm_container_t *container = NULL;
+	esdm_dataset_t *dataset = NULL;
 
 
 	// Prepare dummy data.
@@ -68,16 +68,19 @@ int main(int argc, char const* argv[])
 	}
 
 
-	esdm_open("mycontainer", ESDM_CREATE);
+	ret = esdm_create("mycontainer", ESDM_CREATE, &container);
 	
 	//esdm_open("mycontainer/mydataset", ESDM_CREATE);
 
 
+	//ssize_t pread(int fd, void *buf, size_t count, off_t offset);
+    //ssize_t pwrite(int fd, const void *buf, size_t count, off_t offset);
+
 	// Write the data to the dataset
-	ret = esdm_write(buf_w, dataset, 2, size, offset);
+	ret = esdm_write(dataset, buf_w, 2, dims, offset);
 
 	// Read the data to the dataset
-	ret = esdm_read(buf_r, dataset, 2, size, offset);
+	ret = esdm_read(dataset, buf_r, 2, dims, offset);
 
 
 	// verify data and fail test if mismatches are found

@@ -6,11 +6,7 @@
 #ifndef ESDM_INTERNAL_H
 #define ESDM_INTERNAL_H
 
-
-
-
 #include <esdm.h>
-
 
 
 void esdm_log(uint32_t loglevel, const char* format, ...);
@@ -33,34 +29,8 @@ typedef enum {
 
 
 
-// Fragment
-esdm_fragment_t* esdm_fragment_create();
-esdm_status_t esdm_fragment_commit(esdm_fragment_t *fragment);
-esdm_status_t esdm_fragment_destroy(esdm_fragment_t *fragment);
-esdm_status_t esdm_fragment_serialize(esdm_fragment_t *fragment, char **out);
-esdm_fragment_t* esdm_fragment_deserialize(char *serialized_fragment);
-
-// Datset
-esdm_dataset_t* esdm_dataset_create();
-esdm_status_t esdm_dataset_commit(esdm_dataset_t *dataset);
-esdm_status_t esdm_dataset_destroy(esdm_dataset_t *dataset);
-
-// Container
-esdm_container_t* esdm_container_create();
-esdm_status_t esdm_container_commit(esdm_container_t *container);
-esdm_status_t esdm_container_destroy(esdm_container_t *container);
-
-// Dataspace
-esdm_dataspace_t* esdm_dataspace_create();
-esdm_status_t esdm_dataspace_destroy(esdm_dataspace_t *dataspace);
-esdm_status_t esdm_dataspace_serialize(esdm_dataspace_t *dataspace, char **out);
-esdm_dataspace_t* esdm_dataspace_deserialize(char *serialized_dataspace);
-
-
-
 // Metadata
-esdm_status_t esdm_metadata_t_alloc();
-
+// TODO: really necessary?
 
 
 // ESDM Core //////////////////////////////////////////////////////////////////
@@ -90,7 +60,7 @@ esdm_status_t esdm_layout_stat(char *desc);
 // Performance Model
 esdm_performance_t* esdm_performance_init(esdm_instance_t *esdm);
 esdm_status_t esdm_performance_finalize();
-esdm_status_t esdm_perf_model_split_io(esdm_pending_fragments_t *io, esdm_fragment_t *fragments);
+esdm_status_t esdm_performance_split_io(esdm_pending_fragments_t *io, esdm_fragment_t *fragments);
 
 
 // Backend (generic)
@@ -99,6 +69,9 @@ esdm_status_t esdm_backend_io(esdm_backend_t *backend, esdm_fragment_t *fragment
 
 
 
+
+// Auxiliary
+void print_hashtable_entry (gpointer key, gpointer value, gpointer user_data);
 
 
 #endif

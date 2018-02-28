@@ -68,7 +68,7 @@ esdm_status_t esdm_performance_finalize(esdm_performance_t* performance) {
  * estimates obtained from available backends.
  *
  */
-esdm_status_t esdm_perf_model_split_io(
+esdm_status_t esdm_performance_split_io(
 	esdm_pending_fragments_t* pending_fragments,
 	esdm_fragment_t* fragments
 ) {
