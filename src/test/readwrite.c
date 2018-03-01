@@ -53,7 +53,6 @@ int main(int argc, char const* argv[])
 	uint64_t offset[2] = {0, 0};
 
 	esdm_container_t *container = NULL;
-	esdm_dataset_t *dataset = NULL;
 
 
 	// Prepare dummy data.
@@ -69,6 +68,7 @@ int main(int argc, char const* argv[])
 
 
 	ret = esdm_create("mycontainer", ESDM_CREATE, &container);
+
 	
 	//esdm_open("mycontainer/mydataset", ESDM_CREATE);
 
@@ -77,10 +77,10 @@ int main(int argc, char const* argv[])
     //ssize_t pwrite(int fd, const void *buf, size_t count, off_t offset);
 
 	// Write the data to the dataset
-	ret = esdm_write(dataset, buf_w, 2, dims, offset);
+	ret = esdm_write(container, buf_w, 2, dims, offset);
 
 	// Read the data to the dataset
-	ret = esdm_read(dataset, buf_r, 2, dims, offset);
+	ret = esdm_read(container, buf_r, 2, dims, offset);
 
 
 	// verify data and fail test if mismatches are found

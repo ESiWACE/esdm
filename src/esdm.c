@@ -70,6 +70,9 @@ esdm_status_t esdm_init()
 						  (void*)esdm.performance);
 
 		is_initialized = 1;
+
+		ESDM_DEBUG("ESDM initialized and ready!");
+		printf("\n");
 	}
 
 	return ESDM_SUCCESS;
@@ -86,6 +89,7 @@ esdm_status_t esdm_init()
 esdm_status_t esdm_finalize()
 {
 	ESDM_DEBUG(__func__);	
+
 
 	// ESDM data data structures that require proper cleanup..
 	// in particular this effects data and cache state which is not yet persistent
@@ -120,6 +124,8 @@ esdm_status_t esdm_stat(char *desc, char *result)
 {
 	ESDM_DEBUG(__func__);	
 
+	esdm_init();
+
 	esdm_layout_stat(desc);
 
 	return ESDM_SUCCESS;
@@ -139,9 +145,13 @@ esdm_status_t esdm_create(char *name, int mode, esdm_container_t **container)
 {
 	ESDM_DEBUG(__func__);	
 
+	esdm_init();
+
 	*container = esdm_container_create(name);
 	esdm_dataspace_t* dataspace = esdm_dataspace_create(1 /* dims */);
 	esdm_dataset_t* dataset = esdm_dataset_create(*container, "bytestream", dataspace);
+	
+	printf("Dataset 'bytestream' creation: %p\n", dataset);
 
 	esdm_dataset_commit(dataset);
 	esdm_container_commit(*container);
@@ -164,6 +174,8 @@ esdm_status_t esdm_open(char *name, int mode)
 {
 	ESDM_DEBUG(__func__);	
 
+	esdm_init();
+
 	return ESDM_SUCCESS;
 }
 
@@ -178,16 +190,19 @@ esdm_status_t esdm_open(char *name, int mode)
  * @return Status
  */
 
-esdm_status_t esdm_write(esdm_dataset_t *dataset, void *buf, int dims, uint64_t * size, uint64_t* offset)
+esdm_status_t esdm_write(esdm_container_t *container, void *buf, int dims, uint64_t * size, uint64_t* offset)
 {
 	ESDM_DEBUG(__func__);	
 
+	esdm_dataset_t *dataset = (esdm_dataset_t*) g_hash_table_lookup (container->datasets, "bytestream");
+	printf("Dataset 'bytestream' lookup: %p\n", dataset);
+
+	// create new fragment
 	esdm_dataspace_t *subspace = esdm_dataspace_create();
+	esdm_fragment_t *fragment = esdm_fragment_create(dataset, subspace, buf);
 
-	esdm_fragment_create(dataset, subspace, buf);
-
-	esdm_pending_fragment_t fragment;
-	esdm_scheduler_submit(& fragment);
+	// schedule for I/O
+	esdm_scheduler_submit(&esdm, fragment);
 
 	return ESDM_SUCCESS;
 }
@@ -204,13 +219,18 @@ esdm_status_t esdm_write(esdm_dataset_t *dataset, void *buf, int dims, uint64_t 
  *
  * @return Status
  */
-esdm_status_t esdm_read(esdm_dataset_t *dataset, void * buf, int dims, uint64_t * size, uint64_t* offset)
+esdm_status_t esdm_read(esdm_container_t *container, void *buf, int dims, uint64_t * size, uint64_t* offset)
 {
 	ESDM_DEBUG(__func__);	
 
-	esdm_pending_fragment_t fragment;
-	esdm_scheduler_submit(&fragment);
+	esdm_dataset_t *dataset = (esdm_dataset_t*) g_hash_table_lookup (container->datasets, "bytestream");
+	printf("Dataset 'bytestream' lookup: %p\n", dataset);
 
+	// TODO: reconstruct expected result using esdm_layout
+
+	//esdm_scheduler_submit(fragment);
+	
+	// buf =
 
 	return ESDM_SUCCESS;
 }

@@ -119,7 +119,7 @@ static int fsck()
 
 int posix_backend_performance_estimate(esdm_backend_t* backend) 
 {
-	DEBUG("Calculating performance estimate.");
+	DEBUG("Calculating performance estimate");
 
 	posix_backend_data_t* data = (posix_backend_data_t*)backend->data;
 	posix_backend_options_t* options = data->options;
@@ -252,7 +252,7 @@ static esdm_backend_t backend_template = {
 */
 esdm_backend_t* posix_backend_init(void* init_data) {
 	
-	DEBUG("Initializing POSIX backend.");
+	DEBUG("Initializing POSIX backend");
 
 	esdm_backend_t* backend = (esdm_backend_t*) malloc(sizeof(esdm_backend_t));
 	memcpy(backend, &backend_template, sizeof(esdm_backend_t));

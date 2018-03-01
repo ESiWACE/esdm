@@ -24,7 +24,6 @@
  */
 
 
-
 #include <esdm.h>
 #include <esdm-internal.h>
 
@@ -62,7 +61,13 @@ esdm_scheduler_t* esdm_scheduler_init(esdm_instance_t* esdm)
     gpointer task_data = NULL;
 	for(int t = 0; t < 7 /* num_threads */; t++)
 	{
-		printf("Adding task: %p, %p, %d, %d\n", useable_task_data[t], useable_task_data+t, *(useable_task_data+t), useable_task_data[t]);
+		printf("Adding task: %p, %p, %d, %d\n", 
+				useable_task_data[t],
+				useable_task_data+t, 
+				*(useable_task_data+t), 
+				useable_task_data[t]
+			);
+
 		task_data = &useable_task_data[t];
 		g_thread_pool_push(pool, task_data, NULL /* ignore errors */);
 	}
@@ -86,36 +91,21 @@ esdm_status_t esdm_scheduler_finalize()
 
 
 
-esdm_status_t esdm_scheduler_submit(esdm_pending_fragment_t * io)
+esdm_status_t esdm_scheduler_submit(esdm_instance_t *esdm, esdm_fragment_t * fragment)
 {
-
 	ESDM_DEBUG(__func__);	
 
-	esdm_init();
-
-
-	esdm_pending_fragments_t* pending_fragments;
+	esdm_status_t ret;
 	esdm_fragment_t* fragments;
 
+	// Gather I/O recommendations 
+	esdm_performance_recommendation(NULL, NULL);  // e.g., split, merge, replication?
+	esdm_layout_recommendation(NULL, NULL);		  // e.g., merge, split, transform?
+	// TODO: merge recommendations
 
-	esdm_performance_split_io(pending_fragments, fragments);
-
-	// no threads here
-	esdm_status_t ret;
-	
-	//esdm_metadata_t * metadata = esdm_metadata_t_alloc();
-	esdm_metadata_t * metadata;
-
-
-	/*
-	for(int i=0 ; i < fragments; i++){
-		ret = esdm_backend_io(b_ios[i]->backend, b_ios[i]->io, metadata);
-	}
-	esdm_metata_backend_update(metadata);
-	free(metadata);
+	// TODO: enqueue I/O for dispatch
 
 	return ESDM_SUCCESS;
-	*/
 }
 
 

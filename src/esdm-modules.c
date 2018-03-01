@@ -93,23 +93,21 @@ esdm_modules_t* esdm_modules_init(esdm_instance_t* esdm)
 {
 	ESDM_DEBUG(__func__);	
 
+	// Setup module registry
 	esdm_modules_t* modules = NULL;
 	modules = (esdm_modules_t*) malloc(sizeof(esdm_modules_t));
-
 	modules->bcount = 0;
-	modules->mcount = 0;
+
 
 	esdm_config_backends_t* config_backends = esdm_config_get_backends(esdm);
 	esdm_config_backend_t* b = NULL;
 
-
+	// Add metadata backend (singular)
+	modules->metadata = metadummy_backend_init(NULL);
+	
+	// Add data backends
 	modules->bcount = config_backends->count;
 	modules->backends = (esdm_backend_t**) malloc(sizeof(esdm_backend_t*)*(modules->bcount));
-
-	
-	// add a metadummy backend
-	modules->metadata = metadummy_backend_init(NULL);
-
 
 	for (int i = 0; i < modules->bcount; i++) {
 		b = &(config_backends->backends[i]);
@@ -135,13 +133,6 @@ esdm_modules_t* esdm_modules_init(esdm_instance_t* esdm)
 
 	}
 
-
-
-
-
-
-	// place the module into the right list
-	//
 	return modules;
 }
 
@@ -149,8 +140,7 @@ esdm_status_t esdm_modules_finalize()
 {
 	ESDM_DEBUG(__func__);	
 
-	// reverse finalization of modules
-	//
+	// unregister and finalize modules in reverse order
 	/*
 	for(int i=module_count - 1 ; i >= 0; i--){
 		modules[i]->finalize();

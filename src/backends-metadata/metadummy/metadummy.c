@@ -396,12 +396,7 @@ esdm_backend_t* metadummy_backend_init(void* init_data) {
 	// todo check metadummy style persitency structure available?
 	mkfs(backend);	
 
-
-
-
-	metadummy_test();
-
-
+	//metadummy_test();
 
 	return backend;
 

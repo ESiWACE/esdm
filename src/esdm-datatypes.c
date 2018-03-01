@@ -186,7 +186,7 @@ esdm_dataset_t* esdm_dataset_create(esdm_container_t* container, char* name, esd
 	dataset->dataspace = dataspace;
 	dataset->fragments = g_hash_table_new(g_direct_hash,  g_direct_equal);
 
-	g_hash_table_insert(container->datasets, name, &dataset);
+	g_hash_table_insert(container->datasets, name, dataset);
 
 	return dataset;
 }

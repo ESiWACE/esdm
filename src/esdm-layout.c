@@ -103,6 +103,30 @@ esdm_status_t esdm_layout_finalize() {
 
 
 
+
+/**
+ * Splits pending requests into one or more requests based on performance
+ * estimates obtained from available backends.
+ *
+ */
+esdm_status_t esdm_layout_recommendation(esdm_fragment_t *in, esdm_fragment_t *out)
+{
+	ESDM_DEBUG("Fetch performance estimates from backends.");
+
+	// pickup the performance estimate for each backend module
+	esdm_module_type_array_t * backends;
+	esdm_modules_get_by_type(ESDM_TYPE_DATA, backends);
+	//for(int i=0; i < backends->count; i++){
+	//	//esdm_backend_estimate_performance((esdm_backend_t*) backends->module, 1234);
+	//}
+
+	// now choice the best module
+}
+
+
+
+
+
 esdm_status_t esdm_layout_stat(char* desc) {
 	ESDM_DEBUG(__func__);	
 	ESDM_DEBUG("received metadata lookup request");

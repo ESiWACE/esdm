@@ -30,12 +30,17 @@
 #include <esdm-internal.h>
 
 
-
-
 json_t* esdm_config_gather(int argc, char const *argv[]);
 
 
 
+
+/**
+ * Initializes the site configuration module.
+ *
+ * @param	[in] esdm   Pointer to esdm instance.
+ * @return	Pointer to newly created configuration instance.
+ */
 esdm_config_t* esdm_config_init(esdm_instance_t *esdm)
 {
 	ESDM_DEBUG(__func__);	
@@ -45,13 +50,13 @@ esdm_config_t* esdm_config_init(esdm_instance_t *esdm)
 
 	config->json = esdm_config_gather(0, NULL);
 
-
 	return config;
 }
 
 
-esdm_status_t esdm_config_finalize(esdm_instance_t *esdm) {
 
+esdm_status_t esdm_config_finalize(esdm_instance_t *esdm)
+{
 
 	json_decref(esdm->config->json);
 		

@@ -21,7 +21,9 @@ typedef int esdm_type;
 typedef enum {
 	ESDM_OVERWRITE,
 	ESDM_CREATE,
-	ESDM_AUTOCOMMIT
+	ESDM_AUTOCOMMIT,
+	ESDM_DATASET,
+	ESDM_CONTAINER,
 } esdm_mode_t;
 
 /**
@@ -87,6 +89,7 @@ struct esdm_fragment_t {
 	esdm_dataset_t *dataset;
 	esdm_dataspace_t *dataspace;
 	char *data;
+	size_t size;
 	esdm_status_t status;
 };
 
@@ -212,14 +215,9 @@ typedef struct {
 // Scheduler
 typedef struct {
 	int member;
-} esdm_pending_fragment_t;
+	int callback;
+} esdm_io_t;
 
-
-typedef struct{
-	int thread_count; // Why!?
-	esdm_backend_t *backend;
-	esdm_pending_fragment_t *io;
-} esdm_pending_fragments_t;
 
 
 // Performance Model

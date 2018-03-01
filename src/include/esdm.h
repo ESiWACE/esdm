@@ -33,8 +33,8 @@ esdm_status_t esdm_open(char* desc, int mode);
 esdm_status_t esdm_create(char* desc, int mode, esdm_container_t**);
 esdm_status_t esdm_close(void * buf);
 
-esdm_status_t esdm_write(esdm_dataset_t *dset, void *buf, int dims, uint64_t * size, uint64_t* offset);
-esdm_status_t esdm_read(esdm_dataset_t *dset, void *buf, int dims, uint64_t * size, uint64_t* offset);
+esdm_status_t esdm_write(esdm_container_t *container, void *buf, int dims, uint64_t * size, uint64_t* offset);
+esdm_status_t esdm_read(esdm_container_t *container, void *buf, int dims, uint64_t * size, uint64_t* offset);
 
 
 ///////////////////////////////////////////////////////////////////////////////
