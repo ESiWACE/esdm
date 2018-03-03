@@ -5,13 +5,17 @@
  * it under the terms of the MIT license. See LICENSE for details.
  */
 
-#include <string.h>
 #include <assert.h>
+#include <fcntl.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <unistd.h>
 
 #include <jansson.h>
 
+#include <esdm-internal.h>
 
-#include <esdm.h>
 
 ///////////////////////////////////////////////////////////////////////////////
 // JSON - Load and try to parse
@@ -157,7 +161,7 @@ void print_json_null(const json_t *element, int indent) {
 
 
 ///////////////////////////////////////////////////////////////////////////////
-// JSON PATH - for convienient access of json fields.
+// JSON PATH - for convienient access of json members
 ///////////////////////////////////////////////////////////////////////////////
 
 /*
@@ -184,10 +188,6 @@ static char *jsonp_strdup(const char *str);
 
 static json_malloc_t do_malloc = malloc;
 static json_free_t do_free = free;
-
-
-
-
 
 
 json_t *json_path_get(const json_t *json, const char *path)
@@ -245,6 +245,7 @@ fail:
     jsonp_free(buf);
     return NULL;
 }
+
 
 int json_path_set_new(json_t *json, const char *path, json_t *value, size_t flags, json_error_t *error)
 {
@@ -424,22 +425,3 @@ static char *jsonp_strdup(const char *str) {
 	return new_str;
 }
 /* end jansson private helpers */
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-

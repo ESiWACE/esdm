@@ -62,20 +62,30 @@ esdm_status_t esdm_performance_finalize(esdm_performance_t* performance)
 
 
 
+void fetch_performance_from_backend(gpointer key, gpointer value, gpointer user_data)
+{
+	printf("GHashTable Entry: key=%p (s:%s,i:%i), value=%p (s:%s,i:%i), user_data=%p\n", key, key, *(int*)key, value, value, *(int*)value, user_data);
 
+	esdm_backend_t* backend = (esdm_backend_t*) value;
+	backend->callbacks.performance_estimate(backend);
+
+}
 
 /**
  * Splits pending requests into one or more requests based on performance
  * estimates obtained from available backends.
  *
  */
-esdm_status_t esdm_performance_recommendation(esdm_fragment_t *in, esdm_fragment_t *out)
+esdm_status_t esdm_performance_recommendation(esdm_instance_t *esdm, esdm_fragment_t *in, esdm_fragment_t *out)
 {
 	ESDM_DEBUG("Fetch performance estimates from backends.");
 
 	// pickup the performance estimate for each backend module
 	esdm_module_type_array_t * backends;
 	esdm_modules_get_by_type(ESDM_TYPE_DATA, backends);
+
+	g_hash_table_foreach (esdm->modules->backends, fetch_performance_from_backend, NULL);
+
 	//for(int i=0; i < backends->count; i++){
 	//	//esdm_backend_estimate_performance((esdm_backend_t*) backends->module, 1234);
 	//}

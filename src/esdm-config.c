@@ -25,14 +25,13 @@
 #include <fcntl.h>
 #include <unistd.h>
 
+#include <glib.h>
 
 #include <esdm.h>
 #include <esdm-internal.h>
 
 
 json_t* esdm_config_gather(int argc, char const *argv[]);
-
-
 
 
 /**
@@ -57,45 +56,13 @@ esdm_config_t* esdm_config_init(esdm_instance_t *esdm)
 
 esdm_status_t esdm_config_finalize(esdm_instance_t *esdm)
 {
+	ESDM_DEBUG(__func__);	
 
 	json_decref(esdm->config->json);
-		
 	free(esdm->config);
 
 	return ESDM_SUCCESS;
 }
-
-
-
-
-
-// TODO: move to utils?
-int read_file(char *filepath, char **buf)
-{
-	if (*buf != NULL)
-	{
-		ESDM_ERROR("read_file(): Potential memory leak. Overwriting existing pointer with value != NULL.");
-		exit(1);
-	}
-
-	FILE *f = fopen(filepath, "rb");
-	fseek(f, 0, SEEK_END);
-	long fsize = ftell(f);
-	fseek(f, 0, SEEK_SET);  //same as rewind(f);
-
-	char *string = malloc(fsize + 1);
-	fread(string, fsize, 1, f);
-	fclose(f);
-
-	string[fsize] = 0;
-
-
-	*buf = string;
-
-	printf("read_file(): %s\n", string);
-}
-
-
 
 
 /**
@@ -123,7 +90,6 @@ json_t* esdm_config_gather(int argc, char const* argv[])
 
 	return root;
 }
-
 
 
 /**
@@ -188,7 +154,7 @@ esdm_config_backends_t* esdm_config_get_backends(esdm_instance_t* esdm)
 
 		}
 	} else {
-				ESDM_ERROR("Invalid configuration! /esdm/backends is not an array.");
+		ESDM_ERROR("Invalid configuration! /esdm/backends is not an array.");
 	}
 
 

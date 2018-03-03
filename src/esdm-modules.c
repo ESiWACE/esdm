@@ -63,25 +63,21 @@ esdm_modules_t* esdm_modules_init(esdm_instance_t* esdm)
 
 	// Setup module registry
 	esdm_modules_t* modules = NULL;
-	modules = (esdm_modules_t*) malloc(sizeof(esdm_modules_t));
-	modules->bcount = 0;
+	esdm_backend_t* backend = NULL;
 
+	modules = (esdm_modules_t*) malloc(sizeof(esdm_modules_t));
 
 	esdm_config_backends_t* config_backends = esdm_config_get_backends(esdm);
 	esdm_config_backend_t* b = NULL;
 
-	// Add metadata backend (singular)
-	// TODO: consider 
+	// Register metadata backend (singular)
+	// TODO: This backend is meant as metadata coordinator in a hierarchy of MD (later)
 	modules->metadata = metadummy_backend_init(NULL);
 
-	
-//	container->datasets = g_hash_table_new(g_direct_hash,  g_direct_equal);
+	// Register data backends	
+	modules->backends = g_hash_table_new(g_direct_hash, g_direct_equal);
 
-	// Add data backends
-	modules->bcount = config_backends->count;
-	modules->backends = (esdm_backend_t**) malloc(sizeof(esdm_backend_t*)*(modules->bcount));
-
-	for (int i = 0; i < modules->bcount; i++) {
+	for (int i = 0; i < config_backends->count; i++) {
 		b = &(config_backends->backends[i]);
 
 		printf("Backend config: %d, %s, %s, %s\n", i,
@@ -90,6 +86,7 @@ esdm_modules_t* esdm_modules_init(esdm_instance_t* esdm)
 				b->target
 			  );
 
+
 		if (strncmp (b->type,"POSIX",5) == 0)
 		{
 			posix_backend_options_t* data = (posix_backend_options_t*) malloc(sizeof(posix_backend_options_t));
@@ -97,12 +94,16 @@ esdm_modules_t* esdm_modules_init(esdm_instance_t* esdm)
 			data->name = b->name;
 			data->target = b->target;
 
-			modules->backends[i] = posix_backend_init((void*)data);
-			modules->backends[i]->callbacks.performance_estimate(modules->backends[i]);
+			backend = posix_backend_init((void*)data);
+			g_hash_table_insert(modules->backends, (char*)b->name, backend);
+
+			// test callback, TODO: remove
+			backend->callbacks.performance_estimate(backend);
 		} else {
 			ESDM_ERROR("Unknown backend type. Please check your ESDM configuration.");
 		}
 
+		printf("\n");
 	}
 
 	return modules;

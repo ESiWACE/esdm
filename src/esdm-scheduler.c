@@ -99,8 +99,8 @@ esdm_status_t esdm_scheduler_submit(esdm_instance_t *esdm, esdm_fragment_t * fra
 	esdm_fragment_t* fragments;
 
 	// Gather I/O recommendations 
-	esdm_performance_recommendation(NULL, NULL);  // e.g., split, merge, replication?
-	esdm_layout_recommendation(NULL, NULL);		  // e.g., merge, split, transform?
+	esdm_performance_recommendation(esdm, NULL, NULL);  // e.g., split, merge, replication?
+	esdm_layout_recommendation(esdm, NULL, NULL);		  // e.g., merge, split, transform?
 	// TODO: merge recommendations
 
 	// TODO: enqueue I/O for dispatch

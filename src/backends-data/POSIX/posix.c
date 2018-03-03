@@ -55,7 +55,7 @@ static int mkfs(esdm_backend_t* backend)
 	posix_backend_options_t* options = data->options;
 
 	printf("mkfs: backend->(void*)data->options->target = %s\n", options->target);
-	printf("\n\n\n");
+	printf("\n");
 
 
 	const char* tgt = options->target;
@@ -125,8 +125,7 @@ int posix_backend_performance_estimate(esdm_backend_t* backend)
 	posix_backend_options_t* options = data->options;
 
 	printf("perf_estimate: backend->(void*)data->options->target = %s\n", options->target);
-	printf("\n\n\n");
-
+	printf("\n");
 
 	return 0;
 }

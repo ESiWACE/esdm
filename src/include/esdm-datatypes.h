@@ -111,11 +111,8 @@ typedef enum {
 } esdm_module_type_t;
 
 
-
-
 typedef struct esdm_backend_t esdm_backend_t;
 typedef struct esdm_backend_callbacks_t esdm_backend_callbacks_t;
-
 
 
 // Callbacks
@@ -157,7 +154,6 @@ struct esdm_backend_callbacks_t {
 };
 
 
-
 /**
  * On backend registration ESDM expects the backend to return a pointer to 
  * a esdm_backend_t struct.
@@ -175,16 +171,9 @@ struct esdm_backend_t {
 };
 
 
-
-
-
-
-
 ///////////////////////////////////////////////////////////////////////////////
 // INTERNAL
 ///////////////////////////////////////////////////////////////////////////////
-
-
 
 // Organisation structures of core components /////////////////////////////////
 
@@ -231,15 +220,11 @@ typedef struct {
 // Entry points and state for core components /////////////////////////////////
 
 typedef struct {
-	int info;
 	void *json;
 } esdm_config_t;
 
 typedef struct {
-	int info;
-	int bcount;
-	int mcount;
-	esdm_backend_t** backends;
+	GHashTable *backends;
 	esdm_backend_t* metadata;
 	//esdm_modules_t** modules;
 } esdm_modules_t;

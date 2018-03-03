@@ -109,7 +109,7 @@ esdm_status_t esdm_layout_finalize() {
  * estimates obtained from available backends.
  *
  */
-esdm_status_t esdm_layout_recommendation(esdm_fragment_t *in, esdm_fragment_t *out)
+esdm_status_t esdm_layout_recommendation(esdm_instance_t *esdm, esdm_fragment_t *in, esdm_fragment_t *out)
 {
 	ESDM_DEBUG("Fetch performance estimates from backends.");
 

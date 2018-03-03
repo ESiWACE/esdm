@@ -56,12 +56,12 @@ esdm_status_t esdm_scheduler_submit(esdm_instance_t *esdm, esdm_fragment_t *frag
 // Layout
 esdm_layout_t* esdm_layout_init(esdm_instance_t *esdm);
 esdm_status_t esdm_layout_finalize();
-esdm_status_t esdm_layout_recommendation(esdm_fragment_t* in, esdm_fragment_t* out);
+esdm_status_t esdm_layout_recommendation(esdm_instance_t *esdm, esdm_fragment_t* in, esdm_fragment_t* out);
 esdm_status_t esdm_layout_stat(char *desc);
 
 // Performance Model
 esdm_performance_t* esdm_performance_init(esdm_instance_t *esdm);
-esdm_status_t esdm_performance_recommendation(esdm_fragment_t* in, esdm_fragment_t* out);
+esdm_status_t esdm_performance_recommendation(esdm_instance_t *esdm, esdm_fragment_t* in, esdm_fragment_t* out);
 esdm_status_t esdm_performance_finalize();
 
 
@@ -75,5 +75,6 @@ esdm_status_t esdm_backend_io(esdm_backend_t *backend, esdm_fragment_t *fragment
 // Auxiliary
 void print_hashtable_entry (gpointer key, gpointer value, gpointer user_data);
 
+int read_file(char *filepath, char **buf);
 
 #endif

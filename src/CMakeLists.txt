@@ -214,7 +214,7 @@ add_subdirectory(test)
 
 
 ## Compile middleware
-add_library(esdmutils SHARED esdm.c  esdm-datatypes.c  esdm-layout.c  esdm-performancemodel.c esdm-config.c  esdm-modules.c  utils/debug.c utils/json.c)
+add_library(esdmutils SHARED esdm.c  esdm-datatypes.c  esdm-layout.c  esdm-performancemodel.c esdm-config.c  esdm-modules.c  utils/debug.c utils/json.c utils/auxiliary.c)
 target_link_libraries(esdmutils ${GLIB_LDFLAGS} ${JANSSON_LDFLAGS})
 include_directories(${CMAKE_SOURCE_DIR}/include/ ${CMAKE_BINARY_DIR} ${GLIB_INCLUDE_DIRS} ${JANSSON_INCLUDE_DIRS})
 
