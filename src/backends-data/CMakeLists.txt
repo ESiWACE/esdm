@@ -1,9 +1,3 @@
-
-
-SUBDIRS(POSIX)
-#SUBDIRS(Clovis)
-#SUBDIRS(WOS)
-
-
-
-message(STATUS "XXX   ${XXX}")
+# 
+# NOTICE: Backend subdirs are added in the options section of src/CMakeLists.txt 
+#

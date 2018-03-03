@@ -13,28 +13,6 @@ set(VERSION_MINOR "1")
 set(VERSION_PATCH "0")
 set(VERSION ${VERSION_MAJOR}.${VERSION_MINOR}.${VERSION_PATCH})
 
-#
-# OPTIONS
-# _____________________________________________________________________________
-
-# General Options
-option(ENABLE_MPI "Compile with MPI Support?" OFF)
-
-# Frontends
-option(ENABLE_HDF5 "Compile Plugin for HDF5 Virtual Object Layer?" OFF)
-
-# Data Backends
-option(BACKEND_POSIX "Compile backend for POSIX support?" ON)
-option(BACKEND_LUSTRE "Compile backend for Lustre support?" OFF)
-option(BACKEND_CLOVIS "Compile backend for Clovis support?" OFF)
-option(BACKEND_WOS "Compile backend for WOS support?" OFF)
-
-# Metadata Backends
-option(BACKEND_MONGODB "Compile metadata backend for MongoDB support?" OFF)
-
-
-
-
 
 #
 # USEFUL PROJECT VARIABLES
@@ -173,7 +151,54 @@ set ( CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -pedantic -Wall -Wextra -Wdouble-promo
 set (CMAKE_C_FLAGS_DEBUG   "-O0 -g")
 set (CMAKE_C_FLAGS_RELEASE "-O3")
 
+#
+# OPTIONS
+# _____________________________________________________________________________
 
+# General Options
+option(ENABLE_MPI "Compile with MPI Support?" OFF)
+
+# Frontends
+option(ENABLE_HDF5 "Compile Plugin for HDF5 Virtual Object Layer?" OFF)
+
+
+# Data Backends
+option(BACKEND_POSIX "Compile backend for POSIX support?" ON)
+if(BACKEND_POSIX)
+	message(STATUS "WITH_BACKEND_POSIX")
+	add_definitions(-DESDM_HAS_POSIX=1)
+	SUBDIRS(backends-data/POSIX)
+endif()
+
+option(BACKEND_LUSTRE "Compile backend for Lustre support?" OFF)
+if(BACKEND_LUSTRE)
+	message(STATUS "WITH_BACKEND_LUSTRE")
+	add_definitions(-DESDM_HAS_LUSTRE=1)
+	SUBDIRS(backends-data/LUSTRE)
+endif()
+
+option(BACKEND_CLOVIS "Compile backend for Clovis support?" OFF)
+if(BACKEND_CLOVIS)
+	message(STATUS "WITH_BACKEND_CLOVIS")
+	add_definitions(-DESDM_HAS_CLOVIS=1)
+	SUBDIRS(backends-data/CLOVIS)
+endif()
+
+option(BACKEND_WOS "Compile backend for WOS support?" OFF)
+if(BACKEND_WOS)
+	message(STATUS "WITH_BACKEND_WOS")
+	add_definitions(-DESDM_HAS_WOS=1)
+	SUBDIRS(backends-data/WOS)
+endif()
+
+
+# Metadata Backends
+option(BACKEND_MONGODB "Compile metadata backend for MongoDB support?" OFF)
+if(BACKEND_MONGODB)
+	message(STATUS "WITH_BACKEND_MONGODB")
+	add_definitions(-DESDM_HAS_MONGODB=1)
+	SUBDIRS(backends-metadata/POSIX)
+endif()
 
 
 #
@@ -181,21 +206,17 @@ set (CMAKE_C_FLAGS_RELEASE "-O3")
 # _____________________________________________________________________________ 
 
 enable_testing()
+
 add_subdirectory(backends-data)
 add_subdirectory(backends-metadata)
 add_subdirectory(utils)
 add_subdirectory(test)
 
 
-
-
-
-## Application
+## Compile middleware
 add_library(esdmutils SHARED esdm.c  esdm-datatypes.c  esdm-layout.c  esdm-performancemodel.c esdm-config.c  esdm-modules.c  utils/debug.c utils/json.c)
 target_link_libraries(esdmutils ${GLIB_LDFLAGS} ${JANSSON_LDFLAGS})
 include_directories(${CMAKE_SOURCE_DIR}/include/ ${CMAKE_BINARY_DIR} ${GLIB_INCLUDE_DIRS} ${JANSSON_INCLUDE_DIRS})
-
-
 
 add_library(esdm SHARED esdm.c esdm-scheduler.c)
 target_link_libraries(esdm ${GLIB_LDFLAGS} ${JANSSON_LDFLAGS} esdmutils esdmposix esdmmetadummy)
@@ -204,6 +225,7 @@ include_directories(${CMAKE_SOURCE_DIR}/include/ ${CMAKE_BINARY_DIR} ${GLIB_INCL
 
 
 #TODO: if hdf5 available.. build add hdf5-interface
+
 
 if(HDF5_FOUND)
 	SUBDIRS(hdf5-interface)
