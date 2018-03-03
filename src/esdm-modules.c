@@ -14,13 +14,11 @@
  * along with ESDM.  If not, see <http://www.gnu.org/licenses/>.                
  */                                                                             
 
-
 /**
  * @file
- * @brief ESDM functions for module functionalities.
+ * @brief ESDM module registry that keeps track of available backends.
  *
  */
-
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -29,13 +27,6 @@
 #include <esdm.h>
 #include <esdm-internal.h>
 
-
-#define ESDM_HAS_POSIX
-//#define ESDM_HAS_CLOVIS
-//#define ESDM_HAS_WOS
-
-
-#define ESDM_HAS_METADUMMY
 
 
 
@@ -55,35 +46,12 @@
 #endif
 
 
-
+// TODO: remove define on
+#define ESDM_HAS_METADUMMY
 #ifdef ESDM_HAS_METADUMMY
 	#include "backends-metadata/metadummy/metadummy.h"
 	#pragma message ("Building ESDM with metadummy!")
 #endif
-
-
-
-
-/*
-#ifndef ESDM_MODULES_H
-#define ESDM_MODULES_H
-
-#ifdef ESDM_HAS_POSIX
-#include <data-backends/posix/posix.h>
-#endif
-
-static int module_count;
-static esdm_module_t modules[] = {
-#ifdef ESDM_HAS_POSIX
-  & esdm_posix,
-#endif
-  NULL
-};
-#endif
-
-static esdm_module_type_array_t modules_per_type[ESDM_TYPE_LAST];
-*/
-
 
 
 
@@ -103,8 +71,12 @@ esdm_modules_t* esdm_modules_init(esdm_instance_t* esdm)
 	esdm_config_backend_t* b = NULL;
 
 	// Add metadata backend (singular)
+	// TODO: consider 
 	modules->metadata = metadummy_backend_init(NULL);
+
 	
+//	container->datasets = g_hash_table_new(g_direct_hash,  g_direct_equal);
+
 	// Add data backends
 	modules->bcount = config_backends->count;
 	modules->backends = (esdm_backend_t**) malloc(sizeof(esdm_backend_t*)*(modules->bcount));

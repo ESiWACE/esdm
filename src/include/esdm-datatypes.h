@@ -14,9 +14,9 @@
 typedef int esdm_type;
 
 // ESDM Parameters and Status /////////////////////////////////////////////////
+//
 /**
  * ESDM Status codes and failure modes.
- *
  */
 typedef enum {
 	ESDM_OVERWRITE,
@@ -28,7 +28,6 @@ typedef enum {
 
 /**
  * ESDM Status codes and failure modes.
- *
  */
 typedef enum {
 	ESDM_SUCCESS,
@@ -37,10 +36,8 @@ typedef enum {
 	ESDM_PERSISTENT
 } esdm_status_t;
 
-
 /**
  * ESDM provides logging helpers, the available loglevels are defined here.
- *
  */
 typedef enum {
 	ESDM_LOGLEVEL_CRITICAL,
@@ -51,6 +48,7 @@ typedef enum {
 	ESDM_LOGLEVEL_NOTSET
 } esdm_loglevel_t;
 
+
 // LOGICAL/DOMAIN DATATYPES ///////////////////////////////////////////////////
 
 typedef struct esdm_container_t esdm_container_t;
@@ -58,7 +56,6 @@ typedef struct esdm_metadata_t esdm_metadata_t;
 typedef struct esdm_dataset_t esdm_dataset_t;
 typedef struct esdm_dataspace_t esdm_dataspace_t;
 typedef struct esdm_fragment_t esdm_fragment_t;
-
 
 
 struct esdm_container_t {

@@ -18,5 +18,5 @@ export PKG_CONFIG_PATH=$prefix/lib/pkgconfig:$PKG_CONFIG_PATH
 
 
 # Change prompt for clarity
-PS1="\nESDM devel \u@\h:\w\n\$ \[\]"
+PS1="\n(ESDM devel) \u@\h:\w\n\$ \[\]"
 

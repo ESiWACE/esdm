@@ -28,7 +28,6 @@
 
 
 // Container //////////////////////////////////////////////////////////////////
-
 /**
  * Create a new container. 
  *
@@ -85,7 +84,6 @@ esdm_status_t esdm_container_destroy(esdm_container_t *container)
 
 
 // Fragment ///////////////////////////////////////////////////////////////////
-
 /**
  * Create a new fragment.
  *
@@ -229,7 +227,6 @@ esdm_status_t esdm_dataset_commit(esdm_dataset_t *dataset)
 
 
 // Dataspace //////////////////////////////////////////////////////////////////
-
 /**
  * Create a new dataspace.
  *
