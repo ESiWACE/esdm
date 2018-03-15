@@ -31,7 +31,7 @@
 
 // TODO: Decide on initialization mechanism.
 static int is_initialized = 0;
-static esdm_instance_t esdm;
+esdm_instance_t esdm;
 
 
 /**
@@ -82,7 +82,7 @@ esdm_status_t esdm_init()
 /**
 * Display status information for objects stored in ESDM.
 *
-* @param [in] desc	name or descriptor of object
+* @param [in] desc	Name or descriptor of object.
 *
 * @return Status
 */
@@ -101,6 +101,7 @@ esdm_status_t esdm_finalize()
 
 	return ESDM_SUCCESS;
 }
+
 
 
 
@@ -154,7 +155,9 @@ esdm_status_t esdm_create(char *name, int mode, esdm_container_t **container)
 	printf("Dataset 'bytestream' creation: %p\n", dataset);
 
 	esdm_dataset_commit(dataset);
-	esdm_container_commit(*container);
+
+	// TODO: decide on container dataset semantics
+	//esdm_container_commit(*container);
 
 	return ESDM_SUCCESS;
 }
@@ -202,7 +205,7 @@ esdm_status_t esdm_write(esdm_container_t *container, void *buf, int dims, uint6
 	esdm_fragment_t *fragment = esdm_fragment_create(dataset, subspace, buf);
 
 	// schedule for I/O
-	esdm_scheduler_submit(&esdm, fragment);
+	esdm_scheduler_enqueue(&esdm, fragment);
 
 	return ESDM_SUCCESS;
 }
@@ -210,7 +213,7 @@ esdm_status_t esdm_write(esdm_container_t *container, void *buf, int dims, uint6
 
 
 /**
- * Reads a data fragment described by desc to the dataset dset.
+ * Reads a data fragment described by desc to the dataset dset. 
  *
  * @param [out] buf	The pointer to a contiguous memory region that shall be written
  * @param [in] dset	TODO, currently a stub, we assume it has been identified/created before.... , json description?
@@ -228,7 +231,7 @@ esdm_status_t esdm_read(esdm_container_t *container, void *buf, int dims, uint64
 
 	// TODO: reconstruct expected result using esdm_layout
 
-	//esdm_scheduler_submit(fragment);
+	//esdm_scheduler_enqueue(fragment);
 	
 	// buf =
 
@@ -255,8 +258,9 @@ esdm_status_t esdm_close(void *desc)
 
 
 /**
- * Ensure all remaining data is syncronized with backends. If not called at the
- * end of an application, ESDM can not guarantee all data was written.
+ * Ensure all remaining data is syncronized with backends.
+ * If not called at the end of an application, ESDM can not guarantee all data
+ * was written.
  *
  * @return status
  */

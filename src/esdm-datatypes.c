@@ -27,6 +27,10 @@
 #include <esdm-internal.h>
 
 
+
+extern esdm_instance_t esdm;
+
+
 // Container //////////////////////////////////////////////////////////////////
 /**
  * Create a new container. 
@@ -62,7 +66,17 @@ esdm_status_t esdm_container_commit(esdm_container_t* container)
 {
 	ESDM_DEBUG(__func__);	
 
+	// print datasets of this container
 	g_hash_table_foreach (container->datasets, print_hashtable_entry, NULL);
+
+
+	// md callback create/update container
+	esdm.modules->metadata->callbacks.create(esdm.modules->metadata, "test");
+	
+	
+	// Also commit uncommited datasets of this container?
+	//g_hash_table_foreach (container->datasets, /* TODO: dataset commit wrapper? */ print_hashtable_entry, NULL);
+
 
 	return ESDM_SUCCESS;
 }
@@ -220,6 +234,11 @@ esdm_status_t esdm_dataset_destroy(esdm_dataset_t *dataset)
 esdm_status_t esdm_dataset_commit(esdm_dataset_t *dataset)
 {
 	ESDM_DEBUG(__func__);	
+
+
+
+
+
 	return ESDM_SUCCESS;
 }
 

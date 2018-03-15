@@ -1,0 +1,22 @@
+
+
+# Prerequisites
+
+dnf install mongodb mongodb-server
+
+dnf install mongo-c-driver-devel
+dnf install snappy snappy-devel # somehow require by mongodb
+
+
+
+# Starting MongoDB Service (non-root)
+
+(For a distributed deployment look into mongos).
+
+# using custom config file
+mongod --config mongod.conf
+
+
+# only change port, data and log path
+mkdir -p mongo-data
+mongod --verbose --dbpath ./mongo-data

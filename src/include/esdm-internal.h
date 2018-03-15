@@ -51,7 +51,7 @@ esdm_status_t esdm_modules_get_by_type(esdm_module_type_t type, esdm_module_type
 // I/O Scheduler
 esdm_scheduler_t* esdm_scheduler_init(esdm_instance_t *esdm);
 esdm_status_t esdm_scheduler_finalize();
-esdm_status_t esdm_scheduler_submit(esdm_instance_t *esdm, esdm_fragment_t *fragment);
+esdm_status_t esdm_scheduler_enqueue(esdm_instance_t *esdm, esdm_fragment_t *fragment);
 
 // Layout
 esdm_layout_t* esdm_layout_init(esdm_instance_t *esdm);

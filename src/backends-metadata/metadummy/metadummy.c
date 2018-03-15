@@ -35,6 +35,7 @@
 
 #include <jansson.h>
 
+#include <esdm.h>
 #include "metadummy.h"
 
 
@@ -61,17 +62,27 @@ static int mkfs(esdm_backend_t* backend)
 {
 	DEBUG("metadummy setup");
 
-	//const char* tgt = options->target;
-	const char* tgt = "./_metadummy";
+	struct stat sb;
 
-	struct stat st = {0};
+	// use target directory from backend configuration
+	metadummy_backend_options_t *options = (metadummy_backend_options_t*) backend->data;
+	const char* tgt = options->target;
+	//const char* tgt = "./_metadummy";
 
-	if (stat(tgt, &st) == -1)
+
+	if (stat(tgt, &sb) == -1)
 	{
 		char* root; 
+		char* containers; 
+		
 		asprintf(&root, "%s", tgt);
 		mkdir(root, 0700);
+	
+		asprintf(&containers, "%s/containers", tgt);
+		mkdir(containers, 0700);
+
 		free(root);
+		free(containers);
 	}
 }
 
@@ -87,9 +98,6 @@ static int fsck()
 
 	return 0;
 }
-
-
-
 
 
 int print_stat(struct stat sb)
@@ -253,6 +261,173 @@ int entry_destroy(const char *path)
 
 
 
+
+
+
+
+
+
+
+
+///////////////////////////////////////////////////////////////////////////////
+// Container Helpers //////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////////
+
+int container_create(esdm_backend_t* backend, const char *name)
+{
+	char *path_metadata;
+	char *path_container;
+	struct stat sb;
+
+	metadummy_backend_options_t *options = (metadummy_backend_options_t*) backend->data;
+	const char* tgt = options->target;
+
+	asprintf(&path_metadata, "%s/containers/%s.md", tgt, name);
+	asprintf(&path_container, "%s/containers/%s", tgt, name);
+
+	// create metadata entry
+	entry_create(path_metadata);
+
+	// create directory for datsets
+	if (stat(path_container, &sb) == -1)
+	{
+		mkdir(path_container, 0700);
+	}
+
+	free(path_metadata);
+	free(path_container);
+}
+
+
+int container_receive(esdm_backend_t* backend, const char *name)
+{
+	char *path_metadata;
+	char *path_container;
+	struct stat sb;
+
+	metadummy_backend_options_t *options = (metadummy_backend_options_t*) backend->data;
+	const char* tgt = options->target;
+
+	asprintf(&path_metadata, "%s/containers/%s.md", tgt, name);
+	asprintf(&path_container, "%s/containers/%s", tgt, name);
+
+	// create metadata entry
+	entry_receive(path_metadata);
+
+
+	free(path_metadata);
+	free(path_container);
+}
+
+
+int container_update(esdm_backend_t* backend, const char *name, char *buf, size_t len)
+{
+	char *path_metadata;
+	char *path_container;
+	struct stat sb;
+
+	metadummy_backend_options_t *options = (metadummy_backend_options_t*) backend->data;
+	const char* tgt = options->target;
+
+	asprintf(&path_metadata, "%s/containers/%s.md", tgt, name);
+	asprintf(&path_container, "%s/containers/%s", tgt, name);
+
+	// create metadata entry
+	entry_update(path_metadata, buf, len);
+
+
+	free(path_metadata);
+	free(path_container);
+}
+
+
+int container_destroy(esdm_backend_t* backend, const char *name) 
+{
+	char *path_metadata;
+	char *path_container;
+	struct stat sb;
+
+	metadummy_backend_options_t *options = (metadummy_backend_options_t*) backend->data;
+	const char* tgt = options->target;
+
+	asprintf(&path_metadata, "%s/containers/%s.md", tgt, name);
+	asprintf(&path_container, "%s/containers/%s", tgt, name);
+
+	// create metadata entry
+	entry_destroy(path_metadata);
+
+
+	// TODO: also remove existing datasets?
+
+
+	free(path_metadata);
+	free(path_container);
+}
+
+
+
+///////////////////////////////////////////////////////////////////////////////
+// Dataset Helpers ////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////////
+
+int dataset_create(esdm_backend_t* backend, const char* container, const char *name)
+{
+	char *path_metadata;
+	char *path_dataset;
+	struct stat sb;
+
+	metadummy_backend_options_t *options = (metadummy_backend_options_t*) backend->data;
+	const char* tgt = options->target;
+
+	asprintf(&path_metadata, "%s/containers/%s/%s.md", tgt, container, name);
+	asprintf(&path_dataset, "%s/containers/%s/%s", tgt, container, name);
+
+	// create metadata entry
+	entry_create(path_metadata);
+
+	// create directory for datsets
+	if (stat(path_dataset, &sb) == -1)
+	{
+		mkdir(path_dataset, 0700);
+	}
+
+	free(path_metadata);
+	free(path_dataset);
+}
+
+
+int dataset_receive(esdm_backend_t* backend, const char* container, const char *name)
+{
+}
+
+
+int dataset_update(esdm_backend_t* backend, const char* container, const char *name, char *buf, size_t len)
+{
+}
+
+
+int dataset_destroy(esdm_backend_t* backend, const char* container, const char *name) 
+{
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 ///////////////////////////////////////////////////////////////////////////////
 // ESDM Callbacks /////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////
@@ -265,18 +440,15 @@ int metadummy_backend_performance_estimate(esdm_backend_t* backend)
 }
 
 
-int metadummy_create() 
+int metadummy_create(esdm_backend_t* backend, char* name) 
 {
 	DEBUG("Create");
 
+	// TODO; Sanitize name, and reject forbidden names
 
-	// check if container already exists
 
-	struct stat st = {0};
-	if (stat("_esdm-fs", &st) == -1)
-	{
-		mkdir("_esdm-fs/containers", 0700);
-	}
+	container_create(backend, name);
+
 
 
     //#include <unistd.h>
@@ -390,7 +562,14 @@ esdm_backend_t* metadummy_backend_init(void* init_data) {
 	esdm_backend_t* backend = (esdm_backend_t*) malloc(sizeof(esdm_backend_t));
 	memcpy(backend, &backend_template, sizeof(esdm_backend_t));
 
-	backend->data = init_data;
+	metadummy_backend_options_t* data = (metadummy_backend_options_t*) malloc(sizeof(metadummy_backend_options_t));
+
+	char *tgt;
+	asprintf(&tgt, "./_metadummy");
+	data->target = tgt;
+
+	//backend->data = init_data;
+	backend->data = data;
 
 
 	// todo check metadummy style persitency structure available?
@@ -456,6 +635,7 @@ void metadummy_test()
 	ret = entry_destroy(abc);
 	ret = entry_receive(abc);
 	assert(ret == -1);
+
 
 	// clean up
 	ret = entry_destroy(def);

@@ -75,6 +75,20 @@ esdm_scheduler_t* esdm_scheduler_init(esdm_instance_t* esdm)
 
 
 	// TODO: create Task / I/O queue
+	
+	/*
+	GAsyncQueue * queue = g_async_queue_new(void);
+	void g_async_queue_push(queue, &mydata);
+	gpointer g_async_queue_pop(queue);
+
+	// void g_async_queue_sort (GAsyncQueue *queue, GCompareDataFunc func, gpointer user_data);
+
+	void g_async_queue_lock (GAsyncQueue *queue);
+	void g_async_queue_unlock (GAsyncQueue *queue);
+	
+	*/
+
+
 	// TODO: create thread pool
 
 	return scheduler;
@@ -83,7 +97,6 @@ esdm_scheduler_t* esdm_scheduler_init(esdm_instance_t* esdm)
 
 esdm_status_t esdm_scheduler_finalize()
 {
-
 	ESDM_DEBUG(__func__);	
 	return ESDM_SUCCESS;
 }
@@ -91,7 +104,7 @@ esdm_status_t esdm_scheduler_finalize()
 
 
 
-esdm_status_t esdm_scheduler_submit(esdm_instance_t *esdm, esdm_fragment_t * fragment)
+esdm_status_t esdm_scheduler_enqueue(esdm_instance_t *esdm, esdm_fragment_t * fragment)
 {
 	ESDM_DEBUG(__func__);	
 
@@ -115,7 +128,6 @@ esdm_status_t esdm_scheduler_submit(esdm_instance_t *esdm, esdm_fragment_t * fra
 esdm_status_t esdm_backend_io(esdm_backend_t* backend, esdm_fragment_t* fragment, esdm_metadata_t* metadata)
 {
 	ESDM_DEBUG(__func__);	
-
 
 	return ESDM_SUCCESS;
 }

@@ -137,19 +137,19 @@ struct esdm_backend_callbacks_t {
 //
 // Data Callbacks
 //typedef struct {
-	int (*create)();
-	int (*open)();
-	int (*write)();
-	int (*read)();
+	int (*create)(esdm_backend_t*, char* name);
+	int (*open)(esdm_backend_t*);
+	int (*write)(esdm_backend_t*);
+	int (*read)(esdm_backend_t*);
 
-	int (*close)();
+	int (*close)(esdm_backend_t*);
 //} esdm_backend_callbacks_data_t;
 //
 // Metadata Callbacks
 //typedef struct {
-	int (*allocate)();
-	int (*update)();
-	int (*lookup)();
+	int (*allocate)(esdm_backend_t*);
+	int (*update)(esdm_backend_t*);
+	int (*lookup)(esdm_backend_t*);
 //} esdm_module_callbacks_metadata_t;
 };
 
@@ -177,32 +177,37 @@ struct esdm_backend_t {
 
 // Organisation structures of core components /////////////////////////////////
 
+
 // Config
-typedef struct {
+typedef struct esdm_config_backend_t esdm_config_backend_t;
+struct esdm_config_backend_t {
 	const char *type;
 	const char *name;
 	const char *target;
-} esdm_config_backend_t;
+};
 
-typedef struct {
+
+typedef struct esdm_config_backends_t esdm_config_backends_t;
+struct esdm_config_backends_t {
 	int count;
 	esdm_config_backend_t *backends;
-} esdm_config_backends_t;
-
+};
 
 
 // Modules
-typedef struct {
+typedef struct esdm_module_type_array_t esdm_module_type_array_t;
+struct esdm_module_type_array_t {
 	int count;
 	esdm_module_type_t *module;
-} esdm_module_type_array_t;
+};
 
 
 // Scheduler
-typedef struct {
+typedef struct esdm_io_t esdm_io_t;
+struct esdm_io_t {
 	int member;
 	int callback;
-} esdm_io_t;
+};
 
 
 

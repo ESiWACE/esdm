@@ -6,7 +6,7 @@ set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} ${CMAKE_SOURCE_DIR}/../cmake)
 # _____________________________________________________________________________ 
 
 set(PROJECT_NAME esdm)
-project(${PROJECT_NAME})
+project(${PROJECT_NAME} C CXX)
 
 set(VERSION_MAJOR "0")
 set(VERSION_MINOR "1")
