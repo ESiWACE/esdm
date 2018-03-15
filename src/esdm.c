@@ -155,9 +155,7 @@ esdm_status_t esdm_create(char *name, int mode, esdm_container_t **container)
 	printf("Dataset 'bytestream' creation: %p\n", dataset);
 
 	esdm_dataset_commit(dataset);
-
-	// TODO: decide on container dataset semantics
-	//esdm_container_commit(*container);
+	esdm_container_commit(*container);
 
 	return ESDM_SUCCESS;
 }

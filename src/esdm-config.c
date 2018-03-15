@@ -68,6 +68,8 @@ esdm_status_t esdm_config_finalize(esdm_instance_t *esdm)
 /**
  * Gathers ESDM configuration settings from multiple locations:
  *
+ *
+ * TODO:
  *	/etc/esdm/esdm.conf
  *	~/.config/esdm/esdm.conf
  *	~/.esdm.conf
@@ -84,6 +86,7 @@ json_t* esdm_config_gather(int argc, char const* argv[])
 
 
 	read_file("_esdm.conf", &config_json);
+
 
 	// parse text into JSON structure
 	json_t *root = load_json(config_json);

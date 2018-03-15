@@ -166,13 +166,13 @@ int entry_create(const char *path)
 }
 
 
-int entry_receive(const char *path)
+int entry_retrieve(const char *path)
 {
 	int status;
 	struct stat sb;
 	char* buf;
 
-	printf("entry_receive(%s)\n", path);
+	printf("entry_retrieve(%s)\n", path);
 
 	status = stat(path, &sb);
 	if (status == -1) {
@@ -299,7 +299,7 @@ int container_create(esdm_backend_t* backend, const char *name)
 }
 
 
-int container_receive(esdm_backend_t* backend, const char *name)
+int container_retrieve(esdm_backend_t* backend, const char *name)
 {
 	char *path_metadata;
 	char *path_container;
@@ -312,7 +312,7 @@ int container_receive(esdm_backend_t* backend, const char *name)
 	asprintf(&path_container, "%s/containers/%s", tgt, name);
 
 	// create metadata entry
-	entry_receive(path_metadata);
+	entry_retrieve(path_metadata);
 
 
 	free(path_metadata);
@@ -396,7 +396,7 @@ int dataset_create(esdm_backend_t* backend, const char* container, const char *n
 }
 
 
-int dataset_receive(esdm_backend_t* backend, const char* container, const char *name)
+int dataset_retrieve(esdm_backend_t* backend, const char* container, const char *name)
 {
 }
 
@@ -466,25 +466,25 @@ int metadummy_create(esdm_backend_t* backend, char* name)
  *	owner?	
  *
  */
-int metadummy_open() 
+int metadummy_open(esdm_backend_t* backend) 
 {
 	DEBUG("Open");
 	return 0;
 }
 
-int metadummy_write() 
+int metadummy_write(esdm_backend_t* backend) 
 {
 	DEBUG("Write");
 	return 0;
 }
 
-int metadummy_read() 
+int metadummy_read(esdm_backend_t* backend) 
 {
 	DEBUG("Read");
 	return 0;
 }
 
-int metadummy_close() 
+int metadummy_close(esdm_backend_t* backend) 
 {
 	DEBUG("Close");
 	return 0;
@@ -492,21 +492,21 @@ int metadummy_close()
 
 
 
-int metadummy_allocate() 
+int metadummy_allocate(esdm_backend_t* backend) 
 {
 	DEBUG("Allocate");
 	return 0;
 }
 
 
-int metadummy_update() 
+int metadummy_update(esdm_backend_t* backend) 
 {
 	DEBUG("Update");
 	return 0;
 }
 
 
-int metadummy_lookup() 
+int metadummy_lookup(esdm_backend_t* backend) 
 {
 	DEBUG("Lookup");
 	return 0;
@@ -527,18 +527,35 @@ static esdm_backend_t backend_template = {
 	.version = "0.0.1",
 	.data = NULL,
 	.callbacks = {
+		// General for ESDM
 		NULL, // finalize
 		metadummy_backend_performance_estimate, // performance_estimate
 
+		// Data Callbacks (POSIX like)
 		metadummy_create, // create
 		metadummy_open, // open
 		metadummy_write, // write
 		metadummy_read, // read
 		metadummy_close, // close
 
-		NULL, // allocate
-		NULL, // update
+		// Metadata Callbacks
 		NULL, // lookup
+
+		// ESDM Data Model Specific
+		NULL, // container create
+		NULL, // container retrieve
+		NULL, // container update
+		NULL, // container delete
+
+		NULL, // dataset create
+		NULL, // dataset retrieve
+		NULL, // dataset update
+		NULL, // dataset delete
+
+		NULL, // fragment create
+		NULL, // fragment retrieve
+		NULL, // fragment update
+		NULL, // fragment delete
 	},
 };
 
@@ -615,7 +632,7 @@ void metadummy_test()
 	ret = entry_create(abc);
 	assert(ret == 0);
 
-	ret = entry_receive(abc);
+	ret = entry_retrieve(abc);
 	assert(ret == 0);
 
 
@@ -629,11 +646,11 @@ void metadummy_test()
 
 	// perform update and test
 	ret = entry_update(abc, "huhuhuhuh", 5);
-	ret = entry_receive(abc);
+	ret = entry_retrieve(abc);
 
-	// delete entry and expect receive to fail
+	// delete entry and expect retrieve to fail
 	ret = entry_destroy(abc);
-	ret = entry_receive(abc);
+	ret = entry_retrieve(abc);
 	assert(ret == -1);
 
 

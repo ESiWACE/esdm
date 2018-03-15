@@ -539,18 +539,33 @@ esdm_backend_wos_t esdm_backend_wos = {
 		     .data = NULL,
 		     .blocksize = BLOCKSIZE,
 		     .callbacks = {
-				   (int (*)()) esdm_backend_wos_fini,	// finalize
-				   wos_backend_performance_estimate,	// performance_estimate
+					(int (*)()) esdm_backend_wos_fini,	// finalize
+					wos_backend_performance_estimate,	// performance_estimate
 
-				   (int (*)()) esdm_backend_wos_alloc,
-				   (int (*)()) esdm_backend_wos_open,
-				   (int (*)()) esdm_backend_wos_write,
-				   (int (*)()) esdm_backend_wos_read,
-				   (int (*)()) esdm_backend_wos_close,
+					(int (*)()) esdm_backend_wos_alloc,
+					(int (*)()) esdm_backend_wos_open,
+					(int (*)()) esdm_backend_wos_write,
+					(int (*)()) esdm_backend_wos_read,
+					(int (*)()) esdm_backend_wos_close,
 
-				   NULL,	// allocate
-				   NULL,	// update
-				   NULL,	// lookup
+					// Metadata Callbacks
+					NULL, // lookup
+
+					// ESDM Data Model Specific
+					NULL, // container create
+					NULL, // container retrieve
+					NULL, // container update
+					NULL, // container delete
+
+					NULL, // dataset create
+					NULL, // dataset retrieve
+					NULL, // dataset update
+					NULL, // dataset delete
+
+					NULL, // fragment create
+					NULL, // fragment retrieve
+					NULL, // fragment update
+					NULL, // fragment delete
 				   },
 		     },
 	.ebm_ops = {

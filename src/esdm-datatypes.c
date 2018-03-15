@@ -236,7 +236,8 @@ esdm_status_t esdm_dataset_commit(esdm_dataset_t *dataset)
 	ESDM_DEBUG(__func__);	
 
 
-
+	// md callback create/update container
+	esdm.modules->metadata->callbacks.create(esdm.modules->metadata, "test");
 
 
 	return ESDM_SUCCESS;

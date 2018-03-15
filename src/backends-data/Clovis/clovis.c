@@ -453,9 +453,24 @@ esdm_backend_clovis_t esdm_backend_clovis = {
     		(int (*)())esdm_backend_clovis_read,
     		(int (*)())esdm_backend_clovis_close,
 
-    		NULL, // allocate
-    		NULL, // update
-    		NULL, // lookup
+			// Metadata Callbacks
+			NULL, // lookup
+
+			// ESDM Data Model Specific
+			NULL, // container create
+			NULL, // container retrieve
+			NULL, // container update
+			NULL, // container delete
+
+			NULL, // dataset create
+			NULL, // dataset retrieve
+			NULL, // dataset update
+			NULL, // dataset delete
+
+			NULL, // fragment create
+			NULL, // fragment retrieve
+			NULL, // fragment update
+			NULL, // fragment delete
     	},
     },
     .ebm_ops = {

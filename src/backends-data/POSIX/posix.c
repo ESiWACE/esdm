@@ -31,6 +31,8 @@
 #include <sys/types.h>
 #include <unistd.h>
 
+#include <esdm.h>
+
 #include "posix.h"
 
 
@@ -131,7 +133,7 @@ int posix_backend_performance_estimate(esdm_backend_t* backend)
 }
 
 
-int posix_create() 
+int posix_create(esdm_backend_t* backend, char * name) 
 {
 	DEBUG("Create");
 
@@ -160,25 +162,25 @@ int posix_create()
  *	owner?	
  *
  */
-int posix_open() 
+int posix_open(esdm_backend_t* backend) 
 {
 	DEBUG("Open");
 return 0;
 }
 
-int posix_write() 
+int posix_write(esdm_backend_t* backend) 
 {
 	DEBUG("Write");
 	return 0;
 }
 
-int posix_read() 
+int posix_read(esdm_backend_t* backend) 
 {
 	DEBUG("Read");
 	return 0;
 }
 
-int posix_close() 
+int posix_close(esdm_backend_t* backend) 
 {
 	DEBUG("Close");
 	return 0;
@@ -186,21 +188,21 @@ int posix_close()
 
 
 
-int posix_allocate() 
+int posix_allocate(esdm_backend_t* backend) 
 {
 	DEBUG("Allocate");
 	return 0;
 }
 
 
-int posix_update() 
+int posix_update(esdm_backend_t* backend) 
 {
 	DEBUG("Update");
 	return 0;
 }
 
 
-int posix_lookup() 
+int posix_lookup(esdm_backend_t* backend) 
 {
 	DEBUG("Lookup");
 	return 0;
@@ -230,9 +232,24 @@ static esdm_backend_t backend_template = {
 		posix_read, // read
 		posix_close, // close
 
-		NULL, // allocate
-		NULL, // update
+		// Metadata Callbacks
 		NULL, // lookup
+
+		// ESDM Data Model Specific
+		NULL, // container create
+		NULL, // container retrieve
+		NULL, // container update
+		NULL, // container delete
+
+		NULL, // dataset create
+		NULL, // dataset retrieve
+		NULL, // dataset update
+		NULL, // dataset delete
+
+		NULL, // fragment create
+		NULL, // fragment retrieve
+		NULL, // fragment update
+		NULL, // fragment delete
 	},
 };
 
@@ -283,7 +300,7 @@ esdm_backend_t* posix_backend_init(void* init_data) {
 * Initializes the POSIX plugin. In particular this involves:
 *
 */
-int posix_finalize()
+int posix_finalize(esdm_backend_t* backend)
 {
 	DEBUG("POSIX finalize");
 
