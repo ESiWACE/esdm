@@ -198,12 +198,13 @@ esdm_status_t esdm_write(esdm_container_t *container, void *buf, int dims, uint6
 	esdm_dataset_t *dataset = (esdm_dataset_t*) g_hash_table_lookup (container->datasets, "bytestream");
 	printf("Dataset 'bytestream' lookup: %p\n", dataset);
 
+	
+
 	// create new fragment
 	esdm_dataspace_t *subspace = esdm_dataspace_create();
 	esdm_fragment_t *fragment = esdm_fragment_create(dataset, subspace, buf);
 
-	// schedule for I/O
-	esdm_scheduler_enqueue(&esdm, fragment);
+	esdm_fragment_commit(fragment);
 
 	return ESDM_SUCCESS;
 }

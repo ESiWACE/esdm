@@ -22,7 +22,7 @@
 
 #define _GNU_SOURCE         /* See feature_test_macros(7) */
 
-
+#include <fcntl.h>
 #include <stdarg.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -30,6 +30,8 @@
 #include <sys/stat.h>
 #include <sys/types.h>
 #include <unistd.h>
+#include <assert.h>
+
 
 #include <esdm.h>
 
@@ -97,7 +99,6 @@ static int mkfs(esdm_backend_t* backend)
 static int fsck()
 {
 
-
 	return 0;
 }
 
@@ -106,11 +107,322 @@ static int fsck()
 
 
 
+
+
 ///////////////////////////////////////////////////////////////////////////////
-// Internal Handlers //////////////////////////////////////////////////////////
+// Internal Helpers ///////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////
 
-// find_fragment
+int entry_create(const char *path)
+{
+	int status;
+	struct stat sb;
+	
+	printf("entry_create(%s)\n", path);
+
+	// ENOENT => allow to create
+
+	status = stat(path, &sb);
+	if (status == -1) {
+		perror("stat");
+
+		// write to non existing file
+		int fd = open(path,	O_WRONLY | O_CREAT, S_IWUSR | S_IRUSR | S_IWGRP | S_IRGRP | S_IROTH);
+
+		// everything ok? write and close
+		if ( fd != -1 )
+		{
+			close(fd);
+		}
+
+		return 0;
+
+	} else {
+		// already exists
+		return -1;
+	}
+
+}
+
+
+int entry_retrieve(const char *path)
+{
+	int status;
+	struct stat sb;
+	char* buf;
+
+	printf("entry_retrieve(%s)\n", path);
+
+	status = stat(path, &sb);
+	if (status == -1) {
+		perror("stat");
+		// does not exist
+		return -1;
+	}
+
+	//print_stat(sb);
+
+
+	// write to non existing file
+	int fd = open(path,	O_RDONLY | S_IWUSR | S_IRUSR | S_IWGRP | S_IRGRP | S_IROTH);
+
+	// everything ok? write and close
+	if ( fd != -1 )
+	{
+		// write some metadata
+		buf = (char*) malloc(sb.st_size + 1);
+		buf[sb.st_size] = 0;
+
+		read(fd, buf, sb.st_size);
+		close(fd);
+	}
+
+
+	printf("Entry content: %s\n", buf);
+
+	return 0;
+}
+
+
+int entry_update(const char *path, char *buf, size_t len)
+{
+	int status;
+	struct stat sb;
+
+	printf("entry_update(%s)\n", path);
+
+	status = stat(path, &sb);
+	if (status == -1) {
+		perror("stat");
+		return -1;
+	}
+
+	//print_stat(sb);
+
+	// write to non existing file
+	int fd = open(path,	O_WRONLY | O_CREAT, S_IWUSR | S_IRUSR | S_IWGRP | S_IRGRP | S_IROTH);
+
+	// everything ok? write and close
+	if ( fd != -1 )
+	{
+		// write some metadata
+		write(fd, buf, len);
+		close(fd);
+	}
+
+	return 0;
+}
+
+
+int entry_destroy(const char *path) 
+{
+	int status;
+	struct stat sb;
+
+	printf("entry_destroy(%s)\n", path);
+
+	status = stat(path, &sb);
+	if (status == -1) {
+		perror("stat");
+		return -1;
+	}
+
+	print_stat(sb);
+
+	status = unlink(path);
+	if (status == -1) {
+		perror("unlink");
+		return -1;
+	}
+
+	return 0;
+}
+
+
+
+
+///////////////////////////////////////////////////////////////////////////////
+// Container Helpers //////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////////
+
+int container_create(esdm_backend_t* backend, esdm_container_t *container)
+{
+	char *path_metadata;
+	char *path_container;
+	struct stat sb;
+
+	posix_backend_options_t *options = (posix_backend_options_t*) backend->data;
+	const char* tgt = options->target;
+
+	asprintf(&path_metadata, "%s/containers/%s.md", tgt, container->name);
+	asprintf(&path_container, "%s/containers/%s", tgt, container->name);
+
+	// create metadata entry
+	entry_create(path_metadata);
+
+	// create directory for datsets
+	if (stat(path_container, &sb) == -1)
+	{
+		mkdir(path_container, 0700);
+	}
+
+	free(path_metadata);
+	free(path_container);
+}
+
+
+int container_retrieve(esdm_backend_t* backend, esdm_container_t *container)
+{
+	char *path_metadata;
+	char *path_container;
+	struct stat sb;
+
+	posix_backend_options_t *options = (posix_backend_options_t*) backend->data;
+	const char* tgt = options->target;
+
+
+	asprintf(&path_metadata, "%s/containers/%s.md", tgt, container->name);
+	asprintf(&path_container, "%s/containers/%s", tgt, container->name);
+
+	// create metadata entry
+	entry_retrieve(path_metadata);
+
+
+	free(path_metadata);
+	free(path_container);
+}
+
+
+int container_update(esdm_backend_t* backend, esdm_container_t *container)
+{
+	char *path_metadata;
+	char *path_container;
+	struct stat sb;
+
+	posix_backend_options_t *options = (posix_backend_options_t*) backend->data;
+	const char* tgt = options->target;
+
+	asprintf(&path_metadata, "%s/containers/%s.md", tgt, container->name);
+	asprintf(&path_container, "%s/containers/%s", tgt, container->name);
+
+	// create metadata entry
+	entry_update(path_metadata, "abc", 3);
+
+
+	free(path_metadata);
+	free(path_container);
+}
+
+
+int container_destroy(esdm_backend_t* backend, esdm_container_t *container) 
+{
+	char *path_metadata;
+	char *path_container;
+	struct stat sb;
+
+	posix_backend_options_t *options = (posix_backend_options_t*) backend->data;
+	const char* tgt = options->target;
+
+	asprintf(&path_metadata, "%s/containers/%s.md", tgt, container->name);
+	asprintf(&path_container, "%s/containers/%s", tgt, container->name);
+
+	// create metadata entry
+	entry_destroy(path_metadata);
+
+
+	// TODO: also remove existing datasets?
+
+
+	free(path_metadata);
+	free(path_container);
+}
+
+
+
+///////////////////////////////////////////////////////////////////////////////
+// Dataset Helpers ////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////////
+
+int dataset_create(esdm_backend_t* backend, esdm_dataset_t *dataset)
+{
+	char *path_metadata;
+	char *path_dataset;
+	struct stat sb;
+
+
+	posix_backend_options_t *options = (posix_backend_options_t*) backend->data;
+	const char* tgt = options->target;
+
+	asprintf(&path_metadata, "%s/containers/%s/%s.md", tgt, dataset->container->name, dataset->name);
+	asprintf(&path_dataset, "%s/containers/%s/%s", tgt, dataset->container->name, dataset->name);
+
+	// create metadata entry
+	entry_create(path_metadata);
+
+	// create directory for datsets
+	if (stat(path_dataset, &sb) == -1)
+	{
+		mkdir(path_dataset, 0700);
+	}
+
+	free(path_metadata);
+	free(path_dataset);
+}
+
+
+int dataset_retrieve(esdm_backend_t* backend, esdm_dataset_t *dataset)
+{
+}
+
+
+int dataset_update(esdm_backend_t* backend, esdm_dataset_t *dataset)
+{
+}
+
+
+int dataset_destroy(esdm_backend_t* backend, esdm_dataset_t *dataset) 
+{
+}
+
+
+
+
+
+
+
+int fragment_update(esdm_backend_t* backend, esdm_fragment_t *fragment)
+{
+	char *path;
+	char *path_fragment;
+	struct stat sb;
+
+	posix_backend_data_t* data = (posix_backend_data_t*)backend->data;
+	posix_backend_options_t* options = data->options;
+	const char* tgt = options->target;
+
+
+	asprintf(&path, "%s/containers/%s/%s/", tgt, fragment->dataset->container->name, fragment->dataset->name);
+	asprintf(&path_fragment, "%s/containers/%s/%s/%p", tgt, fragment->dataset->container->name, fragment->dataset->name, fragment);
+
+	printf("path: %s\n", path);
+	printf("path_fragment: %s\n", path_fragment);
+
+	// create metadata entry
+	mkdir_recursive(path);
+	entry_create(path_fragment);
+
+	//entry_update()
+
+
+
+	free(path);
+	free(path_fragment);
+}
+
+
+
+
+
 
 
 
@@ -248,7 +560,7 @@ static esdm_backend_t backend_template = {
 
 		NULL, // fragment create
 		NULL, // fragment retrieve
-		NULL, // fragment update
+		fragment_update, // fragment update
 		NULL, // fragment delete
 	},
 };
@@ -277,6 +589,10 @@ esdm_backend_t* posix_backend_init(void* init_data) {
 	posix_backend_data_t* data = (posix_backend_data_t*) backend->data;
 	posix_backend_options_t* options = (posix_backend_options_t*) init_data;
 	data->options = options;
+
+
+	printf("[POSIX] Backend config: type=%s, name=%s, target=%s\n", options->type, options->name, options->target);
+
 
 	// valid refs for backend, data, options available now
 

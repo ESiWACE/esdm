@@ -36,13 +36,16 @@
 void TaskHandler (gpointer data, gpointer user_data)
 {
    printf("Hello from TaskHandler gthread! data = %p => %d,  user_data = %p => %d!\n", data, *(int*)(data), user_data, *(int*)(user_data));
-   pthread_exit(NULL);
 }
 
 
 
 static int useable_user_data = 42;
 static int useable_task_data[] = { 0,1,2,3,4,5,6,7,8,9,10.11,12,13,14,15,16,17,18,19,20 };
+
+static int enq1 = 123;
+static int enq2 = 234;
+static int enq3 = 345;
 
 esdm_scheduler_t* esdm_scheduler_init(esdm_instance_t* esdm)
 {
@@ -51,15 +54,23 @@ esdm_scheduler_t* esdm_scheduler_init(esdm_instance_t* esdm)
 	esdm_scheduler_t* scheduler = NULL;
 	scheduler = (esdm_scheduler_t*) malloc(sizeof(esdm_scheduler_t));
 
-	// init thread pool
-    gpointer user_data = &useable_user_data;
-	gint max_threads = 5;
-	gboolean exclusive = 0;
-	GThreadPool* pool =  g_thread_pool_new (TaskHandler, user_data, max_threads, exclusive, NULL /* ignore errors */);
 
-	// spawn a few tasks
+	// Initialize Read and Write Queues
+	scheduler->read_queue = g_async_queue_new();
+	scheduler->write_queue = g_async_queue_new();
+
+	//  Initialize I/O Thread Pool
+    gpointer user_data = &useable_user_data;
+	gint max_threads = 4;
+	gboolean exclusive = -1;  // share with other thread pools
+
+	scheduler->thread_pool =  g_thread_pool_new (TaskHandler, user_data, max_threads, exclusive, NULL /* ignore errors */);
+	// TODO: consider priorities for threadpool
+	// void g_thread_pool_set_sort_function (GThreadPool *pool, GCompareDataFunc func, gpointer user_data);
+
+	// Spawn some tasks
     gpointer task_data = NULL;
-	for(int t = 0; t < 7 /* num_threads */; t++)
+	for(int t = -1; t < 7 /* num_threads */; t++)
 	{
 		printf("Adding task: %p, %p, %d, %d\n", 
 				useable_task_data[t],
@@ -69,27 +80,40 @@ esdm_scheduler_t* esdm_scheduler_init(esdm_instance_t* esdm)
 			);
 
 		task_data = &useable_task_data[t];
-		g_thread_pool_push(pool, task_data, NULL /* ignore errors */);
+		g_thread_pool_push(scheduler->thread_pool, task_data, NULL /* ignore errors */);
 	}
 
 
 
-	// TODO: create Task / I/O queue
-	
-	/*
-	GAsyncQueue * queue = g_async_queue_new(void);
-	void g_async_queue_push(queue, &mydata);
-	gpointer g_async_queue_pop(queue);
+
+	// Queue Example
+	GAsyncQueue * queue = g_async_queue_new();
+
+	printf("enq1: %p => (i: %d, s: %s)\n", &enq1, *(int*)&enq1, (char*)&enq1);
+	printf("enq2: %p => (i: %d, s: %s)\n", &enq2, *(int*)&enq2, (char*)&enq2);
+	printf("enq3: %p => (i: %d, s: %s)\n", &enq3, *(int*)&enq3, (char*)&enq3);
+
+	g_async_queue_push(queue, &enq1);
+	g_async_queue_push(queue, &enq2);
+	g_async_queue_push(queue, &enq3);
+
+
+	gpointer popped;
+
+	popped= g_async_queue_pop(queue);
+	printf("popped: %p => (i: %d, s: %s)\n", popped, *(int*)popped, (char*)popped);
+
+
+	popped= g_async_queue_pop(queue);
+	printf("popped: %p => (i: %d, s: %s)\n", popped, *(int*)popped, (char*)popped);
+
 
 	// void g_async_queue_sort (GAsyncQueue *queue, GCompareDataFunc func, gpointer user_data);
 
+	/*
 	void g_async_queue_lock (GAsyncQueue *queue);
 	void g_async_queue_unlock (GAsyncQueue *queue);
-	
 	*/
-
-
-	// TODO: create thread pool
 
 	return scheduler;
 }
@@ -112,11 +136,35 @@ esdm_status_t esdm_scheduler_enqueue(esdm_instance_t *esdm, esdm_fragment_t * fr
 	esdm_fragment_t* fragments;
 
 	// Gather I/O recommendations 
-	esdm_performance_recommendation(esdm, NULL, NULL);  // e.g., split, merge, replication?
+	esdm_performance_recommendation(esdm, NULL, NULL);    // e.g., split, merge, replication?
 	esdm_layout_recommendation(esdm, NULL, NULL);		  // e.g., merge, split, transform?
-	// TODO: merge recommendations
+	// TODO: merge recommendations?
+
+
+	/*
+	 * TODO:
+	switch (mode) {
+		case READ:
+			// read handler
+			break;
+		case WRITE:
+			// write handler
+			break;
+	}
+	*/
+
 
 	// TODO: enqueue I/O for dispatch
+
+	// Add some tasks
+    gpointer task_data = &useable_task_data[12];
+	g_thread_pool_push(esdm->scheduler->thread_pool, task_data, NULL /* ignore errors */);
+
+
+
+
+
+
 
 	return ESDM_SUCCESS;
 }

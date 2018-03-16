@@ -100,38 +100,10 @@ static int fsck()
 }
 
 
-int print_stat(struct stat sb)
-{
-	printf("\n");
-	printf("File type:                ");
-	switch (sb.st_mode & S_IFMT) {
-		case S_IFBLK:  printf("block device\n");      break;
-		case S_IFCHR:  printf("character device\n");  break;
-		case S_IFDIR:  printf("directory\n");         break;
-		case S_IFIFO:  printf("FIFO/pipe\n");         break;
-		case S_IFLNK:  printf("symlink\n");           break;
-		case S_IFREG:  printf("regular file\n");      break;
-		case S_IFSOCK: printf("socket\n");            break;
-		default:       printf("unknown?\n");          break;
-	}
-	printf("I-node number:            %ld\n", (long) sb.st_ino);
-	printf("Mode:                     %lo (octal)\n", (unsigned long) sb.st_mode);
-	printf("Link count:               %ld\n", (long) sb.st_nlink);
-	printf("Ownership:                UID=%ld   GID=%ld\n", (long) sb.st_uid, (long) sb.st_gid);
-	printf("Preferred I/O block size: %ld bytes\n", (long) sb.st_blksize);
-	printf("File size:                %lld bytes\n", (long long) sb.st_size);
-	printf("Blocks allocated:         %lld\n", (long long) sb.st_blocks);
-	printf("Last status change:       %s", ctime(&sb.st_ctime));
-	printf("Last file access:         %s", ctime(&sb.st_atime));
-	printf("Last file modification:   %s", ctime(&sb.st_mtime));
-	printf("\n");
-}
-
-
 
 
 ///////////////////////////////////////////////////////////////////////////////
-// Internal Handlers //////////////////////////////////////////////////////////
+// Internal Helpers  //////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////
 
 int entry_create(const char *path)
@@ -273,7 +245,7 @@ int entry_destroy(const char *path)
 // Container Helpers //////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////
 
-int container_create(esdm_backend_t* backend, const char *name)
+int container_create(esdm_backend_t* backend, esdm_container_t *container)
 {
 	char *path_metadata;
 	char *path_container;
@@ -282,8 +254,8 @@ int container_create(esdm_backend_t* backend, const char *name)
 	metadummy_backend_options_t *options = (metadummy_backend_options_t*) backend->data;
 	const char* tgt = options->target;
 
-	asprintf(&path_metadata, "%s/containers/%s.md", tgt, name);
-	asprintf(&path_container, "%s/containers/%s", tgt, name);
+	asprintf(&path_metadata, "%s/containers/%s.md", tgt, container->name);
+	asprintf(&path_container, "%s/containers/%s", tgt, container->name);
 
 	// create metadata entry
 	entry_create(path_metadata);
@@ -299,7 +271,7 @@ int container_create(esdm_backend_t* backend, const char *name)
 }
 
 
-int container_retrieve(esdm_backend_t* backend, const char *name)
+int container_retrieve(esdm_backend_t* backend, esdm_container_t *container)
 {
 	char *path_metadata;
 	char *path_container;
@@ -308,8 +280,9 @@ int container_retrieve(esdm_backend_t* backend, const char *name)
 	metadummy_backend_options_t *options = (metadummy_backend_options_t*) backend->data;
 	const char* tgt = options->target;
 
-	asprintf(&path_metadata, "%s/containers/%s.md", tgt, name);
-	asprintf(&path_container, "%s/containers/%s", tgt, name);
+
+	asprintf(&path_metadata, "%s/containers/%s.md", tgt, container->name);
+	asprintf(&path_container, "%s/containers/%s", tgt, container->name);
 
 	// create metadata entry
 	entry_retrieve(path_metadata);
@@ -320,7 +293,7 @@ int container_retrieve(esdm_backend_t* backend, const char *name)
 }
 
 
-int container_update(esdm_backend_t* backend, const char *name, char *buf, size_t len)
+int container_update(esdm_backend_t* backend, esdm_container_t *container)
 {
 	char *path_metadata;
 	char *path_container;
@@ -329,11 +302,11 @@ int container_update(esdm_backend_t* backend, const char *name, char *buf, size_
 	metadummy_backend_options_t *options = (metadummy_backend_options_t*) backend->data;
 	const char* tgt = options->target;
 
-	asprintf(&path_metadata, "%s/containers/%s.md", tgt, name);
-	asprintf(&path_container, "%s/containers/%s", tgt, name);
+	asprintf(&path_metadata, "%s/containers/%s.md", tgt, container->name);
+	asprintf(&path_container, "%s/containers/%s", tgt, container->name);
 
 	// create metadata entry
-	entry_update(path_metadata, buf, len);
+	entry_update(path_metadata, "abc", 3);
 
 
 	free(path_metadata);
@@ -341,7 +314,7 @@ int container_update(esdm_backend_t* backend, const char *name, char *buf, size_
 }
 
 
-int container_destroy(esdm_backend_t* backend, const char *name) 
+int container_destroy(esdm_backend_t* backend, esdm_container_t *container) 
 {
 	char *path_metadata;
 	char *path_container;
@@ -350,8 +323,8 @@ int container_destroy(esdm_backend_t* backend, const char *name)
 	metadummy_backend_options_t *options = (metadummy_backend_options_t*) backend->data;
 	const char* tgt = options->target;
 
-	asprintf(&path_metadata, "%s/containers/%s.md", tgt, name);
-	asprintf(&path_container, "%s/containers/%s", tgt, name);
+	asprintf(&path_metadata, "%s/containers/%s.md", tgt, container->name);
+	asprintf(&path_container, "%s/containers/%s", tgt, container->name);
 
 	// create metadata entry
 	entry_destroy(path_metadata);
@@ -370,17 +343,18 @@ int container_destroy(esdm_backend_t* backend, const char *name)
 // Dataset Helpers ////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////
 
-int dataset_create(esdm_backend_t* backend, const char* container, const char *name)
+int dataset_create(esdm_backend_t* backend, esdm_dataset_t *dataset)
 {
 	char *path_metadata;
 	char *path_dataset;
 	struct stat sb;
 
+
 	metadummy_backend_options_t *options = (metadummy_backend_options_t*) backend->data;
 	const char* tgt = options->target;
 
-	asprintf(&path_metadata, "%s/containers/%s/%s.md", tgt, container, name);
-	asprintf(&path_dataset, "%s/containers/%s/%s", tgt, container, name);
+	asprintf(&path_metadata, "%s/containers/%s/%s.md", tgt, dataset->container->name, dataset->name);
+	asprintf(&path_dataset, "%s/containers/%s/%s", tgt, dataset->container->name, dataset->name);
 
 	// create metadata entry
 	entry_create(path_metadata);
@@ -396,33 +370,19 @@ int dataset_create(esdm_backend_t* backend, const char* container, const char *n
 }
 
 
-int dataset_retrieve(esdm_backend_t* backend, const char* container, const char *name)
+int dataset_retrieve(esdm_backend_t* backend, esdm_dataset_t *dataset)
 {
 }
 
 
-int dataset_update(esdm_backend_t* backend, const char* container, const char *name, char *buf, size_t len)
+int dataset_update(esdm_backend_t* backend, esdm_dataset_t *dataset)
 {
 }
 
 
-int dataset_destroy(esdm_backend_t* backend, const char* container, const char *name) 
+int dataset_destroy(esdm_backend_t* backend, esdm_dataset_t *dataset) 
 {
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 
@@ -447,7 +407,7 @@ int metadummy_create(esdm_backend_t* backend, char* name)
 	// TODO; Sanitize name, and reject forbidden names
 
 
-	container_create(backend, name);
+	//container_create(backend, name);
 
 
 
@@ -542,20 +502,20 @@ static esdm_backend_t backend_template = {
 		NULL, // lookup
 
 		// ESDM Data Model Specific
-		NULL, // container create
-		NULL, // container retrieve
-		NULL, // container update
-		NULL, // container delete
+		container_create, // container create
+		container_retrieve, // container retrieve
+		container_update, // container update
+		container_destroy, // container destroy
 
-		NULL, // dataset create
-		NULL, // dataset retrieve
-		NULL, // dataset update
-		NULL, // dataset delete
+		dataset_create, // dataset create
+		dataset_retrieve, // dataset retrieve
+		dataset_update, // dataset update
+		dataset_destroy, // dataset destroy
 
 		NULL, // fragment create
 		NULL, // fragment retrieve
 		NULL, // fragment update
-		NULL, // fragment delete
+		NULL, // fragment destroy
 	},
 };
 

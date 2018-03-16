@@ -44,18 +44,16 @@ int verify_data(uint64_t* a, uint64_t* b) {
 	return mismatches;
 }
 
+
 int main(int argc, char const* argv[])
 {
-	esdm_status_t ret;
 	int mismatches;
 
+
+	// Prepare example data set (application view)
 	uint64_t dims[2] = {10, 20};
 	uint64_t offset[2] = {0, 0};
 
-	esdm_container_t *container = NULL;
-
-
-	// Prepare dummy data.
 	uint64_t * buf_w = (uint64_t *) malloc(10*20*sizeof(uint64_t));
 	uint64_t * buf_r = (uint64_t *) malloc(10*20*sizeof(uint64_t));
 
@@ -67,12 +65,15 @@ int main(int argc, char const* argv[])
 	}
 
 
-	ret = esdm_create("mycontainer", ESDM_CREATE, &container);
+	// Interaction with ESDM
+	esdm_status_t ret;
+	esdm_container_t *container = NULL;
 
+	ret = esdm_create("mycontainer", ESDM_CREATE, &container);
 	
 	//esdm_open("mycontainer/mydataset", ESDM_CREATE);
-
-
+	
+	// POSIX pwrite/pread interfaces for comparison
 	//ssize_t pread(int fd, void *buf, size_t count, off_t offset);
     //ssize_t pwrite(int fd, const void *buf, size_t count, off_t offset);
 

@@ -43,11 +43,13 @@ esdm_status_t esdm_read(esdm_container_t *container, void *buf, int dims, uint64
 
 // Container
 esdm_container_t* esdm_container_create(const char *name);
+esdm_container_t* esdm_container_retrieve(const char * name);
 esdm_status_t esdm_container_commit(esdm_container_t *container);
 esdm_status_t esdm_container_destroy(esdm_container_t *container);
 
 // Datset
-esdm_dataset_t* esdm_dataset_create(esdm_container_t* container, char * name, esdm_dataspace_t* dataspace);
+esdm_dataset_t* esdm_dataset_create(esdm_container_t *container, char * name, esdm_dataspace_t *dataspace);
+esdm_dataset_t* esdm_dataset_retrieve(esdm_container_t *container, const char * name);
 esdm_status_t esdm_dataset_commit(esdm_dataset_t *dataset);
 esdm_status_t esdm_dataset_destroy(esdm_dataset_t *dataset);
 
@@ -59,18 +61,18 @@ esdm_dataspace_t* esdm_dataspace_deserialize(char *serialized_dataspace);
 
 // Fragment
 esdm_fragment_t* esdm_fragment_create(esdm_dataset_t *dataset, esdm_dataspace_t *subspace, char *data);
+esdm_fragment_t* esdm_fragment_retrieve(esdm_container_t *container, esdm_dataset_t *dataset, const char *id);
 esdm_status_t esdm_fragment_commit(esdm_fragment_t *fragment);
 esdm_status_t esdm_fragment_destroy(esdm_fragment_t *fragment);
 esdm_status_t esdm_fragment_serialize(esdm_fragment_t *fragment, char **out);
 esdm_fragment_t* esdm_fragment_deserialize(char *serialized_fragment);
 
 
-
-
 ///////////////////////////////////////////////////////////////////////////////
 // UTILS //////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////
 
+// json.c /////////////////////////////////////////////////////////////////////
 // load json helper
 json_t *load_json(const char *text);
 
@@ -83,8 +85,10 @@ const char *json_plural(int count);
 int json_path_set(json_t *json, const char *path, json_t *value, unsigned int append);
 json_t *json_path_get(const json_t *json, const char *path);
 
-
-
+// auxiliary.c ////////////////////////////////////////////////////////////////
+void print_stat(struct stat sb);
+int read_file(char *filepath, char **buf);
+void mkdir_recursive(const char *path);
 
 
 #endif

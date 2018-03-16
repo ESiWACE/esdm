@@ -75,7 +75,7 @@ esdm_modules_t* esdm_modules_init(esdm_instance_t* esdm)
 	modules->metadata = metadummy_backend_init(NULL);
 
 	// Register data backends	
-	modules->backends = g_hash_table_new(g_direct_hash, g_direct_equal);
+	modules->backends = g_hash_table_new(g_str_hash, g_str_equal);
 
 	for (int i = 0; i < config_backends->count; i++) {
 		b = &(config_backends->backends[i]);
@@ -105,6 +105,10 @@ esdm_modules_t* esdm_modules_init(esdm_instance_t* esdm)
 
 		printf("\n");
 	}
+
+
+	g_hash_table_foreach(modules->backends, print_hashtable_entry, NULL);
+
 
 	return modules;
 }

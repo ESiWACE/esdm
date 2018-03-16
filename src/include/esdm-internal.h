@@ -75,6 +75,8 @@ esdm_status_t esdm_backend_io(esdm_backend_t *backend, esdm_fragment_t *fragment
 // Auxiliary
 void print_hashtable_entry (gpointer key, gpointer value, gpointer user_data);
 
-int read_file(char *filepath, char **buf);
+
+
+
 
 #endif

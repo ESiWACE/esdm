@@ -20,8 +20,10 @@
  * @brief This file implements ESDM datatypes, and associated methods.
  */
 
+#define _GNU_SOURCE         /* See feature_test_macros(7) */
 
 #include <stdlib.h>
+#include <stdio.h>
 
 #include <esdm.h>
 #include <esdm-internal.h>
@@ -46,12 +48,31 @@ esdm_container_t* esdm_container_create(const char* name)
 	ESDM_DEBUG(__func__);	
 	esdm_container_t* container = (esdm_container_t*) malloc(sizeof(esdm_container_t));
 
+	asprintf(&container->name, name);
 	container->metadata = NULL;
 	container->datasets = g_hash_table_new(g_direct_hash,  g_direct_equal);
 	container->status = ESDM_DIRTY;
 
 	return container;
 }
+
+
+esdm_container_t* esdm_container_retrieve(const char * name)
+{
+	ESDM_DEBUG(__func__);	
+	esdm_container_t* container = (esdm_container_t*) malloc(sizeof(esdm_container_t));
+
+	// TODO: retrieve from MD
+	// TODO: retrieve associated data
+
+	asprintf(&container->name, name);
+	container->metadata = NULL;
+	container->datasets = g_hash_table_new(g_direct_hash,  g_direct_equal);
+	container->status = ESDM_DIRTY;
+
+	return container;
+}
+
 
 
 /**
@@ -70,8 +91,9 @@ esdm_status_t esdm_container_commit(esdm_container_t* container)
 	g_hash_table_foreach (container->datasets, print_hashtable_entry, NULL);
 
 
+	// TODO: ensure callback is not NULL
 	// md callback create/update container
-	esdm.modules->metadata->callbacks.create(esdm.modules->metadata, "test");
+	esdm.modules->metadata->callbacks.container_create(esdm.modules->metadata, container);
 	
 	
 	// Also commit uncommited datasets of this container?
@@ -126,6 +148,22 @@ esdm_fragment_t* esdm_fragment_create(esdm_dataset_t* dataset, esdm_dataspace_t*
 }
 
 
+
+esdm_fragment_t* esdm_fragment_retrieve(esdm_container_t *container, esdm_dataset_t *dataset, const char *id)
+{
+	ESDM_DEBUG(__func__);	
+	esdm_fragment_t* fragment = (esdm_fragment_t*) malloc(sizeof(esdm_fragment_t));
+
+	fragment->dataset = dataset;
+
+
+	return fragment;
+}
+
+
+
+
+
 /**
  * Make fragment persistent to storage.
  * Schedule for writing to backends.
@@ -133,6 +171,14 @@ esdm_fragment_t* esdm_fragment_create(esdm_dataset_t* dataset, esdm_dataspace_t*
 esdm_status_t esdm_fragment_commit(esdm_fragment_t *fragment)
 {
 	ESDM_DEBUG(__func__);	
+
+	// schedule for I/O
+	esdm_scheduler_enqueue(&esdm, fragment);
+
+	// Call backend
+	esdm_backend_t *backend = (esdm_backend_t*) g_hash_table_lookup(esdm.modules->backends, "p1");
+	backend->callbacks.fragment_update(backend, fragment);
+
 	return ESDM_SUCCESS;
 }
 
@@ -194,6 +240,8 @@ esdm_dataset_t* esdm_dataset_create(esdm_container_t* container, char* name, esd
 	ESDM_DEBUG(__func__);	
 	esdm_dataset_t* dataset = (esdm_dataset_t*) malloc(sizeof(esdm_dataset_t));
 
+	asprintf(&dataset->name, name);
+	dataset->container = container;
 	dataset->metadata = NULL;
 	dataset->dataspace = dataspace;
 	dataset->fragments = g_hash_table_new(g_direct_hash,  g_direct_equal);
@@ -204,12 +252,21 @@ esdm_dataset_t* esdm_dataset_create(esdm_container_t* container, char* name, esd
 }
 
 
-esdm_dataset_t* esdm_dataset_receive()
+esdm_dataset_t* esdm_dataset_retrieve(esdm_container_t *container, const char* name)
 {
 	ESDM_DEBUG(__func__);	
-	esdm_dataset_t* new_dataset = (esdm_dataset_t*) malloc(sizeof(esdm_dataset_t));
+	esdm_dataset_t* dataset = (esdm_dataset_t*) malloc(sizeof(esdm_dataset_t));
 
-	return new_dataset;
+	asprintf(&dataset->name, name);
+	dataset->container = container;
+	dataset->metadata = NULL;
+	dataset->dataspace = NULL;
+	dataset->fragments = g_hash_table_new(g_direct_hash,  g_direct_equal);
+
+	// TODO: Retrieve from MD
+	// TODO: Retrieve associated Data
+
+	return dataset;
 }
 
 
@@ -235,9 +292,13 @@ esdm_status_t esdm_dataset_commit(esdm_dataset_t *dataset)
 {
 	ESDM_DEBUG(__func__);	
 
+	// print datasets of this container
+	g_hash_table_foreach(dataset->fragments, print_hashtable_entry, NULL);
 
+
+	// TODO: ensure callback is not NULL
 	// md callback create/update container
-	esdm.modules->metadata->callbacks.create(esdm.modules->metadata, "test");
+	esdm.modules->metadata->callbacks.dataset_create(esdm.modules->metadata, dataset);
 
 
 	return ESDM_SUCCESS;

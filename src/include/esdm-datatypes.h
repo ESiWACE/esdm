@@ -59,6 +59,7 @@ typedef struct esdm_fragment_t esdm_fragment_t;
 
 
 struct esdm_container_t {
+	char *name;
 	esdm_metadata_t *metadata;	
 	GHashTable *datasets;
 	esdm_status_t status;
@@ -69,6 +70,8 @@ struct esdm_metadata_t {
 };
 
 struct esdm_dataset_t {
+	char *name;
+	esdm_container_t *container;
 	esdm_metadata_t *metadata;
 	esdm_dataspace_t *dataspace;
 	GHashTable *fragments;
@@ -239,7 +242,7 @@ typedef struct {
 
 typedef struct {
 	GHashTable *backends;
-	esdm_backend_t* metadata;
+	esdm_backend_t *metadata;
 	//esdm_modules_t** modules;
 } esdm_modules_t;
 
@@ -250,6 +253,9 @@ typedef struct {
 
 typedef struct {
 	int info;
+	GThreadPool *thread_pool;
+	GAsyncQueue *read_queue;
+	GAsyncQueue *write_queue;
 } esdm_scheduler_t;
 
 typedef struct {
