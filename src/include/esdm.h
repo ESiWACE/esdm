@@ -6,7 +6,9 @@
 #define ESDM_H
 
 #include <stddef.h>
-
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <unistd.h>
 #include <jansson.h>
 
 #include <esdm-datatypes.h>

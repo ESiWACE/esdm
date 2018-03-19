@@ -36,7 +36,7 @@
 #endif
 
 #ifdef ESDM_HAS_CLOVIS
-	#include "backends-data/Clovis/clovis.h"
+//	#include "backends-data/Clovis/clovis.h"
 	#pragma message ("Building ESDM with Clovis!")
 #endif
 

@@ -1,4 +1,4 @@
-set(MERO_DIR "/mero/target")
+set(MERO_DIR "/mero.bin/")
 
 set(CMAKE_C_FLAGS "-D_REENTRANT -D_GNU_SOURCE -DM0_INTERNAL='' -DM0_EXTERN=extern -iquote ${MERO_DIR} -iquote '.' -DM0_SRC_DIR=${MERO_DIR} -fno-common -Wall -Werror -Wno-attributes -fno-strict-aliasing -fno-omit-frame-pointer -g -O2 ")
 
