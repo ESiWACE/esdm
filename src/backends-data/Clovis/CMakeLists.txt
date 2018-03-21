@@ -6,7 +6,7 @@ set(CMAKE_CXX_FLAGS "-D_REENTRANT -D_GNU_SOURCE -DM0_INTERNAL='' -DM0_EXTERN=ext
 
 add_library(esdmclovis SHARED clovis.c)
 target_link_libraries(esdmclovis ${GLIB_LIBRARIES})
-include_directories(${CMAKE_SOURCE_DIR}/include/ ${CMAKE_BINARY_DIR} ${GLIB_INCLUDE_DIRS} ${Jansson_INCLUDE_DIRS} ${MERO_DIR}/include/ ${MERO_DIR}/include/mero/)
+include_directories(${ESDM_INCLUDE_DIRS} ${CMAKE_BINARY_DIR} ${GLIB_INCLUDE_DIRS} ${Jansson_INCLUDE_DIRS} ${MERO_DIR}/include/ ${MERO_DIR}/include/mero/)
 
 add_subdirectory(test)
 

@@ -2,7 +2,7 @@
 
 PARAMETERS="$0 $*"
 CMAKEFLAGS=
-SRCDIR=$(dirname $(readlink -f $0))/src/
+SRCDIR=$(dirname $(readlink -f $0))/
 CURPATH="$PWD"
 
 function help(){

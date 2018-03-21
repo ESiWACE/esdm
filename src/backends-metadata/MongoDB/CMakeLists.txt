@@ -21,6 +21,6 @@ target_compile_definitions (hello_mongoc PRIVATE "${MONGOC_DEFINITIONS}")
 
 #add_library(esdmmongodb SHARED metadummy.c)
 #target_link_libraries(esdmmongodb esdmutils ${GLIB_LIBRARIES})
-#include_directories(${CMAKE_SOURCE_DIR}/include/ ${CMAKE_BINARY_DIR} ${GLIB_INCLUDE_DIRS} ${Jansson_INCLUDE_DIRS})
+#include_directories(${ESDM_INCLUDE_DIRS} ${CMAKE_BINARY_DIR} ${GLIB_INCLUDE_DIRS} ${Jansson_INCLUDE_DIRS})
 #
 #install(TARGETS esdmmongodb LIBRARY DESTINATION lib)
