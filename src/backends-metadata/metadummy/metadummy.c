@@ -142,7 +142,7 @@ int entry_retrieve(const char *path)
 {
 	int status;
 	struct stat sb;
-	char* buf;
+	char *buf;
 
 	printf("entry_retrieve(%s)\n", path);
 
@@ -171,13 +171,13 @@ int entry_retrieve(const char *path)
 	}
 
 
-	printf("Entry content: %s\n", buf);
+	printf("Entry content: %s\n", (char*)buf);
 
 	return 0;
 }
 
 
-int entry_update(const char *path, char *buf, size_t len)
+int entry_update(const char *path, void *buf, size_t len)
 {
 	int status;
 	struct stat sb;

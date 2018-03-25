@@ -26,11 +26,43 @@ typedef enum {
 	ESDM_CONTAINER,
 } esdm_mode_t;
 
+
+/*
+Fixed width integer types
+
+int8_t
+uint8_t
+int16_t
+uint16_t
+int32_t
+uint32_t
+int64_t
+uint64_t
+
+float			if IEEE 754 (32bit)
+double			if IEEE 754 (64bit)
+*/
+
+typedef enum {
+	ESDM_int8_t,
+	ESDM_uint8_t,
+	ESDM_int16_t,
+	ESDM_uint16_t,
+	ESDM_int32_t,
+	ESDM_uint32_t,
+	ESDM_int64_t,
+	ESDM_uint64_t,
+	ESDM_float,			// if IEEE 754 (32bit)
+	ESDM_double,		// if IEEE 754 (64bit)
+} esdm_datatype_t;
+
+
+
 /**
  * ESDM Status codes and failure modes.
  */
 typedef enum {
-	ESDM_SUCCESS,
+	ESDM_SUCCESS = 0,
 	ESDM_ERROR,
 	ESDM_DIRTY,
 	ESDM_PERSISTENT
@@ -79,9 +111,16 @@ struct esdm_dataset_t {
 };
 
 struct esdm_dataspace_t {
+	esdm_datatype_t datatype;
+	uint64_t dimensions;
+	uint64_t *bounds;
+	uint64_t *size;
+
+	esdm_dataspace_t *subspace_of;
+	uint64_t *offset;
+	uint64_t *subsize;
+
 	char *json;
-	int type;
-	int inspect_callback;
 };
 
 struct esdm_fragment_t {

@@ -142,19 +142,22 @@ esdm_status_t esdm_stat(char *desc, char *result)
  *
  * @return Status
  */
-esdm_status_t esdm_create(char *name, int mode, esdm_container_t **container)
+esdm_status_t esdm_create(char *name, int mode, esdm_container_t **container, esdm_dataset_t **dataset)
 {
 	ESDM_DEBUG(__func__);	
 
 	esdm_init();
 
-	*container = esdm_container_create(name);
-	esdm_dataspace_t* dataspace = esdm_dataspace_create(1 /* dims */);
-	esdm_dataset_t* dataset = esdm_dataset_create(*container, "bytestream", dataspace);
-	
-	printf("Dataset 'bytestream' creation: %p\n", dataset);
 
-	esdm_dataset_commit(dataset);
+	uint64_t bounds[1] = {0};
+	esdm_dataspace_t *dataspace = esdm_dataspace_create(1 /* 1D */ , bounds);
+
+	*container = esdm_container_create(name);
+	*dataset = esdm_dataset_create(*container, "bytestream", dataspace);
+	
+	printf("Dataset 'bytestream' creation: %p\n", *dataset);
+
+	esdm_dataset_commit(*dataset);
 	esdm_container_commit(*container);
 
 	return ESDM_SUCCESS;
@@ -191,7 +194,7 @@ esdm_status_t esdm_open(char *name, int mode)
  * @return Status
  */
 
-esdm_status_t esdm_write(esdm_container_t *container, void *buf, int dims, uint64_t * size, uint64_t* offset)
+esdm_status_t esdm_write(esdm_container_t *container, void *buf, esdm_dataspace_t* subspace)
 {
 	ESDM_DEBUG(__func__);	
 
@@ -201,7 +204,6 @@ esdm_status_t esdm_write(esdm_container_t *container, void *buf, int dims, uint6
 	
 
 	// create new fragment
-	esdm_dataspace_t *subspace = esdm_dataspace_create();
 	esdm_fragment_t *fragment = esdm_fragment_create(dataset, subspace, buf);
 
 	esdm_fragment_commit(fragment);
@@ -221,7 +223,7 @@ esdm_status_t esdm_write(esdm_container_t *container, void *buf, int dims, uint6
  *
  * @return Status
  */
-esdm_status_t esdm_read(esdm_container_t *container, void *buf, int dims, uint64_t * size, uint64_t* offset)
+esdm_status_t esdm_read(esdm_container_t *container, void *buf, esdm_dataspace_t* subspace)
 {
 	ESDM_DEBUG(__func__);	
 
@@ -233,7 +235,7 @@ esdm_status_t esdm_read(esdm_container_t *container, void *buf, int dims, uint64
 	//esdm_scheduler_enqueue(fragment);
 	
 	// buf =
-
+ 
 	return ESDM_SUCCESS;
 }
 
@@ -245,7 +247,7 @@ esdm_status_t esdm_read(esdm_container_t *container, void *buf, int dims, uint64
  * @param [in] desc		String Object Identifier
  *
  * @return Status
- */
+ */ 
 esdm_status_t esdm_close(void *desc) 
 {
 	ESDM_DEBUG(__func__);	

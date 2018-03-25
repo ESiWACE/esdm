@@ -32,11 +32,11 @@ esdm_status_t esdm_stat(char* desc, char* result);
 
 // Object Manipulation
 esdm_status_t esdm_open(char* desc, int mode);
-esdm_status_t esdm_create(char* desc, int mode, esdm_container_t**);
+esdm_status_t esdm_create(char* desc, int mode, esdm_container_t**, esdm_dataset_t**);
 esdm_status_t esdm_close(void * buf);
 
-esdm_status_t esdm_write(esdm_container_t *container, void *buf, int dims, uint64_t * size, uint64_t* offset);
-esdm_status_t esdm_read(esdm_container_t *container, void *buf, int dims, uint64_t * size, uint64_t* offset);
+esdm_status_t esdm_write(esdm_container_t *container, void *buf, esdm_dataspace_t* subspace);
+esdm_status_t esdm_read(esdm_container_t *container, void *buf, esdm_dataspace_t* subspace);
 
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -56,18 +56,19 @@ esdm_status_t esdm_dataset_commit(esdm_dataset_t *dataset);
 esdm_status_t esdm_dataset_destroy(esdm_dataset_t *dataset);
 
 // Dataspace
-esdm_dataspace_t* esdm_dataspace_create();
+esdm_dataspace_t* esdm_dataspace_create(uint64_t dimensions, uint64_t *bounds);
+esdm_dataspace_t* esdm_dataspace_subspace(esdm_dataspace_t *dataspace, uint64_t dimensions, uint64_t *size, uint64_t *offset);
 esdm_status_t esdm_dataspace_destroy(esdm_dataspace_t *dataspace);
-esdm_status_t esdm_dataspace_serialize(esdm_dataspace_t *dataspace, char **out);
-esdm_dataspace_t* esdm_dataspace_deserialize(char *serialized_dataspace);
+esdm_status_t esdm_dataspace_serialize(esdm_dataspace_t *dataspace, void **out);
+esdm_dataspace_t* esdm_dataspace_deserialize(void *serialized_dataspace);
 
 // Fragment
-esdm_fragment_t* esdm_fragment_create(esdm_dataset_t *dataset, esdm_dataspace_t *subspace, char *data);
+esdm_fragment_t* esdm_fragment_create(esdm_dataset_t *dataset, esdm_dataspace_t *subspace, void *data);
 esdm_fragment_t* esdm_fragment_retrieve(esdm_container_t *container, esdm_dataset_t *dataset, const char *id);
 esdm_status_t esdm_fragment_commit(esdm_fragment_t *fragment);
 esdm_status_t esdm_fragment_destroy(esdm_fragment_t *fragment);
-esdm_status_t esdm_fragment_serialize(esdm_fragment_t *fragment, char **out);
-esdm_fragment_t* esdm_fragment_deserialize(char *serialized_fragment);
+esdm_status_t esdm_fragment_serialize(esdm_fragment_t *fragment, void **out);
+esdm_fragment_t* esdm_fragment_deserialize(void *serialized_fragment);
 
 
 ///////////////////////////////////////////////////////////////////////////////

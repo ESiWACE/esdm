@@ -149,7 +149,7 @@ int entry_retrieve(const char *path)
 {
 	int status;
 	struct stat sb;
-	char* buf;
+	char *buf;
 
 	printf("entry_retrieve(%s)\n", path);
 
@@ -184,7 +184,7 @@ int entry_retrieve(const char *path)
 }
 
 
-int entry_update(const char *path, char *buf, size_t len)
+int entry_update(const char *path, void *buf, size_t len)
 {
 	int status;
 	struct stat sb;
@@ -411,8 +411,15 @@ int fragment_update(esdm_backend_t* backend, esdm_fragment_t *fragment)
 	mkdir_recursive(path);
 	entry_create(path_fragment);
 
+	char *buf = NULL;
+	size_t len = 6;
+
+	entry_update(path_fragment, &buf, len);
+
+
 	//entry_update()
 
+	entry_retrieve(path_fragment);
 
 
 	free(path);

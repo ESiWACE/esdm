@@ -47,16 +47,10 @@ int verify_data(uint64_t* a, uint64_t* b) {
 
 int main(int argc, char const* argv[])
 {
-	int mismatches;
 
-
-	// Prepare example data set (application view)
-	uint64_t dims[2] = {10, 20};
-	uint64_t offset[2] = {0, 0};
-
+	// prepare data
 	uint64_t * buf_w = (uint64_t *) malloc(10*20*sizeof(uint64_t));
 	uint64_t * buf_r = (uint64_t *) malloc(10*20*sizeof(uint64_t));
-
 
 	for(int x=0; x < 10; x++){
 		for(int y=0; y < 20; y++){
@@ -68,8 +62,9 @@ int main(int argc, char const* argv[])
 	// Interaction with ESDM
 	esdm_status_t ret;
 	esdm_container_t *container = NULL;
+	esdm_dataset_t *dataset = NULL;
 
-	ret = esdm_create("mycontainer", ESDM_CREATE, &container);
+	ret = esdm_create("mycontainer", ESDM_CREATE, &container, &dataset);
 	
 	//esdm_open("mycontainer/mydataset", ESDM_CREATE);
 	
@@ -77,18 +72,30 @@ int main(int argc, char const* argv[])
 	//ssize_t pread(int fd, void *buf, size_t count, off_t offset);
     //ssize_t pwrite(int fd, const void *buf, size_t count, off_t offset);
 
+
+	// define dataspace
+	uint64_t bounds[] = {10, 20};
+	esdm_dataspace_t *dataspace = esdm_dataspace_create(2, bounds);
+
+	// define subspace
+	uint64_t size[] = {10,20};
+	uint64_t offset[] = {0,0};
+	esdm_dataspace_t *subspace = esdm_dataspace_subspace(dataspace, 2, size, offset);
+
 	// Write the data to the dataset
-	ret = esdm_write(container, buf_w, 2, dims, offset);
+	ret = esdm_write(container, buf_w, subspace);
 
 	// Read the data to the dataset
-	ret = esdm_read(container, buf_r, 2, dims, offset);
+	ret = esdm_read(container, buf_r, subspace);
 
 
 	// verify data and fail test if mismatches are found
-	mismatches = verify_data(buf_w, buf_r);
+	int mismatches = verify_data(buf_w, buf_r);
 	printf("Mismatches: %d\n", mismatches);
 	if ( mismatches > 0 ) {
 		printf("FAILED\n");
+	} else {
+		printf("OK\n");
 	}
 	//assert(mismatches == 0);
 

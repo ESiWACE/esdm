@@ -24,6 +24,7 @@
 
 #include <stdlib.h>
 #include <stdio.h>
+#include <string.h>
 
 #include <esdm.h>
 #include <esdm-internal.h>
@@ -136,7 +137,7 @@ esdm_status_t esdm_container_destroy(esdm_container_t *container)
  *	@return Pointer to new fragment.
  *
  */
-esdm_fragment_t* esdm_fragment_create(esdm_dataset_t* dataset, esdm_dataspace_t* subspace, char *data)
+esdm_fragment_t* esdm_fragment_create(esdm_dataset_t* dataset, esdm_dataspace_t* subspace, void *data)
 {
 	ESDM_DEBUG(__func__);	
 	esdm_fragment_t* fragment = (esdm_fragment_t*) malloc(sizeof(esdm_fragment_t));
@@ -205,7 +206,7 @@ esdm_status_t esdm_fragment_destroy(esdm_fragment_t *fragment)
  * @enduml
  *
  */
-esdm_status_t esdm_fragment_serialize(esdm_fragment_t *fragment, char **out)
+esdm_status_t esdm_fragment_serialize(esdm_fragment_t *fragment, void **out)
 {
 	ESDM_DEBUG(__func__);	
 
@@ -216,7 +217,7 @@ esdm_status_t esdm_fragment_serialize(esdm_fragment_t *fragment, char **out)
 /**
  * Reinstantiate fragment from serialization.
  */
-esdm_fragment_t* esdm_fragment_deserialize(char *serialized_fragment)
+esdm_fragment_t* esdm_fragment_deserialize(void *serialized_fragment)
 {
 	ESDM_DEBUG(__func__);	
 	return ESDM_SUCCESS;
@@ -316,14 +317,61 @@ esdm_status_t esdm_dataset_commit(esdm_dataset_t *dataset)
  *	@return Pointer to new dateset.
  *
  */
-esdm_dataspace_t* esdm_dataspace_create(uint64_t dimensions)
+esdm_dataspace_t* esdm_dataspace_create(uint64_t dimensions, uint64_t* bounds)
 {
 	ESDM_DEBUG(__func__);	
-	esdm_dataspace_t* new_dataspace = (esdm_dataspace_t*) malloc(sizeof(esdm_dataspace_t));
+	esdm_dataspace_t* dataspace = (esdm_dataspace_t*) malloc(sizeof(esdm_dataspace_t));
 
+	dataspace->dimensions = dimensions;
+	dataspace->bounds = (uint64_t*) malloc(sizeof(uint64_t)*dimensions);
+	dataspace->size = NULL;
+	dataspace->subspace_of = NULL;
 
-	return new_dataspace;
+	// copy bounds
+	memcpy(dataspace->bounds, bounds, sizeof(uint64_t)*dimensions);
+
+	return dataspace;
 }
+
+
+
+/**
+ * this could also be the fragment???
+ *
+ *
+ */
+esdm_dataspace_t* esdm_dataspace_subspace(esdm_dataspace_t *dataspace, uint64_t dimensions, uint64_t *size, uint64_t *offset)
+{
+	ESDM_DEBUG(__func__);	
+
+	esdm_dataspace_t* subspace = NULL; 
+
+	if (dimensions == dataspace->dimensions)
+	{
+		// replicate original space
+		subspace = (esdm_dataspace_t*) malloc(sizeof(esdm_dataspace_t));
+		memcpy(subspace, dataspace, sizeof(dataspace));
+
+		// populate subspace members
+		subspace->bounds = (uint64_t*) malloc(sizeof(uint64_t)*dimensions);
+		subspace->size = (uint64_t*) malloc(sizeof(uint64_t)*dimensions);
+		subspace->offset = (uint64_t*) malloc(sizeof(uint64_t)*dimensions);
+		subspace->subspace_of = dataspace;
+
+		// make copies where necessary
+		memcpy(subspace->bounds, dataspace->bounds, sizeof(uint64_t)*dimensions);
+		memcpy(subspace->size, size, sizeof(uint64_t)*dimensions);
+		memcpy(subspace->offset, offset, sizeof(uint64_t)*dimensions);
+	}
+	else
+	{
+		ESDM_ERROR("Subspace dimensions do not match original space.");
+	}
+
+	return subspace;
+}
+
+
 
 /**
  * Destroy dataspace in memory.
@@ -340,7 +388,7 @@ esdm_status_t esdm_dataspace_destroy(esdm_dataspace_t *dataspace)
  * e.g., to store along with fragment
  */
 
-esdm_status_t esdm_dataspace_serialize(esdm_dataspace_t *dataspace, char **out)
+esdm_status_t esdm_dataspace_serialize(esdm_dataspace_t *dataspace, void **out)
 {
 	ESDM_DEBUG(__func__);	
 
@@ -350,7 +398,7 @@ esdm_status_t esdm_dataspace_serialize(esdm_dataspace_t *dataspace, char **out)
 /**
  * Reinstantiate dataspace from serialization.
  */
-esdm_dataspace_t* esdm_dataspace_deserialize(char *serialized_dataspace)
+esdm_dataspace_t* esdm_dataspace_deserialize(void *serialized_dataspace)
 {
 	ESDM_DEBUG(__func__);	
 	return ESDM_SUCCESS;
