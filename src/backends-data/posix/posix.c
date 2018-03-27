@@ -145,11 +145,10 @@ int entry_create(const char *path)
 }
 
 
-int entry_retrieve(const char *path)
+int entry_retrieve(const char *path, void **buf, size_t **count)
 {
 	int status;
 	struct stat sb;
-	char *buf;
 
 	printf("entry_retrieve(%s)\n", path);
 
@@ -166,19 +165,36 @@ int entry_retrieve(const char *path)
 	// write to non existing file
 	int fd = open(path,	O_RDONLY | S_IWUSR | S_IRUSR | S_IWGRP | S_IRGRP | S_IROTH);
 
+
+	*count = malloc(sizeof(size_t));
+	*buf;
+
 	// everything ok? write and close
 	if ( fd != -1 )
 	{
 		// write some metadata
-		buf = (char*) malloc(sb.st_size + 1);
-		buf[sb.st_size] = 0;
+		*buf = (void*) malloc(sb.st_size + 1);
 
-		read(fd, buf, sb.st_size);
+		char* cbuf = (char*) buf;
+		cbuf[sb.st_size] = 0;
+
+		read(fd, *buf, sb.st_size);
 		close(fd);
 	}
 
 
-	printf("Entry content: %s\n", buf);
+
+
+	printf("Entry content: %s\n", (char *) *buf);
+
+	/*
+	uint64_t *buf64 = (uint64_t*) buf;
+	for (int i = 0; i < sb.st_size/sizeof(uint64_t); i++)
+	{
+		printf("idx %d: %d\n", i, buf64[i]);
+	}
+	*/
+
 
 	return 0;
 }
@@ -284,8 +300,12 @@ int container_retrieve(esdm_backend_t* backend, esdm_container_t *container)
 	asprintf(&path_metadata, "%s/containers/%s.md", tgt, container->name);
 	asprintf(&path_container, "%s/containers/%s", tgt, container->name);
 
+
+	size_t *count = NULL;
+	void *buf = NULL;
+
 	// create metadata entry
-	entry_retrieve(path_metadata);
+	entry_retrieve(path_metadata, &buf, &count);
 
 
 	free(path_metadata);
@@ -388,7 +408,46 @@ int dataset_destroy(esdm_backend_t* backend, esdm_dataset_t *dataset)
 
 
 
+int fragment_retrieve(esdm_backend_t* backend, esdm_fragment_t *fragment)
+{
+	char *path;
+	char *path_fragment;
+	struct stat sb;
 
+	posix_backend_data_t* data = (posix_backend_data_t*)backend->data;
+	posix_backend_options_t* options = data->options;
+	const char* tgt = options->target;
+
+
+	asprintf(&path, "%s/containers/%s/%s/", tgt, fragment->dataset->container->name, fragment->dataset->name);
+	asprintf(&path_fragment, "%s/containers/%s/%s/%p", tgt, fragment->dataset->container->name, fragment->dataset->name, fragment);
+
+	printf("path: %s\n", path);
+	printf("path_fragment: %s\n", path_fragment);
+
+	// create metadata entry
+	mkdir_recursive(path);
+	entry_create(path_fragment);
+
+	/*
+	char *buf = NULL;
+	size_t len = 6;
+	entry_update(path_fragment, &buf, len);
+	*/
+	
+	//entry_update()
+
+
+	void *buf;
+	size_t *count;
+
+
+	entry_retrieve(path_fragment, &buf, &count);
+
+
+	free(path);
+	free(path_fragment);
+}
 
 int fragment_update(esdm_backend_t* backend, esdm_fragment_t *fragment)
 {
@@ -411,15 +470,20 @@ int fragment_update(esdm_backend_t* backend, esdm_fragment_t *fragment)
 	mkdir_recursive(path);
 	entry_create(path_fragment);
 
+	/*
 	char *buf = NULL;
 	size_t len = 6;
-
 	entry_update(path_fragment, &buf, len);
-
+	*/
+	
+	entry_update(path_fragment, fragment->data, fragment->bytes);
 
 	//entry_update()
 
-	entry_retrieve(path_fragment);
+	size_t *count = NULL;
+	void *buf = NULL;
+
+	entry_retrieve(path_fragment, &buf, &count);
 
 
 	free(path);
@@ -566,7 +630,7 @@ static esdm_backend_t backend_template = {
 		NULL, // dataset delete
 
 		NULL, // fragment create
-		NULL, // fragment retrieve
+		fragment_retrieve, // fragment retrieve
 		fragment_update, // fragment update
 		NULL, // fragment delete
 	},

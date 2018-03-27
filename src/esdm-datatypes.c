@@ -34,6 +34,51 @@
 extern esdm_instance_t esdm;
 
 
+
+
+
+// Native Datatypes ///////////////////////////////////////////////////////////
+size_t esdm_sizeof(esdm_datatype_t type) {
+	switch (type) {
+		case esdm_int8_t:
+			return sizeof(int8_t);
+		case esdm_int16_t:
+			return sizeof(int16_t);
+		case esdm_int32_t:
+			return sizeof(int32_t);
+		case esdm_int64_t:
+			return sizeof(int64_t);
+
+		case esdm_uint8_t:
+			return sizeof(uint8_t);
+		case esdm_uint16_t:
+			return sizeof(uint16_t);
+		case esdm_uint32_t:
+			return sizeof(uint32_t);
+		case esdm_uint64_t:
+			return sizeof(uint64_t);
+
+		case esdm_float:			// if IEEE 754 (32bit)
+			return sizeof(float);
+		case esdm_double:		// if IEEE 754 (64bit)
+			return sizeof(double);
+
+		// TODO: is a native char type really needed?
+		case esdm_char:
+		case esdm_char_ascii:
+			return 1;
+
+	}
+}
+
+
+
+
+
+
+
+
+
 // Container //////////////////////////////////////////////////////////////////
 /**
  * Create a new container. 
@@ -142,8 +187,34 @@ esdm_fragment_t* esdm_fragment_create(esdm_dataset_t* dataset, esdm_dataspace_t*
 	ESDM_DEBUG(__func__);	
 	esdm_fragment_t* fragment = (esdm_fragment_t*) malloc(sizeof(esdm_fragment_t));
 
-	fragment->dataset = dataset;
+	
+	for (int64_t i = 0; i < subspace->dimensions; i++) { printf("dim %d, subsize=%d (%p)\n", i, subspace->subsize[i], subspace->subsize); }
 
+	// calculate subspace element count
+	int64_t size = 0;
+	for (int64_t i = 0; i < subspace->dimensions; i++)
+	{
+		if (size == 0 && subspace->subsize[i] > 0)
+		{
+			size += subspace->subsize[i];
+		}
+		else if(subspace->subsize[i] > 0)
+		{
+			size *= subspace->subsize[i];
+		}
+	}
+
+	int64_t bytes = size*esdm_sizeof(subspace->datatype);
+	printf("Entries in subspace: %d x %d bytes = %d bytes \n", size, esdm_sizeof(subspace->datatype), bytes);
+
+
+	fragment->metadata = NULL;
+	fragment->dataset = dataset;
+	fragment->subspace = subspace;
+	fragment->data = data;	// zero copy?
+	fragment->size = size;
+	fragment->bytes = bytes;
+	fragment->status = ESDM_DIRTY;
 
 	return fragment;
 }
@@ -173,12 +244,20 @@ esdm_status_t esdm_fragment_commit(esdm_fragment_t *fragment)
 {
 	ESDM_DEBUG(__func__);	
 
+	esdm_status_t status;
+
 	// schedule for I/O
 	esdm_scheduler_enqueue(&esdm, fragment);
 
 	// Call backend
-	esdm_backend_t *backend = (esdm_backend_t*) g_hash_table_lookup(esdm.modules->backends, "p1");
+	esdm_backend_t *backend = (esdm_backend_t*) g_hash_table_lookup(esdm.modules->backends, "p1");  // TODO: let layout decide which backend
 	backend->callbacks.fragment_update(backend, fragment);
+	
+	
+	
+	fragment->status = ESDM_PERSISTENT;
+
+
 
 	return ESDM_SUCCESS;
 }
@@ -317,18 +396,27 @@ esdm_status_t esdm_dataset_commit(esdm_dataset_t *dataset)
  *	@return Pointer to new dateset.
  *
  */
-esdm_dataspace_t* esdm_dataspace_create(uint64_t dimensions, uint64_t* bounds)
+esdm_dataspace_t* esdm_dataspace_create(int64_t dimensions, int64_t* bounds, esdm_datatype_t datatype)
 {
 	ESDM_DEBUG(__func__);	
 	esdm_dataspace_t* dataspace = (esdm_dataspace_t*) malloc(sizeof(esdm_dataspace_t));
 
 	dataspace->dimensions = dimensions;
-	dataspace->bounds = (uint64_t*) malloc(sizeof(uint64_t)*dimensions);
+	dataspace->bounds = (int64_t*) malloc(sizeof(int64_t)*dimensions);
 	dataspace->size = NULL;
+	dataspace->datatype = datatype;
 	dataspace->subspace_of = NULL;
 
 	// copy bounds
-	memcpy(dataspace->bounds, bounds, sizeof(uint64_t)*dimensions);
+	memcpy(dataspace->bounds, bounds, sizeof(int64_t)*dimensions);
+
+
+	for (int64_t i = 0; i < dimensions; i++) { printf("dim %d, bound=%d (%p)\n", i, bounds[i], bounds); }
+	for (int64_t i = 0; i < dimensions; i++) { printf("dim %d, bound=%d (%p)\n", i, dataspace->bounds[i], dataspace->bounds); }
+
+
+
+	printf("New dataspace: dims=%d\n", dataspace->dimensions);
 
 	return dataspace;
 }
@@ -340,7 +428,7 @@ esdm_dataspace_t* esdm_dataspace_create(uint64_t dimensions, uint64_t* bounds)
  *
  *
  */
-esdm_dataspace_t* esdm_dataspace_subspace(esdm_dataspace_t *dataspace, uint64_t dimensions, uint64_t *size, uint64_t *offset)
+esdm_dataspace_t* esdm_dataspace_subspace(esdm_dataspace_t *dataspace, int64_t dimensions, int64_t *size, int64_t *offset)
 {
 	ESDM_DEBUG(__func__);	
 
@@ -350,18 +438,24 @@ esdm_dataspace_t* esdm_dataspace_subspace(esdm_dataspace_t *dataspace, uint64_t 
 	{
 		// replicate original space
 		subspace = (esdm_dataspace_t*) malloc(sizeof(esdm_dataspace_t));
-		memcpy(subspace, dataspace, sizeof(dataspace));
+		memcpy(subspace, dataspace, sizeof(esdm_dataspace_t));
 
 		// populate subspace members
-		subspace->bounds = (uint64_t*) malloc(sizeof(uint64_t)*dimensions);
-		subspace->size = (uint64_t*) malloc(sizeof(uint64_t)*dimensions);
-		subspace->offset = (uint64_t*) malloc(sizeof(uint64_t)*dimensions);
+		subspace->bounds = (int64_t*) malloc(sizeof(int64_t)*dimensions);
+		subspace->subsize = (int64_t*) malloc(sizeof(int64_t)*dimensions);
+		subspace->size = (int64_t*) malloc(sizeof(int64_t)*dimensions);
+		subspace->offset = (int64_t*) malloc(sizeof(int64_t)*dimensions);
 		subspace->subspace_of = dataspace;
 
 		// make copies where necessary
-		memcpy(subspace->bounds, dataspace->bounds, sizeof(uint64_t)*dimensions);
-		memcpy(subspace->size, size, sizeof(uint64_t)*dimensions);
-		memcpy(subspace->offset, offset, sizeof(uint64_t)*dimensions);
+		memcpy(subspace->bounds, dataspace->bounds, sizeof(int64_t)*dimensions);
+		memcpy(subspace->subsize, size, sizeof(int64_t)*dimensions);
+		memcpy(subspace->offset, offset, sizeof(int64_t)*dimensions);
+
+
+
+		for (int64_t i = 0; i < dimensions; i++) { printf("dim %d, bounds=%d (%p)\n", i, dataspace->bounds[i], dataspace->bounds); }
+		for (int64_t i = 0; i < dimensions; i++) { printf("dim %d, size=%d (%p)\n", i, size[i], size); }
 	}
 	else
 	{

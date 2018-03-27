@@ -31,18 +31,18 @@
 
 
 #ifdef ESDM_HAS_POSIX
-	#include "backends-data/POSIX/posix.h"
-	#pragma message ("Building ESDM with POSIX!")
+	#include "backends-data/posix/posix.h"
+	#pragma message ("Building ESDM with support for generic POSIX backend.")
 #endif
 
 #ifdef ESDM_HAS_CLOVIS
 //	#include "backends-data/Clovis/clovis.h"
-	#pragma message ("Building ESDM with Clovis!")
+	#pragma message ("Building ESDM with Clovis support.")
 #endif
 
 #ifdef ESDM_HAS_WOS
 	#include "backends-data/Mero/wos.h"
-	#pragma message ("Building ESDM with WOS!")
+	#pragma message ("Building ESDM with WOS support.")
 #endif
 
 
@@ -50,10 +50,14 @@
 #define ESDM_HAS_METADUMMY
 #ifdef ESDM_HAS_METADUMMY
 	#include "backends-metadata/metadummy/metadummy.h"
-	#pragma message ("Building ESDM with metadummy!")
+	#pragma message ("Building ESDM with support generic 'metadummy' backend.")
 #endif
 
-
+#define ESDM_HAS_METADUMMY
+#ifdef ESDM_HAS_METADUMMY
+	#include "backends-metadata/mongodb/mongodb.h"
+	#pragma message ("Building ESDM with MongoDB support.")
+#endif
 
 
 

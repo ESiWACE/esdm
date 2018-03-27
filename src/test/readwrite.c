@@ -54,7 +54,7 @@ int main(int argc, char const* argv[])
 
 	for(int x=0; x < 10; x++){
 		for(int y=0; y < 20; y++){
-			buf_w[y*10+x] = (y+1)*10 + x + 1;
+			buf_w[y*10+x] = (y)*10 + x + 1;
 		}
 	}
 
@@ -64,8 +64,11 @@ int main(int argc, char const* argv[])
 	esdm_container_t *container = NULL;
 	esdm_dataset_t *dataset = NULL;
 
-	ret = esdm_create("mycontainer", ESDM_CREATE, &container, &dataset);
-	
+
+	esdm_init();
+
+
+	//ret = esdm_create("mytextfile", ESDM_CREATE, &container, &dataset);
 	//esdm_open("mycontainer/mydataset", ESDM_CREATE);
 	
 	// POSIX pwrite/pread interfaces for comparison
@@ -73,20 +76,37 @@ int main(int argc, char const* argv[])
     //ssize_t pwrite(int fd, const void *buf, size_t count, off_t offset);
 
 
+
 	// define dataspace
-	uint64_t bounds[] = {10, 20};
-	esdm_dataspace_t *dataspace = esdm_dataspace_create(2, bounds);
+	int64_t bounds[] = {10, 20};
+	esdm_dataspace_t *dataspace = esdm_dataspace_create(2, bounds, esdm_uint64_t);
+
+	container = esdm_container_create("mycontainer");
+	dataset = esdm_dataset_create(container, "mydataset", dataspace);
+
+	
+	esdm_container_commit(container);
+	esdm_dataset_commit(dataset);
+
 
 	// define subspace
-	uint64_t size[] = {10,20};
-	uint64_t offset[] = {0,0};
+	int64_t size[] = {10,20};
+	int64_t offset[] = {0,0};
 	esdm_dataspace_t *subspace = esdm_dataspace_subspace(dataspace, 2, size, offset);
 
+
 	// Write the data to the dataset
-	ret = esdm_write(container, buf_w, subspace);
+	ret = esdm_write(dataset, buf_w, subspace);
 
 	// Read the data to the dataset
-	ret = esdm_read(container, buf_r, subspace);
+	ret = esdm_read(dataset, buf_r, subspace);
+
+
+
+
+	// TODO: write subset
+	// TODO: read subset -> subspace reconstruction
+
 
 
 	// verify data and fail test if mismatches are found

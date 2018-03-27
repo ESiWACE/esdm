@@ -44,17 +44,27 @@ double			if IEEE 754 (64bit)
 */
 
 typedef enum {
-	ESDM_int8_t,
-	ESDM_uint8_t,
-	ESDM_int16_t,
-	ESDM_uint16_t,
-	ESDM_int32_t,
-	ESDM_uint32_t,
-	ESDM_int64_t,
-	ESDM_uint64_t,
-	ESDM_float,			// if IEEE 754 (32bit)
-	ESDM_double,		// if IEEE 754 (64bit)
+	esdm_int8_t,
+	esdm_int16_t,
+	esdm_int32_t,
+	esdm_int64_t,
+
+	esdm_uint8_t,
+	esdm_uint16_t,
+	esdm_uint32_t,
+	esdm_uint64_t,
+
+	esdm_float,			// if IEEE 754 (32bit)
+	esdm_double,		// if IEEE 754 (64bit)
+
+	esdm_char,			// 1 byte
+	esdm_char_ascii,	// 1 byte
+	esdm_char_utf8,		// esdm_sizeof will fail here
+	esdm_char_utf16,
+	esdm_char_utf32,
 } esdm_datatype_t;
+
+
 
 
 
@@ -112,13 +122,13 @@ struct esdm_dataset_t {
 
 struct esdm_dataspace_t {
 	esdm_datatype_t datatype;
-	uint64_t dimensions;
-	uint64_t *bounds;
-	uint64_t *size;
+	int64_t dimensions;
+	int64_t *bounds;
+	int64_t *size;
 
 	esdm_dataspace_t *subspace_of;
-	uint64_t *offset;
-	uint64_t *subsize;
+	int64_t *offset;
+	int64_t *subsize;
 
 	char *json;
 };
@@ -126,9 +136,10 @@ struct esdm_dataspace_t {
 struct esdm_fragment_t {
 	esdm_metadata_t *metadata;
 	esdm_dataset_t *dataset;
-	esdm_dataspace_t *dataspace;
-	char *data;
+	esdm_dataspace_t *subspace;
+	void *data;
 	size_t size;
+	size_t bytes;
 	esdm_status_t status;
 };
 
@@ -311,6 +322,23 @@ typedef struct {
 	esdm_scheduler_t *scheduler;
 	esdm_performance_t *performance;
 } esdm_instance_t;
+
+
+
+
+
+
+
+// Auxiliary? /////////////////////////////////////////////////////////////////
+
+typedef struct esdm_bytesequence_t esdm_bytesyquence_t;
+struct esdm_bytesequence {
+	esdm_datatype_t type;
+	size_t count;
+	void * data;
+};
+
+
 
 
 #endif

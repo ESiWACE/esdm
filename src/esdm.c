@@ -149,8 +149,8 @@ esdm_status_t esdm_create(char *name, int mode, esdm_container_t **container, es
 	esdm_init();
 
 
-	uint64_t bounds[1] = {0};
-	esdm_dataspace_t *dataspace = esdm_dataspace_create(1 /* 1D */ , bounds);
+	int64_t bounds[1] = {0};
+	esdm_dataspace_t *dataspace = esdm_dataspace_create(1 /* 1D */ , bounds, esdm_int8_t);
 
 	*container = esdm_container_create(name);
 	*dataset = esdm_dataset_create(*container, "bytestream", dataspace);
@@ -183,6 +183,7 @@ esdm_status_t esdm_open(char *name, int mode)
 	return ESDM_SUCCESS;
 }
 
+
 /**
  * Write data  of size starting from offset.
  *
@@ -194,18 +195,16 @@ esdm_status_t esdm_open(char *name, int mode)
  * @return Status
  */
 
-esdm_status_t esdm_write(esdm_container_t *container, void *buf, esdm_dataspace_t* subspace)
+esdm_status_t esdm_write(esdm_dataset_t *dataset, void *buf, esdm_dataspace_t* subspace)
 {
 	ESDM_DEBUG(__func__);	
 
-	esdm_dataset_t *dataset = (esdm_dataset_t*) g_hash_table_lookup (container->datasets, "bytestream");
-	printf("Dataset 'bytestream' lookup: %p\n", dataset);
+	//esdm_dataset_t *dataset = (esdm_dataset_t*) g_hash_table_lookup (container->datasets, "bytestream");
+	//printf("Dataset 'bytestream' lookup: %p\n", dataset);
 
-	
 
 	// create new fragment
 	esdm_fragment_t *fragment = esdm_fragment_create(dataset, subspace, buf);
-
 	esdm_fragment_commit(fragment);
 
 	return ESDM_SUCCESS;
@@ -223,12 +222,12 @@ esdm_status_t esdm_write(esdm_container_t *container, void *buf, esdm_dataspace_
  *
  * @return Status
  */
-esdm_status_t esdm_read(esdm_container_t *container, void *buf, esdm_dataspace_t* subspace)
+esdm_status_t esdm_read(esdm_dataset_t *dataset, void *buf, esdm_dataspace_t* subspace)
 {
 	ESDM_DEBUG(__func__);	
 
-	esdm_dataset_t *dataset = (esdm_dataset_t*) g_hash_table_lookup (container->datasets, "bytestream");
-	printf("Dataset 'bytestream' lookup: %p\n", dataset);
+	//esdm_dataset_t *dataset = (esdm_dataset_t*) g_hash_table_lookup (container->datasets, "bytestream");
+	//printf("Dataset 'bytestream' lookup: %p\n", dataset);
 
 	// TODO: reconstruct expected result using esdm_layout
 
