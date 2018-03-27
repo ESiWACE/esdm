@@ -53,8 +53,8 @@
 	#pragma message ("Building ESDM with support generic 'metadummy' backend.")
 #endif
 
-#define ESDM_HAS_METADUMMY
-#ifdef ESDM_HAS_METADUMMY
+#define ESDM_HAS_MONDODB
+#ifdef ESDM_HAS_MONGODB
 	#include "backends-metadata/mongodb/mongodb.h"
 	#pragma message ("Building ESDM with MongoDB support.")
 #endif
@@ -74,9 +74,30 @@ esdm_modules_t* esdm_modules_init(esdm_instance_t* esdm)
 	esdm_config_backends_t* config_backends = esdm_config_get_backends(esdm);
 	esdm_config_backend_t* b = NULL;
 
+
+	const char *metadata_coordinator_string = esdm_config_get_metadata_coordinator(esdm);
+
 	// Register metadata backend (singular)
 	// TODO: This backend is meant as metadata coordinator in a hierarchy of MD (later)
-	modules->metadata = metadummy_backend_init(NULL);
+
+	if (strncmp(metadata_coordinator_string,"metadummy",9) == 0)
+	{
+		modules->metadata = metadummy_backend_init(NULL);
+	}
+#ifdef ESDM_HAS_MONGODB
+	else if (strncmp(b->metadata_coordinator_string,"mongodb",7) == 0)
+	{
+		modules->metadata = mongodb_backend_init(NULL);
+	} 
+#endif
+	else
+	{
+		ESDM_ERROR("Unknown metadata backend type. Please check your ESDM configuration.");
+	}
+
+
+
+
 
 	// Register data backends	
 	modules->backends = g_hash_table_new(g_str_hash, g_str_equal);
@@ -91,7 +112,7 @@ esdm_modules_t* esdm_modules_init(esdm_instance_t* esdm)
 			  );
 
 
-		if (strncmp (b->type,"POSIX",5) == 0)
+		if (strncmp(b->type,"POSIX",5) == 0)
 		{
 			posix_backend_options_t* data = (posix_backend_options_t*) malloc(sizeof(posix_backend_options_t));
 			data->type = b->type;
