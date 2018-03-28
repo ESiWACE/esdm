@@ -250,11 +250,14 @@ esdm_status_t esdm_fragment_commit(esdm_fragment_t *fragment)
 	esdm_scheduler_enqueue(&esdm, fragment);
 
 	// Call backend
-	esdm_backend_t *backend = (esdm_backend_t*) g_hash_table_lookup(esdm.modules->backends, "p1");  // TODO: let layout decide which backend
+	esdm_backend_t *backend = (esdm_backend_t*) g_hash_table_lookup(esdm.modules->backends, "p1");  // TODO: decision component
 	backend->callbacks.fragment_update(backend, fragment);
 	
 	
-	
+	esdm.modules->metadata->callbacks.fragment_update(esdm.modules->metadata, fragment);
+
+
+
 	fragment->status = ESDM_PERSISTENT;
 
 

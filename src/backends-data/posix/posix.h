@@ -37,7 +37,6 @@ typedef struct {
 
 
 
-int posix_backend_performance_estimate(esdm_backend_t* backend);
 esdm_backend_t* posix_backend_init(void* data);
 
 

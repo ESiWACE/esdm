@@ -39,7 +39,7 @@
 #include "metadummy.h"
 
 
-void log(const char* format, ...)
+static void log(const char* format, ...)
 {
 	va_list args;
 	va_start(args,format);
@@ -50,7 +50,7 @@ void log(const char* format, ...)
 
 
 // forward declarations
-void metadummy_test();
+static void metadummy_test();
 
 
 
@@ -106,7 +106,7 @@ static int fsck()
 // Internal Helpers  //////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////
 
-int entry_create(const char *path)
+static int entry_create(const char *path)
 {
 	int status;
 	struct stat sb;
@@ -138,7 +138,7 @@ int entry_create(const char *path)
 }
 
 
-int entry_retrieve(const char *path)
+static int entry_retrieve(const char *path)
 {
 	int status;
 	struct stat sb;
@@ -177,7 +177,7 @@ int entry_retrieve(const char *path)
 }
 
 
-int entry_update(const char *path, void *buf, size_t len)
+static int entry_update(const char *path, void *buf, size_t len)
 {
 	int status;
 	struct stat sb;
@@ -207,7 +207,7 @@ int entry_update(const char *path, void *buf, size_t len)
 }
 
 
-int entry_destroy(const char *path) 
+static int entry_destroy(const char *path) 
 {
 	int status;
 	struct stat sb;
@@ -245,7 +245,7 @@ int entry_destroy(const char *path)
 // Container Helpers //////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////
 
-int container_create(esdm_backend_t* backend, esdm_container_t *container)
+static int container_create(esdm_backend_t* backend, esdm_container_t *container)
 {
 	char *path_metadata;
 	char *path_container;
@@ -253,6 +253,8 @@ int container_create(esdm_backend_t* backend, esdm_container_t *container)
 
 	metadummy_backend_options_t *options = (metadummy_backend_options_t*) backend->data;
 	const char* tgt = options->target;
+
+	printf("tgt: %p\n", tgt);
 
 	asprintf(&path_metadata, "%s/containers/%s.md", tgt, container->name);
 	asprintf(&path_container, "%s/containers/%s", tgt, container->name);
@@ -271,7 +273,7 @@ int container_create(esdm_backend_t* backend, esdm_container_t *container)
 }
 
 
-int container_retrieve(esdm_backend_t* backend, esdm_container_t *container)
+static int container_retrieve(esdm_backend_t* backend, esdm_container_t *container)
 {
 	char *path_metadata;
 	char *path_container;
@@ -293,7 +295,7 @@ int container_retrieve(esdm_backend_t* backend, esdm_container_t *container)
 }
 
 
-int container_update(esdm_backend_t* backend, esdm_container_t *container)
+static int container_update(esdm_backend_t* backend, esdm_container_t *container)
 {
 	char *path_metadata;
 	char *path_container;
@@ -314,7 +316,7 @@ int container_update(esdm_backend_t* backend, esdm_container_t *container)
 }
 
 
-int container_destroy(esdm_backend_t* backend, esdm_container_t *container) 
+static int container_destroy(esdm_backend_t* backend, esdm_container_t *container) 
 {
 	char *path_metadata;
 	char *path_container;
@@ -343,7 +345,7 @@ int container_destroy(esdm_backend_t* backend, esdm_container_t *container)
 // Dataset Helpers ////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////
 
-int dataset_create(esdm_backend_t* backend, esdm_dataset_t *dataset)
+static int dataset_create(esdm_backend_t* backend, esdm_dataset_t *dataset)
 {
 	char *path_metadata;
 	char *path_dataset;
@@ -352,6 +354,8 @@ int dataset_create(esdm_backend_t* backend, esdm_dataset_t *dataset)
 
 	metadummy_backend_options_t *options = (metadummy_backend_options_t*) backend->data;
 	const char* tgt = options->target;
+
+	printf("tgt: %p\n", tgt);
 
 	asprintf(&path_metadata, "%s/containers/%s/%s.md", tgt, dataset->container->name, dataset->name);
 	asprintf(&path_dataset, "%s/containers/%s/%s", tgt, dataset->container->name, dataset->name);
@@ -370,20 +374,62 @@ int dataset_create(esdm_backend_t* backend, esdm_dataset_t *dataset)
 }
 
 
-int dataset_retrieve(esdm_backend_t* backend, esdm_dataset_t *dataset)
+static int dataset_retrieve(esdm_backend_t* backend, esdm_dataset_t *dataset)
 {
 }
 
 
-int dataset_update(esdm_backend_t* backend, esdm_dataset_t *dataset)
+static int dataset_update(esdm_backend_t* backend, esdm_dataset_t *dataset)
 {
 }
 
 
-int dataset_destroy(esdm_backend_t* backend, esdm_dataset_t *dataset) 
+static int dataset_destroy(esdm_backend_t* backend, esdm_dataset_t *dataset) 
 {
 }
 
+
+
+///////////////////////////////////////////////////////////////////////////////
+// Fragment Helpers ///////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////////
+
+static int fragment_update(esdm_backend_t* backend, esdm_fragment_t *fragment)
+{
+	char *path;
+	char *path_fragment;
+	struct stat sb;
+
+	metadummy_backend_options_t *options = (metadummy_backend_options_t*) backend->data;
+	const char* tgt = options->target;
+
+	printf("tgt: %p\n", tgt);
+		
+	asprintf(&path, "%s/containers/%s/%s/", tgt, fragment->dataset->container->name, fragment->dataset->name);
+	asprintf(&path_fragment, "%s/containers/%s/%s/%p", tgt, fragment->dataset->container->name, fragment->dataset->name, fragment);
+
+	printf("path: %s\n", path);
+	printf("path_fragment: %s\n", path_fragment);
+
+	// create metadata entry
+	//mkdir_recursive(path);
+	//entry_create(path_fragment);
+
+
+//	entry_update(path_fragment, "abc", 3);
+
+	//entry_update()
+
+	/*
+	size_t *count = NULL;
+	void *buf = NULL;
+	entry_retrieve(path_fragment, &buf, &count);
+	*/
+
+
+	free(path);
+	free(path_fragment);
+}
 
 
 
@@ -392,7 +438,7 @@ int dataset_destroy(esdm_backend_t* backend, esdm_dataset_t *dataset)
 // ESDM Callbacks /////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////
 
-int metadummy_backend_performance_estimate(esdm_backend_t* backend) 
+static int metadummy_backend_performance_estimate(esdm_backend_t* backend) 
 {
 	DEBUG("Calculating performance estimate.");
 
@@ -400,7 +446,7 @@ int metadummy_backend_performance_estimate(esdm_backend_t* backend)
 }
 
 
-int metadummy_create(esdm_backend_t* backend, char* name) 
+static int metadummy_create(esdm_backend_t* backend, char* name) 
 {
 	DEBUG("Create");
 
@@ -426,25 +472,25 @@ int metadummy_create(esdm_backend_t* backend, char* name)
  *	owner?	
  *
  */
-int metadummy_open(esdm_backend_t* backend) 
+static int metadummy_open(esdm_backend_t* backend) 
 {
 	DEBUG("Open");
 	return 0;
 }
 
-int metadummy_write(esdm_backend_t* backend) 
+static int metadummy_write(esdm_backend_t* backend) 
 {
 	DEBUG("Write");
 	return 0;
 }
 
-int metadummy_read(esdm_backend_t* backend) 
+static int metadummy_read(esdm_backend_t* backend) 
 {
 	DEBUG("Read");
 	return 0;
 }
 
-int metadummy_close(esdm_backend_t* backend) 
+static int metadummy_close(esdm_backend_t* backend) 
 {
 	DEBUG("Close");
 	return 0;
@@ -452,25 +498,34 @@ int metadummy_close(esdm_backend_t* backend)
 
 
 
-int metadummy_allocate(esdm_backend_t* backend) 
+static int metadummy_allocate(esdm_backend_t* backend) 
 {
 	DEBUG("Allocate");
 	return 0;
 }
 
 
-int metadummy_update(esdm_backend_t* backend) 
+static int metadummy_update(esdm_backend_t* backend) 
 {
 	DEBUG("Update");
 	return 0;
 }
 
 
-int metadummy_lookup(esdm_backend_t* backend) 
+static int metadummy_lookup(esdm_backend_t* backend) 
 {
 	DEBUG("Lookup");
 	return 0;
 }
+
+
+
+
+
+
+
+
+
 
 
 
@@ -514,7 +569,7 @@ static esdm_backend_t backend_template = {
 
 		NULL, // fragment create
 		NULL, // fragment retrieve
-		NULL, // fragment update
+		fragment_update, // fragment update
 		NULL, // fragment destroy
 	},
 };
@@ -575,7 +630,7 @@ int metadummy_finalize()
 
 
 
-void metadummy_test() 
+static void metadummy_test() 
 {
 	int ret = -1;
 

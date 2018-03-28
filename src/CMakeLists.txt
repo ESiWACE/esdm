@@ -146,8 +146,12 @@ target_link_libraries(esdmutils ${GLIB_LDFLAGS} ${JANSSON_LDFLAGS})
 
 
 # ESDM Middleware Library
-add_library(esdm SHARED esdm.c esdm-scheduler.c  esdm-modules.c)
-target_link_libraries(esdm ${GLIB_LDFLAGS} ${JANSSON_LDFLAGS} esdmutils esdmposix esdmmetadummy )
+add_library(esdm SHARED esdm.c  esdm-scheduler.c  esdm-modules.c)
+target_link_libraries(esdm ${GLIB_LDFLAGS} ${JANSSON_LDFLAGS} esdmutils esdmposix esdmmetadummy)
+if(BACKEND_MONGODB)
+	target_link_libraries(esdm esdmmongodb)
+endif()
+
 #target_compile_definitions(esdm PRIVATE MYDEF=${MYVAR})       # TODO: replace backend/feature enablers with this mechanism
 #target_include_directories(esdm PUBLIC include PRIVATE src)   # TODO: decide on main-project/sub-project structure and switch away from include_directories directive where possible
 install(TARGETS esdm LIBRARY DESTINATION lib)

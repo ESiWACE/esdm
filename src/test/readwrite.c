@@ -119,6 +119,7 @@ int main(int argc, char const* argv[])
 	}
 	//assert(mismatches == 0);
 
+
 	// clean up
 	free(buf_w);
 	free(buf_r);

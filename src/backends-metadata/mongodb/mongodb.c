@@ -22,6 +22,7 @@
 
 #define _GNU_SOURCE         /* See feature_test_macros(7) */
 
+
 #include <fcntl.h>
 #include <stdarg.h>
 #include <stdio.h>
@@ -32,10 +33,44 @@
 #include <unistd.h>
 #include <assert.h>
 
+#include <jansson.h>
+#include <mongoc.h>
+#include <bson.h>
 
 #include <esdm.h>
+#include "mongodb.h"
 
-#include "posix.h"
+
+
+
+// Internal functions used by this backend.
+typedef struct {
+	const char* type;
+	const char* name;
+	const char* target;
+
+	mongoc_client_t *client;
+    mongoc_database_t *database;
+    mongoc_collection_t *collection;
+
+} mongodb_backend_options_t;
+
+
+
+
+// Internal functions used by this backend.
+typedef struct {
+	mongodb_backend_options_t* options;
+	int other;
+
+	mongoc_client_t *client;
+    mongoc_database_t *database;
+    mongoc_collection_t *collection;
+} mongodb_backend_data_t;
+
+
+
+
 
 
 static void log(const char* format, ...)
@@ -45,7 +80,12 @@ static void log(const char* format, ...)
 	vprintf(format,args);
 	va_end(args);
 }
-#define DEBUG(msg) log("[POSIX] %-30s %s:%d\n", msg, __FILE__, __LINE__)
+#define DEBUG(msg) log("[METADUMMY] %-30s %s:%d\n", msg, __FILE__, __LINE__)
+
+
+// forward declarations
+static void mongodb_test();
+
 
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -54,39 +94,29 @@ static void log(const char* format, ...)
 
 static int mkfs(esdm_backend_t* backend) 
 {
+	DEBUG("mongodb setup");
 
-	posix_backend_data_t* data = (posix_backend_data_t*)backend->data;
-	posix_backend_options_t* options = data->options;
+	struct stat sb;
 
-	printf("mkfs: backend->(void*)data->options->target = %s\n", options->target);
-	printf("\n");
-
-
+	// use target directory from backend configuration
+	mongodb_backend_options_t *options = (mongodb_backend_options_t*) backend->data;
 	const char* tgt = options->target;
+	//const char* tgt = "./_mongodb";
 
-	struct stat st = {0};
 
-	if (stat(tgt, &st) == -1)
+	if (stat(tgt, &sb) == -1)
 	{
 		char* root; 
-		char* cont;
-		char* sdat;
-		char* sfra;
+		char* containers; 
 		
 		asprintf(&root, "%s", tgt);
-		asprintf(&cont, "%s/containers", tgt);
-		asprintf(&sdat, "%s/shared-datasets", tgt);
-		asprintf(&sfra, "%s/shared-fragments", tgt);
-		
 		mkdir(root, 0700);
-		mkdir(cont, 0700);
-		mkdir(sdat, 0700);
-		mkdir(sfra, 0700);
 	
+		asprintf(&containers, "%s/containers", tgt);
+		mkdir(containers, 0700);
+
 		free(root);
-		free(cont);
-		free(sdat);
-		free(sfra);
+		free(containers);
 	}
 }
 
@@ -99,18 +129,15 @@ static int mkfs(esdm_backend_t* backend)
 static int fsck()
 {
 
+
 	return 0;
 }
 
 
 
 
-
-
-
-
 ///////////////////////////////////////////////////////////////////////////////
-// Internal Helpers ///////////////////////////////////////////////////////////
+// Internal Helpers  //////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////
 
 static int entry_create(const char *path)
@@ -145,10 +172,11 @@ static int entry_create(const char *path)
 }
 
 
-static int entry_retrieve(const char *path, void **buf, size_t **count)
+static int entry_retrieve(const char *path)
 {
 	int status;
 	struct stat sb;
+	char *buf;
 
 	printf("entry_retrieve(%s)\n", path);
 
@@ -165,36 +193,19 @@ static int entry_retrieve(const char *path, void **buf, size_t **count)
 	// write to non existing file
 	int fd = open(path,	O_RDONLY | S_IWUSR | S_IRUSR | S_IWGRP | S_IRGRP | S_IROTH);
 
-
-	*count = malloc(sizeof(size_t));
-	*buf;
-
 	// everything ok? write and close
 	if ( fd != -1 )
 	{
 		// write some metadata
-		*buf = (void*) malloc(sb.st_size + 1);
+		buf = (char*) malloc(sb.st_size + 1);
+		buf[sb.st_size] = 0;
 
-		char* cbuf = (char*) buf;
-		cbuf[sb.st_size] = 0;
-
-		read(fd, *buf, sb.st_size);
+		read(fd, buf, sb.st_size);
 		close(fd);
 	}
 
 
-
-
-	printf("Entry content: %s\n", (char *) *buf);
-
-	/*
-	uint64_t *buf64 = (uint64_t*) buf;
-	for (int i = 0; i < sb.st_size/sizeof(uint64_t); i++)
-	{
-		printf("idx %d: %d\n", i, buf64[i]);
-	}
-	*/
-
+	printf("Entry content: %s\n", (char*)buf);
 
 	return 0;
 }
@@ -257,6 +268,13 @@ static int entry_destroy(const char *path)
 
 
 
+
+
+
+
+
+
+
 ///////////////////////////////////////////////////////////////////////////////
 // Container Helpers //////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////
@@ -267,11 +285,30 @@ static int container_create(esdm_backend_t* backend, esdm_container_t *container
 	char *path_container;
 	struct stat sb;
 
-	posix_backend_options_t *options = (posix_backend_options_t*) backend->data;
+	mongodb_backend_options_t *options = (mongodb_backend_options_t*) backend->data;
 	const char* tgt = options->target;
+
+	printf("tgt: %p\n", tgt);
 
 	asprintf(&path_metadata, "%s/containers/%s.md", tgt, container->name);
 	asprintf(&path_container, "%s/containers/%s", tgt, container->name);
+
+
+	bson_error_t error;	
+	bson_oid_t oid;
+	bson_t *doc = bson_new ();
+
+    bson_oid_init (&oid, NULL);
+    BSON_APPEND_OID (doc, "_id", &oid);
+    BSON_APPEND_UTF8 (doc, "container", container->name);
+
+    if (!mongoc_collection_insert (options->collection, MONGOC_INSERT_NONE, doc, NULL, &error)) {
+        printf ("%s\n", error.message);
+    }
+
+    bson_destroy (doc);
+
+
 
 	// create metadata entry
 	entry_create(path_metadata);
@@ -293,19 +330,15 @@ static int container_retrieve(esdm_backend_t* backend, esdm_container_t *contain
 	char *path_container;
 	struct stat sb;
 
-	posix_backend_options_t *options = (posix_backend_options_t*) backend->data;
+	mongodb_backend_options_t *options = (mongodb_backend_options_t*) backend->data;
 	const char* tgt = options->target;
 
 
 	asprintf(&path_metadata, "%s/containers/%s.md", tgt, container->name);
 	asprintf(&path_container, "%s/containers/%s", tgt, container->name);
 
-
-	size_t *count = NULL;
-	void *buf = NULL;
-
 	// create metadata entry
-	entry_retrieve(path_metadata, &buf, &count);
+	entry_retrieve(path_metadata);
 
 
 	free(path_metadata);
@@ -319,7 +352,7 @@ static int container_update(esdm_backend_t* backend, esdm_container_t *container
 	char *path_container;
 	struct stat sb;
 
-	posix_backend_options_t *options = (posix_backend_options_t*) backend->data;
+	mongodb_backend_options_t *options = (mongodb_backend_options_t*) backend->data;
 	const char* tgt = options->target;
 
 	asprintf(&path_metadata, "%s/containers/%s.md", tgt, container->name);
@@ -340,7 +373,7 @@ static int container_destroy(esdm_backend_t* backend, esdm_container_t *containe
 	char *path_container;
 	struct stat sb;
 
-	posix_backend_options_t *options = (posix_backend_options_t*) backend->data;
+	mongodb_backend_options_t *options = (mongodb_backend_options_t*) backend->data;
 	const char* tgt = options->target;
 
 	asprintf(&path_metadata, "%s/containers/%s.md", tgt, container->name);
@@ -370,11 +403,34 @@ static int dataset_create(esdm_backend_t* backend, esdm_dataset_t *dataset)
 	struct stat sb;
 
 
-	posix_backend_options_t *options = (posix_backend_options_t*) backend->data;
+	mongodb_backend_options_t *options = (mongodb_backend_options_t*) backend->data;
 	const char* tgt = options->target;
+
+	printf("tgt: %p\n", tgt);
 
 	asprintf(&path_metadata, "%s/containers/%s/%s.md", tgt, dataset->container->name, dataset->name);
 	asprintf(&path_dataset, "%s/containers/%s/%s", tgt, dataset->container->name, dataset->name);
+
+
+
+	bson_error_t error;	
+	bson_oid_t oid;
+	bson_t *doc = bson_new ();
+
+    bson_oid_init (&oid, NULL);
+    BSON_APPEND_OID (doc, "_id", &oid);
+    BSON_APPEND_UTF8 (doc, "dataset", dataset->name);
+
+    if (!mongoc_collection_insert (options->collection, MONGOC_INSERT_NONE, doc, NULL, &error)) {
+        printf ("%s\n", error.message);
+    }
+
+    bson_destroy (doc);
+
+
+
+
+
 
 	// create metadata entry
 	entry_create(path_metadata);
@@ -406,48 +462,9 @@ static int dataset_destroy(esdm_backend_t* backend, esdm_dataset_t *dataset)
 
 
 
-
-
-static int fragment_retrieve(esdm_backend_t* backend, esdm_fragment_t *fragment)
-{
-	char *path;
-	char *path_fragment;
-	struct stat sb;
-
-	posix_backend_data_t* data = (posix_backend_data_t*)backend->data;
-	posix_backend_options_t* options = data->options;
-	const char* tgt = options->target;
-
-
-	asprintf(&path, "%s/containers/%s/%s/", tgt, fragment->dataset->container->name, fragment->dataset->name);
-	asprintf(&path_fragment, "%s/containers/%s/%s/%p", tgt, fragment->dataset->container->name, fragment->dataset->name, fragment);
-
-	printf("path: %s\n", path);
-	printf("path_fragment: %s\n", path_fragment);
-
-	// create metadata entry
-	mkdir_recursive(path);
-	entry_create(path_fragment);
-
-	/*
-	char *buf = NULL;
-	size_t len = 6;
-	entry_update(path_fragment, &buf, len);
-	*/
-	
-	//entry_update()
-
-
-	void *buf;
-	size_t *count;
-
-
-	entry_retrieve(path_fragment, &buf, &count);
-
-
-	free(path);
-	free(path_fragment);
-}
+///////////////////////////////////////////////////////////////////////////////
+// Fragment Helpers ///////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////////
 
 static int fragment_update(esdm_backend_t* backend, esdm_fragment_t *fragment)
 {
@@ -455,11 +472,11 @@ static int fragment_update(esdm_backend_t* backend, esdm_fragment_t *fragment)
 	char *path_fragment;
 	struct stat sb;
 
-	posix_backend_data_t* data = (posix_backend_data_t*)backend->data;
-	posix_backend_options_t* options = data->options;
+	mongodb_backend_options_t *options = (mongodb_backend_options_t*) backend->data;
 	const char* tgt = options->target;
 
-
+	printf("tgt: %p\n", tgt);
+		
 	asprintf(&path, "%s/containers/%s/%s/", tgt, fragment->dataset->container->name, fragment->dataset->name);
 	asprintf(&path_fragment, "%s/containers/%s/%s/%p", tgt, fragment->dataset->container->name, fragment->dataset->name, fragment);
 
@@ -467,33 +484,24 @@ static int fragment_update(esdm_backend_t* backend, esdm_fragment_t *fragment)
 	printf("path_fragment: %s\n", path_fragment);
 
 	// create metadata entry
-	mkdir_recursive(path);
-	entry_create(path_fragment);
+	//mkdir_recursive(path);
+	//entry_create(path_fragment);
 
-	/*
-	char *buf = NULL;
-	size_t len = 6;
-	entry_update(path_fragment, &buf, len);
-	*/
-	
-	entry_update(path_fragment, fragment->data, fragment->bytes);
+
+//	entry_update(path_fragment, "abc", 3);
 
 	//entry_update()
 
+	/*
 	size_t *count = NULL;
 	void *buf = NULL;
-
 	entry_retrieve(path_fragment, &buf, &count);
+	*/
 
 
 	free(path);
 	free(path_fragment);
 }
-
-
-
-
-
 
 
 
@@ -502,32 +510,23 @@ static int fragment_update(esdm_backend_t* backend, esdm_fragment_t *fragment)
 // ESDM Callbacks /////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////
 
-static int posix_backend_performance_estimate(esdm_backend_t* backend) 
+static int mongodb_backend_performance_estimate(esdm_backend_t* backend) 
 {
-	DEBUG("Calculating performance estimate");
-
-	posix_backend_data_t* data = (posix_backend_data_t*)backend->data;
-	posix_backend_options_t* options = data->options;
-
-	printf("perf_estimate: backend->(void*)data->options->target = %s\n", options->target);
-	printf("\n");
+	DEBUG("Calculating performance estimate.");
 
 	return 0;
 }
 
 
-static int posix_create(esdm_backend_t* backend, char * name) 
+static int mongodb_create(esdm_backend_t* backend, char* name) 
 {
 	DEBUG("Create");
 
+	// TODO; Sanitize name, and reject forbidden names
 
-	// check if container already exists
 
-	struct stat st = {0};
-	if (stat("_esdm-fs", &st) == -1)
-	{
-		mkdir("_esdm-fs/containers", 0700);
-	}
+	//container_create(backend, name);
+
 
 
     //#include <unistd.h>
@@ -545,25 +544,25 @@ static int posix_create(esdm_backend_t* backend, char * name)
  *	owner?	
  *
  */
-static int posix_open(esdm_backend_t* backend) 
+static int mongodb_open(esdm_backend_t* backend) 
 {
 	DEBUG("Open");
-return 0;
+	return 0;
 }
 
-static int posix_write(esdm_backend_t* backend) 
+static int mongodb_write(esdm_backend_t* backend) 
 {
 	DEBUG("Write");
 	return 0;
 }
 
-static int posix_read(esdm_backend_t* backend) 
+static int mongodb_read(esdm_backend_t* backend) 
 {
 	DEBUG("Read");
 	return 0;
 }
 
-static int posix_close(esdm_backend_t* backend) 
+static int mongodb_close(esdm_backend_t* backend) 
 {
 	DEBUG("Close");
 	return 0;
@@ -571,21 +570,21 @@ static int posix_close(esdm_backend_t* backend)
 
 
 
-static int posix_allocate(esdm_backend_t* backend) 
+static int mongodb_allocate(esdm_backend_t* backend) 
 {
 	DEBUG("Allocate");
 	return 0;
 }
 
 
-static int posix_update(esdm_backend_t* backend) 
+static int mongodb_update(esdm_backend_t* backend) 
 {
 	DEBUG("Update");
 	return 0;
 }
 
 
-static int posix_lookup(esdm_backend_t* backend) 
+static int mongodb_lookup(esdm_backend_t* backend) 
 {
 	DEBUG("Lookup");
 	return 0;
@@ -599,40 +598,42 @@ static int posix_lookup(esdm_backend_t* backend)
 
 static esdm_backend_t backend_template = {
 ///////////////////////////////////////////////////////////////////////////////
-// WARNING: This serves as a template for the posix plugin and is memcpied!  //
+// WARNING: This serves as a template for the mongodb plugin and is memcpied!  //
 ///////////////////////////////////////////////////////////////////////////////
-	.name = "POSIX",
-	.type = ESDM_TYPE_DATA,
+	.name = "mongodb",
+	.type = ESDM_TYPE_METADATA,
 	.version = "0.0.1",
 	.data = NULL,
 	.callbacks = {
+		// General for ESDM
 		NULL, // finalize
-		posix_backend_performance_estimate, // performance_estimate
+		mongodb_backend_performance_estimate, // performance_estimate
 
-		posix_create, // create
-		posix_open, // open
-		posix_write, // write
-		posix_read, // read
-		posix_close, // close
+		// Data Callbacks (POSIX like)
+		mongodb_create, // create
+		mongodb_open, // open
+		mongodb_write, // write
+		mongodb_read, // read
+		mongodb_close, // close
 
 		// Metadata Callbacks
 		NULL, // lookup
 
 		// ESDM Data Model Specific
-		NULL, // container create
-		NULL, // container retrieve
-		NULL, // container update
-		NULL, // container delete
+		container_create, // container create
+		container_retrieve, // container retrieve
+		container_update, // container update
+		container_destroy, // container destroy
 
-		NULL, // dataset create
-		NULL, // dataset retrieve
-		NULL, // dataset update
-		NULL, // dataset delete
+		dataset_create, // dataset create
+		dataset_retrieve, // dataset retrieve
+		dataset_update, // dataset update
+		dataset_destroy, // dataset destroy
 
 		NULL, // fragment create
-		fragment_retrieve, // fragment retrieve
+		NULL, // fragment retrieve
 		fragment_update, // fragment update
-		NULL, // fragment delete
+		NULL, // fragment destroy
 	},
 };
 
@@ -649,34 +650,50 @@ static esdm_backend_t backend_template = {
 *
 * @return pointer to backend struct
 */
-esdm_backend_t* posix_backend_init(void* init_data) {
+esdm_backend_t* mongodb_backend_init(void* init_data) {
 	
-	DEBUG("Initializing POSIX backend");
+	DEBUG("Initializing mongodb backend.");
 
 	esdm_backend_t* backend = (esdm_backend_t*) malloc(sizeof(esdm_backend_t));
 	memcpy(backend, &backend_template, sizeof(esdm_backend_t));
 
-	backend->data = (void*) malloc(sizeof(posix_backend_data_t));
-	posix_backend_data_t* data = (posix_backend_data_t*) backend->data;
-	posix_backend_options_t* options = (posix_backend_options_t*) init_data;
-	data->options = options;
+	mongodb_backend_options_t* data = (mongodb_backend_options_t*) malloc(sizeof(mongodb_backend_options_t));
+
+	char *tgt;
+	asprintf(&tgt, "./_mongodb");
+	data->target = tgt;
 
 
-	printf("[POSIX] Backend config: type=%s, name=%s, target=%s\n", options->type, options->name, options->target);
 
 
-	// valid refs for backend, data, options available now
+
+	//backend->data = init_data;
+	backend->data = data;
 
 
-	data->other = 47;
-
-
-	// todo check posix style persitency structure available?
+	// todo check mongodb style persitency structure available?
 	mkfs(backend);	
 
 
 
+	mongoc_client_t *client;
+	mongoc_collection_t *collection;
+	mongoc_database_t *database;
 
+	//Required to initialize libmongoc's internals
+	mongoc_init ();
+
+	// connect to database and select collection
+	client = mongoc_client_new ("mongodb://localhost:27017");
+	collection = mongoc_client_get_collection (client, "esdm", "esdm");
+
+
+	data->client = client;
+	data->collection = collection;
+
+
+	//mongodb_test();
+	//mongoconnect(0, NULL);
 
 
 	return backend;
@@ -687,11 +704,66 @@ esdm_backend_t* posix_backend_init(void* init_data) {
 * Initializes the POSIX plugin. In particular this involves:
 *
 */
-int posix_finalize(esdm_backend_t* backend)
+int mongodb_finalize()
 {
-	DEBUG("POSIX finalize");
+
+    //mongoc_collection_destroy (collection);
+    //mongoc_client_destroy (client);
 
 	return 0;
 }
 
 
+
+
+
+
+
+
+static void mongodb_test() 
+{
+	int ret = -1;
+
+
+	char* abc;
+	char* def;
+
+	const char* tgt = "./_mongodb";
+	asprintf(&abc, "%s/%s", tgt, "abc");
+	asprintf(&def, "%s/%s", tgt, "def");
+
+
+	// create entry and test
+	ret = entry_create(abc);
+	assert(ret == 0);
+
+	ret = entry_retrieve(abc);
+	assert(ret == 0);
+
+
+	// double create
+	ret = entry_create(def);
+	assert(ret == 0);
+
+	ret = entry_create(def);
+	assert(ret == -1);
+
+
+	// perform update and test
+	ret = entry_update(abc, "huhuhuhuh", 5);
+	ret = entry_retrieve(abc);
+
+	// delete entry and expect retrieve to fail
+	ret = entry_destroy(abc);
+	ret = entry_retrieve(abc);
+	assert(ret == -1);
+
+
+	// clean up
+	ret = entry_destroy(def);
+	assert(ret == 0);
+
+	ret = entry_destroy(def);
+	assert(ret == -1);
+	
+}
