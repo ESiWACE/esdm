@@ -1,5 +1,4 @@
-![Earth System Data Middleware](/doc/assets/architecture/flowRoot5116-4-1.png =500px "Earth System Data Middleware")
-
+# Earth System Data Middleware
 <!-- {#mainpage} -->
 
 
