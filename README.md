@@ -1,7 +1,6 @@
 # Earth System Data Middleware
 <!-- {#mainpage} -->
 
-
 The middleware for earth system data is a prototype to improve I/O performance
 for earth system simulation as used in climate and weather applications.
 ESDM exploits structural information exposed by workflows, applications as well
