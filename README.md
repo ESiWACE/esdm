@@ -1,4 +1,5 @@
-# Earth System Data Middleware [![Build Status](https://travis-ci.org/ESiWACE/esdm.svg?branch=master)](https://travis-ci.org/ESiWACE/esdm)
+![Earth System Data Middleware](/doc/assets/architecture/flowRoot5116-4-1.png =500px "Earth System Data Middleware")
+
 <!-- {#mainpage} -->
 
 
@@ -7,6 +8,8 @@ for earth system simulation as used in climate and weather applications.
 ESDM exploits structural information exposed by workflows, applications as well
 as data description formats such as HDF5 and NetCDF to 
 more efficiently organize metadata and data across a variety of storage backends.
+
+[![Build Status](https://travis-ci.org/ESiWACE/esdm.svg?branch=master)](https://travis-ci.org/ESiWACE/esdm)
 
 ## Requirements
 
