@@ -67,7 +67,7 @@ esdm_modules_t* esdm_modules_init(esdm_instance_t* esdm)
 
 	// Setup module registry
 	esdm_modules_t* modules = NULL;
-	esdm_backend_t* backend = NULL;
+	esdm_backend_t* backend = NULL; 
 
 	modules = (esdm_modules_t*) malloc(sizeof(esdm_modules_t));
 

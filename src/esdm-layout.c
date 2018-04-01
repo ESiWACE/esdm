@@ -22,16 +22,7 @@
  * This file contains the layout implementation.
  *
  *
- *
- *
  * TODO:
- *
- *
- *	JSON: helper
- *		required fields, and mapper to struct
- *		carry along json?
- *
- *
  *
  *	mapper:
  *		1d in => (reorder?) (single/multiple) sequence
@@ -96,7 +87,8 @@ esdm_layout_t* esdm_layout_init(esdm_instance_t* esdm) {
 *
 * @return status
 */
-esdm_status_t esdm_layout_finalize() {
+esdm_status_t esdm_layout_finalize()
+{
 	ESDM_DEBUG(__func__);	
 	return ESDM_SUCCESS;
 }
@@ -111,7 +103,7 @@ esdm_status_t esdm_layout_finalize() {
  */
 esdm_status_t esdm_layout_recommendation(esdm_instance_t *esdm, esdm_fragment_t *in, esdm_fragment_t *out)
 {
-	ESDM_DEBUG("Fetch performance estimates from backends.");
+	ESDM_DEBUG(__func__);	
 
 	// pickup the performance estimate for each backend module
 	esdm_module_type_array_t * backends;
@@ -126,8 +118,41 @@ esdm_status_t esdm_layout_recommendation(esdm_instance_t *esdm, esdm_fragment_t 
 
 
 
+/**
+ * The layout reconstructor finds a reconstruction for subspace of a dataset.
+ *
+ * The reconstruction should take performance considerations into account. 
+ */
+esdm_fragment_t* esdm_layout_reconstruction(esdm_dataset_t *dataset, esdm_dataspace_t *subspace)
+{
+	ESDM_DEBUG(__func__);	
 
-esdm_status_t esdm_layout_stat(char* desc) {
+
+	// TODO: consider decision components to choose fragments (also choose from replicas)
+
+	// for fragment in fragments 
+	//		if   subspaces_overlap(subspace, fragment)
+	//			consider for reconstruction
+	
+	
+	// subspaces_overlap?
+	//	overlap = true
+	//	while currentdim < totaldims
+	//		if 
+
+
+	
+
+
+	return ESDM_SUCCESS;
+}
+
+
+
+
+
+esdm_status_t esdm_layout_stat(char* desc)
+{
 	ESDM_DEBUG(__func__);	
 	ESDM_DEBUG("received metadata lookup request");
 

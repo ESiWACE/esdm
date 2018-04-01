@@ -229,7 +229,9 @@ esdm_status_t esdm_read(esdm_dataset_t *dataset, void *buf, esdm_dataspace_t* su
 	//esdm_dataset_t *dataset = (esdm_dataset_t*) g_hash_table_lookup (container->datasets, "bytestream");
 	//printf("Dataset 'bytestream' lookup: %p\n", dataset);
 
-	// TODO: reconstruct expected result using esdm_layout
+
+	esdm_fragment_t *fragment = esdm_layout_reconstruction(dataset, subspace);
+
 
 	//esdm_scheduler_enqueue(fragment);
 	

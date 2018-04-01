@@ -296,14 +296,14 @@ static int container_create(esdm_backend_t* backend, esdm_container_t *container
 
 	bson_error_t error;	
 	bson_oid_t oid;
-	bson_t *doc = bson_new ();
+	bson_t *doc = bson_new();
 
-    bson_oid_init (&oid, NULL);
-    BSON_APPEND_OID (doc, "_id", &oid);
-    BSON_APPEND_UTF8 (doc, "container", container->name);
+    bson_oid_init(&oid, NULL);
+    BSON_APPEND_OID(doc, "_id", &oid);
+    BSON_APPEND_UTF8(doc, "container", container->name);
 
     if (!mongoc_collection_insert (options->collection, MONGOC_INSERT_NONE, doc, NULL, &error)) {
-        printf ("%s\n", error.message);
+        printf("%s\n", error.message);
     }
 
     bson_destroy (doc);
@@ -685,6 +685,9 @@ esdm_backend_t* mongodb_backend_init(void* init_data) {
 
 	// connect to database and select collection
 	client = mongoc_client_new ("mongodb://localhost:27017");
+
+	// TODO: How should this plugin act in a multiprocessor environemnt? Do not make multiple connections per node
+	mongoc_client_set_appname (client, "ESDM Backend");
 	collection = mongoc_client_get_collection (client, "esdm", "esdm");
 
 

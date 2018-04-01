@@ -136,19 +136,21 @@ struct esdm_dataspace_t {
 struct esdm_fragment_t {
 	esdm_metadata_t *metadata;
 	esdm_dataset_t *dataset;
-	esdm_dataspace_t *subspace;
+	esdm_dataspace_t *dataspace;
 	void *data;
 	size_t size;
 	size_t bytes;
 	esdm_status_t status;
 };
 
-
-
-
-typedef struct {
+typedef struct esdm_fragment_index_t {
 	char *json;
 	GHashTable *fragments;
+	/*
+	int (callback_insert)();
+	int (callback_remove)();
+	int (callback_lookup)();
+	*/
 } esdm_fragment_index_t;
 
 
@@ -274,7 +276,7 @@ struct esdm_io_t {
 
 
 // Performance Model
-typedef struct {
+typedef struct esdm_performance_estimate_t {
 	int latency;
 	int throughout;
 	int max_bytes;
@@ -286,35 +288,35 @@ typedef struct {
 
 // Entry points and state for core components /////////////////////////////////
 
-typedef struct {
+typedef struct esdm_config_t {
 	void *json;
 } esdm_config_t;
 
-typedef struct {
+typedef struct esdm_modules_t {
 	GHashTable *backends;
 	esdm_backend_t *metadata;
 	//esdm_modules_t** modules;
 } esdm_modules_t;
 
-typedef struct {
+typedef struct esdm_layout_t {
 	int info;
 	GHashTable *containers;
 } esdm_layout_t;
 
-typedef struct {
+typedef struct esdm_scheduler_t {
 	int info;
 	GThreadPool *thread_pool;
 	GAsyncQueue *read_queue;
 	GAsyncQueue *write_queue;
 } esdm_scheduler_t;
 
-typedef struct {
+typedef struct esdm_performance_t {
 	int info;
 	GHashTable *cache;
 } esdm_performance_t;
 
 
-typedef struct {
+typedef struct esdm_instance_t {
 	int is_initialized;
 	esdm_config_t *config;
 	esdm_modules_t *modules;

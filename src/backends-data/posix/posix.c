@@ -202,6 +202,8 @@ static int entry_retrieve(const char *path, void **buf, size_t **count)
 
 static int entry_update(const char *path, void *buf, size_t len)
 {
+	DEBUG(__func__);	
+
 	int status;
 	struct stat sb;
 
@@ -232,6 +234,8 @@ static int entry_update(const char *path, void *buf, size_t len)
 
 static int entry_destroy(const char *path) 
 {
+	DEBUG(__func__);	
+
 	int status;
 	struct stat sb;
 
@@ -258,158 +262,13 @@ static int entry_destroy(const char *path)
 
 
 ///////////////////////////////////////////////////////////////////////////////
-// Container Helpers //////////////////////////////////////////////////////////
+// Fragment Handlers //////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////
-
-static int container_create(esdm_backend_t* backend, esdm_container_t *container)
-{
-	char *path_metadata;
-	char *path_container;
-	struct stat sb;
-
-	posix_backend_options_t *options = (posix_backend_options_t*) backend->data;
-	const char* tgt = options->target;
-
-	asprintf(&path_metadata, "%s/containers/%s.md", tgt, container->name);
-	asprintf(&path_container, "%s/containers/%s", tgt, container->name);
-
-	// create metadata entry
-	entry_create(path_metadata);
-
-	// create directory for datsets
-	if (stat(path_container, &sb) == -1)
-	{
-		mkdir(path_container, 0700);
-	}
-
-	free(path_metadata);
-	free(path_container);
-}
-
-
-static int container_retrieve(esdm_backend_t* backend, esdm_container_t *container)
-{
-	char *path_metadata;
-	char *path_container;
-	struct stat sb;
-
-	posix_backend_options_t *options = (posix_backend_options_t*) backend->data;
-	const char* tgt = options->target;
-
-
-	asprintf(&path_metadata, "%s/containers/%s.md", tgt, container->name);
-	asprintf(&path_container, "%s/containers/%s", tgt, container->name);
-
-
-	size_t *count = NULL;
-	void *buf = NULL;
-
-	// create metadata entry
-	entry_retrieve(path_metadata, &buf, &count);
-
-
-	free(path_metadata);
-	free(path_container);
-}
-
-
-static int container_update(esdm_backend_t* backend, esdm_container_t *container)
-{
-	char *path_metadata;
-	char *path_container;
-	struct stat sb;
-
-	posix_backend_options_t *options = (posix_backend_options_t*) backend->data;
-	const char* tgt = options->target;
-
-	asprintf(&path_metadata, "%s/containers/%s.md", tgt, container->name);
-	asprintf(&path_container, "%s/containers/%s", tgt, container->name);
-
-	// create metadata entry
-	entry_update(path_metadata, "abc", 3);
-
-
-	free(path_metadata);
-	free(path_container);
-}
-
-
-static int container_destroy(esdm_backend_t* backend, esdm_container_t *container) 
-{
-	char *path_metadata;
-	char *path_container;
-	struct stat sb;
-
-	posix_backend_options_t *options = (posix_backend_options_t*) backend->data;
-	const char* tgt = options->target;
-
-	asprintf(&path_metadata, "%s/containers/%s.md", tgt, container->name);
-	asprintf(&path_container, "%s/containers/%s", tgt, container->name);
-
-	// create metadata entry
-	entry_destroy(path_metadata);
-
-
-	// TODO: also remove existing datasets?
-
-
-	free(path_metadata);
-	free(path_container);
-}
-
-
-
-///////////////////////////////////////////////////////////////////////////////
-// Dataset Helpers ////////////////////////////////////////////////////////////
-///////////////////////////////////////////////////////////////////////////////
-
-static int dataset_create(esdm_backend_t* backend, esdm_dataset_t *dataset)
-{
-	char *path_metadata;
-	char *path_dataset;
-	struct stat sb;
-
-
-	posix_backend_options_t *options = (posix_backend_options_t*) backend->data;
-	const char* tgt = options->target;
-
-	asprintf(&path_metadata, "%s/containers/%s/%s.md", tgt, dataset->container->name, dataset->name);
-	asprintf(&path_dataset, "%s/containers/%s/%s", tgt, dataset->container->name, dataset->name);
-
-	// create metadata entry
-	entry_create(path_metadata);
-
-	// create directory for datsets
-	if (stat(path_dataset, &sb) == -1)
-	{
-		mkdir(path_dataset, 0700);
-	}
-
-	free(path_metadata);
-	free(path_dataset);
-}
-
-
-static int dataset_retrieve(esdm_backend_t* backend, esdm_dataset_t *dataset)
-{
-}
-
-
-static int dataset_update(esdm_backend_t* backend, esdm_dataset_t *dataset)
-{
-}
-
-
-static int dataset_destroy(esdm_backend_t* backend, esdm_dataset_t *dataset) 
-{
-}
-
-
-
-
 
 static int fragment_retrieve(esdm_backend_t* backend, esdm_fragment_t *fragment)
 {
+	DEBUG(__func__);	
+
 	char *path;
 	char *path_fragment;
 	struct stat sb;
@@ -451,17 +310,23 @@ static int fragment_retrieve(esdm_backend_t* backend, esdm_fragment_t *fragment)
 
 static int fragment_update(esdm_backend_t* backend, esdm_fragment_t *fragment)
 {
-	char *path;
-	char *path_fragment;
-	struct stat sb;
+	DEBUG(__func__);	
 
+	// set data, options and tgt for convienience
 	posix_backend_data_t* data = (posix_backend_data_t*)backend->data;
 	posix_backend_options_t* options = data->options;
 	const char* tgt = options->target;
 
+	// serialization of subspace for fragment
+	char *fragment_name = esdm_dataspace_string_descriptor(fragment->dataspace);
 
+	// determine path
+	char *path;
 	asprintf(&path, "%s/containers/%s/%s/", tgt, fragment->dataset->container->name, fragment->dataset->name);
-	asprintf(&path_fragment, "%s/containers/%s/%s/%p", tgt, fragment->dataset->container->name, fragment->dataset->name, fragment);
+
+	// determine path to fragment
+	char *path_fragment;
+	asprintf(&path_fragment, "%s/containers/%s/%s/%p", tgt, fragment->dataset->container->name, fragment->dataset->name, fragment_name);
 
 	printf("path: %s\n", path);
 	printf("path_fragment: %s\n", path_fragment);
@@ -515,79 +380,16 @@ static int posix_backend_performance_estimate(esdm_backend_t* backend)
 	return 0;
 }
 
-
-static int posix_create(esdm_backend_t* backend, char * name) 
-{
-	DEBUG("Create");
-
-
-	// check if container already exists
-
-	struct stat st = {0};
-	if (stat("_esdm-fs", &st) == -1)
-	{
-		mkdir("_esdm-fs/containers", 0700);
-	}
-
-
-    //#include <unistd.h>
-    //ssize_t pread(int fd, void *buf, size_t count, off_t offset);
-    //ssize_t pwrite(int fd, const void *buf, size_t count, off_t offset);
-
-	return 0;
-}
-
-
 /**
- *	
- *	handle
- *	mode
- *	owner?	
- *
- */
-static int posix_open(esdm_backend_t* backend) 
+* Finalize callback implementation called on ESDM shutdown.
+*
+* This is the last chance for a backend to make outstanding changes persistent.
+* This routine is also expected to clean up memory that is used by the backend.
+*/
+int posix_finalize(esdm_backend_t* backend)
 {
-	DEBUG("Open");
-return 0;
-}
+	DEBUG("POSIX finalize");
 
-static int posix_write(esdm_backend_t* backend) 
-{
-	DEBUG("Write");
-	return 0;
-}
-
-static int posix_read(esdm_backend_t* backend) 
-{
-	DEBUG("Read");
-	return 0;
-}
-
-static int posix_close(esdm_backend_t* backend) 
-{
-	DEBUG("Close");
-	return 0;
-}
-
-
-
-static int posix_allocate(esdm_backend_t* backend) 
-{
-	DEBUG("Allocate");
-	return 0;
-}
-
-
-static int posix_update(esdm_backend_t* backend) 
-{
-	DEBUG("Update");
-	return 0;
-}
-
-
-static int posix_lookup(esdm_backend_t* backend) 
-{
-	DEBUG("Lookup");
 	return 0;
 }
 
@@ -599,7 +401,7 @@ static int posix_lookup(esdm_backend_t* backend)
 
 static esdm_backend_t backend_template = {
 ///////////////////////////////////////////////////////////////////////////////
-// WARNING: This serves as a template for the posix plugin and is memcpied!  //
+// NOTE: This serves as a template for the posix plugin and is memcopied!    //
 ///////////////////////////////////////////////////////////////////////////////
 	.name = "POSIX",
 	.type = ESDM_TYPE_DATA,
@@ -609,11 +411,11 @@ static esdm_backend_t backend_template = {
 		NULL, // finalize
 		posix_backend_performance_estimate, // performance_estimate
 
-		posix_create, // create
-		posix_open, // open
-		posix_write, // write
-		posix_read, // read
-		posix_close, // close
+		NULL, // create
+		NULL, // open
+		NULL, // write
+		NULL, // read
+		NULL, // close
 
 		// Metadata Callbacks
 		NULL, // lookup
@@ -681,17 +483,6 @@ esdm_backend_t* posix_backend_init(void* init_data) {
 
 	return backend;
 
-}
-
-/**
-* Initializes the POSIX plugin. In particular this involves:
-*
-*/
-int posix_finalize(esdm_backend_t* backend)
-{
-	DEBUG("POSIX finalize");
-
-	return 0;
 }
 
 

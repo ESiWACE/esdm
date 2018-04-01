@@ -60,7 +60,7 @@ static void metadummy_test();
 
 static int mkfs(esdm_backend_t* backend) 
 {
-	DEBUG("metadummy setup");
+	DEBUG(__func__);	
 
 	struct stat sb;
 
@@ -94,6 +94,7 @@ static int mkfs(esdm_backend_t* backend)
  */
 static int fsck()
 {
+	DEBUG(__func__);	
 
 
 	return 0;
@@ -108,6 +109,8 @@ static int fsck()
 
 static int entry_create(const char *path)
 {
+	DEBUG(__func__);	
+
 	int status;
 	struct stat sb;
 	
@@ -140,6 +143,8 @@ static int entry_create(const char *path)
 
 static int entry_retrieve(const char *path)
 {
+	DEBUG(__func__);	
+
 	int status;
 	struct stat sb;
 	char *buf;
@@ -179,6 +184,8 @@ static int entry_retrieve(const char *path)
 
 static int entry_update(const char *path, void *buf, size_t len)
 {
+	DEBUG(__func__);	
+
 	int status;
 	struct stat sb;
 
@@ -209,6 +216,8 @@ static int entry_update(const char *path, void *buf, size_t len)
 
 static int entry_destroy(const char *path) 
 {
+	DEBUG(__func__);	
+
 	int status;
 	struct stat sb;
 
@@ -247,6 +256,8 @@ static int entry_destroy(const char *path)
 
 static int container_create(esdm_backend_t* backend, esdm_container_t *container)
 {
+	DEBUG(__func__);	
+
 	char *path_metadata;
 	char *path_container;
 	struct stat sb;
@@ -275,6 +286,8 @@ static int container_create(esdm_backend_t* backend, esdm_container_t *container
 
 static int container_retrieve(esdm_backend_t* backend, esdm_container_t *container)
 {
+	DEBUG(__func__);	
+
 	char *path_metadata;
 	char *path_container;
 	struct stat sb;
@@ -297,6 +310,8 @@ static int container_retrieve(esdm_backend_t* backend, esdm_container_t *contain
 
 static int container_update(esdm_backend_t* backend, esdm_container_t *container)
 {
+	DEBUG(__func__);	
+
 	char *path_metadata;
 	char *path_container;
 	struct stat sb;
@@ -318,6 +333,8 @@ static int container_update(esdm_backend_t* backend, esdm_container_t *container
 
 static int container_destroy(esdm_backend_t* backend, esdm_container_t *container) 
 {
+	DEBUG(__func__);	
+
 	char *path_metadata;
 	char *path_container;
 	struct stat sb;
@@ -347,6 +364,8 @@ static int container_destroy(esdm_backend_t* backend, esdm_container_t *containe
 
 static int dataset_create(esdm_backend_t* backend, esdm_dataset_t *dataset)
 {
+	DEBUG(__func__);	
+
 	char *path_metadata;
 	char *path_dataset;
 	struct stat sb;
@@ -376,16 +395,19 @@ static int dataset_create(esdm_backend_t* backend, esdm_dataset_t *dataset)
 
 static int dataset_retrieve(esdm_backend_t* backend, esdm_dataset_t *dataset)
 {
+	DEBUG(__func__);	
 }
 
 
 static int dataset_update(esdm_backend_t* backend, esdm_dataset_t *dataset)
 {
+	DEBUG(__func__);	
 }
 
 
 static int dataset_destroy(esdm_backend_t* backend, esdm_dataset_t *dataset) 
 {
+	DEBUG(__func__);	
 }
 
 
@@ -396,6 +418,8 @@ static int dataset_destroy(esdm_backend_t* backend, esdm_dataset_t *dataset)
 
 static int fragment_update(esdm_backend_t* backend, esdm_fragment_t *fragment)
 {
+	DEBUG(__func__);	
+
 	char *path;
 	char *path_fragment;
 	struct stat sb;
@@ -440,86 +464,24 @@ static int fragment_update(esdm_backend_t* backend, esdm_fragment_t *fragment)
 
 static int metadummy_backend_performance_estimate(esdm_backend_t* backend) 
 {
-	DEBUG("Calculating performance estimate.");
+	DEBUG(__func__);	
 
 	return 0;
 }
 
-
-static int metadummy_create(esdm_backend_t* backend, char* name) 
-{
-	DEBUG("Create");
-
-	// TODO; Sanitize name, and reject forbidden names
-
-
-	//container_create(backend, name);
-
-
-
-    //#include <unistd.h>
-    //ssize_t pread(int fd, void *buf, size_t count, off_t offset);
-    //ssize_t pwrite(int fd, const void *buf, size_t count, off_t offset);
-
-	return 0;
-}
 
 
 /**
- *	
- *	handle
- *	mode
- *	owner?	
- *
- */
-static int metadummy_open(esdm_backend_t* backend) 
+* Finalize callback implementation called on ESDM shutdown.
+*
+* This is the last chance for a backend to make outstanding changes persistent.
+* This routine is also expected to clean up memory that is used by the backend.
+*/
+int metadummy_finalize()
 {
-	DEBUG("Open");
+
 	return 0;
 }
-
-static int metadummy_write(esdm_backend_t* backend) 
-{
-	DEBUG("Write");
-	return 0;
-}
-
-static int metadummy_read(esdm_backend_t* backend) 
-{
-	DEBUG("Read");
-	return 0;
-}
-
-static int metadummy_close(esdm_backend_t* backend) 
-{
-	DEBUG("Close");
-	return 0;
-}
-
-
-
-static int metadummy_allocate(esdm_backend_t* backend) 
-{
-	DEBUG("Allocate");
-	return 0;
-}
-
-
-static int metadummy_update(esdm_backend_t* backend) 
-{
-	DEBUG("Update");
-	return 0;
-}
-
-
-static int metadummy_lookup(esdm_backend_t* backend) 
-{
-	DEBUG("Lookup");
-	return 0;
-}
-
-
-
 
 
 
@@ -547,11 +509,11 @@ static esdm_backend_t backend_template = {
 		metadummy_backend_performance_estimate, // performance_estimate
 
 		// Data Callbacks (POSIX like)
-		metadummy_create, // create
-		metadummy_open, // open
-		metadummy_write, // write
-		metadummy_read, // read
-		metadummy_close, // close
+		NULL, // create
+		NULL, // open
+		NULL, // write
+		NULL, // read
+		NULL, // close
 
 		// Metadata Callbacks
 		NULL, // lookup
@@ -611,16 +573,6 @@ esdm_backend_t* metadummy_backend_init(void* init_data) {
 
 	return backend;
 
-}
-
-/**
-* Initializes the POSIX plugin. In particular this involves:
-*
-*/
-int metadummy_finalize()
-{
-
-	return 0;
 }
 
 

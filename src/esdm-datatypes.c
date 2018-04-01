@@ -58,7 +58,7 @@ size_t esdm_sizeof(esdm_datatype_t type) {
 		case esdm_uint64_t:
 			return sizeof(uint64_t);
 
-		case esdm_float:			// if IEEE 754 (32bit)
+		case esdm_float:		// if IEEE 754 (32bit)
 			return sizeof(float);
 		case esdm_double:		// if IEEE 754 (64bit)
 			return sizeof(double);
@@ -210,11 +210,14 @@ esdm_fragment_t* esdm_fragment_create(esdm_dataset_t* dataset, esdm_dataspace_t*
 
 	fragment->metadata = NULL;
 	fragment->dataset = dataset;
-	fragment->subspace = subspace;
+	fragment->dataspace = subspace;
 	fragment->data = data;	// zero copy?
 	fragment->size = size;
 	fragment->bytes = bytes;
 	fragment->status = ESDM_DIRTY;
+
+
+	esdm_dataspace_string_descriptor(fragment->dataspace);
 
 	return fragment;
 }
@@ -232,6 +235,50 @@ esdm_fragment_t* esdm_fragment_retrieve(esdm_container_t *container, esdm_datase
 	return fragment;
 }
 
+
+char* esdm_dataspace_string_descriptor(esdm_dataspace_t *dataspace)
+{
+	ESDM_DEBUG(__func__);	
+
+	char *string = NULL;
+	char *string_size = NULL;
+	char *string_offset = NULL;
+
+	int64_t dimensions = dataspace->dimensions;
+	int64_t *size = dataspace->subsize;
+	int64_t *offset = dataspace->offset;
+
+	// offset to string
+	for (int64_t i = 0; i < dimensions; i++)
+	{
+		printf("dim %d, offset=%d (%p)\n", i, offset[i], offset);
+
+		if (string_offset == NULL)
+			asprintf(&string_offset, "%d", offset[i]);
+		else
+			asprintf(&string_offset, "%s,%d", string_offset, offset[i]);
+	}
+
+	// size to string
+	for (int64_t i = 0; i < dimensions; i++)
+	{
+		printf("dim %d, size=%d (%p)\n", i, size[i], size);
+
+		if (string_size == NULL)
+			asprintf(&string_size, "%d", size[i]);
+		else
+			asprintf(&string_size, "%s,%d", string_size, size[i]);
+	}
+
+	// combine offset + size
+	asprintf(&string, "%s_%s", string_offset, string_size);
+	printf("Descriptor: %s\n", string);
+
+	free(string_size);
+	free(string_offset);
+
+	return string;
+}
 
 
 
@@ -253,14 +300,14 @@ esdm_status_t esdm_fragment_commit(esdm_fragment_t *fragment)
 	esdm_backend_t *backend = (esdm_backend_t*) g_hash_table_lookup(esdm.modules->backends, "p1");  // TODO: decision component
 	backend->callbacks.fragment_update(backend, fragment);
 	
-	
+
+	esdm_dataspace_string_descriptor(fragment->dataspace);
+
+
 	esdm.modules->metadata->callbacks.fragment_update(esdm.modules->metadata, fragment);
 
 
-
 	fragment->status = ESDM_PERSISTENT;
-
-
 
 	return ESDM_SUCCESS;
 }
@@ -407,6 +454,7 @@ esdm_dataspace_t* esdm_dataspace_create(int64_t dimensions, int64_t* bounds, esd
 	dataspace->dimensions = dimensions;
 	dataspace->bounds = (int64_t*) malloc(sizeof(int64_t)*dimensions);
 	dataspace->size = NULL;
+	dataspace->subsize = NULL;
 	dataspace->datatype = datatype;
 	dataspace->subspace_of = NULL;
 
@@ -424,6 +472,23 @@ esdm_dataspace_t* esdm_dataspace_create(int64_t dimensions, int64_t* bounds, esd
 	return dataspace;
 }
 
+
+
+uint8_t esdm_dataspace_overlap(esdm_dataspace_t *a, esdm_dataspace_t *b)
+{
+	uint8_t overlapping = 1;
+
+	// TODO: allow comparison of spaces of different size? Alternative maybe to transform into comparable space, provided a mask or dimension index mapping
+	
+	if ( a->dimensions != b->dimensions )
+	{
+		// dimensions do not match so, we say they can not overlap
+		return 0;
+	}
+
+
+
+}
 
 
 /**
