@@ -20,8 +20,9 @@
  * @brief Entry point for ESDM API Implementation
  */
 
-
+#include <stdlib.h>
 #include <stdio.h>
+#include <string.h>
 
 #include <esdm.h>
 #include <esdm-internal.h>
@@ -202,10 +203,10 @@ esdm_status_t esdm_write(esdm_dataset_t *dataset, void *buf, esdm_dataspace_t* s
 	//esdm_dataset_t *dataset = (esdm_dataset_t*) g_hash_table_lookup (container->datasets, "bytestream");
 	//printf("Dataset 'bytestream' lookup: %p\n", dataset);
 
-
 	// create new fragment
 	esdm_fragment_t *fragment = esdm_fragment_create(dataset, subspace, buf);
 	esdm_fragment_commit(fragment);
+
 
 	return ESDM_SUCCESS;
 }
@@ -230,12 +231,19 @@ esdm_status_t esdm_read(esdm_dataset_t *dataset, void *buf, esdm_dataspace_t* su
 	//printf("Dataset 'bytestream' lookup: %p\n", dataset);
 
 
-	esdm_fragment_t *fragment = esdm_layout_reconstruction(dataset, subspace);
+	//esdm_fragment_t *fragment = esdm_layout_reconstruction(dataset, subspace);
 
+	esdm_fragment_t *fragment = esdm_fragment_create(dataset, subspace, NULL);
+	esdm_status_t status = esdm_fragment_retrieve(fragment);
+
+	//if (status != ESDM_SUCCESS)
+	//	ESDM_DEBUG("Could not retrieve fragment.");
 
 	//esdm_scheduler_enqueue(fragment);
 	
 	// buf =
+	//
+	memcpy(buf, fragment->buf, fragment->bytes);
  
 	return ESDM_SUCCESS;
 }

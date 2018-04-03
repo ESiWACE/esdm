@@ -28,6 +28,8 @@ function help(){
 	echo
 }
 
+# Some defaults
+debug="YES"
 buildDIR="build"
 
 function reconfigure(){
@@ -48,7 +50,7 @@ do
 		--reconfigure) reconfigure;;
 		--version) cmake --version; exit;;
 		--prefix) prefix="$2"; shift;;
-		--debug) debug="yes"; ;;
+		--debug) debug="YES"; ;;
 		--with-cc) ccbin="$2"; shift;;
 		--with-cxx) cxxbin="$2"; shift;;
 		--with-hdf5) hdf5="$2"; echo "$2"; shift;;
@@ -73,9 +75,9 @@ echo $PARAMETERS > configure.log
 TARGET_DIR="/usr/local"
 
 if test -n "$debug"; then
-	CMAKEFLAGS="$CMAKEFLAGS -DCMAKE_BUILD_TYPE:STRING=debug"
+	CMAKEFLAGS="$CMAKEFLAGS -DCMAKE_BUILD_TYPE:STRING=Debug"
 else
-	CMAKEFLAGS="$CMAKEFLAGS -DCMAKE_BUILD_TYPE:STRING=release"
+	CMAKEFLAGS="$CMAKEFLAGS -DCMAKE_BUILD_TYPE:STRING=Release"
 fi
 
 if test -n "$prefix"; then

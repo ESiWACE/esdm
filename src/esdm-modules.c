@@ -98,6 +98,9 @@ esdm_modules_t* esdm_modules_init(esdm_instance_t* esdm)
 
 
 
+
+
+
 	// Register data backends	
 	modules->backends = g_hash_table_new(g_str_hash, g_str_equal);
 

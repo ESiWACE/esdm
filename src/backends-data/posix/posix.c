@@ -167,13 +167,15 @@ static int entry_retrieve(const char *path, void **buf, size_t **count)
 
 
 	*count = malloc(sizeof(size_t));
+	**count = sb.st_size;
+
 	*buf;
 
-	// everything ok? write and close
+	// everything ok? read and close
 	if ( fd != -1 )
 	{
 		// write some metadata
-		*buf = (void*) malloc(sb.st_size + 1);
+		*buf = (void*) malloc(sb.st_size + 1);  // TODO: decide if really always allocate the additional bit for 0 termination
 
 		char* cbuf = (char*) buf;
 		cbuf[sb.st_size] = 0;
@@ -269,44 +271,46 @@ static int fragment_retrieve(esdm_backend_t* backend, esdm_fragment_t *fragment)
 {
 	DEBUG(__func__);	
 
-	char *path;
-	char *path_fragment;
-	struct stat sb;
-
+	// set data, options and tgt for convienience
 	posix_backend_data_t* data = (posix_backend_data_t*)backend->data;
 	posix_backend_options_t* options = data->options;
 	const char* tgt = options->target;
 
+	// serialization of subspace for fragment
+	char *fragment_name = esdm_dataspace_string_descriptor(fragment->dataspace);
 
+	// determine path
+	char *path;
 	asprintf(&path, "%s/containers/%s/%s/", tgt, fragment->dataset->container->name, fragment->dataset->name);
-	asprintf(&path_fragment, "%s/containers/%s/%s/%p", tgt, fragment->dataset->container->name, fragment->dataset->name, fragment);
+
+	// determine path to fragment
+	char *path_fragment;
+	asprintf(&path_fragment, "%s/containers/%s/%s/%s", tgt, fragment->dataset->container->name, fragment->dataset->name, fragment_name);
 
 	printf("path: %s\n", path);
 	printf("path_fragment: %s\n", path_fragment);
 
-	// create metadata entry
-	mkdir_recursive(path);
-	entry_create(path_fragment);
 
-	/*
-	char *buf = NULL;
-	size_t len = 6;
-	entry_update(path_fragment, &buf, len);
-	*/
-	
 	//entry_update()
 
-
-	void *buf;
-	size_t *count;
-
+	size_t *count = NULL;
+	void *buf = NULL;
 
 	entry_retrieve(path_fragment, &buf, &count);
 
 
+	printf("count = %d,  buf=%s\n", *count, buf);
+
+	fragment->buf = buf;
+
+
+
+
 	free(path);
 	free(path_fragment);
+
 }
+
 
 static int fragment_update(esdm_backend_t* backend, esdm_fragment_t *fragment)
 {
@@ -326,7 +330,7 @@ static int fragment_update(esdm_backend_t* backend, esdm_fragment_t *fragment)
 
 	// determine path to fragment
 	char *path_fragment;
-	asprintf(&path_fragment, "%s/containers/%s/%s/%p", tgt, fragment->dataset->container->name, fragment->dataset->name, fragment_name);
+	asprintf(&path_fragment, "%s/containers/%s/%s/%s", tgt, fragment->dataset->container->name, fragment->dataset->name, fragment_name);
 
 	printf("path: %s\n", path);
 	printf("path_fragment: %s\n", path_fragment);
@@ -341,7 +345,7 @@ static int fragment_update(esdm_backend_t* backend, esdm_fragment_t *fragment)
 	entry_update(path_fragment, &buf, len);
 	*/
 	
-	entry_update(path_fragment, fragment->data, fragment->bytes);
+	entry_update(path_fragment, fragment->buf, fragment->bytes);
 
 	//entry_update()
 
@@ -356,18 +360,16 @@ static int fragment_update(esdm_backend_t* backend, esdm_fragment_t *fragment)
 }
 
 
-
-
-
-
-
-
-
 ///////////////////////////////////////////////////////////////////////////////
 // ESDM Callbacks /////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////
 
-static int posix_backend_performance_estimate(esdm_backend_t* backend) 
+
+/**
+ * Callback implementation when beeing queried for a performance estimate.
+ *
+ */
+static int posix_backend_performance_estimate(esdm_backend_t* backend /* TODO: , esdm_fragment_t fragment  (?) */) 
 {
 	DEBUG("Calculating performance estimate");
 
@@ -451,9 +453,9 @@ static esdm_backend_t backend_template = {
 *
 * @return pointer to backend struct
 */
-esdm_backend_t* posix_backend_init(void* init_data) {
-	
-	DEBUG("Initializing POSIX backend");
+esdm_backend_t* posix_backend_init(void* init_data) 
+{
+	DEBUG(__func__);
 
 	esdm_backend_t* backend = (esdm_backend_t*) malloc(sizeof(esdm_backend_t));
 	memcpy(backend, &backend_template, sizeof(esdm_backend_t));
@@ -476,13 +478,7 @@ esdm_backend_t* posix_backend_init(void* init_data) {
 	// todo check posix style persitency structure available?
 	mkfs(backend);	
 
-
-
-
-
-
 	return backend;
-
 }
 
 

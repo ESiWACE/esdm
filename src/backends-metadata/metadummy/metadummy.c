@@ -420,39 +420,51 @@ static int fragment_update(esdm_backend_t* backend, esdm_fragment_t *fragment)
 {
 	DEBUG(__func__);	
 
-	char *path;
-	char *path_fragment;
-	struct stat sb;
-
+	// set data, options and tgt for convienience
 	metadummy_backend_options_t *options = (metadummy_backend_options_t*) backend->data;
 	const char* tgt = options->target;
 
-	printf("tgt: %p\n", tgt);
-		
+	// serialization of subspace for fragment
+	char *fragment_name = esdm_dataspace_string_descriptor(fragment->dataspace);
+	
+
+	// determine path
+	char *path;
 	asprintf(&path, "%s/containers/%s/%s/", tgt, fragment->dataset->container->name, fragment->dataset->name);
-	asprintf(&path_fragment, "%s/containers/%s/%s/%p", tgt, fragment->dataset->container->name, fragment->dataset->name, fragment);
+
+	// determine path to fragment
+	char *path_fragment;
+	asprintf(&path_fragment, "%s/containers/%s/%s/%s", tgt, fragment->dataset->container->name, fragment->dataset->name, fragment_name);
 
 	printf("path: %s\n", path);
 	printf("path_fragment: %s\n", path_fragment);
 
 	// create metadata entry
-	//mkdir_recursive(path);
-	//entry_create(path_fragment);
+	mkdir_recursive(path);
+	entry_create(path_fragment);
 
+	/*
+	char *buf = NULL;
+	size_t len = 6;
+	entry_update(path_fragment, &buf, len);
+	*/
 
-//	entry_update(path_fragment, "abc", 3);
+	/*
+	entry_update(path_fragment, fragment->data, fragment->bytes);
 
 	//entry_update()
 
-	/*
 	size_t *count = NULL;
 	void *buf = NULL;
-	entry_retrieve(path_fragment, &buf, &count);
-	*/
 
+	entry_retrieve(path_fragment, &buf, &count);
+		*/
 
 	free(path);
 	free(path_fragment);
+
+
+
 }
 
 
@@ -479,6 +491,7 @@ static int metadummy_backend_performance_estimate(esdm_backend_t* backend)
 */
 int metadummy_finalize()
 {
+	DEBUG(__func__);	
 
 	return 0;
 }
@@ -549,9 +562,9 @@ static esdm_backend_t backend_template = {
 *
 * @return pointer to backend struct
 */
-esdm_backend_t* metadummy_backend_init(void* init_data) {
-	
-	DEBUG("Initializing metadummy backend.");
+esdm_backend_t* metadummy_backend_init(void* init_data)
+{	
+	DEBUG(__func__);
 
 	esdm_backend_t* backend = (esdm_backend_t*) malloc(sizeof(esdm_backend_t));
 	memcpy(backend, &backend_template, sizeof(esdm_backend_t));

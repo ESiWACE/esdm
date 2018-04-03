@@ -101,12 +101,8 @@ int main(int argc, char const* argv[])
 	// Read the data to the dataset
 	ret = esdm_read(dataset, buf_r, subspace);
 
-
-
-
 	// TODO: write subset
 	// TODO: read subset -> subspace reconstruction
-
 
 
 	// verify data and fail test if mismatches are found

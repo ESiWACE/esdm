@@ -122,12 +122,7 @@ esdm_config_backends_t* esdm_config_get_backends(esdm_instance_t* esdm)
 	json_t *root = (json_t*) esdm->config->json;
 
 	// fetch configured backends
-	json_t *element = NULL;
-	element = json_object_get(root, "esdm");
-	element = json_object_get(element, "backends");
-
-	size_t i;
-	size_t size;;
+	json_t *element = json_path_get(root, "$.esdm.backends");
 
 	esdm_config_backends_t* config_backends = (esdm_config_backends_t*) malloc(sizeof(esdm_config_backends_t));
 
@@ -136,15 +131,14 @@ esdm_config_backends_t* esdm_config_get_backends(esdm_instance_t* esdm)
 		if (json_typeof(element) == JSON_ARRAY)
 		{
 			// Element is array, therefor may contain valid backend configurations
-			size = json_array_size(element);
+			size_t size = json_array_size(element);
 
 			esdm_config_backend_t* backends;
 			backends = (esdm_config_backend_t*) malloc(sizeof(esdm_config_backend_t)*size);
 
-
 			//printf("JSON Array of %ld element%s:\n", size, json_plural(size));
 
-			for (i = 0; i < size; i++) {
+			for (size_t i = 0; i < size; i++) {
 				//print_json_aux(json_array_get(element, i), 0);
 
 				json_t *backend = json_array_get(element, i);
@@ -158,6 +152,10 @@ esdm_config_backends_t* esdm_config_get_backends(esdm_instance_t* esdm)
 
 				elem = json_object_get(backend, "target");
 				backends[i].target = json_string_value(elem);
+
+
+				backends[i].esdm = root;
+				backends[i].backend = backend;
 			}	
 
 			config_backends->count = size;

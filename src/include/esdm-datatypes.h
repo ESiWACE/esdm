@@ -43,7 +43,7 @@ float			if IEEE 754 (32bit)
 double			if IEEE 754 (64bit)
 */
 
-typedef enum {
+typedef enum esdm_datatype_t {
 	esdm_int8_t,
 	esdm_int16_t,
 	esdm_int32_t,
@@ -137,7 +137,7 @@ struct esdm_fragment_t {
 	esdm_metadata_t *metadata;
 	esdm_dataset_t *dataset;
 	esdm_dataspace_t *dataspace;
-	void *data;
+	void *buf;
 	size_t size;
 	size_t bytes;
 	esdm_status_t status;
@@ -242,12 +242,15 @@ struct esdm_backend_t {
 // Organisation structures of core components /////////////////////////////////
 
 
-// Config
+// Configuration
 typedef struct esdm_config_backend_t esdm_config_backend_t;
 struct esdm_config_backend_t {
 	const char *type;
 	const char *name;
 	const char *target;
+
+	json_t *esdm;
+	json_t *backend;
 };
 
 

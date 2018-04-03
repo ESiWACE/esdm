@@ -159,6 +159,7 @@ esdm_status_t esdm_container_commit(esdm_container_t* container)
 esdm_status_t esdm_container_destroy(esdm_container_t *container)
 {
 	ESDM_DEBUG(__func__);	
+
 	return ESDM_SUCCESS;
 }
 
@@ -182,7 +183,7 @@ esdm_status_t esdm_container_destroy(esdm_container_t *container)
  *	@return Pointer to new fragment.
  *
  */
-esdm_fragment_t* esdm_fragment_create(esdm_dataset_t* dataset, esdm_dataspace_t* subspace, void *data)
+esdm_fragment_t* esdm_fragment_create(esdm_dataset_t* dataset, esdm_dataspace_t* subspace, void *buf)
 {
 	ESDM_DEBUG(__func__);	
 	esdm_fragment_t* fragment = (esdm_fragment_t*) malloc(sizeof(esdm_fragment_t));
@@ -211,7 +212,7 @@ esdm_fragment_t* esdm_fragment_create(esdm_dataset_t* dataset, esdm_dataspace_t*
 	fragment->metadata = NULL;
 	fragment->dataset = dataset;
 	fragment->dataspace = subspace;
-	fragment->data = data;	// zero copy?
+	fragment->buf = buf;	// zero copy?
 	fragment->size = size;
 	fragment->bytes = bytes;
 	fragment->status = ESDM_DIRTY;
@@ -224,15 +225,20 @@ esdm_fragment_t* esdm_fragment_create(esdm_dataset_t* dataset, esdm_dataspace_t*
 
 
 
-esdm_fragment_t* esdm_fragment_retrieve(esdm_container_t *container, esdm_dataset_t *dataset, const char *id)
+esdm_status_t esdm_fragment_retrieve(esdm_fragment_t *fragment)
 {
 	ESDM_DEBUG(__func__);	
-	esdm_fragment_t* fragment = (esdm_fragment_t*) malloc(sizeof(esdm_fragment_t));
-
-	fragment->dataset = dataset;
 
 
-	return fragment;
+	esdm_dataspace_string_descriptor(fragment->dataspace);
+
+	// Call backend
+	esdm_backend_t *backend = (esdm_backend_t*) g_hash_table_lookup(esdm.modules->backends, "p1");  // TODO: decision component
+	backend->callbacks.fragment_retrieve(backend, fragment);
+
+
+
+	return ESDM_SUCCESS;
 }
 
 
@@ -264,6 +270,7 @@ char* esdm_dataspace_string_descriptor(esdm_dataspace_t *dataspace)
 	{
 		printf("dim %d, size=%d (%p)\n", i, size[i], size);
 
+	// TODO: store
 		if (string_size == NULL)
 			asprintf(&string_size, "%d", size[i]);
 		else
@@ -271,7 +278,7 @@ char* esdm_dataspace_string_descriptor(esdm_dataspace_t *dataspace)
 	}
 
 	// combine offset + size
-	asprintf(&string, "%s_%s", string_offset, string_size);
+	asprintf(&string, "offset:%s_size:%s", string_offset, string_size);
 	printf("Descriptor: %s\n", string);
 
 	free(string_size);
@@ -291,9 +298,9 @@ esdm_status_t esdm_fragment_commit(esdm_fragment_t *fragment)
 {
 	ESDM_DEBUG(__func__);	
 
-	esdm_status_t status;
+	
 
-	// schedule for I/O
+	// Schedule for I/O
 	esdm_scheduler_enqueue(&esdm, fragment);
 
 	// Call backend
@@ -301,9 +308,9 @@ esdm_status_t esdm_fragment_commit(esdm_fragment_t *fragment)
 	backend->callbacks.fragment_update(backend, fragment);
 	
 
-	esdm_dataspace_string_descriptor(fragment->dataspace);
-
-
+	// Announce to metadata coordinator 
+	
+	// TODO: store backend which hold a fragment
 	esdm.modules->metadata->callbacks.fragment_update(esdm.modules->metadata, fragment);
 
 

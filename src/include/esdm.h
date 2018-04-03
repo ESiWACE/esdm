@@ -65,9 +65,9 @@ esdm_status_t esdm_dataspace_serialize(esdm_dataspace_t *dataspace, void **out);
 char* esdm_dataspace_string_descriptor(esdm_dataspace_t *dataspace);
 
 // Fragment
-esdm_fragment_t* esdm_fragment_create(esdm_dataset_t *dataset, esdm_dataspace_t *subspace, void *data);
+esdm_fragment_t* esdm_fragment_create(esdm_dataset_t *dataset, esdm_dataspace_t *subspace, void *buf);
 esdm_fragment_t* esdm_fragment_deserialize(void *serialized_fragment);
-esdm_fragment_t* esdm_fragment_retrieve(esdm_container_t *container, esdm_dataset_t *dataset, const char *id);
+esdm_status_t esdm_fragment_retrieve(esdm_fragment_t *fragment);
 esdm_status_t esdm_fragment_commit(esdm_fragment_t *fragment);
 esdm_status_t esdm_fragment_destroy(esdm_fragment_t *fragment);
 esdm_status_t esdm_fragment_serialize(esdm_fragment_t *fragment, void **out);
