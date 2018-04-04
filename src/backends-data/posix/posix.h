@@ -29,15 +29,15 @@ typedef struct {
 
 // Internal functions used by this backend.
 typedef struct {
-	posix_backend_options_t* options;
-	int other;
+	esdm_config_backend_t *config;
+	const char *target;
 } posix_backend_data_t;
 
 
 
 
 
-esdm_backend_t* posix_backend_init(void* data);
+esdm_backend_t* posix_backend_init(esdm_config_backend_t *config);
 
 
 #endif

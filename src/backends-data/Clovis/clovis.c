@@ -497,7 +497,7 @@ esdm_backend_clovis_t esdm_backend_clovis = {
 *
 * @return pointer to backend struct
 */
-esdm_backend_t* clovis_backend_init()
+esdm_backend_t* clovis_backend_init(esdm_config_backend_t* config)
 {
     esdm_backend_t *eb = &esdm_backend_clovis.ebm_base;
     int rc;

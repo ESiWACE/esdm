@@ -112,7 +112,7 @@ typedef struct {
     struct esdm_backend_xxxops  ebm_ops;
 } esdm_backend_clovis_t;
 
-esdm_backend_t* clovis_backend_init();
+esdm_backend_t* clovis_backend_init(esdm_config_backend_t *config);
 
 extern esdm_backend_clovis_t esdm_backend_clovis;
 

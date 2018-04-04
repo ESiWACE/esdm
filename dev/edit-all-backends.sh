@@ -1,8 +1,8 @@
 #!/bin/bash
 
 # Backend Plugins to edit / Files to open
-data=(POSIX/posix.c Clovis/clovis.c WOS/wos.c)
-meta=(metadummy/metadummy.c MongoDB/mongodb.c)
+data=(posix/posix.c Clovis/clovis.c WOS/wos.c)
+meta=(metadummy/metadummy.c mongodb/mongodb.c)
 
 
 # Hopefully no need to change the following ###################################

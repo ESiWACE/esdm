@@ -610,11 +610,11 @@ static esdm_backend_t backend_template = {
 		mongodb_backend_performance_estimate, // performance_estimate
 
 		// Data Callbacks (POSIX like)
-		mongodb_create, // create
-		mongodb_open, // open
-		mongodb_write, // write
-		mongodb_read, // read
-		mongodb_close, // close
+		NULL, // create
+		NULL, // open
+		NULL, // write
+		NULL, // read
+		NULL, // close
 
 		// Metadata Callbacks
 		NULL, // lookup
@@ -650,7 +650,7 @@ static esdm_backend_t backend_template = {
 *
 * @return pointer to backend struct
 */
-esdm_backend_t* mongodb_backend_init(void* init_data) {
+esdm_backend_t* mongodb_backend_init(esdm_config_backend_t *config) {
 	
 	DEBUG("Initializing mongodb backend.");
 

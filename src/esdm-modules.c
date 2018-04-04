@@ -75,18 +75,18 @@ esdm_modules_t* esdm_modules_init(esdm_instance_t* esdm)
 	esdm_config_backend_t* b = NULL;
 
 
-	const char *metadata_coordinator_string = esdm_config_get_metadata_coordinator(esdm);
+	esdm_config_backend_t *metadata_coordinator = esdm_config_get_metadata_coordinator(esdm);
 
 	// Register metadata backend (singular)
 	// TODO: This backend is meant as metadata coordinator in a hierarchy of MD (later)
-	if (strncmp(metadata_coordinator_string,"metadummy",9) == 0)
+	if (strncmp(metadata_coordinator->type,"metadummy",9) == 0)
 	{
-		modules->metadata = metadummy_backend_init(NULL);
+		modules->metadata = metadummy_backend_init(metadata_coordinator);
 	}
 #ifdef ESDM_HAS_MONGODB
-	else if (strncmp(metadata_coordinator_string,"mongodb",7) == 0)
+	else if (strncmp(metadata_coordinator->type,"mongodb",7) == 0)
 	{
-		modules->metadata = mongodb_backend_init(NULL);
+		modules->metadata = mongodb_backend_init(metadata_coordinator);
 	} 
 #endif
 	else
@@ -113,15 +113,12 @@ esdm_modules_t* esdm_modules_init(esdm_instance_t* esdm)
 				b->target
 			  );
 
+		// TODO: fetch type here instead of in config?
+
 
 		if (strncmp(b->type,"POSIX",5) == 0)
 		{
-			posix_backend_options_t* data = (posix_backend_options_t*) malloc(sizeof(posix_backend_options_t));
-			data->type = b->type;
-			data->name = b->name;
-			data->target = b->target;
-
-			backend = posix_backend_init((void*)data);
+			backend = posix_backend_init(b);
 			g_hash_table_insert(modules->backends, (char*)b->name, backend);
 
 			// test callback, TODO: remove

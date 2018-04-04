@@ -113,7 +113,7 @@ int main(int argc, char const* argv[])
 	} else {
 		printf("OK\n");
 	}
-	//assert(mismatches == 0);
+	assert(mismatches == 0);
 
 
 	// clean up

@@ -592,7 +592,7 @@ esdm_backend_wos_t esdm_backend_wos = {
 *
 * @return pointer to backend struct
 */
-esdm_backend_t *wos_backend_init()
+esdm_backend_t *wos_backend_init(esdm_config_backend_t *config)
 {
 	esdm_backend_t *eb = &esdm_backend_wos.ebm_base;
 	int rc;

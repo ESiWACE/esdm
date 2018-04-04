@@ -562,7 +562,7 @@ static esdm_backend_t backend_template = {
 *
 * @return pointer to backend struct
 */
-esdm_backend_t* metadummy_backend_init(void* init_data)
+esdm_backend_t* metadummy_backend_init(esdm_config_backend_t *config)
 {	
 	DEBUG(__func__);
 

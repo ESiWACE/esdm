@@ -32,6 +32,7 @@
 #include <unistd.h>
 #include <assert.h>
 
+#include <jansson.h>
 
 #include <esdm.h>
 
@@ -56,13 +57,12 @@ static int mkfs(esdm_backend_t* backend)
 {
 
 	posix_backend_data_t* data = (posix_backend_data_t*)backend->data;
-	posix_backend_options_t* options = data->options;
 
-	printf("mkfs: backend->(void*)data->options->target = %s\n", options->target);
+	printf("mkfs: backend->(void*)data->target = %s\n", data->target);
 	printf("\n");
 
 
-	const char* tgt = options->target;
+	const char* tgt = data->target;
 
 	struct stat st = {0};
 
@@ -273,8 +273,7 @@ static int fragment_retrieve(esdm_backend_t* backend, esdm_fragment_t *fragment)
 
 	// set data, options and tgt for convienience
 	posix_backend_data_t* data = (posix_backend_data_t*)backend->data;
-	posix_backend_options_t* options = data->options;
-	const char* tgt = options->target;
+	const char* tgt = data->target;
 
 	// serialization of subspace for fragment
 	char *fragment_name = esdm_dataspace_string_descriptor(fragment->dataspace);
@@ -318,8 +317,7 @@ static int fragment_update(esdm_backend_t* backend, esdm_fragment_t *fragment)
 
 	// set data, options and tgt for convienience
 	posix_backend_data_t* data = (posix_backend_data_t*)backend->data;
-	posix_backend_options_t* options = data->options;
-	const char* tgt = options->target;
+	const char* tgt = data->target;
 
 	// serialization of subspace for fragment
 	char *fragment_name = esdm_dataspace_string_descriptor(fragment->dataspace);
@@ -374,9 +372,8 @@ static int posix_backend_performance_estimate(esdm_backend_t* backend /* TODO: ,
 	DEBUG("Calculating performance estimate");
 
 	posix_backend_data_t* data = (posix_backend_data_t*)backend->data;
-	posix_backend_options_t* options = data->options;
 
-	printf("perf_estimate: backend->(void*)data->options->target = %s\n", options->target);
+	printf("perf_estimate: backend->(void*)data->target = %s\n", data->target);
 	printf("\n");
 
 	return 0;
@@ -453,26 +450,23 @@ static esdm_backend_t backend_template = {
 *
 * @return pointer to backend struct
 */
-esdm_backend_t* posix_backend_init(void* init_data) 
+esdm_backend_t* posix_backend_init(esdm_config_backend_t *config) 
 {
 	DEBUG(__func__);
 
 	esdm_backend_t* backend = (esdm_backend_t*) malloc(sizeof(esdm_backend_t));
 	memcpy(backend, &backend_template, sizeof(esdm_backend_t));
 
+	// allocate memory for backend instance
 	backend->data = (void*) malloc(sizeof(posix_backend_data_t));
 	posix_backend_data_t* data = (posix_backend_data_t*) backend->data;
-	posix_backend_options_t* options = (posix_backend_options_t*) init_data;
-	data->options = options;
+
+	// configure backend instance
+	data->config = config;
+	data->target = json_string_value(json_path_get(config->backend, "$.target"));
 
 
-	printf("[POSIX] Backend config: type=%s, name=%s, target=%s\n", options->type, options->name, options->target);
-
-
-	// valid refs for backend, data, options available now
-
-
-	data->other = 47;
+	printf("[POSIX] Backend config: target=%s\n", data->target);
 
 
 	// todo check posix style persitency structure available?

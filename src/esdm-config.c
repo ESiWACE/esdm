@@ -95,7 +95,7 @@ json_t* esdm_config_gather(int argc, char const* argv[])
 }
 
 
-const char* esdm_config_get_metadata_coordinator(esdm_instance_t* esdm)
+esdm_config_backend_t* esdm_config_get_metadata_coordinator(esdm_instance_t* esdm)
 {
 	ESDM_DEBUG(__func__);	
 
@@ -106,7 +106,15 @@ const char* esdm_config_get_metadata_coordinator(esdm_instance_t* esdm)
 	print_json(elem);
 	printf("\n\n");
 
-	return json_string_value(elem);
+
+
+	esdm_config_backend_t *config_backend = (esdm_config_backend_t*) malloc(sizeof(esdm_config_backend_t));
+	config_backend->type = json_string_value(elem);
+	config_backend->esdm = root;
+	config_backend->backend = json_path_get(root, "$.esdm.metadata");
+
+
+	return config_backend;
 }
 
 
