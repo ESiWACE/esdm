@@ -30,6 +30,7 @@
 #include <esdm.h>
 
 #include "clovis.h"
+#include "clovis_internal.h"
 
 
 #define PAGE_4K (4096ULL)

@@ -76,7 +76,6 @@ int main(int argc, char const* argv[])
     //ssize_t pwrite(int fd, const void *buf, size_t count, off_t offset);
 
 
-
 	// define dataspace
 	int64_t bounds[] = {10, 20};
 	esdm_dataspace_t *dataspace = esdm_dataspace_create(2, bounds, esdm_uint64_t);

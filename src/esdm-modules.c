@@ -36,7 +36,7 @@
 #endif
 
 #ifdef ESDM_HAS_CLOVIS
-//	#include "backends-data/Clovis/clovis.h"
+	#include "backends-data/Clovis/clovis.h"
 	#pragma message ("Building ESDM with Clovis support.")
 #endif
 
@@ -125,9 +125,13 @@ esdm_modules_t* esdm_modules_init(esdm_instance_t* esdm)
 			backend->callbacks.performance_estimate(backend);
 		}
 #ifdef ESDM_HAS_CLOVIS
-		else if (strncmp(b->type,"clovis",6) == 0)
+		else if (strncasecmp(b->type,"CLOVIS",6) == 0)
 		{
 			// TODO
+			backend = clovis_backend_init(b);
+			g_hash_table_insert(modules->backends, (char*)b->name, backend);
+
+			backend->callbacks.performance_estimate(backend);
 		}
 #endif
 #ifdef ESDM_HAS_WOS

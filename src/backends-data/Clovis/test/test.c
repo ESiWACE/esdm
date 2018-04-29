@@ -2,6 +2,7 @@
 #include <stdlib.h>
 
 #include "../clovis.h"
+#include "../clovis_internal.h"
 
 int main(int argc, char* argv[])
 {
