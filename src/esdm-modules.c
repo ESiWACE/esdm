@@ -41,7 +41,7 @@
 #endif
 
 #ifdef ESDM_HAS_WOS
-	#include "backends-data/Mero/wos.h"
+	#include "backends-data/WOS/wos.h"
 	#pragma message ("Building ESDM with WOS support.")
 #endif
 
@@ -135,9 +135,13 @@ esdm_modules_t* esdm_modules_init(esdm_instance_t* esdm)
 		}
 #endif
 #ifdef ESDM_HAS_WOS
-		else if (strncmp(b->type,"wos",3) == 0)
+		else if (strncmp(b->type,"WOS",3) == 0)
 		{
 			// TODO
+			backend = wos_backend_init(b);
+			g_hash_table_insert(modules->backends, (char*)b->name, backend);
+
+			backend->callbacks.performance_estimate(backend);
 		}
 #endif
 		else
