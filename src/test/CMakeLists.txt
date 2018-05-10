@@ -1,6 +1,6 @@
 #
 # Tests
-# _____________________________________________________________________________ 
+# _____________________________________________________________________________
 
 # Copy some prepared files such as a ESDM configuration to the build test directory
 file(COPY ${CMAKE_CURRENT_SOURCE_DIR}/_esdm.conf DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
@@ -17,11 +17,10 @@ foreach(TESTFILE ${TESTFILES})
     get_filename_component(TESTNAME_C ${TESTFILE} NAME)
     STRING(REGEX REPLACE ".c$" "" TESTNAME ${TESTNAME_C})
 
-
 	# Build, link and add as test
-    add_executable(${TESTNAME} ${TESTFILE})
-	target_link_libraries(${TESTNAME} esdm)
-	include_directories(${CMAKE_BINARY_DIR} ${ESDM_INCLUDE_DIRS} ${GLIB_INCLUDE_DIRS})
+    add_executable(${TESTNAME} ${TESTFILE} util/test_util.c)
+   	target_link_libraries(${TESTNAME} esdm)
+  	include_directories(${CMAKE_BINARY_DIR} ${ESDM_INCLUDE_DIRS} ${GLIB_INCLUDE_DIRS})
 
     add_test(${TESTNAME} ./${TESTNAME})
   endif()
