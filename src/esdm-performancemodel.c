@@ -64,7 +64,7 @@ esdm_status_t esdm_performance_finalize(esdm_performance_t* performance)
 
 void fetch_performance_from_backend(gpointer key, gpointer value, gpointer user_data)
 {
-	printf("GHashTable Entry: key=%p (s:%s,i:%i), value=%p (s:%s,i:%i), user_data=%p\n", key, key, *(int*)key, value, value, *(int*)value, user_data);
+	printf("GHashTable Entry: key=%p (s:%s), value=%p (s:%s), user_data=%p\n", key, key,value, value, user_data);
 
 	esdm_backend_t* backend = (esdm_backend_t*) value;
 	backend->callbacks.performance_estimate(backend);

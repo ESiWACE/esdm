@@ -6,6 +6,8 @@
 #ifndef ESDM_INTERNAL_H
 #define ESDM_INTERNAL_H
 
+#include <assert.h>
+
 #include <esdm.h>
 
 

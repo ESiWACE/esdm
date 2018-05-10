@@ -49,7 +49,5 @@ void esdm_log(uint32_t loglevel, const char* format, ...)
 
 void print_hashtable_entry (gpointer key, gpointer value, gpointer user_data)
 {
-	printf("GHashTable Entry: key=%p (s:%s,i:%i), value=%p (s:%s,i:%i), user_data=%p\n", key, key, *(int*)key, value, value, *(int*)value, user_data);
+	printf("GHashTable Entry: key=%p (s:%s), value=%p (s:%s), user_data=%p\n", key, key, value, value, user_data);
 }
-
-

@@ -169,23 +169,19 @@ static int entry_retrieve(const char *path, void **buf, size_t **count)
 	*count = malloc(sizeof(size_t));
 	**count = sb.st_size;
 
-	*buf;
-
 	// everything ok? read and close
 	if ( fd != -1 )
 	{
 		// write some metadata
 		*buf = (void*) malloc(sb.st_size + 1);  // TODO: decide if really always allocate the additional bit for 0 termination
+		assert(buf != NULL);
 
-		char* cbuf = (char*) buf;
+		char* cbuf = (char*)*buf;
 		cbuf[sb.st_size] = 0;
 
-		read(fd, *buf, sb.st_size);
+		read(fd, *buf, sb.st_size); // TODO FIXME: proper read function
 		close(fd);
 	}
-
-
-
 
 	printf("Entry content: %s\n", (char *) *buf);
 
