@@ -73,7 +73,7 @@ int main(int argc, char const* argv[])
 	esdm_init();
 
 	// define dataspace
-	int64_t bounds[] = {10, 20};
+	int64_t bounds[] = {size, size};
 	esdm_dataspace_t *dataspace = esdm_dataspace_create(2, bounds, esdm_uint64_t);
 
 	container = esdm_container_create("mycontainer");
