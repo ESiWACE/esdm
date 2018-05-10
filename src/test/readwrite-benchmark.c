@@ -112,7 +112,7 @@ int main(int argc, char const* argv[])
 	assert(mismatches == 0);
 
 	printf("Runtime read,write: %.3f,%.3f\n", read_time, write_time);
-	printf("Performance read,write: %.3f MiB/s,%.3f MiB/s\n", read_time/volume/ 1024 / 1024, write_time/volume / 1024 / 1024);
+	printf("Performance read,write: %.3f MiB/s,%.3f MiB/s\n", volume/read_time/1024/1024, volume / write_time / 1024.0 / 1024);
 
 
 	// clean up
