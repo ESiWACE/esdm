@@ -8,6 +8,9 @@ make -j install
 
 export PKG_CONFIG_PATH=$PKG_CONFIG_PATH:$PWD/deps/lib/pkgconfig
 
+
+./configure --build-dir=debug --with-cc=/sw/rhel6-x64/gcc/gcc-7.1.0/bin/gcc --debug
+
 ./configure --with-cc=/sw/rhel6-x64/gcc/gcc-7.1.0/bin/gcc
 cd build
 make -j

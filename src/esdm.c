@@ -224,7 +224,7 @@ esdm_status_t esdm_write(esdm_dataset_t *dataset, void *buf, esdm_dataspace_t* s
  */
 esdm_status_t esdm_read(esdm_dataset_t *dataset, void *buf, esdm_dataspace_t* subspace)
 {
-	ESDM_DEBUG(__func__);
+	ESDM_DEBUG("");
 
 	//esdm_dataset_t *dataset = (esdm_dataset_t*) g_hash_table_lookup (container->datasets, "bytestream");
 	//printf("Dataset 'bytestream' lookup: %p\n", dataset);
@@ -242,6 +242,7 @@ esdm_status_t esdm_read(esdm_dataset_t *dataset, void *buf, esdm_dataspace_t* su
 
 	// buf =
 	//
+	ESDM_DEBUG_FMT("Fragment size: %ld", fragment->bytes);
 	memcpy(buf, fragment->buf, fragment->bytes);
 
 	return ESDM_SUCCESS;

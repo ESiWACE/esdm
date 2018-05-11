@@ -42,7 +42,7 @@ int main(int argc, char* argv[])
 		printf("\t SIZE specifies one dimension of a 2D field\n");
 		exit(1);
 	}
-	const long size = atol(argv[1]);
+	const int64_t size = atoll(argv[1]);
 
 	if(mpi_rank == 0)
 		printf("Running with a 2D slice of %ld*%ld\n", size, size);
@@ -57,6 +57,8 @@ int main(int argc, char* argv[])
 	// prepare data
 	uint64_t * buf_w = (uint64_t *) malloc(volume);
 	uint64_t * buf_r = (uint64_t *) malloc(volume);
+	assert(buf_w != NULL);
+	assert(buf_r != NULL);
 
 	for(int y=offset[0]; y < dim[0]; y++){
 		for(int x=offset[1]; x < dim[1]; x++){

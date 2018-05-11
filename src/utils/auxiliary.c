@@ -49,6 +49,7 @@ int read_file(char *filepath, char **buf)
 
 	if( fp == NULL ) {
 		printf("Could not open or find: %s\n", filepath);
+		exit(1);
 	}
 
 
@@ -66,6 +67,7 @@ int read_file(char *filepath, char **buf)
 	*buf = string;
 
 	ESDM_DEBUG_COM_FMT("AUX", "read_file(): %s\n", string);
+	return 0;
 }
 
 

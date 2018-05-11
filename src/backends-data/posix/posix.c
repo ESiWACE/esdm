@@ -33,6 +33,7 @@
 #include <assert.h>
 
 #include <jansson.h>
+#include <errno.h>
 
 #include <esdm.h>
 #include <esdm-debug.h>
@@ -80,6 +81,7 @@ static int mkfs(esdm_backend_t* backend)
 		free(sdat);
 		free(sfra);
 	}
+	return 0;
 }
 
 
@@ -165,13 +167,26 @@ static int entry_retrieve(const char *path, void **buf, size_t **count)
 	if ( fd != -1 )
 	{
 		// write some metadata
-		*buf = (void*) malloc(sb.st_size + 1);  // TODO: decide if really always allocate the additional bit for 0 termination
+		*buf = (void*) malloc(sb.st_size);
 		assert(buf != NULL);
-
-		char* cbuf = (char*)*buf;
-		cbuf[sb.st_size] = 0;
-
-		read(fd, *buf, sb.st_size); // TODO FIXME: proper read function
+		//char* cbuf = (char*)*buf;
+		//cbuf[sb.st_size] = 0;
+		size_t len = sb.st_size;
+		while(len > 0){
+			ssize_t ret = read(fd, buf, len);
+			if (ret != -1){
+				buf = (void*) ((char*) buf + ret);
+				len -= ret;
+			}else{
+				if(errno == EINTR){
+					continue;
+				}else{
+					ESDM_ERROR_COM_FMT("POSIX", "read %s", strerror(errno));
+					**count = len;
+					return 1;
+				}
+			}
+		}
 		close(fd);
 	}
 
@@ -197,7 +212,7 @@ static int entry_update(const char *path, void *buf, size_t len)
 	int status;
 	struct stat sb;
 
-	DEBUG("entry_update(%s)\n", path);
+	DEBUG("entry_update(%s: %ld)\n", path, len);
 
 	status = stat(path, &sb);
 	if (status == -1) {
@@ -214,7 +229,21 @@ static int entry_update(const char *path, void *buf, size_t len)
 	if ( fd != -1 )
 	{
 		// write some metadata
-		write(fd, buf, len);
+		while(len > 0){
+			ssize_t ret = write(fd, buf, len);
+			if (ret != -1){
+				buf = (void*) ((char*) buf + ret);
+				len -= ret;
+			}else{
+				if(errno == EINTR){
+					continue;
+				}else{
+					ESDM_ERROR_COM_FMT("POSIX", "write %s", strerror(errno));
+					return 1;
+				}
+			}
+		}
+
 		close(fd);
 	}
 
@@ -295,7 +324,7 @@ static int fragment_retrieve(esdm_backend_t* backend, esdm_fragment_t *fragment,
 
 	free(path);
 	free(path_fragment);
-
+	return 0;
 }
 
 
@@ -335,6 +364,7 @@ static int fragment_update(esdm_backend_t* backend, esdm_fragment_t *fragment)
 	entry_retrieve(path_fragment, &buf, &count);
 	free(path);
 	free(path_fragment);
+	return 0;
 }
 
 
