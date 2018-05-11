@@ -12,6 +12,7 @@ ulimit -s 102400
 cd /home/dkrz/k202079/work/esdm
 module load openmpi/1.8.4-gcc71 gcc/7.1.0 cmake betke/glib/2.48.0
 export PKG_CONFIG_PATH=$PKG_CONFIG_PATH:$PWD/deps/lib/pkgconfig
+export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:$PWD/deps/lib
 
 
 function clean(){

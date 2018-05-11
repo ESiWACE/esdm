@@ -138,7 +138,7 @@ int main(int argc, char* argv[])
 		assert(mismatches_sum == 0);
 
 		printf("Runtime read,write: %.3f,%.3f\n", total_time_r, total_time_w);
-		printf("Performance read,write: %.3f MiB/s,%.3f MiB/s\n", volume_all/total_time_r/1024/1024, volume_all/total_time_w/1024.0/1024);
+		printf("Performance read,write: %.3f MiB/s,%.3f MiB/s size:%ld MiB\n", volume_all/total_time_r/1024/1024, volume_all/total_time_w/1024.0/1024, volume_all/1024.0/1024);
 	}
 
 
