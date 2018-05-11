@@ -41,7 +41,7 @@ find_package(Threads REQUIRED)
 
 #
 # Verbose debugging information for required software dependencies
-# _____________________________________________________________________________ 
+# _____________________________________________________________________________
 
 message(STATUS "GLIB_FOUND   ${GLIB_FOUND}")
 message(STATUS "GLIB_LIBRARIES   ${GLIB_LIBRARIES}")
@@ -85,51 +85,13 @@ option(ENABLE_MPI "Compile with MPI Support?" OFF)
 # Frontends
 option(ENABLE_HDF5 "Compile Plugin for HDF5 Virtual Object Layer?" OFF)
 
-
-# Data Backends
-option(BACKEND_POSIX "Compile backend for POSIX support?" ON)
-if(BACKEND_POSIX)
-	message(STATUS "WITH_BACKEND_POSIX")
-	add_definitions(-DESDM_HAS_POSIX=1)
-	SUBDIRS(backends-data/posix)
-endif()
-
-option(BACKEND_LUSTRE "Compile backend for Lustre support?" OFF)
-if(BACKEND_LUSTRE)
-	message(STATUS "WITH_BACKEND_LUSTRE")
-	add_definitions(-DESDM_HAS_LUSTRE=1)
-	SUBDIRS(backends-data/lustre)
-endif()
-
-option(BACKEND_CLOVIS "Compile backend for Clovis support?" OFF)
-if(BACKEND_CLOVIS)
-	message(STATUS "WITH_BACKEND_CLOVIS")
-	add_definitions(-DESDM_HAS_CLOVIS=1)
-	SUBDIRS(backends-data/Clovis)
-endif()
-
-option(BACKEND_WOS "Compile backend for WOS support?" OFF)
-if(BACKEND_WOS)
-	message(STATUS "WITH_BACKEND_WOS")
-	add_definitions(-DESDM_HAS_WOS=1)
-	SUBDIRS(backends-data/WOS)
-endif()
-
-
-# Metadata Backends
-option(BACKEND_MONGODB "Compile metadata backend for MongoDB support?" OFF)
-if(BACKEND_MONGODB)
-	message(STATUS "WITH_BACKEND_MONGODB")
-	add_definitions(-DESDM_HAS_MONGODB=1)
-	SUBDIRS(backends-metadata/mongodb)
-endif()
-
-
 #
 # TARGETS
-# _____________________________________________________________________________ 
+# _____________________________________________________________________________
 
 set(ESDM_INCLUDE_DIRS "${CMAKE_SOURCE_DIR}/src/include")
+include_directories(${CMAKE_CURRENT_SOURCE_DIR}/)
+
 
 add_subdirectory(backends-data)
 add_subdirectory(backends-metadata)
@@ -185,12 +147,8 @@ install(TARGETS esdm LIBRARY DESTINATION lib)
 
 #
 # INSTALL & SYSTEM PACKAGING (RPM, TGZ, ...)
-# _____________________________________________________________________________ 
+# _____________________________________________________________________________
 
 
 # System Packaging
 #include(CPackConfig)
-
-
-
-

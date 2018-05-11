@@ -1,18 +1,18 @@
-/* This file is part of ESDM.                                                   
- *                                                                              
- * This program is is free software: you can redistribute it and/or modify      
- * it under the terms of the GNU Lesser General Public License as published by  
- * the Free Software Foundation, either version 3 of the License, or            
- * (at your option) any later version.                                          
- *                                                                              
- * This program is is distributed in the hope that it will be useful,           
- * but WITHOUT ANY WARRANTY; without even the implied warranty of               
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the                
- * GNU General Public License for more details.                                 
- *                                                                              
- * You should have received a copy of the GNU Lesser General Public License     
- * along with ESDM.  If not, see <http://www.gnu.org/licenses/>.                
- */                                                                             
+/* This file is part of ESDM.
+ *
+ * This program is is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Lesser General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public License
+ * along with ESDM.  If not, see <http://www.gnu.org/licenses/>.
+ */
 
 /**
  * @file
@@ -27,6 +27,7 @@
 #include <esdm.h>
 #include <esdm-internal.h>
 
+#include <backends-data/posix/posix.h>
 
 
 
@@ -63,11 +64,11 @@
 
 esdm_modules_t* esdm_modules_init(esdm_instance_t* esdm)
 {
-	ESDM_DEBUG(__func__);	
+	ESDM_DEBUG(__func__);
 
 	// Setup module registry
 	esdm_modules_t* modules = NULL;
-	esdm_backend_t* backend = NULL; 
+	esdm_backend_t* backend = NULL;
 
 	modules = (esdm_modules_t*) malloc(sizeof(esdm_modules_t));
 
@@ -87,35 +88,26 @@ esdm_modules_t* esdm_modules_init(esdm_instance_t* esdm)
 	else if (strncmp(metadata_coordinator->type,"mongodb",7) == 0)
 	{
 		modules->metadata = mongodb_backend_init(metadata_coordinator);
-	} 
+	}
 #endif
 	else
 	{
 		ESDM_ERROR("Unknown metadata backend type. Please check your ESDM configuration.");
 	}
 
-
-
-
-
-
-
-
-	// Register data backends	
+	// Register data backends
 	modules->backends = g_hash_table_new(g_str_hash, g_str_equal);
 
 	for (int i = 0; i < config_backends->count; i++) {
 		b = &(config_backends->backends[i]);
 
 		printf("Backend config: %d, %s, %s, %s\n", i,
-				b->type,	
-				b->name,	
+				b->type,
+				b->name,
 				b->target
 			  );
 
 		// TODO: fetch type here instead of in config?
-
-
 		if (strncmp(b->type,"POSIX",5) == 0)
 		{
 			backend = posix_backend_init(b);
@@ -161,7 +153,7 @@ esdm_modules_t* esdm_modules_init(esdm_instance_t* esdm)
 
 esdm_status_t esdm_modules_finalize()
 {
-	ESDM_DEBUG(__func__);	
+	ESDM_DEBUG(__func__);
 
 	// unregister and finalize modules in reverse order
 	/*
@@ -176,7 +168,7 @@ esdm_status_t esdm_modules_finalize()
 
 esdm_status_t esdm_modules_get_by_type(esdm_module_type_t type, esdm_module_type_array_t * array)
 {
-	ESDM_DEBUG(__func__);	
+	ESDM_DEBUG(__func__);
 
 
 
@@ -186,7 +178,3 @@ esdm_status_t esdm_modules_get_by_type(esdm_module_type_t type, esdm_module_type
 
 	return ESDM_SUCCESS;
 }
-
-
-
-

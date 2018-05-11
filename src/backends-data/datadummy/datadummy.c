@@ -1,18 +1,18 @@
-/* This file is part of ESDM.                                              
- *                                                                              
- * This program is is free software: you can redistribute it and/or modify         
- * it under the terms of the GNU Lesser General Public License as published by  
- * the Free Software Foundation, either version 3 of the License, or            
- * (at your option) any later version.                                          
- *                                                                              
- * This program is is distributed in the hope that it will be useful,           
- * but WITHOUT ANY WARRANTY; without even the implied warranty of               
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the                
- * GNU General Public License for more details.                                 
- *                                                                                 
- * You should have received a copy of the GNU Lesser General Public License        
- * along with ESDM.  If not, see <http://www.gnu.org/licenses/>.           
- */                                                                         
+/* This file is part of ESDM.
+ *
+ * This program is is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Lesser General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public License
+ * along with ESDM.  If not, see <http://www.gnu.org/licenses/>.
+ */
 
 /**
  * @file
@@ -52,7 +52,7 @@ void log(uint32_t loglevel, const char* format, ...)
 // Helper and utility /////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////
 
-int mkfs(esdm_backend_t* backend) 
+int mkfs(esdm_backend_t* backend)
 {
 
 	posix_backend_data_t* data = (posix_backend_data_t*)backend->data;
@@ -68,21 +68,21 @@ int mkfs(esdm_backend_t* backend)
 
 	if (stat(tgt, &st) == -1)
 	{
-		char* root; 
+		char* root;
 		char* cont;
 		char* sdat;
 		char* sfra;
-		
+
 		asprintf(&root, "%s", tgt);
 		asprintf(&cont, "%s/containers", tgt);
 		asprintf(&sdat, "%s/shared-datasets", tgt);
 		asprintf(&sfra, "%s/shared-fragments", tgt);
-		
+
 		mkdir(root, 0700);
 		mkdir(cont, 0700);
 		mkdir(sdat, 0700);
 		mkdir(sfra, 0700);
-	
+
 		free(root);
 		free(cont);
 		free(sdat);
@@ -121,7 +121,7 @@ int fsck()
 // ESDM Callbacks /////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////
 
-int posix_backend_performance_estimate(esdm_backend_t* backend) 
+int posix_backend_performance_estimate(esdm_backend_t* backend)
 {
 	DEBUG(0, "Calculating performance estimate.");
 
@@ -136,7 +136,7 @@ int posix_backend_performance_estimate(esdm_backend_t* backend)
 }
 
 
-int posix_create() 
+int posix_create()
 {
 	DEBUG(0, "Create");
 
@@ -159,31 +159,31 @@ int posix_create()
 
 
 /**
- *	
+ *
  *	handle
  *	mode
- *	owner?	
+ *	owner?
  *
  */
-int posix_open() 
+int posix_open()
 {
 	DEBUG(0, "Open");
 return 0;
 }
 
-int posix_write() 
+int posix_write()
 {
 	DEBUG(0, "Write");
 	return 0;
 }
 
-int posix_read() 
+int posix_read()
 {
 	DEBUG(0, "Read");
 	return 0;
 }
 
-int posix_close() 
+int posix_close()
 {
 	DEBUG(0, "Close");
 	return 0;
@@ -191,21 +191,21 @@ int posix_close()
 
 
 
-int posix_allocate() 
+int posix_allocate()
 {
 	DEBUG(0, "Allocate");
 	return 0;
 }
 
 
-int posix_update() 
+int posix_update()
 {
 	DEBUG(0, "Update");
 	return 0;
 }
 
 
-int posix_lookup() 
+int posix_lookup()
 {
 	DEBUG(0, "Lookup");
 	return 0;
@@ -255,7 +255,7 @@ static esdm_backend_t backend_template = {
 * @return pointer to backend struct
 */
 esdm_backend_t* posix_backend_init(void* init_data) {
-	
+
 	DEBUG(0, "Initializing POSIX backend.");
 
 	esdm_backend_t* backend = (esdm_backend_t*) malloc(sizeof(esdm_backend_t));
@@ -267,18 +267,10 @@ esdm_backend_t* posix_backend_init(void* init_data) {
 	data->options = options;
 
 	// valid refs for backend, data, options available now
-
-
 	data->other = 47;
 
-
 	// todo check posix style persitency structure available?
-	mkfs(backend);	
-
-
-
-
-
+	mkfs(backend);
 
 	return backend;
 
@@ -293,5 +285,3 @@ int posix_finalize()
 
 	return 0;
 }
-
-

@@ -13,24 +13,17 @@
  * You should have received a copy of the GNU Lesser General Public License
  * along with ESDM.  If not, see <http://www.gnu.org/licenses/>.
  */
-#ifndef ESDM_BACKENDS_POSIX_H
-#define ESDM_BACKENDS_POSIX_H
-
-#include <esdm.h>
+#include <esdm-debug.h>
 #include <backends-data/generic-perf-model/lat-thr.h>
 
-// Internal functions used by this backend.
-typedef struct {
-	esdm_config_backend_t *config;
-	const char *target;
-	esdm_perf_model_lat_thp_t perf_model;
-} posix_backend_data_t;
+int esdm_backend_parse_perf_model_lat_thp(json_t * str, esdm_perf_model_lat_thp_t * out_data){
+  json_t *elem = NULL;
+  elem = json_object_get(str, "latency");
+  assert(elem != NULL);
+  out_data->latency_in_s = json_real_value(elem);
+  elem = json_object_get(str, "throughput");
+  assert(elem != NULL);
+  out_data->throughputMiBs = json_real_value(elem);
 
-
-
-
-
-esdm_backend_t* posix_backend_init(esdm_config_backend_t *config);
-
-
-#endif
+  return 0;
+}

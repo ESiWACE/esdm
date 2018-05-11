@@ -3,7 +3,7 @@ set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} ${CMAKE_SOURCE_DIR}/cmake)
 
 #
 # PROJECT METADATA
-# _____________________________________________________________________________ 
+# _____________________________________________________________________________
 
 set(PROJECT_NAME esdm)
 project(${PROJECT_NAME} C CXX)
@@ -16,7 +16,7 @@ set(VERSION ${VERSION_MAJOR}.${VERSION_MINOR}.${VERSION_PATCH})
 
 #
 # USEFUL PROJECT VARIABLES
-# _____________________________________________________________________________ 
+# _____________________________________________________________________________
 
 set(DEV_DIR "${CMAKE_SOURCE_DIR}/dev")
 set(DOC_DIR "${CMAKE_SOURCE_DIR}/doc")
@@ -25,7 +25,7 @@ set(DEPS_DIR "${CMAKE_SOURCE_DIR}/deps")
 
 # CMake useful variables
 #set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin")
-#set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/lib") 
+#set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/lib")
 #set(CMAKE_LIBRARY_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/lib")
 
 
@@ -33,7 +33,7 @@ set(DEPS_DIR "${CMAKE_SOURCE_DIR}/deps")
 
 #
 # BUILD SETTINGS
-# _____________________________________________________________________________ 
+# _____________________________________________________________________________
 
 set (CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -std=gnu11 -pedantic -Wall -Wextra -Wdouble-promotion -Wfloat-equal -flto -fdata-sections -ffunction-sections -Wl,--gc-sections -Wl,--allow-shlib-undefined -Wl,--retain-symbols-file=${CMAKE_SOURCE_DIR}/dev/symbols.txt -pedantic-errors")
  # -fvisibility=hidden -fvisibility-inlines-hidden
@@ -41,17 +41,16 @@ set (CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -std=gnu11 -pedantic -Wall -Wextra -Wdouble
 set (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -pedantic -Wall -Wextra -Wdouble-promotion -Wfloat-equal -flto -fdata-sections -ffunction-sections -Wl,--gc-sections -Wl,--allow-shlib-undefined -pedantic-errors")
 
 #-fvisibility=hidden -fvisibility-inlines-hidden
-set (CMAKE_CXX_FLAGS_DEBUG "${CMAKE_C_FLAGS_DEBUG} -O0 -g")
+set (CMAKE_CXX_FLAGS_DEBUG "${CMAKE_C_FLAGS_DEBUG} -O0 -g3")
 set (CMAKE_CXX_FLAGS_RELEASE "${CMAKE_C_FLAGS_RELEASE} -O3")
 
-set (CMAKE_C_FLAGS_DEBUG "${CMAKE_C_FLAGS_DEBUG} -O0 -g")
+set (CMAKE_C_FLAGS_DEBUG "${CMAKE_C_FLAGS_DEBUG} -O0 -g3")
 set (CMAKE_C_FLAGS_RELEASE "${CMAKE_C_FLAGS_RELEASE} -O3")
-
 
 
 #
 # CNAKE MODULES & DEPENDENCIES
-# _____________________________________________________________________________ 
+# _____________________________________________________________________________
 
 include(CTest)
 include(FeatureSummary)
@@ -102,7 +101,7 @@ add_feature_info(plantuml plantuml  "PlantUML for documentation" URL http://de.p
 
 #
 # OTHER
-# _____________________________________________________________________________ 
+# _____________________________________________________________________________
 
 
 

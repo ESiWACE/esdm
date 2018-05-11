@@ -1,18 +1,18 @@
-/* This file is part of ESDM.                                              
- *                                                                              
- * This program is is free software: you can redistribute it and/or modify         
- * it under the terms of the GNU Lesser General Public License as published by  
- * the Free Software Foundation, either version 3 of the License, or            
- * (at your option) any later version.                                          
- *                                                                              
- * This program is is distributed in the hope that it will be useful,           
- * but WITHOUT ANY WARRANTY; without even the implied warranty of               
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the                
- * GNU General Public License for more details.                                 
- *                                                                                 
- * You should have received a copy of the GNU Lesser General Public License        
- * along with ESDM.  If not, see <http://www.gnu.org/licenses/>.           
- */                                                                         
+/* This file is part of ESDM.
+ *
+ * This program is is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Lesser General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public License
+ * along with ESDM.  If not, see <http://www.gnu.org/licenses/>.
+ */
 
 /**
  * @file
@@ -42,7 +42,7 @@ json_t* esdm_config_gather(int argc, char const *argv[]);
  */
 esdm_config_t* esdm_config_init(esdm_instance_t *esdm)
 {
-	ESDM_DEBUG(__func__);	
+	ESDM_DEBUG(__func__);
 
 	esdm_config_t* config = NULL;
 	config = (esdm_config_t*) malloc(sizeof(esdm_config_t));
@@ -56,7 +56,7 @@ esdm_config_t* esdm_config_init(esdm_instance_t *esdm)
 
 esdm_status_t esdm_config_finalize(esdm_instance_t *esdm)
 {
-	ESDM_DEBUG(__func__);	
+	ESDM_DEBUG(__func__);
 
 	json_decref(esdm->config->json);
 	free(esdm->config);
@@ -78,9 +78,9 @@ esdm_status_t esdm_config_finalize(esdm_instance_t *esdm)
  *  arguments
  *
  */
-json_t* esdm_config_gather(int argc, char const* argv[]) 
+json_t* esdm_config_gather(int argc, char const* argv[])
 {
-	ESDM_DEBUG(__func__);	
+	ESDM_DEBUG(__func__);
 
 	char* config_json = NULL;
 
@@ -97,7 +97,7 @@ json_t* esdm_config_gather(int argc, char const* argv[])
 
 esdm_config_backend_t* esdm_config_get_metadata_coordinator(esdm_instance_t* esdm)
 {
-	ESDM_DEBUG(__func__);	
+	ESDM_DEBUG(__func__);
 
 	json_t *root = (json_t*) esdm->config->json;
 
@@ -125,7 +125,7 @@ esdm_config_backend_t* esdm_config_get_metadata_coordinator(esdm_instance_t* esd
  */
 esdm_config_backends_t* esdm_config_get_backends(esdm_instance_t* esdm)
 {
-	ESDM_DEBUG(__func__);	
+	ESDM_DEBUG(__func__);
 
 	json_t *root = (json_t*) esdm->config->json;
 
@@ -151,7 +151,7 @@ esdm_config_backends_t* esdm_config_get_backends(esdm_instance_t* esdm)
 
 				json_t *backend = json_array_get(element, i);
 				json_t *elem = NULL;
-				
+
 				elem = json_object_get(backend, "type");
 				backends[i].type = json_string_value(elem);
 
@@ -160,11 +160,11 @@ esdm_config_backends_t* esdm_config_get_backends(esdm_instance_t* esdm)
 
 				elem = json_object_get(backend, "target");
 				backends[i].target = json_string_value(elem);
-
+				backends[i].performance_model = json_object_get(backend, "performance-model");
 
 				backends[i].esdm = root;
 				backends[i].backend = backend;
-			}	
+			}
 
 			config_backends->count = size;
 			config_backends->backends = backends;
@@ -177,54 +177,3 @@ esdm_config_backends_t* esdm_config_get_backends(esdm_instance_t* esdm)
 
 	return config_backends;
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-

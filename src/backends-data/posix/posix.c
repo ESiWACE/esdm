@@ -1,18 +1,18 @@
-/* This file is part of ESDM.                                              
- *                                                                              
- * This program is is free software: you can redistribute it and/or modify         
- * it under the terms of the GNU Lesser General Public License as published by  
- * the Free Software Foundation, either version 3 of the License, or            
- * (at your option) any later version.                                          
- *                                                                              
- * This program is is distributed in the hope that it will be useful,           
- * but WITHOUT ANY WARRANTY; without even the implied warranty of               
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the                
- * GNU General Public License for more details.                                 
- *                                                                                 
- * You should have received a copy of the GNU Lesser General Public License        
- * along with ESDM.  If not, see <http://www.gnu.org/licenses/>.           
- */                                                                         
+/* This file is part of ESDM.
+ *
+ * This program is is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Lesser General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public License
+ * along with ESDM.  If not, see <http://www.gnu.org/licenses/>.
+ */
 
 /**
  * @file
@@ -53,7 +53,7 @@ static void log(const char* format, ...)
 // Helper and utility /////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////
 
-static int mkfs(esdm_backend_t* backend) 
+static int mkfs(esdm_backend_t* backend)
 {
 
 	posix_backend_data_t* data = (posix_backend_data_t*)backend->data;
@@ -68,21 +68,21 @@ static int mkfs(esdm_backend_t* backend)
 
 	if (stat(tgt, &st) == -1)
 	{
-		char* root; 
+		char* root;
 		char* cont;
 		char* sdat;
 		char* sfra;
-		
+
 		asprintf(&root, "%s", tgt);
 		asprintf(&cont, "%s/containers", tgt);
 		asprintf(&sdat, "%s/shared-datasets", tgt);
 		asprintf(&sfra, "%s/shared-fragments", tgt);
-		
+
 		mkdir(root, 0700);
 		mkdir(cont, 0700);
 		mkdir(sdat, 0700);
 		mkdir(sfra, 0700);
-	
+
 		free(root);
 		free(cont);
 		free(sdat);
@@ -117,7 +117,7 @@ static int entry_create(const char *path)
 {
 	int status;
 	struct stat sb;
-	
+
 	printf("entry_create(%s)\n", path);
 
 	// ENOENT => allow to create
@@ -183,7 +183,7 @@ static int entry_retrieve(const char *path, void **buf, size_t **count)
 		close(fd);
 	}
 
-	printf("Entry content: %s\n", (char *) *buf);
+	//printf("Entry content: %s\n", (char *) *buf);
 
 	/*
 	uint64_t *buf64 = (uint64_t*) buf;
@@ -200,7 +200,7 @@ static int entry_retrieve(const char *path, void **buf, size_t **count)
 
 static int entry_update(const char *path, void *buf, size_t len)
 {
-	DEBUG(__func__);	
+	DEBUG(__func__);
 
 	int status;
 	struct stat sb;
@@ -230,9 +230,9 @@ static int entry_update(const char *path, void *buf, size_t len)
 }
 
 
-static int entry_destroy(const char *path) 
+static int entry_destroy(const char *path)
 {
-	DEBUG(__func__);	
+	DEBUG(__func__);
 
 	int status;
 	struct stat sb;
@@ -265,7 +265,7 @@ static int entry_destroy(const char *path)
 
 static int fragment_retrieve(esdm_backend_t* backend, esdm_fragment_t *fragment)
 {
-	DEBUG(__func__);	
+	DEBUG(__func__);
 
 	// set data, options and tgt for convienience
 	posix_backend_data_t* data = (posix_backend_data_t*)backend->data;
@@ -309,7 +309,7 @@ static int fragment_retrieve(esdm_backend_t* backend, esdm_fragment_t *fragment)
 
 static int fragment_update(esdm_backend_t* backend, esdm_fragment_t *fragment)
 {
-	DEBUG(__func__);	
+	DEBUG(__func__);
 
 	// set data, options and tgt for convienience
 	posix_backend_data_t* data = (posix_backend_data_t*)backend->data;
@@ -338,7 +338,7 @@ static int fragment_update(esdm_backend_t* backend, esdm_fragment_t *fragment)
 	size_t len = 6;
 	entry_update(path_fragment, &buf, len);
 	*/
-	
+
 	entry_update(path_fragment, fragment->buf, fragment->bytes);
 
 	//entry_update()
@@ -363,7 +363,7 @@ static int fragment_update(esdm_backend_t* backend, esdm_fragment_t *fragment)
  * Callback implementation when beeing queried for a performance estimate.
  *
  */
-static int posix_backend_performance_estimate(esdm_backend_t* backend /* TODO: , esdm_fragment_t fragment  (?) */) 
+static int posix_backend_performance_estimate(esdm_backend_t* backend /* TODO: , esdm_fragment_t fragment  (?) */)
 {
 	DEBUG("Calculating performance estimate");
 
@@ -446,7 +446,7 @@ static esdm_backend_t backend_template = {
 *
 * @return pointer to backend struct
 */
-esdm_backend_t* posix_backend_init(esdm_config_backend_t *config) 
+esdm_backend_t* posix_backend_init(esdm_config_backend_t *config)
 {
 	DEBUG(__func__);
 
@@ -456,6 +456,7 @@ esdm_backend_t* posix_backend_init(esdm_config_backend_t *config)
 	// allocate memory for backend instance
 	backend->data = (void*) malloc(sizeof(posix_backend_data_t));
 	posix_backend_data_t* data = (posix_backend_data_t*) backend->data;
+	esdm_backend_parse_perf_model_lat_thp(config->performance_model, & data->perf_model);
 
 	// configure backend instance
 	data->config = config;
@@ -466,9 +467,7 @@ esdm_backend_t* posix_backend_init(esdm_config_backend_t *config)
 
 
 	// todo check posix style persitency structure available?
-	mkfs(backend);	
+	mkfs(backend);
 
 	return backend;
 }
-
-

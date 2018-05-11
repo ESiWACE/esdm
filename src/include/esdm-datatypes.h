@@ -102,7 +102,7 @@ typedef struct esdm_fragment_t esdm_fragment_t;
 
 struct esdm_container_t {
 	char *name;
-	esdm_metadata_t *metadata;	
+	esdm_metadata_t *metadata;
 	GHashTable *datasets;
 	esdm_status_t status;
 };
@@ -157,7 +157,7 @@ typedef struct esdm_fragment_index_t {
 // MODULES ////////////////////////////////////////////////////////////////////
 
 /**
- *	
+ *
  */
 typedef enum {
 	ESDM_TYPE_DATA,
@@ -177,10 +177,10 @@ typedef struct esdm_backend_callbacks_t esdm_backend_callbacks_t;
  *		before ESDM exits, it will call the finalize function for every module
  *
  * performance_estimate:
- *		
- *	
  *
- * 
+ *
+ *
+ *
  * Notes:
  *	* No callback is expected for initialization as ESDM calls it on discovery.
  *
@@ -219,7 +219,7 @@ struct esdm_backend_callbacks_t {
 
 
 /**
- * On backend registration ESDM expects the backend to return a pointer to 
+ * On backend registration ESDM expects the backend to return a pointer to
  * a esdm_backend_t struct.
  *
  * Each backend provides
@@ -249,6 +249,7 @@ struct esdm_config_backend_t {
 	const char *name;
 	const char *target;
 
+	json_t * performance_model;
 	json_t *esdm;
 	json_t *backend;
 };
