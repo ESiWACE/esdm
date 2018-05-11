@@ -107,20 +107,20 @@ static int fsck()
 // Internal Helpers  //////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////
 
-static int entry_create(const char *path)
+static int entry_create(const char *path, esdm_metadata_t * data)
 {
 	DEBUG(__func__);
 
 	int status;
 	struct stat sb;
 
-	printf("entry_create(%s)\n", path);
+	printf("entry_create(%s - %s)\n", path, data != NULL ? data->json : NULL);
 
 	// ENOENT => allow to create
 
 	status = stat(path, &sb);
-	if (status == -1) {
-		perror("stat");
+	//if (status == -1) {
+	//	perror("stat");
 
 		// write to non existing file
 		int fd = open(path,	O_WRONLY | O_CREAT, S_IWUSR | S_IRUSR | S_IWGRP | S_IRGRP | S_IROTH);
@@ -128,20 +128,23 @@ static int entry_create(const char *path)
 		// everything ok? write and close
 		if ( fd != -1 )
 		{
+			if(data != NULL && data->json != NULL){
+				int size = strlen(data->json);
+				int ret = write(fd, data->json, size);
+				assert( ret == size );
+			}
 			close(fd);
+			return 0;
 		}
-
-		return 0;
-
-	} else {
-		// already exists
-		return -1;
-	}
+		return 1;
+	//} else {
+	//	// already exists
+	//	return -1;
+	//}
 
 }
 
-
-static int entry_retrieve(const char *path)
+static int entry_retrieve_tst(const char *path)
 {
 	DEBUG(__func__);
 
@@ -149,7 +152,7 @@ static int entry_retrieve(const char *path)
 	struct stat sb;
 	char *buf;
 
-	printf("entry_retrieve(%s)\n", path);
+	printf("entry_retrieve_tst(%s)\n", path);
 
 	status = stat(path, &sb);
 	if (status == -1) {
@@ -271,7 +274,7 @@ static int container_create(esdm_backend_t* backend, esdm_container_t *container
 	asprintf(&path_container, "%s/containers/%s", tgt, container->name);
 
 	// create metadata entry
-	entry_create(path_metadata);
+	entry_create(path_metadata, NULL);
 
 	// create directory for datsets
 	if (stat(path_container, &sb) == -1)
@@ -300,7 +303,7 @@ static int container_retrieve(esdm_backend_t* backend, esdm_container_t *contain
 	asprintf(&path_container, "%s/containers/%s", tgt, container->name);
 
 	// create metadata entry
-	entry_retrieve(path_metadata);
+	entry_retrieve_tst(path_metadata);
 
 
 	free(path_metadata);
@@ -380,7 +383,7 @@ static int dataset_create(esdm_backend_t* backend, esdm_dataset_t *dataset)
 	asprintf(&path_dataset, "%s/containers/%s/%s", tgt, dataset->container->name, dataset->name);
 
 	// create metadata entry
-	entry_create(path_metadata);
+	entry_create(path_metadata, NULL);
 
 	// create directory for datsets
 	if (stat(path_dataset, &sb) == -1)
@@ -416,6 +419,47 @@ static int dataset_destroy(esdm_backend_t* backend, esdm_dataset_t *dataset)
 // Fragment Helpers ///////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////
 
+static int fragment_retrieve(esdm_backend_t* backend, esdm_fragment_t *fragment, json_t * metadata){
+		// set data, options and tgt for convienience
+		metadummy_backend_options_t *options = (metadummy_backend_options_t*) backend->data;
+		const char* tgt = options->target;
+
+		// serialization of subspace for fragment
+		char *fragment_name = esdm_dataspace_string_descriptor(fragment->dataspace);
+
+		// determine path
+		char *path;
+		asprintf(&path, "%s/containers/%s/%s/", tgt, fragment->dataset->container->name, fragment->dataset->name);
+
+		// determine path to fragment
+		char *path_fragment;
+		asprintf(&path_fragment, "%s/containers/%s/%s/%s", tgt, fragment->dataset->container->name, fragment->dataset->name, fragment_name);
+
+
+		int status;
+		struct stat sb;
+		char *buf;
+
+		status = stat(path_fragment, &sb);
+		if (status == -1) {
+			perror("stat");
+			// does not exist
+			return -1;
+		}
+
+		int fd = open(path_fragment,	O_RDONLY | S_IWUSR | S_IRUSR | S_IWGRP | S_IRGRP | S_IROTH);
+
+		// everything ok? write and close
+		if ( fd != -1 )
+		{
+			// write some metadata
+			read(fd, fragment->metadata->json, sb.st_size);
+			close(fd);
+		}
+
+		return 0;
+}
+
 static int fragment_update(esdm_backend_t* backend, esdm_fragment_t *fragment)
 {
 	DEBUG(__func__);
@@ -426,7 +470,6 @@ static int fragment_update(esdm_backend_t* backend, esdm_fragment_t *fragment)
 
 	// serialization of subspace for fragment
 	char *fragment_name = esdm_dataspace_string_descriptor(fragment->dataspace);
-
 
 	// determine path
 	char *path;
@@ -441,7 +484,7 @@ static int fragment_update(esdm_backend_t* backend, esdm_fragment_t *fragment)
 
 	// create metadata entry
 	mkdir_recursive(path);
-	entry_create(path_fragment);
+	entry_create(path_fragment, fragment->metadata);
 
 	/*
 	char *buf = NULL;
@@ -457,7 +500,7 @@ static int fragment_update(esdm_backend_t* backend, esdm_fragment_t *fragment)
 	size_t *count = NULL;
 	void *buf = NULL;
 
-	entry_retrieve(path_fragment, &buf, &count);
+	entry_retrieve_tst(path_fragment, &buf, &count);
 		*/
 
 	free(path);
@@ -544,7 +587,7 @@ static esdm_backend_t backend_template = {
 		dataset_destroy, // dataset destroy
 
 		NULL, // fragment create
-		NULL, // fragment retrieve
+		fragment_retrieve, // fragment retrieve
 		fragment_update, // fragment update
 		NULL, // fragment destroy
 	},
@@ -610,28 +653,28 @@ static void metadummy_test()
 
 
 	// create entry and test
-	ret = entry_create(abc);
+	ret = entry_create(abc, NULL);
 	assert(ret == 0);
 
-	ret = entry_retrieve(abc);
+	ret = entry_retrieve_tst(abc);
 	assert(ret == 0);
 
 
 	// double create
-	ret = entry_create(def);
+	ret = entry_create(def, NULL);
 	assert(ret == 0);
 
-	ret = entry_create(def);
+	ret = entry_create(def, NULL);
 	assert(ret == -1);
 
 
 	// perform update and test
 	ret = entry_update(abc, "huhuhuhuh", 5);
-	ret = entry_retrieve(abc);
+	ret = entry_retrieve_tst(abc);
 
 	// delete entry and expect retrieve to fail
 	ret = entry_destroy(abc);
-	ret = entry_retrieve(abc);
+	ret = entry_retrieve_tst(abc);
 	assert(ret == -1);
 
 

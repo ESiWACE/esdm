@@ -188,7 +188,6 @@ esdm_fragment_t* esdm_fragment_create(esdm_dataset_t* dataset, esdm_dataspace_t*
 	ESDM_DEBUG(__func__);
 	esdm_fragment_t* fragment = (esdm_fragment_t*) malloc(sizeof(esdm_fragment_t));
 
-
 	for (int64_t i = 0; i < subspace->dimensions; i++) { printf("dim %d, subsize=%d (%p)\n", i, subspace->subsize[i], subspace->subsize); }
 
 	// calculate subspace element count
@@ -208,8 +207,11 @@ esdm_fragment_t* esdm_fragment_create(esdm_dataset_t* dataset, esdm_dataspace_t*
 	int64_t bytes = size*esdm_sizeof(subspace->datatype);
 	printf("Entries in subspace: %d x %d bytes = %d bytes \n", size, esdm_sizeof(subspace->datatype), bytes);
 
+	fragment->metadata = malloc(1024);
+	fragment->metadata->json = (char*)(fragment->metadata + sizeof(esdm_metadata_t));
+	fragment->metadata->json[0] = 0;
+	fragment->metadata->size = 0;
 
-	fragment->metadata = NULL;
 	fragment->dataset = dataset;
 	fragment->dataspace = subspace;
 	fragment->buf = buf;	// zero copy?
@@ -229,15 +231,23 @@ esdm_status_t esdm_fragment_retrieve(esdm_fragment_t *fragment)
 {
 	ESDM_DEBUG(__func__);
 
+	// for now take the first plugin
 
 	esdm_dataspace_string_descriptor(fragment->dataspace);
+	esdm.modules->metadata->callbacks.fragment_retrieve(esdm.modules->metadata, fragment, NULL);
+	json_t *root = load_json(fragment->metadata->json);
+	json_t * elem;
+	elem = json_object_get(root, "plugin");
+	const char * plugin_type = json_string_value(elem);
+	elem = json_object_get(root, "name");
+	const char * plugin_name = json_string_value(elem);
+	//printf("%s - %s\n", plugin_type, plugin_name);
+	elem = json_object_get(root, "data");
 
 	// Call backend
-	esdm_backend_t *backend = (esdm_backend_t*) g_hash_table_lookup(esdm.modules->backends, "p1");  // TODO: decision component
-	backend->callbacks.fragment_retrieve(backend, fragment);
+	esdm_backend_t *backend = (esdm_backend_t*) g_hash_table_lookup(esdm.modules->backends, plugin_name);  // TODO: decision component, upon many
 
-
-
+	backend->callbacks.fragment_retrieve(backend, fragment, elem);
 	return ESDM_SUCCESS;
 }
 
@@ -299,8 +309,7 @@ esdm_status_t esdm_fragment_commit(esdm_fragment_t *fragment)
 	ESDM_DEBUG(__func__);
 
 	// Schedule for I/O
-	esdm_scheduler_enqueue(&esdm, fragment);
-
+	//esdm_scheduler_enqueue(&esdm, fragment);
 
 	GHashTableIter iter;
 	// TODO move to decision component
@@ -310,6 +319,7 @@ esdm_status_t esdm_fragment_commit(esdm_fragment_t *fragment)
 
   float best_time = 1e36;
 	esdm_backend_t* backend = NULL;
+	char * best_name = NULL;
   while (g_hash_table_iter_next (&iter, (gpointer) &name, (gpointer) &val_backend))
   {
 		float time_est = 1e35;
@@ -317,18 +327,20 @@ esdm_status_t esdm_fragment_commit(esdm_fragment_t *fragment)
 		if(time_est < best_time){
 			backend = val_backend;
 			best_time = time_est;
+			best_name = name;
 		}
   }
 
+	printf("Target choice: %s\n", best_name );
+
 	// Call backend
 	assert(backend != NULL);
+	fragment->metadata->size += sprintf(& fragment->metadata->json[fragment->metadata->size], "{\"plugin\" : \"POSIX\", \"name\" : \"%s\", \"data\" :", best_name);
 	backend->callbacks.fragment_update(backend, fragment);
+	fragment->metadata->size += sprintf(& fragment->metadata->json[fragment->metadata->size], "}");
 
 	// Announce to metadata coordinator
-
-	// TODO: store backend which hold a fragment
 	esdm.modules->metadata->callbacks.fragment_update(esdm.modules->metadata, fragment);
-
 
 	fragment->status = ESDM_PERSISTENT;
 

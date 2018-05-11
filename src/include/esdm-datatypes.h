@@ -98,6 +98,8 @@ typedef struct esdm_metadata_t esdm_metadata_t;
 typedef struct esdm_dataset_t esdm_dataset_t;
 typedef struct esdm_dataspace_t esdm_dataspace_t;
 typedef struct esdm_fragment_t esdm_fragment_t;
+typedef struct esdm_backend_t esdm_backend_t;
+typedef struct esdm_backend_callbacks_t esdm_backend_callbacks_t;
 
 
 struct esdm_container_t {
@@ -109,6 +111,7 @@ struct esdm_container_t {
 
 struct esdm_metadata_t {
 	char *json;
+	int size;
 };
 
 struct esdm_dataset_t {
@@ -134,7 +137,7 @@ struct esdm_dataspace_t {
 };
 
 struct esdm_fragment_t {
-	esdm_metadata_t *metadata;
+	esdm_metadata_t *metadata; // only valid after written
 	esdm_dataset_t *dataset;
 	esdm_dataspace_t *dataspace;
 
@@ -171,10 +174,6 @@ typedef enum {
 	ESDM_TYPE_METADATA,
 	ESDM_TYPE_HYBRID
 } esdm_module_type_t;
-
-
-typedef struct esdm_backend_t esdm_backend_t;
-typedef struct esdm_backend_callbacks_t esdm_backend_callbacks_t;
 
 
 // Callbacks
@@ -219,7 +218,7 @@ struct esdm_backend_callbacks_t {
 	int (*dataset_destroy)(esdm_backend_t*, esdm_dataset_t *dataset);
 
 	int (*fragment_create)(esdm_backend_t*, esdm_fragment_t *fragment);
-	int (*fragment_retrieve)(esdm_backend_t*, esdm_fragment_t *fragment);
+	int (*fragment_retrieve)(esdm_backend_t*, esdm_fragment_t *fragment, json_t *metadata);
 	int (*fragment_update)(esdm_backend_t*, esdm_fragment_t *fragment);
 	int (*fragment_destroy)(esdm_backend_t*, esdm_fragment_t *fragment);
 };

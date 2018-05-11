@@ -263,7 +263,7 @@ static int entry_destroy(const char *path)
 // Fragment Handlers //////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////
 
-static int fragment_retrieve(esdm_backend_t* backend, esdm_fragment_t *fragment)
+static int fragment_retrieve(esdm_backend_t* backend, esdm_fragment_t *fragment, json_t * metadata)
 {
 	DEBUG(__func__);
 
@@ -333,22 +333,14 @@ static int fragment_update(esdm_backend_t* backend, esdm_fragment_t *fragment)
 	mkdir_recursive(path);
 	entry_create(path_fragment);
 
-	/*
-	char *buf = NULL;
-	size_t len = 6;
-	entry_update(path_fragment, &buf, len);
-	*/
+	fragment->metadata->size += sprintf(& fragment->metadata->json[fragment->metadata->size], "{\"path\" : \"%s\"}", path_fragment);
 
 	entry_update(path_fragment, fragment->buf, fragment->bytes);
-
 	//entry_update()
 
 	size_t *count = NULL;
 	void *buf = NULL;
-
 	entry_retrieve(path_fragment, &buf, &count);
-
-
 	free(path);
 	free(path_fragment);
 }
