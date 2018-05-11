@@ -29,7 +29,7 @@ function help(){
 }
 
 # Some defaults
-debug="YES"
+debug=""
 buildDIR="build"
 
 function reconfigure(){

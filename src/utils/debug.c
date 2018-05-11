@@ -38,6 +38,7 @@ void esdm_log(uint32_t loglevel, const char* format, ...)
 
 	if ( loglevel <= active_loglevel ) {
 		va_list args;
+    printf("[ESDM] ");
 		va_start(args,format);
 		vprintf(format,args);
 		va_end(args);

@@ -46,7 +46,7 @@ esdm_instance_t esdm;
 */
 esdm_status_t esdm_init()
 {
-	ESDM_DEBUG(__func__);
+	ESDM_DEBUG("Init");
 
 	if (!is_initialized) {
 		ESDM_DEBUG("Initializing ESDM");
@@ -206,7 +206,7 @@ esdm_status_t esdm_write(esdm_dataset_t *dataset, void *buf, esdm_dataspace_t* s
 	// create new fragment
 	esdm_fragment_t *fragment = esdm_fragment_create(dataset, subspace, buf);
 	esdm_fragment_commit(fragment);
-	
+
 	return ESDM_SUCCESS;
 }
 
