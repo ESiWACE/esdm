@@ -129,7 +129,7 @@ static int entry_create(const char *path, esdm_metadata_t * data)
 		if ( fd != -1 )
 		{
 			if(data != NULL && data->json != NULL){
-				int size = strlen(data->json);
+				int size = strlen(data->json) + 1;
 				int ret = write(fd, data->json, size);
 				assert( ret == size );
 			}

@@ -26,26 +26,16 @@
 #include <esdm.h>
 #include "util/test_util.h"
 
-int verify_data(long size, uint64_t* a, uint64_t* b) {
-	int mismatches = 0;
-	int idx;
-
-	for(int x=0; x < size; x++){
-		for(int y=0; y < size; y++){
-			idx = y*size+x;
-
-			if (a[idx] != b[idx]) {
-				mismatches++;
-			}
-		}
-	}
-	return mismatches;
-}
-
 
 int main(int argc, char* argv[])
 {
 	MPI_Init(& argc, & argv);
+
+	int mpi_size;
+	int mpi_rank;
+
+	MPI_Comm_rank(MPI_COMM_WORLD, & mpi_rank);
+	MPI_Comm_size(MPI_COMM_WORLD, & mpi_size);
 
 	if(argc != 2){
 		printf("Syntax: %s SIZE", argv[0]);
@@ -53,19 +43,26 @@ int main(int argc, char* argv[])
 		exit(1);
 	}
 	const long size = atol(argv[1]);
-	printf("Running with a 2D slice of %ld*%ld\n", size, size);
-	const long volume = size*size*sizeof(uint64_t);
+
+	if(mpi_rank == 0)
+		printf("Running with a 2D slice of %ld*%ld\n", size, size);
+
+	int64_t dim[] = {size / mpi_size + (mpi_rank < (size % mpi_size) ? 1 : 0), size};
+	int64_t offset[] = {size / mpi_size * mpi_rank + (mpi_rank < (size % mpi_size) ? mpi_rank : size % mpi_size), 0};
+	//printf("%d %d - %d-%d \n", dim[1], dim[0], offset[1], offset[0]);
+
+	const long volume 		= dim[0]*dim[1]*sizeof(uint64_t);
+	const long volume_all = size*size*sizeof(uint64_t);
 
 	// prepare data
 	uint64_t * buf_w = (uint64_t *) malloc(volume);
 	uint64_t * buf_r = (uint64_t *) malloc(volume);
 
-	for(int x=0; x < size; x++){
-		for(int y=0; y < size; y++){
-			buf_w[y*size+x] = y*size + x + 1;
+	for(int y=offset[0]; y < dim[0]; y++){
+		for(int x=offset[1]; x < dim[1]; x++){
+			buf_w[(y-offset[0])*size+x] = y*size + x + 1;
 		}
 	}
-
 
 	// Interaction with ESDM
 	esdm_status_t ret;
@@ -87,34 +84,60 @@ int main(int argc, char* argv[])
 	esdm_dataset_commit(dataset);
 
 	// define subspace
-	int64_t dim[] = {size,size};
-	int64_t offset[] = {0,0};
 	esdm_dataspace_t *subspace = esdm_dataspace_subspace(dataspace, 2, dim, offset);
 
 	timer t;
+	MPI_Barrier(MPI_COMM_WORLD);
 	start_timer(&t);
 
 	// Write the data to the dataset
 	ret = esdm_write(dataset, buf_w, subspace);
+	assert( ret == ESDM_SUCCESS );
+	MPI_Barrier(MPI_COMM_WORLD);
 	const double write_time = stop_timer(t);
 
 	start_timer(&t);
 	// Read the data to the dataset
 	ret = esdm_read(dataset, buf_r, subspace);
+	assert( ret == ESDM_SUCCESS );
+
+	MPI_Barrier(MPI_COMM_WORLD);
 	const double read_time = stop_timer(t);
 
 	// verify data and fail test if mismatches are found
-	int mismatches = verify_data(size, buf_w, buf_r);
-	printf("Mismatches: %d\n", mismatches);
-	if ( mismatches > 0 ) {
-		printf("FAILED\n");
-	} else {
-		printf("OK\n");
-	}
-	assert(mismatches == 0);
+	int mismatches = 0;
+	int idx;
 
-	printf("Runtime read,write: %.3f,%.3f\n", read_time, write_time);
-	printf("Performance read,write: %.3f MiB/s,%.3f MiB/s\n", volume/read_time/1024/1024, volume / write_time / 1024.0 / 1024);
+	for(int y=offset[0]; y < dim[0]; y++){
+		for(int x=offset[1]; x < dim[1]; x++){
+			idx = (y-offset[0])*size + x;
+
+			if (buf_r[idx] != buf_w[idx]) {
+				mismatches++;
+			}
+		}
+	}
+
+	double total_time_w;
+	double total_time_r;
+	MPI_Reduce(& write_time, &total_time_w, 1, MPI_DOUBLE, MPI_MAX, 0, MPI_COMM_WORLD);
+	MPI_Reduce(& read_time, &total_time_r, 1, MPI_DOUBLE, MPI_MAX, 0, MPI_COMM_WORLD);
+
+	int mismatches_sum;
+	MPI_Reduce(& mismatches, &mismatches_sum, 1, MPI_INT, MPI_SUM, 0, MPI_COMM_WORLD);
+
+	if (mpi_rank == 0){
+		if ( mismatches_sum > 0 ) {
+			printf("FAILED\n");
+			printf("Mismatches: %d\n", mismatches_sum);
+		} else {
+			printf("OK\n");
+		}
+		assert(mismatches_sum == 0);
+
+		printf("Runtime read,write: %.3f,%.3f\n", total_time_r, total_time_w);
+		printf("Performance read,write: %.3f MiB/s,%.3f MiB/s\n", volume_all/total_time_r/1024/1024, volume_all/total_time_w/1024.0/1024);
+	}
 
 
 	// clean up
