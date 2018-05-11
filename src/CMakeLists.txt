@@ -17,7 +17,7 @@ set_package_properties(JANSSON PROPERTIES
 	TYPE REQUIRED
 	PURPOSE "Support for JSON metadata description."
 )
-
+include_directories(${JANSSON_INCLUDE_DIRS})
 
 
 # Optional
