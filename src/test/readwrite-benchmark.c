@@ -47,6 +47,11 @@ int main(int argc, char* argv[])
 	if(mpi_rank == 0)
 		printf("Running with a 2D slice of %ld*%ld\n", size, size);
 
+	if(size / mpi_size == 0){
+		printf("Error, size < number of ranks!\n");
+		exit(1);
+	}
+
 	int64_t dim[] = {size / mpi_size + (mpi_rank < (size % mpi_size) ? 1 : 0), size};
 	int64_t offset[] = {size / mpi_size * mpi_rank + (mpi_rank < (size % mpi_size) ? mpi_rank : size % mpi_size), 0};
 	//printf("%d %d - %d-%d \n", dim[1], dim[0], offset[1], offset[0]);
