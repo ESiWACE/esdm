@@ -45,8 +45,8 @@ esdm_instance_t esdm;
 * @return status
 */
 esdm_status_t esdm_init()
-{	
-	ESDM_DEBUG(__func__);	
+{
+	ESDM_DEBUG(__func__);
 
 	if (!is_initialized) {
 		ESDM_DEBUG("Initializing ESDM");
@@ -63,11 +63,11 @@ esdm_status_t esdm_init()
 		esdm.scheduler = esdm_scheduler_init(&esdm);
 
 
-		printf("[ESDM] esdm = {config = %p, modules = %p, scheduler = %p, layout = %p, performance = %p}\n", 
+		printf("[ESDM] esdm = {config = %p, modules = %p, scheduler = %p, layout = %p, performance = %p}\n",
 						  (void*)esdm.config,
 						  (void*)esdm.modules,
 						  (void*)esdm.scheduler,
-						  (void*)esdm.layout, 
+						  (void*)esdm.layout,
 						  (void*)esdm.performance);
 
 		is_initialized = 1;
@@ -89,7 +89,7 @@ esdm_status_t esdm_init()
 */
 esdm_status_t esdm_finalize()
 {
-	ESDM_DEBUG(__func__);	
+	ESDM_DEBUG(__func__);
 
 
 	// ESDM data data structures that require proper cleanup..
@@ -124,7 +124,7 @@ esdm_status_t esdm_finalize()
 */
 esdm_status_t esdm_stat(char *desc, char *result)
 {
-	ESDM_DEBUG(__func__);	
+	ESDM_DEBUG(__func__);
 
 	esdm_init();
 
@@ -145,7 +145,7 @@ esdm_status_t esdm_stat(char *desc, char *result)
  */
 esdm_status_t esdm_create(char *name, int mode, esdm_container_t **container, esdm_dataset_t **dataset)
 {
-	ESDM_DEBUG(__func__);	
+	ESDM_DEBUG(__func__);
 
 	esdm_init();
 
@@ -155,7 +155,7 @@ esdm_status_t esdm_create(char *name, int mode, esdm_container_t **container, es
 
 	*container = esdm_container_create(name);
 	*dataset = esdm_dataset_create(*container, "bytestream", dataspace);
-	
+
 	printf("Dataset 'bytestream' creation: %p\n", *dataset);
 
 	esdm_dataset_commit(*dataset);
@@ -177,7 +177,7 @@ esdm_status_t esdm_create(char *name, int mode, esdm_container_t **container, es
  */
 esdm_status_t esdm_open(char *name, int mode)
 {
-	ESDM_DEBUG(__func__);	
+	ESDM_DEBUG(__func__);
 
 	esdm_init();
 
@@ -198,7 +198,7 @@ esdm_status_t esdm_open(char *name, int mode)
 
 esdm_status_t esdm_write(esdm_dataset_t *dataset, void *buf, esdm_dataspace_t* subspace)
 {
-	ESDM_DEBUG(__func__);	
+	ESDM_DEBUG(__func__);
 
 	//esdm_dataset_t *dataset = (esdm_dataset_t*) g_hash_table_lookup (container->datasets, "bytestream");
 	//printf("Dataset 'bytestream' lookup: %p\n", dataset);
@@ -206,15 +206,14 @@ esdm_status_t esdm_write(esdm_dataset_t *dataset, void *buf, esdm_dataspace_t* s
 	// create new fragment
 	esdm_fragment_t *fragment = esdm_fragment_create(dataset, subspace, buf);
 	esdm_fragment_commit(fragment);
-
-
+	
 	return ESDM_SUCCESS;
 }
 
 
 
 /**
- * Reads a data fragment described by desc to the dataset dset. 
+ * Reads a data fragment described by desc to the dataset dset.
  *
  * @param [out] buf	The pointer to a contiguous memory region that shall be written
  * @param [in] dset	TODO, currently a stub, we assume it has been identified/created before.... , json description?
@@ -225,7 +224,7 @@ esdm_status_t esdm_write(esdm_dataset_t *dataset, void *buf, esdm_dataspace_t* s
  */
 esdm_status_t esdm_read(esdm_dataset_t *dataset, void *buf, esdm_dataspace_t* subspace)
 {
-	ESDM_DEBUG(__func__);	
+	ESDM_DEBUG(__func__);
 
 	//esdm_dataset_t *dataset = (esdm_dataset_t*) g_hash_table_lookup (container->datasets, "bytestream");
 	//printf("Dataset 'bytestream' lookup: %p\n", dataset);
@@ -240,11 +239,11 @@ esdm_status_t esdm_read(esdm_dataset_t *dataset, void *buf, esdm_dataspace_t* su
 	//	ESDM_DEBUG("Could not retrieve fragment.");
 
 	//esdm_scheduler_enqueue(fragment);
-	
+
 	// buf =
 	//
 	memcpy(buf, fragment->buf, fragment->bytes);
- 
+
 	return ESDM_SUCCESS;
 }
 
@@ -252,14 +251,14 @@ esdm_status_t esdm_read(esdm_dataset_t *dataset, void *buf, esdm_dataspace_t* su
 
 /**
  * Close opened object.
- * 
+ *
  * @param [in] desc		String Object Identifier
  *
  * @return Status
- */ 
-esdm_status_t esdm_close(void *desc) 
+ */
+esdm_status_t esdm_close(void *desc)
 {
-	ESDM_DEBUG(__func__);	
+	ESDM_DEBUG(__func__);
 
 
 	return ESDM_SUCCESS;
@@ -274,11 +273,8 @@ esdm_status_t esdm_close(void *desc)
  *
  * @return status
  */
-esdm_status_t esdm_sync() 
+esdm_status_t esdm_sync()
 {
-	ESDM_DEBUG(__func__);	
+	ESDM_DEBUG(__func__);
 	return ESDM_SUCCESS;
 }
-
-
-

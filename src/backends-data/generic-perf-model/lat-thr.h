@@ -22,9 +22,11 @@
 
 typedef struct{
   double latency_in_s;
-  double throughputMiBs;
+  double throughputBs;
 } esdm_perf_model_lat_thp_t;
 
 int esdm_backend_parse_perf_model_lat_thp(json_t * perf_model_str, esdm_perf_model_lat_thp_t * out_data);
+
+int esdm_backend_perf_model_long_lat_perf_estimate(esdm_perf_model_lat_thp_t* data, esdm_fragment_t *fragment, float * out_time);
 
 #endif

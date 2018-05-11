@@ -298,15 +298,31 @@ esdm_status_t esdm_fragment_commit(esdm_fragment_t *fragment)
 {
 	ESDM_DEBUG(__func__);
 
-
 	// Schedule for I/O
 	esdm_scheduler_enqueue(&esdm, fragment);
 
+
+	GHashTableIter iter;
+	// TODO move to decision component
+  g_hash_table_iter_init (&iter, esdm.modules->backends);
+  char *name;
+	esdm_backend_t* val_backend;
+
+  float best_time = 1e36;
+	esdm_backend_t* backend = NULL;
+  while (g_hash_table_iter_next (&iter, (gpointer) &name, (gpointer) &val_backend))
+  {
+		float time_est = 1e35;
+		val_backend->callbacks.performance_estimate(val_backend, fragment, & time_est);
+		if(time_est < best_time){
+			backend = val_backend;
+			best_time = time_est;
+		}
+  }
+
 	// Call backend
-	esdm_backend_t *backend = (esdm_backend_t*) g_hash_table_lookup(esdm.modules->backends, "p1");  // TODO: decision component
 	assert(backend != NULL);
 	backend->callbacks.fragment_update(backend, fragment);
-
 
 	// Announce to metadata coordinator
 

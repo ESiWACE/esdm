@@ -137,11 +137,18 @@ struct esdm_fragment_t {
 	esdm_metadata_t *metadata;
 	esdm_dataset_t *dataset;
 	esdm_dataspace_t *dataspace;
+
 	void *buf;
 	size_t size;
 	size_t bytes;
 	esdm_status_t status;
 };
+
+// multiple fragments
+typedef struct{
+	struct esdm_fragment_t * fragment;
+	int count;
+} esdm_fragments_t;
 
 typedef struct esdm_fragment_index_t {
 	char *json;
@@ -188,7 +195,7 @@ typedef struct esdm_backend_callbacks_t esdm_backend_callbacks_t;
 struct esdm_backend_callbacks_t {
 // General for ESDM
 	int (*finalize)(esdm_backend_t*);
-	int (*performance_estimate)(esdm_backend_t*);
+	int (*performance_estimate)(esdm_backend_t*, esdm_fragment_t *fragment, float * out_time);
 
 // Data Callbacks (POSIX like)
 	int (*create)(esdm_backend_t*, char *name);
@@ -276,18 +283,6 @@ struct esdm_io_t {
 	int member;
 	int callback;
 };
-
-
-
-// Performance Model
-typedef struct esdm_performance_estimate_t {
-	int latency;
-	int throughout;
-	int max_bytes;
-	int min_bytes;
-	int concurrency;
-} esdm_performance_estimate_t;
-
 
 
 // Entry points and state for core components /////////////////////////////////

@@ -1,18 +1,18 @@
-/* This file is part of ESDM.                                              
- *                                                                              
- * This program is is free software: you can redistribute it and/or modify         
- * it under the terms of the GNU Lesser General Public License as published by  
- * the Free Software Foundation, either version 3 of the License, or            
- * (at your option) any later version.                                          
- *                                                                              
- * This program is is distributed in the hope that it will be useful,           
- * but WITHOUT ANY WARRANTY; without even the implied warranty of               
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the                
- * GNU General Public License for more details.                                 
- *                                                                                 
- * You should have received a copy of the GNU Lesser General Public License        
- * along with ESDM.  If not, see <http://www.gnu.org/licenses/>.           
- */                                                                         
+/* This file is part of ESDM.
+ *
+ * This program is is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Lesser General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public License
+ * along with ESDM.  If not, see <http://www.gnu.org/licenses/>.
+ */
 
 /**
  * @file
@@ -58,9 +58,9 @@ static void metadummy_test();
 // Helper and utility /////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////
 
-static int mkfs(esdm_backend_t* backend) 
+static int mkfs(esdm_backend_t* backend)
 {
-	DEBUG(__func__);	
+	DEBUG(__func__);
 
 	struct stat sb;
 
@@ -72,12 +72,12 @@ static int mkfs(esdm_backend_t* backend)
 
 	if (stat(tgt, &sb) == -1)
 	{
-		char* root; 
-		char* containers; 
-		
+		char* root;
+		char* containers;
+
 		asprintf(&root, "%s", tgt);
 		mkdir(root, 0700);
-	
+
 		asprintf(&containers, "%s/containers", tgt);
 		mkdir(containers, 0700);
 
@@ -94,7 +94,7 @@ static int mkfs(esdm_backend_t* backend)
  */
 static int fsck()
 {
-	DEBUG(__func__);	
+	DEBUG(__func__);
 
 
 	return 0;
@@ -109,11 +109,11 @@ static int fsck()
 
 static int entry_create(const char *path)
 {
-	DEBUG(__func__);	
+	DEBUG(__func__);
 
 	int status;
 	struct stat sb;
-	
+
 	printf("entry_create(%s)\n", path);
 
 	// ENOENT => allow to create
@@ -143,7 +143,7 @@ static int entry_create(const char *path)
 
 static int entry_retrieve(const char *path)
 {
-	DEBUG(__func__);	
+	DEBUG(__func__);
 
 	int status;
 	struct stat sb;
@@ -184,7 +184,7 @@ static int entry_retrieve(const char *path)
 
 static int entry_update(const char *path, void *buf, size_t len)
 {
-	DEBUG(__func__);	
+	DEBUG(__func__);
 
 	int status;
 	struct stat sb;
@@ -214,9 +214,9 @@ static int entry_update(const char *path, void *buf, size_t len)
 }
 
 
-static int entry_destroy(const char *path) 
+static int entry_destroy(const char *path)
 {
-	DEBUG(__func__);	
+	DEBUG(__func__);
 
 	int status;
 	struct stat sb;
@@ -256,7 +256,7 @@ static int entry_destroy(const char *path)
 
 static int container_create(esdm_backend_t* backend, esdm_container_t *container)
 {
-	DEBUG(__func__);	
+	DEBUG(__func__);
 
 	char *path_metadata;
 	char *path_container;
@@ -286,7 +286,7 @@ static int container_create(esdm_backend_t* backend, esdm_container_t *container
 
 static int container_retrieve(esdm_backend_t* backend, esdm_container_t *container)
 {
-	DEBUG(__func__);	
+	DEBUG(__func__);
 
 	char *path_metadata;
 	char *path_container;
@@ -310,7 +310,7 @@ static int container_retrieve(esdm_backend_t* backend, esdm_container_t *contain
 
 static int container_update(esdm_backend_t* backend, esdm_container_t *container)
 {
-	DEBUG(__func__);	
+	DEBUG(__func__);
 
 	char *path_metadata;
 	char *path_container;
@@ -331,9 +331,9 @@ static int container_update(esdm_backend_t* backend, esdm_container_t *container
 }
 
 
-static int container_destroy(esdm_backend_t* backend, esdm_container_t *container) 
+static int container_destroy(esdm_backend_t* backend, esdm_container_t *container)
 {
-	DEBUG(__func__);	
+	DEBUG(__func__);
 
 	char *path_metadata;
 	char *path_container;
@@ -364,7 +364,7 @@ static int container_destroy(esdm_backend_t* backend, esdm_container_t *containe
 
 static int dataset_create(esdm_backend_t* backend, esdm_dataset_t *dataset)
 {
-	DEBUG(__func__);	
+	DEBUG(__func__);
 
 	char *path_metadata;
 	char *path_dataset;
@@ -395,19 +395,19 @@ static int dataset_create(esdm_backend_t* backend, esdm_dataset_t *dataset)
 
 static int dataset_retrieve(esdm_backend_t* backend, esdm_dataset_t *dataset)
 {
-	DEBUG(__func__);	
+	DEBUG(__func__);
 }
 
 
 static int dataset_update(esdm_backend_t* backend, esdm_dataset_t *dataset)
 {
-	DEBUG(__func__);	
+	DEBUG(__func__);
 }
 
 
-static int dataset_destroy(esdm_backend_t* backend, esdm_dataset_t *dataset) 
+static int dataset_destroy(esdm_backend_t* backend, esdm_dataset_t *dataset)
 {
-	DEBUG(__func__);	
+	DEBUG(__func__);
 }
 
 
@@ -418,7 +418,7 @@ static int dataset_destroy(esdm_backend_t* backend, esdm_dataset_t *dataset)
 
 static int fragment_update(esdm_backend_t* backend, esdm_fragment_t *fragment)
 {
-	DEBUG(__func__);	
+	DEBUG(__func__);
 
 	// set data, options and tgt for convienience
 	metadummy_backend_options_t *options = (metadummy_backend_options_t*) backend->data;
@@ -426,7 +426,7 @@ static int fragment_update(esdm_backend_t* backend, esdm_fragment_t *fragment)
 
 	// serialization of subspace for fragment
 	char *fragment_name = esdm_dataspace_string_descriptor(fragment->dataspace);
-	
+
 
 	// determine path
 	char *path;
@@ -474,9 +474,10 @@ static int fragment_update(esdm_backend_t* backend, esdm_fragment_t *fragment)
 // ESDM Callbacks /////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////
 
-static int metadummy_backend_performance_estimate(esdm_backend_t* backend) 
+static int metadummy_backend_performance_estimate(esdm_backend_t* backend, esdm_fragment_t *fragment, float * out_time)
 {
-	DEBUG(__func__);	
+	DEBUG(__func__);
+	*out_time = 0;
 
 	return 0;
 }
@@ -491,7 +492,7 @@ static int metadummy_backend_performance_estimate(esdm_backend_t* backend)
 */
 int metadummy_finalize()
 {
-	DEBUG(__func__);	
+	DEBUG(__func__);
 
 	return 0;
 }
@@ -563,7 +564,7 @@ static esdm_backend_t backend_template = {
 * @return pointer to backend struct
 */
 esdm_backend_t* metadummy_backend_init(esdm_config_backend_t *config)
-{	
+{
 	DEBUG(__func__);
 
 	esdm_backend_t* backend = (esdm_backend_t*) malloc(sizeof(esdm_backend_t));
@@ -580,7 +581,7 @@ esdm_backend_t* metadummy_backend_init(esdm_config_backend_t *config)
 
 
 	// todo check metadummy style persitency structure available?
-	mkfs(backend);	
+	mkfs(backend);
 
 	//metadummy_test();
 
@@ -595,7 +596,7 @@ esdm_backend_t* metadummy_backend_init(esdm_config_backend_t *config)
 
 
 
-static void metadummy_test() 
+static void metadummy_test()
 {
 	int ret = -1;
 
@@ -640,5 +641,5 @@ static void metadummy_test()
 
 	ret = entry_destroy(def);
 	assert(ret == -1);
-	
+
 }

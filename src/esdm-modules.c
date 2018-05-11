@@ -112,9 +112,6 @@ esdm_modules_t* esdm_modules_init(esdm_instance_t* esdm)
 		{
 			backend = posix_backend_init(b);
 			g_hash_table_insert(modules->backends, (char*)b->name, backend);
-
-			// test callback, TODO: remove
-			backend->callbacks.performance_estimate(backend);
 		}
 #ifdef ESDM_HAS_CLOVIS
 		else if (strncasecmp(b->type,"CLOVIS",6) == 0)
@@ -122,8 +119,6 @@ esdm_modules_t* esdm_modules_init(esdm_instance_t* esdm)
 			// TODO
 			backend = clovis_backend_init(b);
 			g_hash_table_insert(modules->backends, (char*)b->name, backend);
-
-			backend->callbacks.performance_estimate(backend);
 		}
 #endif
 #ifdef ESDM_HAS_WOS
@@ -132,8 +127,6 @@ esdm_modules_t* esdm_modules_init(esdm_instance_t* esdm)
 			// TODO
 			backend = wos_backend_init(b);
 			g_hash_table_insert(modules->backends, (char*)b->name, backend);
-
-			backend->callbacks.performance_estimate(backend);
 		}
 #endif
 		else

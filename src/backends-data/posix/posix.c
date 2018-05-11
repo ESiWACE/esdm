@@ -363,16 +363,12 @@ static int fragment_update(esdm_backend_t* backend, esdm_fragment_t *fragment)
  * Callback implementation when beeing queried for a performance estimate.
  *
  */
-static int posix_backend_performance_estimate(esdm_backend_t* backend /* TODO: , esdm_fragment_t fragment  (?) */)
+static int posix_backend_performance_estimate(esdm_backend_t* backend, esdm_fragment_t *fragment, float * out_time)
 {
 	DEBUG("Calculating performance estimate");
 
-	posix_backend_data_t* data = (posix_backend_data_t*)backend->data;
-
-	printf("perf_estimate: backend->(void*)data->target = %s\n", data->target);
-	printf("\n");
-
-	return 0;
+	posix_backend_data_t* data = (posix_backend_data_t*) backend->data;
+	return esdm_backend_perf_model_long_lat_perf_estimate(& data->perf_model, fragment, out_time);
 }
 
 /**
