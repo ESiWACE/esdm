@@ -21,6 +21,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <assert.h>
+#include <mpi.h>
 
 #include <esdm.h>
 #include "util/test_util.h"
@@ -42,8 +43,10 @@ int verify_data(long size, uint64_t* a, uint64_t* b) {
 }
 
 
-int main(int argc, char const* argv[])
+int main(int argc, char* argv[])
 {
+	MPI_Init(& argc, & argv);
+
 	if(argc != 2){
 		printf("Syntax: %s SIZE", argv[0]);
 		printf("\t SIZE specifies one dimension of a 2D field\n");
@@ -83,7 +86,6 @@ int main(int argc, char const* argv[])
 	esdm_container_commit(container);
 	esdm_dataset_commit(dataset);
 
-
 	// define subspace
 	int64_t dim[] = {size,size};
 	int64_t offset[] = {0,0};
@@ -118,6 +120,8 @@ int main(int argc, char const* argv[])
 	// clean up
 	free(buf_w);
 	free(buf_r);
+
+	MPI_Finalize();
 
 	return 0;
 }
