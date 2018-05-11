@@ -32,10 +32,13 @@
 
 #include <glib.h>
 
+#define DEBUG_ENTER ESDM_DEBUG_COM_FMT("SCHEDULER", "", "")
+#define DEBUG(fmt, ...) ESDM_DEBUG_COM_FMT("SCHEDULER", fmt, __VA_ARGS__)
+
 
 void TaskHandler (gpointer data, gpointer user_data)
 {
-   printf("Hello from TaskHandler gthread! data = %p => %d,  user_data = %p => %d!\n", data, *(int*)(data), user_data, *(int*)(user_data));
+   DEBUG("Hello from TaskHandler gthread! data = %p => %d,  user_data = %p => %d!\n", data, *(int*)(data), user_data, *(int*)(user_data));
 }
 
 
@@ -49,7 +52,7 @@ static int enq3 = 345;
 
 esdm_scheduler_t* esdm_scheduler_init(esdm_instance_t* esdm)
 {
-	ESDM_DEBUG(__func__);	
+	ESDM_DEBUG(__func__);
 
 	esdm_scheduler_t* scheduler = NULL;
 	scheduler = (esdm_scheduler_t*) malloc(sizeof(esdm_scheduler_t));
@@ -72,10 +75,10 @@ esdm_scheduler_t* esdm_scheduler_init(esdm_instance_t* esdm)
     gpointer task_data = NULL;
 	for(int t = -1; t < 7 /* num_threads */; t++)
 	{
-		printf("Adding task: %p, %p, %d, %d\n", 
+		DEBUG("Adding task: %p, %p, %d, %d\n",
 				useable_task_data[t],
-				useable_task_data+t, 
-				*(useable_task_data+t), 
+				useable_task_data+t,
+				*(useable_task_data+t),
 				useable_task_data[t]
 			);
 
@@ -89,9 +92,9 @@ esdm_scheduler_t* esdm_scheduler_init(esdm_instance_t* esdm)
 	// Queue Example
 	GAsyncQueue * queue = g_async_queue_new();
 
-	printf("enq1: %p => (i: %d, s: %s)\n", &enq1, *(int*)&enq1, (char*)&enq1);
-	printf("enq2: %p => (i: %d, s: %s)\n", &enq2, *(int*)&enq2, (char*)&enq2);
-	printf("enq3: %p => (i: %d, s: %s)\n", &enq3, *(int*)&enq3, (char*)&enq3);
+	DEBUG("enq1: %p => (i: %d, s: %s)\n", &enq1, *(int*)&enq1, (char*)&enq1);
+	DEBUG("enq2: %p => (i: %d, s: %s)\n", &enq2, *(int*)&enq2, (char*)&enq2);
+	DEBUG("enq3: %p => (i: %d, s: %s)\n", &enq3, *(int*)&enq3, (char*)&enq3);
 
 	g_async_queue_push(queue, &enq1);
 	g_async_queue_push(queue, &enq2);
@@ -101,11 +104,11 @@ esdm_scheduler_t* esdm_scheduler_init(esdm_instance_t* esdm)
 	gpointer popped;
 
 	popped= g_async_queue_pop(queue);
-	printf("popped: %p => (i: %d, s: %s)\n", popped, *(int*)popped, (char*)popped);
+	DEBUG("popped: %p => (i: %d, s: %s)\n", popped, *(int*)popped, (char*)popped);
 
 
 	popped= g_async_queue_pop(queue);
-	printf("popped: %p => (i: %d, s: %s)\n", popped, *(int*)popped, (char*)popped);
+	DEBUG("popped: %p => (i: %d, s: %s)\n", popped, *(int*)popped, (char*)popped);
 
 
 	// void g_async_queue_sort (GAsyncQueue *queue, GCompareDataFunc func, gpointer user_data);
@@ -121,7 +124,7 @@ esdm_scheduler_t* esdm_scheduler_init(esdm_instance_t* esdm)
 
 esdm_status_t esdm_scheduler_finalize()
 {
-	ESDM_DEBUG(__func__);	
+	ESDM_DEBUG(__func__);
 	return ESDM_SUCCESS;
 }
 
@@ -130,12 +133,12 @@ esdm_status_t esdm_scheduler_finalize()
 
 esdm_status_t esdm_scheduler_enqueue(esdm_instance_t *esdm, esdm_fragment_t * fragment)
 {
-	ESDM_DEBUG(__func__);	
+	ESDM_DEBUG(__func__);
 
 	esdm_status_t ret;
 	esdm_fragment_t* fragments;
 
-	// Gather I/O recommendations 
+	// Gather I/O recommendations
 	esdm_performance_recommendation(esdm, NULL, NULL);    // e.g., split, merge, replication?
 	esdm_layout_recommendation(esdm, NULL, NULL);		  // e.g., merge, split, transform?
 	// TODO: merge recommendations?
@@ -175,7 +178,7 @@ esdm_status_t esdm_scheduler_enqueue(esdm_instance_t *esdm, esdm_fragment_t * fr
 
 esdm_status_t esdm_backend_io(esdm_backend_t* backend, esdm_fragment_t* fragment, esdm_metadata_t* metadata)
 {
-	ESDM_DEBUG(__func__);	
+	ESDM_DEBUG(__func__);
 
 	return ESDM_SUCCESS;
 }

@@ -29,11 +29,15 @@
  */
 
 
+#include <stdio.h>
+#include <stdlib.h>
+
 #include <esdm.h>
 #include <esdm-internal.h>
 
-#include <stdio.h>
-#include <stdlib.h>
+#define DEBUG_ENTER ESDM_DEBUG_COM_FMT("METADUMMY", "", "")
+#define DEBUG(fmt, ...) ESDM_DEBUG_COM_FMT("METADUMMY", fmt, __VA_ARGS__)
+
 
 
 esdm_performance_t* esdm_performance_init(esdm_instance_t* esdm) {
@@ -59,7 +63,7 @@ esdm_status_t esdm_performance_finalize(esdm_performance_t* performance)
 
 void fetch_performance_from_backend(gpointer key, gpointer value, gpointer user_data)
 {
-	printf("GHashTable Entry: key=%p (s:%s), value=%p (s:%s), user_data=%p\n", key, key,value, value, user_data);
+	DEBUG("GHashTable Entry: key=%p (s:%s), value=%p (s:%s), user_data=%p\n", key, key,value, value, user_data);
 
 	esdm_backend_t* backend = (esdm_backend_t*) value;
 	//backend->callbacks.performance_estimate(backend);
@@ -72,7 +76,7 @@ void fetch_performance_from_backend(gpointer key, gpointer value, gpointer user_
  */
 esdm_status_t esdm_performance_recommendation(esdm_instance_t *esdm, esdm_fragment_t *in, esdm_fragment_t *out)
 {
-	ESDM_DEBUG("Fetch performance estimates from backends.");
+	DEBUG_ENTER;
 
 	// pickup the performance estimate for each backend module
 	esdm_module_type_array_t * backends;

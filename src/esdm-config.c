@@ -30,6 +30,9 @@
 #include <esdm.h>
 #include <esdm-internal.h>
 
+#define DEBUG_ENTER 		ESDM_DEBUG_COM_FMT("CONFIG", "", "")
+#define DEBUG(fmt, ...) ESDM_DEBUG_COM_FMT("CONFIG", fmt, __VA_ARGS__)
+
 
 json_t* esdm_config_gather(int argc, char const *argv[]);
 
@@ -97,15 +100,15 @@ json_t* esdm_config_gather(int argc, char const* argv[])
 
 esdm_config_backend_t* esdm_config_get_metadata_coordinator(esdm_instance_t* esdm)
 {
-	ESDM_DEBUG(__func__);
+	DEBUG_ENTER;
 
 	json_t *root = (json_t*) esdm->config->json;
 
 	json_t *elem = json_path_get(root, "$.esdm.metadata.type");
-	printf("json_path_get (metadata backend) => %p -> %s\n",  elem, json_string_value(elem));
+	DEBUG("json_path_get (metadata backend) => %p -> %s\n",  elem, json_string_value(elem));
+	#ifndef NDEBUG
 	print_json(elem);
-	printf("\n\n");
-
+	#endif
 
 
 	esdm_config_backend_t *config_backend = (esdm_config_backend_t*) malloc(sizeof(esdm_config_backend_t));

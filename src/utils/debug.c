@@ -47,8 +47,11 @@ void esdm_log(uint32_t loglevel, const char* format, ...)
 
 
 
-
-void print_hashtable_entry (gpointer key, gpointer value, gpointer user_data)
+static void print_hashtable_entry (gpointer key, gpointer value, gpointer user_data)
 {
-	printf("GHashTable Entry: key=%p (s:%s), value=%p (s:%s), user_data=%p\n", key, key, value, value, user_data);
+	ESDM_DEBUG_FMT("GHashTable Entry: key=%p (s:%s), value=%p (s:%s), user_data=%p\n", key, key, value, value, user_data);
+}
+
+void esdm_print_hashtable (GHashTable * tbl){
+  g_hash_table_foreach (tbl, print_hashtable_entry, NULL);
 }

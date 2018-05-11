@@ -30,6 +30,8 @@
 #include <esdm-internal.h>
 
 
+#define DEBUG_ENTER 		ESDM_DEBUG_COM_FMT("DATATYPES", "", "")
+#define DEBUG(fmt, ...) ESDM_DEBUG_COM_FMT("DATATYPES", fmt, __VA_ARGS__)
 
 extern esdm_instance_t esdm;
 
@@ -94,7 +96,8 @@ esdm_container_t* esdm_container_create(const char* name)
 	ESDM_DEBUG(__func__);
 	esdm_container_t* container = (esdm_container_t*) malloc(sizeof(esdm_container_t));
 
-	asprintf(&container->name, name);
+	int ret = asprintf(&container->name, name);
+	assert(ret > 0);
 	container->metadata = NULL;
 	container->datasets = g_hash_table_new(g_direct_hash,  g_direct_equal);
 	container->status = ESDM_DIRTY;
@@ -134,7 +137,7 @@ esdm_status_t esdm_container_commit(esdm_container_t* container)
 	ESDM_DEBUG(__func__);
 
 	// print datasets of this container
-	g_hash_table_foreach (container->datasets, print_hashtable_entry, NULL);
+	esdm_print_hashtable(container->datasets);
 
 
 	// TODO: ensure callback is not NULL
@@ -188,7 +191,7 @@ esdm_fragment_t* esdm_fragment_create(esdm_dataset_t* dataset, esdm_dataspace_t*
 	ESDM_DEBUG(__func__);
 	esdm_fragment_t* fragment = (esdm_fragment_t*) malloc(sizeof(esdm_fragment_t));
 
-	for (int64_t i = 0; i < subspace->dimensions; i++) { printf("dim %d, subsize=%d (%p)\n", i, subspace->subsize[i], subspace->subsize); }
+	for (int64_t i = 0; i < subspace->dimensions; i++) { DEBUG("dim %d, subsize=%d (%p)\n", i, subspace->subsize[i], subspace->subsize); }
 
 	// calculate subspace element count
 	int64_t size = 0;
@@ -205,7 +208,7 @@ esdm_fragment_t* esdm_fragment_create(esdm_dataset_t* dataset, esdm_dataspace_t*
 	}
 
 	int64_t bytes = size*esdm_sizeof(subspace->datatype);
-	printf("Entries in subspace: %d x %d bytes = %d bytes \n", size, esdm_sizeof(subspace->datatype), bytes);
+	DEBUG("Entries in subspace: %d x %d bytes = %d bytes \n", size, esdm_sizeof(subspace->datatype), bytes);
 
 	fragment->metadata = malloc(1024);
 	fragment->metadata->json = (char*)(fragment->metadata + sizeof(esdm_metadata_t));
@@ -267,7 +270,7 @@ char* esdm_dataspace_string_descriptor(esdm_dataspace_t *dataspace)
 	// offset to string
 	for (int64_t i = 0; i < dimensions; i++)
 	{
-		printf("dim %d, offset=%d (%p)\n", i, offset[i], offset);
+		DEBUG("dim %d, offset=%d (%p)\n", i, offset[i], offset);
 
 		if (string_offset == NULL)
 			asprintf(&string_offset, "%d", offset[i]);
@@ -278,7 +281,7 @@ char* esdm_dataspace_string_descriptor(esdm_dataspace_t *dataspace)
 	// size to string
 	for (int64_t i = 0; i < dimensions; i++)
 	{
-		printf("dim %d, size=%d (%p)\n", i, size[i], size);
+		DEBUG("dim %d, size=%d (%p)\n", i, size[i], size);
 
 	// TODO: store
 		if (string_size == NULL)
@@ -289,7 +292,7 @@ char* esdm_dataspace_string_descriptor(esdm_dataspace_t *dataspace)
 
 	// combine offset + size
 	asprintf(&string, "offset:%s_size:%s", string_offset, string_size);
-	printf("Descriptor: %s\n", string);
+	DEBUG("Descriptor: %s\n", string);
 
 	free(string_size);
 	free(string_offset);
@@ -331,7 +334,7 @@ esdm_status_t esdm_fragment_commit(esdm_fragment_t *fragment)
 		}
   }
 
-	printf("Target choice: %s\n", best_name );
+	DEBUG("Target choice: %s\n", best_name );
 
 	// Call backend
 	assert(backend != NULL);
@@ -405,7 +408,8 @@ esdm_dataset_t* esdm_dataset_create(esdm_container_t* container, char* name, esd
 	ESDM_DEBUG(__func__);
 	esdm_dataset_t* dataset = (esdm_dataset_t*) malloc(sizeof(esdm_dataset_t));
 
-	asprintf(&dataset->name, name);
+	int ret = asprintf(&dataset->name, name);
+	assert(ret > 0);
 	dataset->container = container;
 	dataset->metadata = NULL;
 	dataset->dataspace = dataspace;
@@ -422,7 +426,8 @@ esdm_dataset_t* esdm_dataset_retrieve(esdm_container_t *container, const char* n
 	ESDM_DEBUG(__func__);
 	esdm_dataset_t* dataset = (esdm_dataset_t*) malloc(sizeof(esdm_dataset_t));
 
-	asprintf(&dataset->name, name);
+	int ret = asprintf(&dataset->name, name);
+	assert(ret > 0);
 	dataset->container = container;
 	dataset->metadata = NULL;
 	dataset->dataspace = NULL;
@@ -458,9 +463,8 @@ esdm_status_t esdm_dataset_commit(esdm_dataset_t *dataset)
 	ESDM_DEBUG(__func__);
 
 	// print datasets of this container
-	g_hash_table_foreach(dataset->fragments, print_hashtable_entry, NULL);
-
-
+	esdm_print_hashtable(dataset->fragments);
+	
 	// TODO: ensure callback is not NULL
 	// md callback create/update container
 	esdm.modules->metadata->callbacks.dataset_create(esdm.modules->metadata, dataset);
@@ -497,12 +501,10 @@ esdm_dataspace_t* esdm_dataspace_create(int64_t dimensions, int64_t* bounds, esd
 	memcpy(dataspace->bounds, bounds, sizeof(int64_t)*dimensions);
 
 
-	for (int64_t i = 0; i < dimensions; i++) { printf("dim %d, bound=%d (%p)\n", i, bounds[i], bounds); }
-	for (int64_t i = 0; i < dimensions; i++) { printf("dim %d, bound=%d (%p)\n", i, dataspace->bounds[i], dataspace->bounds); }
+	for (int64_t i = 0; i < dimensions; i++) { DEBUG("dim %d, bound=%d (%p)\n", i, bounds[i], bounds); }
+	for (int64_t i = 0; i < dimensions; i++) { DEBUG("dim %d, bound=%d (%p)\n", i, dataspace->bounds[i], dataspace->bounds); }
 
-
-
-	printf("New dataspace: dims=%d\n", dataspace->dimensions);
+	DEBUG("New dataspace: dims=%d\n", dataspace->dimensions);
 
 	return dataspace;
 }
@@ -557,8 +559,8 @@ esdm_dataspace_t* esdm_dataspace_subspace(esdm_dataspace_t *dataspace, int64_t d
 
 
 
-		for (int64_t i = 0; i < dimensions; i++) { printf("dim %d, bounds=%d (%p)\n", i, dataspace->bounds[i], dataspace->bounds); }
-		for (int64_t i = 0; i < dimensions; i++) { printf("dim %d, size=%d (%p)\n", i, size[i], size); }
+		for (int64_t i = 0; i < dimensions; i++) { DEBUG("dim %d, bounds=%d (%p)\n", i, dataspace->bounds[i], dataspace->bounds); }
+		for (int64_t i = 0; i < dimensions; i++) { DEBUG("dim %d, size=%d (%p)\n", i, size[i], size); }
 	}
 	else
 	{

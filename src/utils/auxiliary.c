@@ -35,7 +35,7 @@
 #include <glib.h>
 
 #include <esdm.h>
-
+#include <esdm-debug.h>
 
 int read_file(char *filepath, char **buf)
 {
@@ -65,7 +65,7 @@ int read_file(char *filepath, char **buf)
 
 	*buf = string;
 
-	printf("read_file(): %s\n", string);
+	ESDM_DEBUG_COM_FMT("AUX", "read_file(): %s\n", string);
 }
 
 
@@ -91,7 +91,7 @@ void mkdir_recursive(const char *path) {
 			if(*p == '/') {
 				// if current char is a /
 				// temporaly set character at address p to 0
-				// create dir from start of string 
+				// create dir from start of string
 				// reset char at address back to /
 				*p = 0;
 				mkdir(tmp, S_IRWXU);
@@ -131,7 +131,3 @@ void print_stat(struct stat sb)
 	printf("Last file modification:   %s", ctime(&sb.st_mtime));
 	printf("\n");
 }
-
-
-
-

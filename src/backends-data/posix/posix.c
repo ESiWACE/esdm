@@ -35,19 +35,13 @@
 #include <jansson.h>
 
 #include <esdm.h>
+#include <esdm-debug.h>
 
 #include "posix.h"
 
 
-static void log(const char* format, ...)
-{
-	va_list args;
-	va_start(args,format);
-	vprintf(format,args);
-	va_end(args);
-}
-#define DEBUG(msg) log("[POSIX] %-30s %s:%d\n", msg, __FILE__, __LINE__)
-
+#define DEBUG_ENTER ESDM_DEBUG_COM_FMT("POSIX", "", "")
+#define DEBUG(fmt, ...) ESDM_DEBUG_COM_FMT("POSIX", fmt, __VA_ARGS__)
 
 ///////////////////////////////////////////////////////////////////////////////
 // Helper and utility /////////////////////////////////////////////////////////
@@ -58,9 +52,7 @@ static int mkfs(esdm_backend_t* backend)
 
 	posix_backend_data_t* data = (posix_backend_data_t*)backend->data;
 
-	printf("mkfs: backend->(void*)data->target = %s\n", data->target);
-	printf("\n");
-
+	DEBUG("mkfs: backend->(void*)data->target = %s\n", data->target);
 
 	const char* tgt = data->target;
 
@@ -118,7 +110,7 @@ static int entry_create(const char *path)
 	int status;
 	struct stat sb;
 
-	printf("entry_create(%s)\n", path);
+	DEBUG("entry_create(%s)\n", path);
 
 	// ENOENT => allow to create
 
@@ -150,7 +142,7 @@ static int entry_retrieve(const char *path, void **buf, size_t **count)
 	int status;
 	struct stat sb;
 
-	printf("entry_retrieve(%s)\n", path);
+	DEBUG("entry_retrieve(%s)\n", path);
 
 	status = stat(path, &sb);
 	if (status == -1) {
@@ -200,12 +192,12 @@ static int entry_retrieve(const char *path, void **buf, size_t **count)
 
 static int entry_update(const char *path, void *buf, size_t len)
 {
-	DEBUG(__func__);
+	DEBUG_ENTER;
 
 	int status;
 	struct stat sb;
 
-	printf("entry_update(%s)\n", path);
+	DEBUG("entry_update(%s)\n", path);
 
 	status = stat(path, &sb);
 	if (status == -1) {
@@ -232,12 +224,12 @@ static int entry_update(const char *path, void *buf, size_t len)
 
 static int entry_destroy(const char *path)
 {
-	DEBUG(__func__);
+	DEBUG_ENTER;
 
 	int status;
 	struct stat sb;
 
-	printf("entry_destroy(%s)\n", path);
+	DEBUG("entry_destroy(%s)\n", path);
 
 	status = stat(path, &sb);
 	if (status == -1) {
@@ -265,7 +257,7 @@ static int entry_destroy(const char *path)
 
 static int fragment_retrieve(esdm_backend_t* backend, esdm_fragment_t *fragment, json_t * metadata)
 {
-	DEBUG(__func__);
+	DEBUG_ENTER;
 
 	// set data, options and tgt for convienience
 	posix_backend_data_t* data = (posix_backend_data_t*)backend->data;
@@ -282,8 +274,8 @@ static int fragment_retrieve(esdm_backend_t* backend, esdm_fragment_t *fragment,
 	char *path_fragment;
 	asprintf(&path_fragment, "%s/containers/%s/%s/%s", tgt, fragment->dataset->container->name, fragment->dataset->name, fragment_name);
 
-	printf("path: %s\n", path);
-	printf("path_fragment: %s\n", path_fragment);
+	DEBUG("path: %s\n", path);
+	DEBUG("path_fragment: %s\n", path_fragment);
 
 
 	//entry_update()
@@ -294,7 +286,7 @@ static int fragment_retrieve(esdm_backend_t* backend, esdm_fragment_t *fragment,
 	entry_retrieve(path_fragment, &buf, &count);
 
 
-	printf("count = %d,  buf=%s\n", *count, buf);
+	DEBUG("count = %d,  buf=%s\n", *count, buf);
 
 	fragment->buf = buf;
 
@@ -309,7 +301,7 @@ static int fragment_retrieve(esdm_backend_t* backend, esdm_fragment_t *fragment,
 
 static int fragment_update(esdm_backend_t* backend, esdm_fragment_t *fragment)
 {
-	DEBUG(__func__);
+	DEBUG_ENTER;
 
 	// set data, options and tgt for convienience
 	posix_backend_data_t* data = (posix_backend_data_t*)backend->data;
@@ -326,8 +318,8 @@ static int fragment_update(esdm_backend_t* backend, esdm_fragment_t *fragment)
 	char *path_fragment;
 	asprintf(&path_fragment, "%s/containers/%s/%s/%s", tgt, fragment->dataset->container->name, fragment->dataset->name, fragment_name);
 
-	printf("path: %s\n", path);
-	printf("path_fragment: %s\n", path_fragment);
+	DEBUG("path: %s\n", path);
+	DEBUG("path_fragment: %s\n", path_fragment);
 
 	// create metadata entry
 	mkdir_recursive(path);
@@ -357,7 +349,7 @@ static int fragment_update(esdm_backend_t* backend, esdm_fragment_t *fragment)
  */
 static int posix_backend_performance_estimate(esdm_backend_t* backend, esdm_fragment_t *fragment, float * out_time)
 {
-	DEBUG("Calculating performance estimate");
+	DEBUG_ENTER;
 
 	posix_backend_data_t* data = (posix_backend_data_t*) backend->data;
 	return esdm_backend_perf_model_long_lat_perf_estimate(& data->perf_model, fragment, out_time);
@@ -371,7 +363,7 @@ static int posix_backend_performance_estimate(esdm_backend_t* backend, esdm_frag
 */
 int posix_finalize(esdm_backend_t* backend)
 {
-	DEBUG("POSIX finalize");
+	DEBUG_ENTER;
 
 	return 0;
 }
@@ -436,7 +428,7 @@ static esdm_backend_t backend_template = {
 */
 esdm_backend_t* posix_backend_init(esdm_config_backend_t *config)
 {
-	DEBUG(__func__);
+	DEBUG_ENTER;
 
 	esdm_backend_t* backend = (esdm_backend_t*) malloc(sizeof(esdm_backend_t));
 	memcpy(backend, &backend_template, sizeof(esdm_backend_t));
@@ -451,7 +443,7 @@ esdm_backend_t* posix_backend_init(esdm_config_backend_t *config)
 	data->target = json_string_value(json_path_get(config->backend, "$.target"));
 
 
-	printf("[POSIX] Backend config: target=%s\n", data->target);
+	DEBUG("Backend config: target=%s\n", data->target);
 
 
 	// todo check posix style persitency structure available?

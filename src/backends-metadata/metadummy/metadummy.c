@@ -36,17 +36,12 @@
 #include <jansson.h>
 
 #include <esdm.h>
+#include <esdm-debug.h>
 #include "metadummy.h"
 
 
-static void log(const char* format, ...)
-{
-	va_list args;
-	va_start(args,format);
-	vprintf(format,args);
-	va_end(args);
-}
-#define DEBUG(msg) log("[METADUMMY] %-30s %s:%d\n", msg, __FILE__, __LINE__)
+#define DEBUG_ENTER ESDM_DEBUG_COM_FMT("METADUMMY", "", "")
+#define DEBUG(fmt, ...) ESDM_DEBUG_COM_FMT("METADUMMY", fmt, __VA_ARGS__)
 
 
 // forward declarations
@@ -60,7 +55,7 @@ static void metadummy_test();
 
 static int mkfs(esdm_backend_t* backend)
 {
-	DEBUG(__func__);
+	DEBUG_ENTER;
 
 	struct stat sb;
 
@@ -94,7 +89,7 @@ static int mkfs(esdm_backend_t* backend)
  */
 static int fsck()
 {
-	DEBUG(__func__);
+	DEBUG_ENTER;
 
 
 	return 0;
@@ -109,12 +104,12 @@ static int fsck()
 
 static int entry_create(const char *path, esdm_metadata_t * data)
 {
-	DEBUG(__func__);
+	DEBUG_ENTER;
 
 	int status;
 	struct stat sb;
 
-	printf("entry_create(%s - %s)\n", path, data != NULL ? data->json : NULL);
+	DEBUG("entry_create(%s - %s)\n", path, data != NULL ? data->json : NULL);
 
 	// ENOENT => allow to create
 
@@ -146,13 +141,13 @@ static int entry_create(const char *path, esdm_metadata_t * data)
 
 static int entry_retrieve_tst(const char *path)
 {
-	DEBUG(__func__);
+	DEBUG_ENTER;
 
 	int status;
 	struct stat sb;
 	char *buf;
 
-	printf("entry_retrieve_tst(%s)\n", path);
+	DEBUG("entry_retrieve_tst(%s)\n", path);
 
 	status = stat(path, &sb);
 	if (status == -1) {
@@ -179,7 +174,7 @@ static int entry_retrieve_tst(const char *path)
 	}
 
 
-	printf("Entry content: %s\n", (char*)buf);
+	DEBUG("Entry content: %s\n", (char*)buf);
 
 	return 0;
 }
@@ -187,12 +182,12 @@ static int entry_retrieve_tst(const char *path)
 
 static int entry_update(const char *path, void *buf, size_t len)
 {
-	DEBUG(__func__);
+	DEBUG_ENTER;
 
 	int status;
 	struct stat sb;
 
-	printf("entry_update(%s)\n", path);
+	DEBUG("entry_update(%s)\n", path);
 
 	status = stat(path, &sb);
 	if (status == -1) {
@@ -219,12 +214,12 @@ static int entry_update(const char *path, void *buf, size_t len)
 
 static int entry_destroy(const char *path)
 {
-	DEBUG(__func__);
+	DEBUG_ENTER;
 
 	int status;
 	struct stat sb;
 
-	printf("entry_destroy(%s)\n", path);
+	DEBUG("entry_destroy(%s)\n", path);
 
 	status = stat(path, &sb);
 	if (status == -1) {
@@ -259,7 +254,7 @@ static int entry_destroy(const char *path)
 
 static int container_create(esdm_backend_t* backend, esdm_container_t *container)
 {
-	DEBUG(__func__);
+	DEBUG_ENTER;
 
 	char *path_metadata;
 	char *path_container;
@@ -268,7 +263,7 @@ static int container_create(esdm_backend_t* backend, esdm_container_t *container
 	metadummy_backend_options_t *options = (metadummy_backend_options_t*) backend->data;
 	const char* tgt = options->target;
 
-	printf("tgt: %p\n", tgt);
+	DEBUG("tgt: %p\n", tgt);
 
 	asprintf(&path_metadata, "%s/containers/%s.md", tgt, container->name);
 	asprintf(&path_container, "%s/containers/%s", tgt, container->name);
@@ -289,7 +284,7 @@ static int container_create(esdm_backend_t* backend, esdm_container_t *container
 
 static int container_retrieve(esdm_backend_t* backend, esdm_container_t *container)
 {
-	DEBUG(__func__);
+	DEBUG_ENTER;
 
 	char *path_metadata;
 	char *path_container;
@@ -313,7 +308,7 @@ static int container_retrieve(esdm_backend_t* backend, esdm_container_t *contain
 
 static int container_update(esdm_backend_t* backend, esdm_container_t *container)
 {
-	DEBUG(__func__);
+	DEBUG_ENTER;
 
 	char *path_metadata;
 	char *path_container;
@@ -336,7 +331,7 @@ static int container_update(esdm_backend_t* backend, esdm_container_t *container
 
 static int container_destroy(esdm_backend_t* backend, esdm_container_t *container)
 {
-	DEBUG(__func__);
+	DEBUG_ENTER;
 
 	char *path_metadata;
 	char *path_container;
@@ -367,7 +362,7 @@ static int container_destroy(esdm_backend_t* backend, esdm_container_t *containe
 
 static int dataset_create(esdm_backend_t* backend, esdm_dataset_t *dataset)
 {
-	DEBUG(__func__);
+	DEBUG_ENTER;
 
 	char *path_metadata;
 	char *path_dataset;
@@ -377,7 +372,7 @@ static int dataset_create(esdm_backend_t* backend, esdm_dataset_t *dataset)
 	metadummy_backend_options_t *options = (metadummy_backend_options_t*) backend->data;
 	const char* tgt = options->target;
 
-	printf("tgt: %p\n", tgt);
+	DEBUG("tgt: %p\n", tgt);
 
 	asprintf(&path_metadata, "%s/containers/%s/%s.md", tgt, dataset->container->name, dataset->name);
 	asprintf(&path_dataset, "%s/containers/%s/%s", tgt, dataset->container->name, dataset->name);
@@ -398,19 +393,19 @@ static int dataset_create(esdm_backend_t* backend, esdm_dataset_t *dataset)
 
 static int dataset_retrieve(esdm_backend_t* backend, esdm_dataset_t *dataset)
 {
-	DEBUG(__func__);
+	DEBUG_ENTER;
 }
 
 
 static int dataset_update(esdm_backend_t* backend, esdm_dataset_t *dataset)
 {
-	DEBUG(__func__);
+	DEBUG_ENTER;
 }
 
 
 static int dataset_destroy(esdm_backend_t* backend, esdm_dataset_t *dataset)
 {
-	DEBUG(__func__);
+	DEBUG_ENTER;
 }
 
 
@@ -462,7 +457,7 @@ static int fragment_retrieve(esdm_backend_t* backend, esdm_fragment_t *fragment,
 
 static int fragment_update(esdm_backend_t* backend, esdm_fragment_t *fragment)
 {
-	DEBUG(__func__);
+	DEBUG_ENTER;
 
 	// set data, options and tgt for convienience
 	metadummy_backend_options_t *options = (metadummy_backend_options_t*) backend->data;
@@ -479,8 +474,8 @@ static int fragment_update(esdm_backend_t* backend, esdm_fragment_t *fragment)
 	char *path_fragment;
 	asprintf(&path_fragment, "%s/containers/%s/%s/%s", tgt, fragment->dataset->container->name, fragment->dataset->name, fragment_name);
 
-	printf("path: %s\n", path);
-	printf("path_fragment: %s\n", path_fragment);
+	DEBUG("path: %s\n", path);
+	DEBUG("path_fragment: %s\n", path_fragment);
 
 	// create metadata entry
 	mkdir_recursive(path);
@@ -519,7 +514,7 @@ static int fragment_update(esdm_backend_t* backend, esdm_fragment_t *fragment)
 
 static int metadummy_backend_performance_estimate(esdm_backend_t* backend, esdm_fragment_t *fragment, float * out_time)
 {
-	DEBUG(__func__);
+	DEBUG_ENTER;
 	*out_time = 0;
 
 	return 0;
@@ -535,7 +530,7 @@ static int metadummy_backend_performance_estimate(esdm_backend_t* backend, esdm_
 */
 int metadummy_finalize()
 {
-	DEBUG(__func__);
+	DEBUG_ENTER;
 
 	return 0;
 }
@@ -608,7 +603,7 @@ static esdm_backend_t backend_template = {
 */
 esdm_backend_t* metadummy_backend_init(esdm_config_backend_t *config)
 {
-	DEBUG(__func__);
+	DEBUG_ENTER;
 
 	esdm_backend_t* backend = (esdm_backend_t*) malloc(sizeof(esdm_backend_t));
 	memcpy(backend, &backend_template, sizeof(esdm_backend_t));

@@ -9,9 +9,6 @@
 #include <esdm-debug.h>
 #include <esdm.h>
 
-
-void esdm_log(uint32_t loglevel, const char* format, ...);
-
 /* see esdm-datatypes.h for definition
 typedef enum {
 	ESDM_LOGLEVEL_CRITICAL,
@@ -73,7 +70,7 @@ esdm_status_t esdm_backend_io(esdm_backend_t *backend, esdm_fragment_t *fragment
 
 
 // Auxiliary
-void print_hashtable_entry (gpointer key, gpointer value, gpointer user_data);
+void esdm_print_hashtable (GHashTable * tbl);
 
 
 

@@ -63,7 +63,7 @@ esdm_status_t esdm_init()
 		esdm.scheduler = esdm_scheduler_init(&esdm);
 
 
-		printf("[ESDM] esdm = {config = %p, modules = %p, scheduler = %p, layout = %p, performance = %p}\n",
+		ESDM_DEBUG_COM_FMT("ESDM", " esdm = {config = %p, modules = %p, scheduler = %p, layout = %p, performance = %p}\n",
 						  (void*)esdm.config,
 						  (void*)esdm.modules,
 						  (void*)esdm.scheduler,

@@ -29,6 +29,9 @@
 
 #include <backends-data/posix/posix.h>
 
+#define DEBUG_ENTER ESDM_DEBUG_COM_FMT("MODULES", "", "")
+#define DEBUG(fmt, ...) ESDM_DEBUG_COM_FMT("MODULES", fmt, __VA_ARGS__)
+
 
 
 #ifdef ESDM_HAS_POSIX
@@ -101,7 +104,7 @@ esdm_modules_t* esdm_modules_init(esdm_instance_t* esdm)
 	for (int i = 0; i < config_backends->count; i++) {
 		b = &(config_backends->backends[i]);
 
-		printf("Backend config: %d, %s, %s, %s\n", i,
+		DEBUG("Backend config: %d, %s, %s, %s\n", i,
 				b->type,
 				b->name,
 				b->target
@@ -133,13 +136,9 @@ esdm_modules_t* esdm_modules_init(esdm_instance_t* esdm)
 		{
 			ESDM_ERROR("Unknown backend type. Please check your ESDM configuration.");
 		}
-
-		printf("\n");
 	}
 
-
-	g_hash_table_foreach(modules->backends, print_hashtable_entry, NULL);
-
+	esdm_print_hashtable(modules->backends);
 
 	return modules;
 }

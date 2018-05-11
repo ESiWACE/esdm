@@ -31,21 +31,11 @@
 #include <sys/types.h>
 #include <unistd.h>
 
+#include <esdm-debug.h>
+
 #include "metadummy.h"
 
-
-void log(uint32_t loglevel, const char* format, ...)
-{
-	uint32_t active_loglevel = 99;
-
-	if ( loglevel <= active_loglevel ) {
-		va_list args;
-		va_start(args,format);
-		vprintf(format,args);
-		va_end(args);
-	}
-}
-#define DEBUG(loglevel, msg) log(loglevel, "[POSIX] %-30s %s:%d\n", msg, __FILE__, __LINE__)
+#define DEBUG_ENTER(msg) ESDM_DEBUG_COM_FMT("DUMMY", "%s", msg)
 
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -58,8 +48,8 @@ int mkfs(esdm_backend_t* backend)
 	posix_backend_data_t* data = (posix_backend_data_t*)backend->data;
 	posix_backend_options_t* options = data->options;
 
-	printf("mkfs: backend->(void*)data->options->target = %s\n", options->target);
-	printf("\n\n\n");
+	ESDM_DEBUG("mkfs: backend->(void*)data->options->target = %s\n", options->target);
+	ESDM_DEBUG("\n\n\n");
 
 
 	const char* tgt = options->target;
@@ -123,14 +113,12 @@ int fsck()
 
 int posix_backend_performance_estimate(esdm_backend_t* backend)
 {
-	DEBUG(0, "Calculating performance estimate.");
+	DEBUG_ENTER("Calculating performance estimate.");
 
 	posix_backend_data_t* data = (posix_backend_data_t*)backend->data;
 	posix_backend_options_t* options = data->options;
 
-	printf("perf_estimate: backend->(void*)data->options->target = %s\n", options->target);
-	printf("\n\n\n");
-
+	ESDM_DEBUG("perf_estimate: backend->(void*)data->options->target = %s\n", options->target);
 
 	return 0;
 }
@@ -138,7 +126,7 @@ int posix_backend_performance_estimate(esdm_backend_t* backend)
 
 int posix_create()
 {
-	DEBUG(0, "Create");
+	DEBUG_ENTER("Create");
 
 
 	// check if container already exists
@@ -167,25 +155,25 @@ int posix_create()
  */
 int posix_open()
 {
-	DEBUG(0, "Open");
+	DEBUG_ENTER("Open");
 return 0;
 }
 
 int posix_write()
 {
-	DEBUG(0, "Write");
+	DEBUG_ENTER("Write");
 	return 0;
 }
 
 int posix_read()
 {
-	DEBUG(0, "Read");
+	DEBUG_ENTER("Read");
 	return 0;
 }
 
 int posix_close()
 {
-	DEBUG(0, "Close");
+	DEBUG_ENTER("Close");
 	return 0;
 }
 
@@ -193,21 +181,21 @@ int posix_close()
 
 int posix_allocate()
 {
-	DEBUG(0, "Allocate");
+	DEBUG_ENTER("Allocate");
 	return 0;
 }
 
 
 int posix_update()
 {
-	DEBUG(0, "Update");
+	DEBUG_ENTER("Update");
 	return 0;
 }
 
 
 int posix_lookup()
 {
-	DEBUG(0, "Lookup");
+	DEBUG_ENTER("Lookup");
 	return 0;
 }
 
@@ -256,7 +244,7 @@ static esdm_backend_t backend_template = {
 */
 esdm_backend_t* posix_backend_init(void* init_data) {
 
-	DEBUG(0, "Initializing POSIX backend.");
+	DEBUG_ENTER("Initializing POSIX backend.");
 
 	esdm_backend_t* backend = (esdm_backend_t*) malloc(sizeof(esdm_backend_t));
 	memcpy(backend, &backend_template, sizeof(esdm_backend_t));
