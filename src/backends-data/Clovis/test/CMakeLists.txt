@@ -11,4 +11,4 @@ set_target_properties(gf_complete PROPERTIES IMPORTED_LOCATION ${MERO_DIR}/lib/l
 add_library          (mero-xcode-ff2c SHARED IMPORTED)
 set_target_properties(mero-xcode-ff2c PROPERTIES IMPORTED_LOCATION ${MERO_DIR}/lib/libmero-xcode-ff2c.so)
 
-target_link_libraries(clovis_test ${GLIB_LIBRARIES} esdmclovis mero gf_complete mero-xcode-ff2c)
+target_link_libraries(clovis_test ${GLIB_LIBRARIES} esdm esdmutils esdmclovis mero gf_complete mero-xcode-ff2c)
