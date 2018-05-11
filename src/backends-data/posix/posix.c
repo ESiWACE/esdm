@@ -139,7 +139,7 @@ static int entry_create(const char *path)
 }
 
 
-static int entry_retrieve(const char *path, void **buf, size_t **count)
+static int entry_retrieve(const char *path, void *buf)
 {
 	int status;
 	struct stat sb;
@@ -153,36 +153,23 @@ static int entry_retrieve(const char *path, void **buf, size_t **count)
 		return -1;
 	}
 
-	//print_stat(sb);
-
-
 	// write to non existing file
 	int fd = open(path,	O_RDONLY | S_IWUSR | S_IRUSR | S_IWGRP | S_IRGRP | S_IROTH);
-
-
-	*count = malloc(sizeof(size_t));
-	**count = sb.st_size;
-
 	// everything ok? read and close
 	if ( fd != -1 )
 	{
-		// write some metadata
-		*buf = (void*) malloc(sb.st_size);
-		assert(buf != NULL);
-		//char* cbuf = (char*)*buf;
-		//cbuf[sb.st_size] = 0;
 		size_t len = sb.st_size;
+		char *bbuf = (char*) buf;
 		while(len > 0){
-			ssize_t ret = read(fd, buf, len);
+			ssize_t ret = read(fd, bbuf, len);
 			if (ret != -1){
-				buf = (void*) ((char*) buf + ret);
+				bbuf += ret;
 				len -= ret;
 			}else{
 				if(errno == EINTR){
 					continue;
 				}else{
 					ESDM_ERROR_COM_FMT("POSIX", "read %s", strerror(errno));
-					**count = len;
 					return 1;
 				}
 			}
@@ -310,15 +297,8 @@ static int fragment_retrieve(esdm_backend_t* backend, esdm_fragment_t *fragment,
 	//entry_update()
 
 	size_t *count = NULL;
-	void *buf = NULL;
-
-	entry_retrieve(path_fragment, &buf, &count);
-
-
-	DEBUG("count = %d,  buf=%s\n", *count, buf);
-
-	fragment->buf = buf;
-
+	entry_retrieve(path_fragment, fragment->buf);
+	DEBUG(" buf=%s\n", fragment->buf);
 
 
 
@@ -357,11 +337,6 @@ static int fragment_update(esdm_backend_t* backend, esdm_fragment_t *fragment)
 	fragment->metadata->size += sprintf(& fragment->metadata->json[fragment->metadata->size], "{\"path\" : \"%s\"}", path_fragment);
 
 	entry_update(path_fragment, fragment->buf, fragment->bytes);
-	//entry_update()
-
-	size_t *count = NULL;
-	void *buf = NULL;
-	entry_retrieve(path_fragment, &buf, &count);
 	free(path);
 	free(path_fragment);
 	return 0;

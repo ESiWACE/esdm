@@ -233,18 +233,13 @@ esdm_status_t esdm_read(esdm_dataset_t *dataset, void *buf, esdm_dataspace_t* su
 	//esdm_fragment_t *fragment = esdm_layout_reconstruction(dataset, subspace);
 
 	esdm_fragment_t *fragment = esdm_fragment_create(dataset, subspace, NULL);
+	fragment->buf = buf;
 	esdm_status_t status = esdm_fragment_retrieve(fragment);
-
 	//if (status != ESDM_SUCCESS)
 	//	ESDM_DEBUG("Could not retrieve fragment.");
 
 	//esdm_scheduler_enqueue(fragment);
-
-	// buf =
-	//
 	ESDM_DEBUG_FMT("Fragment size: %ld", fragment->bytes);
-	memcpy(buf, fragment->buf, fragment->bytes);
-
 	return ESDM_SUCCESS;
 }
 
