@@ -35,18 +35,18 @@
 
 extern esdm_instance_t esdm;
 
-
-
-
-
 // Native Datatypes ///////////////////////////////////////////////////////////
 size_t esdm_sizeof(esdm_datatype_t type) {
 	switch (type) {
+
 		case esdm_int8_t:
+		case esdm_char_utf8:
 			return sizeof(int8_t);
 		case esdm_int16_t:
+		case esdm_char_utf16:
 			return sizeof(int16_t);
 		case esdm_int32_t:
+		case esdm_char_utf32:
 			return sizeof(int32_t);
 		case esdm_int64_t:
 			return sizeof(int64_t);
@@ -65,21 +65,10 @@ size_t esdm_sizeof(esdm_datatype_t type) {
 		case esdm_double:		// if IEEE 754 (64bit)
 			return sizeof(double);
 
-		// TODO: is a native char type really needed?
-		case esdm_char:
-		case esdm_char_ascii:
+		default:
 			return 1;
-
 	}
 }
-
-
-
-
-
-
-
-
 
 // Container //////////////////////////////////////////////////////////////////
 /**

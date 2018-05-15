@@ -36,7 +36,7 @@ int main(int argc, char *argv[])
 	}
 	printf("wos connection succeeded\n");
 
-	rc = esdm_backend_wos.ebm_ops.esdm_backend_obj_alloc(eb, 1, &data_size, 1, NULL, NULL, &object_id, &object_meta);
+	rc = esdm_backend_wos.ebm_ops.esdm_backend_obj_alloc(eb, 1, &data_size, esdm_char, NULL, NULL, &object_id, &object_meta);
 	if (rc != 0) {
 		printf("esdm_backend_wos.ebm_ops alloc failed rc=%d\n", rc);
 		goto fini;

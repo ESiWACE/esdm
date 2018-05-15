@@ -20,9 +20,12 @@
  * @brief A data backend to provide wos compatibility.
  */
 
+#define _GNU_SOURCE
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <errno.h>
+
 #include <esdm.h>
 
 #include "wos.h"
@@ -37,13 +40,6 @@
 
 // Temporary definitions
 #define ESDM_DEBUG(msg) fprintf(stderr, "[%s][%d] %s\n", __FILE__, __LINE__, msg)
-
-int wos_sizeof(esdm_type type)
-{
-	// Return the size (in bytes) corresponding to data type 'type'
-	// TODO: change the reference to correct core function
-	return (int) type;
-}
 
 int wos_get_param(const char *conf, char **output, const char *param)
 {
@@ -137,7 +133,7 @@ int wos_object_list_encode(t_WosOID ** oid_list, char **out_object_id)
 	return 0;
 }
 
-int esdm_backend_wos_init(char *conf, esdm_backend_t * eb)
+int esdm_backend_wos_init(const char *conf, esdm_backend_t * eb)
 {
 	esdm_backend_wos_t *ebm = (esdm_backend_wos_t *) eb;
 	if (!ebm) {
@@ -217,7 +213,7 @@ int esdm_backend_wos_fini(esdm_backend_t * eb)
 	return 0;
 }
 
-int esdm_backend_wos_alloc(esdm_backend_t * eb, int n_dims, int *dims_size, esdm_type type, char *md1, char *md2, char **out_object_id, char **out_wos_metadata)
+int esdm_backend_wos_alloc(esdm_backend_t * eb, int n_dims, int *dims_size, esdm_datatype_t type, char *md1, char *md2, char **out_object_id, char **out_wos_metadata)
 {
 	if (!out_object_id || !out_wos_metadata) {
 		ESDM_DEBUG("Null pointer");
@@ -226,7 +222,7 @@ int esdm_backend_wos_alloc(esdm_backend_t * eb, int n_dims, int *dims_size, esdm
 	*out_object_id = NULL;
 	*out_wos_metadata = NULL;
 
-	int item_size = wos_sizeof(type);
+	int item_size = esdm_sizeof(type);
 	if (!dims_size || (n_dims < 1) || !item_size) {
 		ESDM_DEBUG("Wrong parameters");
 		return 1;
@@ -373,8 +369,8 @@ int esdm_backend_wos_write(esdm_backend_t * eb, void *obj_handle, uint64_t start
 	}
 	uint64_t obj_size = ebm->size_list[0];
 
-	esdm_type type = 1;	// TODO: data type should be extracted from metadata associated to WOS object
-	int item_size = wos_sizeof(type);
+	esdm_datatype_t type = esdm_char;	// TODO: data type should be extracted from metadata associated to WOS object
+	int item_size = esdm_sizeof(type);
 
 	// TODO: start and count has to be used to write the appropriate objects; only one object is now created
 	start *= item_size;
@@ -489,8 +485,8 @@ int esdm_backend_wos_read(esdm_backend_t * eb, void *obj_handle, uint64_t start,
 		return 1;
 	}
 
-	esdm_type type = 1;	// TODO: data type should be extracted from metadata associated to WOS object
-	int item_size = wos_sizeof(type);
+	esdm_datatype_t type = esdm_char;	// TODO: data type should be extracted from metadata associated to WOS object
+	int item_size = esdm_sizeof(type);
 
 	// TODO: start and count has to be used to select the appropriate objects, get data and aggregate the result to be outputed; now there is only one object
 	start *= item_size;
@@ -528,44 +524,129 @@ int wos_backend_performance_estimate()
 	return 0;
 }
 
+int esdm_backend_wos_fragment_retrieve(esdm_backend_t * backend, esdm_fragment_t * fragment)
+{
+	char *fragment_name = NULL;
+	char *path_fragment = NULL;
+	void *buf = NULL;
+	char *obj_id = NULL;
+	void *obj_handle;
+	int rc = 0;
+
+	// serialization of subspace for fragment
+	fragment_name = esdm_dataspace_string_descriptor(fragment->dataspace);
+	asprintf(&path_fragment, "/containers/%s/%s/%s", fragment->dataset->container->name, fragment->dataset->name, fragment_name);
+	printf("path_fragment: %s\n", path_fragment);
+
+	buf = malloc(fragment->bytes);
+	if (buf == NULL) {
+		rc = -ENOMEM;
+		goto _RETRIEVE_EXIT;
+	}
+	// 1. Find if this fragment exists;
+	// To do so, find its object_id from meta.
+	// <path_fragment, object_id> is inserted into mapping during update.
+	obj_id = NULL;		/* TODO: lookup from the mapping */
+
+	// 2. open object with its object_id.
+	rc = esdm_backend_wos_open(backend, obj_id, &obj_handle);
+
+	// 3. read from this object.
+	rc = esdm_backend_wos_read(backend, obj_handle, 0, fragment->bytes, buf);
+
+	// 4. close this object.
+	rc = esdm_backend_wos_close(backend, obj_handle);
+
+	fragment->buf = buf;
+      _RETRIEVE_EXIT:
+	free(fragment_name);
+	free(path_fragment);
+	return rc;
+}
+
+int esdm_backend_wos_fragment_update(esdm_backend_t * backend, esdm_fragment_t * fragment)
+{
+	char *fragment_name = NULL;
+	char *path_fragment = NULL;
+	char *obj_id = NULL;
+	char *obj_meta = NULL;
+	void *obj_handle;
+	int rc = 0;
+
+	// serialization of subspace for fragment
+	fragment_name = esdm_dataspace_string_descriptor(fragment->dataspace);
+	asprintf(&path_fragment, "/containers/%s/%s/%s", fragment->dataset->container->name, fragment->dataset->name, fragment_name);
+	printf("path_fragment: %s\n", path_fragment);
+
+	// 1. create a new object if this fragment exists;
+	// To do so, find its object_id from meta.
+	// <path_fragment, object_id> is inserted into mapping during update.
+	obj_id = NULL;		/* TODO: lookup from the mapping */
+
+	if (obj_id == NULL) {
+		int size = fragment->bytes;
+		rc = esdm_backend_wos_alloc(backend, 1, &size, fragment->dataspace->datatype, NULL, NULL, &obj_id, &obj_meta);
+		if (rc == 0) {
+			// Insert this <path_fragment, obj_id> into mapping
+		} else {
+			goto _UPDATE_EXIT;
+		}
+	}
+	// 2. open object with its object_id.
+	rc = esdm_backend_wos_open(backend, obj_id, &obj_handle);
+
+	// 3. read from this object.
+	rc = esdm_backend_wos_write(backend, obj_handle, 0, fragment->bytes, fragment->buf);
+
+	// 4. close this object.
+	rc = esdm_backend_wos_close(backend, obj_handle);
+
+      _UPDATE_EXIT:
+	free(obj_id);
+	free(obj_meta);
+	free(fragment_name);
+	free(path_fragment);
+	return rc;
+}
+
 ///////////////////////////////////////////////////////////////////////////////
 // ESDM Module Registration ///////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////
 esdm_backend_wos_t esdm_backend_wos = {
 	.ebm_base = {
-		     .name = "wos",
+		     .name = "WOS",
 		     .type = ESDM_TYPE_DATA,
 		     .version = "0.0.1",
 		     .data = NULL,
 		     .blocksize = BLOCKSIZE,
 		     .callbacks = {
-					(int (*)()) esdm_backend_wos_fini,	// finalize
-					wos_backend_performance_estimate,	// performance_estimate
+				   (int (*)()) esdm_backend_wos_fini,	// finalize
+				   wos_backend_performance_estimate,	// performance_estimate
 
-					(int (*)()) esdm_backend_wos_alloc,
-					(int (*)()) esdm_backend_wos_open,
-					(int (*)()) esdm_backend_wos_write,
-					(int (*)()) esdm_backend_wos_read,
-					(int (*)()) esdm_backend_wos_close,
+				   (int (*)()) esdm_backend_wos_alloc,
+				   (int (*)()) esdm_backend_wos_open,
+				   (int (*)()) esdm_backend_wos_write,
+				   (int (*)()) esdm_backend_wos_read,
+				   (int (*)()) esdm_backend_wos_close,
 
-					// Metadata Callbacks
-					NULL, // lookup
+				   // Metadata Callbacks
+				   NULL,	// lookup
 
-					// ESDM Data Model Specific
-					NULL, // container create
-					NULL, // container retrieve
-					NULL, // container update
-					NULL, // container delete
+				   // ESDM Data Model Specific
+				   NULL,	// container create
+				   NULL,	// container retrieve
+				   NULL,	// container update
+				   NULL,	// container delete
 
-					NULL, // dataset create
-					NULL, // dataset retrieve
-					NULL, // dataset update
-					NULL, // dataset delete
+				   NULL,	// dataset create
+				   NULL,	// dataset retrieve
+				   NULL,	// dataset update
+				   NULL,	// dataset delete
 
-					NULL, // fragment create
-					NULL, // fragment retrieve
-					NULL, // fragment update
-					NULL, // fragment delete
+				   NULL,	// fragment create
+				   (int (*)()) esdm_backend_wos_fragment_retrieve,	// fragment retrieve
+				   (int (*)()) esdm_backend_wos_fragment_update,	// fragment update
+				   NULL,	// fragment delete
 				   },
 		     },
 	.ebm_ops = {
@@ -592,13 +673,15 @@ esdm_backend_wos_t esdm_backend_wos = {
 *
 * @return pointer to backend struct
 */
-esdm_backend_t *wos_backend_init(esdm_config_backend_t *config)
+esdm_backend_t *wos_backend_init(esdm_config_backend_t * config)
 {
+	if (!config || !config->type || strcasecmp(config->type, "WOS") || !config->target) {
+		printf("Wrong configuration\n");
+		return NULL;
+	}
+
 	esdm_backend_t *eb = &esdm_backend_wos.ebm_base;
-	int rc;
-
-	rc = esdm_backend_wos_init("host=127.0.0.1;policy=test;", eb);
-
+	int rc = esdm_backend_wos_init(config->target, eb);
 	if (rc != 0)
 		return NULL;
 	else

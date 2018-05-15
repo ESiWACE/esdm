@@ -435,6 +435,11 @@ esdm_backend_t* posix_backend_init(esdm_config_backend_t *config)
 {
 	DEBUG_ENTER;
 
+	if (!config || !config->type || strcasecmp(config->type, "POSIX") || !config->target) {
+		DEBUG("Wrong configuration\n");
+		return NULL;
+	}
+
 	esdm_backend_t* backend = (esdm_backend_t*) malloc(sizeof(esdm_backend_t));
 	memcpy(backend, &backend_template, sizeof(esdm_backend_t));
 

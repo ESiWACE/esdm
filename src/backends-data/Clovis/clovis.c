@@ -557,8 +557,8 @@ esdm_backend_clovis_t esdm_backend_clovis = {
             NULL, // dataset delete
 
             NULL, // fragment create
-            esdm_backend_clovis_fragment_retrieve, // fragment retrieve
-            esdm_backend_clovis_fragment_update,   // fragment update
+            (int (*)()) esdm_backend_clovis_fragment_retrieve, // fragment retrieve
+            (int (*)()) esdm_backend_clovis_fragment_update,   // fragment update
             NULL, // fragment delete
         },
     },
@@ -592,6 +592,11 @@ esdm_backend_t* clovis_backend_init(esdm_config_backend_t* config)
     esdm_backend_t *eb = &esdm_backend_clovis.ebm_base;
     char           *target = NULL;
     int             rc;
+
+    if (!config || !config->type || strcasecmp(config->type, "CLOVIS") || !config->target) {
+	printf("Wrong configuration\n");
+	return NULL;
+    }
 
     printf("backend type   = %s\n", config->type);
     printf("backend name   = %s\n", config->name);

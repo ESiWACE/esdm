@@ -31,7 +31,7 @@ struct esdm_backend_wos_ops {
 	 * The format of conf string would like this:
 	 * "laddr ha_addr prof_opt proc_fid".
 	 */
-	int (*esdm_backend_init) (char *conf, esdm_backend_t * eb);
+	int (*esdm_backend_init) (const char *conf, esdm_backend_t * eb);
 
 	/**
 	 * Finalise the backend.
@@ -51,7 +51,7 @@ struct esdm_backend_wos_ops {
 	 * @param [out] out_object_id, the returned objects.
 	 * @param [out] out_mero_metadata, the returned metadata.
 	 */
-	int (*esdm_backend_obj_alloc) (esdm_backend_t * eb, int n_dims, int *dims_size, esdm_type type, char *md1, char *md2, char **out_object_id, char **out_wos_metadata);
+	int (*esdm_backend_obj_alloc) (esdm_backend_t * eb, int n_dims, int *dims_size, esdm_datatype_t type, char *md1, char *md2, char **out_object_id, char **out_wos_metadata);
 
 	/**
 	 * Open an object for read/write.
@@ -93,7 +93,7 @@ typedef struct {
 
 } esdm_backend_wos_t;
 
-esdm_backend_t *wos_backend_init(esdm_config_backend_t *config);
+esdm_backend_t *wos_backend_init(esdm_config_backend_t * config);
 
 extern esdm_backend_wos_t esdm_backend_wos;
 
