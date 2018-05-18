@@ -63,12 +63,12 @@ struct esdm_backend_wos_ops {
 	/**
 	 * Write to an object.
 	 */
-	int (*esdm_backend_obj_write) (esdm_backend_t * eb, void *obj_handle, uint64_t start, uint64_t count, void *data);
+	int (*esdm_backend_obj_write) (esdm_backend_t * eb, void *obj_handle, uint64_t start, uint64_t count, esdm_datatype_t type, void *data);
 
 	/**
 	 * Read from object.
 	 */
-	int (*esdm_backend_obj_read) (esdm_backend_t * eb, void *obj_handle, uint64_t start, uint64_t count, void *data);
+	int (*esdm_backend_obj_read) (esdm_backend_t * eb, void *obj_handle, uint64_t start, uint64_t count, esdm_datatype_t type, void *data);
 
 	/**
 	 * Close an object.

@@ -343,16 +343,49 @@ int esdm_backend_wos_open(esdm_backend_t * eb, char *object_id, void **obj_handl
 	return 0;
 }
 
-int esdm_backend_wos_write(esdm_backend_t * eb, void *obj_handle, uint64_t start, uint64_t count, void *data)
+int esdm_backend_wos_delete(esdm_backend_t * eb, void *obj_handle)
 {
 	if (!obj_handle) {
 		ESDM_DEBUG("Null pointer");
 		return 1;
 	}
-	if (!data || !count) {
-		ESDM_DEBUG("No data has to be written");
+
+	esdm_backend_wos_t *ebm = (esdm_backend_wos_t *) eb;
+	if (!ebm) {
+		ESDM_DEBUG("Unable to get struct");
 		return 1;
 	}
+	if (!ebm->wos_cluster || !ebm->wos_policy) {
+		ESDM_DEBUG("Unable to get wos parameters");
+		return 1;
+	}
+
+	t_WosStatus *wos_status = CreateStatus();
+	if (!wos_status) {
+		ESDM_DEBUG("Unable to create wos status");
+		return 1;
+	}
+
+	Delete_b(wos_status, (t_WosOID *) obj_handle, ebm->wos_cluster);
+	if (GetStatus(wos_status)) {
+		DeleteWosStatus(wos_status);
+		ESDM_DEBUG("Unable to allocate data");
+		return 1;
+	}
+
+	DeleteWosStatus(wos_status);
+
+	return 0;
+}
+
+int esdm_backend_wos_write(esdm_backend_t * eb, void *obj_handle, uint64_t start, uint64_t count, esdm_datatype_t type, void *data)
+{
+	if (!obj_handle) {
+		ESDM_DEBUG("Null pointer");
+		return 1;
+	}
+	if (!data || !count)
+		return esdm_backend_wos_delete(eb, obj_handle);
 
 	esdm_backend_wos_t *ebm = (esdm_backend_wos_t *) eb;
 	if (!ebm) {
@@ -369,7 +402,6 @@ int esdm_backend_wos_write(esdm_backend_t * eb, void *obj_handle, uint64_t start
 	}
 	uint64_t obj_size = ebm->size_list[0];
 
-	esdm_datatype_t type = esdm_char;	// TODO: data type should be extracted from metadata associated to WOS object
 	int item_size = esdm_sizeof(type);
 
 	// TODO: start and count has to be used to write the appropriate objects; only one object is now created
@@ -429,7 +461,7 @@ int esdm_backend_wos_write(esdm_backend_t * eb, void *obj_handle, uint64_t start
 	return 0;
 }
 
-int esdm_backend_wos_read(esdm_backend_t * eb, void *obj_handle, uint64_t start, uint64_t count, void *data)
+int esdm_backend_wos_read(esdm_backend_t * eb, void *obj_handle, uint64_t start, uint64_t count, esdm_datatype_t type, void *data)
 {
 	if (!obj_handle) {
 		ESDM_DEBUG("Null pointer");
@@ -485,7 +517,6 @@ int esdm_backend_wos_read(esdm_backend_t * eb, void *obj_handle, uint64_t start,
 		return 1;
 	}
 
-	esdm_datatype_t type = esdm_char;	// TODO: data type should be extracted from metadata associated to WOS object
 	int item_size = esdm_sizeof(type);
 
 	// TODO: start and count has to be used to select the appropriate objects, get data and aggregate the result to be outputed; now there is only one object
@@ -526,86 +557,206 @@ int wos_backend_performance_estimate()
 
 int esdm_backend_wos_fragment_retrieve(esdm_backend_t * backend, esdm_fragment_t * fragment)
 {
-	char *fragment_name = NULL;
-	char *path_fragment = NULL;
 	void *buf = NULL;
 	char *obj_id = NULL;
-	void *obj_handle;
+	void *obj_handle = NULL;
 	int rc = 0;
 
-	// serialization of subspace for fragment
-	fragment_name = esdm_dataspace_string_descriptor(fragment->dataspace);
-	asprintf(&path_fragment, "/containers/%s/%s/%s", fragment->dataset->container->name, fragment->dataset->name, fragment_name);
-	printf("path_fragment: %s\n", path_fragment);
+	if (!backend || !fragment)
+		return -1;
+
+	fragment->buf = NULL;
+
+	obj_id = NULL;
+	while (fragment->metadata->size) {
+		char *start_id = strstr(fragment->metadata->json, "object_id"), *end_id;
+		if (!start_id)
+			break;
+		start_id = strstr(start_id, ":");
+		if (!start_id)
+			break;
+		start_id = strstr(start_id, "\"");
+		if (!start_id)
+			break;
+		start_id++;
+		end_id = strstr(start_id, "\"");
+		if (!end_id)
+			break;
+		obj_id = strndup(start_id, end_id - start_id);
+		break;
+	}
+	if (!obj_id) {
+		ESDM_DEBUG("Object not found");
+		rc = -1;
+		goto _RETRIEVE_EXIT;
+	}
+
+	rc = esdm_backend_wos_open(backend, obj_id, &obj_handle);
+	if (rc) {
+		goto _RETRIEVE_EXIT;
+	}
 
 	buf = malloc(fragment->bytes);
 	if (buf == NULL) {
+		esdm_backend_wos_close(backend, obj_handle);
 		rc = -ENOMEM;
 		goto _RETRIEVE_EXIT;
 	}
-	// 1. Find if this fragment exists;
-	// To do so, find its object_id from meta.
-	// <path_fragment, object_id> is inserted into mapping during update.
-	obj_id = NULL;		/* TODO: lookup from the mapping */
+	rc = esdm_backend_wos_read(backend, obj_handle, 0, fragment->bytes, fragment->dataspace->datatype, buf);
+	if (rc) {
+		esdm_backend_wos_close(backend, obj_handle);
+		free(buf);
+		goto _RETRIEVE_EXIT;
+	}
 
-	// 2. open object with its object_id.
-	rc = esdm_backend_wos_open(backend, obj_id, &obj_handle);
-
-	// 3. read from this object.
-	rc = esdm_backend_wos_read(backend, obj_handle, 0, fragment->bytes, buf);
-
-	// 4. close this object.
 	rc = esdm_backend_wos_close(backend, obj_handle);
+	if (rc) {
+		free(buf);
+		goto _RETRIEVE_EXIT;
+	}
 
 	fragment->buf = buf;
+
       _RETRIEVE_EXIT:
-	free(fragment_name);
-	free(path_fragment);
+
 	return rc;
 }
 
 int esdm_backend_wos_fragment_update(esdm_backend_t * backend, esdm_fragment_t * fragment)
 {
-	char *fragment_name = NULL;
-	char *path_fragment = NULL;
 	char *obj_id = NULL;
 	char *obj_meta = NULL;
-	void *obj_handle;
+	void *obj_handle = NULL;
 	int rc = 0;
 
-	// serialization of subspace for fragment
-	fragment_name = esdm_dataspace_string_descriptor(fragment->dataspace);
-	asprintf(&path_fragment, "/containers/%s/%s/%s", fragment->dataset->container->name, fragment->dataset->name, fragment_name);
-	printf("path_fragment: %s\n", path_fragment);
+	if (!backend || !fragment)
+		return -1;
 
-	// 1. create a new object if this fragment exists;
-	// To do so, find its object_id from meta.
-	// <path_fragment, object_id> is inserted into mapping during update.
-	obj_id = NULL;		/* TODO: lookup from the mapping */
-
-	if (obj_id == NULL) {
-		int size = fragment->bytes;
-		rc = esdm_backend_wos_alloc(backend, 1, &size, fragment->dataspace->datatype, NULL, NULL, &obj_id, &obj_meta);
-		if (rc == 0) {
-			// Insert this <path_fragment, obj_id> into mapping
-		} else {
+	obj_id = NULL;
+	while (fragment->metadata->size) {
+		char *start_id = strstr(fragment->metadata->json, "object_id"), *end_id;
+		if (!start_id)
+			break;
+		start_id = strstr(start_id, ":");
+		if (!start_id)
+			break;
+		start_id = strstr(start_id, "\"");
+		if (!start_id)
+			break;
+		start_id++;
+		end_id = strstr(start_id, "\"");
+		if (!end_id)
+			break;
+		obj_id = strndup(start_id, end_id - start_id);
+		break;
+	}
+	if (obj_id) {
+		ESDM_DEBUG("Object found: it needs to be replaced");
+		rc = esdm_backend_wos_open(backend, obj_id, &obj_handle);
+		if (rc) {
 			goto _UPDATE_EXIT;
 		}
+
+		rc = esdm_backend_wos_delete(backend, obj_handle);
+		if (rc) {
+			esdm_backend_wos_close(backend, obj_handle);
+			goto _UPDATE_EXIT;
+		}
+
+		rc = esdm_backend_wos_close(backend, obj_handle);
+		if (rc) {
+			goto _UPDATE_EXIT;
+		}
+
+		free(obj_id);
 	}
-	// 2. open object with its object_id.
+
+	int size = fragment->bytes;
+	rc = esdm_backend_wos_alloc(backend, 1, &size, fragment->dataspace->datatype, NULL, NULL, &obj_id, &obj_meta);
+	if (rc) {
+		goto _UPDATE_EXIT;
+	}
+
+	fragment->metadata->size += sprintf(&fragment->metadata->json[fragment->metadata->size], "{\"object_id\" : \"%s\"}", obj_id);
+	if (fragment->metadata->size >= ESDM_MAX_SIZE) {
+		rc = -ENOMEM;
+		goto _UPDATE_EXIT;
+	}
+
 	rc = esdm_backend_wos_open(backend, obj_id, &obj_handle);
+	if (rc) {
+		goto _UPDATE_EXIT;
+	}
 
-	// 3. read from this object.
-	rc = esdm_backend_wos_write(backend, obj_handle, 0, fragment->bytes, fragment->buf);
+	rc = esdm_backend_wos_write(backend, obj_handle, 0, fragment->bytes, fragment->dataspace->datatype, fragment->buf);
+	if (rc) {
+		esdm_backend_wos_close(backend, obj_handle);
+		goto _UPDATE_EXIT;
+	}
 
-	// 4. close this object.
 	rc = esdm_backend_wos_close(backend, obj_handle);
+	if (rc) {
+		goto _UPDATE_EXIT;
+	}
 
       _UPDATE_EXIT:
 	free(obj_id);
 	free(obj_meta);
-	free(fragment_name);
-	free(path_fragment);
+
+	return rc;
+}
+
+int esdm_backend_wos_fragment_delete(esdm_backend_t * backend, esdm_fragment_t * fragment)
+{
+	char *obj_id = NULL;
+	void *obj_handle = NULL;
+	int rc = 0;
+
+	if (!backend || !fragment)
+		return -1;
+
+	obj_id = NULL;
+	while (fragment->metadata->size) {
+		char *start_id = strstr(fragment->metadata->json, "object_id"), *end_id;
+		if (!start_id)
+			break;
+		start_id = strstr(start_id, ":");
+		if (!start_id)
+			break;
+		start_id = strstr(start_id, "\"");
+		if (!start_id)
+			break;
+		start_id++;
+		end_id = strstr(start_id, "\"");
+		if (!end_id)
+			break;
+		obj_id = strndup(start_id, end_id - start_id);
+		break;
+	}
+	if (!obj_id) {
+		ESDM_DEBUG("Object not found");
+		rc = -1;
+		goto _DELETE_EXIT;
+	}
+
+	rc = esdm_backend_wos_open(backend, obj_id, &obj_handle);
+	if (rc) {
+		goto _DELETE_EXIT;
+	}
+
+	rc = esdm_backend_wos_delete(backend, obj_handle);
+	if (rc) {
+		esdm_backend_wos_close(backend, obj_handle);
+		goto _DELETE_EXIT;
+	}
+
+	rc = esdm_backend_wos_close(backend, obj_handle);
+	if (rc) {
+		goto _DELETE_EXIT;
+	}
+
+      _DELETE_EXIT:
+
 	return rc;
 }
 
@@ -646,7 +797,7 @@ esdm_backend_wos_t esdm_backend_wos = {
 				   NULL,	// fragment create
 				   (int (*)()) esdm_backend_wos_fragment_retrieve,	// fragment retrieve
 				   (int (*)()) esdm_backend_wos_fragment_update,	// fragment update
-				   NULL,	// fragment delete
+				   (int (*)()) esdm_backend_wos_fragment_delete,	// fragment delete
 				   },
 		     },
 	.ebm_ops = {

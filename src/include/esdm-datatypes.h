@@ -9,7 +9,7 @@
 #include <stdint.h>
 #include <glib.h>
 
-
+#define ESDM_MAX_SIZE 1024
 
 typedef int esdm_type;
 

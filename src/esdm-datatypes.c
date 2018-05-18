@@ -199,7 +199,7 @@ esdm_fragment_t* esdm_fragment_create(esdm_dataset_t* dataset, esdm_dataspace_t*
 	int64_t bytes = size*esdm_sizeof(subspace->datatype);
 	DEBUG("Entries in subspace: %d x %d bytes = %d bytes \n", size, esdm_sizeof(subspace->datatype), bytes);
 
-	fragment->metadata = malloc(1024);
+	fragment->metadata = malloc(ESDM_MAX_SIZE);
 	fragment->metadata->json = (char*)(fragment->metadata + sizeof(esdm_metadata_t));
 	fragment->metadata->json[0] = 0;
 	fragment->metadata->size = 0;
