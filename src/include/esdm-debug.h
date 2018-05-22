@@ -18,10 +18,10 @@ void esdm_log(uint32_t loglevel, const char* format, ...);
 #else
   #define ESDM_DEBUG(fmt) ESDM_LOG_FMT(ESDM_LOGLEVEL_DEBUG, "%s", fmt)
   #define ESDM_DEBUG_FMT(fmt, ...) ESDM_LOG_FMT(ESDM_LOGLEVEL_DEBUG, fmt, __VA_ARGS__)
-  #define ESDM_DEBUG_COM_FMT(com, fmt, ...) ESDM_LOG_COM_FMT(ESDM_LOGLEVEL_DEBUG, com, fmt, __VA_ARGS__)
+  #define ESDM_DEBUG_COM_FMT(component, fmt, ...) ESDM_LOG_COM_FMT(ESDM_LOGLEVEL_DEBUG, component, fmt, __VA_ARGS__)
 #endif
 
-#define ESDM_ERROR(fmt) ESDM_ERROR_FMT(ESDM_LOGLEVEL_DEBUG, "%s", fmt)
+#define ESDM_ERROR(fmt) ESDM_LOG_FMT(ESDM_LOGLEVEL_DEBUG, "%s", fmt)
 #define ESDM_ERROR_FMT(fmt, ...) do { ESDM_LOG_FMT(ESDM_LOGLEVEL_DEBUG, fmt, __VA_ARGS__); exit(1); } while(0)
 #define ESDM_ERROR_COM_FMT(component, fmt, ...) do { ESDM_LOG_COM_FMT(ESDM_LOGLEVEL_DEBUG, component, fmt, __VA_ARGS__); exit(1); } while(0)
 
