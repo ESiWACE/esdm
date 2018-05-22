@@ -23,6 +23,8 @@ function help(){
 	echo "--with-cxx=<file>        : path to the C++ compiler"
 	echo "--with-mpicc=<file>      : path to the MPI C compiler"
 	echo "--with-mpicxx=<file>     : path to the MPI C++ compiler"
+	echo "--with-boost=<file>      : path to boost library used for WOS"
+	echo "--enable-wos=<file>      : path to WOS library"
 	echo "--plantuml-jar-dir=<dir> : directory containing plantuml.jar, useful for building the documentation"
 	echo "--without-hdf            : disable HDF5 frontend (do not build VOL plugin)."
 	echo
@@ -41,7 +43,7 @@ function reconfigure(){
 	exit $?
 }
 
-set -- `getopt -u -l "help,version,debug,reconfigure,prefix:,with-cc:,with-cxx:,with-hdf5:,plantuml-jar-dir:,with-mpicc:,with-mpicxx:,verbose,build-dir:" -o "hV" -- "$@"`
+set -- `getopt -u -l "help,version,debug,reconfigure,prefix:,with-cc:,with-cxx:,with-hdf5:,plantuml-jar-dir:,with-mpicc:,with-mpicxx:,verbose,build-dir:,enable-wos:,with-boost:" -o "hV" -- "$@"`
 test $# -lt 1  && exit 1
 while test $# -gt 0
 do
@@ -56,6 +58,7 @@ do
 		--with-hdf5) hdf5="$2"; echo "$2"; shift;;
 		--with-mpicc) mpicc="$2"; shift;;
 		--with-mpicxx) mpicxx="$2"; shift;;
+		--with-boost) boost="$2"; shift;;
 		--enable-lustre) lustre="$2"; shift;;
 		--enable-clovis) clovis="$2"; shift;;
 		--enable-wos) wos="$2"; shift;;
@@ -98,6 +101,12 @@ if test -n "$mpicc"; then
 fi
 if test -n "$mpicxx"; then
 	CMAKEFLAGS="$CMAKEFLAGS -DMPI_CXX_COMPILER:FILEPATH=$mpicxx"
+fi
+if test -n "$wos"; then
+	CMAKEFLAGS="$CMAKEFLAGS -DWOS_wos_LIBRARY_RELEASE:PATH=$wos/lib/libwos_cpp.so -DWOS_C_INCLUDE_DIR:PATH=$wos/include"
+fi
+if test -n "$boost"; then
+	CMAKEFLAGS="$CMAKEFLAGS -DBOOST_boost_LIBRARY_RELEASE:PATH=$boost/lib/libboost_system.so -DBOOST_C_INCLUDE_DIR:PATH=$boost/include"
 fi
 
 

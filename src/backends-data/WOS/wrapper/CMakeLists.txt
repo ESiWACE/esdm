@@ -1,6 +1,8 @@
-add_library(esdmwos SHARED wos.c)
-target_link_libraries(esdmwos ${GLIB_LIBRARIES})
-include_directories(${ESDM_INCLUDE_DIRS} ${CMAKE_BINARY_DIR} ${GLIB_INCLUDE_DIRS} ${Jansson_INCLUDE_DIRS} /home/ophidia/oph-hub/dist /home/ophidia/oph-hub/boost45/include)
+set(CMAKE_CXX_FLAGS "-pedantic")
 
-install(TARGETS esdmwos LIBRARY DESTINATION lib)
+add_library(esdmwosw SHARED wos_wrapper.cpp)
+target_link_libraries(esdmwosw ${GLIB_LIBRARIES} ${BOOST_boost_LIBRARY_RELEASE})
+include_directories(${ESDM_INCLUDE_DIRS} ${CMAKE_BINARY_DIR} ${GLIB_INCLUDE_DIRS} ${BOOST_C_INCLUDE_DIR})
+
+install(TARGETS esdmwosw LIBRARY DESTINATION lib)
 

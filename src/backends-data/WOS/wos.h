@@ -52,7 +52,7 @@ struct esdm_backend_wos_ops {
 	 * @param [out] out_object_id, the returned objects.
 	 * @param [out] out_mero_metadata, the returned metadata.
 	 */
-	int (*esdm_backend_obj_alloc) (esdm_backend_t * eb, int n_dims, int *dims_size, esdm_datatype_t type, char *md1, char *md2, char **out_object_id, char **out_wos_metadata);
+	int (*esdm_backend_obj_alloc) (esdm_backend_t * eb, int n_dims, int *dims_size, esdm_datatype_t type, char **out_object_id, char **out_wos_metadata);
 
 	/**
 	 * Open an object for read/write.

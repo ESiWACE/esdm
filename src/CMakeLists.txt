@@ -106,7 +106,6 @@ if(BACKEND_CLOVIS)
     include_directories(${MERO_DIR}/include ${MERO_DIR}/include/mero)
 endif()
 
-
 # ESDM Utils and Database Library
 add_library(esdmutils SHARED esdm.c  esdm-datatypes.c  esdm-layout.c  esdm-performancemodel.c esdm-config.c  utils/debug.c utils/json.c utils/auxiliary.c)
 target_link_libraries(esdmutils ${GLIB_LDFLAGS} ${JANSSON_LDFLAGS})
@@ -116,10 +115,17 @@ target_link_libraries(esdmutils ${GLIB_LDFLAGS} ${JANSSON_LDFLAGS})
 add_library(esdm SHARED esdm.c  esdm-scheduler.c  esdm-modules.c)
 target_link_libraries(esdm ${GLIB_LDFLAGS} ${JANSSON_LDFLAGS} esdmutils esdmposix esdmmetadummy)
 if(BACKEND_MONGODB)
-	target_link_libraries(esdm esdmmongodb)
+    target_link_libraries(esdm esdmmongodb)
 endif()
+
 if(BACKEND_CLOVIS)
-    target_link_libraries(esdm ${GLIB_LDFLAGS} ${JANSSON_LDFLAGS} esdmutils esdmposix esdmmetadummy esdmclovis)
+    add_definitions(-DESDM_HAS_CLOVIS=1)
+    target_link_libraries(esdm ${GLIB_LDFLAGS} ${JANSSON_LDFLAGS} esdmutils esdmclovis esdmmetadummy)
+endif()
+
+if(BACKEND_WOS)
+    add_definitions(-DESDM_HAS_WOS=1)
+    target_link_libraries(esdm ${GLIB_LDFLAGS} ${JANSSON_LDFLAGS} esdmutils esdmwos esdmmetadummy)
 endif()
 
 

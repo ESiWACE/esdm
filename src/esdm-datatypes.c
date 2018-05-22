@@ -327,7 +327,7 @@ esdm_status_t esdm_fragment_commit(esdm_fragment_t *fragment)
 
 	// Call backend
 	assert(backend != NULL);
-	fragment->metadata->size += sprintf(& fragment->metadata->json[fragment->metadata->size], "{\"plugin\" : \"POSIX\", \"name\" : \"%s\", \"data\" :", best_name);
+	fragment->metadata->size += sprintf(& fragment->metadata->json[fragment->metadata->size], "{\"plugin\" : \"%s\", \"name\" : \"%s\", \"data\" :", backend->name, best_name);
 	backend->callbacks.fragment_update(backend, fragment);
 	fragment->metadata->size += sprintf(& fragment->metadata->json[fragment->metadata->size], "}");
 

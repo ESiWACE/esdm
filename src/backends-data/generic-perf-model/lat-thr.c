@@ -41,7 +41,7 @@ int esdm_backend_perf_model_long_lat_perf_estimate(esdm_perf_model_lat_thp_t* da
   if (!data || !fragment | !out_time)
     return -1;
 
-  if (data->throughputBs)
+  if (data->throughputBs > 0)
     *out_time = fragment->size / data->throughputBs + data->latency_in_s;
   else
     *out_time = 0;

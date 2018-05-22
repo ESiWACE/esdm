@@ -214,7 +214,7 @@ int esdm_backend_wos_fini(esdm_backend_t * eb)
 	return 0;
 }
 
-int esdm_backend_wos_alloc(esdm_backend_t * eb, int n_dims, int *dims_size, esdm_datatype_t type, char *md1, char *md2, char **out_object_id, char **out_wos_metadata)
+int esdm_backend_wos_alloc(esdm_backend_t * eb, int n_dims, int *dims_size, esdm_datatype_t type, char **out_object_id, char **out_wos_metadata)
 {
 	if (!out_object_id || !out_wos_metadata) {
 		ESDM_DEBUG("Null pointer");
@@ -223,7 +223,8 @@ int esdm_backend_wos_alloc(esdm_backend_t * eb, int n_dims, int *dims_size, esdm
 	*out_object_id = NULL;
 	*out_wos_metadata = NULL;
 
-	int item_size = esdm_sizeof(type);
+	//int item_size = esdm_sizeof(type);
+	int item_size = 1;	// type is not used, input size is measured in bytes
 	if (!dims_size || (n_dims < 1) || !item_size) {
 		ESDM_DEBUG("Wrong parameters");
 		return 1;
@@ -403,7 +404,8 @@ int esdm_backend_wos_write(esdm_backend_t * eb, void *obj_handle, uint64_t start
 	}
 	uint64_t obj_size = ebm->size_list[0];
 
-	int item_size = esdm_sizeof(type);
+	//int item_size = esdm_sizeof(type);
+	int item_size = 1;	// type is not used, input size is measured in bytes
 
 	// TODO: start and count has to be used to write the appropriate objects; only one object is now created
 	start *= item_size;
@@ -413,53 +415,56 @@ int esdm_backend_wos_write(esdm_backend_t * eb, void *obj_handle, uint64_t start
 		return 1;
 	}
 
-	t_WosStatus *wos_status = CreateStatus();
-	if (!wos_status) {
-		ESDM_DEBUG("Unable to create wos status");
-		return 1;
-	}
-
-	t_WosObjPtr *wobj = NULL;
 	void *buffer = calloc(obj_size, sizeof(char));
 	if (!buffer) {
-		DeleteWosStatus(wos_status);
 		ESDM_DEBUG("Memory error");
 		return 1;
 	}
 
-	int i;
+	t_WosStatus *wos_status = CreateStatus();
+	if (!wos_status) {
+		free(buffer);
+		ESDM_DEBUG("Unable to create wos status");
+		return 1;
+	}
+
+	int i, rc = 0;
+	t_WosObjPtr *wobj = NULL;
 	for (i = 0; ebm->oid_list[i]; i++) {
 
 		wobj = WosObjCreate();
 		if (!wobj) {
-			DeleteWosStatus(wos_status);
+			rc = -1;
 			ESDM_DEBUG("Unable to create wos object");
-			return 1;
+			break;
 		}
 		ESDM_DEBUG("New object created");
 
 		/* Fill data */
 		// TODO: start and count has to be used to write the appropriate objects; only one object is now created
 		bzero(buffer, ebm->size_list[i]);
-		memcpy(buffer, data + start, count);
+		memcpy(buffer, (char *) data + start, count);
+		ESDM_DEBUG("Data copied in local buffer");
+
 		SetDataObj(buffer, ebm->size_list[i], wobj);
+		ESDM_DEBUG("Data prepared to be sent");
 
 		PutOID_b(wos_status, ebm->oid_list[i], wobj, ebm->wos_cluster);
-		if (GetStatus(wos_status)) {
-			DeleteWosStatus(wos_status);
+		if ((rc = GetStatus(wos_status))) {
+			DeleteWosObj(wobj);
 			ESDM_DEBUG("Unable to allocate data");
-			return 1;
+			break;
 		}
+		ESDM_DEBUG("Data sent to remote buffer");
 
 		DeleteWosObj(wobj);
 		ESDM_DEBUG("Hook removed");
 	}
 
 	free(buffer);
-
 	DeleteWosStatus(wos_status);
 
-	return 0;
+	return rc;
 }
 
 int esdm_backend_wos_read(esdm_backend_t * eb, void *obj_handle, uint64_t start, uint64_t count, esdm_datatype_t type, void *data)
@@ -517,20 +522,20 @@ int esdm_backend_wos_read(esdm_backend_t * eb, void *obj_handle, uint64_t start,
 		ESDM_DEBUG("Unable to get data");
 		return 1;
 	}
-
-	int item_size = esdm_sizeof(type);
+	//int item_size = esdm_sizeof(type);
+	int item_size = 1;	// type is not used, input size is measured in bytes
 
 	// TODO: start and count has to be used to select the appropriate objects, get data and aggregate the result to be outputed; now there is only one object
 	start *= item_size;
 	count *= item_size;
-	if (len < start + count) {
+	if ((uint64_t) len < start + count) {
 		DeleteWosObj(wobj);
 		ESDM_DEBUG("Hook removed");
 		ESDM_DEBUG("Wrong parameters start or count");
 		return 1;
 	}
 
-	memcpy(data, buffer + start, count);
+	memcpy(data, (char *) buffer + start, count);
 
 	DeleteWosObj(wobj);
 	ESDM_DEBUG("Hook removed");
@@ -540,7 +545,7 @@ int esdm_backend_wos_read(esdm_backend_t * eb, void *obj_handle, uint64_t start,
 
 int esdm_backend_wos_close(esdm_backend_t * eb, void *obj_handle)
 {
-	if (!obj_handle) {
+	if (!eb || !obj_handle) {
 		ESDM_DEBUG("Null pointer");
 		return 1;
 	}
@@ -566,34 +571,22 @@ int wos_backend_performance_estimate(esdm_backend_t * eb, esdm_fragment_t * frag
 	return esdm_backend_perf_model_long_lat_perf_estimate(&ebm->perf_model, fragment, out_time);
 }
 
-int esdm_backend_wos_fragment_retrieve(esdm_backend_t * backend, esdm_fragment_t * fragment)
+int esdm_backend_wos_fragment_retrieve(esdm_backend_t * backend, esdm_fragment_t * fragment, json_t * metadata)
 {
 	void *buf = NULL;
 	char *obj_id = NULL;
 	void *obj_handle = NULL;
 	int rc = 0;
 
-	if (!backend || !fragment)
+	if (!backend || !fragment || !metadata)
 		return -1;
 
 	fragment->buf = NULL;
 
-	obj_id = NULL;
-	while (fragment->metadata->size) {
-		char *start_id = strstr(fragment->metadata->json, "object_id"), *end_id;
-		if (!start_id)
-			break;
-		start_id = strstr(start_id, ":");
-		if (!start_id)
-			break;
-		start_id = strstr(start_id, "\"");
-		if (!start_id)
-			break;
-		start_id++;
-		end_id = strstr(start_id, "\"");
-		if (!end_id)
-			break;
-		obj_id = strndup(start_id, end_id - start_id);
+	const char *key;
+	json_t *value;
+	json_object_foreach(metadata, key, value) {
+		obj_id = strdup(json_string_value(value));
 		break;
 	}
 	if (!obj_id) {
@@ -601,6 +594,7 @@ int esdm_backend_wos_fragment_retrieve(esdm_backend_t * backend, esdm_fragment_t
 		rc = -1;
 		goto _RETRIEVE_EXIT;
 	}
+	ESDM_DEBUG(obj_id);
 
 	rc = esdm_backend_wos_open(backend, obj_id, &obj_handle);
 	if (rc) {
@@ -683,7 +677,7 @@ int esdm_backend_wos_fragment_update(esdm_backend_t * backend, esdm_fragment_t *
 	}
 
 	int size = fragment->bytes;
-	rc = esdm_backend_wos_alloc(backend, 1, &size, fragment->dataspace->datatype, NULL, NULL, &obj_id, &obj_meta);
+	rc = esdm_backend_wos_alloc(backend, 1, &size, fragment->dataspace->datatype, &obj_id, &obj_meta);
 	if (rc) {
 		goto _UPDATE_EXIT;
 	}
