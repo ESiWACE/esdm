@@ -18,9 +18,9 @@ foreach(TESTFILE ${TESTFILES})
     STRING(REGEX REPLACE ".c$" "" TESTNAME ${TESTNAME_C})
 
 	# Build, link and add as test
-    add_executable(${TESTNAME}.exe ${TESTFILE} util/test_util.c)
-   	target_link_libraries(${TESTNAME}.exe esdm ${MPI_LIBRARIES} -lrt)
-    target_include_directories(${TESTNAME}.exe SYSTEM PRIVATE ${MPI_INCLUDE_PATH} ${CMAKE_BINARY_DIR} ${ESDM_INCLUDE_DIRS} ${GLIB_INCLUDE_DIRS})
+    add_executable(${TESTNAME} ${TESTFILE} util/test_util.c)
+   	target_link_libraries(${TESTNAME} esdm ${MPI_LIBRARIES} -lrt)
+    target_include_directories(${TESTNAME} SYSTEM PRIVATE ${MPI_INCLUDE_PATH} ${CMAKE_BINARY_DIR} ${ESDM_INCLUDE_DIRS} ${GLIB_INCLUDE_DIRS})
 
     add_test(${TESTNAME} ./${TESTNAME})
   endif()

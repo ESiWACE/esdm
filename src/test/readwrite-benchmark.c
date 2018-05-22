@@ -37,12 +37,16 @@ int main(int argc, char* argv[])
 	MPI_Comm_rank(MPI_COMM_WORLD, & mpi_rank);
 	MPI_Comm_size(MPI_COMM_WORLD, & mpi_size);
 
-	if(argc != 2){
+	int64_t _size;
+	if (argc < 2)
+		_size = 1024;
+	else if (argc != 2){
 		printf("Syntax: %s SIZE", argv[0]);
 		printf("\t SIZE specifies one dimension of a 2D field\n");
 		exit(1);
-	}
-	const int64_t size = atoll(argv[1]);
+	} else
+		_size = atoll(argv[1]);
+	const int64_t size = _size;
 
 	if(mpi_rank == 0)
 		printf("Running with a 2D slice of %ld*%ld\n", size, size);

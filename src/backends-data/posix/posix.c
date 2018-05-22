@@ -356,6 +356,9 @@ static int posix_backend_performance_estimate(esdm_backend_t* backend, esdm_frag
 {
 	DEBUG_ENTER;
 
+	if (!backend || !fragment || !out_time)
+		return 1;
+
 	posix_backend_data_t* data = (posix_backend_data_t*) backend->data;
 	return esdm_backend_perf_model_long_lat_perf_estimate(& data->perf_model, fragment, out_time);
 }
@@ -446,7 +449,11 @@ esdm_backend_t* posix_backend_init(esdm_config_backend_t *config)
 	// allocate memory for backend instance
 	backend->data = (void*) malloc(sizeof(posix_backend_data_t));
 	posix_backend_data_t* data = (posix_backend_data_t*) backend->data;
-	esdm_backend_parse_perf_model_lat_thp(config->performance_model, & data->perf_model);
+
+	if (data && config->performance_model)
+		esdm_backend_parse_perf_model_lat_thp(config->performance_model, & data->perf_model);
+	else
+		esdm_backend_reset_perf_model_lat_thp(& data->perf_model);
 
 	// configure backend instance
 	data->config = config;

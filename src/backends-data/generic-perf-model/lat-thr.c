@@ -25,12 +25,27 @@ int esdm_backend_parse_perf_model_lat_thp(json_t * str, esdm_perf_model_lat_thp_
   assert(elem != NULL);
   out_data->throughputBs = json_real_value(elem) * 1024 * 1024;
 
+  assert(out_data->latency_in_s >= 0);
   assert(out_data->throughputBs > 0);
 
   return 0;
 }
 
 int esdm_backend_perf_model_long_lat_perf_estimate(esdm_perf_model_lat_thp_t* data, esdm_fragment_t *fragment, float * out_time){
-  *out_time = fragment->size / data->throughputBs + data->latency_in_s;
+  if (!data || !fragment | !out_time)
+    return -1;
+  if (data->throughputBs)
+    *out_time = fragment->size / data->throughputBs + data->latency_in_s;
+  else
+    *out_time = 0;
   return 0;
 }
+
+int esdm_backend_reset_perf_model_lat_thp(esdm_perf_model_lat_thp_t * out_data) {
+  if (!out_data)
+    return -1;
+  out_data->throughputBs = 0;
+  out_data->latency_in_s = 0;
+  return 0;
+}
+
