@@ -38,6 +38,7 @@
 #define WOS_HOST "host"
 #define WOS_POLICY "policy"
 #define WOS_OBJ_NUM 1
+#define WOS_OBJECT_ID "object_id"
 
 // Temporary definitions
 #define ESDM_DEBUG(msg) fprintf(stderr, "[%s][%d] %s\n", __FILE__, __LINE__, msg)
@@ -578,15 +579,32 @@ int esdm_backend_wos_fragment_retrieve(esdm_backend_t * backend, esdm_fragment_t
 	void *obj_handle = NULL;
 	int rc = 0;
 
-	if (!backend || !fragment || !metadata)
+	if (!backend || !fragment || !fragment->buf || !metadata)
 		return -1;
-
-	fragment->buf = NULL;
 
 	const char *key;
 	json_t *value;
 	json_object_foreach(metadata, key, value) {
-		obj_id = strdup(json_string_value(value));
+		if (!strcmp(key, WOS_OBJECT_ID)) {
+			obj_id = strdup(json_string_value(value));
+			break;
+		}
+	}
+	while (!obj_id && fragment->metadata->size) {
+		char *start_id = strstr(fragment->metadata->json, WOS_OBJECT_ID), *end_id;
+		if (!start_id)
+			break;
+		start_id = strstr(start_id, ":");
+		if (!start_id)
+			break;
+		start_id = strstr(start_id, "\"");
+		if (!start_id)
+			break;
+		start_id++;
+		end_id = strstr(start_id, "\"");
+		if (!end_id)
+			break;
+		obj_id = strndup(start_id, end_id - start_id);
 		break;
 	}
 	if (!obj_id) {
@@ -601,26 +619,16 @@ int esdm_backend_wos_fragment_retrieve(esdm_backend_t * backend, esdm_fragment_t
 		goto _RETRIEVE_EXIT;
 	}
 
-	buf = malloc(fragment->bytes);
-	if (buf == NULL) {
-		esdm_backend_wos_close(backend, obj_handle);
-		rc = -ENOMEM;
-		goto _RETRIEVE_EXIT;
-	}
-	rc = esdm_backend_wos_read(backend, obj_handle, 0, fragment->bytes, fragment->dataspace->datatype, buf);
+	rc = esdm_backend_wos_read(backend, obj_handle, 0, fragment->bytes, fragment->dataspace->datatype, fragment->buf);
 	if (rc) {
 		esdm_backend_wos_close(backend, obj_handle);
-		free(buf);
 		goto _RETRIEVE_EXIT;
 	}
 
 	rc = esdm_backend_wos_close(backend, obj_handle);
 	if (rc) {
-		free(buf);
 		goto _RETRIEVE_EXIT;
 	}
-
-	fragment->buf = buf;
 
       _RETRIEVE_EXIT:
 
@@ -637,9 +645,8 @@ int esdm_backend_wos_fragment_update(esdm_backend_t * backend, esdm_fragment_t *
 	if (!backend || !fragment)
 		return -1;
 
-	obj_id = NULL;
 	while (fragment->metadata->size) {
-		char *start_id = strstr(fragment->metadata->json, "object_id"), *end_id;
+		char *start_id = strstr(fragment->metadata->json, WOS_OBJECT_ID), *end_id;
 		if (!start_id)
 			break;
 		start_id = strstr(start_id, ":");
@@ -682,7 +689,7 @@ int esdm_backend_wos_fragment_update(esdm_backend_t * backend, esdm_fragment_t *
 		goto _UPDATE_EXIT;
 	}
 
-	fragment->metadata->size += sprintf(&fragment->metadata->json[fragment->metadata->size], "{\"object_id\" : \"%s\"}", obj_id);
+	fragment->metadata->size += sprintf(&fragment->metadata->json[fragment->metadata->size], "{\"%s\" : \"%s\"}", WOS_OBJECT_ID, obj_id);
 	if (fragment->metadata->size >= ESDM_MAX_SIZE) {
 		rc = -ENOMEM;
 		goto _UPDATE_EXIT;
@@ -711,7 +718,7 @@ int esdm_backend_wos_fragment_update(esdm_backend_t * backend, esdm_fragment_t *
 	return rc;
 }
 
-int esdm_backend_wos_fragment_delete(esdm_backend_t * backend, esdm_fragment_t * fragment)
+int esdm_backend_wos_fragment_delete(esdm_backend_t * backend, esdm_fragment_t * fragment, json_t * metadata)
 {
 	char *obj_id = NULL;
 	void *obj_handle = NULL;
@@ -720,9 +727,16 @@ int esdm_backend_wos_fragment_delete(esdm_backend_t * backend, esdm_fragment_t *
 	if (!backend || !fragment)
 		return -1;
 
-	obj_id = NULL;
-	while (fragment->metadata->size) {
-		char *start_id = strstr(fragment->metadata->json, "object_id"), *end_id;
+	const char *key;
+	json_t *value;
+	json_object_foreach(metadata, key, value) {
+		if (!strcmp(key, WOS_OBJECT_ID)) {
+			obj_id = strdup(json_string_value(value));
+			break;
+		}
+	}
+	while (!obj_id && fragment->metadata->size) {
+		char *start_id = strstr(fragment->metadata->json, WOS_OBJECT_ID), *end_id;
 		if (!start_id)
 			break;
 		start_id = strstr(start_id, ":");
@@ -832,7 +846,7 @@ esdm_backend_wos_t esdm_backend_wos = {
 esdm_backend_t *wos_backend_init(esdm_config_backend_t * config)
 {
 	if (!config || !config->type || strcasecmp(config->type, "WOS") || !config->target) {
-		printf("Wrong configuration\n");
+		ESDM_DEBUG("Wrong configuration");
 		return NULL;
 	}
 
