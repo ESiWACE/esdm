@@ -25,6 +25,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <errno.h>
+#include <jansson.h>
 
 #include <esdm.h>
 
@@ -549,10 +550,20 @@ int esdm_backend_wos_close(esdm_backend_t * eb, void *obj_handle)
 	return 0;
 }
 
-int wos_backend_performance_estimate()
+int wos_backend_performance_estimate(esdm_backend_t * eb, esdm_fragment_t * fragment, float *out_time)
 {
-	ESDM_DEBUG("Not implemented");
-	return 0;
+	if (!eb || !fragment || !out_time) {
+		ESDM_DEBUG("Null pointer");
+		return 1;
+	}
+
+	esdm_backend_wos_t *ebm = (esdm_backend_wos_t *) eb;
+	if (!ebm) {
+		ESDM_DEBUG("Unable to get struct");
+		return 1;
+	}
+
+	return esdm_backend_perf_model_long_lat_perf_estimate(&ebm->perf_model, fragment, out_time);
 }
 
 int esdm_backend_wos_fragment_retrieve(esdm_backend_t * backend, esdm_fragment_t * fragment)
@@ -837,4 +848,10 @@ esdm_backend_t *wos_backend_init(esdm_config_backend_t * config)
 		return NULL;
 	else
 		return eb;
+
+	esdm_backend_wos_t *ebm = (esdm_backend_wos_t *) eb;
+	if (config->performance_model)
+		esdm_backend_parse_perf_model_lat_thp(config->performance_model, &ebm->perf_model);
+	else
+		esdm_backend_reset_perf_model_lat_thp(&ebm->perf_model);
 }

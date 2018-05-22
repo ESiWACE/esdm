@@ -17,7 +17,8 @@
 #ifndef WOS_H
 #define WOS_H
 
-#include "esdm.h"
+#include <esdm.h>
+#include <backends-data/generic-perf-model/lat-thr.h>
 
 #include "wrapper/wos_wrapper.h"
 
@@ -87,6 +88,8 @@ typedef struct {
 	t_WosObjPtr *wos_meta_obj;	// Used for internal purposes to store metadata info
 	t_WosOID **oid_list;	// List of object ids
 	uint64_t *size_list;	// List of object sizes
+
+	esdm_perf_model_lat_thp_t perf_model;
 
 	/* for test */
 	struct esdm_backend_wos_ops ebm_ops;
