@@ -436,7 +436,7 @@ esdm_backend_t* posix_backend_init(esdm_config_backend_t *config)
 	DEBUG_ENTER;
 
 	if (!config || !config->type || strcasecmp(config->type, "POSIX") || !config->target) {
-		DEBUG("Wrong configuration\n");
+		DEBUG("Wrong configuration%s\n", "");
 		return NULL;
 	}
 

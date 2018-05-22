@@ -594,8 +594,8 @@ esdm_backend_t* clovis_backend_init(esdm_config_backend_t* config)
     int             rc;
 
     if (!config || !config->type || strcasecmp(config->type, "CLOVIS") || !config->target) {
-	printf("Wrong configuration\n");
-	return NULL;
+        printf("Wrong configuration\n");
+        return NULL;
     }
 
     printf("backend type   = %s\n", config->type);
