@@ -100,11 +100,6 @@ add_subdirectory(test)
 
 # Include directories for all target in this CMakeLists.txt
 include_directories(${CMAKE_BINARY_DIR} ${ESDM_INCLUDE_DIRS} ${GLIB_INCLUDE_DIRS} ${JANSSON_INCLUDE_DIRS})
-if(BACKEND_CLOVIS)
-    # Please set this to the MERO/Clovis installed binary directory.
-    set(MERO_DIR "/mero.bin")
-    include_directories(${MERO_DIR}/include ${MERO_DIR}/include/mero)
-endif()
 
 # ESDM Utils and Database Library
 add_library(esdmutils SHARED esdm.c  esdm-datatypes.c  esdm-layout.c  esdm-performancemodel.c esdm-config.c  utils/debug.c utils/json.c utils/auxiliary.c)

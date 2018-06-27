@@ -7,7 +7,7 @@
 int main(int argc, char* argv[])
 {
                 //"local_addr ha_addr profile process_fid"
-    char conf[] = "172.16.154.130@tcp:12345:33:103 172.16.154.130@tcp:12345:34:1 <0x7000000000000001:0> <0x7200000000000001:64>";
+    char conf[] = "192.168.168.144@tcp:12345:33:103 192.168.168.144@tcp:12345:34:1 <0x7000000000000001:0> <0x7200000000000001:64>";
     esdm_backend_t *eb = &esdm_backend_clovis.ebm_base;
     char *object_id = NULL;
     char *object_meta = NULL;
@@ -27,8 +27,7 @@ int main(int argc, char* argv[])
 
     printf("Test Mero/Clovis data-backend for ESDM\n");
 
-    printf("bs = %llu\n",
-            (unsigned long long)eb->blocksize);
+    printf("bs = %llu\n", (unsigned long long)eb->blocksize);
 
 
     rc = esdm_backend_clovis.ebm_ops.esdm_backend_init(conf, eb);
@@ -86,6 +85,7 @@ fini:
     free(object_id); /* free(NULL) is OK. */
     free(object_meta);
 
+    printf("Clovis is about to fini eb = %p\n", eb);
     rc = esdm_backend_clovis.ebm_ops.esdm_backend_fini(eb);
     if (rc != 0) {
         printf("esdm_backend_clovis.ebm_ops fini failed rc=%d\n", rc);

@@ -38,6 +38,13 @@
 #define BLOCKMASK (BLOCKSIZE - 1)
 
 static struct m0_uint128 gid;
+static struct m0_fid gidxfid = {
+    .f_container = 0x1ULL,
+    .f_key       = 0x1234567812345678ULL
+};
+
+static int clovis_index_create(struct m0_clovis_realm *parent,
+                               struct m0_fid *fid);
 
 static inline
 esdm_backend_clovis_t *eb2ebm(esdm_backend_t *eb)
@@ -118,10 +125,14 @@ static int esdm_backend_clovis_init(char * conf, esdm_backend_t *eb)
         return rc;
     }
 
-    gid = M0_CLOVIS_ID_APP;
     /* FIXME this makes the gid not reused. */
     gid.u_hi = gid.u_lo = time(NULL);
-    return 0;
+
+    /* create the global mapping index */
+    rc = clovis_index_create(&ebm->ebm_clovis_container.co_realm,
+                             &gidxfid);
+
+    return rc;
 }
 
 static int esdm_backend_clovis_fini(esdm_backend_t *eb)
@@ -134,7 +145,6 @@ static int esdm_backend_clovis_fini(esdm_backend_t *eb)
     free((char*)ebm->ebm_clovis_conf.cc_ha_addr);
     free((char*)ebm->ebm_clovis_conf.cc_profile);
     free((char*)ebm->ebm_clovis_conf.cc_process_fid);
-    free(ebm);
     return 0;
 }
 
@@ -163,7 +173,7 @@ static int create_object(esdm_backend_clovis_t *ebm,
 
     m0_clovis_obj_init(&obj, &ebm->ebm_clovis_container.co_realm,
                        &id,
-                       m0_clovis_default_layout_id(ebm->ebm_clovis_instance));
+                       m0_clovis_layout_id(ebm->ebm_clovis_instance));
 
     open_entity(&obj);
 
@@ -286,7 +296,7 @@ static int esdm_backend_clovis_open(esdm_backend_t *eb,
     memset(obj, 0, sizeof(struct m0_clovis_obj));
     m0_clovis_obj_init(obj, &ebm->ebm_clovis_container.co_realm,
                        &obj_id,
-                       m0_clovis_default_layout_id(ebm->ebm_clovis_instance));
+                       m0_clovis_layout_id(ebm->ebm_clovis_instance));
 
     open_entity(obj);
     *obj_handle = obj;
@@ -429,6 +439,179 @@ static int esdm_backend_clovis_performance_estimate()
     return 0;
 }
 
+static int index_op_tail(struct m0_clovis_entity *ce,
+                         struct m0_clovis_op *op,
+                         int rc)
+{
+	if (rc == 0) {
+		m0_clovis_op_launch(&op, 1);
+		rc = m0_clovis_op_wait(op,
+                               M0_BITS(M0_CLOVIS_OS_FAILED,
+                               M0_CLOVIS_OS_STABLE),
+                               M0_TIME_NEVER);
+		printf("operation rc: %i\n", op->op_rc);
+	} else
+		printf("operation rc: %i\n", rc);
+	m0_clovis_op_fini(op);
+	m0_clovis_op_free(op);
+	m0_clovis_entity_fini(ce);
+	return rc;
+}
+
+static int clovis_index_create(struct m0_clovis_realm *parent,
+                               struct m0_fid *fid)
+{
+	struct m0_clovis_op   *op  = NULL;
+	struct m0_clovis_idx   idx;
+	int                    rc = 0;
+
+	m0_clovis_idx_init(&idx, parent, (struct m0_uint128 *)fid);
+	rc = m0_clovis_entity_create(&idx.in_entity, &op);
+	rc = index_op_tail(&idx.in_entity, op, rc);
+	return rc;
+}
+
+static int index_op(struct m0_clovis_realm    *parent,
+                    struct m0_fid             *fid,
+                    enum m0_clovis_idx_opcode  opcode,
+                    struct m0_bufvec          *keys,
+                    struct m0_bufvec          *vals)
+{
+	struct m0_clovis_idx  idx;
+	struct m0_clovis_op  *op = NULL;
+	int32_t              *rcs;
+	int                   rc;
+
+	M0_ASSERT(keys != NULL);
+	M0_ASSERT(keys->ov_vec.v_nr != 0);
+	M0_ALLOC_ARR(rcs, keys->ov_vec.v_nr);
+	if (rcs == NULL)
+		return -ENOMEM;
+	m0_clovis_idx_init(&idx, parent, (struct m0_uint128 *)fid);
+	rc = m0_clovis_idx_op(&idx, opcode, keys, vals, rcs, 0, &op);
+	rc = index_op_tail(&idx.in_entity, op, rc);
+	m0_free(rcs);
+	return rc;
+}
+
+static int clovis_index_put(struct m0_clovis_realm *parent,
+                            struct m0_fid          *fid,
+                            struct m0_bufvec       *keys,
+                            struct m0_bufvec       *vals)
+{
+	int rc = 0;
+
+	M0_PRE(fid != NULL );
+	M0_PRE(keys != NULL);
+	M0_PRE(vals != NULL);
+
+	rc = index_op(parent, fid, M0_CLOVIS_IC_PUT, keys, vals);
+	printf("put done: %i\n", rc);
+
+	return rc;
+}
+
+static int clovis_index_get(struct m0_clovis_realm *parent,
+                            struct m0_fid          *fid,
+                            struct m0_bufvec       *keys,
+                            struct m0_bufvec       *vals)
+{
+	int rc;
+
+	M0_PRE(fid != NULL);
+	M0_PRE(keys != NULL && keys->ov_vec.v_nr == 1);
+	M0_PRE(vals != NULL && vals->ov_vec.v_nr == 0);
+
+	/* Allocate vals entity without buffers. */
+	rc = m0_bufvec_empty_alloc(vals, 1);
+    if (rc == 0) {
+        rc = index_op(parent, fid, M0_CLOVIS_IC_GET, keys, vals);
+        if (rc == 0) {
+	        if (vals->ov_buf[0] == NULL)
+				rc = -ENODATA;
+        }
+    }
+	printf("get done: %i\n", rc);
+	return rc;
+}
+
+static int bufvec_fill(const char *value, struct m0_bufvec *vals)
+{
+	int   rc;
+
+	rc = m0_bufvec_empty_alloc(vals, 1);
+	if (rc < 0)
+		return rc;
+
+    if (value != NULL) {
+        vals->ov_buf[0] = strdup(value);
+        vals->ov_vec.v_count[0] = strlen(value) + 1;
+    }
+
+	return rc;
+}
+
+
+/**
+ * Get the obj_id from mapping DB if this mapping exists.
+ *
+ * @return 0 on success, -1 on failure.
+ */
+static int mapping_get(esdm_backend_t  *backend,
+                       const char *name,
+                       char **obj_id)
+{
+    esdm_backend_clovis_t *ebm = eb2ebm(backend);
+    int                    rc;
+    struct m0_bufvec       key;
+    struct m0_bufvec       val;
+
+    rc = bufvec_fill(name, &key)?:bufvec_fill(NULL, &val);
+
+    if (rc == 0) {
+        rc = clovis_index_get(&ebm->ebm_clovis_container.co_realm,
+                              &gidxfid,
+                              &key,
+                              &val);
+        if (rc == 0)
+            *obj_id = strdup(val.ov_buf[0]);
+    }
+
+    m0_bufvec_free(&key);
+    m0_bufvec_free(&val);
+
+    return rc;
+}
+
+/**
+ * Insert this mapping into mapping DB.
+ * @return 0 on success, -1 on failure.
+ */
+static int mapping_insert(esdm_backend_t  *backend,
+                          const char *name,
+                          const char *obj_id)
+{
+    esdm_backend_clovis_t *ebm = eb2ebm(backend);
+    int                    rc;
+    struct m0_bufvec       key;
+    struct m0_bufvec       val;
+
+    rc = bufvec_fill(name, &key)?:bufvec_fill(obj_id, &val);
+
+    if (rc == 0) {
+        rc = clovis_index_put(&ebm->ebm_clovis_container.co_realm,
+                              &gidxfid,
+                              &key,
+                              &val);
+    }
+
+    m0_bufvec_free(&key);
+    m0_bufvec_free(&val);
+
+    return rc;
+}
+
+
 static int esdm_backend_clovis_fragment_retrieve(esdm_backend_t  *backend,
                                                  esdm_fragment_t *fragment)
 {
@@ -451,9 +634,7 @@ static int esdm_backend_clovis_fragment_retrieve(esdm_backend_t  *backend,
     }
 
     // 1. Find if this fragment exists;
-    // To do so, find its object_id from meta.
-    // <path_fragment, object_id> is inserted into mapping during update.
-    obj_id = NULL; /* lookup from the mapping */
+    rc = mapping_get(backend, fragment_name, &obj_id);
 
     // 2. open object with its object_id.
     rc = esdm_backend_clovis_open(backend, obj_id, &obj_handle);
@@ -487,9 +668,7 @@ static int esdm_backend_clovis_fragment_update(esdm_backend_t  *backend,
     printf("path_fragment: %s\n", path_fragment);
 
     // 1. create a new object if this fragment exists;
-    // To do so, find its object_id from meta.
-    // <path_fragment, object_id> is inserted into mapping during update.
-    obj_id = NULL; /* lookup from the mapping */
+    rc = mapping_get(backend, fragment_name, &obj_id);
     if (obj_id == NULL) {
         rc = esdm_backend_clovis_alloc(backend,
                                        fragment->dataspace->dimensions,
@@ -500,7 +679,7 @@ static int esdm_backend_clovis_fragment_update(esdm_backend_t  *backend,
                                        &obj_id,
                                        &obj_meta);
         if (rc == 0) {
-            // Insert this <path_fragment, obj_id> into mapping
+            rc = mapping_insert(backend, fragment_name, obj_id);
         } else {
             goto err;
         }
@@ -611,7 +790,7 @@ esdm_backend_t* clovis_backend_init(esdm_config_backend_t* config)
     rc = esdm_backend_clovis_init(target, eb);
     free(target);
 
-    if (rc != 0)
+   if (rc != 0)
         return NULL;
     else
         return eb;

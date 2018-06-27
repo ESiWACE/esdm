@@ -21,6 +21,7 @@
 
 #include "clovis/clovis.h"
 #include "clovis/clovis_idx.h"
+#include "lib/memory.h"
 
 struct esdm_backend_xxxops {
 	/**

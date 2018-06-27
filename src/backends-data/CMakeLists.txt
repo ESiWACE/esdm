@@ -14,7 +14,7 @@ if(BACKEND_LUSTRE)
 	SUBDIRS(lustre)
 endif()
 
-option(BACKEND_CLOVIS "Compile backend for Clovis support?" OFF)
+option(BACKEND_CLOVIS "Compile backend for Clovis support?" ON)
 if(BACKEND_CLOVIS)
 	message(STATUS "WITH_BACKEND_CLOVIS")
 	add_definitions(-DESDM_HAS_CLOVIS=1)
