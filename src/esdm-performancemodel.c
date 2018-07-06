@@ -84,7 +84,8 @@ esdm_status_t esdm_performance_recommendation(esdm_instance_t *esdm, esdm_fragme
 
 	g_hash_table_foreach (esdm->modules->backends, fetch_performance_from_backend, NULL);
 
-	//for(int i=0; i < backends->count; i++){
+	//int i;
+	//for(i=0; i < backends->count; i++){
 	//	//esdm_backend_estimate_performance((esdm_backend_t*) backends->module, 1234);
 	//}
 

@@ -63,7 +63,7 @@ esdm_scheduler_t* esdm_scheduler_init(esdm_instance_t* esdm)
 	scheduler->write_queue = g_async_queue_new();
 
 	//  Initialize I/O Thread Pool
-    gpointer user_data = &useable_user_data;
+	gpointer user_data = &useable_user_data;
 	gint max_threads = 4;
 	gboolean exclusive = -1;  // share with other thread pools
 
@@ -72,8 +72,9 @@ esdm_scheduler_t* esdm_scheduler_init(esdm_instance_t* esdm)
 	// void g_thread_pool_set_sort_function (GThreadPool *pool, GCompareDataFunc func, gpointer user_data);
 
 	// Spawn some tasks
-    gpointer task_data = NULL;
-	for(int t = -1; t < 7 /* num_threads */; t++)
+	gpointer task_data = NULL;
+	int t;
+	for(t = -1; t < 7 /* num_threads */; t++)
 	{
 		DEBUG("Adding task: %p, %p, %d, %d\n",
 				useable_task_data[t],

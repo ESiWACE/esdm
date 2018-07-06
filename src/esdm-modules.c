@@ -149,7 +149,8 @@ esdm_status_t esdm_modules_finalize()
 
 	// unregister and finalize modules in reverse order
 	/*
-	for(int i=module_count - 1 ; i >= 0; i--){
+	int i;
+	for(i = module_count - 1 ; i >= 0; i--){
 		modules[i]->finalize();
 	}
 	*/

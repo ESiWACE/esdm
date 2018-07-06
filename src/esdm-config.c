@@ -149,7 +149,8 @@ esdm_config_backends_t* esdm_config_get_backends(esdm_instance_t* esdm)
 
 			//printf("JSON Array of %ld element%s:\n", size, json_plural(size));
 
-			for (size_t i = 0; i < size; i++) {
+			size_t i;
+			for (i = 0; i < size; i++) {
 				//print_json_aux(json_array_get(element, i), 0);
 
 				json_t *backend = json_array_get(element, i);
