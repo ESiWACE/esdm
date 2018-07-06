@@ -180,11 +180,12 @@ esdm_fragment_t* esdm_fragment_create(esdm_dataset_t* dataset, esdm_dataspace_t*
 	ESDM_DEBUG(__func__);
 	esdm_fragment_t* fragment = (esdm_fragment_t*) malloc(sizeof(esdm_fragment_t));
 
-	for (int64_t i = 0; i < subspace->dimensions; i++) { DEBUG("dim %d, subsize=%d (%p)\n", i, subspace->subsize[i], subspace->subsize); }
+	int64_t i;
+	for (i = 0; i < subspace->dimensions; i++) { DEBUG("dim %d, subsize=%d (%p)\n", i, subspace->subsize[i], subspace->subsize); }
 
 	// calculate subspace element count
 	int64_t size = 0;
-	for (int64_t i = 0; i < subspace->dimensions; i++)
+	for (i = 0; i < subspace->dimensions; i++)
 	{
 		if (size == 0 && subspace->subsize[i] > 0)
 		{
@@ -257,7 +258,8 @@ char* esdm_dataspace_string_descriptor(esdm_dataspace_t *dataspace)
 	int64_t *offset = dataspace->offset;
 
 	// offset to string
-	for (int64_t i = 0; i < dimensions; i++)
+	int64_t i;
+	for (i = 0; i < dimensions; i++)
 	{
 		DEBUG("dim %d, offset=%d (%p)\n", i, offset[i], offset);
 
@@ -268,7 +270,7 @@ char* esdm_dataspace_string_descriptor(esdm_dataspace_t *dataspace)
 	}
 
 	// size to string
-	for (int64_t i = 0; i < dimensions; i++)
+	for (i = 0; i < dimensions; i++)
 	{
 		DEBUG("dim %d, size=%d (%p)\n", i, size[i], size);
 
@@ -489,9 +491,9 @@ esdm_dataspace_t* esdm_dataspace_create(int64_t dimensions, int64_t* bounds, esd
 	// copy bounds
 	memcpy(dataspace->bounds, bounds, sizeof(int64_t)*dimensions);
 
-
-	for (int64_t i = 0; i < dimensions; i++) { DEBUG("dim %d, bound=%d (%p)\n", i, bounds[i], bounds); }
-	for (int64_t i = 0; i < dimensions; i++) { DEBUG("dim %d, bound=%d (%p)\n", i, dataspace->bounds[i], dataspace->bounds); }
+	int64_t i;
+	for (i = 0; i < dimensions; i++) { DEBUG("dim %d, bound=%d (%p)\n", i, bounds[i], bounds); }
+	for (i = 0; i < dimensions; i++) { DEBUG("dim %d, bound=%d (%p)\n", i, dataspace->bounds[i], dataspace->bounds); }
 
 	DEBUG("New dataspace: dims=%d\n", dataspace->dimensions);
 
@@ -547,9 +549,9 @@ esdm_dataspace_t* esdm_dataspace_subspace(esdm_dataspace_t *dataspace, int64_t d
 		memcpy(subspace->offset, offset, sizeof(int64_t)*dimensions);
 
 
-
-		for (int64_t i = 0; i < dimensions; i++) { DEBUG("dim %d, bounds=%d (%p)\n", i, dataspace->bounds[i], dataspace->bounds); }
-		for (int64_t i = 0; i < dimensions; i++) { DEBUG("dim %d, size=%d (%p)\n", i, size[i], size); }
+		int64_t i;
+		for (i = 0; i < dimensions; i++) { DEBUG("dim %d, bounds=%d (%p)\n", i, dataspace->bounds[i], dataspace->bounds); }
+		for (i = 0; i < dimensions; i++) { DEBUG("dim %d, size=%d (%p)\n", i, size[i], size); }
 	}
 	else
 	{
