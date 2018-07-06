@@ -101,7 +101,8 @@ esdm_modules_t* esdm_modules_init(esdm_instance_t* esdm)
 	// Register data backends
 	modules->backends = g_hash_table_new(g_str_hash, g_str_equal);
 
-	for (int i = 0; i < config_backends->count; i++) {
+	int i;
+	for (i = 0; i < config_backends->count; i++) {
 		b = &(config_backends->backends[i]);
 
 		DEBUG("Backend config: %d, %s, %s, %s\n", i,
