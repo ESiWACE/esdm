@@ -69,8 +69,9 @@ int main(int argc, char* argv[])
 	assert(buf_w != NULL);
 	assert(buf_r != NULL);
 
-	for(int y=offset[0]; y < dim[0]; y++){
-		for(int x=offset[1]; x < dim[1]; x++){
+	int x, y;
+	for(y = offset[0]; y < dim[0]; y++){
+		for(x = offset[1]; x < dim[1]; x++){
 			buf_w[(y-offset[0])*size+x] = y*size + x + 1;
 		}
 	}
@@ -119,8 +120,8 @@ int main(int argc, char* argv[])
 	int mismatches = 0;
 	int idx;
 
-	for(int y=offset[0]; y < dim[0]; y++){
-		for(int x=offset[1]; x < dim[1]; x++){
+	for(y = offset[0]; y < dim[0]; y++){
+		for(x = offset[1]; x < dim[1]; x++){
 			idx = (y-offset[0])*size + x;
 
 			if (buf_r[idx] != buf_w[idx]) {

@@ -29,8 +29,9 @@ int verify_data(uint64_t* a, uint64_t* b) {
 	int mismatches = 0;
 	int idx;
 
-	for(int x=0; x < 10; x++){
-		for(int y=0; y < 20; y++){
+	int x, y;
+	for(x = 0; x < 10; x++){
+		for(y = 0; y < 20; y++){
 			idx = y*10+x;
 
 			if (a[idx] != b[idx]) {
@@ -52,8 +53,9 @@ int main(int argc, char const* argv[])
 	uint64_t * buf_w = (uint64_t *) malloc(10*20*sizeof(uint64_t));
 	uint64_t * buf_r = (uint64_t *) malloc(10*20*sizeof(uint64_t));
 
-	for(int x=0; x < 10; x++){
-		for(int y=0; y < 20; y++){
+	int x, y;
+	for(x = 0; x < 10; x++){
+		for(y = 0; y < 20; y++){
 			buf_w[y*10+x] = (y)*10 + x + 1;
 		}
 	}
