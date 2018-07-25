@@ -2,7 +2,6 @@
 #include <glib.h>
 #include <assert.h>
 
-
 #include "util/test_util.h"
 
 /*
@@ -65,17 +64,16 @@ void startIO(long work, io_request_status_t * status){
   // add the number of outstanding requests
   GError * error;
 
-  // atomically add the number of ops that need to be done.
-  g_mutex_lock(& status->mutex);
-  status->pending_ops += backend_count;
-  g_mutex_unlock(& status->mutex);
-
   // now enqueue the operations
   for (int i=0; i < backend_count; i++){
     io_work_t * task = (io_work_t*) malloc(sizeof(io_work_t));
     task->num = i;
     task->parent = status;
+#ifdef TEST_SINGLE_THREADED
+    backend_thread(task, (gpointer)(size_t) i);
+#else
     g_thread_pool_push(pools[i], task, & error);
+#endif
   }
 }
 
@@ -98,10 +96,15 @@ void write_dataset(long iterations){
   g_cond_init(& status.done_condition);
   status.pending_ops = 0;
 
+  // atomically add the number of ops that need to be done.
+  //g_mutex_lock(& status->mutex);
+  status.pending_ops = backend_count * iterations;
+  //g_mutex_unlock(& status->mutex);
+
   // TODO evtl. check if we must stall due to short in memory
 
   // breakdown the dataset into iteration fragments:
-  for(long i=0; i <= iterations; i++){
+  for(long i=0; i < iterations; i++){
     startIO(i, &status);
   }
   wait(& status);
