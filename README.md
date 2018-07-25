@@ -4,7 +4,7 @@
 The middleware for earth system data is a prototype to improve I/O performance
 for earth system simulation as used in climate and weather applications.
 ESDM exploits structural information exposed by workflows, applications as well
-as data description formats such as HDF5 and NetCDF to 
+as data description formats such as HDF5 and NetCDF to
 more efficiently organize metadata and data across a variety of storage backends.
 
 [![Build Status](https://travis-ci.org/ESiWACE/esdm.svg?branch=master)](https://travis-ci.org/ESiWACE/esdm)
@@ -27,13 +27,21 @@ more efficiently organize metadata and data across a variety of storage backends
 
   * dnf install gcc-c++ gcc libtool cmake
 
+#### Installation with Spack
+
+  First get the new gcc:
+  * spack install gcc@8.1.0
+  Then install the packages with GCC:
+  * spack install jansson%gcc@8.1.0 glib%gcc@8.1.0 openmpi%gcc@8.1.0 gettext%gcc@8.1.0
+  Before running configure load the modules:
+  * spack load jansson%gcc@8.1.0 glib%gcc@8.1.0 openmpi%gcc@8.1.0 gcc gettext%gcc@8.1.0 -r
 
 ## Development
 
 ### Directory structure
 
 - `dev` contains helpers for development purpose
-  e.g., to install hdf5-vol which is required by this project you can use 
+  e.g., to install hdf5-vol which is required by this project you can use
 
         ./dev/setup-development-environment.sh
 
@@ -49,7 +57,7 @@ more efficiently organize metadata and data across a variety of storage backends
 
 		cd build
 		make test
-  
+
   You may also choose to configure with a different hdf5 installation (see ./configure --help) e.g.:
 
 		./configure --with-hdf5=$PWD/install
@@ -58,7 +66,7 @@ more efficiently organize metadata and data across a variety of storage backends
 
 - `doc` contains documentation which uses doxygen to build a HTML or a PDF version:
 
-	
+
 	For the HTML Reference use the following commands:
 
 		cd build
@@ -73,8 +81,5 @@ more efficiently organize metadata and data across a variety of storage backends
 		make
 
 
-- `tools` contains separate programs, e.g., for benchmarking HDF5. 
+- `tools` contains separate programs, e.g., for benchmarking HDF5.
   They should only be loosly coupled with the source code and allow to be used with the regular HDF5.
-
-
-
