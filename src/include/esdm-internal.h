@@ -46,9 +46,15 @@ esdm_status_t esdm_modules_get_by_type(esdm_module_type_t type, esdm_module_type
 
 // I/O Scheduler
 esdm_scheduler_t* esdm_scheduler_init(esdm_instance_t *esdm);
-esdm_status_t esdm_scheduler_finalize();
-	// for dim
-esdm_status_t esdm_scheduler_enqueue(esdm_instance_t *esdm, esdm_fragment_t *fragment);
+esdm_status_t esdm_scheduler_finalize(esdm_instance_t *esdm);
+
+esdm_status_t esdm_scheduler_status_init(io_request_status_t * status);
+esdm_status_t esdm_scheduler_status_finalize(io_request_status_t * status);
+esdm_status_t esdm_scheduler_process_blocking(esdm_instance_t *esdm, io_operation_t type, esdm_dataspace_t* subspace);
+esdm_status_t esdm_scheduler_enqueue(esdm_instance_t *esdm, io_request_status_t * status, io_operation_t type, esdm_dataspace_t* subspace);
+esdm_status_t esdm_scheduler_wait(io_request_status_t * status);
+
+
 
 // Layout
 esdm_layout_t* esdm_layout_init(esdm_instance_t *esdm);

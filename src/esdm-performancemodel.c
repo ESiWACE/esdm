@@ -78,12 +78,6 @@ esdm_status_t esdm_performance_recommendation(esdm_instance_t *esdm, esdm_fragme
 {
 	DEBUG_ENTER;
 
-	// pickup the performance estimate for each backend module
-	esdm_module_type_array_t * backends;
-	esdm_modules_get_by_type(ESDM_TYPE_DATA, backends);
-
-	g_hash_table_foreach (esdm->modules->backends, fetch_performance_from_backend, NULL);
-
 	//int i;
 	//for(i=0; i < backends->count; i++){
 	//	//esdm_backend_estimate_performance((esdm_backend_t*) backends->module, 1234);

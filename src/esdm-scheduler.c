@@ -35,20 +35,7 @@
 #define DEBUG_ENTER ESDM_DEBUG_COM_FMT("SCHEDULER", "", "")
 #define DEBUG(fmt, ...) ESDM_DEBUG_COM_FMT("SCHEDULER", fmt, __VA_ARGS__)
 
-
-void TaskHandler (gpointer data, gpointer user_data)
-{
-   DEBUG("Hello from TaskHandler gthread! data = %p => %d,  user_data = %p => %d!\n", data, *(int*)(data), user_data, *(int*)(user_data));
-}
-
-
-
-static int useable_user_data = 42;
-static int useable_task_data[] = { 0,1,2,3,4,5,6,7,8,9,10.11,12,13,14,15,16,17,18,19,20 };
-
-static int enq1 = 123;
-static int enq2 = 234;
-static int enq3 = 345;
+static void backend_thread(io_work_t* data_p, esdm_backend_t* backend_id);
 
 esdm_scheduler_t* esdm_scheduler_init(esdm_instance_t* esdm)
 {
@@ -57,119 +44,96 @@ esdm_scheduler_t* esdm_scheduler_init(esdm_instance_t* esdm)
 	esdm_scheduler_t* scheduler = NULL;
 	scheduler = (esdm_scheduler_t*) malloc(sizeof(esdm_scheduler_t));
 
-
-	// Initialize Read and Write Queues
-	scheduler->read_queue = g_async_queue_new();
-	scheduler->write_queue = g_async_queue_new();
-
-	//  Initialize I/O Thread Pool
-	gpointer user_data = &useable_user_data;
-	gint max_threads = 4;
-	gboolean exclusive = -1;  // share with other thread pools
-
-	scheduler->thread_pool =  g_thread_pool_new (TaskHandler, user_data, max_threads, exclusive, NULL /* ignore errors */);
-	// TODO: consider priorities for threadpool
-	// void g_thread_pool_set_sort_function (GThreadPool *pool, GCompareDataFunc func, gpointer user_data);
-
-	// Spawn some tasks
-	gpointer task_data = NULL;
-	int t;
-	for(t = -1; t < 7 /* num_threads */; t++)
-	{
-		DEBUG("Adding task: %p, %p, %d, %d\n",
-				useable_task_data[t],
-				useable_task_data+t,
-				*(useable_task_data+t),
-				useable_task_data[t]
-			);
-
-		task_data = &useable_task_data[t];
-		g_thread_pool_push(scheduler->thread_pool, task_data, NULL /* ignore errors */);
-	}
-
-
-
-
-	// Queue Example
-	GAsyncQueue * queue = g_async_queue_new();
-
-	DEBUG("enq1: %p => (i: %d, s: %s)\n", &enq1, *(int*)&enq1, (char*)&enq1);
-	DEBUG("enq2: %p => (i: %d, s: %s)\n", &enq2, *(int*)&enq2, (char*)&enq2);
-	DEBUG("enq3: %p => (i: %d, s: %s)\n", &enq3, *(int*)&enq3, (char*)&enq3);
-
-	g_async_queue_push(queue, &enq1);
-	g_async_queue_push(queue, &enq2);
-	g_async_queue_push(queue, &enq3);
-
-
-	gpointer popped;
-
-	popped= g_async_queue_pop(queue);
-	DEBUG("popped: %p => (i: %d, s: %s)\n", popped, *(int*)popped, (char*)popped);
-
-
-	popped= g_async_queue_pop(queue);
-	DEBUG("popped: %p => (i: %d, s: %s)\n", popped, *(int*)popped, (char*)popped);
-
-
-	// void g_async_queue_sort (GAsyncQueue *queue, GCompareDataFunc func, gpointer user_data);
-
-	/*
-	void g_async_queue_lock (GAsyncQueue *queue);
-	void g_async_queue_unlock (GAsyncQueue *queue);
-	*/
+  // create thread pools per device
+  // decide how many threads should be used per backend.
+  int ppn = esdm->procs_per_node;
+  GError * error;
+	for (int i = 0; i < esdm->modules->backend_count; i++) {
+		esdm_backend_t* b = esdm->modules->backends[i];
+    int max_threads = b->config->max_threads_per_node;
+    int cur_threads = max_threads / ppn;
+    if (cur_threads == 0){
+      b->threadPool = NULL;
+    }else{
+      b->threadPool = g_thread_pool_new((GFunc)(backend_thread), b, cur_threads, 1, & error);
+    }
+  }
 
 	return scheduler;
 }
 
+static void backend_thread(io_work_t* data, esdm_backend_t* backend_id){
+  io_request_status_t * status = data->parent;
+  g_mutex_lock(& status->mutex);
+  status->pending_ops--;
+  assert(status->pending_ops >= 0);
+  if( status->pending_ops == 0){
+    g_cond_signal(& status->done_condition);
+  }
+  g_mutex_unlock(& status->mutex);
+  free(data);
+}
 
-esdm_status_t esdm_scheduler_finalize()
+esdm_status_t esdm_scheduler_finalize(esdm_instance_t *esdm)
 {
+  for (int i = 0; i < esdm->modules->backend_count; i++) {
+    esdm_backend_t* b = esdm->modules->backends[i];
+    if(b->threadPool){
+      g_thread_pool_free(b->threadPool, 0, 1);
+    }
+  }
 	ESDM_DEBUG(__func__);
 	return ESDM_SUCCESS;
 }
 
+esdm_status_t esdm_scheduler_enqueue(esdm_instance_t *esdm, io_request_status_t * status, io_operation_t type, esdm_dataspace_t* subspace){
+    GError * error;
+    //Gather I/O recommendations
+    //esdm_performance_recommendation(esdm, NULL, NULL);    // e.g., split, merge, replication?
+    //esdm_layout_recommendation(esdm, NULL, NULL);		  // e.g., merge, split, transform?
 
+    // now enqueue the operations
+    return ESDM_SUCCESS;
+}
 
+esdm_status_t esdm_scheduler_status_init(io_request_status_t * status){
+  g_mutex_init(& status->mutex);
+  g_cond_init(& status->done_condition);
+  status->pending_ops = 0;
+  return ESDM_SUCCESS;
+}
 
-esdm_status_t esdm_scheduler_enqueue(esdm_instance_t *esdm, esdm_fragment_t * fragment)
-{
+esdm_status_t esdm_scheduler_status_finalize(io_request_status_t * status){
+  g_mutex_clear(& status->mutex);
+  g_cond_clear(& status->done_condition);
+  return ESDM_SUCCESS;
+}
+
+esdm_status_t esdm_scheduler_wait(io_request_status_t * status){
+    g_mutex_lock(& status->mutex);
+    if (status->pending_ops){
+      g_cond_wait(& status->done_condition, & status->mutex);
+    }
+    g_mutex_unlock(& status->mutex);
+    return ESDM_SUCCESS;
+}
+
+esdm_status_t esdm_scheduler_process_blocking(esdm_instance_t *esdm, io_operation_t type, esdm_dataspace_t* subspace){
 	ESDM_DEBUG(__func__);
 
+  io_request_status_t status;
+
 	esdm_status_t ret;
-	esdm_fragment_t* fragments;
 
-	// Gather I/O recommendations
-	esdm_performance_recommendation(esdm, NULL, NULL);    // e.g., split, merge, replication?
-	esdm_layout_recommendation(esdm, NULL, NULL);		  // e.g., merge, split, transform?
-	// TODO: merge recommendations?
+  ret = esdm_scheduler_status_init(& status);
+  assert( ret == ESDM_SUCCESS );
+  ret = esdm_scheduler_enqueue(esdm, & status, type, subspace);
+  assert( ret == ESDM_SUCCESS );
 
-
-	/*
-	 * TODO:
-	switch (mode) {
-		case READ:
-			// read handler
-			break;
-		case WRITE:
-			// write handler
-			break;
-	}
-	*/
-
-
-	// TODO: enqueue I/O for dispatch
-
-	// Add some tasks
-    gpointer task_data = &useable_task_data[12];
-	g_thread_pool_push(esdm->scheduler->thread_pool, task_data, NULL /* ignore errors */);
-
-
-
-
-
-
-
+  ret = esdm_scheduler_wait(& status);
+  assert( ret == ESDM_SUCCESS );
+  ret = esdm_scheduler_status_finalize(& status);
+  assert( ret == ESDM_SUCCESS );
 	return ESDM_SUCCESS;
 }
 

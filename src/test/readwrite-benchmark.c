@@ -40,7 +40,8 @@ int tasks_per_node() {
 
 int main(int argc, char* argv[])
 {
-	MPI_Init(& argc, & argv);
+  int provided;
+	MPI_Init_thread(& argc, & argv, MPI_THREAD_FUNNELED, & provided);
 
 	int mpi_size;
 	int mpi_rank;
@@ -93,7 +94,8 @@ int main(int argc, char* argv[])
 	esdm_dataset_t *dataset = NULL;
 
 	int pPerNode = tasks_per_node();
-	printf("Running with %d processes per Node\n", pPerNode);
+  if (mpi_rank == 0)
+	   printf("Running with %d processes per Node\n", pPerNode);
 	esdm_set_procs_per_node(pPerNode);
 
 	// TODO provide a support MPI library function to do this
@@ -111,6 +113,7 @@ int main(int argc, char* argv[])
 		MPI_Bcast(config, len, MPI_CHAR, 0, MPI_COMM_WORLD);
 	}
 	esdm_load_config_str(config);
+	// END TODO
 
 	ret = esdm_init();
 

@@ -99,7 +99,8 @@ esdm_modules_t* esdm_modules_init(esdm_instance_t* esdm)
 	}
 
 	// Register data backends
-	modules->backends = g_hash_table_new(g_str_hash, g_str_equal);
+	modules->backend_count = config_backends->count;
+	modules->backends = malloc(config_backends->count * sizeof(esdm_backend_t*));
 
 	int i;
 	for (i = 0; i < config_backends->count; i++) {
@@ -111,35 +112,29 @@ esdm_modules_t* esdm_modules_init(esdm_instance_t* esdm)
 				b->target
 			  );
 
-		// TODO: fetch type here instead of in config?
 		if (strncmp(b->type,"POSIX",5) == 0)
 		{
 			backend = posix_backend_init(b);
-			g_hash_table_insert(modules->backends, (char*)b->name, backend);
 		}
 #ifdef ESDM_HAS_CLOVIS
 		else if (strncasecmp(b->type,"CLOVIS",6) == 0)
 		{
-			// TODO
 			backend = clovis_backend_init(b);
-			g_hash_table_insert(modules->backends, (char*)b->name, backend);
 		}
 #endif
 #ifdef ESDM_HAS_WOS
 		else if (strncmp(b->type,"WOS",3) == 0)
 		{
-			// TODO
 			backend = wos_backend_init(b);
-			g_hash_table_insert(modules->backends, (char*)b->name, backend);
 		}
 #endif
 		else
 		{
 			ESDM_ERROR("Unknown backend type. Please check your ESDM configuration.");
 		}
+		backend->config = b;
+		modules->backends[i] = backend;
 	}
-
-	esdm_print_hashtable(modules->backends);
 
 	return modules;
 }

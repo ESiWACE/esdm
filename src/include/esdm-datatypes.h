@@ -224,6 +224,8 @@ struct esdm_backend_callbacks_t {
 };
 
 
+typedef struct esdm_config_backend_t esdm_config_backend_t;
+
 /**
  * On backend registration ESDM expects the backend to return a pointer to
  * a esdm_backend_t struct.
@@ -232,13 +234,36 @@ struct esdm_backend_callbacks_t {
  *
  */
 struct esdm_backend_t {
+	esdm_config_backend_t * config;
 	char *name;
 	esdm_module_type_t type;
 	char *version; // 0.0.0
 	void *data;
 	uint32_t blocksize; /* any io must be multiple of 'blocksize' and aligned. */
 	esdm_backend_callbacks_t callbacks;
+
+
+	GThreadPool * threadPool;
 };
+
+typedef enum {
+	ESDM_WRITE = 0,
+	ESDM_READ
+} io_operation_t;
+
+typedef struct{
+	io_operation_t op;
+
+  int pending_ops;
+  GMutex mutex;
+  GCond  done_condition;
+} io_request_status_t;
+
+typedef struct{
+  // TODO more fields
+  io_request_status_t * parent;
+} io_work_t;
+
 
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -249,7 +274,6 @@ struct esdm_backend_t {
 
 
 // Configuration
-typedef struct esdm_config_backend_t esdm_config_backend_t;
 struct esdm_config_backend_t {
 	const char *type;
 	const char *name;
@@ -292,7 +316,8 @@ typedef struct esdm_config_t {
 } esdm_config_t;
 
 typedef struct esdm_modules_t {
-	GHashTable *backends;
+	int backend_count;
+	esdm_backend_t **backends;
 	esdm_backend_t *metadata;
 	//esdm_modules_t** modules;
 } esdm_modules_t;

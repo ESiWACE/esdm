@@ -107,7 +107,7 @@ esdm_status_t esdm_finalize()
 	// ESDM data data structures that require proper cleanup..
 	// in particular this effects data and cache state which is not yet persistent
 
-	//esdm_scheduler_finalize();
+	esdm_scheduler_finalize(& esdm);
 	//esdm_performance_finalize();
 	//esdm_layout_finalize();
 	esdm_modules_finalize();

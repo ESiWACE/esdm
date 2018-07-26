@@ -238,7 +238,7 @@ esdm_status_t esdm_fragment_retrieve(esdm_fragment_t *fragment)
 	elem = json_object_get(root, "data");
 
 	// Call backend
-	esdm_backend_t *backend = (esdm_backend_t*) g_hash_table_lookup(esdm.modules->backends, plugin_name);  // TODO: decision component, upon many
+	esdm_backend_t *backend = esdm.modules->backends[0];  // TODO: decision component, upon many
 
 	backend->callbacks.fragment_retrieve(backend, fragment, elem);
 	return ESDM_SUCCESS;
@@ -307,23 +307,22 @@ esdm_status_t esdm_fragment_commit(esdm_fragment_t *fragment)
 
 	GHashTableIter iter;
 	// TODO move to decision component
-  g_hash_table_iter_init (&iter, esdm.modules->backends);
   char *name;
 	esdm_backend_t* val_backend;
 
   float best_time = 1e36;
-	esdm_backend_t* backend = NULL;
+	esdm_backend_t* backend = esdm.modules->backends[0];
 	char * best_name = NULL;
-  while (g_hash_table_iter_next (&iter, (gpointer) &name, (gpointer) &val_backend))
-  {
-		float time_est = 1e35;
-		val_backend->callbacks.performance_estimate(val_backend, fragment, & time_est);
-		if(time_est < best_time){
-			backend = val_backend;
-			best_time = time_est;
-			best_name = name;
-		}
-  }
+  //while (g_hash_table_iter_next (&iter, (gpointer) &name, (gpointer) &val_backend))
+  //{
+	//	float time_est = 1e35;
+	//	val_backend->callbacks.performance_estimate(val_backend, fragment, & time_est);
+	//	if(time_est < best_time){
+	//		backend = val_backend;
+	//		best_time = time_est;
+	//		best_name = name;
+	//	}
+  //}
 
 	DEBUG("Target choice: %s\n", best_name );
 
@@ -455,7 +454,7 @@ esdm_status_t esdm_dataset_commit(esdm_dataset_t *dataset)
 
 	// print datasets of this container
 	esdm_print_hashtable(dataset->fragments);
-	
+
 	// TODO: ensure callback is not NULL
 	// md callback create/update container
 	esdm.modules->metadata->callbacks.dataset_create(esdm.modules->metadata, dataset);
