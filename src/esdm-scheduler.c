@@ -51,27 +51,15 @@ esdm_scheduler_t* esdm_scheduler_init(esdm_instance_t* esdm)
 	for (int i = 0; i < esdm->modules->backend_count; i++) {
 		esdm_backend_t* b = esdm->modules->backends[i];
     int max_threads = b->config->max_threads_per_node;
-    int cur_threads = max_threads / ppn;
-    if (cur_threads == 0){
+    b->threads = max_threads / ppn;
+    if (b->threads == 0){
       b->threadPool = NULL;
     }else{
-      b->threadPool = g_thread_pool_new((GFunc)(backend_thread), b, cur_threads, 1, & error);
+      b->threadPool = g_thread_pool_new((GFunc)(backend_thread), b, b->threads, 1, & error);
     }
   }
 
 	return scheduler;
-}
-
-static void backend_thread(io_work_t* data, esdm_backend_t* backend_id){
-  io_request_status_t * status = data->parent;
-  g_mutex_lock(& status->mutex);
-  status->pending_ops--;
-  assert(status->pending_ops >= 0);
-  if( status->pending_ops == 0){
-    g_cond_signal(& status->done_condition);
-  }
-  g_mutex_unlock(& status->mutex);
-  free(data);
 }
 
 esdm_status_t esdm_scheduler_finalize(esdm_instance_t *esdm)
@@ -86,11 +74,61 @@ esdm_status_t esdm_scheduler_finalize(esdm_instance_t *esdm)
 	return ESDM_SUCCESS;
 }
 
-esdm_status_t esdm_scheduler_enqueue(esdm_instance_t *esdm, io_request_status_t * status, io_operation_t type, esdm_dataspace_t* subspace){
+static void backend_thread(io_work_t* work, esdm_backend_t* backend){
+  io_request_status_t * status = work->parent;
+
+  printf("backend thread operates on %s via %s \n", backend->name, backend->config->target);
+
+  assert(backend == work->fragment->backend);
+
+  esdm_status_t ret;
+  switch(work->op){
+    case(ESDM_OP_READ):{
+      ret = esdm_fragment_retrieve(work->fragment);
+      break;
+    }
+    case(ESDM_OP_WRITE):{
+      ret = esdm_fragment_commit(work->fragment);
+      break;
+    }
+  }
+
+  work->return_code = ret;
+
+  g_mutex_lock(& status->mutex);
+  status->pending_ops--;
+  assert(status->pending_ops >= 0);
+  if( status->pending_ops == 0){
+    g_cond_signal(& status->done_condition);
+  }
+  g_mutex_unlock(& status->mutex);
+  free(work);
+}
+
+
+esdm_status_t esdm_scheduler_enqueue(esdm_instance_t *esdm, io_request_status_t * status, io_operation_t op, esdm_dataset_t *dataset, void *buf,  esdm_dataspace_t* subspace){
     GError * error;
     //Gather I/O recommendations
     //esdm_performance_recommendation(esdm, NULL, NULL);    // e.g., split, merge, replication?
     //esdm_layout_recommendation(esdm, NULL, NULL);		  // e.g., merge, split, transform?
+
+    // TODO, for now, replicate the data:
+    status->pending_ops += esdm->modules->backend_count;
+
+    for (int i = 0; i < esdm->modules->backend_count; i++) {
+      esdm_backend_t* b = esdm->modules->backends[i];
+      io_work_t * task = (io_work_t*) malloc(sizeof(io_work_t));
+
+      task->parent = status;
+      task->op = op;
+      task->fragment = esdm_fragment_create(dataset, subspace, buf);
+      task->fragment->backend = b;
+      if (b->threads == 0){
+        backend_thread(task, b);
+      }else{
+        g_thread_pool_push(b->threadPool, task, & error);
+      }
+    }
 
     // now enqueue the operations
     return ESDM_SUCCESS;
@@ -118,7 +156,7 @@ esdm_status_t esdm_scheduler_wait(io_request_status_t * status){
     return ESDM_SUCCESS;
 }
 
-esdm_status_t esdm_scheduler_process_blocking(esdm_instance_t *esdm, io_operation_t type, esdm_dataspace_t* subspace){
+esdm_status_t esdm_scheduler_process_blocking(esdm_instance_t *esdm, io_operation_t op, esdm_dataset_t *dataset, void *buf,  esdm_dataspace_t* subspace){
 	ESDM_DEBUG(__func__);
 
   io_request_status_t status;
@@ -127,7 +165,8 @@ esdm_status_t esdm_scheduler_process_blocking(esdm_instance_t *esdm, io_operatio
 
   ret = esdm_scheduler_status_init(& status);
   assert( ret == ESDM_SUCCESS );
-  ret = esdm_scheduler_enqueue(esdm, & status, type, subspace);
+
+  ret = esdm_scheduler_enqueue(esdm, & status, op, dataset, buf, subspace);
   assert( ret == ESDM_SUCCESS );
 
   ret = esdm_scheduler_wait(& status);

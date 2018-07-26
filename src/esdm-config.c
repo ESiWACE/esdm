@@ -155,18 +155,25 @@ esdm_config_backends_t* esdm_config_get_backends(esdm_instance_t* esdm)
 				elem = json_object_get(backend, "type");
 				backends[i].type = json_string_value(elem);
 
-				elem = json_object_get(backend, "name");
-				backends[i].name = json_string_value(elem);
+				elem = json_object_get(backend, "id");
+				backends[i].id = json_string_value(elem);
 
 				elem = json_object_get(backend, "target");
 				backends[i].target = json_string_value(elem);
 				backends[i].performance_model = json_object_get(backend, "performance-model");
 
-				elem = json_object_get(backend, "threads");
+				elem = json_object_get(backend, "max-threads-per-node");
 				if (elem == NULL){
 					backends[i].max_threads_per_node = 0;
 				}else{
 					backends[i].max_threads_per_node = json_integer_value(elem);
+				}
+
+				elem = json_object_get(backend, "max-fragment-size");
+				if (elem == NULL){
+					backends[i].max_fragment_size = 10*1024*1024;
+				}else{
+					backends[i].max_fragment_size = json_integer_value(elem);
 				}
 
 				backends[i].esdm = root;

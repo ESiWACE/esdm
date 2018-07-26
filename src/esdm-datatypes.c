@@ -302,34 +302,9 @@ esdm_status_t esdm_fragment_commit(esdm_fragment_t *fragment)
 {
 	ESDM_DEBUG(__func__);
 
-	// Schedule for I/O
-	//esdm_scheduler_enqueue(&esdm, fragment);
+	fragment->metadata->size += sprintf(& fragment->metadata->json[fragment->metadata->size], "{\"plugin\" : \"%s\", \"name\" : \"%s\", \"data\" :", fragment->backend->name, fragment->backend->config->id);
 
-	GHashTableIter iter;
-	// TODO move to decision component
-  char *name;
-	esdm_backend_t* val_backend;
-
-  float best_time = 1e36;
-	esdm_backend_t* backend = esdm.modules->backends[0];
-	char * best_name = NULL;
-  //while (g_hash_table_iter_next (&iter, (gpointer) &name, (gpointer) &val_backend))
-  //{
-	//	float time_est = 1e35;
-	//	val_backend->callbacks.performance_estimate(val_backend, fragment, & time_est);
-	//	if(time_est < best_time){
-	//		backend = val_backend;
-	//		best_time = time_est;
-	//		best_name = name;
-	//	}
-  //}
-
-	DEBUG("Target choice: %s\n", best_name );
-
-	// Call backend
-	assert(backend != NULL);
-	fragment->metadata->size += sprintf(& fragment->metadata->json[fragment->metadata->size], "{\"plugin\" : \"%s\", \"name\" : \"%s\", \"data\" :", backend->name, best_name);
-	backend->callbacks.fragment_update(backend, fragment);
+	fragment->backend->callbacks.fragment_update(fragment->backend, fragment);
 	fragment->metadata->size += sprintf(& fragment->metadata->json[fragment->metadata->size], "}");
 
 	// Announce to metadata coordinator

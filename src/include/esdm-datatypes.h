@@ -141,6 +141,8 @@ struct esdm_fragment_t {
 	esdm_dataset_t *dataset;
 	esdm_dataspace_t *dataspace;
 
+	esdm_backend_t * backend;
+
 	void *buf;
 	size_t size;
 	size_t bytes;
@@ -241,26 +243,27 @@ struct esdm_backend_t {
 	void *data;
 	uint32_t blocksize; /* any io must be multiple of 'blocksize' and aligned. */
 	esdm_backend_callbacks_t callbacks;
-
+	int threads;
 
 	GThreadPool * threadPool;
 };
 
 typedef enum {
-	ESDM_WRITE = 0,
-	ESDM_READ
+	ESDM_OP_WRITE = 0,
+	ESDM_OP_READ
 } io_operation_t;
 
 typedef struct{
-	io_operation_t op;
-
   int pending_ops;
   GMutex mutex;
   GCond  done_condition;
 } io_request_status_t;
 
 typedef struct{
-  // TODO more fields
+  esdm_fragment_t *fragment;
+	io_operation_t op;
+	esdm_status_t return_code;
+
   io_request_status_t * parent;
 } io_work_t;
 
@@ -276,9 +279,11 @@ typedef struct{
 // Configuration
 struct esdm_config_backend_t {
 	const char *type;
-	const char *name;
+	const char *id;
 	const char *target;
+
 	int max_threads_per_node;
+	uint64_t max_fragment_size;
 
 	json_t *performance_model;
 	json_t *esdm;

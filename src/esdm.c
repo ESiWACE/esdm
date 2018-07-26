@@ -212,12 +212,7 @@ esdm_status_t esdm_write(esdm_dataset_t *dataset, void *buf, esdm_dataspace_t* s
 {
 	ESDM_DEBUG(__func__);
 
-	//esdm_dataset_t *dataset = (esdm_dataset_t*) g_hash_table_lookup (container->datasets, "bytestream");
-	//printf("Dataset 'bytestream' lookup: %p\n", dataset);
-
-	// create new fragment
-	esdm_fragment_t *fragment = esdm_fragment_create(dataset, subspace, buf);
-	esdm_fragment_commit(fragment);
+	esdm_scheduler_process_blocking(& esdm, ESDM_OP_WRITE, dataset, buf, subspace);
 
 	return ESDM_SUCCESS;
 }
@@ -238,21 +233,10 @@ esdm_status_t esdm_read(esdm_dataset_t *dataset, void *buf, esdm_dataspace_t* su
 {
 	ESDM_DEBUG("");
 
-	//esdm_dataset_t *dataset = (esdm_dataset_t*) g_hash_table_lookup (container->datasets, "bytestream");
-	//printf("Dataset 'bytestream' lookup: %p\n", dataset);
+	esdm_status_t ret = esdm_scheduler_process_blocking(& esdm, ESDM_OP_READ, dataset, buf, subspace);
 
-
-	//esdm_fragment_t *fragment = esdm_layout_reconstruction(dataset, subspace);
-
-	esdm_fragment_t *fragment = esdm_fragment_create(dataset, subspace, NULL);
-	fragment->buf = buf;
-	esdm_status_t status = esdm_fragment_retrieve(fragment);
-	//if (status != ESDM_SUCCESS)
-	//	ESDM_DEBUG("Could not retrieve fragment.");
-
-	//esdm_scheduler_enqueue(fragment);
-	ESDM_DEBUG_FMT("Fragment size: %ld", fragment->bytes);
-	return ESDM_SUCCESS;
+	//ESDM_DEBUG_FMT("Fragment size: %ld", fragment->bytes);
+	return ret;
 }
 
 

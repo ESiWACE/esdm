@@ -50,8 +50,8 @@ esdm_status_t esdm_scheduler_finalize(esdm_instance_t *esdm);
 
 esdm_status_t esdm_scheduler_status_init(io_request_status_t * status);
 esdm_status_t esdm_scheduler_status_finalize(io_request_status_t * status);
-esdm_status_t esdm_scheduler_process_blocking(esdm_instance_t *esdm, io_operation_t type, esdm_dataspace_t* subspace);
-esdm_status_t esdm_scheduler_enqueue(esdm_instance_t *esdm, io_request_status_t * status, io_operation_t type, esdm_dataspace_t* subspace);
+esdm_status_t esdm_scheduler_process_blocking(esdm_instance_t *esdm, io_operation_t type, esdm_dataset_t *dataset,  void *buf, esdm_dataspace_t* subspace);
+esdm_status_t esdm_scheduler_enqueue(esdm_instance_t *esdm, io_request_status_t * status, io_operation_t type, esdm_dataset_t *dataset,  void *buf, esdm_dataspace_t* subspace);
 esdm_status_t esdm_scheduler_wait(io_request_status_t * status);
 
 
