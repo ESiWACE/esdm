@@ -254,8 +254,9 @@ struct esdm_config_backend_t {
 	const char *type;
 	const char *name;
 	const char *target;
+	int max_threads_per_node;
 
-	json_t * performance_model;
+	json_t *performance_model;
 	json_t *esdm;
 	json_t *backend;
 };
@@ -316,6 +317,7 @@ typedef struct esdm_performance_t {
 
 typedef struct esdm_instance_t {
 	int is_initialized;
+	int procs_per_node;
 	esdm_config_t *config;
 	esdm_modules_t *modules;
 	esdm_layout_t *layout;

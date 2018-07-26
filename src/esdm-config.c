@@ -34,8 +34,15 @@
 #define DEBUG(fmt, ...) ESDM_DEBUG_COM_FMT("CONFIG", fmt, __VA_ARGS__)
 
 
-json_t* esdm_config_gather(int argc, char const *argv[]);
+char* esdm_config_gather();
 
+esdm_config_t* esdm_config_init_from_str(const char * config_str){
+	esdm_config_t* config = NULL;
+	config = (esdm_config_t*) malloc(sizeof(esdm_config_t));
+	config->json = load_json(config_str); // parse text into JSON structure
+
+	return config;
+}
 
 /**
  * Initializes the site configuration module.
@@ -43,16 +50,13 @@ json_t* esdm_config_gather(int argc, char const *argv[]);
  * @param	[in] esdm   Pointer to esdm instance.
  * @return	Pointer to newly created configuration instance.
  */
-esdm_config_t* esdm_config_init(esdm_instance_t *esdm)
+esdm_config_t* esdm_config_init()
 {
 	ESDM_DEBUG(__func__);
 
-	esdm_config_t* config = NULL;
-	config = (esdm_config_t*) malloc(sizeof(esdm_config_t));
+	char * config_str = esdm_config_gather(0, NULL);
 
-	config->json = esdm_config_gather(0, NULL);
-
-	return config;
+	return esdm_config_init_from_str(config_str);
 }
 
 
@@ -69,8 +73,7 @@ esdm_status_t esdm_config_finalize(esdm_instance_t *esdm)
 
 
 /**
- * Gathers ESDM configuration settings from multiple locations:
- *
+ * Gathers ESDM configuration settings from multiple locations to build one configuration string.
  *
  * TODO:
  *	/etc/esdm/esdm.conf
@@ -81,20 +84,13 @@ esdm_status_t esdm_config_finalize(esdm_instance_t *esdm)
  *  arguments
  *
  */
-json_t* esdm_config_gather(int argc, char const* argv[])
+char* esdm_config_gather()
 {
 	ESDM_DEBUG(__func__);
 
 	char* config_json = NULL;
-
-
 	read_file("_esdm.conf", &config_json);
-
-
-	// parse text into JSON structure
-	json_t *root = load_json(config_json);
-
-	return root;
+	return config_json;
 }
 
 
@@ -165,6 +161,13 @@ esdm_config_backends_t* esdm_config_get_backends(esdm_instance_t* esdm)
 				elem = json_object_get(backend, "target");
 				backends[i].target = json_string_value(elem);
 				backends[i].performance_model = json_object_get(backend, "performance-model");
+
+				elem = json_object_get(backend, "threads");
+				if (elem == NULL){
+					backends[i].max_threads_per_node = 0;
+				}else{
+					backends[i].max_threads_per_node = json_integer_value(elem);
+				}
 
 				backends[i].esdm = root;
 				backends[i].backend = backend;

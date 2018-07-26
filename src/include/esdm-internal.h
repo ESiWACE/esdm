@@ -30,7 +30,8 @@ typedef enum {
 // ESDM Core //////////////////////////////////////////////////////////////////
 
 // Configuration
-esdm_config_t* esdm_config_init(esdm_instance_t *esdm);
+esdm_config_t* esdm_config_init();
+esdm_config_t* esdm_config_init_from_str(const char * str);
 esdm_status_t esdm_config_finalize(esdm_instance_t *esdm);
 
 esdm_config_backends_t* esdm_config_get_backends(esdm_instance_t *esdm);

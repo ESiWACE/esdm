@@ -26,6 +26,17 @@
 #include <esdm.h>
 #include "util/test_util.h"
 
+int tasks_per_node() {
+    MPI_Comm shared_comm;
+    int count;
+
+    MPI_Comm_split_type (MPI_COMM_WORLD, MPI_COMM_TYPE_SHARED, 0, MPI_INFO_NULL, &shared_comm);
+    MPI_Comm_size (shared_comm, &count);
+    MPI_Comm_free (&shared_comm);
+
+    return count;
+}
+
 
 int main(int argc, char* argv[])
 {
@@ -40,8 +51,8 @@ int main(int argc, char* argv[])
 	int64_t _size;
 	if (argc < 2)
 		_size = 1024;
-	else if (argc != 2){
-		printf("Syntax: %s SIZE", argv[0]);
+	else if (argc != 3){
+		printf("Syntax: %s [SIZE] [CONFIG]", argv[0]);
 		printf("\t SIZE specifies one dimension of a 2D field\n");
 		exit(1);
 	} else
@@ -81,8 +92,27 @@ int main(int argc, char* argv[])
 	esdm_container_t *container = NULL;
 	esdm_dataset_t *dataset = NULL;
 
+	int pPerNode = tasks_per_node();
+	printf("Running with %d processes per Node\n", pPerNode);
+	esdm_set_procs_per_node(pPerNode);
 
-	esdm_init();
+	// TODO provide a support MPI library function to do this
+	char * config = NULL;
+	if (mpi_rank == 0){
+		int len;
+		read_file(argv[2], & config);
+		len = strlen(config) + 1;
+		MPI_Bcast(& len, 1, MPI_INT, 0, MPI_COMM_WORLD);
+		MPI_Bcast(config, len, MPI_CHAR, 0, MPI_COMM_WORLD);
+	}else{
+		int len;
+		MPI_Bcast(& len, 1, MPI_INT, 0, MPI_COMM_WORLD);
+		config = (char*) malloc(len);
+		MPI_Bcast(config, len, MPI_CHAR, 0, MPI_COMM_WORLD);
+	}
+	esdm_load_config_str(config);
+
+	ret = esdm_init();
 
 	// define dataspace
 	int64_t bounds[] = {size, size};

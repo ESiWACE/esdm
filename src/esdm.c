@@ -32,8 +32,18 @@
 
 // TODO: Decide on initialization mechanism.
 static int is_initialized = 0;
-esdm_instance_t esdm;
+esdm_instance_t esdm = {
+	.procs_per_node = 1,
+	.config = NULL,
+};
 
+esdm_status_t esdm_set_procs_per_node(int procs){
+	esdm.procs_per_node = procs;
+}
+
+esdm_status_t esdm_load_config_str(const char * str){
+	esdm.config = esdm_config_init_from_str(str);
+}
 
 /**
 * Initialize ESDM:
@@ -52,7 +62,9 @@ esdm_status_t esdm_init()
 		ESDM_DEBUG("Initializing ESDM");
 
 		// find configuration
-		esdm.config = esdm_config_init(&esdm);
+		if ( ! esdm.config ){
+			esdm.config = esdm_config_init(&esdm);
+		}
 
 		// optional modules (e.g. data and metadata backends)
 		esdm.modules = esdm_modules_init(&esdm);
