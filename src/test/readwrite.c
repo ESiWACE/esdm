@@ -24,15 +24,17 @@
 
 #include <esdm.h>
 
+#define HEIGHT 10
+#define WIDTH  4096
 
 int verify_data(uint64_t* a, uint64_t* b) {
 	int mismatches = 0;
 	int idx;
 
 	int x, y;
-	for(x = 0; x < 10; x++){
-		for(y = 0; y < 20; y++){
-			idx = y*10+x;
+	for(x = 0; x < HEIGHT; x++){
+		for(y = 0; y < WIDTH; y++){
+			idx = y * HEIGHT +x;
 
 			if (a[idx] != b[idx]) {
 				mismatches++;
@@ -50,13 +52,13 @@ int main(int argc, char const* argv[])
 {
 
 	// prepare data
-	uint64_t * buf_w = (uint64_t *) malloc(10*20*sizeof(uint64_t));
-	uint64_t * buf_r = (uint64_t *) malloc(10*20*sizeof(uint64_t));
+	uint64_t * buf_w = (uint64_t *) malloc(HEIGHT * WIDTH *sizeof(uint64_t));
+	uint64_t * buf_r = (uint64_t *) malloc(HEIGHT * WIDTH *sizeof(uint64_t));
 
 	int x, y;
-	for(x = 0; x < 10; x++){
-		for(y = 0; y < 20; y++){
-			buf_w[y*10+x] = (y)*10 + x + 1;
+	for(x = 0; x < HEIGHT; x++){
+		for(y = 0; y < WIDTH; y++){
+			buf_w[y * HEIGHT + x] = (y) * HEIGHT + x + 1;
 		}
 	}
 
@@ -79,7 +81,7 @@ int main(int argc, char const* argv[])
 
 
 	// define dataspace
-	int64_t bounds[] = {10, 20};
+	int64_t bounds[] = {HEIGHT, WIDTH};
 	esdm_dataspace_t *dataspace = esdm_dataspace_create(2, bounds, esdm_uint64_t);
 
 	container = esdm_container_create("mycontainer");
@@ -91,7 +93,7 @@ int main(int argc, char const* argv[])
 
 
 	// define subspace
-	int64_t size[] = {10,20};
+	int64_t size[] = {HEIGHT, WIDTH};
 	int64_t offset[] = {0,0};
 	esdm_dataspace_t *subspace = esdm_dataspace_subspace(dataspace, 2, size, offset);
 

@@ -454,9 +454,9 @@ static int index_op_tail(struct m0_clovis_entity *ce,
                                M0_BITS(M0_CLOVIS_OS_FAILED,
                                M0_CLOVIS_OS_STABLE),
                                M0_TIME_NEVER);
-		printf("operation rc: %i\n", op->op_rc);
+		printf("operation (%d) rc: %i\n", op->op_code, op->op_rc);
 	} else
-		printf("operation rc: %i\n", rc);
+		printf("operation (%d) fail rc: %i\n", op->op_code, rc);
 	m0_clovis_op_fini(op);
 	m0_clovis_op_free(op);
 	m0_clovis_entity_fini(ce);
@@ -636,7 +636,7 @@ static int esdm_backend_clovis_fragment_retrieve(esdm_backend_t  *backend,
     // serialization of subspace for fragment
     fragment_name = esdm_dataspace_string_descriptor(fragment->dataspace);
     asprintf(&path_fragment, "/containers/%s/%s/%s", fragment->dataset->container->name, fragment->dataset->name, fragment_name);
-    printf("path_fragment: %s\n", path_fragment);
+    printf("retrieving path_fragment: %s size=%d\n", path_fragment, (int)fragment->bytes);
 
     buf = malloc(fragment->bytes);
     if (buf == NULL)
@@ -681,7 +681,7 @@ static int esdm_backend_clovis_fragment_update(esdm_backend_t  *backend,
     // serialization of subspace for fragment
     fragment_name = esdm_dataspace_string_descriptor(fragment->dataspace);
     asprintf(&path_fragment, "/containers/%s/%s/%s", fragment->dataset->container->name, fragment->dataset->name, fragment_name);
-    printf("path_fragment: %s\n", path_fragment);
+    printf("updating path_fragment: %s (size=%d)\n", path_fragment, (int)fragment->bytes);
 
     // 1. create a new object if this fragment exists;
     rc = mapping_get(backend, fragment_name, &obj_id);
@@ -797,7 +797,7 @@ esdm_backend_t* clovis_backend_init(esdm_config_backend_t* config)
     }
 
     printf("backend type   = %s\n", config->type);
-    printf("backend name   = %s\n", config->name);
+    printf("backend id     = %s\n", config->id);
     printf("backend target = %s\n", config->target);
 
     //         "local_addr ha_addr profile process_fid"

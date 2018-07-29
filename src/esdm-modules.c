@@ -108,7 +108,7 @@ esdm_modules_t* esdm_modules_init(esdm_instance_t* esdm)
 
 		DEBUG("Backend config: %d, %s, %s, %s\n", i,
 				b->type,
-				b->name,
+				b->id,
 				b->target
 			  );
 

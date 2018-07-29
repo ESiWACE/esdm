@@ -26,14 +26,10 @@
 int main(){
 	esdm_status_t ret;
 
-
 	char desc[] = "{\"dataset\": \"abcdef\", \"dims\": 3}";
-	char* result;
-
-
+	char* result = NULL;
 
 	ret = esdm_stat(desc, result);
-
 
 	return 0;
 }

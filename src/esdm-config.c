@@ -161,6 +161,9 @@ esdm_config_backends_t* esdm_config_get_backends(esdm_instance_t* esdm)
 				elem = json_object_get(backend, "target");
 				backends[i].target = json_string_value(elem);
 				backends[i].performance_model = json_object_get(backend, "performance-model");
+				DEBUG("type=%s id = %s target=%s\n", backends[i].type,
+					backends[i].id,
+					backends[i].target);
 
 				elem = json_object_get(backend, "max-threads-per-node");
 				if (elem == NULL){
