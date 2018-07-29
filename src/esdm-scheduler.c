@@ -46,12 +46,18 @@ esdm_scheduler_t* esdm_scheduler_init(esdm_instance_t* esdm)
 
   // create thread pools per device
   // decide how many threads should be used per backend.
-  int ppn = esdm->procs_per_node;
+  const int ppn = esdm->procs_per_node;
+  const int gt = esdm->total_procs;
   GError * error;
 	for (int i = 0; i < esdm->modules->backend_count; i++) {
 		esdm_backend_t* b = esdm->modules->backends[i];
-    int max_threads = b->config->max_threads_per_node;
-    b->threads = max_threads / ppn;
+		// in total we should not use more than max_global total threads
+		int max_local = b->config->max_threads_per_node / ppn;
+		int max_global = b->config->max_global_threads / gt;
+
+    b->threads = max_local < max_global ? max_local : max_global;
+		DEBUG("Using %d threads for backend %s", b->threads, b->config->id);
+
     if (b->threads == 0){
       b->threadPool = NULL;
     }else{

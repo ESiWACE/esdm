@@ -21,6 +21,7 @@
 
 // These functions must be used before calling init:
 esdm_status_t esdm_set_procs_per_node(int procs);
+esdm_status_t esdm_set_total_procs(int procs);
 esdm_status_t esdm_load_config_str(const char * str);
 
 esdm_status_t esdm_init();

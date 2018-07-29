@@ -118,24 +118,17 @@ static int entry_create(const char *path)
 
 	status = stat(path, &sb);
 	if (status == -1) {
-		perror("stat");
-
 		// write to non existing file
 		int fd = open(path,	O_WRONLY | O_CREAT, S_IWUSR | S_IRUSR | S_IWGRP | S_IRGRP | S_IROTH);
-
 		// everything ok? write and close
 		if ( fd != -1 )
 		{
 			close(fd);
+			return 0;
 		}
-
-		return 0;
-
-	} else {
-		// already exists
-		return -1;
 	}
-
+	// already exists
+	return -1;
 }
 
 

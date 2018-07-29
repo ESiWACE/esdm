@@ -172,6 +172,13 @@ esdm_config_backends_t* esdm_config_get_backends(esdm_instance_t* esdm)
 					backends[i].max_threads_per_node = json_integer_value(elem);
 				}
 
+				elem = json_object_get(backend, "max-global-threads");
+				if (elem == NULL){
+					backends[i].max_global_threads = 0;
+				}else{
+					backends[i].max_global_threads = json_integer_value(elem);
+				}
+
 				elem = json_object_get(backend, "max-fragment-size");
 				if (elem == NULL){
 					backends[i].max_fragment_size = 10*1024*1024;

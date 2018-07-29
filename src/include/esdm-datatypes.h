@@ -283,6 +283,7 @@ struct esdm_config_backend_t {
 	const char *target;
 
 	int max_threads_per_node;
+	int max_global_threads;
 	uint64_t max_fragment_size;
 
 	json_t *performance_model;
@@ -348,6 +349,7 @@ typedef struct esdm_performance_t {
 typedef struct esdm_instance_t {
 	int is_initialized;
 	int procs_per_node;
+	int total_procs;
 	esdm_config_t *config;
 	esdm_modules_t *modules;
 	esdm_layout_t *layout;

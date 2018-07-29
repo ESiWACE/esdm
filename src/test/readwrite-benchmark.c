@@ -99,6 +99,7 @@ int main(int argc, char* argv[])
   if (mpi_rank == 0)
 	   printf("Running with %d processes per Node\n", pPerNode);
 	esdm_set_procs_per_node(pPerNode);
+  esdm_set_total_procs(mpi_size);
 
 	// TODO provide a support MPI library function to do this
 	char * config = NULL;

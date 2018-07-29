@@ -34,14 +34,23 @@
 static int is_initialized = 0;
 esdm_instance_t esdm = {
 	.procs_per_node = 1,
+	.total_procs = 1,
 	.config = NULL,
 };
 
 esdm_status_t esdm_set_procs_per_node(int procs){
+	assert(procs > 0);
 	esdm.procs_per_node = procs;
 }
 
+esdm_status_t esdm_set_total_procs(int procs){
+	assert(procs > 0);
+	esdm.total_procs = procs;
+}
+
+
 esdm_status_t esdm_load_config_str(const char * str){
+	assert(str != NULL);
 	esdm.config = esdm_config_init_from_str(str);
 }
 
