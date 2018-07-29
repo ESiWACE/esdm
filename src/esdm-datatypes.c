@@ -39,30 +39,30 @@ extern esdm_instance_t esdm;
 size_t esdm_sizeof(esdm_datatype_t type) {
 	switch (type) {
 
-		case esdm_int8_t:
-		case esdm_char_utf8:
+		case ESDM_TYPE_INT8_T:
+		case ESDM_TYPE_CHAR_UTF8:
 			return sizeof(int8_t);
-		case esdm_int16_t:
-		case esdm_char_utf16:
+		case ESDM_TYPE_INT16_T:
+		case ESDM_TYPE_CHAR_UTF16:
 			return sizeof(int16_t);
-		case esdm_int32_t:
-		case esdm_char_utf32:
+		case ESDM_TYPE_INT32_T:
+		case ESDM_TYPE_CHAR_UTF32:
 			return sizeof(int32_t);
-		case esdm_int64_t:
+		case ESDM_TYPE_INT64_T:
 			return sizeof(int64_t);
 
-		case esdm_uint8_t:
+		case ESDM_TYPE_UINT8_T:
 			return sizeof(uint8_t);
-		case esdm_uint16_t:
+		case ESDM_TYPE_UINT16_T:
 			return sizeof(uint16_t);
-		case esdm_uint32_t:
+		case ESDM_TYPE_UINT32_T:
 			return sizeof(uint32_t);
-		case esdm_uint64_t:
+		case ESDM_TYPE_UINT64_T:
 			return sizeof(uint64_t);
 
-		case esdm_float:		// if IEEE 754 (32bit)
+		case ESDM_TYPE_FLOAT:		// if IEEE 754 (32bit)
 			return sizeof(float);
-		case esdm_double:		// if IEEE 754 (64bit)
+		case ESDM_TYPE_DOUBLE:		// if IEEE 754 (64bit)
 			return sizeof(double);
 
 		default:

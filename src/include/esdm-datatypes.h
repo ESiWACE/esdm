@@ -44,24 +44,24 @@ double			if IEEE 754 (64bit)
 */
 
 typedef enum esdm_datatype_t {
-	esdm_int8_t,
-	esdm_int16_t,
-	esdm_int32_t,
-	esdm_int64_t,
+	ESDM_TYPE_INT8_T,
+	ESDM_TYPE_INT16_T,
+	ESDM_TYPE_INT32_T,
+	ESDM_TYPE_INT64_T,
 
-	esdm_uint8_t,
-	esdm_uint16_t,
-	esdm_uint32_t,
-	esdm_uint64_t,
+	ESDM_TYPE_UINT8_T,
+	ESDM_TYPE_UINT16_T,
+	ESDM_TYPE_UINT32_T,
+	ESDM_TYPE_UINT64_T,
 
-	esdm_float,			// if IEEE 754 (32bit)
-	esdm_double,		// if IEEE 754 (64bit)
+	ESDM_TYPE_FLOAT,			// if IEEE 754 (32bit)
+	ESDM_TYPE_DOUBLE,		// if IEEE 754 (64bit)
 
-	esdm_char,			// 1 byte
-	esdm_char_ascii,	// 1 byte
-	esdm_char_utf8,		// esdm_sizeof will fail here
-	esdm_char_utf16,
-	esdm_char_utf32,
+	ESDM_TYPE_CHAR,			// 1 byte
+	ESDM_TYPE_CHAR_ASCII,	// 1 byte
+	ESDM_TYPE_CHAR_UTF8,		// esdm_sizeof will fail here
+	ESDM_TYPE_CHAR_UTF16,
+	ESDM_TYPE_CHAR_UTF32,
 } esdm_datatype_t;
 
 

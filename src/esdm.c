@@ -172,7 +172,7 @@ esdm_status_t esdm_create(char *name, int mode, esdm_container_t **container, es
 
 
 	int64_t bounds[1] = {0};
-	esdm_dataspace_t *dataspace = esdm_dataspace_create(1 /* 1D */ , bounds, esdm_int8_t);
+	esdm_dataspace_t *dataspace = esdm_dataspace_create(1 /* 1D */ , bounds, ESDM_TYPE_INT8_T);
 
 	*container = esdm_container_create(name);
 	*dataset = esdm_dataset_create(*container, "bytestream", dataspace);

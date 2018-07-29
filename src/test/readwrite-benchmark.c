@@ -28,7 +28,7 @@
 #include <esdm.h>
 #include "util/test_util.h"
 
-int tasks_per_node() {
+int esdm_mpi_get_tasks_per_node() {
     MPI_Comm shared_comm;
     int count;
 
@@ -37,6 +37,35 @@ int tasks_per_node() {
     MPI_Comm_free (&shared_comm);
 
     return count;
+}
+
+void esdm_mpi_distribute_config_file(char * config_filename){
+  int mpi_rank;
+  MPI_Comm_rank(MPI_COMM_WORLD, & mpi_rank);
+
+	char * config = NULL;
+	if (mpi_rank == 0){
+		int len;
+		read_file(config_filename, & config);
+		len = strlen(config) + 1;
+		MPI_Bcast(& len, 1, MPI_INT, 0, MPI_COMM_WORLD);
+		MPI_Bcast(config, len, MPI_CHAR, 0, MPI_COMM_WORLD);
+	}else{
+		int len;
+		MPI_Bcast(& len, 1, MPI_INT, 0, MPI_COMM_WORLD);
+		config = (char*) malloc(len);
+		MPI_Bcast(config, len, MPI_CHAR, 0, MPI_COMM_WORLD);
+	}
+	esdm_load_config_str(config);
+}
+
+void esdm_mpi_init(){
+  int mpi_size;
+  MPI_Comm_size(MPI_COMM_WORLD, & mpi_size);
+
+  int pPerNode = esdm_mpi_get_tasks_per_node();
+  esdm_set_procs_per_node(pPerNode);
+  esdm_set_total_procs(mpi_size);
 }
 
 
@@ -72,7 +101,6 @@ int main(int argc, char* argv[])
 
 	int64_t dim[] = {size / mpi_size + (mpi_rank < (size % mpi_size) ? 1 : 0), size};
 	int64_t offset[] = {size / mpi_size * mpi_rank + (mpi_rank < (size % mpi_size) ? mpi_rank : size % mpi_size), 0};
-	//printf("%d %d - %d-%d \n", dim[1], dim[0], offset[1], offset[0]);
 
 	const long volume 		= dim[0]*dim[1]*sizeof(uint64_t);
 	const long volume_all = size*size*sizeof(uint64_t);
@@ -95,34 +123,14 @@ int main(int argc, char* argv[])
 	esdm_container_t *container = NULL;
 	esdm_dataset_t *dataset = NULL;
 
-	int pPerNode = tasks_per_node();
-  if (mpi_rank == 0)
-	   printf("Running with %d processes per Node\n", pPerNode);
-	esdm_set_procs_per_node(pPerNode);
-  esdm_set_total_procs(mpi_size);
-
-	// TODO provide a support MPI library function to do this
-	char * config = NULL;
-	if (mpi_rank == 0){
-		int len;
-		read_file(argv[2], & config);
-		len = strlen(config) + 1;
-		MPI_Bcast(& len, 1, MPI_INT, 0, MPI_COMM_WORLD);
-		MPI_Bcast(config, len, MPI_CHAR, 0, MPI_COMM_WORLD);
-	}else{
-		int len;
-		MPI_Bcast(& len, 1, MPI_INT, 0, MPI_COMM_WORLD);
-		config = (char*) malloc(len);
-		MPI_Bcast(config, len, MPI_CHAR, 0, MPI_COMM_WORLD);
-	}
-	esdm_load_config_str(config);
-	// END TODO
+  esdm_mpi_init();
+  esdm_mpi_distribute_config_file(argv[2]);
 
 	ret = esdm_init();
 
 	// define dataspace
 	int64_t bounds[] = {size, size};
-	esdm_dataspace_t *dataspace = esdm_dataspace_create(2, bounds, esdm_uint64_t);
+	esdm_dataspace_t *dataspace = esdm_dataspace_create(2, bounds, ESDM_TYPE_UINT64_T);
 
 	container = esdm_container_create("mycontainer");
 	dataset = esdm_dataset_create(container, "mydataset", dataspace);
