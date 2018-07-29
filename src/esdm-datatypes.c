@@ -155,6 +155,29 @@ esdm_status_t esdm_container_destroy(esdm_container_t *container)
 	return ESDM_SUCCESS;
 }
 
+uint64_t esdm_dataspace_element_count(esdm_dataspace_t *subspace){
+	// calculate subspace element count
+	uint64_t size = 0;
+	for (int i = 0; i < subspace->dimensions; i++)
+	{
+		if (size == 0 && subspace->subsize[i] > 0)
+		{
+			size += subspace->subsize[i];
+		}
+		else if(subspace->subsize[i] > 0)
+		{
+			size *= subspace->subsize[i];
+		}
+	}
+	return size;
+}
+
+uint64_t  esdm_dataspace_size(esdm_dataspace_t *dataspace){
+	uint64_t size = esdm_dataspace_element_count(dataspace);
+	uint64_t bytes = size*esdm_sizeof(dataspace->datatype);
+	return bytes;
+}
+
 
 
 
@@ -183,21 +206,8 @@ esdm_fragment_t* esdm_fragment_create(esdm_dataset_t* dataset, esdm_dataspace_t*
 	int64_t i;
 	for (i = 0; i < subspace->dimensions; i++) { DEBUG("dim %d, subsize=%d (%p)\n", i, subspace->subsize[i], subspace->subsize); }
 
-	// calculate subspace element count
-	int64_t size = 0;
-	for (i = 0; i < subspace->dimensions; i++)
-	{
-		if (size == 0 && subspace->subsize[i] > 0)
-		{
-			size += subspace->subsize[i];
-		}
-		else if(subspace->subsize[i] > 0)
-		{
-			size *= subspace->subsize[i];
-		}
-	}
-
-	int64_t bytes = size*esdm_sizeof(subspace->datatype);
+	uint64_t size = esdm_dataspace_element_count(subspace);
+	int64_t bytes = size * esdm_sizeof(subspace->datatype);
 	DEBUG("Entries in subspace: %d x %d bytes = %d bytes \n", size, esdm_sizeof(subspace->datatype), bytes);
 
 	fragment->metadata = malloc(ESDM_MAX_SIZE);

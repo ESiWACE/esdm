@@ -136,9 +136,11 @@ struct esdm_dataspace_t {
 	char *json;
 };
 
+
+
 struct esdm_fragment_t {
-	esdm_metadata_t *metadata; // only valid after written
-	esdm_dataset_t *dataset;
+	esdm_metadata_t  *metadata; // only valid after written
+	esdm_dataset_t 	 *dataset;
 	esdm_dataspace_t *dataspace;
 
 	esdm_backend_t * backend;

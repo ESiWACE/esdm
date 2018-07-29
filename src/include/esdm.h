@@ -66,6 +66,8 @@ esdm_dataspace_t* esdm_dataspace_deserialize(void *serialized_dataspace);
 esdm_dataspace_t* esdm_dataspace_subspace(esdm_dataspace_t *dataspace, int64_t dimensions, int64_t *size, int64_t *offset);
 esdm_status_t esdm_dataspace_destroy(esdm_dataspace_t *dataspace);
 esdm_status_t esdm_dataspace_serialize(esdm_dataspace_t *dataspace, void **out);
+uint64_t      esdm_dataspace_element_count(esdm_dataspace_t *dataspace);
+uint64_t      esdm_dataspace_size(esdm_dataspace_t *dataspace);
 
 char* esdm_dataspace_string_descriptor(esdm_dataspace_t *dataspace);
 
