@@ -71,7 +71,7 @@ void esdm_mpi_init(){
 
 int main(int argc, char* argv[])
 {
-  int provided;
+	int provided;
 	MPI_Init_thread(& argc, & argv, MPI_THREAD_FUNNELED, & provided);
 
 	int mpi_size;
@@ -81,14 +81,17 @@ int main(int argc, char* argv[])
 	MPI_Comm_size(MPI_COMM_WORLD, & mpi_size);
 
 	int64_t _size;
+	char *config_file = "_esdm.conf";
 	if (argc < 2)
 		_size = 1024;
-	else if (argc != 3){
+	else if (argc != 3) {
 		printf("Syntax: %s [SIZE] [CONFIG]", argv[0]);
 		printf("\t SIZE specifies one dimension of a 2D field\n");
 		exit(1);
-	} else
+	} else {
 		_size = atoll(argv[1]);
+		config_file = argv[2];
+	}
 	const int64_t size = _size;
 
 	if(mpi_rank == 0)
@@ -102,7 +105,7 @@ int main(int argc, char* argv[])
 	int64_t dim[] = {size / mpi_size + (mpi_rank < (size % mpi_size) ? 1 : 0), size};
 	int64_t offset[] = {size / mpi_size * mpi_rank + (mpi_rank < (size % mpi_size) ? mpi_rank : size % mpi_size), 0};
 
-	const long volume 		= dim[0]*dim[1]*sizeof(uint64_t);
+	const long volume = dim[0]*dim[1]*sizeof(uint64_t);
 	const long volume_all = size*size*sizeof(uint64_t);
 
 	// prepare data
@@ -123,10 +126,11 @@ int main(int argc, char* argv[])
 	esdm_container_t *container = NULL;
 	esdm_dataset_t *dataset = NULL;
 
-  esdm_mpi_init();
-  esdm_mpi_distribute_config_file(argv[2]);
+	esdm_mpi_init();
+	esdm_mpi_distribute_config_file(config_file);
 
 	ret = esdm_init();
+	assert( ret == ESDM_SUCCESS );
 
 	// define dataspace
 	int64_t bounds[] = {size, size};
@@ -134,7 +138,6 @@ int main(int argc, char* argv[])
 
 	container = esdm_container_create("mycontainer");
 	dataset = esdm_dataset_create(container, "mydataset", dataspace);
-
 
 	esdm_container_commit(container);
 	esdm_dataset_commit(dataset);
