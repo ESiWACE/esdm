@@ -179,8 +179,8 @@ int main(int argc, char* argv[])
 
 	double total_time_w;
 	double total_time_r;
-	MPI_Reduce(& write_time, &total_time_w, 1, MPI_DOUBLE, MPI_MAX, 0, MPI_COMM_WORLD);
-	MPI_Reduce(& read_time,  &total_time_r, 1, MPI_DOUBLE, MPI_MAX, 0, MPI_COMM_WORLD);
+	MPI_Reduce((void *)& write_time, &total_time_w, 1, MPI_DOUBLE, MPI_MAX, 0, MPI_COMM_WORLD);
+	MPI_Reduce((void *)& read_time,  &total_time_r, 1, MPI_DOUBLE, MPI_MAX, 0, MPI_COMM_WORLD);
 
 	int mismatches_sum;
 	MPI_Reduce(& mismatches, &mismatches_sum, 1, MPI_INT, MPI_SUM, 0, MPI_COMM_WORLD);
