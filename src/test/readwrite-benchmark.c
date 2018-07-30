@@ -29,19 +29,19 @@
 #include "util/test_util.h"
 
 int esdm_mpi_get_tasks_per_node() {
-    MPI_Comm shared_comm;
-    int count;
+	MPI_Comm shared_comm;
+	int count;
 
-    MPI_Comm_split_type (MPI_COMM_WORLD, MPI_COMM_TYPE_SHARED, 0, MPI_INFO_NULL, &shared_comm);
-    MPI_Comm_size (shared_comm, &count);
-    MPI_Comm_free (&shared_comm);
+	MPI_Comm_split_type (MPI_COMM_WORLD, MPI_COMM_TYPE_SHARED, 0, MPI_INFO_NULL, &shared_comm);
+	MPI_Comm_size (shared_comm, &count);
+	MPI_Comm_free (&shared_comm);
 
-    return count;
+	return count;
 }
 
 void esdm_mpi_distribute_config_file(char * config_filename){
-  int mpi_rank;
-  MPI_Comm_rank(MPI_COMM_WORLD, & mpi_rank);
+	int mpi_rank;
+	MPI_Comm_rank(MPI_COMM_WORLD, & mpi_rank);
 
 	char * config = NULL;
 	if (mpi_rank == 0){
@@ -50,7 +50,7 @@ void esdm_mpi_distribute_config_file(char * config_filename){
 		len = strlen(config) + 1;
 		MPI_Bcast(& len, 1, MPI_INT, 0, MPI_COMM_WORLD);
 		MPI_Bcast(config, len, MPI_CHAR, 0, MPI_COMM_WORLD);
-	}else{
+	} else {
 		int len;
 		MPI_Bcast(& len, 1, MPI_INT, 0, MPI_COMM_WORLD);
 		config = (char*) malloc(len);
@@ -60,12 +60,12 @@ void esdm_mpi_distribute_config_file(char * config_filename){
 }
 
 void esdm_mpi_init(){
-  int mpi_size;
-  MPI_Comm_size(MPI_COMM_WORLD, & mpi_size);
+	int mpi_size;
+	MPI_Comm_size(MPI_COMM_WORLD, & mpi_size);
 
-  int pPerNode = esdm_mpi_get_tasks_per_node();
-  esdm_set_procs_per_node(pPerNode);
-  esdm_set_total_procs(mpi_size);
+	int pPerNode = esdm_mpi_get_tasks_per_node();
+	esdm_set_procs_per_node(pPerNode);
+	esdm_set_total_procs(mpi_size);
 }
 
 
@@ -94,10 +94,10 @@ int main(int argc, char* argv[])
 	}
 	const int64_t size = _size;
 
-	if(mpi_rank == 0)
+	if (mpi_rank == 0)
 		printf("Running with a 2D slice of %ld*%ld\n", size, size);
 
-	if(size / mpi_size == 0){
+	if (size / mpi_size == 0){
 		printf("Error, size < number of ranks!\n");
 		exit(1);
 	}
@@ -117,7 +117,7 @@ int main(int argc, char* argv[])
 	int x, y;
 	for(y = offset[0]; y < dim[0]; y++){
 		for(x = offset[1]; x < dim[1]; x++){
-			buf_w[(y-offset[0])*size+x] = y*size + x + 1;
+			buf_w[(y - offset[0]) * size + x] = y * size + x + 1;
 		}
 	}
 
@@ -169,7 +169,7 @@ int main(int argc, char* argv[])
 
 	for(y = offset[0]; y < dim[0]; y++){
 		for(x = offset[1]; x < dim[1]; x++){
-			idx = (y-offset[0])*size + x;
+			idx = (y - offset[0]) * size + x;
 
 			if (buf_r[idx] != buf_w[idx]) {
 				mismatches++;
@@ -180,7 +180,7 @@ int main(int argc, char* argv[])
 	double total_time_w;
 	double total_time_r;
 	MPI_Reduce(& write_time, &total_time_w, 1, MPI_DOUBLE, MPI_MAX, 0, MPI_COMM_WORLD);
-	MPI_Reduce(& read_time, &total_time_r, 1, MPI_DOUBLE, MPI_MAX, 0, MPI_COMM_WORLD);
+	MPI_Reduce(& read_time,  &total_time_r, 1, MPI_DOUBLE, MPI_MAX, 0, MPI_COMM_WORLD);
 
 	int mismatches_sum;
 	MPI_Reduce(& mismatches, &mismatches_sum, 1, MPI_INT, MPI_SUM, 0, MPI_COMM_WORLD);
@@ -195,7 +195,10 @@ int main(int argc, char* argv[])
 		assert(mismatches_sum == 0);
 
 		printf("Runtime read,write: %.3f,%.3f\n", total_time_r, total_time_w);
-		printf("Performance read,write: %.3f MiB/s,%.3f MiB/s size:%.0f MiB\n", volume_all/total_time_r/1024/1024, volume_all/total_time_w/1024.0/1024, volume_all/1024.0/1024);
+		printf("Performance read,write: %.3f MiB/s,%.3f MiB/s size:%.0f MiB\n",
+			volume_all/total_time_r/1024/1024,
+			volume_all/total_time_w/1024.0/1024,
+			volume_all/1024.0/1024);
 	}
 
 
