@@ -85,8 +85,8 @@ esdm_container_t* esdm_container_create(const char* name)
 	ESDM_DEBUG(__func__);
 	esdm_container_t* container = (esdm_container_t*) malloc(sizeof(esdm_container_t));
 
-	int ret = asprintf(&container->name, name);
-	assert(ret > 0);
+	container->name = strdup(name);
+
 	container->metadata = NULL;
 	container->datasets = g_hash_table_new(g_direct_hash,  g_direct_equal);
 	container->status = ESDM_DIRTY;
@@ -103,7 +103,8 @@ esdm_container_t* esdm_container_retrieve(const char * name)
 	// TODO: retrieve from MD
 	// TODO: retrieve associated data
 
-	asprintf(&container->name, name);
+	container->name = strdup(name);
+
 	container->metadata = NULL;
 	container->datasets = g_hash_table_new(g_direct_hash,  g_direct_equal);
 	container->status = ESDM_DIRTY;
@@ -207,7 +208,10 @@ esdm_fragment_t* esdm_fragment_create(esdm_dataset_t* dataset, esdm_dataspace_t*
 	esdm_fragment_t* fragment = (esdm_fragment_t*) malloc(sizeof(esdm_fragment_t));
 
 	int64_t i;
-	for (i = 0; i < subspace->dimensions; i++) { DEBUG("dim %d, size=%d (%p)\n", i, subspace->size[i], subspace->size); }
+	for (i = 0; i < subspace->dimensions; i++) {
+		DEBUG("dim %d, size=%d (%p)\n", i, subspace->size[i], subspace->size);
+		assert(subspace->size[i] > 0);
+	}
 
 	uint64_t size = esdm_dataspace_element_count(subspace);
 	int64_t bytes = size * esdm_sizeof(subspace->datatype);
@@ -274,24 +278,24 @@ char* esdm_dataspace_string_descriptor(esdm_dataspace_t *dataspace)
 	int64_t i;
 	for (i = 0; i < dimensions; i++)
 	{
-		DEBUG("dim %d, offset=%d (%p)\n", i, offset[i], offset);
+		DEBUG("dim %d, offset=%ld (%p)\n", i, offset[i], offset);
 
 		if (string_offset == NULL)
-			asprintf(&string_offset, "%d", offset[i]);
+			asprintf(&string_offset, "%ld", offset[i]);
 		else
-			asprintf(&string_offset, "%s,%d", string_offset, offset[i]);
+			asprintf(&string_offset, "%s,%ld", string_offset, offset[i]);
 	}
 
 	// size to string
 	for (i = 0; i < dimensions; i++)
 	{
-		DEBUG("dim %d, size=%d (%p)\n", i, size[i], size);
+		DEBUG("dim %d, size=%ld (%p)\n", i, size[i], size);
 
 	// TODO: store
 		if (string_size == NULL)
-			asprintf(&string_size, "%d", size[i]);
+			asprintf(&string_size, "%ld", size[i]);
 		else
-			asprintf(&string_size, "%s,%d", string_size, size[i]);
+			asprintf(&string_size, "%s,%ld", string_size, size[i]);
 	}
 
 	// combine offset + size
@@ -386,8 +390,7 @@ esdm_dataset_t* esdm_dataset_create(esdm_container_t* container, char* name, esd
 	ESDM_DEBUG(__func__);
 	esdm_dataset_t* dataset = (esdm_dataset_t*) malloc(sizeof(esdm_dataset_t));
 
-	int ret = asprintf(&dataset->name, name);
-	assert(ret > 0);
+	dataset->name = strdup(name);
 	dataset->container = container;
 	dataset->metadata = NULL;
 	dataset->dataspace = dataspace;
@@ -404,8 +407,7 @@ esdm_dataset_t* esdm_dataset_retrieve(esdm_container_t *container, const char* n
 	ESDM_DEBUG(__func__);
 	esdm_dataset_t* dataset = (esdm_dataset_t*) malloc(sizeof(esdm_dataset_t));
 
-	int ret = asprintf(&dataset->name, name);
-	assert(ret > 0);
+	dataset->name = strdup(name);
 	dataset->container = container;
 	dataset->metadata = NULL;
 	dataset->dataspace = NULL;
@@ -494,8 +496,7 @@ uint8_t esdm_dataspace_overlap(esdm_dataspace_t *a, esdm_dataspace_t *b)
 		return 0;
 	}
 
-
-
+	return 0;
 }
 
 
@@ -527,7 +528,10 @@ esdm_dataspace_t* esdm_dataspace_subspace(esdm_dataspace_t *dataspace, int64_t d
 
 
 		int64_t i;
-		for (i = 0; i < dimensions; i++) { DEBUG("dim %d, size=%d (%p)\n", i, size[i], size); }
+		for (i = 0; i < dimensions; i++) {
+			DEBUG("dim %d, size=%ld (%p)\n", i, size[i], size);
+			assert(size[i] > 0);
+		}
 	}
 	else
 	{

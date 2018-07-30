@@ -52,8 +52,8 @@ esdm_scheduler_t* esdm_scheduler_init(esdm_instance_t* esdm)
 	for (int i = 0; i < esdm->modules->backend_count; i++) {
 		esdm_backend_t* b = esdm->modules->backends[i];
 		// in total we should not use more than max_global total threads
-		int max_local = b->config->max_threads_per_node / ppn;
-		int max_global = b->config->max_global_threads / gt;
+		int max_local = (b->config->max_threads_per_node + ppn - 1) / ppn;
+		int max_global = (b->config->max_global_threads + gt - 1) / gt;
 
     b->threads = max_local < max_global ? max_local : max_global;
 		DEBUG("Using %d threads for backend %s", b->threads, b->config->id);
@@ -108,32 +108,83 @@ static void backend_thread(io_work_t* work, esdm_backend_t* backend){
     g_cond_signal(& status->done_condition);
   }
   g_mutex_unlock(& status->mutex);
+	esdm_dataspace_destroy(work->fragment->dataspace);
   free(work);
 }
 
 
-esdm_status_t esdm_scheduler_enqueue(esdm_instance_t *esdm, io_request_status_t * status, io_operation_t op, esdm_dataset_t *dataset, void *buf,  esdm_dataspace_t* subspace){
+esdm_status_t esdm_scheduler_enqueue(esdm_instance_t *esdm, io_request_status_t * status, io_operation_t op, esdm_dataset_t *dataset, void *buf,  esdm_dataspace_t* space){
     GError * error;
     //Gather I/O recommendations
     //esdm_performance_recommendation(esdm, NULL, NULL);    // e.g., split, merge, replication?
     //esdm_layout_recommendation(esdm, NULL, NULL);		  // e.g., merge, split, transform?
 
-    // TODO, for now, replicate the data:
-    status->pending_ops += esdm->modules->backend_count;
+		// how big is one sub-hypercube? we call it y axis for the easier reading
+    uint64_t one_y_size = esdm_buffer_offset_first_dimension(space, 1);
+		if (one_y_size == 0){
+			return ESDM_SUCCESS;
+		}
+
+		uint64_t y_count = space->size[0];
+		uint64_t per_backend[esdm->modules->backend_count];
+
+		memset(per_backend, 0, sizeof(per_backend));
+
+		while(y_count > 0){
+			for (int i = 0; i < esdm->modules->backend_count; i++) {
+				status->pending_ops++;
+				esdm_backend_t* b = esdm->modules->backends[i];
+				// how many of these fit into our buffer
+				uint64_t backend_y_per_buffer = b->config->max_fragment_size / one_y_size;
+				if (backend_y_per_buffer == 0){
+					backend_y_per_buffer = 1;
+				}
+				if (backend_y_per_buffer >= y_count){
+					per_backend[i] += y_count;
+					y_count = 0;
+					break;
+				}else{
+					per_backend[i] += backend_y_per_buffer;
+					y_count -= backend_y_per_buffer;
+				}
+			}
+		}
+		ESDM_DEBUG_FMT("Will submit %d operations and for backend0: %d y-blocks", status->pending_ops, per_backend[0]);
+
+		uint64_t offset_y = 0;
+		int64_t dim[space->dimensions];
+		int64_t offset[space->dimensions];
+		memset(offset, 0, space->dimensions * sizeof(int64_t));
+		memcpy(dim, space->size, space->dimensions * sizeof(int64_t));
 
     for (int i = 0; i < esdm->modules->backend_count; i++) {
-      esdm_backend_t* b = esdm->modules->backends[i];
-      io_work_t * task = (io_work_t*) malloc(sizeof(io_work_t));
+			esdm_backend_t* b = esdm->modules->backends[i];
+			// how many of these fit into our buffer
+			uint64_t backend_y_per_buffer = b->config->max_fragment_size / one_y_size;
 
-      task->parent = status;
-      task->op = op;
-      task->fragment = esdm_fragment_create(dataset, subspace, buf);
-      task->fragment->backend = b;
-      if (b->threads == 0){
-        backend_thread(task, b);
-      }else{
-        g_thread_pool_push(b->threadPool, task, & error);
-      }
+			uint64_t y_total_access = per_backend[i];
+			while(y_total_access > 0){
+				uint64_t y_to_access = y_total_access > backend_y_per_buffer ? backend_y_per_buffer : y_total_access ;
+				y_total_access -= y_to_access;
+
+				dim[0] = y_to_access;
+				offset[0] = offset_y;
+
+	      io_work_t * task = (io_work_t*) malloc(sizeof(io_work_t));
+				esdm_dataspace_t* subspace = esdm_dataspace_subspace(space, 2, dim, offset);
+
+	      task->parent = status;
+	      task->op = op;
+	      task->fragment = esdm_fragment_create(dataset, subspace, (char*) buf + offset_y * one_y_size);
+	      task->fragment->backend = b;
+	      if (b->threads == 0){
+	        backend_thread(task, b);
+	      }else{
+	        g_thread_pool_push(b->threadPool, task, & error);
+	      }
+
+				offset_y += y_to_access;
+			}
     }
 
     // now enqueue the operations
