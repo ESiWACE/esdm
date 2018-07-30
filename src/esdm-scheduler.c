@@ -83,7 +83,7 @@ esdm_status_t esdm_scheduler_finalize(esdm_instance_t *esdm)
 static void backend_thread(io_work_t* work, esdm_backend_t* backend){
   io_request_status_t * status = work->parent;
 
-  printf("backend thread operates on %s via %s \n", backend->name, backend->config->target);
+  DEBUG("Backend thread operates on %s via %s\n", backend->name, backend->config->target);
 
   assert(backend == work->fragment->backend);
 

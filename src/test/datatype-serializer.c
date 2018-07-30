@@ -1,6 +1,8 @@
 #include <esdm.h>
 #include <esdm-internal.h>
 
+#include <string.h>
+
 int main(){
   int64_t dim[2]    = {10, 20}; // dim order highest first: (y, x)
   int64_t dim2[2]   = {5, 20};
