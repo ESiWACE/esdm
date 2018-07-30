@@ -9,8 +9,6 @@ int main(){
   float ** data     = malloc(sizeof(float*) * dim[1]);
   float ** data_out = malloc(sizeof(float*) * dim[1]);
 
-  memset(p, 0, sizeof(float) * dim[0] * dim[1] * 2);
-
   // prepare test data
   float * c = p;
   for(int y = 0; y < dim[0]; y++){
@@ -22,6 +20,9 @@ int main(){
   }
   for(int y = 0; y < dim[0]; y++){
     data_out[y] = c;
+    for(int x = 0; x < dim[1]; x++){
+      data_out[y][x] = 0;
+    }
     c += dim[1];
   }
 
@@ -41,7 +42,10 @@ int main(){
     uint64_t size = esdm_dataspace_size(subspace);
     printf("Offset: %d,%d -- size: %lu\n", (int) offset[0], (int) offset[1], size);
 
-    
+    // now copy the data from the position
+    uint64_t off_buff = esdm_buffer_offset_first_dimension(space, offset[0]);
+    printf("Buffer offset: %lu %zu %zu\n", off_buff, ((char*) data_out[0]) + off_buff, ((char*) data[0]) + off_buff);
+    memcpy(((char*) data_out[0]) + off_buff, ((char*) data[0]) + off_buff, size);
 
     // compare results:
     for(int y = offset[0]; y < dim2[0] + offsetY; y++){

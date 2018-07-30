@@ -156,18 +156,12 @@ esdm_status_t esdm_container_destroy(esdm_container_t *container)
 }
 
 uint64_t esdm_dataspace_element_count(esdm_dataspace_t *subspace){
+	assert(subspace->size != NULL);
 	// calculate subspace element count
-	uint64_t size = 0;
-	for (int i = 0; i < subspace->dimensions; i++)
+	uint64_t size = subspace->size[0];
+	for (int i = 1; i < subspace->dimensions; i++)
 	{
-		if (size == 0 && subspace->subsize[i] > 0)
-		{
-			size += subspace->subsize[i];
-		}
-		else if(subspace->subsize[i] > 0)
-		{
-			size *= subspace->subsize[i];
-		}
+		size *= subspace->size[i];
 	}
 	return size;
 }
@@ -178,6 +172,15 @@ uint64_t  esdm_dataspace_size(esdm_dataspace_t *dataspace){
 	return bytes;
 }
 
+uint64_t 	esdm_buffer_offset_first_dimension(esdm_dataspace_t *subspace, int64_t offset){
+	assert(subspace->size != NULL);
+	uint64_t pos = offset;
+	for (int i = 1; i < subspace->dimensions; i++)
+	{
+		pos *= subspace->size[i];
+	}
+	return pos * esdm_sizeof(subspace->datatype);
+}
 
 
 
@@ -204,7 +207,7 @@ esdm_fragment_t* esdm_fragment_create(esdm_dataset_t* dataset, esdm_dataspace_t*
 	esdm_fragment_t* fragment = (esdm_fragment_t*) malloc(sizeof(esdm_fragment_t));
 
 	int64_t i;
-	for (i = 0; i < subspace->dimensions; i++) { DEBUG("dim %d, subsize=%d (%p)\n", i, subspace->subsize[i], subspace->subsize); }
+	for (i = 0; i < subspace->dimensions; i++) { DEBUG("dim %d, size=%d (%p)\n", i, subspace->size[i], subspace->size); }
 
 	uint64_t size = esdm_dataspace_element_count(subspace);
 	int64_t bytes = size * esdm_sizeof(subspace->datatype);
@@ -264,7 +267,7 @@ char* esdm_dataspace_string_descriptor(esdm_dataspace_t *dataspace)
 	char *string_offset = NULL;
 
 	int64_t dimensions = dataspace->dimensions;
-	int64_t *size = dataspace->subsize;
+	int64_t *size = dataspace->size;
 	int64_t *offset = dataspace->offset;
 
 	// offset to string
@@ -460,24 +463,17 @@ esdm_status_t esdm_dataset_commit(esdm_dataset_t *dataset)
  *	@return Pointer to new dateset.
  *
  */
-esdm_dataspace_t* esdm_dataspace_create(int64_t dimensions, int64_t* bounds, esdm_datatype_t datatype)
+esdm_dataspace_t* esdm_dataspace_create(int64_t dimensions, int64_t* sizes, esdm_datatype_t datatype)
 {
 	ESDM_DEBUG(__func__);
 	esdm_dataspace_t* dataspace = (esdm_dataspace_t*) malloc(sizeof(esdm_dataspace_t));
 
 	dataspace->dimensions = dimensions;
-	dataspace->bounds = (int64_t*) malloc(sizeof(int64_t)*dimensions);
-	dataspace->size = NULL;
-	dataspace->subsize = NULL;
+	dataspace->size = (int64_t*) malloc(sizeof(int64_t)*dimensions);
 	dataspace->datatype = datatype;
 	dataspace->subspace_of = NULL;
 
-	// copy bounds
-	memcpy(dataspace->bounds, bounds, sizeof(int64_t)*dimensions);
-
-	int64_t i;
-	for (i = 0; i < dimensions; i++) { DEBUG("dim %d, bound=%d (%p)\n", i, bounds[i], bounds); }
-	for (i = 0; i < dimensions; i++) { DEBUG("dim %d, bound=%d (%p)\n", i, dataspace->bounds[i], dataspace->bounds); }
+	memcpy(dataspace->size, sizes, sizeof(int64_t)*dimensions);
 
 	DEBUG("New dataspace: dims=%d\n", dataspace->dimensions);
 
@@ -521,20 +517,16 @@ esdm_dataspace_t* esdm_dataspace_subspace(esdm_dataspace_t *dataspace, int64_t d
 		memcpy(subspace, dataspace, sizeof(esdm_dataspace_t));
 
 		// populate subspace members
-		subspace->bounds = (int64_t*) malloc(sizeof(int64_t)*dimensions);
-		subspace->subsize = (int64_t*) malloc(sizeof(int64_t)*dimensions);
 		subspace->size = (int64_t*) malloc(sizeof(int64_t)*dimensions);
 		subspace->offset = (int64_t*) malloc(sizeof(int64_t)*dimensions);
 		subspace->subspace_of = dataspace;
 
 		// make copies where necessary
-		memcpy(subspace->bounds, dataspace->bounds, sizeof(int64_t)*dimensions);
-		memcpy(subspace->subsize, size, sizeof(int64_t)*dimensions);
+		memcpy(subspace->size, size, sizeof(int64_t)*dimensions);
 		memcpy(subspace->offset, offset, sizeof(int64_t)*dimensions);
 
 
 		int64_t i;
-		for (i = 0; i < dimensions; i++) { DEBUG("dim %d, bounds=%d (%p)\n", i, dataspace->bounds[i], dataspace->bounds); }
 		for (i = 0; i < dimensions; i++) { DEBUG("dim %d, size=%d (%p)\n", i, size[i], size); }
 	}
 	else

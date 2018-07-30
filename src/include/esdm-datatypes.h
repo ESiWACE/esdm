@@ -131,7 +131,6 @@ struct esdm_dataspace_t {
 
 	esdm_dataspace_t *subspace_of;
 	int64_t *offset;
-	int64_t *subsize;
 
 	char *json;
 };
