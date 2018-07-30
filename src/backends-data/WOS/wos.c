@@ -574,7 +574,6 @@ int wos_backend_performance_estimate(esdm_backend_t * eb, esdm_fragment_t * frag
 
 int esdm_backend_wos_fragment_retrieve(esdm_backend_t * backend, esdm_fragment_t * fragment, json_t * metadata)
 {
-	void *buf = NULL;
 	char *obj_id = NULL;
 	void *obj_handle = NULL;
 	int rc = 0;
