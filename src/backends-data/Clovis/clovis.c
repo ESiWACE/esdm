@@ -26,6 +26,7 @@
 #include <stdlib.h>
 #include <assert.h>
 #include <errno.h>
+#include <string.h>
 
 #include <esdm.h>
 
@@ -52,6 +53,29 @@ esdm_backend_clovis_t *eb2ebm(esdm_backend_t *eb)
     return container_of(eb, esdm_backend_clovis_t, ebm_base);
 }
 
+char *laddr_get()
+{
+    FILE *output;
+    char screen[4096 * 2];
+    int rc;
+
+    output = popen("lctl list_nids", "r");
+    if (output == NULL) {
+        return NULL;
+    }
+
+    memset(screen, 0, 4096);
+    rc = fread(screen, 1, 4096, output);
+    pclose(output);
+    return rc > 0 ? strdup(screen) : NULL;
+}
+
+/**
+ * Parse the conf into various parameters.
+ * @TODO Use the laddr_get() to generate a unique local address.
+ * This is needed for running in MPI with the same configuration file,
+ * and actually every client needs its own local address.
+ */
 static int conf_parse(char * conf, esdm_backend_clovis_t *ebm)
 {
     /*
