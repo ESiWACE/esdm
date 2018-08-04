@@ -502,7 +502,7 @@ int esdm_dataspace_overlap_str(esdm_dataspace_t *a, char * str){
 static esdm_fragment_t * create_fragment_from_metadata(int fd){
 	struct stat sb;
 	int ret = fstat(fd, & sb);
-	printf("%ld\n", sb.st_size);
+	DEBUG("Fragment found size:%ld", sb.st_size);
 
 	esdm_fragment_t * frag;
 	frag = malloc(sizeof(esdm_fragment_t));
@@ -514,7 +514,7 @@ static esdm_fragment_t * create_fragment_from_metadata(int fd){
 /*
  * Assumptions: there are no fragments created while reading back data!
  */
-static int lookup(esdm_backend_t* backend, esdm_dataset_t * dataset, esdm_dataspace_t * space, int * out_frag_count, esdm_fragment_t ** out_fragments){
+static int lookup(esdm_backend_t* backend, esdm_dataset_t * dataset, esdm_dataspace_t * space, int * out_frag_count, esdm_fragment_t *** out_fragments){
 	DEBUG_ENTER;
 
 	// set data, options and tgt for convienience
@@ -543,7 +543,8 @@ static int lookup(esdm_backend_t* backend, esdm_dataset_t * dataset, esdm_datasp
 	}
 
 	// read fragments!
-	*out_fragments = (esdm_fragment_t*) malloc(sizeof(esdm_fragment_t*) * frag_count);
+	esdm_fragment_t ** frag = (esdm_fragment_t**) malloc(sizeof(esdm_fragment_t*) * frag_count);
+	*out_fragments = frag;
 
 	rewinddir(dir);
 	int frag_no = 0;
@@ -555,8 +556,7 @@ static int lookup(esdm_backend_t* backend, esdm_dataset_t * dataset, esdm_datasp
 			if(esdm_dataspace_overlap_str(space, e->d_name)){
 				assert(frag_no < frag_count);
 				int fd = openat(dirfd, e->d_name, O_RDONLY);
-				printf("%s\n", e->d_name);
-				out_fragments[frag_no] = create_fragment_from_metadata(fd);
+				frag[frag_no] = create_fragment_from_metadata(fd);
 				close(fd);
 				frag_no++;
 			}

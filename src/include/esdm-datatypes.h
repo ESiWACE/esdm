@@ -209,7 +209,7 @@ struct esdm_backend_callbacks_t {
   /*
 	 * Retrieve a list (and metadata) of fragments that contain data for the given subpatch with the size and offset.
 	 */
-	int (*lookup)(esdm_backend_t * b, esdm_dataset_t * dataset,	esdm_dataspace_t * space, int * out_frag_count, esdm_fragment_t ** out_fragments);
+	int (*lookup)(esdm_backend_t * b, esdm_dataset_t * dataset,	esdm_dataspace_t * space, int * out_frag_count, esdm_fragment_t *** out_fragments);
 
 // ESDM Data Model Specific
 	int (*container_create)(esdm_backend_t*, esdm_container_t *container);

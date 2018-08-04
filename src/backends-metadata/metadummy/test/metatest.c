@@ -67,7 +67,7 @@ int main(){
   //fragment_retrieve
   esdm_dataspace_t * res;
   int frag_count;
-  esdm_fragment_t * read_frag;
+  esdm_fragment_t ** read_frag = NULL;
 
   {
     int64_t size[]   = {30, 30};
