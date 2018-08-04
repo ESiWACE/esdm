@@ -179,6 +179,18 @@ esdm_config_backends_t* esdm_config_get_backends(esdm_instance_t* esdm)
 					backends[i].max_global_threads = json_integer_value(elem);
 				}
 
+				elem = json_object_get(backend, "accessibility");
+				if (elem != NULL){
+					const char * str = json_string_value(elem);
+					if (strcasecmp(str, "global") == 0){
+						backends[i].data_accessibility = ESDM_ACCESSIBILITY_GLOBAL;
+					}else if (strcasecmp(str, "global") == 0){
+						backends[i].data_accessibility = ESDM_ACCESSIBILITY_NODELOCAL;
+					}else{
+						ESDM_ERROR("Unknown accessibility!");
+					}
+				}
+
 				elem = json_object_get(backend, "max-fragment-size");
 				if (elem == NULL){
 					backends[i].max_fragment_size = 10*1024*1024;

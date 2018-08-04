@@ -41,17 +41,20 @@ esdm_instance_t esdm = {
 esdm_status_t esdm_set_procs_per_node(int procs){
 	assert(procs > 0);
 	esdm.procs_per_node = procs;
+	return ESDM_SUCCESS;
 }
 
 esdm_status_t esdm_set_total_procs(int procs){
 	assert(procs > 0);
 	esdm.total_procs = procs;
+	return ESDM_SUCCESS;
 }
 
 
 esdm_status_t esdm_load_config_str(const char * str){
 	assert(str != NULL);
 	esdm.config = esdm_config_init_from_str(str);
+	return ESDM_SUCCESS;
 }
 
 /**
@@ -177,7 +180,7 @@ esdm_status_t esdm_create(char *name, int mode, esdm_container_t **container, es
 	*container = esdm_container_create(name);
 	*dataset = esdm_dataset_create(*container, "bytestream", dataspace);
 
-	printf("Dataset 'bytestream' creation: %p\n", *dataset);
+	printf("Dataset 'bytestream' creation: %p\n", (void*) *dataset);
 
 	esdm_dataset_commit(*dataset);
 	esdm_container_commit(*container);

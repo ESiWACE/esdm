@@ -268,6 +268,11 @@ typedef struct{
   io_request_status_t * parent;
 } io_work_t;
 
+// where is the data accessible
+typedef enum {
+	ESDM_ACCESSIBILITY_GLOBAL, // shared file system etc.
+	ESDM_ACCESSIBILITY_NODELOCAL
+} data_accessibility_t;
 
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -286,6 +291,7 @@ struct esdm_config_backend_t {
 	int max_threads_per_node;
 	int max_global_threads;
 	uint64_t max_fragment_size;
+	data_accessibility_t data_accessibility;
 
 	json_t *performance_model;
 	json_t *esdm;

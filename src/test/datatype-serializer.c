@@ -46,7 +46,7 @@ int main(){
 
     // now copy the data from the position
     uint64_t off_buff = esdm_buffer_offset_first_dimension(space, offset[0]);
-    printf("Buffer offset: %lu %zu %zu\n", off_buff, ((char*) data_out[0]) + off_buff, ((char*) data[0]) + off_buff);
+    printf("Buffer offset: %lu %zu %zu\n", off_buff, (size_t)((char*) data_out[0]) + off_buff, (size_t)((char*) data[0]) + off_buff);
     memcpy(((char*) data_out[0]) + off_buff, ((char*) data[0]) + off_buff, size);
 
     // compare results:

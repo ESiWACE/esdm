@@ -455,6 +455,10 @@ static int fragment_retrieve(esdm_backend_t* backend, esdm_fragment_t *fragment,
 		return 0;
 }
 
+
+/*
+ * How to: concurrent access by multiple processes
+ */
 static int fragment_update(esdm_backend_t* backend, esdm_fragment_t *fragment)
 {
 	DEBUG_ENTER;
@@ -481,28 +485,9 @@ static int fragment_update(esdm_backend_t* backend, esdm_fragment_t *fragment)
 	mkdir_recursive(path);
 	entry_create(path_fragment, fragment->metadata);
 
-	/*
-	char *buf = NULL;
-	size_t len = 6;
-	entry_update(path_fragment, &buf, len);
-	*/
-
-	/*
-	entry_update(path_fragment, fragment->data, fragment->bytes);
-
-	//entry_update()
-
-	size_t *count = NULL;
-	void *buf = NULL;
-
-	entry_retrieve_tst(path_fragment, &buf, &count);
-		*/
 
 	free(path);
 	free(path_fragment);
-
-
-
 }
 
 
@@ -528,18 +513,12 @@ static int metadummy_backend_performance_estimate(esdm_backend_t* backend, esdm_
 * This is the last chance for a backend to make outstanding changes persistent.
 * This routine is also expected to clean up memory that is used by the backend.
 */
-int metadummy_finalize()
+static int metadummy_finalize(esdm_backend_t* b)
 {
 	DEBUG_ENTER;
 
 	return 0;
 }
-
-
-
-
-
-
 
 
 
@@ -557,7 +536,7 @@ static esdm_backend_t backend_template = {
 	.data = NULL,
 	.callbacks = {
 		// General for ESDM
-		NULL, // finalize
+		metadummy_finalize, // finalize
 		metadummy_backend_performance_estimate, // performance_estimate
 
 		// Data Callbacks (POSIX like)
@@ -610,13 +589,9 @@ esdm_backend_t* metadummy_backend_init(esdm_config_backend_t *config)
 
 	metadummy_backend_options_t* data = (metadummy_backend_options_t*) malloc(sizeof(metadummy_backend_options_t));
 
-	char *tgt;
-	asprintf(&tgt, "./_metadummy");
-	data->target = tgt;
-
-	//backend->data = init_data;
+	data->target = config->target;
 	backend->data = data;
-
+	backend->config = config;
 
 	// todo check metadummy style persitency structure available?
 	mkfs(backend);

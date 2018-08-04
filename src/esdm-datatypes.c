@@ -320,8 +320,7 @@ esdm_status_t esdm_fragment_commit(esdm_fragment_t *fragment)
 	ESDM_DEBUG(__func__);
 
 	fragment->metadata->size += sprintf(& fragment->metadata->json[fragment->metadata->size], "{\"plugin\" : \"%s\", \"name\" : \"%s\", \"data\" :", fragment->backend->name, fragment->backend->config->id);
-
-	fragment->backend->callbacks.fragment_update(fragment->backend, fragment);
+	fragment->backend->callbacks.fragment_update(fragment->backend, fragment);	
 	fragment->metadata->size += sprintf(& fragment->metadata->json[fragment->metadata->size], "}");
 
 	// Announce to metadata coordinator
