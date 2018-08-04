@@ -2,6 +2,8 @@
 * This test uses the generic patterns to verify the high-level interface works as intended
 */
 
+#include <assert.h>
+
 #include <backends-metadata/metadummy/metadummy.h>
 
 int main(){
@@ -20,6 +22,7 @@ int main(){
     dataspace = esdm_dataspace_create(2, dim, ESDM_TYPE_UINT64_T);
   }
 
+  esdm_status_t ret;
 	esdm_container_t * container = esdm_container_create("testContainer");
 	esdm_dataset_t   * dataset   = esdm_dataset_create(container, "testDataset", dataspace);
 
@@ -31,6 +34,7 @@ int main(){
     int64_t dim[] = {25, 50};
 	  s1 = esdm_dataspace_subspace(dataspace, 2, dim, offset);
     f1 = esdm_fragment_create(dataset, s1, buff);
+    f1->metadata->size = sprintf(f1->metadata->json, "{}");
   }
   {
     int64_t offset[] = {25, 0};
@@ -51,12 +55,21 @@ int main(){
     f4 = esdm_fragment_create(dataset, s4, buff);
   }
 
-  b->callbacks.fragment_update(b, f1);
-  b->callbacks.fragment_update(b, f2);
-  b->callbacks.fragment_update(b, f3);
-  b->callbacks.fragment_update(b, f4);
-  //fragment_retrieve
+  ret = b->callbacks.fragment_update(b, f1);
+  assert(ret == ESDM_SUCCESS);
+  ret = b->callbacks.fragment_update(b, f2);
+  assert(ret == ESDM_SUCCESS);
+  ret = b->callbacks.fragment_update(b, f3);
+  assert(ret == ESDM_SUCCESS);
+  ret = b->callbacks.fragment_update(b, f4);
+  assert(ret == ESDM_SUCCESS);
 
+  //fragment_retrieve
+  esdm_dataspace_t * res;
+  int frag_count;
+  esdm_fragment_t * read_frag;
+  ret = b->callbacks.lookup(b, dataset, res, & frag_count, & read_frag);
+  assert(ret == ESDM_SUCCESS);
 
   b->callbacks.finalize(b);
 

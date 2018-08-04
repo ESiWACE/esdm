@@ -273,7 +273,8 @@ static int fragment_retrieve(esdm_backend_t* backend, esdm_fragment_t *fragment,
 	const char* tgt = data->target;
 
 	// serialization of subspace for fragment
-	char *fragment_name = esdm_dataspace_string_descriptor(fragment->dataspace);
+	char fragment_name[PATH_MAX];
+	esdm_dataspace_string_descriptor(fragment_name, fragment->dataspace);
 
 	// determine path
 	char *path;
@@ -310,7 +311,8 @@ static int fragment_update(esdm_backend_t* backend, esdm_fragment_t *fragment)
 	const char* tgt = data->target;
 
 	// serialization of subspace for fragment
-	char *fragment_name = esdm_dataspace_string_descriptor(fragment->dataspace);
+	char fragment_name[PATH_MAX];
+	esdm_dataspace_string_descriptor(fragment_name, fragment->dataspace);
 
 	// determine path
 	char *path;

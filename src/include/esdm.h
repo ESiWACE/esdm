@@ -68,7 +68,7 @@ esdm_status_t esdm_dataspace_destroy(esdm_dataspace_t *dataspace);
 esdm_status_t esdm_dataspace_serialize(esdm_dataspace_t *dataspace, void **out);
 uint64_t      esdm_dataspace_element_count(esdm_dataspace_t *dataspace);
 uint64_t      esdm_dataspace_size(esdm_dataspace_t *dataspace);
-char*         esdm_dataspace_string_descriptor(esdm_dataspace_t *dataspace);
+void         esdm_dataspace_string_descriptor(char* out_str, esdm_dataspace_t *dataspace);
 
 /*
  * This function computes the offset to a starting buffer relative to the dataspace
@@ -83,9 +83,9 @@ esdm_status_t esdm_fragment_commit(esdm_fragment_t *fragment);
 esdm_status_t esdm_fragment_destroy(esdm_fragment_t *fragment);
 esdm_status_t esdm_fragment_serialize(esdm_fragment_t *fragment, void **out);
 
-
-
 size_t esdm_sizeof(esdm_datatype_t type);
+
+
 
 
 ///////////////////////////////////////////////////////////////////////////////

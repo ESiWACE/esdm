@@ -32,6 +32,7 @@
 #include <sys/types.h>
 #include <unistd.h>
 #include <assert.h>
+#include <dirent.h>
 
 #include <jansson.h>
 
@@ -62,8 +63,6 @@ static int mkfs(esdm_backend_t* backend)
 	// use target directory from backend configuration
 	metadummy_backend_options_t *options = (metadummy_backend_options_t*) backend->data;
 	const char* tgt = options->target;
-	//const char* tgt = "./_metadummy";
-
 
 	if (stat(tgt, &sb) == -1)
 	{
@@ -364,8 +363,8 @@ static int dataset_create(esdm_backend_t* backend, esdm_dataset_t *dataset)
 {
 	DEBUG_ENTER;
 
-	char *path_metadata;
-	char *path_dataset;
+	char path_metadata[PATH_MAX];
+	char path_dataset[PATH_MAX];
 	struct stat sb;
 
 
@@ -374,8 +373,8 @@ static int dataset_create(esdm_backend_t* backend, esdm_dataset_t *dataset)
 
 	DEBUG("tgt: %p\n", tgt);
 
-	asprintf(&path_metadata, "%s/containers/%s/%s.md", tgt, dataset->container->name, dataset->name);
-	asprintf(&path_dataset, "%s/containers/%s/%s", tgt, dataset->container->name, dataset->name);
+	sprintf(path_metadata, "%s/containers/%s/%s.md", tgt, dataset->container->name, dataset->name);
+	sprintf(path_dataset, "%s/containers/%s/%s", tgt, dataset->container->name, dataset->name);
 
 	// create metadata entry
 	entry_create(path_metadata, NULL);
@@ -385,9 +384,6 @@ static int dataset_create(esdm_backend_t* backend, esdm_dataset_t *dataset)
 	{
 		mkdir(path_dataset, 0700);
 	}
-
-	free(path_metadata);
-	free(path_dataset);
 }
 
 
@@ -420,15 +416,16 @@ static int fragment_retrieve(esdm_backend_t* backend, esdm_fragment_t *fragment,
 		const char* tgt = options->target;
 
 		// serialization of subspace for fragment
-		char *fragment_name = esdm_dataspace_string_descriptor(fragment->dataspace);
+		char fragment_name[PATH_MAX];
+		esdm_dataspace_string_descriptor(fragment_name, fragment->dataspace);
 
 		// determine path
-		char *path;
-		asprintf(&path, "%s/containers/%s/%s/", tgt, fragment->dataset->container->name, fragment->dataset->name);
+		char path[PATH_MAX];
+		sprintf(path, "%s/containers/%s/%s/", tgt, fragment->dataset->container->name, fragment->dataset->name);
 
 		// determine path to fragment
-		char *path_fragment;
-		asprintf(&path_fragment, "%s/containers/%s/%s/%s", tgt, fragment->dataset->container->name, fragment->dataset->name, fragment_name);
+		char path_fragment[PATH_MAX];
+		sprintf(path_fragment, "%s/containers/%s/%s/%s", tgt, fragment->dataset->container->name, fragment->dataset->name, fragment_name);
 
 
 		int status;
@@ -455,6 +452,31 @@ static int fragment_retrieve(esdm_backend_t* backend, esdm_fragment_t *fragment,
 		return 0;
 }
 
+static int lookup(esdm_backend_t* backend, esdm_dataset_t * dataset, esdm_dataspace_t * space, int * out_frag_count, esdm_fragment_t ** out_fragments){
+	DEBUG_ENTER;
+
+	// set data, options and tgt for convienience
+	metadummy_backend_options_t *options = (metadummy_backend_options_t*) backend->data;
+	const char* tgt = options->target;
+	// determine path
+	char path[PATH_MAX];
+	sprintf(path, "%s/containers/%s/%s/", tgt, dataset->container->name, dataset->name);
+
+	DIR * dir = opendir(path);
+	if(dir == NULL){
+		return ESDM_ERROR;
+	}
+	struct dirent *e = readdir(dir);
+	while(e != NULL){
+		if(e->d_name[0] != '.'){
+			printf("%s\n", e->d_name);
+		}
+		e = readdir(dir);
+	}
+	closedir(dir);
+
+	return ESDM_SUCCESS;
+}
 
 /*
  * How to: concurrent access by multiple processes
@@ -468,15 +490,16 @@ static int fragment_update(esdm_backend_t* backend, esdm_fragment_t *fragment)
 	const char* tgt = options->target;
 
 	// serialization of subspace for fragment
-	char *fragment_name = esdm_dataspace_string_descriptor(fragment->dataspace);
+	char fragment_name[PATH_MAX];
+	esdm_dataspace_string_descriptor(fragment_name, fragment->dataspace);
 
 	// determine path
-	char *path;
-	asprintf(&path, "%s/containers/%s/%s/", tgt, fragment->dataset->container->name, fragment->dataset->name);
+	char path[PATH_MAX];
+	sprintf(path, "%s/containers/%s/%s/", tgt, fragment->dataset->container->name, fragment->dataset->name);
 
 	// determine path to fragment
-	char *path_fragment;
-	asprintf(&path_fragment, "%s/containers/%s/%s/%s", tgt, fragment->dataset->container->name, fragment->dataset->name, fragment_name);
+	char path_fragment[PATH_MAX];
+	sprintf(path_fragment, "%s/containers/%s/%s/%s", tgt, fragment->dataset->container->name, fragment->dataset->name, fragment_name);
 
 	DEBUG("path: %s\n", path);
 	DEBUG("path_fragment: %s\n", path_fragment);
@@ -484,10 +507,6 @@ static int fragment_update(esdm_backend_t* backend, esdm_fragment_t *fragment)
 	// create metadata entry
 	mkdir_recursive(path);
 	entry_create(path_fragment, fragment->metadata);
-
-
-	free(path);
-	free(path_fragment);
 }
 
 
@@ -547,7 +566,7 @@ static esdm_backend_t backend_template = {
 		NULL, // close
 
 		// Metadata Callbacks
-		NULL, // lookup
+		lookup, // lookup
 
 		// ESDM Data Model Specific
 		container_create, // container create
@@ -614,12 +633,12 @@ static void metadummy_test()
 	int ret = -1;
 
 
-	char* abc;
-	char* def;
+	char abc[PATH_MAX];
+	char def[PATH_MAX];
 
 	const char* tgt = "./_metadummy";
-	asprintf(&abc, "%s/%s", tgt, "abc");
-	asprintf(&def, "%s/%s", tgt, "def");
+	sprintf(abc, "%s/%s", tgt, "abc");
+	sprintf(def, "%s/%s", tgt, "def");
 
 
 	// create entry and test

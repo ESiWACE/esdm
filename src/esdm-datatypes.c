@@ -229,8 +229,7 @@ esdm_fragment_t* esdm_fragment_create(esdm_dataset_t* dataset, esdm_dataspace_t*
 	fragment->bytes = bytes;
 	fragment->status = ESDM_DIRTY;
 
-
-	esdm_dataspace_string_descriptor(fragment->dataspace);
+	//esdm_dataspace_string_descriptor(fragment->dataspace);
 
 	return fragment;
 }
@@ -242,8 +241,7 @@ esdm_status_t esdm_fragment_retrieve(esdm_fragment_t *fragment)
 	ESDM_DEBUG(__func__);
 
 	// for now take the first plugin
-
-	esdm_dataspace_string_descriptor(fragment->dataspace);
+	//esdm_dataspace_string_descriptor(fragment->dataspace);
 	esdm.modules->metadata->callbacks.fragment_retrieve(esdm.modules->metadata, fragment, NULL);
 	json_t *root = load_json(fragment->metadata->json);
 	json_t * elem;
@@ -262,13 +260,10 @@ esdm_status_t esdm_fragment_retrieve(esdm_fragment_t *fragment)
 }
 
 
-char* esdm_dataspace_string_descriptor(esdm_dataspace_t *dataspace)
+void esdm_dataspace_string_descriptor(char* string, esdm_dataspace_t *dataspace)
 {
 	ESDM_DEBUG(__func__);
-
-	char *string = NULL;
-	char *string_size = NULL;
-	char *string_offset = NULL;
+	int pos = 0;
 
 	int64_t dimensions = dataspace->dimensions;
 	int64_t *size = dataspace->size;
@@ -276,36 +271,21 @@ char* esdm_dataspace_string_descriptor(esdm_dataspace_t *dataspace)
 
 	// offset to string
 	int64_t i;
-	for (i = 0; i < dimensions; i++)
+	pos += sprintf(& string[pos], "%ld", offset[0]);
+	for (i = 1; i < dimensions; i++)
 	{
 		DEBUG("dim %d, offset=%ld (%p)\n", i, offset[i], offset);
-
-		if (string_offset == NULL)
-			asprintf(&string_offset, "%ld", offset[i]);
-		else
-			asprintf(&string_offset, "%s,%ld", string_offset, offset[i]);
+		pos += sprintf(& string[pos], ",%ld", offset[i]);
 	}
 
 	// size to string
-	for (i = 0; i < dimensions; i++)
+	pos += sprintf(& string[pos], "-%ld", size[0]);
+	for (i = 1; i < dimensions; i++)
 	{
 		DEBUG("dim %d, size=%ld (%p)\n", i, size[i], size);
-
-	// TODO: store
-		if (string_size == NULL)
-			asprintf(&string_size, "%ld", size[i]);
-		else
-			asprintf(&string_size, "%s,%ld", string_size, size[i]);
+		pos += sprintf(& string[pos], ",%ld", size[i]);
 	}
-
-	// combine offset + size
-	asprintf(&string, "offset:%s_size:%s", string_offset, string_size);
 	DEBUG("Descriptor: %s\n", string);
-
-	free(string_size);
-	free(string_offset);
-
-	return string;
 }
 
 
@@ -320,7 +300,7 @@ esdm_status_t esdm_fragment_commit(esdm_fragment_t *fragment)
 	ESDM_DEBUG(__func__);
 
 	fragment->metadata->size += sprintf(& fragment->metadata->json[fragment->metadata->size], "{\"plugin\" : \"%s\", \"name\" : \"%s\", \"data\" :", fragment->backend->name, fragment->backend->config->id);
-	fragment->backend->callbacks.fragment_update(fragment->backend, fragment);	
+	fragment->backend->callbacks.fragment_update(fragment->backend, fragment);
 	fragment->metadata->size += sprintf(& fragment->metadata->json[fragment->metadata->size], "}");
 
 	// Announce to metadata coordinator

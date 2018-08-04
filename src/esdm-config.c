@@ -112,6 +112,10 @@ esdm_config_backend_t* esdm_config_get_metadata_coordinator(esdm_instance_t* esd
 	config_backend->esdm = root;
 	config_backend->backend = json_path_get(root, "$.esdm.metadata");
 
+	elem = json_object_get(config_backend->backend, "id");
+	config_backend->id = json_string_value(elem);
+	elem = json_object_get(config_backend->backend, "target");
+	config_backend->target = json_string_value(elem);
 
 	return config_backend;
 }
