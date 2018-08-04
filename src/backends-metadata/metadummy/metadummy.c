@@ -452,6 +452,68 @@ static int fragment_retrieve(esdm_backend_t* backend, esdm_fragment_t *fragment,
 		return 0;
 }
 
+int esdm_dataspace_overlap_str(esdm_dataspace_t *a, char * str){
+	//printf("str: %s\n", str);
+
+	char * save = NULL;
+	const char * delim = ",";
+	char * cur = strtok_r(str, delim, & save);
+	if (cur == NULL) return 0;
+
+	int64_t off[a->dimensions];
+	int64_t size[a->dimensions];
+
+	for(int d=0; d < a->dimensions; d++){
+		if (cur == NULL) return 0;
+		off[d] = atol(cur);
+		if(off[d] < 0) return 0;
+		//printf("o%ld,", off[d]);
+		save[-1] = ','; // reset the overwritten text
+		cur = strtok_r(NULL, delim, & save);
+	}
+	//printf("\n");
+
+	for(int d=0; d < a->dimensions; d++){
+		if (cur == NULL) return 0;
+		size[d] = atol(cur);
+		if(size[d] < 0) return 0;
+		//printf("s%ld,", size[d]);
+		if(save[0] != 0) save[-1] = ',';
+		cur = strtok_r(NULL, delim, & save);
+	}
+	//printf("\n");
+	if( cur != NULL){
+		return 0;
+	}
+
+	// dimensions match, now check for overlap
+	for(int d=0; d < a->dimensions; d++){
+		int o1 = a->offset[d];
+		int s1 = a->size[d];
+
+		int o2 = off[d];
+		int s2 = size[d];
+		if ( o1 + s1 <= o2 ) return 0;
+		if ( o2 + s2 <= o1 ) return 0;
+	}
+	return 1;
+}
+
+static esdm_fragment_t * create_fragment_from_metadata(int fd){
+	struct stat sb;
+	int ret = fstat(fd, & sb);
+	printf("%ld\n", sb.st_size);
+
+	esdm_fragment_t * frag;
+	frag = malloc(sizeof(esdm_fragment_t));
+
+
+	return frag;
+}
+
+/*
+ * Assumptions: there are no fragments created while reading back data!
+ */
 static int lookup(esdm_backend_t* backend, esdm_dataset_t * dataset, esdm_dataspace_t * space, int * out_frag_count, esdm_fragment_t ** out_fragments){
 	DEBUG_ENTER;
 
@@ -466,14 +528,48 @@ static int lookup(esdm_backend_t* backend, esdm_dataset_t * dataset, esdm_datasp
 	if(dir == NULL){
 		return ESDM_ERROR;
 	}
+
+	int frag_count = 0;
 	struct dirent *e = readdir(dir);
 	while(e != NULL){
 		if(e->d_name[0] != '.'){
-			printf("%s\n", e->d_name);
+			DEBUG("checking:%s", e->d_name);
+			if(esdm_dataspace_overlap_str(space, e->d_name)){
+				DEBUG("Overlaps!", "");
+				frag_count++;
+			}
 		}
 		e = readdir(dir);
 	}
+
+	// read fragments!
+	*out_fragments = (esdm_fragment_t*) malloc(sizeof(esdm_fragment_t*) * frag_count);
+
+	rewinddir(dir);
+	int frag_no = 0;
+	int dirfd = open(path, O_RDONLY);
+	assert(dirfd >= 0);
+	e = readdir(dir);
+	while(e != NULL){
+		if(e->d_name[0] != '.'){
+			if(esdm_dataspace_overlap_str(space, e->d_name)){
+				assert(frag_no < frag_count);
+				int fd = openat(dirfd, e->d_name, O_RDONLY);
+				printf("%s\n", e->d_name);
+				out_fragments[frag_no] = create_fragment_from_metadata(fd);
+				close(fd);
+				frag_no++;
+			}
+		}
+		e = readdir(dir);
+	}
+
 	closedir(dir);
+	close(dirfd);
+
+	assert(frag_no == frag_count);
+
+	*out_frag_count = frag_count;
 
 	return ESDM_SUCCESS;
 }

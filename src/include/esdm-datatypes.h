@@ -126,7 +126,6 @@ struct esdm_dataset_t {
 struct esdm_dataspace_t {
 	esdm_datatype_t datatype;
 	int64_t dimensions;
-	int64_t *bounds;
 	int64_t *size;
 
 	esdm_dataspace_t *subspace_of;

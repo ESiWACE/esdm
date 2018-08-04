@@ -18,8 +18,8 @@ int main(){
   char * buff = "test";
   esdm_dataspace_t * dataspace;
   {
-    int64_t dim[] = {50, 100};
-    dataspace = esdm_dataspace_create(2, dim, ESDM_TYPE_UINT64_T);
+    int64_t size[]   = {50, 100};
+    dataspace = esdm_dataspace_create(2, size, ESDM_TYPE_UINT64_T);
   }
 
   esdm_status_t ret;
@@ -31,27 +31,27 @@ int main(){
 
   {
     int64_t offset[] = {0, 0};
-    int64_t dim[] = {25, 50};
-	  s1 = esdm_dataspace_subspace(dataspace, 2, dim, offset);
+    int64_t size[]   = {25, 50};
+	  s1 = esdm_dataspace_subspace(dataspace, 2, size, offset);
     f1 = esdm_fragment_create(dataset, s1, buff);
     f1->metadata->size = sprintf(f1->metadata->json, "{}");
   }
   {
     int64_t offset[] = {25, 0};
-    int64_t dim[] = {25, 50};
-	  s2 = esdm_dataspace_subspace(dataspace, 2, dim, offset);
+    int64_t size[]   = {25, 50};
+	  s2 = esdm_dataspace_subspace(dataspace, 2, size, offset);
     f2 = esdm_fragment_create(dataset, s2, buff);
   }
   {
     int64_t offset[] = {25, 50};
-    int64_t dim[] = {25, 50};
-	  s3 = esdm_dataspace_subspace(dataspace, 2, dim, offset);
+    int64_t size[]   = {25, 50};
+	  s3 = esdm_dataspace_subspace(dataspace, 2, size, offset);
     f3 = esdm_fragment_create(dataset, s3, buff);
   }
   {
     int64_t offset[] = {0, 50};
-    int64_t dim[] = {25, 50};
-	  s4 = esdm_dataspace_subspace(dataspace, 2, dim, offset);
+    int64_t size[]   = {25, 50};
+	  s4 = esdm_dataspace_subspace(dataspace, 2, size, offset);
     f4 = esdm_fragment_create(dataset, s4, buff);
   }
 
@@ -68,8 +68,17 @@ int main(){
   esdm_dataspace_t * res;
   int frag_count;
   esdm_fragment_t * read_frag;
+
+  {
+    int64_t size[]   = {30, 30};
+    int64_t offset[] = {10, 10};
+	  res = esdm_dataspace_subspace(dataspace, 2, size, offset);
+  }
+
   ret = b->callbacks.lookup(b, dataset, res, & frag_count, & read_frag);
   assert(ret == ESDM_SUCCESS);
+  printf("Found fragments: %d\n", frag_count);
+  assert(frag_count == 2);
 
   b->callbacks.finalize(b);
 

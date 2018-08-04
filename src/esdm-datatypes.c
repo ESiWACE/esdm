@@ -229,8 +229,6 @@ esdm_fragment_t* esdm_fragment_create(esdm_dataset_t* dataset, esdm_dataspace_t*
 	fragment->bytes = bytes;
 	fragment->status = ESDM_DIRTY;
 
-	//esdm_dataspace_string_descriptor(fragment->dataspace);
-
 	return fragment;
 }
 
@@ -279,7 +277,7 @@ void esdm_dataspace_string_descriptor(char* string, esdm_dataspace_t *dataspace)
 	}
 
 	// size to string
-	pos += sprintf(& string[pos], "-%ld", size[0]);
+	pos += sprintf(& string[pos], ",%ld", size[0]);
 	for (i = 1; i < dimensions; i++)
 	{
 		DEBUG("dim %d, size=%ld (%p)\n", i, size[i], size);
