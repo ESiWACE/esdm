@@ -224,9 +224,7 @@ esdm_status_t esdm_write(esdm_dataset_t *dataset, void *buf, esdm_dataspace_t* s
 {
 	ESDM_DEBUG(__func__);
 
-	esdm_scheduler_process_blocking(& esdm, ESDM_OP_WRITE, dataset, buf, subspace);
-
-	return ESDM_SUCCESS;
+	return esdm_scheduler_process_blocking(& esdm, ESDM_OP_WRITE, dataset, buf, subspace);
 }
 
 
@@ -245,10 +243,7 @@ esdm_status_t esdm_read(esdm_dataset_t *dataset, void *buf, esdm_dataspace_t* su
 {
 	ESDM_DEBUG("");
 
-	esdm_status_t ret = esdm_scheduler_process_blocking(& esdm, ESDM_OP_READ, dataset, buf, subspace);
-
-	//ESDM_DEBUG_FMT("Fragment size: %ld", fragment->bytes);
-	return ret;
+	return esdm_scheduler_process_blocking(& esdm, ESDM_OP_READ, dataset, buf, subspace);
 }
 
 

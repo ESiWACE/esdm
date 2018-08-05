@@ -113,8 +113,61 @@ static void backend_thread(io_work_t* work, esdm_backend_t* backend){
   free(work);
 }
 
+esdm_status_t esdm_scheduler_enqueue_read(esdm_instance_t *esdm, io_request_status_t * status,  esdm_dataset_t *dataset, void *buf,  esdm_dataspace_t* space){
+	GError * error;
+	esdm_status_t ret;
+	esdm_backend_t * md = esdm->modules->metadata;
+	esdm_fragment_t ** read_frag = NULL;
+	int frag_count;
+  ret = md->callbacks.lookup(md, dataset, space, & frag_count, & read_frag);
+	DEBUG("fragments to read: %d", frag_count);
+	status->pending_ops += frag_count;
 
-esdm_status_t esdm_scheduler_enqueue(esdm_instance_t *esdm, io_request_status_t * status, io_operation_t op, esdm_dataset_t *dataset, void *buf,  esdm_dataspace_t* space){
+	for(int i=0; i < frag_count; i++){
+		esdm_fragment_t * f = read_frag[i];
+		json_t *root = load_json(f->metadata->json);
+		json_t * elem;
+		elem = json_object_get(root, "plugin");
+		const char * plugin_type = json_string_value(elem);
+		elem = json_object_get(root, "id");
+		const char * plugin_id = json_string_value(elem);
+
+		esdm_backend_t* backend_to_use = NULL;
+
+		// find the backend for the fragment
+		for(int x=0; x < esdm->modules->backend_count; x++){
+			esdm_backend_t* b_tmp = esdm->modules->backends[x];
+			if(strcmp(b_tmp->config->id, plugin_id) == 0){
+				DEBUG("found plugin %s", plugin_id);
+				backend_to_use = b_tmp;
+				break;
+			}
+		}
+		if(backend_to_use == NULL){
+			printf("Error no backend found for ID: %s\n", plugin_id);
+			exit(1);
+		}
+		// esdm_fragment_print(read_frag[i]);
+		// printf("\n");
+
+		//f->buffer = buf TODO;
+		f->backend = backend_to_use;
+
+    io_work_t * task = (io_work_t*) malloc(sizeof(io_work_t));
+    task->parent = status;
+    task->op = ESDM_OP_READ;
+    task->fragment = f;
+    if (backend_to_use->threads == 0){
+      backend_thread(task, backend_to_use);
+    }else{
+      g_thread_pool_push(backend_to_use->threadPool, task, & error);
+    }
+	}
+
+	return ESDM_SUCCESS;
+}
+
+esdm_status_t esdm_scheduler_enqueue_write(esdm_instance_t *esdm, io_request_status_t * status, esdm_dataset_t *dataset, void *buf,  esdm_dataspace_t* space){
     GError * error;
     //Gather I/O recommendations
     //esdm_performance_recommendation(esdm, NULL, NULL);    // e.g., split, merge, replication?
@@ -162,6 +215,9 @@ esdm_status_t esdm_scheduler_enqueue(esdm_instance_t *esdm, io_request_status_t 
 			esdm_backend_t* b = esdm->modules->backends[i];
 			// how many of these fit into our buffer
 			uint64_t backend_y_per_buffer = b->config->max_fragment_size / one_y_size;
+			if (backend_y_per_buffer == 0){
+				backend_y_per_buffer = 1;
+			}
 
 			uint64_t y_total_access = per_backend[i];
 			while(y_total_access > 0){
@@ -175,7 +231,7 @@ esdm_status_t esdm_scheduler_enqueue(esdm_instance_t *esdm, io_request_status_t 
 				esdm_dataspace_t* subspace = esdm_dataspace_subspace(space, 2, dim, offset);
 
 	      task->parent = status;
-	      task->op = op;
+	      task->op = ESDM_OP_WRITE;
 	      task->fragment = esdm_fragment_create(dataset, subspace, (char*) buf + offset_y * one_y_size);
 	      task->fragment->backend = b;
 	      if (b->threads == 0){
@@ -224,7 +280,13 @@ esdm_status_t esdm_scheduler_process_blocking(esdm_instance_t *esdm, io_operatio
   ret = esdm_scheduler_status_init(& status);
   assert( ret == ESDM_SUCCESS );
 
-  ret = esdm_scheduler_enqueue(esdm, & status, op, dataset, buf, subspace);
+	if( op == ESDM_OP_WRITE){
+		ret = esdm_scheduler_enqueue_write(esdm, & status, dataset, buf, subspace);
+	}else if(op == ESDM_OP_READ){
+		ret = esdm_scheduler_enqueue_read(esdm, & status, dataset, buf, subspace);
+	}else{
+		assert(0 && "Unknown operation");
+	}
   assert( ret == ESDM_SUCCESS );
 
   ret = esdm_scheduler_wait(& status);
