@@ -83,7 +83,12 @@ int main(int argc, char* argv[])
 	MPI_Comm_size(MPI_COMM_WORLD, & mpi_size);
 
 	int64_t _size;
-	char *config_file = "_esdm.conf";
+	char *config_file;
+	char * default_args[] = {argv[0], "10", "_esdm.conf", "B"};
+	if (argc == 1){
+		argc = 4;
+		argv = default_args;
+	}
 	if (argc != 4) {
 		printf("Syntax: %s [SIZE] [CONFIG] [R|W|B]", argv[0]);
 		printf("\t SIZE specifies one dimension of a 2D field\n");
