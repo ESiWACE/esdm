@@ -79,6 +79,10 @@ int main(){
   assert(ret == ESDM_SUCCESS);
   printf("Found fragments: %d\n", frag_count);
   assert(frag_count == 2);
+  for(int i=0; i < frag_count; i++){
+    esdm_fragment_print(read_frag[i]);
+    printf("\n");
+  }
 
   b->callbacks.finalize(b);
 

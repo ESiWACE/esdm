@@ -83,6 +83,9 @@ esdm_status_t esdm_fragment_commit(esdm_fragment_t *fragment);
 esdm_status_t esdm_fragment_destroy(esdm_fragment_t *fragment);
 esdm_status_t esdm_fragment_serialize(esdm_fragment_t *fragment, void **out);
 
+void esdm_fragment_print(esdm_fragment_t *fragment);
+void esdm_dataspace_print(esdm_dataspace_t *dataspace);
+
 size_t esdm_sizeof(esdm_datatype_t type);
 
 

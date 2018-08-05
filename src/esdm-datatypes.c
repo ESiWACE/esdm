@@ -213,9 +213,9 @@ esdm_fragment_t* esdm_fragment_create(esdm_dataset_t* dataset, esdm_dataspace_t*
 		assert(subspace->size[i] > 0);
 	}
 
-	uint64_t size = esdm_dataspace_element_count(subspace);
-	int64_t bytes = size * esdm_sizeof(subspace->datatype);
-	DEBUG("Entries in subspace: %d x %d bytes = %d bytes \n", size, esdm_sizeof(subspace->datatype), bytes);
+	uint64_t elements = esdm_dataspace_element_count(subspace);
+	int64_t bytes = elements * esdm_sizeof(subspace->datatype);
+	DEBUG("Entries in subspace: %d x %d bytes = %d bytes \n", elements, esdm_sizeof(subspace->datatype), bytes);
 
 	fragment->metadata = malloc(ESDM_MAX_SIZE);
 	fragment->metadata->json = (char*)(fragment->metadata + sizeof(esdm_metadata_t));
@@ -225,7 +225,7 @@ esdm_fragment_t* esdm_fragment_create(esdm_dataset_t* dataset, esdm_dataspace_t*
 	fragment->dataset = dataset;
 	fragment->dataspace = subspace;
 	fragment->buf = buf;	// zero copy?
-	fragment->size = size;
+	fragment->elements = elements;
 	fragment->bytes = bytes;
 	fragment->status = ESDM_DIRTY;
 
@@ -503,10 +503,8 @@ esdm_dataspace_t* esdm_dataspace_subspace(esdm_dataspace_t *dataspace, int64_t d
 		memcpy(subspace->size, size, sizeof(int64_t)*dimensions);
 		memcpy(subspace->offset, offset, sizeof(int64_t)*dimensions);
 
-
-		int64_t i;
-		for (i = 0; i < dimensions; i++) {
-			DEBUG("dim %d, size=%ld (%p)\n", i, size[i], size);
+		for (int64_t i = 0; i < dimensions; i++) {
+			DEBUG("dim %d, size=%ld off=%ld", i, size[i], offset[i]);
 			assert(size[i] > 0);
 		}
 	}
@@ -516,6 +514,25 @@ esdm_dataspace_t* esdm_dataspace_subspace(esdm_dataspace_t *dataspace, int64_t d
 	}
 
 	return subspace;
+}
+
+void esdm_dataspace_print(esdm_dataspace_t * d){
+	printf("DATASPACE(size(%ld", d->size[0]);
+	for (int64_t i = 1; i < d->dimensions; i++) {
+		printf("x%ld", d->size[i]);
+	}
+	printf("),off(");
+	printf("%ld", d->offset[0]);
+	for (int64_t i = 1; i < d->dimensions; i++) {
+		printf("x%ld", d->offset[i]);
+	}
+	printf("))");
+}
+
+void esdm_fragment_print(esdm_fragment_t * f){
+	printf("FRAGMENT(%p,", f);
+	esdm_dataspace_print(f->dataspace);
+	printf(")");
 }
 
 

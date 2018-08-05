@@ -42,7 +42,7 @@ int esdm_backend_perf_model_long_lat_perf_estimate(esdm_perf_model_lat_thp_t* da
     return -1;
 
   if (data->throughputBs > 0)
-    *out_time = fragment->size / data->throughputBs + data->latency_in_s;
+    *out_time = fragment->bytes / data->throughputBs + data->latency_in_s;
   else
     *out_time = 0;
 
@@ -59,4 +59,3 @@ int esdm_backend_reset_perf_model_lat_thp(esdm_perf_model_lat_thp_t * out_data) 
 
   return 0;
 }
-

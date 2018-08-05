@@ -33,6 +33,7 @@
 #include <unistd.h>
 #include <assert.h>
 #include <dirent.h>
+#include <errno.h>
 
 #include <jansson.h>
 
@@ -80,6 +81,43 @@ static int mkfs(esdm_backend_t* backend)
 	}
 }
 
+static int write_check(int fd, char *buf, size_t len){
+	while(len > 0){
+		ssize_t ret = write(fd, buf, len);
+		if (ret != -1){
+			buf = buf + ret;
+			len -= ret;
+		}else{
+			if(errno == EINTR){
+				continue;
+			}else{
+				ESDM_ERROR_COM_FMT("POSIX", "write %s", strerror(errno));
+				return 1;
+			}
+		}
+	}
+	return 0;
+}
+
+static int read_check(int fd, char *buf, size_t len){
+	while(len > 0){
+		ssize_t ret = read(fd, buf, len);
+		if( ret == 0 ){
+			return 1;
+		}else if (ret != -1){
+			buf += ret;
+			len -= ret;
+		}else{
+			if(errno == EINTR){
+				continue;
+			}else{
+				ESDM_ERROR_COM_FMT("POSIX", "read %s", strerror(errno));
+				return 1;
+			}
+		}
+	}
+	return 0;
+}
 
 /**
  * Similar to the command line counterpart fsck for ESDM plugins is responsible
@@ -124,18 +162,13 @@ static int entry_create(const char *path, esdm_metadata_t * data)
 		{
 			if(data != NULL && data->json != NULL){
 				int size = strlen(data->json) + 1;
-				int ret = write(fd, data->json, size);
-				assert( ret == size );
+				int ret = write_check(fd, data->json, size);
+				assert( ret == 0 );
 			}
 			close(fd);
 			return 0;
 		}
 		return 1;
-	//} else {
-	//	// already exists
-	//	return -1;
-	//}
-
 }
 
 static int entry_retrieve_tst(const char *path)
@@ -168,7 +201,7 @@ static int entry_retrieve_tst(const char *path)
 		buf = (char*) malloc(sb.st_size + 1);
 		buf[sb.st_size] = 0;
 
-		read(fd, buf, sb.st_size);
+		read_check(fd, buf, sb.st_size);
 		close(fd);
 	}
 
@@ -203,7 +236,7 @@ static int entry_update(const char *path, void *buf, size_t len)
 	if ( fd != -1 )
 	{
 		// write some metadata
-		write(fd, buf, len);
+		write_check(fd, buf, len);
 		close(fd);
 	}
 
@@ -445,14 +478,14 @@ static int fragment_retrieve(esdm_backend_t* backend, esdm_fragment_t *fragment,
 		if ( fd != -1 )
 		{
 			// write some metadata
-			read(fd, fragment->metadata->json, sb.st_size);
+			read_check(fd, fragment->metadata->json, sb.st_size);
 			close(fd);
 		}
 
 		return 0;
 }
 
-int esdm_dataspace_overlap_str(esdm_dataspace_t *a, char * str){
+int esdm_dataspace_overlap_str(esdm_dataspace_t *a, char * str, esdm_dataspace_t ** out_space){
 	//printf("str: %s\n", str);
 
 	char * save = NULL;
@@ -496,19 +529,35 @@ int esdm_dataspace_overlap_str(esdm_dataspace_t *a, char * str){
 		if ( o1 + s1 <= o2 ) return 0;
 		if ( o2 + s2 <= o1 ) return 0;
 	}
+	if(out_space != NULL){
+			*out_space = esdm_dataspace_subspace(a->subspace_of, a->dimensions, size, off);
+	}
 	return 1;
 }
 
-static esdm_fragment_t * create_fragment_from_metadata(int fd){
+static esdm_fragment_t * create_fragment_from_metadata(int fd, esdm_dataset_t * dataset, esdm_dataspace_t * space){
 	struct stat sb;
 	int ret = fstat(fd, & sb);
 	DEBUG("Fragment found size:%ld", sb.st_size);
 
-	esdm_fragment_t * frag;
-	frag = malloc(sizeof(esdm_fragment_t));
+	esdm_fragment_t * f;
+	f = malloc(sizeof(esdm_fragment_t));
+	f->metadata = malloc(sb.st_size + sizeof(esdm_metadata_t));
+	f->metadata->json = (char*)(f->metadata + sizeof(esdm_metadata_t));
+	f->metadata->size = 0;
+	read_check(fd, f->metadata->json, sb.st_size);
 
+	uint64_t elements = esdm_dataspace_element_count(space);
+	int64_t bytes = elements * esdm_sizeof(space->datatype);
 
-	return frag;
+	f->dataset = dataset;
+	f->dataspace = space;
+	f->buf = NULL;
+	f->elements = elements;
+	f->bytes = bytes;
+	f->status = ESDM_DIRTY;
+
+	return f;
 }
 
 /*
@@ -534,7 +583,7 @@ static int lookup(esdm_backend_t* backend, esdm_dataset_t * dataset, esdm_datasp
 	while(e != NULL){
 		if(e->d_name[0] != '.'){
 			DEBUG("checking:%s", e->d_name);
-			if(esdm_dataspace_overlap_str(space, e->d_name)){
+			if(esdm_dataspace_overlap_str(space, e->d_name, NULL)){
 				DEBUG("Overlaps!", "");
 				frag_count++;
 			}
@@ -553,10 +602,11 @@ static int lookup(esdm_backend_t* backend, esdm_dataset_t * dataset, esdm_datasp
 	e = readdir(dir);
 	while(e != NULL){
 		if(e->d_name[0] != '.'){
-			if(esdm_dataspace_overlap_str(space, e->d_name)){
+			esdm_dataspace_t * subspace;
+			if(esdm_dataspace_overlap_str(space, e->d_name, & subspace)){
 				assert(frag_no < frag_count);
 				int fd = openat(dirfd, e->d_name, O_RDONLY);
-				frag[frag_no] = create_fragment_from_metadata(fd);
+				frag[frag_no] = create_fragment_from_metadata(fd, dataset, subspace);
 				close(fd);
 				frag_no++;
 			}
