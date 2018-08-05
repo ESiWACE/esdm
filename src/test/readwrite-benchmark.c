@@ -179,7 +179,7 @@ int main(int argc, char* argv[])
 		double total_time;
 		MPI_Reduce((void *)& time, &total_time, 1, MPI_DOUBLE, MPI_MAX, 0, MPI_COMM_WORLD);
 		if (mpi_rank == 0){
-			printf("Write: %.3fs %.3f MiB/s size:%.0f MiB\n", time, volume_all/time/1024.0/1024, volume_all/1024.0/1024);
+			printf("Write: %.3fs %.3f MiB/s size:%.0f MiB\n", total_time, volume_all/total_time/1024.0/1024, volume_all/1024.0/1024);
 		}
 	}
 	int mismatches = 0;
@@ -218,7 +218,7 @@ int main(int argc, char* argv[])
 				printf("OK\n");
 			}
 			assert(mismatches_sum == 0);
-			printf("Read: %.3fs %.3f MiB/s size:%.0f MiB\n", time, volume_all/time/1024.0/1024, volume_all/1024.0/1024);
+			printf("Read: %.3fs %.3f MiB/s size:%.0f MiB\n", total_time, volume_all/total_time/1024.0/1024, volume_all/1024.0/1024);
 		}
 	}
 
