@@ -76,22 +76,42 @@ int main(int argc, char* argv[])
 
 	int mpi_size;
 	int mpi_rank;
+	int run_read = 0;
+	int run_write = 0;
 
 	MPI_Comm_rank(MPI_COMM_WORLD, & mpi_rank);
 	MPI_Comm_size(MPI_COMM_WORLD, & mpi_size);
 
 	int64_t _size;
 	char *config_file = "_esdm.conf";
-	if (argc < 2)
-		_size = 1024;
-	else if (argc != 3) {
-		printf("Syntax: %s [SIZE] [CONFIG]", argv[0]);
+	if (argc != 4) {
+		printf("Syntax: %s [SIZE] [CONFIG] [R|W|B]", argv[0]);
 		printf("\t SIZE specifies one dimension of a 2D field\n");
 		exit(1);
-	} else {
-		_size = atoll(argv[1]);
-		config_file = argv[2];
 	}
+
+	_size = atoll(argv[1]);
+	config_file = argv[2];
+	switch(argv[3][0]){
+		case('R'):{
+			run_read = 1;
+			break;
+		}
+		case('W'):{
+			run_write = 1;
+			break;
+		}
+		case('B'):{
+			run_read = 1;
+			run_write = 1;
+			break;
+		}
+		default : {
+			printf("Unknown setting for argument: %s expected [R|W|B]\n", argv[3]);
+			exit(1);
+		}
+	}
+
 	const int64_t size = _size;
 
 	if (mpi_rank == 0)
@@ -146,60 +166,63 @@ int main(int argc, char* argv[])
 	esdm_dataspace_t *subspace = esdm_dataspace_subspace(dataspace, 2, dim, offset);
 
 	timer t;
-	MPI_Barrier(MPI_COMM_WORLD);
-	start_timer(&t);
+	double time;
 
-	// Write the data to the dataset
-	ret = esdm_write(dataset, buf_w, subspace);
-	assert( ret == ESDM_SUCCESS );
-	MPI_Barrier(MPI_COMM_WORLD);
-	const double write_time = stop_timer(t);
-
-	start_timer(&t);
-	// Read the data to the dataset
-	ret = esdm_read(dataset, buf_r, subspace);
-	assert( ret == ESDM_SUCCESS );
-
-	MPI_Barrier(MPI_COMM_WORLD);
-	const double read_time = stop_timer(t);
-
-	// verify data and fail test if mismatches are found
+	if(run_write){
+		MPI_Barrier(MPI_COMM_WORLD);
+		start_timer(&t);
+		// Write the data to the dataset
+		ret = esdm_write(dataset, buf_w, subspace);
+		assert( ret == ESDM_SUCCESS );
+		MPI_Barrier(MPI_COMM_WORLD);
+		time = stop_timer(t);
+		double total_time;
+		MPI_Reduce((void *)& time, &total_time, 1, MPI_DOUBLE, MPI_MAX, 0, MPI_COMM_WORLD);
+		if (mpi_rank == 0){
+			printf("Write: %.3fs %.3f MiB/s size:%.0f MiB\n", time, volume_all/time/1024.0/1024, volume_all/1024.0/1024);
+		}
+	}
 	int mismatches = 0;
-	int idx;
 
-	for(y = offset[0]; y < dim[0]; y++){
-		for(x = offset[1]; x < dim[1]; x++){
-			idx = (y - offset[0]) * size + x;
+	if(run_read){
+		MPI_Barrier(MPI_COMM_WORLD);
+		start_timer(&t);
+		// Read the data to the dataset
+		ret = esdm_read(dataset, buf_r, subspace);
+		assert( ret == ESDM_SUCCESS );
 
-			if (buf_r[idx] != buf_w[idx]) {
-				mismatches++;
+		MPI_Barrier(MPI_COMM_WORLD);
+ 		time = stop_timer(t);
+
+		// verify data and fail test if mismatches are found
+		int idx;
+
+		for(y = offset[0]; y < dim[0]; y++){
+			for(x = offset[1]; x < dim[1]; x++){
+				idx = (y - offset[0]) * size + x;
+
+				if (buf_r[idx] != buf_w[idx]) {
+					mismatches++;
+				}
 			}
 		}
-	}
-
-	double total_time_w;
-	double total_time_r;
-	MPI_Reduce((void *)& write_time, &total_time_w, 1, MPI_DOUBLE, MPI_MAX, 0, MPI_COMM_WORLD);
-	MPI_Reduce((void *)& read_time,  &total_time_r, 1, MPI_DOUBLE, MPI_MAX, 0, MPI_COMM_WORLD);
-
-	int mismatches_sum;
-	MPI_Reduce(& mismatches, &mismatches_sum, 1, MPI_INT, MPI_SUM, 0, MPI_COMM_WORLD);
-
-	if (mpi_rank == 0){
-		if ( mismatches_sum > 0 ) {
-			printf("FAILED\n");
-			printf("Mismatches: %d\n", mismatches_sum);
-		} else {
-			printf("OK\n");
+		int mismatches_sum;
+		MPI_Reduce(& mismatches, &mismatches_sum, 1, MPI_INT, MPI_SUM, 0, MPI_COMM_WORLD);
+		double total_time;
+		MPI_Reduce((void *)& time, &total_time, 1, MPI_DOUBLE, MPI_MAX, 0, MPI_COMM_WORLD);
+		if (mpi_rank == 0){
+			if ( mismatches_sum > 0 ) {
+				printf("FAILED\n");
+				printf("Mismatches: %d\n", mismatches_sum);
+			} else {
+				printf("OK\n");
+			}
+			assert(mismatches_sum == 0);
+			printf("Read: %.3fs %.3f MiB/s size:%.0f MiB\n", time, volume_all/time/1024.0/1024, volume_all/1024.0/1024);
 		}
-		assert(mismatches_sum == 0);
-
-		printf("Runtime read,write: %.3f,%.3f\n", total_time_r, total_time_w);
-		printf("Performance read,write: %.3f MiB/s,%.3f MiB/s size:%.0f MiB\n",
-			volume_all/total_time_r/1024/1024,
-			volume_all/total_time_w/1024.0/1024,
-			volume_all/1024.0/1024);
 	}
+
+
 
 
 	// clean up
