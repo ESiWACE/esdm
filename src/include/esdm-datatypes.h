@@ -140,8 +140,7 @@ struct esdm_fragment_t {
 	esdm_metadata_t  *metadata; // only valid after written
 	esdm_dataset_t 	 *dataset;
 	esdm_dataspace_t *dataspace;
-
-	esdm_backend_t * backend;
+	esdm_backend_t   *backend;
 
 	void *buf;
 	size_t elements;

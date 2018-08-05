@@ -131,6 +131,10 @@ esdm_status_t esdm_scheduler_enqueue_read(esdm_instance_t *esdm, io_request_stat
 		const char * plugin_type = json_string_value(elem);
 		elem = json_object_get(root, "id");
 		const char * plugin_id = json_string_value(elem);
+		elem = json_object_get(root, "offset");
+		const char * offset_str = json_string_value(elem);
+		elem = json_object_get(root, "size");
+		const char * size_str = json_string_value(elem);
 
 		esdm_backend_t* backend_to_use = NULL;
 
@@ -150,7 +154,7 @@ esdm_status_t esdm_scheduler_enqueue_read(esdm_instance_t *esdm, io_request_stat
 		// esdm_fragment_print(read_frag[i]);
 		// printf("\n");
 
-		//f->buffer = buf TODO;
+		f->buf = buf; // TODO calculate buffer position according to offset, size;
 		f->backend = backend_to_use;
 
     io_work_t * task = (io_work_t*) malloc(sizeof(io_work_t));

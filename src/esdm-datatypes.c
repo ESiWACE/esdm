@@ -293,18 +293,35 @@ void esdm_dataspace_string_descriptor(char* string, esdm_dataspace_t *dataspace)
  * Make fragment persistent to storage.
  * Schedule for writing to backends.
  */
-esdm_status_t esdm_fragment_commit(esdm_fragment_t *fragment)
+esdm_status_t esdm_fragment_commit(esdm_fragment_t *f)
 {
 	ESDM_DEBUG(__func__);
+	esdm_metadata_t * m = f->metadata;
+	esdm_dataspace_t * d = f->dataspace;
 
-	fragment->metadata->size += sprintf(& fragment->metadata->json[fragment->metadata->size], "{\"plugin\" : \"%s\", \"id\" : \"%s\", \"data\" :", fragment->backend->name, fragment->backend->config->id);
-	fragment->backend->callbacks.fragment_update(fragment->backend, fragment);
-	fragment->metadata->size += sprintf(& fragment->metadata->json[fragment->metadata->size], "}");
+	m->size += sprintf(& m->json[m->size], "{\"plugin\" : \"%s\", \"id\" : \"%s\", \"size\": \"", f->backend->name, f->backend->config->id);
+
+	m->size += sprintf(& m->json[m->size], "%ld", d->size[0]);
+	for(int i=1; i < d->dimensions; i++){
+		m->size += sprintf(& m->json[m->size], "x%ld", d->size[i]);
+	}
+
+	m->size += sprintf(& m->json[m->size], "\", \"offset\" :\"");
+	m->size += sprintf(& m->json[m->size], "%ld", d->offset[0]);
+	for(int i=1; i < d->dimensions; i++){
+		m->size += sprintf(& m->json[m->size], "x%ld", d->offset[i]);
+	}
+
+
+	m->size += sprintf(& m->json[m->size], "\", \"data\" :");
+
+	f->backend->callbacks.fragment_update(f->backend, f);
+	m->size += sprintf(& m->json[m->size], "}");
 
 	// Announce to metadata coordinator
-	esdm.modules->metadata->callbacks.fragment_update(esdm.modules->metadata, fragment);
+	esdm.modules->metadata->callbacks.fragment_update(esdm.modules->metadata, f);
 
-	fragment->status = ESDM_PERSISTENT;
+	f->status = ESDM_PERSISTENT;
 
 	return ESDM_SUCCESS;
 }
