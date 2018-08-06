@@ -89,7 +89,7 @@ esdm_container_t* esdm_container_create(const char* name)
 
 	container->metadata = NULL;
 	container->datasets = g_hash_table_new(g_direct_hash,  g_direct_equal);
-	container->status = ESDM_DIRTY;
+	container->status = ESDM_STATUS_DIRTY;
 
 	return container;
 }
@@ -107,7 +107,7 @@ esdm_container_t* esdm_container_retrieve(const char * name)
 
 	container->metadata = NULL;
 	container->datasets = g_hash_table_new(g_direct_hash,  g_direct_equal);
-	container->status = ESDM_DIRTY;
+	container->status = ESDM_STATUS_DIRTY;
 
 	return container;
 }
@@ -227,9 +227,65 @@ esdm_fragment_t* esdm_fragment_create(esdm_dataset_t* dataset, esdm_dataspace_t*
 	fragment->buf = buf;	// zero copy?
 	fragment->elements = elements;
 	fragment->bytes = bytes;
-	fragment->status = ESDM_DIRTY;
+	fragment->status = ESDM_STATUS_DIRTY;
 
 	return fragment;
+}
+
+
+esdm_status_t esdm_dataspace_overlap_str(esdm_dataspace_t *a, char delim_c, char * str_offset, char * str_size, esdm_dataspace_t ** out_space){
+	//printf("str: %s %s\n", str_size, str_offset);
+
+	const char delim[] = {delim_c, 0};
+	char * save = NULL;
+	char * cur = strtok_r(str_offset, delim, & save);
+	if (cur == NULL) return ESDM_ERROR;
+
+	int64_t off[a->dimensions];
+	int64_t size[a->dimensions];
+
+	for(int d=0; d < a->dimensions; d++){
+		if (cur == NULL) return ESDM_ERROR;
+		off[d] = atol(cur);
+		if(off[d] < 0) return ESDM_ERROR;
+		//printf("o%ld,", off[d]);
+		save[-1] = delim_c; // reset the overwritten text
+		cur = strtok_r(NULL, delim, & save);
+	}
+	//printf("\n");
+	if(str_size != NULL){
+		cur = strtok_r(str_size, delim, & save);
+	}
+
+	for(int d=0; d < a->dimensions; d++){
+		if (cur == NULL) return ESDM_ERROR;
+		size[d] = atol(cur);
+		if(size[d] < 0) return ESDM_ERROR;
+		//printf("s%ld,", size[d]);
+		if(save[0] != 0) save[-1] = delim_c;
+		cur = strtok_r(NULL, delim, & save);
+	}
+	//printf("\n");
+	if( cur != NULL){
+		return ESDM_ERROR;
+	}
+
+	// dimensions match, now check for overlap
+	for(int d=0; d < a->dimensions; d++){
+		int o1 = a->offset[d];
+		int s1 = a->size[d];
+
+		int o2 = off[d];
+		int s2 = size[d];
+
+		//printf("%ld %ld != %ld %ld\n", o1, s1, o2, s2);
+		if ( o1 + s1 <= o2 ) return ESDM_ERROR;
+		if ( o2 + s2 <= o1 ) return ESDM_ERROR;
+	}
+	if(out_space != NULL){
+			*out_space = esdm_dataspace_subspace(a->subspace_of, a->dimensions, size, off);
+	}
+	return ESDM_SUCCESS;
 }
 
 
@@ -238,22 +294,14 @@ esdm_status_t esdm_fragment_retrieve(esdm_fragment_t *fragment)
 {
 	ESDM_DEBUG(__func__);
 
-	// for now take the first plugin
-	//esdm_dataspace_string_descriptor(fragment->dataspace);
-	esdm.modules->metadata->callbacks.fragment_retrieve(esdm.modules->metadata, fragment, NULL);
 	json_t *root = load_json(fragment->metadata->json);
 	json_t * elem;
-	elem = json_object_get(root, "plugin");
-	const char * plugin_type = json_string_value(elem);
-	elem = json_object_get(root, "id");
-	const char * plugin_name = json_string_value(elem);
-	//printf("%s - %s\n", plugin_type, plugin_name);
 	elem = json_object_get(root, "data");
 
 	// Call backend
-	esdm_backend_t *backend = esdm.modules->backends[0];  // TODO: decision component, upon many
-
+	esdm_backend_t *backend = fragment->backend;  // TODO: decision component, upon many
 	backend->callbacks.fragment_retrieve(backend, fragment, elem);
+	
 	return ESDM_SUCCESS;
 }
 
@@ -321,7 +369,7 @@ esdm_status_t esdm_fragment_commit(esdm_fragment_t *f)
 	// Announce to metadata coordinator
 	esdm.modules->metadata->callbacks.fragment_update(esdm.modules->metadata, f);
 
-	f->status = ESDM_PERSISTENT;
+	f->status = ESDM_STATUS_PERSISTENT;
 
 	return ESDM_SUCCESS;
 }

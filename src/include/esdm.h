@@ -70,6 +70,8 @@ uint64_t      esdm_dataspace_element_count(esdm_dataspace_t *dataspace);
 uint64_t      esdm_dataspace_size(esdm_dataspace_t *dataspace);
 void         esdm_dataspace_string_descriptor(char* out_str, esdm_dataspace_t *dataspace);
 
+esdm_status_t esdm_dataspace_overlap_str(esdm_dataspace_t *parent, char delim, char * str_size, char * str_offset, esdm_dataspace_t ** out_space);
+
 /*
  * This function computes the offset to a starting buffer relative to the dataspace
  */

@@ -74,8 +74,8 @@ typedef enum esdm_datatype_t {
 typedef enum {
 	ESDM_SUCCESS = 0,
 	ESDM_ERROR,
-	ESDM_DIRTY,
-	ESDM_PERSISTENT
+	ESDM_STATUS_DIRTY,
+	ESDM_STATUS_PERSISTENT
 } esdm_status_t;
 
 /**
@@ -262,12 +262,21 @@ typedef struct{
 } io_request_status_t;
 
 typedef struct{
+	void * mem_buf;
+	esdm_dataspace_t * buf_space;
+} io_work_callback_data_t;
+
+typedef struct io_work_t io_work_t;
+
+struct io_work_t{
   esdm_fragment_t *fragment;
 	io_operation_t op;
 	esdm_status_t return_code;
 
   io_request_status_t * parent;
-} io_work_t;
+	void (*callback)(io_work_t * work);
+	io_work_callback_data_t data;
+};
 
 // where is the data accessible
 typedef enum {

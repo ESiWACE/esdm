@@ -102,6 +102,10 @@ static void backend_thread(io_work_t* work, esdm_backend_t* backend){
 
   work->return_code = ret;
 
+	if(work->callback){
+		work->callback(work);
+	}
+
   g_mutex_lock(& status->mutex);
   status->pending_ops--;
   assert(status->pending_ops >= 0);
@@ -109,18 +113,45 @@ static void backend_thread(io_work_t* work, esdm_backend_t* backend){
     g_cond_signal(& status->done_condition);
   }
   g_mutex_unlock(& status->mutex);
-	esdm_dataspace_destroy(work->fragment->dataspace);
+	//esdm_dataspace_destroy(work->fragment->dataspace);
   free(work);
 }
 
-esdm_status_t esdm_scheduler_enqueue_read(esdm_instance_t *esdm, io_request_status_t * status,  esdm_dataset_t *dataset, void *buf,  esdm_dataspace_t* space){
+static void read_callback(io_work_t * work){
+	char * b = (char*) work->data.mem_buf;
+	esdm_dataspace_t * bs = work->data.buf_space;
+
+	esdm_fragment_t * f = work->fragment;
+	esdm_dataspace_t * fs = f->dataspace;
+	//esdm_fragment_print(f);
+	//printf("\n");
+	assert(bs->datatype == fs->datatype);
+
+	//calculate where to copy the fetched data to
+	uint64_t size = esdm_sizeof(bs->datatype);
+
+	//TODO proper serialization
+	for(int d=1; d < fs->dimensions; d++){
+		assert(bs->size[d] == fs->size[d]);
+		size *= fs->size[d];
+	}
+	uint64_t mn = bs->size[0] > fs->size[0] ? fs->size[0] : bs->size[0];
+	uint64_t offset_mem = fs->offset[0] * size;
+	uint64_t offset_f = 0;
+
+	size *= mn;
+
+	DEBUG("SIZE: %ld %ld %ld", size, offset_mem, offset_f);
+
+	// first dimension can be different:
+	memcpy(b + offset_mem, ((char*)f->buf) + offset_f, size);
+
+	free(f->buf);
+}
+
+esdm_status_t esdm_scheduler_enqueue_read(esdm_instance_t *esdm, io_request_status_t * status, int frag_count, esdm_fragment_t** read_frag, void * buf, esdm_dataspace_t * buf_space){
 	GError * error;
 	esdm_status_t ret;
-	esdm_backend_t * md = esdm->modules->metadata;
-	esdm_fragment_t ** read_frag = NULL;
-	int frag_count;
-  ret = md->callbacks.lookup(md, dataset, space, & frag_count, & read_frag);
-	DEBUG("fragments to read: %d", frag_count);
 	status->pending_ops += frag_count;
 
 	for(int i=0; i < frag_count; i++){
@@ -154,13 +185,27 @@ esdm_status_t esdm_scheduler_enqueue_read(esdm_instance_t *esdm, io_request_stat
 		// esdm_fragment_print(read_frag[i]);
 		// printf("\n");
 
-		f->buf = buf; // TODO calculate buffer position according to offset, size;
+		DEBUG("OFFSET/SIZE: %s %s\n", offset_str, size_str);
+
+		//for verification purposes, we could read back the metadata stored and compare it...
+		//esdm_dataspace_t * space = NULL;
+		//ret = esdm_dataspace_overlap_str(parent_space, 'x', (char*)offset_str, (char*)size_str, & space);
+		//assert(ret == ESDM_SUCCESS);
+
+		uint64_t size = esdm_dataspace_size(f->dataspace);
+		//printf("SIZE: %ld\n", size);
+
+		f->dataspace = f->dataspace;
+		f->buf = malloc(size);
 		f->backend = backend_to_use;
 
     io_work_t * task = (io_work_t*) malloc(sizeof(io_work_t));
     task->parent = status;
     task->op = ESDM_OP_READ;
     task->fragment = f;
+		task->callback = read_callback;
+		task->data.mem_buf = buf;
+		task->data.buf_space = buf_space;
     if (backend_to_use->threads == 0){
       backend_thread(task, backend_to_use);
     }else{
@@ -238,6 +283,7 @@ esdm_status_t esdm_scheduler_enqueue_write(esdm_instance_t *esdm, io_request_sta
 	      task->op = ESDM_OP_WRITE;
 	      task->fragment = esdm_fragment_create(dataset, subspace, (char*) buf + offset_y * one_y_size);
 	      task->fragment->backend = b;
+				task->callback = NULL;
 	      if (b->threads == 0){
 	        backend_thread(task, b);
 	      }else{
@@ -284,10 +330,16 @@ esdm_status_t esdm_scheduler_process_blocking(esdm_instance_t *esdm, io_operatio
   ret = esdm_scheduler_status_init(& status);
   assert( ret == ESDM_SUCCESS );
 
+	esdm_fragment_t ** read_frag = NULL;
+	int frag_count;
+
 	if( op == ESDM_OP_WRITE){
 		ret = esdm_scheduler_enqueue_write(esdm, & status, dataset, buf, subspace);
 	}else if(op == ESDM_OP_READ){
-		ret = esdm_scheduler_enqueue_read(esdm, & status, dataset, buf, subspace);
+		esdm_backend_t * md = esdm->modules->metadata;
+		ret = md->callbacks.lookup(md, dataset, subspace, & frag_count, & read_frag);
+		DEBUG("fragments to read: %d", frag_count);
+		ret = esdm_scheduler_enqueue_read(esdm, & status, frag_count, read_frag, buf, subspace);
 	}else{
 		assert(0 && "Unknown operation");
 	}
@@ -295,6 +347,7 @@ esdm_status_t esdm_scheduler_process_blocking(esdm_instance_t *esdm, io_operatio
 
   ret = esdm_scheduler_wait(& status);
   assert( ret == ESDM_SUCCESS );
+
   ret = esdm_scheduler_status_finalize(& status);
   assert( ret == ESDM_SUCCESS );
 	return ESDM_SUCCESS;

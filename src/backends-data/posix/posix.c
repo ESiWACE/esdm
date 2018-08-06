@@ -277,27 +277,21 @@ static int fragment_retrieve(esdm_backend_t* backend, esdm_fragment_t *fragment,
 	esdm_dataspace_string_descriptor(fragment_name, fragment->dataspace);
 
 	// determine path
-	char *path;
-	asprintf(&path, "%s/containers/%s/%s/", tgt, fragment->dataset->container->name, fragment->dataset->name);
+	char path[PATH_MAX];
+	sprintf(path, "%s/containers/%s/%s/", tgt, fragment->dataset->container->name, fragment->dataset->name);
 
 	// determine path to fragment
-	char *path_fragment;
-	asprintf(&path_fragment, "%s/containers/%s/%s/%s", tgt, fragment->dataset->container->name, fragment->dataset->name, fragment_name);
+	char path_fragment[PATH_MAX];
+	sprintf(path_fragment, "%s/containers/%s/%s/%s", tgt, fragment->dataset->container->name, fragment->dataset->name, fragment_name);
 
-	DEBUG("path: %s\n", path);
-	DEBUG("path_fragment: %s\n", path_fragment);
-
+	DEBUG("path: %s", path);
+	DEBUG("path_fragment: %s", path_fragment);
 
 	//entry_update()
 
 	size_t *count = NULL;
 	entry_retrieve(path_fragment, fragment->buf);
-	DEBUG(" buf=%s\n", fragment->buf);
-
-
-
-	free(path);
-	free(path_fragment);
+	//DEBUG("buf=%s", fragment->buf);
 	return 0;
 }
 
@@ -315,12 +309,12 @@ static int fragment_update(esdm_backend_t* backend, esdm_fragment_t *fragment)
 	esdm_dataspace_string_descriptor(fragment_name, fragment->dataspace);
 
 	// determine path
-	char *path;
-	asprintf(&path, "%s/containers/%s/%s/", tgt, fragment->dataset->container->name, fragment->dataset->name);
+	char path[PATH_MAX];
+	sprintf(path, "%s/containers/%s/%s/", tgt, fragment->dataset->container->name, fragment->dataset->name);
 
 	// determine path to fragment
-	char *path_fragment;
-	asprintf(&path_fragment, "%s/containers/%s/%s/%s", tgt, fragment->dataset->container->name, fragment->dataset->name, fragment_name);
+	char path_fragment[PATH_MAX];
+	sprintf(path_fragment, "%s/containers/%s/%s/%s", tgt, fragment->dataset->container->name, fragment->dataset->name, fragment_name);
 
 	DEBUG("path: %s\n", path);
 	DEBUG("path_fragment: %s\n", path_fragment);
@@ -332,8 +326,6 @@ static int fragment_update(esdm_backend_t* backend, esdm_fragment_t *fragment)
 	fragment->metadata->size += sprintf(& fragment->metadata->json[fragment->metadata->size], "{\"path\" : \"%s\"}", path_fragment);
 
 	entry_update(path_fragment, fragment->buf, fragment->bytes);
-	free(path);
-	free(path_fragment);
 	return 0;
 }
 
