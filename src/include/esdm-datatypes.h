@@ -226,6 +226,8 @@ struct esdm_backend_callbacks_t {
 	int (*fragment_retrieve)(esdm_backend_t*, esdm_fragment_t *fragment, json_t *metadata);
 	int (*fragment_update)(esdm_backend_t*, esdm_fragment_t *fragment);
 	int (*fragment_destroy)(esdm_backend_t*, esdm_fragment_t *fragment);
+
+	int (*mkfs)(esdm_backend_t*, int enforce_format);
 };
 
 

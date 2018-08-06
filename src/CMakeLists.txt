@@ -60,12 +60,6 @@ message(STATUS "JANSSON_INCLUDE_DIRS   ${JANSSON_INCLUDE_DIRS}")
 message(STATUS "JANSSON_CFLAGS   ${JANSSON_CFLAGS}")
 message(STATUS "JANSSON_CFLAGS_OTHER   ${JANSSON_CFLAGS_OTHER}")
 
-message(STATUS "XXX   ${XXX}")
-message(STATUS "XXX   ${XXX}")
-message(STATUS "XXX   ${XXX}")
-
-
-
 
 
 
@@ -96,6 +90,7 @@ add_subdirectory(backends-data)
 add_subdirectory(backends-metadata)
 add_subdirectory(utils)
 add_subdirectory(test)
+add_subdirectory(tools)
 
 
 # Include directories for all target in this CMakeLists.txt

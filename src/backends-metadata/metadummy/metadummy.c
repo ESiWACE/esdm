@@ -55,7 +55,9 @@ static void metadummy_test();
 // Helper and utility /////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////
 
-static int mkfs(esdm_backend_t* backend)
+void posix_recursive_remove(const char * path);
+
+static int mkfs(esdm_backend_t* backend, int enforce_format)
 {
 	DEBUG_ENTER;
 
@@ -64,21 +66,29 @@ static int mkfs(esdm_backend_t* backend)
 	// use target directory from backend configuration
 	metadummy_backend_options_t *options = (metadummy_backend_options_t*) backend->data;
 	const char* tgt = options->target;
+	if(strlen(tgt) < 6){
+		return ESDM_ERROR;
+	}
+	char containers[PATH_MAX];
+	sprintf(containers, "%s/containers", tgt);
+	if (enforce_format){
+		printf("[mkfs] Removing %s\n", tgt);
+		if (stat(containers, & sb) != 0){
+			printf("[mkfs] error, this directory seems not to be created by ESDM!\n");
+			return ESDM_ERROR;
+		}
+		posix_recursive_remove(tgt);
+		if(enforce_format == 2) return ESDM_SUCCESS;
+	}
 
 	if (stat(tgt, &sb) == -1)
 	{
-		char* root;
-		char* containers;
-
-		asprintf(&root, "%s", tgt);
-		mkdir(root, 0700);
-
-		asprintf(&containers, "%s/containers", tgt);
+		mkdir(tgt, 0700);
 		mkdir(containers, 0700);
-
-		free(root);
-		free(containers);
+		return ESDM_SUCCESS;
 	}
+
+	return ESDM_ERROR;
 }
 
 static int write_check(int fd, char *buf, size_t len){
@@ -700,7 +710,8 @@ static esdm_backend_t backend_template = {
 		NULL, // fragment create
 		fragment_retrieve, // fragment retrieve
 		fragment_update, // fragment update
-		NULL, // fragment destroy
+		NULL, // fragment destroy,
+		mkfs,
 	},
 };
 
@@ -729,10 +740,6 @@ esdm_backend_t* metadummy_backend_init(esdm_config_backend_t *config)
 	data->target = config->target;
 	backend->data = data;
 	backend->config = config;
-
-	// todo check metadummy style persitency structure available?
-	mkfs(backend);
-
 	//metadummy_test();
 
 	return backend;

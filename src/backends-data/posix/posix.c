@@ -31,6 +31,7 @@
 #include <sys/types.h>
 #include <unistd.h>
 #include <assert.h>
+#include <dirent.h>
 
 #include <jansson.h>
 #include <errno.h>
@@ -48,38 +49,68 @@
 // Helper and utility /////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////
 
-static int mkfs(esdm_backend_t* backend)
-{
+void posix_recursive_remove(const char * path){
+	DEBUG("removing %s", path);
+	struct stat sb = {0};
+	int ret = stat(path, &sb);
+	if (ret == 0){
+		if((sb.st_mode & S_IFMT) == S_IFDIR){
+			DIR * dir = opendir(path);
+			struct dirent * f = readdir(dir);
+			while(f){
+				if(strcmp(f->d_name, ".") != 0 && strcmp(f->d_name, "..") != 0 ){
+					char child_path[PATH_MAX];
+					sprintf(child_path, "%s/%s", path, f->d_name);
+					posix_recursive_remove(child_path);
+				}
+				f = readdir(dir);
+			}
+			closedir(dir);
+			rmdir(path);
+		}else{
+			unlink(path);
+		}
+	}
+}
 
+static int mkfs(esdm_backend_t* backend, int enforce_format)
+{
 	posix_backend_data_t* data = (posix_backend_data_t*)backend->data;
 
 	DEBUG("mkfs: backend->(void*)data->target = %s\n", data->target);
 
 	const char* tgt = data->target;
+	if(strlen(tgt) < 6){
+		return ESDM_ERROR;
+	}
+	char sdat[PATH_MAX];
+	sprintf(sdat, "%s/shared-datasets", tgt);
 
 	struct stat st = {0};
+	if (enforce_format){
+		printf("[mkfs] Removing %s\n", tgt);
+		if (stat(sdat, & st) != 0){
+			printf("[mkfs] error, this directory seems not to be created by ESDM!\n");
+			return ESDM_ERROR;
+		}
+		posix_recursive_remove(tgt);
+		if(enforce_format == 2) return ESDM_SUCCESS;
+	}
 
 	if (stat(tgt, &st) == -1)
 	{
-		char* root;
-		char* cont;
-		char* sdat;
-		char* sfra;
+		char root[PATH_MAX];
+		char cont[PATH_MAX];
+		char sfra[PATH_MAX];
 
-		asprintf(&root, "%s", tgt);
-		asprintf(&cont, "%s/containers", tgt);
-		asprintf(&sdat, "%s/shared-datasets", tgt);
-		asprintf(&sfra, "%s/shared-fragments", tgt);
+		sprintf(root, "%s", tgt);
+		sprintf(cont, "%s/containers", tgt);
+		sprintf(sfra, "%s/shared-fragments", tgt);
 
 		mkdir(root, 0700);
 		mkdir(cont, 0700);
 		mkdir(sdat, 0700);
 		mkdir(sfra, 0700);
-
-		free(root);
-		free(cont);
-		free(sdat);
-		free(sfra);
 	}
 	return 0;
 }
@@ -405,6 +436,7 @@ static esdm_backend_t backend_template = {
 		fragment_retrieve, // fragment retrieve
 		fragment_update, // fragment update
 		NULL, // fragment delete
+		mkfs,
 	},
 };
 
@@ -448,10 +480,6 @@ esdm_backend_t* posix_backend_init(esdm_config_backend_t *config)
 
 
 	DEBUG("Backend config: target=%s\n", data->target);
-
-
-	// todo check posix style persitency structure available?
-	mkfs(backend);
 
 	return backend;
 }
