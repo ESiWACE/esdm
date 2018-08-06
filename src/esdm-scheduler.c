@@ -116,7 +116,7 @@ static void backend_thread(io_work_t* work, esdm_backend_t* backend){
   free(work);
 }
 
-static void read_callback(io_work_t * work){
+static void read_copy_callback(io_work_t * work){
 	char * b = (char*) work->data.mem_buf;
 	esdm_dataspace_t * bs = work->data.buf_space;
 
@@ -193,18 +193,22 @@ esdm_status_t esdm_scheduler_enqueue_read(esdm_instance_t *esdm, io_request_stat
 
 		uint64_t size = esdm_dataspace_size(f->dataspace);
 		//printf("SIZE: %ld\n", size);
-
-		f->dataspace = f->dataspace;
-		f->buf = malloc(size);
 		f->backend = backend_to_use;
 
     io_work_t * task = (io_work_t*) malloc(sizeof(io_work_t));
     task->parent = status;
     task->op = ESDM_OP_READ;
     task->fragment = f;
-		task->callback = read_callback;
-		task->data.mem_buf = buf;
-		task->data.buf_space = buf_space;
+		if(f->in_place){
+			DEBUG("inplace!", "");
+			task->callback = NULL;
+			f->buf = buf;
+		}else{
+			f->buf = malloc(size);
+			task->callback = read_copy_callback;
+			task->data.mem_buf = buf;
+			task->data.buf_space = buf_space;
+		}
     if (backend_to_use->threads == 0){
       backend_thread(task, backend_to_use);
     }else{

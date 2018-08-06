@@ -507,6 +507,7 @@ static esdm_fragment_t * create_fragment_from_metadata(int fd, esdm_dataset_t * 
 	f->elements = elements;
 	f->bytes = bytes;
 	f->status = ESDM_STATUS_PERSISTENT;
+	f->in_place = 0;
 	//printf("%s \n", f->metadata->json);
 
 	return f;
@@ -524,6 +525,25 @@ static int lookup(esdm_backend_t* backend, esdm_dataset_t * dataset, esdm_datasp
 	// determine path
 	char path[PATH_MAX];
 	sprintf(path, "%s/containers/%s/%s/", tgt, dataset->container->name, dataset->name);
+
+	// optimization: check if we find a fragment that matches the requested domain exactly
+	{
+		char fragment_name[PATH_MAX];
+		esdm_dataspace_string_descriptor(fragment_name, space);
+		char path_full[PATH_MAX];
+		sprintf(path_full, "%s/%s", path, fragment_name);
+		int fd = open(path_full, O_RDONLY);
+		if(fd >= 0){
+			// found a fragment
+			*out_frag_count = 1;
+			esdm_fragment_t ** frag = (esdm_fragment_t**) malloc(sizeof(esdm_fragment_t*));
+			*out_fragments = frag;
+			frag[0] = create_fragment_from_metadata(fd, dataset, space);
+			frag[0]->in_place = 1;
+			close(fd);
+			return ESDM_SUCCESS;
+		}
+	}
 
 	DIR * dir = opendir(path);
 	if(dir == NULL){

@@ -143,6 +143,7 @@ struct esdm_fragment_t {
 	esdm_backend_t   *backend;
 
 	void *buf;
+	int in_place;
 	size_t elements;
 	size_t bytes;
 	esdm_status_t status;
