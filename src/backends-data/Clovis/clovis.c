@@ -666,15 +666,15 @@ static int mapping_insert(esdm_backend_t  *backend,
 static int esdm_backend_clovis_fragment_retrieve(esdm_backend_t  *backend,
                                                  esdm_fragment_t *fragment)
 {
-    char                  *fragment_name = NULL;
-    char                  *path_fragment = NULL;
-    void                  *buf = NULL;
-    char                  *obj_id = NULL;
-    void                  *obj_handle = NULL;
-    int                    rc = 0;
+    char  fragment_name[PATH_MAX];
+    char *path_fragment = NULL;
+    void *buf = NULL;
+    char *obj_id = NULL;
+    void *obj_handle = NULL;
+    int   rc = 0;
 
     // serialization of subspace for fragment
-    fragment_name = esdm_dataspace_string_descriptor(fragment->dataspace);
+    esdm_dataspace_string_descriptor(fragment_name, fragment->dataspace);
     asprintf(&path_fragment, "/containers/%s/%s/%s", fragment->dataset->container->name, fragment->dataset->name, fragment_name);
     printf("retrieving path_fragment: %s size=%d\n", path_fragment, (int)fragment->bytes);
 
@@ -703,7 +703,6 @@ err:
     if (rc != 0)
         free(buf);
     free(obj_id);
-    free(fragment_name);
     free(path_fragment);
     return rc;
 }
@@ -711,15 +710,15 @@ err:
 static int esdm_backend_clovis_fragment_update(esdm_backend_t  *backend,
                                                esdm_fragment_t *fragment)
 {
-    char                  *fragment_name = NULL;
-    char                  *path_fragment = NULL;
-    char                  *obj_id = NULL;
-    char                  *obj_meta = NULL;
-    void                  *obj_handle = NULL;
-    int                    rc = 0;
+    char  fragment_name[PATH_MAX];
+    char *path_fragment = NULL;
+    char *obj_id = NULL;
+    char *obj_meta = NULL;
+    void *obj_handle = NULL;
+    int  rc = 0;
 
     // serialization of subspace for fragment
-    fragment_name = esdm_dataspace_string_descriptor(fragment->dataspace);
+    esdm_dataspace_string_descriptor(fragment_name, fragment->dataspace);
     asprintf(&path_fragment, "/containers/%s/%s/%s", fragment->dataset->container->name, fragment->dataset->name, fragment_name);
     printf("updating path_fragment: %s (size=%d)\n", path_fragment, (int)fragment->bytes);
 
@@ -753,7 +752,6 @@ static int esdm_backend_clovis_fragment_update(esdm_backend_t  *backend,
 err:
     free(obj_id);
     free(obj_meta);
-    free(fragment_name);
     free(path_fragment);
     return rc;
 }
