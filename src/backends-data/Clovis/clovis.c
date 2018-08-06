@@ -56,7 +56,8 @@ esdm_backend_clovis_t *eb2ebm(esdm_backend_t *eb)
 char *laddr_get()
 {
     FILE *output;
-    char screen[4096 * 2];
+    char screen[4096];
+    char *first_newline;
     int rc;
 
     output = popen("lctl list_nids", "r");
@@ -67,6 +68,12 @@ char *laddr_get()
     memset(screen, 0, 4096);
     rc = fread(screen, 1, 4096, output);
     pclose(output);
+    if (rc > 0) {
+        /* find the first '\n' char and replace it with '\0' */
+        first_newline = strchr(screen, '\n');
+        if (first_newline != 0)
+            *first_newline = '\0';
+    }
     return rc > 0 ? strdup(screen) : NULL;
 }
 
@@ -81,28 +88,37 @@ static int conf_parse(char * conf, esdm_backend_clovis_t *ebm)
     /*
      * Parse the conf string into ebm->ebm_clovis_conf.
      */
-    static char *clovis_local_addr;
-    static char *clovis_ha_addr;
-    static char *clovis_prof;
-    static char *clovis_proc_fid;
-    static char *clovis_index_dir = "/tmp/";
-    static struct m0_idx_dix_config dix_conf = { .kc_create_meta = false };
+    char *clovis_local_addr;
+    char *clovis_ha_addr;
+    char *clovis_prof;
+    char *clovis_proc_fid;
+    char *clovis_index_dir = "/tmp/";
+    struct m0_idx_dix_config dix_conf = { .kc_create_meta = false };
+    char *laddr, *combined_laddr;
 
-    if ((clovis_local_addr = strsep(&conf, " ")) == NULL) {
+    if ((clovis_local_addr = strsep(&conf, " ")) == NULL)
         return -EINVAL;
-    }
-    ebm->ebm_clovis_conf.cc_local_addr = strdup(clovis_local_addr);
-    if ((clovis_ha_addr = strsep(&conf, " ")) == NULL) {
+    laddr = laddr_get();
+    if (laddr == NULL)
         return -EINVAL;
-    }
+    /* concatenate the local address and user provided appendix */
+    asprintf(&combined_laddr, "%s%s", laddr, clovis_local_addr);
+    free(laddr);
+    if (combined_laddr == NULL)
+        return -EINVAL;
+    ebm->ebm_clovis_conf.cc_local_addr = combined_laddr;
+
+    if ((clovis_ha_addr = strsep(&conf, " ")) == NULL)
+        return -EINVAL;
+
     ebm->ebm_clovis_conf.cc_ha_addr = strdup(clovis_ha_addr);
-    if ((clovis_prof = strsep(&conf, " ")) == NULL) {
+
+    if ((clovis_prof = strsep(&conf, " ")) == NULL)
         return -EINVAL;
-    }
     ebm->ebm_clovis_conf.cc_profile = strdup(clovis_prof);
-    if ((clovis_proc_fid = strsep(&conf, " ")) == NULL) {
+
+    if ((clovis_proc_fid = strsep(&conf, " ")) == NULL)
         return -EINVAL;
-    }
     ebm->ebm_clovis_conf.cc_process_fid = strdup(clovis_proc_fid);
 
     ebm->ebm_clovis_conf.cc_is_oostore            = true;
@@ -650,15 +666,15 @@ static int mapping_insert(esdm_backend_t  *backend,
 static int esdm_backend_clovis_fragment_retrieve(esdm_backend_t  *backend,
                                                  esdm_fragment_t *fragment)
 {
-    char                  *fragment_name = NULL;
-    char                  *path_fragment = NULL;
-    void                  *buf = NULL;
-    char                  *obj_id = NULL;
-    void                  *obj_handle = NULL;
-    int                    rc = 0;
+    char  fragment_name[PATH_MAX];
+    char *path_fragment = NULL;
+    void *buf = NULL;
+    char *obj_id = NULL;
+    void *obj_handle = NULL;
+    int   rc = 0;
 
     // serialization of subspace for fragment
-    fragment_name = esdm_dataspace_string_descriptor(fragment->dataspace);
+    esdm_dataspace_string_descriptor(fragment_name, fragment->dataspace);
     asprintf(&path_fragment, "/containers/%s/%s/%s", fragment->dataset->container->name, fragment->dataset->name, fragment_name);
     printf("retrieving path_fragment: %s size=%d\n", path_fragment, (int)fragment->bytes);
 
@@ -687,7 +703,6 @@ err:
     if (rc != 0)
         free(buf);
     free(obj_id);
-    free(fragment_name);
     free(path_fragment);
     return rc;
 }
@@ -695,15 +710,15 @@ err:
 static int esdm_backend_clovis_fragment_update(esdm_backend_t  *backend,
                                                esdm_fragment_t *fragment)
 {
-    char                  *fragment_name = NULL;
-    char                  *path_fragment = NULL;
-    char                  *obj_id = NULL;
-    char                  *obj_meta = NULL;
-    void                  *obj_handle = NULL;
-    int                    rc = 0;
+    char  fragment_name[PATH_MAX];
+    char *path_fragment = NULL;
+    char *obj_id = NULL;
+    char *obj_meta = NULL;
+    void *obj_handle = NULL;
+    int  rc = 0;
 
     // serialization of subspace for fragment
-    fragment_name = esdm_dataspace_string_descriptor(fragment->dataspace);
+    esdm_dataspace_string_descriptor(fragment_name, fragment->dataspace);
     asprintf(&path_fragment, "/containers/%s/%s/%s", fragment->dataset->container->name, fragment->dataset->name, fragment_name);
     printf("updating path_fragment: %s (size=%d)\n", path_fragment, (int)fragment->bytes);
 
@@ -737,7 +752,6 @@ static int esdm_backend_clovis_fragment_update(esdm_backend_t  *backend,
 err:
     free(obj_id);
     free(obj_meta);
-    free(fragment_name);
     free(path_fragment);
     return rc;
 }
@@ -824,8 +838,11 @@ esdm_backend_t* clovis_backend_init(esdm_config_backend_t* config)
     printf("backend id     = %s\n", config->id);
     printf("backend target = %s\n", config->target);
 
-    //         "local_addr ha_addr profile process_fid"
-    //target = "172.16.154.130@tcp:12345:33:103 172.16.154.130@tcp:12345:34:1 <0x7000000000000001:0> <0x7200000000000001:64>";
+    /*
+     *          "local_addr ha_addr profile process_fid"
+     * target = ":12345:33:103 172.16.154.130@tcp:12345:34:1 <0x7000000000000001:0> <0x7200000000000001:64>";
+     * Now please note the local_addr does not include the ipaddr.
+     */
     target = strdup(config->target);
     if (target == NULL)
         return NULL;

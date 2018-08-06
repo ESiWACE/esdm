@@ -30,7 +30,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-
 #include <glib.h>
 
 #define DEBUG_ENTER ESDM_DEBUG_COM_FMT("SCHEDULER", "", "")
