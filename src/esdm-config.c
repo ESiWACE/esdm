@@ -189,7 +189,7 @@ esdm_config_backends_t* esdm_config_get_backends(esdm_instance_t* esdm)
 					const char * str = json_string_value(elem);
 					if (strcasecmp(str, "global") == 0){
 						backends[i].data_accessibility = ESDM_ACCESSIBILITY_GLOBAL;
-					}else if (strcasecmp(str, "global") == 0){
+					}else if (strcasecmp(str, "local") == 0){
 						backends[i].data_accessibility = ESDM_ACCESSIBILITY_NODELOCAL;
 					}else{
 						ESDM_ERROR("Unknown accessibility!");
