@@ -209,7 +209,6 @@ int main(int argc, char* argv[])
 			assert( ret == ESDM_SUCCESS );
 			// verify data and fail test if mismatches are found
 			long idx;
-			printf("%ld %ld - %ld\n", dim[1], dim[2], offset[1]);
 			for(y = offset[1]; y < dim[1]; y++){
 				for(x = offset[2]; x < dim[2]; x++){
 					idx = (y - offset[1]) * size + x;
