@@ -128,14 +128,23 @@ static void read_copy_callback(io_work_t * work){
 
 	//calculate where to copy the fetched data to
 	uint64_t size = esdm_sizeof(bs->datatype);
+	// choose the dimension to split
+	int split_dim = 0;
+	for(int i=0; i < fs->dimensions; i++){
+		if (fs->size[i] != 1){
+			split_dim = i;
+			break;
+		}
+	}
 
 	//TODO proper serialization
-	for(int d=1; d < fs->dimensions; d++){
-		assert(bs->size[d] == fs->size[d]);
-		size *= fs->size[d];
+	for(int d=0; d < fs->dimensions; d++){
+		if (d != split_dim){
+			size *= fs->size[d];
+		}
 	}
-	uint64_t mn = bs->size[0] > fs->size[0] ? fs->size[0] : bs->size[0];
-	uint64_t offset_mem = fs->offset[0] * size;
+	uint64_t mn = bs->size[split_dim] > fs->size[split_dim] ? fs->size[split_dim] : bs->size[split_dim];
+	uint64_t offset_mem = (fs->offset[split_dim] - bs->offset[split_dim]) * size;
 	uint64_t offset_f = 0;
 
 	size *= mn;
@@ -274,7 +283,7 @@ esdm_status_t esdm_scheduler_enqueue_write(esdm_instance_t *esdm, io_request_sta
 		}
 		ESDM_DEBUG_FMT("Will submit %d operations and for backend0: %d y-blocks", status->pending_ops, per_backend[0]);
 
-		uint64_t offset_y = space->offset[split_dim];
+		uint64_t offset_y = 0;
 		int64_t dim[space->dimensions];
 		int64_t offset[space->dimensions];
 		memcpy(offset, space->offset, space->dimensions * sizeof(int64_t));
@@ -294,7 +303,7 @@ esdm_status_t esdm_scheduler_enqueue_write(esdm_instance_t *esdm, io_request_sta
 				y_total_access -= y_to_access;
 
 				dim[split_dim] = y_to_access;
-				offset[split_dim] = offset_y;
+				offset[split_dim] = offset_y + space->offset[split_dim];
 
 	      io_work_t * task = (io_work_t*) malloc(sizeof(io_work_t));
 				esdm_dataspace_t* subspace = esdm_dataspace_subspace(space, space->dimensions, dim, offset);

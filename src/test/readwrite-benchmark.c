@@ -145,7 +145,7 @@ int main(int argc, char* argv[])
 	int x, y;
 	for(y = offset[1]; y < dim[1]; y++){
 		for(x = offset[2]; x < dim[2]; x++){
-			buf_w[(y - offset[1]) * size + x] = y * size + x + 1;
+			buf_w[(y - offset[1]) * size + x] = y * size + x + 1 + mpi_rank;
 		}
 	}
 
@@ -206,22 +206,21 @@ int main(int argc, char* argv[])
 			esdm_dataspace_t *subspace = esdm_dataspace_subspace(dataspace, 3, dim, offset);
 			ret = esdm_read(dataset, buf_r, subspace);
 			assert( ret == ESDM_SUCCESS );
+			// verify data and fail test if mismatches are found
+			int idx;
+			for(y = offset[1]; y < dim[1]; y++){
+				for(x = offset[2]; x < dim[2]; x++){
+					idx = (y - offset[1]) * size + x;
+
+					if (buf_r[idx] != buf_w[idx]) {
+						mismatches++;
+					}
+				}
+			}
 		}
 		MPI_Barrier(MPI_COMM_WORLD);
  		time = stop_timer(t);
 
-		// verify data and fail test if mismatches are found
-		int idx;
-
-		for(y = offset[0]; y < dim[0]; y++){
-			for(x = offset[1]; x < dim[1]; x++){
-				idx = (y - offset[0]) * size + x;
-
-				if (buf_r[idx] != buf_w[idx]) {
-					mismatches++;
-				}
-			}
-		}
 		int mismatches_sum;
 		MPI_Reduce(& mismatches, &mismatches_sum, 1, MPI_INT, MPI_SUM, 0, MPI_COMM_WORLD);
 		double total_time;
@@ -233,7 +232,6 @@ int main(int argc, char* argv[])
 			} else {
 				printf("OK\n");
 			}
-			assert(mismatches_sum == 0);
 			printf("Read: %.3fs %.3f MiB/s size:%.0f MiB\n", total_time, volume_all/total_time/1024.0/1024, volume_all/1024.0/1024);
 		}
 	}
