@@ -62,13 +62,13 @@ int main(int argc, char** argv){
   if(o.format_global){
     ret = esdm_mkfs(o.remove_data ? 2 : o.enforce_format, ESDM_ACCESSIBILITY_GLOBAL);
     if (ret != ESDM_SUCCESS){
-      printf("Error during mkfs!\n");
+      printf("Error during mkfs -g!\n");
     }
   }
   if(o.format_local){
     ret = esdm_mkfs(o.remove_data ? 2 : o.enforce_format, ESDM_ACCESSIBILITY_NODELOCAL);
     if (ret != ESDM_SUCCESS){
-      printf("Error during mkfs!\n");
+      printf("Error during mkfs -l!\n");
     }
   }
   ret = esdm_finalize();

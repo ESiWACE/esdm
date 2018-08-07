@@ -91,9 +91,9 @@ static int mkfs(esdm_backend_t* backend, int enforce_format)
 		printf("[mkfs] Removing %s\n", tgt);
 		if (stat(sdat, & st) != 0){
 			printf("[mkfs] error, this directory seems not to be created by ESDM!\n");
-			return ESDM_ERROR;
+		}else{
+			posix_recursive_remove(tgt);
 		}
-		posix_recursive_remove(tgt);
 		if(enforce_format == 2) return ESDM_SUCCESS;
 	}
 
