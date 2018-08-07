@@ -30,7 +30,7 @@
 
 int esdm_mpi_get_tasks_per_node() {
 	MPI_Comm shared_comm;
-	int count;
+	int count = 1;
 
 	MPI_Comm_split_type (MPI_COMM_WORLD, MPI_COMM_TYPE_SHARED, 0, MPI_INFO_NULL, &shared_comm);
 	MPI_Comm_size (shared_comm, &count);
@@ -123,7 +123,7 @@ int main(int argc, char* argv[])
 	const int64_t size = _size;
 
 	if (mpi_rank == 0)
-		printf("Running with a 2D slice of %ld*%ld\n", size, size);
+		printf("Running with %ld timesteps and 2D slice of %ld*%ld\n", timesteps, size, size);
 
 	if (size / mpi_size == 0){
 		printf("Error, size < number of ranks!\n");
@@ -143,7 +143,7 @@ int main(int argc, char* argv[])
 	assert(buf_r != NULL);
 
 	int x, y;
-	for(y = offset[1]; y < dim[2]; y++){
+	for(y = offset[1]; y < dim[1]; y++){
 		for(x = offset[2]; x < dim[2]; x++){
 			buf_w[(y - offset[1]) * size + x] = y * size + x + 1;
 		}
