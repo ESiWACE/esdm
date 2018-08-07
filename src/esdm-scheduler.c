@@ -299,9 +299,6 @@ esdm_status_t esdm_scheduler_enqueue_write(esdm_instance_t *esdm, io_request_sta
 	      io_work_t * task = (io_work_t*) malloc(sizeof(io_work_t));
 				esdm_dataspace_t* subspace = esdm_dataspace_subspace(space, space->dimensions, dim, offset);
 
-				esdm_dataspace_print(subspace);
-				printf(" HERNES\n");
-
 	      task->parent = status;
 	      task->op = ESDM_OP_WRITE;
 	      task->fragment = esdm_fragment_create(dataset, subspace, (char*) buf + offset_y * one_y_size);
