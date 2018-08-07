@@ -94,7 +94,7 @@ size_t esdm_sizeof(esdm_datatype_t type);
  * enforce_format = 1 => recreate structure deleting old stuff
  * enforce_format = 2 => delete only
  */
-esdm_status_t esdm_mkfs(int enforce_format);
+esdm_status_t esdm_mkfs(int enforce_format, data_accessibility_t target);
 
 
 ///////////////////////////////////////////////////////////////////////////////

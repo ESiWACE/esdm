@@ -103,19 +103,24 @@ esdm_status_t esdm_init()
 	return ESDM_SUCCESS;
 }
 
-esdm_status_t esdm_mkfs(int enforce_format){
+esdm_status_t esdm_mkfs(int enforce_format, data_accessibility_t target){
 	if(! is_initialized){
 		return ESDM_ERROR;
 	}
 	int ret;
-	ret = esdm.modules->metadata->callbacks.mkfs(esdm.modules->metadata, enforce_format);
-	if (ret != ESDM_SUCCESS){
-		return ret;
-	}
-	for(int i=0; i < esdm.modules->backend_count; i++){
-		ret = esdm.modules->backends[i]->callbacks.mkfs(esdm.modules->backends[i], enforce_format);
+	if(esdm.modules->metadata->config->data_accessibility == target){
+		ret = esdm.modules->metadata->callbacks.mkfs(esdm.modules->metadata, enforce_format);
 		if (ret != ESDM_SUCCESS){
 			return ret;
+		}
+	}
+
+	for(int i=0; i < esdm.modules->backend_count; i++){
+		if(esdm.modules->backends[i]->config->data_accessibility == target){
+			ret = esdm.modules->backends[i]->callbacks.mkfs(esdm.modules->backends[i], enforce_format);
+			if (ret != ESDM_SUCCESS){
+				return ret;
+			}
 		}
 	}
 	return ESDM_SUCCESS;
