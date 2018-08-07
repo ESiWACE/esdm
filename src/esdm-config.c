@@ -118,13 +118,13 @@ esdm_config_backend_t* esdm_config_get_metadata_coordinator(esdm_instance_t* esd
 	elem = json_object_get(config_backend->backend, "target");
 	config_backend->target = json_string_value(elem);
 
-	elem = json_object_get(backend, "accessibility");
+	elem = json_object_get(config_backend->backend, "accessibility");
 	if (elem != NULL){
 		const char * str = json_string_value(elem);
 		if (strcasecmp(str, "global") == 0){
-			backends[i].data_accessibility = ESDM_ACCESSIBILITY_GLOBAL;
+			config_backend->data_accessibility = ESDM_ACCESSIBILITY_GLOBAL;
 		}else if (strcasecmp(str, "local") == 0){
-			backends[i].data_accessibility = ESDM_ACCESSIBILITY_NODELOCAL;
+			config_backend->data_accessibility = ESDM_ACCESSIBILITY_NODELOCAL;
 		}else{
 			ESDM_ERROR("Unknown accessibility!");
 		}
