@@ -274,7 +274,7 @@ esdm_status_t esdm_scheduler_enqueue_write(esdm_instance_t *esdm, io_request_sta
 		}
 		ESDM_DEBUG_FMT("Will submit %d operations and for backend0: %d y-blocks", status->pending_ops, per_backend[0]);
 
-		uint64_t offset_y = 0;
+		uint64_t offset_y = space->offset[split_dim];
 		int64_t dim[space->dimensions];
 		int64_t offset[space->dimensions];
 		memcpy(offset, space->offset, space->dimensions * sizeof(int64_t));
@@ -298,6 +298,9 @@ esdm_status_t esdm_scheduler_enqueue_write(esdm_instance_t *esdm, io_request_sta
 
 	      io_work_t * task = (io_work_t*) malloc(sizeof(io_work_t));
 				esdm_dataspace_t* subspace = esdm_dataspace_subspace(space, space->dimensions, dim, offset);
+
+				esdm_dataspace_print(subspace);
+				printf(" HERNES\n");
 
 	      task->parent = status;
 	      task->op = ESDM_OP_WRITE;

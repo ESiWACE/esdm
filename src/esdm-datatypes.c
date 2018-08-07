@@ -505,9 +505,11 @@ esdm_dataspace_t* esdm_dataspace_create(int64_t dimensions, int64_t* sizes, esdm
 	dataspace->dimensions = dimensions;
 	dataspace->size = (int64_t*) malloc(sizeof(int64_t)*dimensions);
 	dataspace->datatype = datatype;
+	dataspace->offset = (int64_t*) malloc(sizeof(int64_t)*dimensions);
 	dataspace->subspace_of = NULL;
 
 	memcpy(dataspace->size, sizes, sizeof(int64_t)*dimensions);
+	memset(dataspace->offset, 0, sizeof(int64_t)*dimensions);
 
 	DEBUG("New dataspace: dims=%d\n", dataspace->dimensions);
 

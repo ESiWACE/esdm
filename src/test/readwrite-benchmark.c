@@ -182,6 +182,7 @@ int main(int argc, char* argv[])
 		for(int t=0; t < timesteps; t++){
 			offset[0] = t;
 			esdm_dataspace_t *subspace = esdm_dataspace_subspace(dataspace, 3, dim, offset);
+
 			ret = esdm_write(dataset, buf_w, subspace);
 			assert( ret == ESDM_SUCCESS );
 		}
