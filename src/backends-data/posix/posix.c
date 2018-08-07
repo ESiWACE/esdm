@@ -97,23 +97,24 @@ static int mkfs(esdm_backend_t* backend, int enforce_format)
 		if(enforce_format == 2) return ESDM_SUCCESS;
 	}
 
-	if (stat(tgt, &st) == -1)
+	if (stat(tgt, &st) != -1)
 	{
-		printf("[mkfs] Creating %s\n", tgt);
-		char root[PATH_MAX];
-		char cont[PATH_MAX];
-		char sfra[PATH_MAX];
-
-		sprintf(root, "%s", tgt);
-		sprintf(cont, "%s/containers", tgt);
-		sprintf(sfra, "%s/shared-fragments", tgt);
-
-		mkdir(root, 0700);
-		mkdir(cont, 0700);
-		mkdir(sdat, 0700);
-		mkdir(sfra, 0700);
+		return ESDM_ERROR;
 	}
-	return 0;
+	printf("[mkfs] Creating %s\n", tgt);
+	char root[PATH_MAX];
+	char cont[PATH_MAX];
+	char sfra[PATH_MAX];
+
+	sprintf(root, "%s", tgt);
+	sprintf(cont, "%s/containers", tgt);
+	sprintf(sfra, "%s/shared-fragments", tgt);
+
+	mkdir(root, 0700);
+	mkdir(cont, 0700);
+	mkdir(sdat, 0700);
+	mkdir(sfra, 0700);
+	return ESDM_SUCCESS;
 }
 
 

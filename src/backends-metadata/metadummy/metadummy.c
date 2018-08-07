@@ -81,15 +81,15 @@ static int mkfs(esdm_backend_t* backend, int enforce_format)
 		if(enforce_format == 2) return ESDM_SUCCESS;
 	}
 
-	if (stat(tgt, &sb) == -1)
+	if (stat(tgt, &sb) == 0)
 	{
-		printf("[mkfs] Creating %s\n", tgt);
-		mkdir(tgt, 0700);
-		mkdir(containers, 0700);
-		return ESDM_SUCCESS;
+		return ESDM_ERROR;
 	}
 
-	return ESDM_ERROR;
+	printf("[mkfs] Creating %s\n", tgt);
+	mkdir(tgt, 0700);
+	mkdir(containers, 0700);
+	return ESDM_SUCCESS;
 }
 
 static int write_check(int fd, char *buf, size_t len){
