@@ -45,7 +45,13 @@ int main(){
     printf("Offset: %d,%d -- size: %lu\n", (int) offset[0], (int) offset[1], size);
 
     // now copy the data from the position
-    uint64_t off_buff = esdm_buffer_offset_first_dimension(space, offset[0]);
+  	uint64_t off_buff = offset[0];
+  	for (int i = 0; i < space->dimensions; i++)
+  	{
+  		off_buff *= space->size[i];
+  	}
+  	off_buff *= esdm_sizeof(subspace->datatype);
+
     printf("Buffer offset: %lu %zu %zu\n", off_buff, (size_t)((char*) data_out[0]) + off_buff, (size_t)((char*) data[0]) + off_buff);
     memcpy(((char*) data_out[0]) + off_buff, ((char*) data[0]) + off_buff, size);
 

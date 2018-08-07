@@ -72,11 +72,6 @@ void         esdm_dataspace_string_descriptor(char* out_str, esdm_dataspace_t *d
 
 esdm_status_t esdm_dataspace_overlap_str(esdm_dataspace_t *parent, char delim, char * str_size, char * str_offset, esdm_dataspace_t ** out_space);
 
-/*
- * This function computes the offset to a starting buffer relative to the dataspace
- */
-uint64_t      esdm_buffer_offset_first_dimension(esdm_dataspace_t *dataspace, int64_t offset);
-
 // Fragment
 esdm_fragment_t* esdm_fragment_create(esdm_dataset_t *dataset, esdm_dataspace_t *subspace, void *buf);
 esdm_fragment_t* esdm_fragment_deserialize(void *serialized_fragment);

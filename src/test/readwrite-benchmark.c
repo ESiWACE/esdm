@@ -78,24 +78,25 @@ int main(int argc, char* argv[])
 	int mpi_rank;
 	int run_read = 0;
 	int run_write = 0;
+	long timesteps = 0;
 
 	MPI_Comm_rank(MPI_COMM_WORLD, & mpi_rank);
 	MPI_Comm_size(MPI_COMM_WORLD, & mpi_size);
 
 	int64_t _size;
 	char *config_file;
-	char * default_args[] = {argv[0], "10", "_esdm.conf", "B"};
+	char * default_args[] = {argv[0], "10", "_esdm.conf", "B", "10"};
 	if (argc == 1){
-		argc = 4;
+		argc = 5;
 		argv = default_args;
 	}
-	if (argc != 4) {
-		printf("Syntax: %s [SIZE] [CONFIG] [R|W|B]", argv[0]);
+	if (argc != 5) {
+		printf("Syntax: %s [SIZE] [CONFIG] [R|W|B] [TIMESTEPS]", argv[0]);
 		printf("\t SIZE specifies one dimension of a 2D field\n");
 		exit(1);
 	}
 
-	_size = atoll(argv[1]);
+	_size = atol(argv[1]);
 	config_file = argv[2];
 	switch(argv[3][0]){
 		case('R'):{
@@ -116,6 +117,8 @@ int main(int argc, char* argv[])
 			exit(1);
 		}
 	}
+	timesteps = atol(argv[4]);
+
 
 	const int64_t size = _size;
 
@@ -127,11 +130,11 @@ int main(int argc, char* argv[])
 		exit(1);
 	}
 
-	int64_t dim[] = {size / mpi_size + (mpi_rank < (size % mpi_size) ? 1 : 0), size};
-	int64_t offset[] = {size / mpi_size * mpi_rank + (mpi_rank < (size % mpi_size) ? mpi_rank : size % mpi_size), 0};
+	int64_t dim[] = {1, size / mpi_size + (mpi_rank < (size % mpi_size) ? 1 : 0), size};
+	int64_t offset[] = {0, size / mpi_size * mpi_rank + (mpi_rank < (size % mpi_size) ? mpi_rank : size % mpi_size), 0};
 
-	const long volume = dim[0]*dim[1]*sizeof(uint64_t);
-	const long volume_all = size*size*sizeof(uint64_t);
+	const long volume = dim[1]*dim[2]*sizeof(uint64_t);
+	const long volume_all = timesteps*size*size*sizeof(uint64_t);
 
 	// prepare data
 	uint64_t * buf_w = (uint64_t *) malloc(volume);
@@ -140,9 +143,9 @@ int main(int argc, char* argv[])
 	assert(buf_r != NULL);
 
 	int x, y;
-	for(y = offset[0]; y < dim[0]; y++){
-		for(x = offset[1]; x < dim[1]; x++){
-			buf_w[(y - offset[0]) * size + x] = y * size + x + 1;
+	for(y = offset[1]; y < dim[2]; y++){
+		for(x = offset[2]; x < dim[2]; x++){
+			buf_w[(y - offset[1]) * size + x] = y * size + x + 1;
 		}
 	}
 
@@ -158,8 +161,8 @@ int main(int argc, char* argv[])
 	assert( ret == ESDM_SUCCESS );
 
 	// define dataspace
-	int64_t bounds[] = {size, size};
-	esdm_dataspace_t *dataspace = esdm_dataspace_create(2, bounds, ESDM_TYPE_UINT64_T);
+	int64_t bounds[] = {timesteps, size, size};
+	esdm_dataspace_t *dataspace = esdm_dataspace_create(3, bounds, ESDM_TYPE_UINT64_T);
 
 	container = esdm_container_create("mycontainer");
 	dataset = esdm_dataset_create(container, "mydataset", dataspace);
@@ -168,7 +171,6 @@ int main(int argc, char* argv[])
 	esdm_dataset_commit(dataset);
 
 	// define subspace
-	esdm_dataspace_t *subspace = esdm_dataspace_subspace(dataspace, 2, dim, offset);
 
 	timer t;
 	double time;
@@ -177,8 +179,13 @@ int main(int argc, char* argv[])
 		MPI_Barrier(MPI_COMM_WORLD);
 		start_timer(&t);
 		// Write the data to the dataset
-		ret = esdm_write(dataset, buf_w, subspace);
-		assert( ret == ESDM_SUCCESS );
+		for(int t=0; t < timesteps; t++){
+			offset[0] = t;
+			esdm_dataspace_t *subspace = esdm_dataspace_subspace(dataspace, 3, dim, offset);
+			ret = esdm_write(dataset, buf_w, subspace);
+			assert( ret == ESDM_SUCCESS );
+		}
+
 		MPI_Barrier(MPI_COMM_WORLD);
 		time = stop_timer(t);
 		double total_time;
@@ -193,9 +200,12 @@ int main(int argc, char* argv[])
 		MPI_Barrier(MPI_COMM_WORLD);
 		start_timer(&t);
 		// Read the data to the dataset
-		ret = esdm_read(dataset, buf_r, subspace);
-		assert( ret == ESDM_SUCCESS );
-
+		for(int t=0; t < timesteps; t++){
+			offset[0] = t;
+			esdm_dataspace_t *subspace = esdm_dataspace_subspace(dataspace, 3, dim, offset);
+			ret = esdm_read(dataset, buf_r, subspace);
+			assert( ret == ESDM_SUCCESS );
+		}
 		MPI_Barrier(MPI_COMM_WORLD);
  		time = stop_timer(t);
 

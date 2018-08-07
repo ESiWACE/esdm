@@ -173,16 +173,6 @@ uint64_t  esdm_dataspace_size(esdm_dataspace_t *dataspace){
 	return bytes;
 }
 
-uint64_t 	esdm_buffer_offset_first_dimension(esdm_dataspace_t *subspace, int64_t offset){
-	assert(subspace->size != NULL);
-	uint64_t pos = offset;
-	for (int i = 1; i < subspace->dimensions; i++)
-	{
-		pos *= subspace->size[i];
-	}
-	return pos * esdm_sizeof(subspace->datatype);
-}
-
 
 
 // Fragment ///////////////////////////////////////////////////////////////////
@@ -301,7 +291,7 @@ esdm_status_t esdm_fragment_retrieve(esdm_fragment_t *fragment)
 	// Call backend
 	esdm_backend_t *backend = fragment->backend;  // TODO: decision component, upon many
 	backend->callbacks.fragment_retrieve(backend, fragment, elem);
-	
+
 	return ESDM_SUCCESS;
 }
 

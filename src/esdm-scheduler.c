@@ -225,13 +225,30 @@ esdm_status_t esdm_scheduler_enqueue_write(esdm_instance_t *esdm, io_request_sta
     //esdm_performance_recommendation(esdm, NULL, NULL);    // e.g., split, merge, replication?
     //esdm_layout_recommendation(esdm, NULL, NULL);		  // e.g., merge, split, transform?
 
+		// choose the dimension to split
+		int split_dim = 0;
+		for(int i=0; i < space->dimensions; i++){
+			if (space->size[i] != 1){
+				split_dim = i;
+				break;
+			}
+		}
+
 		// how big is one sub-hypercube? we call it y axis for the easier reading
-    uint64_t one_y_size = esdm_buffer_offset_first_dimension(space, 1);
+		uint64_t one_y_size = 1;
+		for (int i = 0; i < space->dimensions; i++)
+		{
+			if(i != split_dim){
+				one_y_size *= space->size[i];
+			}
+		}
+		one_y_size *= esdm_sizeof(space->datatype);
+
 		if (one_y_size == 0){
 			return ESDM_SUCCESS;
 		}
 
-		uint64_t y_count = space->size[0];
+		uint64_t y_count = space->size[split_dim];
 		uint64_t per_backend[esdm->modules->backend_count];
 
 		memset(per_backend, 0, sizeof(per_backend));
@@ -260,7 +277,7 @@ esdm_status_t esdm_scheduler_enqueue_write(esdm_instance_t *esdm, io_request_sta
 		uint64_t offset_y = 0;
 		int64_t dim[space->dimensions];
 		int64_t offset[space->dimensions];
-		memset(offset, 0, space->dimensions * sizeof(int64_t));
+		memcpy(offset, space->offset, space->dimensions * sizeof(int64_t));
 		memcpy(dim, space->size, space->dimensions * sizeof(int64_t));
 
     for (int i = 0; i < esdm->modules->backend_count; i++) {
@@ -276,11 +293,11 @@ esdm_status_t esdm_scheduler_enqueue_write(esdm_instance_t *esdm, io_request_sta
 				uint64_t y_to_access = y_total_access > backend_y_per_buffer ? backend_y_per_buffer : y_total_access ;
 				y_total_access -= y_to_access;
 
-				dim[0] = y_to_access;
-				offset[0] = offset_y;
+				dim[split_dim] = y_to_access;
+				offset[split_dim] = offset_y;
 
 	      io_work_t * task = (io_work_t*) malloc(sizeof(io_work_t));
-				esdm_dataspace_t* subspace = esdm_dataspace_subspace(space, 2, dim, offset);
+				esdm_dataspace_t* subspace = esdm_dataspace_subspace(space, space->dimensions, dim, offset);
 
 	      task->parent = status;
 	      task->op = ESDM_OP_WRITE;
