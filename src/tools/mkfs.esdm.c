@@ -72,5 +72,6 @@ int main(int argc, char** argv){
     }
   }
   ret = esdm_finalize();
+  printf("[mkfs] OK\n");
   return 0;
 }

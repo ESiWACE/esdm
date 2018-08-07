@@ -99,6 +99,7 @@ static int mkfs(esdm_backend_t* backend, int enforce_format)
 
 	if (stat(tgt, &st) == -1)
 	{
+		printf("[mkfs] Creating %s\n", tgt);
 		char root[PATH_MAX];
 		char cont[PATH_MAX];
 		char sfra[PATH_MAX];

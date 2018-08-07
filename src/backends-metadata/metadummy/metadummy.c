@@ -83,6 +83,7 @@ static int mkfs(esdm_backend_t* backend, int enforce_format)
 
 	if (stat(tgt, &sb) == -1)
 	{
+		printf("[mkfs] Creating %s\n", tgt);
 		mkdir(tgt, 0700);
 		mkdir(containers, 0700);
 		return ESDM_SUCCESS;
