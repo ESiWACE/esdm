@@ -162,6 +162,12 @@ esdm_config_backends_t* esdm_config_get_backends(esdm_instance_t* esdm)
 
 				elem = json_object_get(backend, "id");
 				backends[i].id = json_string_value(elem);
+				for (int j = 0; j < i; j++) {
+					if(strcmp(backends[i].id, backends[j].id) == 0){
+						printf("ERROR two backends with the same ID found: %s\n", backends[i].id);
+						ESDM_ERROR("Aborting!");
+					}
+				}
 
 				elem = json_object_get(backend, "target");
 				backends[i].target = json_string_value(elem);

@@ -83,7 +83,7 @@ esdm_status_t esdm_scheduler_finalize(esdm_instance_t *esdm)
 static void backend_thread(io_work_t* work, esdm_backend_t* backend){
   io_request_status_t * status = work->parent;
 
-  DEBUG("Backend thread operates on %s via %s\n", backend->name, backend->config->target);
+  DEBUG("Backend thread operates on %s via %s", backend->name, backend->config->target);
 
   assert(backend == work->fragment->backend);
 
@@ -117,6 +117,10 @@ static void backend_thread(io_work_t* work, esdm_backend_t* backend){
 }
 
 static void read_copy_callback(io_work_t * work){
+	if(work->return_code != ESDM_SUCCESS){
+		DEBUG("Error reading from fragment ", work->fragment);
+		return;
+	}
 	char * b = (char*) work->data.mem_buf;
 	esdm_dataspace_t * bs = work->data.buf_space;
 

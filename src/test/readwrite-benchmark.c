@@ -138,14 +138,12 @@ int main(int argc, char* argv[])
 
 	// prepare data
 	uint64_t * buf_w = (uint64_t *) malloc(volume);
-	uint64_t * buf_r = (uint64_t *) malloc(volume);
 	assert(buf_w != NULL);
-	assert(buf_r != NULL);
-
-	int x, y;
+	long x, y;
 	for(y = offset[1]; y < dim[1]; y++){
 		for(x = offset[2]; x < dim[2]; x++){
-			buf_w[(y - offset[1]) * size + x] = y * size + x + 1 + mpi_rank;
+			long idx = (y - offset[1]) * size + x;
+			buf_w[idx] = y * size + x + 1 + mpi_rank;
 		}
 	}
 
@@ -203,11 +201,15 @@ int main(int argc, char* argv[])
 		// Read the data to the dataset
 		for(int t=0; t < timesteps; t++){
 			offset[0] = t;
+			uint64_t * buf_r = (uint64_t *) malloc(volume);
+			assert(buf_r != NULL);
+
 			esdm_dataspace_t *subspace = esdm_dataspace_subspace(dataspace, 3, dim, offset);
 			ret = esdm_read(dataset, buf_r, subspace);
 			assert( ret == ESDM_SUCCESS );
 			// verify data and fail test if mismatches are found
-			int idx;
+			long idx;
+			printf("%ld %ld - %ld\n", dim[1], dim[2], offset[1]);
 			for(y = offset[1]; y < dim[1]; y++){
 				for(x = offset[2]; x < dim[2]; x++){
 					idx = (y - offset[1]) * size + x;
@@ -217,6 +219,7 @@ int main(int argc, char* argv[])
 					}
 				}
 			}
+			free(buf_r);
 		}
 		MPI_Barrier(MPI_COMM_WORLD);
  		time = stop_timer(t);
@@ -236,12 +239,8 @@ int main(int argc, char* argv[])
 		}
 	}
 
-
-
-
 	// clean up
 	free(buf_w);
-	free(buf_r);
 
 	MPI_Finalize();
 
