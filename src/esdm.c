@@ -97,7 +97,6 @@ esdm_status_t esdm_init()
 		is_initialized = 1;
 
 		ESDM_DEBUG("ESDM initialized and ready!");
-		printf("\n");
 	}
 
 	return ESDM_SUCCESS;
