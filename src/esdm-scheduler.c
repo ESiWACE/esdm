@@ -55,7 +55,11 @@ esdm_scheduler_t* esdm_scheduler_init(esdm_instance_t* esdm)
 		int max_local = (b->config->max_threads_per_node + ppn - 1) / ppn;
 		int max_global = (b->config->max_global_threads + gt - 1) / gt;
 
-    b->threads = max_local < max_global ? max_local : max_global;
+		if (b->config->data_accessibility == ESDM_ACCESSIBILITY_GLOBAL){
+			b->threads = max_local < max_global ? max_local : max_global;
+		}else{
+			b->threads = max_local;
+		}
 		DEBUG("Using %d threads for backend %s", b->threads, b->config->id);
 
     if (b->threads == 0){
