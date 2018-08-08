@@ -79,6 +79,7 @@ int main(int argc, char* argv[])
 	int run_read = 0;
 	int run_write = 0;
 	long timesteps = 0;
+	int cycleBlock = 0;
 
 	MPI_Comm_rank(MPI_COMM_WORLD, & mpi_rank);
 	MPI_Comm_size(MPI_COMM_WORLD, & mpi_size);
@@ -91,7 +92,7 @@ int main(int argc, char* argv[])
 		argv = default_args;
 	}
 	if (argc != 5) {
-		printf("Syntax: %s [SIZE] [CONFIG] [R|W|B] [TIMESTEPS]", argv[0]);
+		printf("Syntax: %s [SIZE] [CONFIG] [R|W|B|R][C] [TIMESTEPS]", argv[0]);
 		printf("\t SIZE specifies one dimension of a 2D field\n");
 		exit(1);
 	}
@@ -117,21 +118,24 @@ int main(int argc, char* argv[])
 			exit(1);
 		}
 	}
+	cycleBlock = argv[3][1] == 'C';
 	timesteps = atol(argv[4]);
 
 
 	const int64_t size = _size;
 
 	if (mpi_rank == 0)
-		printf("Running with %ld timesteps and 2D slice of %ld*%ld\n", timesteps, size, size);
+		printf("Running with %ld timesteps and 2D slice of %ld*%ld (cycle: %d)\n", timesteps, size, size, cycleBlock);
 
 	if (size / mpi_size == 0){
 		printf("Error, size < number of ranks!\n");
 		exit(1);
 	}
 
-	int64_t dim[] = {1, size / mpi_size + (mpi_rank < (size % mpi_size) ? 1 : 0), size};
-	int64_t offset[] = {0, size / mpi_size * mpi_rank + (mpi_rank < (size % mpi_size) ? mpi_rank : size % mpi_size), 0};
+	int pPerNode = esdm_mpi_get_tasks_per_node();
+	int tmp_rank = (mpi_rank + (cycleBlock*pPerNode)) % mpi_size;
+	int64_t dim[] = {1, size / mpi_size + (tmp_rank < (size % mpi_size) ? 1 : 0), size};
+	int64_t offset[] = {0, size / mpi_size * tmp_rank + (tmp_rank < (size % mpi_size) ? tmp_rank : size % mpi_size), 0};
 
 	const long volume = dim[1]*dim[2]*sizeof(uint64_t);
 	const long volume_all = timesteps*size*size*sizeof(uint64_t);
