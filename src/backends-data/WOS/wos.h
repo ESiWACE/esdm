@@ -14,87 +14,29 @@
  * along with ESDM.  If not, see <http://www.gnu.org/licenses/>.           
  *
  */
-#ifndef WOS_H
-#define WOS_H
+#ifndef ESDM_BACKENDS_WOS_H
+#define ESDM_BACKENDS_WOS_H
 
 #include <esdm.h>
 #include <backends-data/generic-perf-model/lat-thr.h>
 
 #include "wrapper/wos_wrapper.h"
 
-struct esdm_backend_wos_ops {
-	/**
-	 * Allocate the backend context and initialise it.
-	 * In this interface, Wos connects to Wos cluster.
-	 * @param [in] conf, the connection parameters.
-	 * @param [out] eb_out, returned the backend context.
-	 *
-	 * The format of conf string would like this:
-	 * "laddr ha_addr prof_opt proc_fid".
-	 */
-	int (*esdm_backend_init) (const char *conf, esdm_backend_t * eb);
-
-	/**
-	 * Finalise the backend.
-	 */
-	int (*esdm_backend_fini) (esdm_backend_t * eb);
-
-	/* object operations start here */
-	/**
-	 * Allocate an object or objects in backend and return them
-	 * in @out out_object_id and their internal attributes @out out_mero_metadata.
-	 * @param [in] eb, the backend pointer.
-	 * @param [in] n_dims, number of dimensions.
-	 * @param [in] dims_size, dimension array.
-	 * @param [in] type, type of esdm.
-	 * @param [in] md1, metadata.
-	 * @param [in] md2, metadata.
-	 * @param [out] out_object_id, the returned objects.
-	 * @param [out] out_mero_metadata, the returned metadata.
-	 */
-	int (*esdm_backend_obj_alloc) (esdm_backend_t * eb, int n_dims, int *dims_size, esdm_datatype_t type, char **out_object_id, char **out_wos_metadata);
-
-	/**
-	 * Open an object for read/write.
-	 *
-	 * return object handle in [out] obj_handle;
-	 */
-	int (*esdm_backend_obj_open) (esdm_backend_t * eb, char *object_id, void **obj_handle);
-
-	/**
-	 * Write to an object.
-	 */
-	int (*esdm_backend_obj_write) (esdm_backend_t * eb, void *obj_handle, uint64_t start, uint64_t count, esdm_datatype_t type, void *data);
-
-	/**
-	 * Read from object.
-	 */
-	int (*esdm_backend_obj_read) (esdm_backend_t * eb, void *obj_handle, uint64_t start, uint64_t count, esdm_datatype_t type, void *data);
-
-	/**
-	 * Close an object.
-	 */
-	int (*esdm_backend_obj_close) (esdm_backend_t * eb, void *obj_handle);
-
-};
-
+// Internal functions used by this backend.
 typedef struct {
 
-	esdm_backend_t ebm_base;
+	esdm_config_backend_t *config;
+	const char *target;
+	esdm_perf_model_lat_thp_t perf_model;
 
-	/* WOS */
 	t_WosClusterPtr *wos_cluster;	// Pointer to WOS cluster
 	t_WosPolicy *wos_policy;	// Policy
 	t_WosObjPtr *wos_meta_obj;	// Used for internal purposes to store metadata info
 	t_WosOID **oid_list;	// List of object ids
 	uint64_t *size_list;	// List of object sizes
 
-	esdm_perf_model_lat_thp_t perf_model;
-
-	/* for test */
-	struct esdm_backend_wos_ops ebm_ops;
-
-} esdm_backend_wos_t;
+} wos_backend_data_t;
+typedef wos_backend_data_t esdm_backend_wos_t;
 
 esdm_backend_t *wos_backend_init(esdm_config_backend_t * config);
 

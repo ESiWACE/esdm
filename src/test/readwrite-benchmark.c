@@ -92,7 +92,7 @@ int main(int argc, char* argv[])
 		argv = default_args;
 	}
 	if (argc != 5) {
-		printf("Syntax: %s [SIZE] [CONFIG] [R|W|B|R][C] [TIMESTEPS]", argv[0]);
+		printf("Syntax: %s [SIZE] [CONFIG] [B|R|W][C] [TIMESTEPS]", argv[0]);
 		printf("\t SIZE specifies one dimension of a 2D field\n");
 		exit(1);
 	}
@@ -121,7 +121,6 @@ int main(int argc, char* argv[])
 	cycleBlock = argv[3][1] == 'C';
 	timesteps = atol(argv[4]);
 
-
 	const int64_t size = _size;
 
 	if (mpi_rank == 0)
@@ -137,8 +136,13 @@ int main(int argc, char* argv[])
 	int64_t dim[] = {1, size / mpi_size + (tmp_rank < (size % mpi_size) ? 1 : 0), size};
 	int64_t offset[] = {0, size / mpi_size * tmp_rank + (tmp_rank < (size % mpi_size) ? tmp_rank : size % mpi_size), 0};
 
-	const long volume = dim[1]*dim[2]*sizeof(uint64_t);
-	const long volume_all = timesteps*size*size*sizeof(uint64_t);
+	const long volume = dim[1] * dim[2] * sizeof(uint64_t);
+	const long volume_all = timesteps * size * size * sizeof(uint64_t);
+
+	if (!volume_all) {
+		printf("Error: no data!\n");
+		exit(1);
+	}
 
 	// prepare data
 	uint64_t * buf_w = (uint64_t *) malloc(volume);

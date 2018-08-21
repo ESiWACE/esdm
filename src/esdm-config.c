@@ -128,7 +128,8 @@ esdm_config_backend_t* esdm_config_get_metadata_coordinator(esdm_instance_t* esd
 		}else{
 			ESDM_ERROR("Unknown accessibility!");
 		}
-	}
+	} else
+		config_backend->data_accessibility = ESDM_ACCESSIBILITY_GLOBAL;
 	return config_backend;
 }
 
@@ -161,7 +162,7 @@ esdm_config_backends_t* esdm_config_get_backends(esdm_instance_t* esdm)
 
 			//printf("JSON Array of %ld element%s:\n", size, json_plural(size));
 
-			size_t i;
+			size_t i, j;
 			for (i = 0; i < size; i++) {
 				//print_json_aux(json_array_get(element, i), 0);
 
@@ -173,7 +174,7 @@ esdm_config_backends_t* esdm_config_get_backends(esdm_instance_t* esdm)
 
 				elem = json_object_get(backend, "id");
 				backends[i].id = json_string_value(elem);
-				for (int j = 0; j < i; j++) {
+				for (j = 0; j < i; j++) {
 					if(strcmp(backends[i].id, backends[j].id) == 0){
 						printf("ERROR two backends with the same ID found: %s\n", backends[i].id);
 						ESDM_ERROR("Aborting!");
@@ -211,7 +212,8 @@ esdm_config_backends_t* esdm_config_get_backends(esdm_instance_t* esdm)
 					}else{
 						ESDM_ERROR("Unknown accessibility!");
 					}
-				}
+				} else
+					backends[i].data_accessibility = ESDM_ACCESSIBILITY_GLOBAL;
 
 				elem = json_object_get(backend, "max-fragment-size");
 				if (elem == NULL){

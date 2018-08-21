@@ -170,7 +170,8 @@ esdm_status_t esdm_scheduler_enqueue_read(esdm_instance_t *esdm, io_request_stat
 	esdm_status_t ret;
 	status->pending_ops += frag_count;
 
-	for(int i=0; i < frag_count; i++){
+	int i, x;
+	for (i = 0; i < frag_count; i++){
 		esdm_fragment_t * f = read_frag[i];
 		json_t *root = load_json(f->metadata->json);
 		json_t * elem;
@@ -183,13 +184,17 @@ esdm_status_t esdm_scheduler_enqueue_read(esdm_instance_t *esdm, io_request_stat
 		elem = json_object_get(root, "size");
 		const char * size_str = json_string_value(elem);
 
-		esdm_backend_t* backend_to_use = NULL;
+		if(!plugin_id){
+			printf("Backend ID needs to be given\n");
+			exit(1);
+		}
 
 		// find the backend for the fragment
-		for(int x=0; x < esdm->modules->backend_count; x++){
+		esdm_backend_t* backend_to_use = NULL;
+		for (x = 0; x < esdm->modules->backend_count; x++){
 			esdm_backend_t* b_tmp = esdm->modules->backends[x];
-			if(strcmp(b_tmp->config->id, plugin_id) == 0){
-				DEBUG("found plugin %s", plugin_id);
+			if (strcmp(b_tmp->config->id, plugin_id) == 0){
+				DEBUG("Found plugin %s", plugin_id);
 				backend_to_use = b_tmp;
 				break;
 			}
@@ -198,6 +203,7 @@ esdm_status_t esdm_scheduler_enqueue_read(esdm_instance_t *esdm, io_request_stat
 			printf("Error no backend found for ID: %s\n", plugin_id);
 			exit(1);
 		}
+
 		// esdm_fragment_print(read_frag[i]);
 		// printf("\n");
 
@@ -212,10 +218,10 @@ esdm_status_t esdm_scheduler_enqueue_read(esdm_instance_t *esdm, io_request_stat
 		//printf("SIZE: %ld\n", size);
 		f->backend = backend_to_use;
 
-    io_work_t * task = (io_work_t*) malloc(sizeof(io_work_t));
-    task->parent = status;
-    task->op = ESDM_OP_READ;
-    task->fragment = f;
+		io_work_t * task = (io_work_t*) malloc(sizeof(io_work_t));
+		task->parent = status;
+		task->op = ESDM_OP_READ;
+		task->fragment = f;
 		if(f->in_place){
 			DEBUG("inplace!", "");
 			task->callback = NULL;
@@ -226,11 +232,11 @@ esdm_status_t esdm_scheduler_enqueue_read(esdm_instance_t *esdm, io_request_stat
 			task->data.mem_buf = buf;
 			task->data.buf_space = buf_space;
 		}
-    if (backend_to_use->threads == 0){
-      backend_thread(task, backend_to_use);
-    }else{
-      g_thread_pool_push(backend_to_use->threadPool, task, & error);
-    }
+		if (backend_to_use->threads == 0){
+			backend_thread(task, backend_to_use);
+		}else{
+			g_thread_pool_push(backend_to_use->threadPool, task, & error);
+		}
 	}
 
 	return ESDM_SUCCESS;
@@ -242,97 +248,97 @@ esdm_status_t esdm_scheduler_enqueue_write(esdm_instance_t *esdm, io_request_sta
     //esdm_performance_recommendation(esdm, NULL, NULL);    // e.g., split, merge, replication?
     //esdm_layout_recommendation(esdm, NULL, NULL);		  // e.g., merge, split, transform?
 
-		// choose the dimension to split
-		int split_dim = 0;
-		for(int i=0; i < space->dimensions; i++){
-			if (space->size[i] != 1){
-				split_dim = i;
-				break;
-			}
+	// choose the dimension to split
+	int split_dim = 0;
+	for(int i=0; i < space->dimensions; i++){
+		if (space->size[i] != 1){
+			split_dim = i;
+			break;
 		}
+	}
 
-		// how big is one sub-hypercube? we call it y axis for the easier reading
-		uint64_t one_y_size = 1;
-		for (int i = 0; i < space->dimensions; i++)
-		{
-			if(i != split_dim){
-				one_y_size *= space->size[i];
-			}
+	// how big is one sub-hypercube? we call it y axis for the easier reading
+	uint64_t one_y_size = 1;
+	for (int i = 0; i < space->dimensions; i++)
+	{
+		if(i != split_dim){
+			one_y_size *= space->size[i];
 		}
-		one_y_size *= esdm_sizeof(space->datatype);
+	}
+	one_y_size *= esdm_sizeof(space->datatype);
 
-		if (one_y_size == 0){
-			return ESDM_SUCCESS;
-		}
+	if (one_y_size == 0){
+		return ESDM_SUCCESS;
+	}
 
-		uint64_t y_count = space->size[split_dim];
-		uint64_t per_backend[esdm->modules->backend_count];
+	uint64_t y_count = space->size[split_dim];
+	uint64_t per_backend[esdm->modules->backend_count];
 
-		memset(per_backend, 0, sizeof(per_backend));
+	memset(per_backend, 0, sizeof(per_backend));
 
-		while(y_count > 0){
-			for (int i = 0; i < esdm->modules->backend_count; i++) {
-				status->pending_ops++;
-				esdm_backend_t* b = esdm->modules->backends[i];
-				// how many of these fit into our buffer
-				uint64_t backend_y_per_buffer = b->config->max_fragment_size / one_y_size;
-				if (backend_y_per_buffer == 0){
-					backend_y_per_buffer = 1;
-				}
-				if (backend_y_per_buffer >= y_count){
-					per_backend[i] += y_count;
-					y_count = 0;
-					break;
-				}else{
-					per_backend[i] += backend_y_per_buffer;
-					y_count -= backend_y_per_buffer;
-				}
-			}
-		}
-		ESDM_DEBUG_FMT("Will submit %d operations and for backend0: %d y-blocks", status->pending_ops, per_backend[0]);
-
-		uint64_t offset_y = 0;
-		int64_t dim[space->dimensions];
-		int64_t offset[space->dimensions];
-		memcpy(offset, space->offset, space->dimensions * sizeof(int64_t));
-		memcpy(dim, space->size, space->dimensions * sizeof(int64_t));
-
-    for (int i = 0; i < esdm->modules->backend_count; i++) {
+	while(y_count > 0){
+		for (int i = 0; i < esdm->modules->backend_count; i++) {
+			status->pending_ops++;
 			esdm_backend_t* b = esdm->modules->backends[i];
 			// how many of these fit into our buffer
 			uint64_t backend_y_per_buffer = b->config->max_fragment_size / one_y_size;
 			if (backend_y_per_buffer == 0){
 				backend_y_per_buffer = 1;
 			}
-
-			uint64_t y_total_access = per_backend[i];
-			while(y_total_access > 0){
-				uint64_t y_to_access = y_total_access > backend_y_per_buffer ? backend_y_per_buffer : y_total_access ;
-				y_total_access -= y_to_access;
-
-				dim[split_dim] = y_to_access;
-				offset[split_dim] = offset_y + space->offset[split_dim];
-
-	      io_work_t * task = (io_work_t*) malloc(sizeof(io_work_t));
-				esdm_dataspace_t* subspace = esdm_dataspace_subspace(space, space->dimensions, dim, offset);
-
-	      task->parent = status;
-	      task->op = ESDM_OP_WRITE;
-	      task->fragment = esdm_fragment_create(dataset, subspace, (char*) buf + offset_y * one_y_size);
-	      task->fragment->backend = b;
-				task->callback = NULL;
-	      if (b->threads == 0){
-	        backend_thread(task, b);
-	      }else{
-	        g_thread_pool_push(b->threadPool, task, & error);
-	      }
-
-				offset_y += y_to_access;
+			if (backend_y_per_buffer >= y_count){
+				per_backend[i] += y_count;
+				y_count = 0;
+				break;
+			}else{
+				per_backend[i] += backend_y_per_buffer;
+				y_count -= backend_y_per_buffer;
 			}
-    }
+		}
+	}
+	ESDM_DEBUG_FMT("Will submit %d operations and for backend0: %d y-blocks", status->pending_ops, per_backend[0]);
 
-    // now enqueue the operations
-    return ESDM_SUCCESS;
+	uint64_t offset_y = 0;
+	int64_t dim[space->dimensions];
+	int64_t offset[space->dimensions];
+	memcpy(offset, space->offset, space->dimensions * sizeof(int64_t));
+	memcpy(dim, space->size, space->dimensions * sizeof(int64_t));
+
+	for (int i = 0; i < esdm->modules->backend_count; i++) {
+		esdm_backend_t* b = esdm->modules->backends[i];
+		// how many of these fit into our buffer
+		uint64_t backend_y_per_buffer = b->config->max_fragment_size / one_y_size;
+		if (backend_y_per_buffer == 0){
+			backend_y_per_buffer = 1;
+		}
+
+		uint64_t y_total_access = per_backend[i];
+		while(y_total_access > 0){
+			uint64_t y_to_access = y_total_access > backend_y_per_buffer ? backend_y_per_buffer : y_total_access ;
+			y_total_access -= y_to_access;
+
+			dim[split_dim] = y_to_access;
+			offset[split_dim] = offset_y + space->offset[split_dim];
+
+			io_work_t * task = (io_work_t*) malloc(sizeof(io_work_t));
+			esdm_dataspace_t* subspace = esdm_dataspace_subspace(space, space->dimensions, dim, offset);
+
+			task->parent = status;
+			task->op = ESDM_OP_WRITE;
+			task->fragment = esdm_fragment_create(dataset, subspace, (char*) buf + offset_y * one_y_size);
+			task->fragment->backend = b;
+			task->callback = NULL;
+			if (b->threads == 0){
+				backend_thread(task, b);
+			}else{
+				g_thread_pool_push(b->threadPool, task, & error);
+			}
+
+			offset_y += y_to_access;
+		}
+	}
+
+	// now enqueue the operations
+	return ESDM_SUCCESS;
 }
 
 esdm_status_t esdm_scheduler_status_init(io_request_status_t * status){

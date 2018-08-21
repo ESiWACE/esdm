@@ -55,7 +55,6 @@ esdm_performance_t* esdm_performance_init(esdm_instance_t* esdm) {
 
 esdm_status_t esdm_performance_finalize(esdm_performance_t* performance)
 {
-
 	return ESDM_SUCCESS;
 }
 
@@ -84,6 +83,8 @@ esdm_status_t esdm_performance_recommendation(esdm_instance_t *esdm, esdm_fragme
 	//}
 
 	// now choice the best module
+
+	return ESDM_SUCCESS;
 }
 
 
