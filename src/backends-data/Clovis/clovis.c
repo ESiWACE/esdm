@@ -664,11 +664,11 @@ static int mapping_insert(esdm_backend_t  *backend,
 
 
 static int esdm_backend_clovis_fragment_retrieve(esdm_backend_t  *backend,
-                                                 esdm_fragment_t *fragment)
+                                                 esdm_fragment_t *fragment,
+                                                 json_t          *metadata)
 {
     char  fragment_name[PATH_MAX];
     char *path_fragment = NULL;
-    void *buf = NULL;
     char *obj_id = NULL;
     void *obj_handle = NULL;
     int   rc = 0;
@@ -677,10 +677,6 @@ static int esdm_backend_clovis_fragment_retrieve(esdm_backend_t  *backend,
     esdm_dataspace_string_descriptor(fragment_name, fragment->dataspace);
     asprintf(&path_fragment, "/containers/%s/%s/%s", fragment->dataset->container->name, fragment->dataset->name, fragment_name);
     printf("retrieving path_fragment: %s size=%d\n", path_fragment, (int)fragment->bytes);
-
-    buf = malloc(fragment->bytes);
-    if (buf == NULL)
-        goto err;
 
     // 1. Find if this fragment exists;
     rc = mapping_get(backend, fragment_name, &obj_id);
@@ -691,17 +687,13 @@ static int esdm_backend_clovis_fragment_retrieve(esdm_backend_t  *backend,
     rc = esdm_backend_clovis_open(backend, obj_id, &obj_handle);
     if (rc == 0) {
         // 3. read from this object.
-        rc = esdm_backend_clovis_read(backend, obj_handle, 0, fragment->bytes, buf);
+        rc = esdm_backend_clovis_read(backend, obj_handle, 0, fragment->bytes, fragment->buf);
 
         // 4. close this object.
         esdm_backend_clovis_close(backend, obj_handle);
-        if (rc == 0)
-            fragment->buf = buf;
     }
 
 err:
-    if (rc != 0)
-        free(buf);
     free(obj_id);
     free(path_fragment);
     return rc;
@@ -741,19 +733,28 @@ static int esdm_backend_clovis_fragment_update(esdm_backend_t  *backend,
     }
     // 2. open object with its object_id.
     rc = esdm_backend_clovis_open(backend, obj_id, &obj_handle);
-    if (rc != 0) {
-        // 3. read from this object.
+    if (rc == 0) {
+        // 3. write to this object.
         rc = esdm_backend_clovis_write(backend, obj_handle, 0, fragment->bytes, fragment->buf);
 
         // 4. close this object.
         esdm_backend_clovis_close(backend, obj_handle);
     }
+    fragment->metadata->size += sprintf(&fragment->metadata->json[fragment->metadata->size], "{\"obj_id\" : \"%s\"}", obj_id);
 
 err:
     free(obj_id);
     free(obj_meta);
     free(path_fragment);
     return rc;
+}
+
+static int esdm_backend_clovis_mkfs(esdm_backend_t * backend, int enforce_format)
+{
+	if (!backend)
+		return ESDM_ERROR;
+
+	return ESDM_SUCCESS;
 }
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -793,8 +794,8 @@ esdm_backend_clovis_t esdm_backend_clovis = {
             NULL, // fragment create
             (int (*)()) esdm_backend_clovis_fragment_retrieve, // fragment retrieve
             (int (*)()) esdm_backend_clovis_fragment_update,   // fragment update
-            NULL, // fragment delete
-            mkfs // TODO
+            NULL,                                              // fragment delete
+            (int (*)()) esdm_backend_clovis_mkfs,              // mkfs
         },
     },
     .ebm_ops = {
