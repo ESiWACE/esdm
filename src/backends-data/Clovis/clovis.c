@@ -28,15 +28,21 @@
 #include <errno.h>
 #include <string.h>
 
+#undef NDEBUG
+
 #include <esdm.h>
+#include <esdm-debug.h>
 
 #include "clovis.h"
 #include "clovis_internal.h"
 
+#define DEBUG(fmt)          ESDM_DEBUG(fmt)
+#define DEBUG_FMT(fmt, ...) ESDM_DEBUG_COM_FMT("CLOVIS", fmt, __VA_ARGS__)
 
 #define PAGE_4K (4096ULL)
 #define BLOCKSIZE (PAGE_4K)
 #define BLOCKMASK (BLOCKSIZE - 1)
+#define CLOVIS_OBJ_ID "obj_id"
 
 static struct m0_uint128 gid;
 static struct m0_fid gidxfid = {
@@ -44,8 +50,8 @@ static struct m0_fid gidxfid = {
     .f_key       = 0x1234567812345678ULL
 };
 
-static int clovis_index_create(struct m0_clovis_realm *parent,
-                               struct m0_fid *fid);
+int clovis_index_create(struct m0_clovis_realm *parent,
+                        struct m0_fid *fid);
 
 static inline
 esdm_backend_clovis_t *eb2ebm(esdm_backend_t *eb)
@@ -133,10 +139,10 @@ static int conf_parse(char * conf, esdm_backend_clovis_t *ebm)
     ebm->ebm_clovis_conf.cc_idx_service_id        = M0_CLOVIS_IDX_MOCK;
     ebm->ebm_clovis_conf.cc_idx_service_conf      = clovis_index_dir;
 
-    printf("local addr = %s\n", ebm->ebm_clovis_conf.cc_local_addr);
-    printf("ha addr = %s\n",    ebm->ebm_clovis_conf.cc_ha_addr);
-    printf("profile = %s\n",    ebm->ebm_clovis_conf.cc_profile);
-    printf("process id = %s\n", ebm->ebm_clovis_conf.cc_process_fid);
+    DEBUG_FMT("local addr = %s", ebm->ebm_clovis_conf.cc_local_addr);
+    DEBUG_FMT("ha addr    = %s", ebm->ebm_clovis_conf.cc_ha_addr);
+    DEBUG_FMT("profile    = %s", ebm->ebm_clovis_conf.cc_profile);
+    DEBUG_FMT("process id = %s", ebm->ebm_clovis_conf.cc_process_fid);
     return 0;
 }
 
@@ -155,7 +161,7 @@ static int esdm_backend_clovis_init(char * conf, esdm_backend_t *eb)
     /* Clovis instance */
     rc = m0_clovis_init(&ebm->ebm_clovis_instance, &ebm->ebm_clovis_conf, true);
     if (rc != 0) {
-        printf("Failed to initilise Clovis: %d\n", rc);
+        DEBUG_FMT("Failed to initilise Clovis: %d", rc);
         return rc;
     }
 
@@ -166,7 +172,7 @@ static int esdm_backend_clovis_init(char * conf, esdm_backend_t *eb)
     rc = ebm->ebm_clovis_container.co_realm.re_entity.en_sm.sm_rc;
 
     if (rc != 0) {
-        printf("Failed to open uber realm\n");
+        DEBUG("Failed to open uber realm");
         return rc;
     }
 
@@ -174,8 +180,10 @@ static int esdm_backend_clovis_init(char * conf, esdm_backend_t *eb)
     gid.u_hi = gid.u_lo = time(NULL);
 
     /* create the global mapping index */
+    /* XXX NO NEED TO DO SO.
     rc = clovis_index_create(&ebm->ebm_clovis_container.co_realm,
                              &gidxfid);
+    */
 
     return rc;
 }
@@ -308,7 +316,7 @@ static int esdm_backend_clovis_alloc(esdm_backend_t *eb,
 
     /* First step: alloc a new fid for this new object. */
     obj_id = object_id_alloc();
-    printf("new obj id = "FID_F"\n", FID_P((struct m0_fid*)&obj_id));
+    DEBUG_FMT("new obj id = <%lx:%lx>", FID_P((struct m0_fid*)&obj_id));
 
     /* Then create object */
     rc = create_object(ebm, obj_id);
@@ -494,16 +502,16 @@ static int index_op_tail(struct m0_clovis_entity *ce,
                                M0_BITS(M0_CLOVIS_OS_FAILED,
                                M0_CLOVIS_OS_STABLE),
                                M0_TIME_NEVER);
-		printf("operation (%d) rc: %i\n", op->op_code, op->op_rc);
+		DEBUG_FMT("operation (%d) rc: %i", op->op_code, op->op_rc);
 	} else
-		printf("operation (%d) fail rc: %i\n", op->op_code, rc);
+		DEBUG_FMT("operation (%d) fail rc: %i", op->op_code, rc);
 	m0_clovis_op_fini(op);
 	m0_clovis_op_free(op);
 	m0_clovis_entity_fini(ce);
 	return rc;
 }
 
-static int clovis_index_create(struct m0_clovis_realm *parent,
+int clovis_index_create(struct m0_clovis_realm *parent,
                                struct m0_fid *fid)
 {
 	struct m0_clovis_op   *op  = NULL;
@@ -551,7 +559,7 @@ static int clovis_index_put(struct m0_clovis_realm *parent,
 	M0_PRE(vals != NULL);
 
 	rc = index_op(parent, fid, M0_CLOVIS_IC_PUT, keys, vals);
-	printf("put done: %i\n", rc);
+	DEBUG_FMT("put done: %i", rc);
 
 	return rc;
 }
@@ -572,7 +580,7 @@ static int clovis_index_get(struct m0_clovis_realm *parent,
 	    if (vals->ov_buf[0] == NULL)
             rc = -ENODATA;
     }
-	printf("get done: %i\n", rc);
+	DEBUG_FMT("get done: %i", rc);
 	return rc;
 }
 
@@ -667,21 +675,31 @@ static int esdm_backend_clovis_fragment_retrieve(esdm_backend_t  *backend,
                                                  esdm_fragment_t *fragment,
                                                  json_t          *metadata)
 {
-    char  fragment_name[PATH_MAX];
-    char *path_fragment = NULL;
     char *obj_id = NULL;
     void *obj_handle = NULL;
     int   rc = 0;
+    const char *key;
+    json_t     *value;
 
-    // serialization of subspace for fragment
-    esdm_dataspace_string_descriptor(fragment_name, fragment->dataspace);
-    asprintf(&path_fragment, "/containers/%s/%s/%s", fragment->dataset->container->name, fragment->dataset->name, fragment_name);
-    printf("retrieving path_fragment: %s size=%d\n", path_fragment, (int)fragment->bytes);
+    if (!backend || !fragment || !fragment->buf || !metadata)
+        return ESDM_ERROR;
 
-    // 1. Find if this fragment exists;
-    rc = mapping_get(backend, fragment_name, &obj_id);
-    if (rc != 0)
-        goto err;
+    /*
+     * Parse metadata json to retrieve object id.
+     */
+    json_object_foreach(metadata, key, value) {
+        if (!strcmp(key, CLOVIS_OBJ_ID)) {
+            obj_id = strdup(json_string_value(value));
+            break;
+        }
+    }
+
+    if (obj_id == NULL) {
+        DEBUG("INVALID metadata. No object ID is found");
+		return ESDM_ERROR;
+    }
+
+    DEBUG_FMT("Retrieving from %s", obj_id);
 
     // 2. open object with its object_id.
     rc = esdm_backend_clovis_open(backend, obj_id, &obj_handle);
@@ -693,60 +711,53 @@ static int esdm_backend_clovis_fragment_retrieve(esdm_backend_t  *backend,
         esdm_backend_clovis_close(backend, obj_handle);
     }
 
-err:
     free(obj_id);
-    free(path_fragment);
-    return rc;
+    return rc == 0 ? ESDM_SUCCESS : ESDM_ERROR;
 }
 
 static int esdm_backend_clovis_fragment_update(esdm_backend_t  *backend,
                                                esdm_fragment_t *fragment)
 {
-    char  fragment_name[PATH_MAX];
-    char *path_fragment = NULL;
     char *obj_id = NULL;
     char *obj_meta = NULL;
     void *obj_handle = NULL;
-    int  rc = 0;
+    int  rc = ESDM_SUCCESS;
 
-    // serialization of subspace for fragment
-    esdm_dataspace_string_descriptor(fragment_name, fragment->dataspace);
-    asprintf(&path_fragment, "/containers/%s/%s/%s", fragment->dataset->container->name, fragment->dataset->name, fragment_name);
-    printf("updating path_fragment: %s (size=%d)\n", path_fragment, (int)fragment->bytes);
+    // 1. create a new object for this fragment
+    rc = esdm_backend_clovis_alloc(backend,
+                                   fragment->dataspace->dimensions,
+                                   NULL, //fragment->dataspace->size,
+                                   0,
+                                   NULL,
+                                   NULL,
+                                   &obj_id,
+                                   &obj_meta);
+    if (rc != 0)
+        goto err;
 
-    // 1. create a new object if this fragment exists;
-    rc = mapping_get(backend, fragment_name, &obj_id);
-    if (rc == -ENODATA || obj_id == NULL) {
-        rc = esdm_backend_clovis_alloc(backend,
-                                       fragment->dataspace->dimensions,
-                                       NULL, //fragment->dataspace->size,
-                                       0,
-                                       NULL,
-                                       NULL,
-                                       &obj_id,
-                                       &obj_meta);
-        if (rc == 0)
-            rc = mapping_insert(backend, fragment_name, obj_id);
-
-        if (rc != 0)
-            goto err;
-    }
+    DEBUG_FMT("Updating to %s (size=%lu)", obj_id, fragment->bytes);
     // 2. open object with its object_id.
     rc = esdm_backend_clovis_open(backend, obj_id, &obj_handle);
     if (rc == 0) {
         // 3. write to this object.
-        rc = esdm_backend_clovis_write(backend, obj_handle, 0, fragment->bytes, fragment->buf);
+        rc = esdm_backend_clovis_write(backend, obj_handle, 0,
+                                       fragment->bytes, fragment->buf);
 
         // 4. close this object.
         esdm_backend_clovis_close(backend, obj_handle);
     }
-    fragment->metadata->size += sprintf(&fragment->metadata->json[fragment->metadata->size], "{\"obj_id\" : \"%s\"}", obj_id);
+
+    /*
+     * Store this object's ID into fragment metadata. This metadata will be
+     * used later in retrieve() to read data from.
+     */
+    fragment->metadata->size += sprintf(&fragment->metadata->json[fragment->metadata->size],
+                                "{\"%s\" : \"%s\"}", CLOVIS_OBJ_ID, obj_id);
 
 err:
     free(obj_id);
     free(obj_meta);
-    free(path_fragment);
-    return rc;
+    return rc == 0 ? ESDM_SUCCESS : ESDM_ERROR;
 }
 
 static int esdm_backend_clovis_mkfs(esdm_backend_t * backend, int enforce_format)
@@ -832,13 +843,13 @@ esdm_backend_t* clovis_backend_init(esdm_config_backend_t* config)
     int             rc;
 
     if (!config || !config->type || strcasecmp(config->type, "CLOVIS") || !config->target) {
-        printf("Wrong configuration\n");
+        DEBUG("Wrong configuration");
         return NULL;
     }
 
-    printf("backend type   = %s\n", config->type);
-    printf("backend id     = %s\n", config->id);
-    printf("backend target = %s\n", config->target);
+    DEBUG_FMT("backend type   = %s", config->type);
+    DEBUG_FMT("backend id     = %s", config->id);
+    DEBUG_FMT("backend target = %s", config->target);
 
     /*
      *          "local_addr ha_addr profile process_fid"
