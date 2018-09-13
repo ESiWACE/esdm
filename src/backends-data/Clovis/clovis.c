@@ -149,6 +149,10 @@ static int conf_parse(char * conf, esdm_backend_clovis_t *ebm)
 static int esdm_backend_clovis_init(char * conf, esdm_backend_t *eb)
 {
     esdm_backend_clovis_t *ebm;
+    time_t                 t;
+    unsigned int           pid;
+    unsigned int           r;
+    unsigned long long     f;
     int                    rc;
 
     ebm = eb2ebm(eb);
@@ -177,7 +181,14 @@ static int esdm_backend_clovis_init(char * conf, esdm_backend_t *eb)
     }
 
     /* FIXME this makes the gid not reused. */
-    gid.u_hi = gid.u_lo = time(NULL);
+    t = time(NULL);
+    srand(t);
+    r = rand();
+    pid = getpid();
+    f = (t << 16 ) | (r & 0xff00) | (pid & 0xff);
+    gid.u_hi = f;
+    gid.u_lo = 1L;
+    DEBUG_FMT("GID set to: <%lx:%lx>", gid.u_hi, gid.u_lo);
 
     /* create the global mapping index */
     /* XXX NO NEED TO DO SO.
@@ -230,7 +241,7 @@ static int create_object(esdm_backend_clovis_t *ebm,
 
     open_entity(&obj);
 
-    m0_clovis_entity_create(&obj.ob_entity, &ops[0]);
+    m0_clovis_entity_create(NULL, &obj.ob_entity, &ops[0]);
 
     m0_clovis_op_launch(ops, ARRAY_SIZE(ops));
 
@@ -519,7 +530,7 @@ int clovis_index_create(struct m0_clovis_realm *parent,
 	int                    rc = 0;
 
 	m0_clovis_idx_init(&idx, parent, (struct m0_uint128 *)fid);
-	rc = m0_clovis_entity_create(&idx.in_entity, &op);
+	rc = m0_clovis_entity_create(NULL, &idx.in_entity, &op);
 	rc = index_op_tail(&idx.in_entity, op, rc);
 	return rc;
 }
