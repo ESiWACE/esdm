@@ -142,6 +142,8 @@ esdm_fragment_t* esdm_layout_reconstruction(esdm_dataset_t *dataset, esdm_datasp
 	//		if 
 
 
+
+	// TODO: There should to be a cache component that can be asked if fragment is present
 	
 
 

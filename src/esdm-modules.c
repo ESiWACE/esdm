@@ -102,6 +102,7 @@ esdm_modules_t* esdm_modules_init(esdm_instance_t* esdm)
 	modules->backend_count = config_backends->count;
 	modules->backends = malloc(config_backends->count * sizeof(esdm_backend_t*));
 
+
 	int i;
 	for (i = 0; i < config_backends->count; i++) {
 		b = &(config_backends->backends[i]);
@@ -143,7 +144,7 @@ esdm_status_t esdm_modules_finalize()
 {
 	ESDM_DEBUG(__func__);
 
-	// unregister and finalize modules in reverse order
+	// TODO: unregister and finalize modules in reverse order
 	/*
 	int i;
 	for(i = module_count - 1 ; i >= 0; i--){

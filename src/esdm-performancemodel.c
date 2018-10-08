@@ -59,7 +59,9 @@ esdm_status_t esdm_performance_finalize(esdm_performance_t* performance)
 }
 
 
-
+/**
+ * Queries backend for performance estimate for the given fragment. 
+ */
 void fetch_performance_from_backend(gpointer key, gpointer value, gpointer user_data)
 {
 	DEBUG("GHashTable Entry: key=%p (s:%s), value=%p (s:%s), user_data=%p\n", key, key,value, value, user_data);
@@ -82,7 +84,7 @@ esdm_status_t esdm_performance_recommendation(esdm_instance_t *esdm, esdm_fragme
 	//	//esdm_backend_estimate_performance((esdm_backend_t*) backends->module, 1234);
 	//}
 
-	// now choice the best module
+	// now choose the best module
 
 	return ESDM_SUCCESS;
 }

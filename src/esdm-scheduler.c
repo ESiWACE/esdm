@@ -342,16 +342,16 @@ esdm_status_t esdm_scheduler_enqueue_write(esdm_instance_t *esdm, io_request_sta
 }
 
 esdm_status_t esdm_scheduler_status_init(io_request_status_t * status){
-  g_mutex_init(& status->mutex);
-  g_cond_init(& status->done_condition);
-  status->pending_ops = 0;
-  return ESDM_SUCCESS;
+	g_mutex_init(& status->mutex);
+	g_cond_init(& status->done_condition);
+	status->pending_ops = 0;
+	return ESDM_SUCCESS;
 }
 
 esdm_status_t esdm_scheduler_status_finalize(io_request_status_t * status){
-  g_mutex_clear(& status->mutex);
-  g_cond_clear(& status->done_condition);
-  return ESDM_SUCCESS;
+	g_mutex_clear(& status->mutex);
+	g_cond_clear(& status->done_condition);
+	return ESDM_SUCCESS;
 }
 
 esdm_status_t esdm_scheduler_wait(io_request_status_t * status){
@@ -366,33 +366,34 @@ esdm_status_t esdm_scheduler_wait(io_request_status_t * status){
 esdm_status_t esdm_scheduler_process_blocking(esdm_instance_t *esdm, io_operation_t op, esdm_dataset_t *dataset, void *buf,  esdm_dataspace_t* subspace){
 	ESDM_DEBUG(__func__);
 
-  io_request_status_t status;
+	io_request_status_t status;
 
 	esdm_status_t ret;
 
-  ret = esdm_scheduler_status_init(& status);
-  assert( ret == ESDM_SUCCESS );
+	ret = esdm_scheduler_status_init(& status);
+	assert( ret == ESDM_SUCCESS );
 
 	esdm_fragment_t ** read_frag = NULL;
 	int frag_count;
 
-	if( op == ESDM_OP_WRITE){
+	if (op == ESDM_OP_WRITE) {
 		ret = esdm_scheduler_enqueue_write(esdm, & status, dataset, buf, subspace);
-	}else if(op == ESDM_OP_READ){
+	} else if (op == ESDM_OP_READ) {
 		esdm_backend_t * md = esdm->modules->metadata;
 		ret = md->callbacks.lookup(md, dataset, subspace, & frag_count, & read_frag);
 		DEBUG("fragments to read: %d", frag_count);
 		ret = esdm_scheduler_enqueue_read(esdm, & status, frag_count, read_frag, buf, subspace);
-	}else{
+	} else {
 		assert(0 && "Unknown operation");
 	}
-  assert( ret == ESDM_SUCCESS );
+	assert( ret == ESDM_SUCCESS );
 
-  ret = esdm_scheduler_wait(& status);
-  assert( ret == ESDM_SUCCESS );
+	ret = esdm_scheduler_wait(& status);
+	assert( ret == ESDM_SUCCESS );
 
-  ret = esdm_scheduler_status_finalize(& status);
-  assert( ret == ESDM_SUCCESS );
+	ret = esdm_scheduler_status_finalize(& status);
+	assert( ret == ESDM_SUCCESS );
+
 	return ESDM_SUCCESS;
 }
 
