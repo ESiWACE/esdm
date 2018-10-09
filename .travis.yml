@@ -1,7 +1,7 @@
 language: c
 install:
   - sudo apt-get update -qq
-  - sudo apt-get install -y -qq libglib2.0 libglib2.0-dev libjansson4 libjansson-dev libopenmpi-dev openmpi-bin
+  - sudo apt-get install -y -qq libglib2.0 libglib2.0-dev libjansson4 libjansson-dev libopenmpi-dev openmpi-bin libopenmpi-dev
 script:
   - ./configure --with-cc=mpicc && cd build && make && make CTEST_OUTPUT_ON_FAILURE=1 test
 
