@@ -59,6 +59,17 @@ esdm_backend_clovis_t *eb2ebm(esdm_backend_t *eb)
     return container_of(eb, esdm_backend_clovis_t, ebm_base);
 }
 
+/**
+ *  To get local network address, in tcp or o2ib.
+ * 'lctl' requires root privilege, but m0nettest runs in normal user.
+ * This is used to pick local address. Clovis app requires to choose
+ * its own unique local address. If ESDM is running from multiple nodes
+ * with the same configuration file, a unique local address should be
+ * used for every app on different nodes.
+ *
+ * @TODO: Please note, if multiple apps are running from the same node,
+ * different local addresses are required.
+ *  */
 char *laddr_get()
 {
     FILE *output;
@@ -66,7 +77,7 @@ char *laddr_get()
     char *first_newline;
     int rc;
 
-    output = popen("lctl list_nids", "r");
+    output = popen("/mero.bin/bin/m0nettest -l | grep NID | egrep -e 'tcp|o2ib' | head -n 1 | awk -e '{print $3}'", "r");
     if (output == NULL) {
         return NULL;
     }
@@ -79,6 +90,7 @@ char *laddr_get()
         first_newline = strchr(screen, '\n');
         if (first_newline != 0)
             *first_newline = '\0';
+        DEBUG_FMT("local addr = %s", screen);
     }
     return rc > 0 ? strdup(screen) : NULL;
 }
@@ -100,10 +112,12 @@ static int conf_parse(char * conf, esdm_backend_clovis_t *ebm)
     char *clovis_proc_fid;
     char *clovis_index_dir = "/tmp/";
     struct m0_idx_dix_config dix_conf = { .kc_create_meta = false };
-    char *laddr, *combined_laddr;
+    /*char *laddr, *combined_laddr;*/
 
     if ((clovis_local_addr = strsep(&conf, " ")) == NULL)
         return -EINVAL;
+#if 0
+    /* Temporarily disabled this. */
     laddr = laddr_get();
     if (laddr == NULL)
         return -EINVAL;
@@ -113,10 +127,12 @@ static int conf_parse(char * conf, esdm_backend_clovis_t *ebm)
     if (combined_laddr == NULL)
         return -EINVAL;
     ebm->ebm_clovis_conf.cc_local_addr = combined_laddr;
+#else
+    ebm->ebm_clovis_conf.cc_local_addr = clovis_local_addr;
+#endif
 
     if ((clovis_ha_addr = strsep(&conf, " ")) == NULL)
         return -EINVAL;
-
     ebm->ebm_clovis_conf.cc_ha_addr = strdup(clovis_ha_addr);
 
     if ((clovis_prof = strsep(&conf, " ")) == NULL)
@@ -220,7 +236,7 @@ static void open_entity(struct m0_clovis_obj *obj)
     m0_clovis_entity_open(entity, &ops[0]);
     m0_clovis_op_launch(ops, 1);
     m0_clovis_op_wait(ops[0], M0_BITS(M0_CLOVIS_OS_FAILED, M0_CLOVIS_OS_STABLE),
-                      m0_time_from_now(3,0));
+                      M0_TIME_NEVER);//m0_time_from_now(3,0));
     m0_clovis_op_fini(ops[0]);
     m0_clovis_op_free(ops[0]);
     ops[0] = NULL;
@@ -247,7 +263,7 @@ static int create_object(esdm_backend_clovis_t *ebm,
 
     rc = m0_clovis_op_wait(ops[0],
                            M0_BITS(M0_CLOVIS_OS_FAILED, M0_CLOVIS_OS_STABLE),
-                           m0_time_from_now(3,0));
+                           M0_TIME_NEVER);//m0_time_from_now(3,0));
 
     m0_clovis_op_fini(ops[0]);
     m0_clovis_op_free(ops[0]);
