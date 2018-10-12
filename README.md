@@ -22,7 +22,7 @@ more efficiently organize metadata and data across a variety of storage backends
 #### Installation for Fedora/CentOS/RHEL Systems
 
   * dnf install glib2 glib2-devel mpi jansson jansson-devel
-  * dnf install mpich-3.0 mpich-3.0-devel
+  * dnf install mpich-3.0 mpich-3.0-devel	OR   dnf install openmpi opemmpi-devel
 
 
   * dnf install gcc-c++ gcc libtool cmake

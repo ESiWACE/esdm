@@ -12,13 +12,13 @@
 
 
 #ifdef DEBUG
-	#define info(...) fprintf(stderr, "[H5 ESDM] Info: "__VA_ARGS__);
+	#define info(...) fprintf(stderr, "[H5 ESDM] Info: "__VA_ARGS__)
 #else
  	#define info(...)
 #endif
 
 
-#define warn(...) fprintf(stderr, "[H5 ESDM] Warning: "__VA_ARGS__);
+#define warn(...) fprintf(stderr, "[H5 ESDM] Warning: "__VA_ARGS__)
 #define fail(...) { fprintf(stderr, "[H5 ESDM] Error: "__VA_ARGS__); exit(1); }
 
 

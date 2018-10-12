@@ -16,6 +16,8 @@
 #include <stdio.h>
 #include <hdf5.h>
 
+#include <assert.h>
+
 
 #define H5FILE_NAME   "SDScompound.h5"
 #define DATASETNAME   "ArrayOfStructures"

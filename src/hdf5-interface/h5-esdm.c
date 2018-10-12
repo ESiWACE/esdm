@@ -82,7 +82,7 @@ static const H5VL_class_t H5VL_esdm = {
     VOL_PLUGIN_NAME, // const char *name;                          /* Plugin name */
     H5VL_esdm_init,  // herr_t  (*initialize)(hid_t vipl_id);      /* Plugin initialization callback */
     H5VL_esdm_term,  // herr_t  (*terminate)(hid_t vtpl_id);       /* Plugin termination callback */
-    sizeof(hid_t),  // size_t  fapl_size;                         /* size of the vol info in the fapl property */
+    sizeof(hid_t),   // size_t  fapl_size;                         /* size of the vol info in the fapl property */
     NULL,            // void *  (*fapl_copy)(const void *info);    /* callback to create a copy of the vol info */
     NULL,            // herr_t  (*fapl_free)(void *info);          /* callback to release the vol info copy */
 
@@ -155,15 +155,24 @@ static const H5VL_class_t H5VL_esdm = {
 
 
 
+
+
+
 static hid_t vol_id = -1;
 
 
 herr_t H5VL_esdm_init(hid_t vipl_id)
 {
+	info("H5VL_esdm_init()");
+
 	vol_id = H5VLregister (&H5VL_esdm);
 	H5VLinitialize(vol_id, H5P_DEFAULT);
 
 	assert(H5VLget_plugin_id(VOL_PLUGIN_NAME) != -1);
+
+
+	esdm_init();
+
 
 	return (herr_t)vol_id;
 }
@@ -171,6 +180,8 @@ herr_t H5VL_esdm_init(hid_t vipl_id)
 
 int H5VL_esdm_term()
 {
+	info("H5VL_esdm_term()");
+
 	assert(vol_id != -1);
 
 	H5VLclose(vol_id);

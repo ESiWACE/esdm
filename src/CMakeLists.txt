@@ -124,15 +124,13 @@ endif()
 install(TARGETS esdm LIBRARY DESTINATION lib)
 
 
-
-#TODO: if hdf5 available.. build add hdf5-interface
-
-
-#if(HDF5_FOUND)
-#	SUBDIRS(hdf5-interface)
-#endif(HDF5_FOUND)
+if(ENABLE_HDF5)
+	SUBDIRS(hdf5-interface)
+endif(ENABLE_HDF5)
 
 
+
+#SUBDIRS(interfaces)
 
 
 

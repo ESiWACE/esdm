@@ -52,7 +52,7 @@ int puipui;
 static void* H5VL_esdm_attribute_create (void *obj, H5VL_loc_params_t loc_params, const char *attr_name, hid_t acpl_id, hid_t aapl_id, hid_t dxpl_id, void **req) 
 {
 	info("%s\n", __func__);
-	info("%s: Attach new attribute=TODO '%s' to obj=%p\n", __func__, attr_name, obj) 
+	info("%s: Attach new attribute=TODO '%s' to obj=%p\n", __func__, attr_name, obj);
 
 	
 //	hid_t space_id;
@@ -150,7 +150,8 @@ static void* H5VL_esdm_attribute_create (void *obj, H5VL_loc_params_t loc_params
 static void* H5VL_esdm_attribute_open (void *obj, H5VL_loc_params_t loc_params, const char *attr_name, hid_t aapl_id, hid_t dxpl_id, void **req) 
 {
 	info("%s\n", __func__);
-	info("%s: *obj = %p\n", __func__, obj) 
+	info("%s: *obj = %p\n", __func__, obj);
+
 
 
 	void *attribute;
@@ -266,7 +267,7 @@ static herr_t H5VL_esdm_attribute_write (void *attr, hid_t mem_type_id, const vo
 static herr_t H5VL_esdm_attribute_get (void *obj, H5VL_attr_get_t get_type, hid_t dxpl_id, void **req, va_list arguments) 
 {
 	info("%s\n", __func__);
-	info("%s: *obj = %p\n", __func__, obj) 
+	info("%s: *obj = %p\n", __func__, obj);
 
     H5VL_esdm_object_t *object;
     H5VL_esdm_attribute_t *attribute;
@@ -1252,6 +1253,11 @@ static void * H5VL_esdm_file_open(const char *name, unsigned flags, hid_t fapl_i
     H5VL_esdm_object_t *object;
 
 	info("%s\n", __func__);
+
+
+	esdm_init();
+
+
 
     object = g_hash_table_lookup (files_tbl, name);
 

@@ -16,6 +16,9 @@
 #include <stdio.h>
 #include <hdf5.h>
 
+#include <assert.h>
+
+
 #define FILE "file-test.h5"
 
 int main()

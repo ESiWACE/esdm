@@ -25,8 +25,8 @@ function help(){
 	echo "--with-mpicxx=<file>     : path to the MPI C++ compiler"
 	echo "--with-boost=<file>      : path to boost library used for WOS"
 	echo "--enable-wos=<file>      : path to WOS library"
+	echo "--enable-hdf5            : Build including HDF5 frontend"
 	echo "--plantuml-jar-dir=<dir> : directory containing plantuml.jar, useful for building the documentation"
-	echo "--without-hdf            : disable HDF5 frontend (do not build VOL plugin)."
 	echo
 }
 
@@ -94,7 +94,8 @@ if test -n "$cxxbin"; then
 	CMAKEFLAGS="$CMAKEFLAGS -DCMAKE_CXX_COMPILER:FILEPATH=$cxxbin"
 fi
 if test -n "$hdf5"; then
-	CMAKEFLAGS="$CMAKEFLAGS -DHDF5_hdf5_LIBRARY_RELEASE:PATH=$hdf5/lib/libhdf5.so -DHDF5_C_INCLUDE_DIR:PATH=$hdf5/include"
+	#CMAKEFLAGS="$CMAKEFLAGS -DHDF5_HDF5_LIBRARY_RELEASE:PATH=$hdf5/lib/libhdf5.so -DHDF5_C_INCLUDE_DIR:PATH=$hdf5/include -DENABLE_HDF5=ON"
+	CMAKEFLAGS="$CMAKEFLAGS -DENABLE_HDF5=ON"
 fi
 if test -n "$mpicc"; then
 	CMAKEFLAGS="$CMAKEFLAGS -DMPI_C_COMPILER:FILEPATH=$mpicc"
