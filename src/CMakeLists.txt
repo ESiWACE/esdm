@@ -124,13 +124,11 @@ endif()
 install(TARGETS esdm LIBRARY DESTINATION lib)
 
 
-if(ENABLE_HDF5)
-	SUBDIRS(hdf5-interface)
-endif(ENABLE_HDF5)
 
 
 
-#SUBDIRS(interfaces)
+
+SUBDIRS(interfaces)
 
 
 
