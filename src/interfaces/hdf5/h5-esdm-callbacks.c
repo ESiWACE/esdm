@@ -153,6 +153,8 @@ static void* H5VL_esdm_attribute_open (void *obj, H5VL_loc_params_t loc_params, 
 	info("%s: *obj = %p\n", __func__, obj);
 
 
+	// provided container or dataset
+
 
 	void *attribute;
 
@@ -525,6 +527,11 @@ static void *H5VL_esdm_dataset_create(
 
 	info("%s\n", __func__);
 
+
+	//esdm_dataset_t* esdm_dataset_create(esdm_container_t *container, char * name, esdm_dataspace_t *dataspace);
+	
+
+
 	// (gdb) bt
 	// #0  H5VL_esdm_dataset_create (obj=0x95f9c0, loc_params=..., name=0x961db0 "lat", dcpl_id=792633534417207319,
 	//     dapl_id=792633534417207303, dxpl_id=792633534417207311, req=0x0) at /home/pq/ESiWACE/ESD-Middleware/src/m-dataset.c:86
@@ -614,6 +621,8 @@ static void *H5VL_esdm_dataset_open(void *obj, H5VL_loc_params_t loc_params, con
 	info("%s\n", __func__);
 
     H5VL_esdm_group_t *parent = (H5VL_esdm_group_t *) ((H5VL_esdm_object_t*)obj)->object;
+
+	//esdm_dataset_t* esdm_dataset_retrieve(esdm_container_t *container, const char * name);
 
 
 	H5VL_esdm_object_t * child = g_hash_table_lookup(parent->childs_tbl, name);
@@ -1156,9 +1165,8 @@ static void * H5VL_esdm_file_create(const char *name, unsigned flags, hid_t fcpl
 
 	info("%s\n", __func__);
 
-
-	esdm_init();
-
+	//esdm_container_t* esdm_container_create(const char *name);
+	//esdm_container_t* esdm_container_retrieve(const char * name);
 
 	// analyse property lists
 	size_t nprops = 0;
@@ -1254,6 +1262,7 @@ static void * H5VL_esdm_file_open(const char *name, unsigned flags, hid_t fapl_i
 
 	info("%s\n", __func__);
 
+	//esdm_container_t* esdm_container_retrieve(const char * name);
 
 	esdm_init();
 
@@ -1510,6 +1519,7 @@ static void * H5VL_esdm_group_create(void *obj, H5VL_loc_params_t loc_params, co
 	info("%s\n", __func__);
 
 	
+	//esdm_container_t* esdm_container_create(const char *name);
 
 	// allocate resources
     object = (H5VL_esdm_object_t*) malloc(sizeof(H5VL_esdm_object_t));
@@ -1550,6 +1560,9 @@ static void *H5VL_esdm_group_open(void *obj, H5VL_loc_params_t loc_params, const
 
 	H5VL_esdm_object_t * child = g_hash_table_lookup(parent->childs_tbl, name);
 	info("%s: Found group=%p with name=%s in parent=%p\n", __func__, child->object, name, obj);
+
+
+	//esdm_container_t* esdm_container_retrieve(const char * name);
 
 
 	return (void *)child;

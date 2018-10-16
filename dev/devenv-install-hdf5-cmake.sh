@@ -30,7 +30,7 @@ echo "Preparing Configure"
 mkdir build
 cd build
 
-cmake -DCMAKE_C_COMPILER:FILEPATH=gcc --enable-parallel ..
+cmake -DCMAKE_INSTALL_PREFIX:PATH=$prefix -DCMAKE_C_COMPILER:FILEPATH=gcc --enable-parallel ..
 
 #../configure --prefix=$prefix --enable-parallel --with-default-plugindir=$DIR/../build/ --enable-build-mode=debug --enable-hl   CFLAGS="-g" || exit 1
 #../configure --prefix=$prefix --with-default-plugindir=$DIR/../build/ --enable-build-mode=debug --enable-hl   CFLAGS="-g" || exit 1
