@@ -1,0 +1,5 @@
+The netCDF interface is realized by a small patch which enables the HDF5
+Virtual Object Plugin within NetCDF. This has to be compiled into NetCDF.
+See documentation for details.
+
+
