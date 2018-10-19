@@ -14,7 +14,7 @@ source $DIR/setenv.bash
 # required for netCDF to link the correct HDF5 installation
 H5DIR=$prefix
 
-version=4.5.1
+version=4.5.0
 
 # Download and unpack NetCDF4
 if [[ ! -e netcdf-$version ]] ; then
@@ -34,9 +34,25 @@ patch -b --verbose $PWD/include/netcdf.h $DIR/netcdf4-include-netcdf-h.patch
 
 # build, check and install
 
-CC=mpicc CPPFLAGS="-I${H5DIR}/include -g3 -O0" LDFLAGS=-L${H5DIR}/lib ./configure --prefix=$prefix
+#CC=mpicc CPPFLAGS="-I${H5DIR}/include -g3 -O0" LDFLAGS=-L${H5DIR}/lib ./configure --prefix=$prefix
+
+rm -rf build
+mkdir build
+cd build
+
+# non parallel build
+#cmake -DCMAKE_PREFIX_PATH=$prefix -DCMAKE_INSTALL_PREFIX:PATH=$prefix -DCMAKE_C_FLAGS=-L$prefix/lib/  ..
+
+# +parallel
+export CC=mpicc
+cmake -DCMAKE_PREFIX_PATH=$prefix -DCMAKE_INSTALL_PREFIX:PATH=$prefix -DCMAKE_C_FLAGS=-L$prefix/lib/ -DENABLE_PARALLEL4=ON ..
+
+# +parallel +pnetcdf
+#export CC=mpicc
+#cmake -DCMAKE_PREFIX_PATH=$prefix -DCMAKE_INSTALL_PREFIX:PATH=$prefix -DENABLE_PARALLEL4=ON -DENABLE_PNETCDF=ON ..
 
 make -j
-make check
 make install
 
+
+# make test

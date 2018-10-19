@@ -26,15 +26,16 @@ echo "Preparing Configure"
 #   Cannot find source file:    <PATH>/esdm/install/download/vol/src/H5Edefin.h
 ./bin/make_err
 
-
+rm -rf build
 mkdir build
 cd build
 
-cmake -DCMAKE_INSTALL_PREFIX:PATH=$prefix -DCMAKE_C_COMPILER:FILEPATH=gcc -DHDF5_GENERATE_HEADERS=ON --enable-parallel ..
+export CC=mpicc
 
-#../configure --prefix=$prefix --enable-parallel --with-default-plugindir=$DIR/../build/ --enable-build-mode=debug --enable-hl   CFLAGS="-g" || exit 1
-#../configure --prefix=$prefix --with-default-plugindir=$DIR/../build/ --enable-build-mode=debug --enable-hl   CFLAGS="-g" || exit 1
-make -j 8 || exit 1
+cmake -DCMAKE_INSTALL_PREFIX:PATH=$prefix -DCMAKE_C_COMPILER:FILEPATH=gcc -DHDF5_GENERATE_HEADERS=ON -DHDF5_ENABLE_PARALLEL=ON -DHDF5_BUILD_CPP_LIB=OFF ..
+
+
+make -j || exit 1
 make -j install
 
 echo "To verify that HDF5 works, please run"
