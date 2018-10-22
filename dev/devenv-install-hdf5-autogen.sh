@@ -35,7 +35,7 @@ echo "Preparing Configure"
 mkdir build
 cd build
 #../configure --prefix=$prefix --enable-parallel --with-default-plugindir=$DIR/../build/ --enable-build-mode=debug --enable-hl   CFLAGS="-g" || exit 1
-../configure --prefix=$prefix --with-default-plugindir=$DIR/../build/ --enable-build-mode=debug --enable-hl --enable-shared   CFLAGS="-g" || exit 1
+../configure --prefix=$prefix --with-default-plugindir=$DIR/../build/ --enable-parallel --enable-build-mode=debug --enable-hl --enable-shared   CFLAGS="-g" || exit 1
 make -j 8 || exit 1
 make -j install
 
