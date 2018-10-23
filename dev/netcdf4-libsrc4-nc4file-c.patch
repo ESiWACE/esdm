@@ -7,8 +7,8 @@
   #endif
   
 +    hid_t vol_id;
-+    if ( cmode & NC_H5VOL_MEMVOL )
-+    	   vol_id = H5VLregister_by_name("h5-memvol"); // ESD middleware: use VOL plugin
++    if ( cmode & NC_H5VOL_ESDM )
++    	   vol_id = H5VLregister_by_name("h5-esdm"); // ESD middleware: use VOL plugin
 + 
 +    
      assert(nc);
@@ -23,7 +23,7 @@
 + 
 + 
 +    /* ESD middleware set vol plugin */ // TODO: Property exists by now, otherwise NetCDF would "BAIL"
-+    if ( cmode & NC_H5VOL_MEMVOL ) {
++    if ( cmode & NC_H5VOL_ESDM ) {
 +      if (H5Pset_vol(fapl_id, vol_id, &fapl_id) < 0) // ESD middleware: use VOL plugin 
 + 	   BAIL(NC_EHDFERR); // TODO: more sensible error code?
 +    }
@@ -39,8 +39,8 @@
   #endif /* !USE_PARALLEL4 */
   
 +    hid_t vol_id;
-+    if ( mode & NC_H5VOL_MEMVOL )
-+      vol_id = H5VLregister_by_name("h5-memvol"); // ESD middleware: use VOL plugin
++    if ( mode & NC_H5VOL_ESDM )
++      vol_id = H5VLregister_by_name("h5-esdm"); // ESD middleware: use VOL plugin
 + 
      LOG((3, "%s: path %s mode %d", __func__, path, mode));
      assert(path && nc);
@@ -71,9 +71,9 @@
 +    
 +    
 +    /* ESD middleware set vol plugin */ // TODO: Property exists by now, otherwise NetCDF would "BAIL"
-+    if ( mode & NC_H5VOL_MEMVOL ) {
-+ 	 if (H5Pset_vol(fapl_id, vol_id, &fapl_id) < 0) // ESD middleware: use VOL plugin 
-+ 	   BAIL(NC_EHDFERR); // TODO: more sensible error code?
++    if ( mode & NC_H5VOL_ESDM ) {
++ 	   if (H5Pset_vol(fapl_id, vol_id, &fapl_id) < 0) // ESD middleware: use VOL plugin 
++ 	     BAIL(NC_EHDFERR); // TODO: more sensible error code?
 +    }
 + 
 + 

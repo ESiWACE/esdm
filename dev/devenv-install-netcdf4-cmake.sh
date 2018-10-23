@@ -26,8 +26,8 @@ fi
 cd netcdf-$version
 
 # patch netcdf 
-patch -b --verbose $PWD/libsrc4/nc4file.c $DIR/netcdf4-libsrc4-nc4file-c.patch
-patch -b --verbose $PWD/include/netcdf.h $DIR/netcdf4-include-netcdf-h.patch
+#patch -b --verbose $PWD/libsrc4/nc4file.c $DIR/netcdf4-libsrc4-nc4file-c.patch
+#patch -b --verbose $PWD/include/netcdf.h $DIR/netcdf4-include-netcdf-h.patch
 
 # Patch NetCDF to use ESD middleware
 # TODO: patch netcdf to use e.g. memvol plugin for hdf5 (libsrc4/nc4file.c)
