@@ -4,4 +4,4 @@
 reporoot=$(git rev-parse --show-toplevel)
 
 
-cp -r $reporoot/install/download/netcdf-4.4.0/examples/C/* test
+cp -r $reporoot/install/download/netcdf-4.4.0/examples/C/* test-examples

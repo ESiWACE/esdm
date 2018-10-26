@@ -1,6 +1,8 @@
 #/bin/bash
 
 
+source env.bash
+
 # Flags
 # -r, --read                    Enable read benchmark
 # -w, --write                   Enable write benchmark
