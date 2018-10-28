@@ -56,6 +56,7 @@ do
 		--with-cc) ccbin="$2"; shift;;
 		--with-cxx) cxxbin="$2"; shift;;
 		--with-hdf5) hdf5="$2"; echo "$2"; shift;;
+		--with-netcdf4) netcdf4="$2"; echo "$2"; shift;;
 		--with-mpicc) mpicc="$2"; shift;;
 		--with-mpicxx) mpicxx="$2"; shift;;
 		--with-boost) boost="$2"; shift;;
@@ -93,10 +94,17 @@ fi
 if test -n "$cxxbin"; then
 	CMAKEFLAGS="$CMAKEFLAGS -DCMAKE_CXX_COMPILER:FILEPATH=$cxxbin"
 fi
+
+
 if test -n "$hdf5"; then
 	#CMAKEFLAGS="$CMAKEFLAGS -DHDF5_HDF5_LIBRARY_RELEASE:PATH=$hdf5/lib/libhdf5.so -DHDF5_C_INCLUDE_DIR:PATH=$hdf5/include -DENABLE_HDF5=ON"
-	CMAKEFLAGS="$CMAKEFLAGS -DENABLE_HDF5=ON"
+	CMAKEFLAGS="$CMAKEFLAGS -DINTERFACE_HDF5=ON"
 fi
+if test -n "$netcdf4"; then
+	CMAKEFLAGS="$CMAKEFLAGS -DINTERFACE_NETCDF4=ON"
+fi
+
+
 if test -n "$mpicc"; then
 	CMAKEFLAGS="$CMAKEFLAGS -DMPI_C_COMPILER:FILEPATH=$mpicc"
 fi

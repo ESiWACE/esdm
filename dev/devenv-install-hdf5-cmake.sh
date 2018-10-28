@@ -14,7 +14,9 @@ cd install/download
 # download most recent HDF5 source code
 if [[ ! -e vol ]] ; then
 	echo "Downloading source code for HDF5 with VOL"
-	svn checkout https://svn.hdfgroup.org/hdf5/features/vol/ || exit 1
+	#svn checkout https://svn.hdfgroup.org/hdf5/features/vol/ || exit 1
+    cp ~/vol.tar .
+    tar xvf vol.tar
 fi
 
 

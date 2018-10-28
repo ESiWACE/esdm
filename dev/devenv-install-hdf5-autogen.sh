@@ -37,6 +37,12 @@ mkdir build
 cd build
 
 export CC=mpicc
+#export CC=gcc
+
+# simple case for testin 
+#../configure --prefix=$prefix --enable-shared || exit 1 
+
+# parallel case + default plugin directory set
 ../configure --prefix=$prefix --with-default-plugindir=$DIR/../build/ --enable-parallel --enable-build-mode=debug --enable-hl --enable-shared   CFLAGS="-g" || exit 1
 
 make -j 8 || exit 1

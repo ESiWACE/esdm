@@ -21,8 +21,6 @@ include_directories(${JANSSON_INCLUDE_DIRS})
 
 
 # Optional
-find_package(HDF5)
-
 find_package(MPI REQUIRED) # TODO this is optional
 
 
