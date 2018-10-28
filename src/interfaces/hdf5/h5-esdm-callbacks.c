@@ -1165,12 +1165,18 @@ static void * H5VL_esdm_file_create(const char *name, unsigned flags, hid_t fcpl
 
 	info("%s\n", __func__);
 
+    info("%s: name=%s \n", __func__, name);
+
+	esdm_container_create(name);
 	//esdm_container_t* esdm_container_create(const char *name);
 	//esdm_container_t* esdm_container_retrieve(const char * name);
 
 	// analyse property lists
 	size_t nprops = 0;
 	void * iter_data;
+
+
+
 
 	H5Pget_nprops(fcpl_id, &nprops );
     info("%s: fcpl_id=%ld nprops= %d \n", __func__, fcpl_id,  nprops);
@@ -1261,6 +1267,8 @@ static void * H5VL_esdm_file_open(const char *name, unsigned flags, hid_t fapl_i
     H5VL_esdm_object_t *object;
 
 	info("%s\n", __func__);
+
+    info("%s: name=%s \n", __func__, name);
 
 	//esdm_container_t* esdm_container_retrieve(const char * name);
 
