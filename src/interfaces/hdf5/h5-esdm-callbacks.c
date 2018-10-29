@@ -47,7 +47,7 @@
 // ../install/download/vol/src/H5VLnative.c
 // ../install/download/vol/src/H5A.c
 
-int puipui;
+int mock_attr;
 
 static void* H5VL_esdm_attribute_create (void *obj, H5VL_loc_params_t loc_params, const char *attr_name, hid_t acpl_id, hid_t aapl_id, hid_t dxpl_id, void **req) 
 {
@@ -74,11 +74,15 @@ static void* H5VL_esdm_attribute_create (void *obj, H5VL_loc_params_t loc_params
 //	switch(loc_params.obj_type)
 //	{
 //		case H5I_FILE:
+//			info("%s: H5I_FILE \n", __func__);
 //			ERRORMSG("Not implemented");
 //			break;
 //		case H5I_GROUP:
+//			info("%s: H5I_GROUP \n", __func__);
+//		    /*FALLTHROUGH*/
 //		case H5I_DATASET:
 //			{ 
+//  			info("%s: H5I_DATASET \n", __func__);
 //				SQO_t* sqo = (SQO_t*) obj;
 //				sqo->info.num_attrs++;
 //				attribute->object.location = create_path(sqo);
@@ -96,47 +100,75 @@ static void* H5VL_esdm_attribute_create (void *obj, H5VL_loc_params_t loc_params
 //			}
 //			break;
 //		case H5I_DATATYPE:
+//			info("%s: H5I_DATATYPE \n", __func__);
 //			ERRORMSG("Not implemented");
+//
 //			break;
 //		case H5I_ATTR:
+//			info("%s: H5I_ATTR \n", __func__);
 //			ERRORMSG("Not implemented");
 //			break;
+//
 //		case H5I_UNINIT:
+//			info("%s: H5I_UNINIT \n", __func__);
 //			ERRORMSG("Not implemented");
 //			break;
+//
 //		case H5I_BADID:
+//			info("%s: H5I_BADID \n", __func__);
 //			ERRORMSG("Not implemented");
 //			break;
+//
 //		case H5I_DATASPACE:
+//			info("%s: H5I_DATASPACE \n", __func__);
 //			ERRORMSG("Not implemented");
 //			break;
+//
 //		case H5I_REFERENCE:
+//			info("%s: H5I_REFRENCE \n", __func__);
 //			ERRORMSG("Not implemented");
 //			break;
+//
 //		case H5I_VFL:
+//			info("%s: H5I_VFL \n", __func__);
 //			ERRORMSG("Not implemented");
 //			break;
+//
 //		case H5I_VOL:
+//			info("%s: H5I_VOL \n", __func__);
 //			ERRORMSG("Not implemented");
 //			break;
+//
 //		case H5I_GENPROP_CLS:
+//			info("%s: H5I_CLS \n", __func__);
 //			ERRORMSG("Not implemented");
 //			break;
+//
 //		case H5I_GENPROP_LST:
+//			info("%s: H5I_LST \n", __func__);
 //			ERRORMSG("Not implemented");
 //			break;
+//
 //		case H5I_ERROR_CLASS:
+//			info("%s: H5I_CLASS \n", __func__);
 //			ERRORMSG("Not implemented");
 //			break;
+//
 //		case H5I_ERROR_MSG:
+//			info("%s: H5I_MSG \n", __func__);
 //			ERRORMSG("Not implemented");
 //			break;
+//
 //		case H5I_ERROR_STACK:
+//			info("%s: H5I_ERROR_STACK \n", __func__);
 //			ERRORMSG("Not implemented");
 //			break;
+//
 //		case H5I_NTYPES:
+//			info("%s: H5I_NTYPES \n", __func__);
 //			ERRORMSG("Not implemented");
 //			break;
+//
 //		default:
 //			ERRORMSG("Not supported");
 //	} /* end switch */
@@ -144,7 +176,7 @@ static void* H5VL_esdm_attribute_create (void *obj, H5VL_loc_params_t loc_params
 //	return attribute;
 
 
-	return (void*) &puipui;
+	return (void*) &mock_attr;
 }
 
 static void* H5VL_esdm_attribute_open (void *obj, H5VL_loc_params_t loc_params, const char *attr_name, hid_t aapl_id, hid_t dxpl_id, void **req) 
@@ -160,8 +192,9 @@ static void* H5VL_esdm_attribute_open (void *obj, H5VL_loc_params_t loc_params, 
 
 	switch(loc_params.obj_type)
 	{
-		case H5I_GROUP:
-			// Are Group and Dataset handled the same?
+		case H5I_GROUP:  
+            // We probably can handle Group and Dataset the same way
+            /*FALLTHROUGH*/
 		case H5I_DATASET:
 			switch (loc_params.type) {
 				case H5VL_OBJECT_BY_IDX:
@@ -200,24 +233,54 @@ static void* H5VL_esdm_attribute_open (void *obj, H5VL_loc_params_t loc_params, 
 			break;
 
 		case H5I_UNINIT:
-			info("%s: H5I_ \n", __func__);
+			info("%s: H5I_UNINIT \n", __func__);
 			break;
 
 		case H5I_BADID:
-			info("%s: H5I_ \n", __func__);
+			info("%s: H5I_BADID \n", __func__);
 			break;
 
 		case H5I_DATASPACE:
+			info("%s: H5I_DATASPACE \n", __func__);
+			break;
+
 		case H5I_REFERENCE:
+			info("%s: H5I_REFERENCE \n", __func__);
+			break;
+
 		case H5I_VFL:
+			info("%s: H5I_VFL \n", __func__);
+			break;
+
 		case H5I_VOL:
+			info("%s: H5I_VOL \n", __func__);
+			break;
+
 		case H5I_GENPROP_CLS:
+			info("%s: H5I_GENPROP_CLS \n", __func__);
+			break;
+
 		case H5I_GENPROP_LST:
+			info("%s: H5I_GENPROP_LST \n", __func__);
+			break;
+
 		case H5I_ERROR_CLASS:
+			info("%s: H5I_ERROR_CLASS \n", __func__);
+			break;
+
 		case H5I_ERROR_MSG:
+			info("%s: H5I_ERROR_MSG \n", __func__);
+			break;
+
 		case H5I_ERROR_STACK:
+			info("%s: H5I_ERROR_STACK \n", __func__);
+			break;
+
 		case H5I_NTYPES:
+			info("%s: H5I_NTYPES \n", __func__);
 			fail("Not implemented");
+			break;
+
 		default:
 			fail("unsupported type");
 	} /* end switch */
@@ -407,6 +470,7 @@ static herr_t H5VL_esdm_attribute_specific (void *obj, H5VL_loc_params_t loc_par
             }
 
         default:
+			fail("Cannot get this type of information from attr. %s\n", __func__);
         	break;
 	}
 
@@ -431,7 +495,7 @@ static herr_t H5VL_esdm_attribute_close (void *attr, hid_t dxpl_id, void **req)
 	info("%s\n", __func__);
 
 
-	// Ensure persitence
+	// Ensure persistence
 	// Free memory
 	// inform ESDM, ESDM may decide to keep things cached?
 
@@ -1291,13 +1355,13 @@ static herr_t H5VL_esdm_file_get(void *file, H5VL_file_get_t get_type, hid_t dxp
 
 	// /* types for file GET callback */
 	// typedef enum H5VL_file_get_t {
-	//     H5VL_FILE_GET_FAPL,                     /* file access property list	*/
-	//     H5VL_FILE_GET_FCPL,	                    /* file creation property list	*/
+	//     H5VL_FILE_GET_FAPL,                  /* file access property list	*/
+	//     H5VL_FILE_GET_FCPL,	                /* file creation property list	*/
 	//     H5VL_FILE_GET_INTENT,	            /* file intent           		*/
-	//     H5VL_FILE_GET_NAME,	                    /* file name             		*/
+	//     H5VL_FILE_GET_NAME,	                /* file name             		*/
 	//     H5VL_FILE_GET_OBJ_COUNT,	            /* object count in file	       	*/
 	//     H5VL_FILE_GET_OBJ_IDS,	            /* object ids in file     		*/
-	//     H5VL_OBJECT_GET_FILE                    /* retrieve or resurrect file of object */
+	//     H5VL_OBJECT_GET_FILE                 /* retrieve or resurrect file of object */
 	// } H5VL_file_get_t;
 
 	// H5VL_FILE_GET_FAPL:            
@@ -1360,20 +1424,20 @@ static herr_t H5VL_esdm_file_get(void *file, H5VL_file_get_t get_type, hid_t dxp
       /* H5Fget_name */
       case H5VL_FILE_GET_NAME:
       {
-        H5I_type_t type = va_arg (arguments, H5I_type_t);
-        size_t     size = va_arg (arguments, size_t);
-        char      *name = va_arg (arguments, char *);
-        ssize_t   *ret  = va_arg (arguments, ssize_t *);
-        size_t     len = strlen(f->name);
+          H5I_type_t type = va_arg (arguments, H5I_type_t);
+          size_t     size = va_arg (arguments, size_t);
+          char      *name = va_arg (arguments, char *);
+          ssize_t   *ret  = va_arg (arguments, ssize_t *);
+          size_t     len = strlen(f->name);
 
-        if(name) {
-          strncpy(name, f->name, MIN(len + 1,size));
-          if(len >= size) name[size-1]='\0';
-        }
+          if(name) {
+              strncpy(name, f->name, MIN(len + 1,size));
+              if(len >= size) name[size-1]='\0';
+          }
 
-        /* Set the return value for the API call */
-        *ret = (ssize_t)len;
-        break;
+          /* Set the return value for the API call */
+          *ret = (ssize_t)len;
+          break;
       }
       /* H5I_get_file_id */
       case H5VL_OBJECT_GET_FILE:
@@ -1384,19 +1448,29 @@ static herr_t H5VL_esdm_file_get(void *file, H5VL_file_get_t get_type, hid_t dxp
         assert(0 && "TODO");
 
         switch(type) {
-          case H5I_FILE:
-          tmp = f;
-          break;
-          case H5I_GROUP:
-            break;
-          case H5I_DATATYPE:
-            break;
-          case H5I_DATASET:
-            break;
-          case H5I_ATTR:
-            break;
-          default:
-            assert(0 && "Invalid datatype");
+            case H5I_FILE:
+			    info("%s: H5I_FILE \n", __func__);
+                tmp = f;
+                break;
+
+            case H5I_GROUP:
+			    info("%s: H5I_GROUP \n", __func__);
+                break;
+
+            case H5I_DATATYPE:
+			    info("%s: H5I_DATATYPE \n", __func__);
+                break;
+
+            case H5I_DATASET:
+			    info("%s: H5I_DATASET \n", __func__);
+                break;
+
+            case H5I_ATTR:
+			    info("%s: H5I_ATTR \n", __func__);
+                break;
+
+            default:
+                assert(0 && "Invalid datatype");
         }
 
         *ret = (void*) tmp;
