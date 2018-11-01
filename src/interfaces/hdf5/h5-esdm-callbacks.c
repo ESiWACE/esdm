@@ -1222,6 +1222,10 @@ static herr_t H5VL_esdm_datatype_close(void *dt, hid_t dxpl_id, void **req)
 static GHashTable * files_tbl = NULL;
 
 
+#define HEIGHT 10
+#define WIDTH  4096
+
+
 static void * H5VL_esdm_file_create(const char *name, unsigned flags, hid_t fcpl_id, hid_t fapl_id, hid_t fxpl_id, void **req)
 {
     H5VL_esdm_object_t *object;
@@ -1231,7 +1235,61 @@ static void * H5VL_esdm_file_create(const char *name, unsigned flags, hid_t fcpl
 
     info("%s: name=%s \n", __func__, name);
 
-	esdm_container_create(name);
+
+	// prepare data
+	uint64_t * buf_w = (uint64_t *) malloc(HEIGHT * WIDTH *sizeof(uint64_t));
+	uint64_t * buf_r = (uint64_t *) malloc(HEIGHT * WIDTH *sizeof(uint64_t));
+
+	int x, y;
+	for(x = 0; x < HEIGHT; x++){
+		for(y = 0; y < WIDTH; y++){
+			buf_w[y * HEIGHT + x] = (y) * HEIGHT + x + 1;
+		}
+	}
+
+
+	// Interaction with ESDM
+	esdm_status_t ret;
+	esdm_container_t *container = NULL;
+	esdm_dataset_t *dataset = NULL;
+
+
+	esdm_init();
+
+
+
+	// define dataspace
+	int64_t bounds[] = {HEIGHT, WIDTH};
+	esdm_dataspace_t *dataspace = esdm_dataspace_create(2, bounds, ESDM_TYPE_UINT64_T);
+
+	container = esdm_container_create("mycontainer");
+	dataset = esdm_dataset_create(container, "mydataset", dataspace);
+
+	
+	esdm_container_commit(container);
+	esdm_dataset_commit(dataset);
+
+
+	// define subspace
+	int64_t size[] = {HEIGHT, WIDTH};
+	int64_t offset[] = {0,0};
+	esdm_dataspace_t *subspace = esdm_dataspace_subspace(dataspace, 2, size, offset);
+
+
+	// Write the data to the dataset
+	ret = esdm_write(dataset, buf_w, subspace);
+
+
+
+
+    /* 
+	esdm_init();
+    
+	
+    esdm_container_t* co = esdm_container_create(name);
+    esdm_container_commit(co); 
+    */
+
 	//esdm_container_t* esdm_container_create(const char *name);
 	//esdm_container_t* esdm_container_retrieve(const char * name);
 

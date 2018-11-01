@@ -116,7 +116,7 @@ esdm_container_t* esdm_container_retrieve(const char * name)
 
 /**
  * Make container persistent to storage.
- * Schedule for writing to backends.
+ * Enqueue for writing to backends.
  *
  * Calling container commit may trigger subsequent commits for datasets that
  * are part of the container.
