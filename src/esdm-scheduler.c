@@ -18,7 +18,7 @@
 /**
  * @file
  * @brief The scheduler receives application requests and schedules subsequent
- *        I/O requests as a are necessary for metadata lookups and data
+ *        I/O requests as are necessary for metadata lookups and data
  *        reconstructions.
  *
  */
@@ -37,6 +37,17 @@
 
 static void backend_thread(io_work_t* data_p, esdm_backend_t* backend_id);
 
+
+
+/**
+ * Initialize scheduler component:
+ *     * setup a thread pool 
+ *     * allow global and local limits
+ *
+ *     use globale limit only if ESDM_ACCESSIBILITY_GLOBAL is set    (data_accessibility_t enum)
+ *
+ *
+ */
 esdm_scheduler_t* esdm_scheduler_init(esdm_instance_t* esdm)
 {
 	ESDM_DEBUG(__func__);
@@ -164,6 +175,7 @@ static void read_copy_callback(io_work_t * work){
 
 	free(f->buf);
 }
+
 
 esdm_status_t esdm_scheduler_enqueue_read(esdm_instance_t *esdm, io_request_status_t * status, int frag_count, esdm_fragment_t** read_frag, void * buf, esdm_dataspace_t * buf_space){
 	GError * error;
@@ -363,6 +375,14 @@ esdm_status_t esdm_scheduler_wait(io_request_status_t * status){
     return ESDM_SUCCESS;
 }
 
+
+
+/**
+ * Calls to reads have to be completed before they can return to the application and are therefor blocking.
+ * Use esdm_scheduler_process_blocking from functions in the application facing API to process blocking scheduling.
+ *
+ * Note: write is also blocking right now.
+ */
 esdm_status_t esdm_scheduler_process_blocking(esdm_instance_t *esdm, io_operation_t op, esdm_dataset_t *dataset, void *buf,  esdm_dataspace_t* subspace){
 	ESDM_DEBUG(__func__);
 
@@ -400,10 +420,3 @@ esdm_status_t esdm_scheduler_process_blocking(esdm_instance_t *esdm, io_operatio
 
 
 
-
-esdm_status_t esdm_backend_io(esdm_backend_t* backend, esdm_fragment_t* fragment, esdm_metadata_t* metadata)
-{
-	ESDM_DEBUG(__func__);
-
-	return ESDM_SUCCESS;
-}

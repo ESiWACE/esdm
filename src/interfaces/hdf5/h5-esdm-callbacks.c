@@ -1236,6 +1236,7 @@ static void * H5VL_esdm_file_create(const char *name, unsigned flags, hid_t fcpl
     info("%s: name=%s \n", __func__, name);
 
 
+
 	// prepare data
 	uint64_t * buf_w = (uint64_t *) malloc(HEIGHT * WIDTH *sizeof(uint64_t));
 	uint64_t * buf_r = (uint64_t *) malloc(HEIGHT * WIDTH *sizeof(uint64_t));
@@ -1247,16 +1248,12 @@ static void * H5VL_esdm_file_create(const char *name, unsigned flags, hid_t fcpl
 		}
 	}
 
-
 	// Interaction with ESDM
 	esdm_status_t ret;
 	esdm_container_t *container = NULL;
 	esdm_dataset_t *dataset = NULL;
 
-
 	esdm_init();
-
-
 
 	// define dataspace
 	int64_t bounds[] = {HEIGHT, WIDTH};
@@ -1264,17 +1261,14 @@ static void * H5VL_esdm_file_create(const char *name, unsigned flags, hid_t fcpl
 
 	container = esdm_container_create("mycontainer");
 	dataset = esdm_dataset_create(container, "mydataset", dataspace);
-
 	
 	esdm_container_commit(container);
 	esdm_dataset_commit(dataset);
-
 
 	// define subspace
 	int64_t size[] = {HEIGHT, WIDTH};
 	int64_t offset[] = {0,0};
 	esdm_dataspace_t *subspace = esdm_dataspace_subspace(dataspace, 2, size, offset);
-
 
 	// Write the data to the dataset
 	ret = esdm_write(dataset, buf_w, subspace);
@@ -1334,6 +1328,7 @@ static void * H5VL_esdm_file_create(const char *name, unsigned flags, hid_t fcpl
 		// TODO: truncate the file. Free all structures...
 		H5VL_esdm_group_init(& file->root_grp);
 	}
+
 
 
 	// create the file if not already existent

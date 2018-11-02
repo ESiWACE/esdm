@@ -74,7 +74,6 @@ esdm_status_t esdm_performance_finalize();
 
 // Backend (generic)
 esdm_status_t esdm_backend_estimate_performance(esdm_backend_t *backend, int fragment);
-esdm_status_t esdm_backend_io(esdm_backend_t *backend, esdm_fragment_t *fragment, esdm_metadata_t *metadata);
 
 
 

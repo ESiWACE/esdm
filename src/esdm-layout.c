@@ -62,8 +62,6 @@
 //	hilber curve
 //	z-ordering?
 
-
-
 // also have a look at device data environments from openmp
 // openmp:  map clause
 
