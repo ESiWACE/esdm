@@ -16,7 +16,7 @@
 
 /**
  * @file
- * @brief A data backend to provide POSIX compatibility.
+ * @brief A metadata backend on top of a POSIX compatible filesystem.
  */
 
 

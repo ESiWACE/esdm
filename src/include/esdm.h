@@ -106,8 +106,14 @@ void print_json_aux(const json_t *element, int indent);
 const char *json_plural(int count);
 
 // json path for convienient access
-int json_path_set(json_t *json, const char *path, json_t *value, unsigned int append);
+int json_path_set_new(json_t *json, const char *path, json_t *value, size_t flags, json_error_t *error);
 json_t *json_path_get(const json_t *json, const char *path);
+
+static inline 
+int json_path_set(json_t *json, const char *path, json_t *value, size_t flags, json_error_t *error)
+{
+    return json_path_set_new(json, path, json_incref(value), flags, error);
+}
 
 // auxiliary.c ////////////////////////////////////////////////////////////////
 void print_stat(struct stat sb);

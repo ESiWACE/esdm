@@ -32,9 +32,15 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <assert.h>
-#include <glib.h>
+#include <unistd.h>                                                             
+#include <sys/types.h>   
+
 
 #include <hdf5.h>
+
+#include <glib.h>
+#include <jansson.h>
+
 
 
 

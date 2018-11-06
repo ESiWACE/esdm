@@ -27,6 +27,28 @@
 // Attributes
 ///////////////////////////////////////////////////////////////////////////////
 
+//
+//              Unsaved               
+//
+//            +---------------------+
+//            | Primary data object |
+//            +----------+----------+
+//                       | 0..1
+//                       |
+//                       v 0..*
+//               +-------+-------+
+//               |   Attribute   |
+//               ++-------------++
+//           0..* |             | 0..*
+//                |             |
+//              1 v             v 1
+//          +-----+----+    +---+-------+
+//          | Datatype |    | Dataspace |
+//          +----------+    +-----------+
+//
+//
+
+
 
 // extract from ../install/download/vol/src/H5Apkg.h:233 for reference (consider any structure strictly private!)
 
@@ -706,11 +728,118 @@ static herr_t H5VL_esdm_dataset_read(void *dset, hid_t mem_type_id, hid_t mem_sp
 }
 
 
+
+struct filt_t;
+struct obj_t;
+struct fapl_t;
+struct dset_t;
+
+
+typedef struct fapl_t {
+  int mpi_size;
+  int mpi_rank;
+  char* fn;
+  char* db_fn;
+  char* data_fn;
+} fapl_t;
+
+typedef struct obj_t {                                                          
+    char* location;                                                             
+    char* name;                                                                 
+    //H5O_info_t info;                                                            
+    struct file_t* root;                                                         
+    //fapl_t* fapl;                                                      
+    fapl_t fapl;                                                      
+} obj_t;
+
+typedef struct SQF_t {                                                          
+    obj_t object;                                                               
+    int fd;                                                                     
+	off_t offset; // global offset                                              
+    void* db;                                                                   
+} file_t;    /* structure for file*/ 
+
+
+typedef struct dset_t {                                                          
+    obj_t object;                                                               
+    off_t offset; // position in file                                         
+    size_t data_size;                                                           
+} dset_t;
+
+
 static herr_t H5VL_esdm_dataset_write(void *dset, hid_t mem_type_id, hid_t mem_space_id, hid_t file_space_id, hid_t xfer_plist_id, const void * buf, void **req)
 {
 	info("%s\n", __func__);
 
 	herr_t ret_value = SUCCEED;
+
+
+	/*
+dset = {
+	
+
+
+}
+	*/
+
+	dset_t *d = (dset_t*) malloc(sizeof(dset_t));	
+	//d->object = (obj_t*) malloc(sizeof(obj_t));
+	
+	
+	
+
+	int ndims = H5Sget_simple_extent_ndims(mem_space_id);
+
+
+	// src/H5public.h:184:typedef unsigned long long 	hsize_t;
+
+
+	// TODO: do away with VLAs
+
+	hsize_t dims[ndims];
+	hsize_t max_dims[ndims];
+	H5Sget_simple_extent_dims(mem_space_id, dims, max_dims);
+
+	size_t block_size = H5Tget_size(mem_type_id);
+	assert(block_size != 0);
+	for (size_t i = 0; i < ndims; ++i) {
+		block_size *= dims[i];
+	}
+
+	hsize_t start[ndims];
+	hsize_t stride[ndims];
+	hsize_t count[ndims];
+	hsize_t block[ndims];
+	if (-1 == (ret_value = H5Sget_regular_hyperslab(file_space_id, start, stride, count, block))) {
+		fail("Couldn't read hyperslab.");
+	}
+
+	hid_t dspace_id;
+
+	//unsigned char* space_buf = malloc(data_size)set pointer to data;                           
+	//const void * data =  /* set pointer to data*/;                       
+	//memcpy(space_buf, data, data_size);                                     
+	//*space_id = H5Sdecode(space_buf);                                       
+	//assert(-1 != *space_id);     
+	
+	hsize_t ddims[ndims];
+	hsize_t dmaxdims[ndims];
+	if (H5Sis_simple(dspace_id)) {
+		H5Sget_simple_extent_dims(dspace_id, ddims, dmaxdims);
+	}
+	else {
+		fail("Unsupported dataspace.");
+	}
+
+
+	off_t rel_offset = start[0] * block_size * d->object.fapl.mpi_size +  block_size * d->object.fapl.mpi_rank;
+
+	off_t offset = d->offset + rel_offset;
+
+
+	//dataset_update(dset, buf, block_size, offset);
+
+
 
 	return ret_value;
 }
@@ -1235,45 +1364,59 @@ static void * H5VL_esdm_file_create(const char *name, unsigned flags, hid_t fcpl
 
     info("%s: name=%s \n", __func__, name);
 
-
-
-	// prepare data
-	uint64_t * buf_w = (uint64_t *) malloc(HEIGHT * WIDTH *sizeof(uint64_t));
-	uint64_t * buf_r = (uint64_t *) malloc(HEIGHT * WIDTH *sizeof(uint64_t));
-
-	int x, y;
-	for(x = 0; x < HEIGHT; x++){
-		for(y = 0; y < WIDTH; y++){
-			buf_w[y * HEIGHT + x] = (y) * HEIGHT + x + 1;
-		}
-	}
-
-	// Interaction with ESDM
-	esdm_status_t ret;
-	esdm_container_t *container = NULL;
-	esdm_dataset_t *dataset = NULL;
-
-	esdm_init();
-
-	// define dataspace
-	int64_t bounds[] = {HEIGHT, WIDTH};
-	esdm_dataspace_t *dataspace = esdm_dataspace_create(2, bounds, ESDM_TYPE_UINT64_T);
-
-	container = esdm_container_create("mycontainer");
-	dataset = esdm_dataset_create(container, "mydataset", dataspace);
 	
-	esdm_container_commit(container);
-	esdm_dataset_commit(dataset);
+	json_error_t *error;	
+	json_t * json = json_object();
 
-	// define subspace
-	int64_t size[] = {HEIGHT, WIDTH};
-	int64_t offset[] = {0,0};
-	esdm_dataspace_t *subspace = esdm_dataspace_subspace(dataspace, 2, size, offset);
-
-	// Write the data to the dataset
-	ret = esdm_write(dataset, buf_w, subspace);
+	json_path_set(json, "$.test.time", json_integer(21), 0, &error);
 
 
+
+	print_json(json);
+
+	//void print_json(const json_t *root) {
+
+	//int json_path_set_new(json_t *json, const char *path, json_t *value, size_t flags, json_error_t *error)
+	
+//
+//
+//	// prepare data
+//	uint64_t * buf_w = (uint64_t *) malloc(HEIGHT * WIDTH *sizeof(uint64_t));
+//	uint64_t * buf_r = (uint64_t *) malloc(HEIGHT * WIDTH *sizeof(uint64_t));
+//
+//	int x, y;
+//	for(x = 0; x < HEIGHT; x++){
+//		for(y = 0; y < WIDTH; y++){
+//			buf_w[y * HEIGHT + x] = (y) * HEIGHT + x + 1;
+//		}
+//	}
+//
+//	// Interaction with ESDM
+//	esdm_status_t ret;
+//	esdm_container_t *container = NULL;
+//	esdm_dataset_t *dataset = NULL;
+//
+//	esdm_init();
+//
+//	// define dataspace
+//	int64_t bounds[] = {HEIGHT, WIDTH};
+//	esdm_dataspace_t *dataspace = esdm_dataspace_create(2, bounds, ESDM_TYPE_UINT64_T);
+//
+//	container = esdm_container_create("mycontainer");
+//	dataset = esdm_dataset_create(container, "mydataset", dataspace);
+//	
+//	esdm_container_commit(container);
+//	esdm_dataset_commit(dataset);
+//
+//	// define subspace
+//	int64_t size[] = {HEIGHT, WIDTH};
+//	int64_t offset[] = {0,0};
+//	esdm_dataspace_t *subspace = esdm_dataspace_subspace(dataspace, 2, size, offset);
+//
+//	// Write the data to the dataset
+//	ret = esdm_write(dataset, buf_w, subspace);
+//
+//
 
 
     /* 
