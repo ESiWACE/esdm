@@ -8,7 +8,7 @@ as data description formats such as HDF5 and NetCDF to
 more efficiently organize metadata and data across a variety of storage backends.
 
 [![Build Status](https://travis-ci.org/ESiWACE/esdm.svg?branch=master)](https://travis-ci.org/ESiWACE/esdm)
-
+ 
 ## Requirements
 
  * glib2
@@ -24,12 +24,11 @@ more efficiently organize metadata and data across a variety of storage backends
   * dnf install glib2 glib2-devel mpi jansson jansson-devel
   * dnf install mpich-3.0 mpich-3.0-devel	OR   dnf install openmpi opemmpi-devel
 
-
   * dnf install gcc-c++ gcc libtool cmake
 
 #### Installation with Spack
 
-  First get the new gcc:
+  First get the recent GCC:
   * spack install gcc@8.1.0
   Then install the packages with GCC:
   * spack install jansson%gcc@8.1.0 glib%gcc@8.1.0 openmpi%gcc@8.1.0 gettext%gcc@8.1.0
@@ -38,10 +37,9 @@ more efficiently organize metadata and data across a variety of storage backends
 
 ## Development
 
-### Directory structure
+### Project directory structure
 
-- `dev` contains helpers for development purpose
-  e.g., to install hdf5-vol which is required by this project you can use
+- `dev` contains helpers for development purposes. For example, this project requires a development variant of HDF5 that provides the Virtual Object Layer (VOL). This and other dependencies can be installed into a development environment using the following script:
 
         ./dev/setup-development-environment.sh
 
@@ -67,7 +65,7 @@ more efficiently organize metadata and data across a variety of storage backends
 - `doc` contains documentation which uses doxygen to build a HTML or a PDF version:
 
 
-	For the HTML Reference use the following commands:
+	For the HTML Reference use the following commands (assuming ./configure completed successfully):
 
 		cd build
 		doxygen

@@ -28,7 +28,6 @@
 ///////////////////////////////////////////////////////////////////////////////
 
 //
-//              Unsaved               
 //
 //            +---------------------+
 //            | Primary data object |
@@ -64,6 +63,15 @@
 //     herr_t (*close) (void *attr, hid_t dxpl_id, void **req);
 // } H5VL_attr_class_t;
 
+// src/H5Apkg.h-94-
+// /* Define the main attribute structure */
+// struct H5A_t {
+//     H5O_shared_t sh_loc;     /* Shared message info (must be first) */
+//     H5O_loc_t    oloc;       /* Object location for object attribute is on */
+//     hbool_t      obj_opened; /* Object header entry opened? */
+//     H5G_name_t   path;       /* Group hierarchy path */
+//     H5A_shared_t *shared;    /* Shared attribute information */
+// };
 
 
 // ../install/download/vol/src/H5VLnative.c
@@ -76,7 +84,24 @@ static void* H5VL_esdm_attribute_create (void *obj, H5VL_loc_params_t loc_params
 	info("%s\n", __func__);
 	info("%s: Attach new attribute=TODO '%s' to obj=%p\n", __func__, attr_name, obj);
 
-	
+
+	size_t nprops = 0;
+	void * iter_data;
+
+	H5Pget_nprops(acpl_id, &nprops );
+    info("%s: acpl_id=%ld nprops= %ld \n", __func__, acpl_id,  nprops);
+	H5Piterate(acpl_id, NULL, print_property, iter_data);
+
+	H5Pget_nprops(aapl_id, &nprops );
+    info("%s: aapl_id=%ld nprops= %ld \n", __func__, aapl_id,  nprops);
+	H5Piterate(aapl_id, NULL, print_property, iter_data);
+
+	H5Pget_nprops(dxpl_id, &nprops );
+    info("%s: dxpl_id=%ld nprops= %ld \n", __func__, dxpl_id,  nprops);
+	H5Piterate(dxpl_id, NULL, print_property, iter_data);
+
+
+
 //	hid_t space_id;
 //	H5Pget(acpl_id, "attr_space_id", &space_id);
 //	int ndims = H5Sget_simple_extent_ndims(space_id);
@@ -100,7 +125,7 @@ static void* H5VL_esdm_attribute_create (void *obj, H5VL_loc_params_t loc_params
 //			ERRORMSG("Not implemented");
 //			break;
 //		case H5I_GROUP:
-//			info("%s: H5I_GROUP \n", __func__);
+//			info("%s: H5I_GROUP (FALLTHROUGH)\n", __func__);
 //		    /*FALLTHROUGH*/
 //		case H5I_DATASET:
 //			{ 
@@ -614,6 +639,11 @@ static void *H5VL_esdm_dataset_create(
 	info("%s\n", __func__);
 
 
+
+
+
+
+
 	//esdm_dataset_t* esdm_dataset_create(esdm_container_t *container, char * name, esdm_dataspace_t *dataspace);
 	
 
@@ -1124,6 +1154,10 @@ static herr_t H5VL_esdm_dataset_close(void *dset, hid_t dxpl_id, void **req)
 //     herr_t (*close) (void *dt, hid_t dxpl_id, void **req);
 // } H5VL_datatype_class_t;
 
+
+
+
+
 // TODO some locking here
 static GHashTable * type_table = NULL;
 
@@ -1243,6 +1277,26 @@ static herr_t H5VL_esdm_datatype_close(void *dt, hid_t dxpl_id, void **req)
 //     herr_t (*close) (void *file, hid_t dxpl_id, void **req);
 // } H5VL_file_class_t;
 // 
+
+
+// /* Structure specifically to store superblock. This was originally
+//  * maintained entirely within H5F_file_t, but is now extracted
+//  * here because the superblock is now handled by the cache */
+// typedef struct H5F_super_t {
+//     H5AC_info_t cache_info;     /* Cache entry information structure          */
+//     unsigned    super_vers;     /* Superblock version                         */
+//     uint8_t sizeof_addr;        /* Size of addresses in file                  */
+//     uint8_t sizeof_size;        /* Size of offsets in file                    */
+//     uint8_t     status_flags;   /* File status flags                          */
+//     unsigned    sym_leaf_k;     /* Size of leaves in symbol tables            */
+//     unsigned    btree_k[H5B_NUM_BTREE_ID]; /* B-tree key values for each type */
+//     haddr_t     base_addr;      /* Absolute base address for rel.addrs.       */
+//                                 /* (superblock for file is at this offset)    */
+//     haddr_t     ext_addr;       /* Relative address of superblock extension   */
+//     haddr_t     driver_addr;    /* File driver information block address      */
+//     haddr_t     root_addr;      /* Root group address                         */
+//     H5G_entry_t *root_ent;      /* Root group symbol table entry              */
+// } H5F_super_t;    
 
 
 // extract from ../install/download/vol/src/H5Fpkg.h:233 for reference (consider any structure strictly private!)
@@ -1430,12 +1484,11 @@ static void * H5VL_esdm_file_create(const char *name, unsigned flags, hid_t fcpl
 	//esdm_container_t* esdm_container_create(const char *name);
 	//esdm_container_t* esdm_container_retrieve(const char * name);
 
+
+
 	// analyse property lists
 	size_t nprops = 0;
 	void * iter_data;
-
-
-
 
 	H5Pget_nprops(fcpl_id, &nprops );
     info("%s: fcpl_id=%ld nprops= %d \n", __func__, fcpl_id,  nprops);
@@ -1446,8 +1499,10 @@ static void * H5VL_esdm_file_create(const char *name, unsigned flags, hid_t fcpl
 	H5Piterate(fapl_id, NULL, print_property, iter_data);
 
 	H5Pget_nprops(fxpl_id, &nprops );
-    info("%s: fxpl_id=%ld nprops= %d \n", __func__, fcpl_id,  nprops);
+    info("%s: fxpl_id=%ld nprops= %d \n", __func__, fxpl_id,  nprops);
 	H5Piterate(fxpl_id, NULL, print_property, iter_data);
+
+
 
 
 	// create files hash map if not already existent
@@ -2091,6 +2146,77 @@ herr_t H5VL_esdm_link_optional(void *obj, hid_t dxpl_id, void **req, va_list arg
 // } H5VL_object_class_t;
 // 
 
+
+
+// Extract from : src/H5Opkg.h:263:struct H5O_t {
+
+// struct H5O_t {
+//     H5AC_info_t cache_info; /* Information for metadata cache functions, _must_ be */
+//                             /* first field in structure */
+// 
+//     /* File-specific information (not stored) */
+//     size_t      sizeof_size;            /* Size of file sizes            */
+//     size_t      sizeof_addr;            /* Size of file addresses        */
+// 
+//     /* Debugging information (not stored) */
+// #ifdef H5O_ENABLE_BAD_MESG_COUNT
+//     hbool_t     store_bad_mesg_count;   /* Flag to indicate that a bad message count should be stored */
+//                                         /* (This is to simulate a bug in earlier
+//                                          *      versions of the library)
+//                                          */
+// #endif /* H5O_ENABLE_BAD_MESG_COUNT */
+// #ifndef NDEBUG
+//     size_t      ndecode_dirtied;        /* Number of messages dirtied by decoding */
+// #endif /* NDEBUG */
+// 
+//     /* Chunk management information (not stored) */
+//     size_t      rc;                     /* Reference count of [continuation] chunks using this structure */
+//     size_t      chunk0_size;            /* Size of serialized first chunk    */
+//     hbool_t     mesgs_modified;         /* Whether any messages were modified when the object header was deserialized */
+//     hbool_t     prefix_modified;        /* Whether prefix was modified when the object header was deserialized */
+// 
+//     /* Object information (stored) */
+//     hbool_t     has_refcount_msg;       /* Whether the object has a ref. count message */
+//     unsigned    nlink;          /*link count                 */
+//     uint8_t version;        /*version number             */
+//     uint8_t flags;          /*flags                  */
+// 
+//     /* Time information (stored, for versions > 1 & H5O_HDR_STORE_TIMES flag set) */
+//     time_t      atime;                  /*access time                */
+//     time_t      mtime;                  /*modification time              */
+//     time_t      ctime;                  /*change time                */
+//     time_t      btime;                  /*birth time                 */
+// 
+//     /* Attribute information (stored, for versions > 1) */
+//     unsigned    max_compact;        /* Maximum # of compact attributes   */
+//     unsigned    min_dense;      /* Minimum # of "dense" attributes   */
+// 
+//     /* Message management (stored, encoded in chunks) */
+//     size_t  nmesgs;         /*number of messages             */
+//     size_t  alloc_nmesgs;       /*number of message slots        */
+//     H5O_mesg_t  *mesg;          /*array of messages          */
+//     size_t      link_msgs_seen;         /* # of link messages seen when loading header */
+//     size_t      attr_msgs_seen;         /* # of attribute messages seen when loading header */
+// 
+//     /* Chunk management (not stored) */
+//     size_t  nchunks;        /*number of chunks           */
+//     size_t  alloc_nchunks;      /*chunks allocated           */
+//     H5O_chunk_t *chunk;         /*array of chunks            */
+// };
+// 
+// /* Class for types of objects in file */
+// typedef struct H5O_obj_class_t {
+//     H5O_type_t  type;               /*object type on disk        */
+//     const char  *name;              /*for debugging          */
+//     void       *(*get_copy_file_udata)(void);   /*retrieve user data for 'copy file' operation */
+//     void    (*free_copy_file_udata)(void *); /*free user data for 'copy file' operation */
+//     htri_t  (*isa)(H5O_t *);        /*if a header matches an object class */
+//     hid_t   (*open)(const H5G_loc_t *, hid_t, hid_t, hbool_t ); /*open an object of this class */
+//     void    *(*create)(H5F_t *, void *, H5G_loc_t *, hid_t );   /*create an object of this class */
+//     H5O_loc_t   *(*get_oloc)(hid_t );       /*get the object header location for an object */
+//     herr_t      (*bh_info)(const H5O_loc_t *loc, hid_t dxpl_id, H5O_t *oh, H5_ih_info_t *bh_info); /*get the index & heap info for an object */
+//     herr_t      (*flush)(void *obj_ptr, hid_t dxpl_id); /*flush an opened object of this class */
+// } H5O_obj_class_t;   
 
 
 // ../install/download/vol/src/H5VLnative.c

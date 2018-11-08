@@ -11,6 +11,29 @@
 #define DEBUG 1
 
 
+
+#define VL_LOG(fmt) VL_LOG_FMT(VL_LOGLEVEL_DEBUG, "%s", fmt)
+#define VL_LOG_FMT(loglevel, fmt, ...) esdm_log(loglevel, "%-30s:%d (%s): "#fmt"\n", __FILE__, __LINE__, __func__, __VA_ARGS__)
+
+#ifdef NDEBUG
+  // remove debug messages in total
+  #define VL_DEBUG(fmt)
+  #define VL_DEBUG_FMT(fmt, ...)
+#else
+  #define VL_DEBUG(fmt) VL_LOG_FMT(VL_LOGLEVEL_DEBUG, "%s", fmt)
+  #define VL_DEBUG_FMT(fmt, ...) VL_LOG_FMT(VL_LOGLEVEL_DEBUG, fmt, __VA_ARGS__)
+#endif
+
+#define VL_ERROR(fmt) VL_LOG_FMT(VL_LOGLEVEL_DEBUG, "%s", fmt)
+#define VL_ERROR_FMT(fmt, ...) do { VL_LOG_FMT(VL_LOGLEVEL_DEBUG, fmt, __VA_ARGS__); exit(1); } while(0)
+
+
+
+
+
+
+
+
 #ifdef DEBUG
 	#define info(...) fprintf(stderr, "[H5 ESDM] Info: "__VA_ARGS__)
 #else
