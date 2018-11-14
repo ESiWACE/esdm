@@ -147,4 +147,59 @@ static void H5VL_esdm_group_init(H5VL_esdm_group_t * group);
 
 
 
+
+
+
+
+
+
+struct filt_t;
+struct obj_t;
+struct fapl_t;
+struct dset_t;
+
+
+typedef struct fapl_t {
+  int mpi_size;
+  int mpi_rank;
+  char* fn;
+  char* db_fn;
+  char* data_fn;
+} fapl_t;
+
+typedef struct obj_t {                                                          
+    char* location;                                                             
+    char* name;                                                                 
+    //H5O_info_t info;                                                            
+    struct file_t* root;                                                         
+    //fapl_t* fapl;                                                      
+    fapl_t fapl;                                                      
+} obj_t;
+
+typedef struct file_t {                                                          
+    obj_t object;                                                               
+    int fd;                                                                     
+	off_t offset; // global offset                                              
+    void* db;                                                                   
+} file_t;    /* structure for file*/ 
+
+
+typedef struct dset_t {                                                          
+    obj_t object;                                                               
+    off_t offset; // position in file                                         
+    size_t data_size;                                                           
+} dset_t;
+
+
+
+
+
+
+
+
+
+
+
+
+
 #endif

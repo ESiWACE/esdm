@@ -759,42 +759,6 @@ static herr_t H5VL_esdm_dataset_read(void *dset, hid_t mem_type_id, hid_t mem_sp
 
 
 
-struct filt_t;
-struct obj_t;
-struct fapl_t;
-struct dset_t;
-
-
-typedef struct fapl_t {
-  int mpi_size;
-  int mpi_rank;
-  char* fn;
-  char* db_fn;
-  char* data_fn;
-} fapl_t;
-
-typedef struct obj_t {                                                          
-    char* location;                                                             
-    char* name;                                                                 
-    //H5O_info_t info;                                                            
-    struct file_t* root;                                                         
-    //fapl_t* fapl;                                                      
-    fapl_t fapl;                                                      
-} obj_t;
-
-typedef struct SQF_t {                                                          
-    obj_t object;                                                               
-    int fd;                                                                     
-	off_t offset; // global offset                                              
-    void* db;                                                                   
-} file_t;    /* structure for file*/ 
-
-
-typedef struct dset_t {                                                          
-    obj_t object;                                                               
-    off_t offset; // position in file                                         
-    size_t data_size;                                                           
-} dset_t;
 
 
 static herr_t H5VL_esdm_dataset_write(void *dset, hid_t mem_type_id, hid_t mem_space_id, hid_t file_space_id, hid_t xfer_plist_id, const void * buf, void **req)

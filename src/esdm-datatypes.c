@@ -573,6 +573,12 @@ esdm_dataspace_t* esdm_dataspace_subspace(esdm_dataspace_t *dataspace, int64_t d
 	return subspace;
 }
 
+
+
+
+
+
+
 void esdm_dataspace_print(esdm_dataspace_t * d){
 	printf("DATASPACE(size(%ld", d->size[0]);
 	for (int64_t i = 1; i < d->dimensions; i++) {
@@ -609,7 +615,6 @@ esdm_status_t esdm_dataspace_destroy(esdm_dataspace_t *dataspace)
  *
  * e.g., to store along with fragment
  */
-
 esdm_status_t esdm_dataspace_serialize(esdm_dataspace_t *dataspace, void **out)
 {
 	ESDM_DEBUG(__func__);
