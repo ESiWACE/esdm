@@ -1389,8 +1389,15 @@ static void * H5VL_esdm_file_create(const char *name, unsigned flags, hid_t fcpl
 	json_path_set(json, "$.test.time", json_integer(21), 0, &error);
 
 
-
 	print_json(json);
+
+	
+	esdm_init();
+
+
+	esdm_container_t* cont = esdm_container_create(name);
+	esdm_container_commit(cont);
+
 
 	//void print_json(const json_t *root) {
 
@@ -1466,6 +1473,9 @@ static void * H5VL_esdm_file_create(const char *name, unsigned flags, hid_t fcpl
     info("%s: fxpl_id=%ld nprops= %d \n", __func__, fxpl_id,  nprops);
 	H5Piterate(fxpl_id, NULL, print_property, iter_data);
 
+
+	//gchar * g_base64_encode (const guchar *data, gsize len);
+	
 
 
 
@@ -1555,6 +1565,10 @@ static void * H5VL_esdm_file_open(const char *name, unsigned flags, hid_t fapl_i
 
 
 
+	//guchar * g_base64_decode (const gchar *text, gsize *out_len);
+
+
+
     object = g_hash_table_lookup (files_tbl, name);
 
     return (void *)object;
@@ -1586,6 +1600,10 @@ static herr_t H5VL_esdm_file_get(void *file, H5VL_file_get_t get_type, hid_t dxp
 	// H5VL_FILE_GET_OBJ_COUNT:	      
 	// H5VL_FILE_GET_OBJ_IDS:	      
 	// H5VL_OBJECT_GET_FILE           
+
+
+	//guchar * g_base64_decode (const gchar *text, gsize *out_len);
+
 
     switch (get_type) {
       /* H5Fget_access_plist */

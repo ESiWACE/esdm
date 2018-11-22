@@ -156,6 +156,10 @@ esdm_status_t esdm_container_destroy(esdm_container_t *container)
 	return ESDM_SUCCESS;
 }
 
+
+
+
+
 uint64_t esdm_dataspace_element_count(esdm_dataspace_t *subspace){
 	assert(subspace->size != NULL);
 	// calculate subspace element count

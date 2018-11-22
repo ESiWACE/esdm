@@ -6,6 +6,7 @@
 #include <assert.h>
 
 #include <glib.h>
+#include <glib/gi18n.h>
 
 
 #define DEBUG 1
