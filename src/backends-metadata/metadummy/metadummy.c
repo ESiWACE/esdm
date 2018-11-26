@@ -23,6 +23,9 @@
 #define _GNU_SOURCE         /* See feature_test_macros(7) */
 
 
+#include <assert.h>
+#include <dirent.h>
+#include <errno.h>
 #include <fcntl.h>
 #include <stdarg.h>
 #include <stdio.h>
@@ -31,9 +34,6 @@
 #include <sys/stat.h>
 #include <sys/types.h>
 #include <unistd.h>
-#include <assert.h>
-#include <dirent.h>
-#include <errno.h>
 
 #include <jansson.h>
 
@@ -49,13 +49,13 @@
 // forward declarations
 static void metadummy_test();
 
+void posix_recursive_remove(const char * path);
 
 
 ///////////////////////////////////////////////////////////////////////////////
 // Helper and utility /////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////
 
-void posix_recursive_remove(const char * path);
 
 static int mkfs(esdm_backend_t* backend, int enforce_format)
 {
@@ -65,10 +65,16 @@ static int mkfs(esdm_backend_t* backend, int enforce_format)
 
 	// use target directory from backend configuration
 	metadummy_backend_options_t *options = (metadummy_backend_options_t*) backend->data;
+
+
+	// Enforce min target length?
 	const char* tgt = options->target;
 	if(strlen(tgt) < 6){
+		printf("[mkfs] error, the target name is to short (< 6 characters)!\n");
 		return ESDM_ERROR;
 	}
+
+
 	char containers[PATH_MAX];
 	sprintf(containers, "%s/containers", tgt);
 	if (enforce_format){
@@ -92,43 +98,7 @@ static int mkfs(esdm_backend_t* backend, int enforce_format)
 	return ESDM_SUCCESS;
 }
 
-static int write_check(int fd, char *buf, size_t len){
-	while(len > 0){
-		ssize_t ret = write(fd, buf, len);
-		if (ret != -1){
-			buf = buf + ret;
-			len -= ret;
-		}else{
-			if(errno == EINTR){
-				continue;
-			}else{
-				ESDM_ERROR_COM_FMT("POSIX", "write %s", strerror(errno));
-				return 1;
-			}
-		}
-	}
-	return 0;
-}
 
-static int read_check(int fd, char *buf, size_t len){
-	while(len > 0){
-		ssize_t ret = read(fd, buf, len);
-		if( ret == 0 ){
-			return 1;
-		}else if (ret != -1){
-			buf += ret;
-			len -= ret;
-		}else{
-			if(errno == EINTR){
-				continue;
-			}else{
-				ESDM_ERROR_COM_FMT("POSIX", "read %s", strerror(errno));
-				return 1;
-			}
-		}
-	}
-	return 0;
-}
 
 /**
  * Similar to the command line counterpart fsck for ESDM plugins is responsible
@@ -162,8 +132,8 @@ static int entry_create(const char *path, esdm_metadata_t * data)
 	// ENOENT => allow to create
 
 	status = stat(path, &sb);
-	//if (status == -1) {
-	//	perror("stat");
+	if (status == -1) {
+		perror("stat");
 
 		// write to non existing file
 		int fd = open(path,	O_WRONLY | O_CREAT, S_IWUSR | S_IRUSR | S_IWGRP | S_IRGRP | S_IROTH);
@@ -179,7 +149,9 @@ static int entry_create(const char *path, esdm_metadata_t * data)
 			close(fd);
 			return 0;
 		}
-		return 1;
+	}
+	
+	return 1;
 }
 
 static int entry_retrieve_tst(const char *path)
@@ -742,6 +714,9 @@ esdm_backend_t* metadummy_backend_init(esdm_config_backend_t *config)
 	backend->data = data;
 	backend->config = config;
 	//metadummy_test();
+
+
+	mkfs(backend, 0);
 
 	return backend;
 

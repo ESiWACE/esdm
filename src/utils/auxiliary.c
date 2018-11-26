@@ -22,6 +22,7 @@
  */
 
 #include <assert.h>
+#include <errno.h>
 #include <fcntl.h>
 #include <limits.h>
 #include <stdarg.h>
@@ -36,6 +37,46 @@
 
 #include <esdm.h>
 #include <esdm-debug.h>
+
+
+// directory handling /////////////////////////////////////////////////////////
+
+void mkdir_recursive(const char *path) {
+        char tmp[PATH_MAX];
+        char *p = NULL;
+        size_t len;
+
+		// copy provided path, as we modify it
+        snprintf(tmp, sizeof(tmp),"%s",path);
+
+		// check if last char of string is a /
+        len = strlen(tmp);
+        if(tmp[len - 1] == '/')
+			// if it is, set to 0
+			tmp[len - 1] = 0;
+
+		// traverse string from start to end
+		for(p = tmp + 1; *p; p++)
+		{
+			if(*p == '/') {
+				// if current char is a /
+				// temporaly set character at address p to 0
+				// create dir from start of string
+				// reset char at address back to /
+				*p = 0;
+				mkdir(tmp, S_IRWXU);
+				*p = '/';
+			}
+			// continue with next position in string
+		}
+		mkdir(tmp, S_IRWXU);
+}
+
+
+
+
+
+// file I/O handling //////////////////////////////////////////////////////////
 
 int read_file(char *filepath, char **buf)
 {
@@ -72,41 +113,62 @@ int read_file(char *filepath, char **buf)
 
 
 
-
-void mkdir_recursive(const char *path) {
-        char tmp[PATH_MAX];
-        char *p = NULL;
-        size_t len;
-
-		// copy provided path, as we modify it
-        snprintf(tmp, sizeof(tmp),"%s",path);
-
-		// check if last char of string is a /
-        len = strlen(tmp);
-        if(tmp[len - 1] == '/')
-			// if it is, set to 0
-			tmp[len - 1] = 0;
-
-		// traverse string from start to end
-		for(p = tmp + 1; *p; p++)
-		{
-			if(*p == '/') {
-				// if current char is a /
-				// temporaly set character at address p to 0
-				// create dir from start of string
-				// reset char at address back to /
-				*p = 0;
-				mkdir(tmp, S_IRWXU);
-				*p = '/';
+/**
+ * Write while ensuring and retrying until len is written or error occured.
+ */
+int write_check(int fd, char *buf, size_t len){
+	while(len > 0){
+		ssize_t ret = write(fd, buf, len);
+		if (ret != -1){
+			buf = buf + ret;
+			len -= ret;
+		}else{
+			if(errno == EINTR){
+				continue;
+			}else{
+				ESDM_ERROR_COM_FMT("POSIX", "write %s", strerror(errno));
+				return 1;
 			}
-			// continue with next position in string
 		}
-		mkdir(tmp, S_IRWXU);
+	}
+	return 0;
+}
+
+/**
+ * Read while ensuring and retrying until len is read or error occured.
+ */
+int read_check(int fd, char *buf, size_t len){
+	while(len > 0){
+		ssize_t ret = read(fd, buf, len);
+		if( ret == 0 ){
+			return 1;
+		}else if (ret != -1){
+			buf += ret;
+			len -= ret;
+		}else{
+			if(errno == EINTR){
+				continue;
+			}else{
+				ESDM_ERROR_COM_FMT("POSIX", "read %s", strerror(errno));
+				return 1;
+			}
+		}
+	}
+	return 0;
 }
 
 
 
 
+
+
+
+
+// POSIX other ////////////////////////////////////////////////////////////////
+
+/**
+ * Print a detailed summary for the stat system call.
+ */
 void print_stat(struct stat sb)
 {
 	printf("\n");

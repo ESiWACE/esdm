@@ -6,9 +6,10 @@
 #define ESDM_H
 
 #include <stddef.h>
-#include <sys/types.h>
 #include <sys/stat.h>
+#include <sys/types.h>
 #include <unistd.h>
+
 #include <jansson.h>
 
 #include <esdm-datatypes.h>
@@ -117,8 +118,12 @@ int json_path_set(json_t *json, const char *path, json_t *value, size_t flags, j
 
 // auxiliary.c ////////////////////////////////////////////////////////////////
 void print_stat(struct stat sb);
-int read_file(char *filepath, char **buf);
 void mkdir_recursive(const char *path);
+
+int read_file(char *filepath, char **buf);
+
+int read_check(int fd, char *buf, size_t len);
+int write_check(int fd, char *buf, size_t len);
 
 
 #endif
