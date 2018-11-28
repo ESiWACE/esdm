@@ -49,29 +49,6 @@
 // Helper and utility /////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////
 
-void posix_recursive_remove(const char * path){
-	DEBUG("removing %s", path);
-	struct stat sb = {0};
-	int ret = stat(path, &sb);
-	if (ret == 0){
-		if((sb.st_mode & S_IFMT) == S_IFDIR){
-			DIR * dir = opendir(path);
-			struct dirent * f = readdir(dir);
-			while(f){
-				if(strcmp(f->d_name, ".") != 0 && strcmp(f->d_name, "..") != 0 ){
-					char child_path[PATH_MAX];
-					sprintf(child_path, "%s/%s", path, f->d_name);
-					posix_recursive_remove(child_path);
-				}
-				f = readdir(dir);
-			}
-			closedir(dir);
-			rmdir(path);
-		}else{
-			unlink(path);
-		}
-	}
-}
 
 static int mkfs(esdm_backend_t* backend, int enforce_format)
 {

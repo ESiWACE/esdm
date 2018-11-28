@@ -118,7 +118,9 @@ int json_path_set(json_t *json, const char *path, json_t *value, size_t flags, j
 
 // auxiliary.c ////////////////////////////////////////////////////////////////
 void print_stat(struct stat sb);
+
 void mkdir_recursive(const char *path);
+void posix_recursive_remove(const char * path);
 
 int read_file(char *filepath, char **buf);
 
