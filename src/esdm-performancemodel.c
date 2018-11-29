@@ -53,7 +53,7 @@ esdm_performance_t* esdm_performance_init(esdm_instance_t* esdm) {
 }
 
 
-esdm_status_t esdm_performance_finalize(esdm_performance_t* performance)
+esdm_status esdm_performance_finalize(esdm_performance_t* performance)
 {
 	return ESDM_SUCCESS;
 }
@@ -75,7 +75,7 @@ void fetch_performance_from_backend(gpointer key, gpointer value, gpointer user_
  * estimates obtained from available backends.
  *
  */
-esdm_status_t esdm_performance_recommendation(esdm_instance_t *esdm, esdm_fragment_t *in, esdm_fragment_t *out)
+esdm_status esdm_performance_recommendation(esdm_instance_t *esdm, esdm_fragment_t *in, esdm_fragment_t *out)
 {
 	DEBUG_ENTER;
 
@@ -93,7 +93,7 @@ esdm_status_t esdm_performance_recommendation(esdm_instance_t *esdm, esdm_fragme
 
 
 
-esdm_status_t esdm_backend_estimate_performance(esdm_backend_t* backend, int request)
+esdm_status esdm_backend_estimate_performance(esdm_backend_t* backend, int request)
 {
 	ESDM_DEBUG("Estimate performance call dummy");
 

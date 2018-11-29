@@ -76,7 +76,7 @@ typedef enum {
 	ESDM_ERROR,
 	ESDM_STATUS_DIRTY,
 	ESDM_STATUS_PERSISTENT
-} esdm_status_t;
+} esdm_status;
 
 /**
  * ESDM provides logging helpers, the available loglevels are defined here.
@@ -106,7 +106,7 @@ struct esdm_container_t {
 	char *name;
 	esdm_metadata_t *metadata;
 	GHashTable *datasets;
-	esdm_status_t status;
+	esdm_status status;
 };
 
 struct esdm_metadata_t {
@@ -120,7 +120,7 @@ struct esdm_dataset_t {
 	esdm_metadata_t *metadata;
 	esdm_dataspace_t *dataspace;
 	GHashTable *fragments;
-	esdm_status_t status;
+	esdm_status status;
 };
 
 struct esdm_dataspace_t {
@@ -146,7 +146,7 @@ struct esdm_fragment_t {
 	int in_place;
 	size_t elements;
 	size_t bytes;
-	esdm_status_t status;
+	esdm_status status;
 };
 
 // multiple fragments
@@ -274,7 +274,7 @@ typedef struct io_work_t io_work_t;
 struct io_work_t{
   esdm_fragment_t *fragment;
 	io_operation_t op;
-	esdm_status_t return_code;
+	esdm_status return_code;
 
   io_request_status_t * parent;
 	void (*callback)(io_work_t * work);

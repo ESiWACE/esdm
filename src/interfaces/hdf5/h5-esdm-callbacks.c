@@ -1417,7 +1417,7 @@ static void * H5VL_esdm_file_create(const char *name, unsigned flags, hid_t fcpl
 //	}
 //
 //	// Interaction with ESDM
-//	esdm_status_t ret;
+//	esdm_status ret;
 //	esdm_container_t *container = NULL;
 //	esdm_dataset_t *dataset = NULL;
 //

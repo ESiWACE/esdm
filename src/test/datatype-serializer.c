@@ -29,7 +29,7 @@ int main(){
   }
 
 
-  esdm_status_t ret;
+  esdm_status ret;
   esdm_dataspace_t* space = esdm_dataspace_create(2, dim, ESDM_TYPE_FLOAT);
   assert(space != NULL);
 

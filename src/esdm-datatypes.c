@@ -122,7 +122,7 @@ esdm_container_t* esdm_container_retrieve(const char * name)
  * are part of the container.
  *
  */
-esdm_status_t esdm_container_commit(esdm_container_t* container)
+esdm_status esdm_container_commit(esdm_container_t* container)
 {
 	ESDM_DEBUG(__func__);
 
@@ -149,7 +149,7 @@ esdm_status_t esdm_container_commit(esdm_container_t* container)
  * Either from memory or from persistent storage.
  *
  */
-esdm_status_t esdm_container_destroy(esdm_container_t *container)
+esdm_status esdm_container_destroy(esdm_container_t *container)
 {
 	ESDM_DEBUG(__func__);
 
@@ -227,7 +227,7 @@ esdm_fragment_t* esdm_fragment_create(esdm_dataset_t* dataset, esdm_dataspace_t*
 }
 
 
-esdm_status_t esdm_dataspace_overlap_str(esdm_dataspace_t *a, char delim_c, char * str_offset, char * str_size, esdm_dataspace_t ** out_space){
+esdm_status esdm_dataspace_overlap_str(esdm_dataspace_t *a, char delim_c, char * str_offset, char * str_size, esdm_dataspace_t ** out_space){
 	//printf("str: %s %s\n", str_size, str_offset);
 
 	const char delim[] = {delim_c, 0};
@@ -284,7 +284,7 @@ esdm_status_t esdm_dataspace_overlap_str(esdm_dataspace_t *a, char delim_c, char
 
 
 
-esdm_status_t esdm_fragment_retrieve(esdm_fragment_t *fragment)
+esdm_status esdm_fragment_retrieve(esdm_fragment_t *fragment)
 {
 	ESDM_DEBUG(__func__);
 
@@ -335,7 +335,7 @@ void esdm_dataspace_string_descriptor(char* string, esdm_dataspace_t *dataspace)
  * Make fragment persistent to storage.
  * Schedule for writing to backends.
  */
-esdm_status_t esdm_fragment_commit(esdm_fragment_t *f)
+esdm_status esdm_fragment_commit(esdm_fragment_t *f)
 {
 	ESDM_DEBUG(__func__);
 	esdm_metadata_t * m = f->metadata;
@@ -369,7 +369,7 @@ esdm_status_t esdm_fragment_commit(esdm_fragment_t *f)
 }
 
 
-esdm_status_t esdm_fragment_destroy(esdm_fragment_t *fragment)
+esdm_status esdm_fragment_destroy(esdm_fragment_t *fragment)
 {
 	ESDM_DEBUG(__func__);
 	return ESDM_SUCCESS;
@@ -391,7 +391,7 @@ esdm_status_t esdm_fragment_destroy(esdm_fragment_t *fragment)
  * @enduml
  *
  */
-esdm_status_t esdm_fragment_serialize(esdm_fragment_t *fragment, void **out)
+esdm_status esdm_fragment_serialize(esdm_fragment_t *fragment, void **out)
 {
 	ESDM_DEBUG(__func__);
 
@@ -456,7 +456,7 @@ esdm_dataset_t* esdm_dataset_retrieve(esdm_container_t *container, const char* n
 }
 
 
-esdm_status_t esdm_dataset_update(esdm_dataset_t *dataset)
+esdm_status esdm_dataset_update(esdm_dataset_t *dataset)
 {
 	ESDM_DEBUG(__func__);
 	return ESDM_SUCCESS;
@@ -464,7 +464,7 @@ esdm_status_t esdm_dataset_update(esdm_dataset_t *dataset)
 
 
 
-esdm_status_t esdm_dataset_destroy(esdm_dataset_t *dataset)
+esdm_status esdm_dataset_destroy(esdm_dataset_t *dataset)
 {
 	ESDM_DEBUG(__func__);
 	return ESDM_SUCCESS;
@@ -474,7 +474,7 @@ esdm_status_t esdm_dataset_destroy(esdm_dataset_t *dataset)
  * Make dataset persistent to storage.
  * Schedule for writing to backends.
  */
-esdm_status_t esdm_dataset_commit(esdm_dataset_t *dataset)
+esdm_status esdm_dataset_commit(esdm_dataset_t *dataset)
 {
 	ESDM_DEBUG(__func__);
 
@@ -608,7 +608,7 @@ void esdm_fragment_print(esdm_fragment_t * f){
 /**
  * Destroy dataspace in memory.
  */
-esdm_status_t esdm_dataspace_destroy(esdm_dataspace_t *dataspace)
+esdm_status esdm_dataspace_destroy(esdm_dataspace_t *dataspace)
 {
 	ESDM_DEBUG(__func__);
 	return ESDM_SUCCESS;
@@ -619,7 +619,7 @@ esdm_status_t esdm_dataspace_destroy(esdm_dataspace_t *dataspace)
  *
  * e.g., to store along with fragment
  */
-esdm_status_t esdm_dataspace_serialize(esdm_dataspace_t *dataspace, void **out)
+esdm_status esdm_dataspace_serialize(esdm_dataspace_t *dataspace, void **out)
 {
 	ESDM_DEBUG(__func__);
 

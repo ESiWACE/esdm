@@ -38,20 +38,20 @@ esdm_instance_t esdm = {
 	.config = NULL,
 };
 
-esdm_status_t esdm_set_procs_per_node(int procs){
+esdm_status esdm_set_procs_per_node(int procs){
 	assert(procs > 0);
 	esdm.procs_per_node = procs;
 	return ESDM_SUCCESS;
 }
 
-esdm_status_t esdm_set_total_procs(int procs){
+esdm_status esdm_set_total_procs(int procs){
 	assert(procs > 0);
 	esdm.total_procs = procs;
 	return ESDM_SUCCESS;
 }
 
 
-esdm_status_t esdm_load_config_str(const char * str){
+esdm_status esdm_load_config_str(const char * str){
 	assert(str != NULL);
 	esdm.config = esdm_config_init_from_str(str);
 	return ESDM_SUCCESS;
@@ -66,7 +66,7 @@ esdm_status_t esdm_load_config_str(const char * str){
 *
 * @return status
 */
-esdm_status_t esdm_init()
+esdm_status esdm_init()
 {
 	ESDM_DEBUG("Init");
 
@@ -102,7 +102,7 @@ esdm_status_t esdm_init()
 	return ESDM_SUCCESS;
 }
 
-esdm_status_t esdm_mkfs(int enforce_format, data_accessibility_t target){
+esdm_status esdm_mkfs(int enforce_format, data_accessibility_t target){
 	if(! is_initialized){
 		return ESDM_ERROR;
 	}
@@ -134,7 +134,7 @@ esdm_status_t esdm_mkfs(int enforce_format, data_accessibility_t target){
 *
 * @return Status
 */
-esdm_status_t esdm_finalize()
+esdm_status esdm_finalize()
 {
 	ESDM_DEBUG(__func__);
 
@@ -169,7 +169,7 @@ esdm_status_t esdm_finalize()
 *
 * @return Status
 */
-esdm_status_t esdm_stat(char *desc, char *result)
+esdm_status esdm_stat(char *desc, char *result)
 {
 	ESDM_DEBUG(__func__);
 
@@ -190,7 +190,7 @@ esdm_status_t esdm_stat(char *desc, char *result)
  *
  * @return Status
  */
-esdm_status_t esdm_create(char *name, int mode, esdm_container_t **container, esdm_dataset_t **dataset)
+esdm_status esdm_create(char *name, int mode, esdm_container_t **container, esdm_dataset_t **dataset)
 {
 	ESDM_DEBUG(__func__);
 
@@ -222,7 +222,7 @@ esdm_status_t esdm_create(char *name, int mode, esdm_container_t **container, es
  *
  * @return Status
  */
-esdm_status_t esdm_open(char *name, int mode)
+esdm_status esdm_open(char *name, int mode)
 {
 	ESDM_DEBUG(__func__);
 
@@ -243,7 +243,7 @@ esdm_status_t esdm_open(char *name, int mode)
  * @return Status
  */
 
-esdm_status_t esdm_write(esdm_dataset_t *dataset, void *buf, esdm_dataspace_t* subspace)
+esdm_status esdm_write(esdm_dataset_t *dataset, void *buf, esdm_dataspace_t* subspace)
 {
 	ESDM_DEBUG(__func__);
 
@@ -262,7 +262,7 @@ esdm_status_t esdm_write(esdm_dataset_t *dataset, void *buf, esdm_dataspace_t* s
  *
  * @return Status
  */
-esdm_status_t esdm_read(esdm_dataset_t *dataset, void *buf, esdm_dataspace_t* subspace)
+esdm_status esdm_read(esdm_dataset_t *dataset, void *buf, esdm_dataspace_t* subspace)
 {
 	ESDM_DEBUG("");
 
@@ -278,7 +278,7 @@ esdm_status_t esdm_read(esdm_dataset_t *dataset, void *buf, esdm_dataspace_t* su
  *
  * @return Status
  */
-esdm_status_t esdm_close(void *desc)
+esdm_status esdm_close(void *desc)
 {
 	ESDM_DEBUG(__func__);
 
@@ -295,7 +295,7 @@ esdm_status_t esdm_close(void *desc)
  *
  * @return status
  */
-esdm_status_t esdm_sync()
+esdm_status esdm_sync()
 {
 	ESDM_DEBUG(__func__);
 	return ESDM_SUCCESS;

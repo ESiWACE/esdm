@@ -85,7 +85,7 @@ esdm_layout_t* esdm_layout_init(esdm_instance_t* esdm) {
 *
 * @return status
 */
-esdm_status_t esdm_layout_finalize()
+esdm_status esdm_layout_finalize()
 {
 	ESDM_DEBUG(__func__);	
 	return ESDM_SUCCESS;
@@ -99,7 +99,7 @@ esdm_status_t esdm_layout_finalize()
  * estimates obtained from available backends.
  *
  */
-esdm_status_t esdm_layout_recommendation(esdm_instance_t *esdm, esdm_fragment_t *in, esdm_fragment_t *out)
+esdm_status esdm_layout_recommendation(esdm_instance_t *esdm, esdm_fragment_t *in, esdm_fragment_t *out)
 {
 	ESDM_DEBUG(__func__);	
 
@@ -152,7 +152,7 @@ esdm_fragment_t* esdm_layout_reconstruction(esdm_dataset_t *dataset, esdm_datasp
 
 
 
-esdm_status_t esdm_layout_stat(char* desc)
+esdm_status esdm_layout_stat(char* desc)
 {
 	ESDM_DEBUG(__func__);	
 	ESDM_DEBUG("received metadata lookup request");

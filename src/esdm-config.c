@@ -62,7 +62,7 @@ esdm_config_t* esdm_config_init()
 
 
 
-esdm_status_t esdm_config_finalize(esdm_instance_t *esdm)
+esdm_status esdm_config_finalize(esdm_instance_t *esdm)
 {
 	ESDM_DEBUG(__func__);
 

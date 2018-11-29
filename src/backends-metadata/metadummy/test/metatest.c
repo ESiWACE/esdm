@@ -22,7 +22,7 @@ int main(){
     dataspace = esdm_dataspace_create(2, size, ESDM_TYPE_UINT64_T);
   }
 
-  esdm_status_t ret;
+  esdm_status ret;
 	esdm_container_t * container = esdm_container_create("testContainer");
 	esdm_dataset_t   * dataset   = esdm_dataset_create(container, "testDataset", dataspace);
 

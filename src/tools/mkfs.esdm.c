@@ -79,7 +79,7 @@ int main(int argc, char** argv){
   read_file(o.config_file, & config);
 	esdm_load_config_str(config);
 
-  esdm_status_t ret;
+  esdm_status ret;
   ret = esdm_init();
   if(o.format_global){
     ret = esdm_mkfs(o.remove_data ? 2 : o.enforce_format, ESDM_ACCESSIBILITY_GLOBAL);

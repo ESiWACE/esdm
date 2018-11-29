@@ -83,7 +83,7 @@ esdm_scheduler_t* esdm_scheduler_init(esdm_instance_t* esdm)
 	return scheduler;
 }
 
-esdm_status_t esdm_scheduler_finalize(esdm_instance_t *esdm)
+esdm_status esdm_scheduler_finalize(esdm_instance_t *esdm)
 {
   for (int i = 0; i < esdm->modules->backend_count; i++) {
     esdm_backend_t* b = esdm->modules->backends[i];
@@ -102,7 +102,7 @@ static void backend_thread(io_work_t* work, esdm_backend_t* backend){
 
   assert(backend == work->fragment->backend);
 
-  esdm_status_t ret;
+  esdm_status ret;
   switch(work->op){
     case(ESDM_OP_READ):{
       ret = esdm_fragment_retrieve(work->fragment);
@@ -177,9 +177,9 @@ static void read_copy_callback(io_work_t * work){
 }
 
 
-esdm_status_t esdm_scheduler_enqueue_read(esdm_instance_t *esdm, io_request_status_t * status, int frag_count, esdm_fragment_t** read_frag, void * buf, esdm_dataspace_t * buf_space){
+esdm_status esdm_scheduler_enqueue_read(esdm_instance_t *esdm, io_request_status_t * status, int frag_count, esdm_fragment_t** read_frag, void * buf, esdm_dataspace_t * buf_space){
 	GError * error;
-	esdm_status_t ret;
+	esdm_status ret;
 	status->pending_ops += frag_count;
 
 	int i, x;
@@ -254,7 +254,7 @@ esdm_status_t esdm_scheduler_enqueue_read(esdm_instance_t *esdm, io_request_stat
 	return ESDM_SUCCESS;
 }
 
-esdm_status_t esdm_scheduler_enqueue_write(esdm_instance_t *esdm, io_request_status_t * status, esdm_dataset_t *dataset, void *buf,  esdm_dataspace_t* space){
+esdm_status esdm_scheduler_enqueue_write(esdm_instance_t *esdm, io_request_status_t * status, esdm_dataset_t *dataset, void *buf,  esdm_dataspace_t* space){
     GError * error;
     //Gather I/O recommendations
     //esdm_performance_recommendation(esdm, NULL, NULL);    // e.g., split, merge, replication?
@@ -353,20 +353,20 @@ esdm_status_t esdm_scheduler_enqueue_write(esdm_instance_t *esdm, io_request_sta
 	return ESDM_SUCCESS;
 }
 
-esdm_status_t esdm_scheduler_status_init(io_request_status_t * status){
+esdm_status esdm_scheduler_status_init(io_request_status_t * status){
 	g_mutex_init(& status->mutex);
 	g_cond_init(& status->done_condition);
 	status->pending_ops = 0;
 	return ESDM_SUCCESS;
 }
 
-esdm_status_t esdm_scheduler_status_finalize(io_request_status_t * status){
+esdm_status esdm_scheduler_status_finalize(io_request_status_t * status){
 	g_mutex_clear(& status->mutex);
 	g_cond_clear(& status->done_condition);
 	return ESDM_SUCCESS;
 }
 
-esdm_status_t esdm_scheduler_wait(io_request_status_t * status){
+esdm_status esdm_scheduler_wait(io_request_status_t * status){
     g_mutex_lock(& status->mutex);
     if (status->pending_ops){
       g_cond_wait(& status->done_condition, & status->mutex);
@@ -383,12 +383,12 @@ esdm_status_t esdm_scheduler_wait(io_request_status_t * status){
  *
  * Note: write is also blocking right now.
  */
-esdm_status_t esdm_scheduler_process_blocking(esdm_instance_t *esdm, io_operation_t op, esdm_dataset_t *dataset, void *buf,  esdm_dataspace_t* subspace){
+esdm_status esdm_scheduler_process_blocking(esdm_instance_t *esdm, io_operation_t op, esdm_dataset_t *dataset, void *buf,  esdm_dataspace_t* subspace){
 	ESDM_DEBUG(__func__);
 
 	io_request_status_t status;
 
-	esdm_status_t ret;
+	esdm_status ret;
 
 	ret = esdm_scheduler_status_init(& status);
 	assert( ret == ESDM_SUCCESS );
