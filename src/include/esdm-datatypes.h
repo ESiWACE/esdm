@@ -24,7 +24,7 @@ typedef enum {
 	ESDM_AUTOCOMMIT,
 	ESDM_DATASET,
 	ESDM_CONTAINER,
-} esdm_mode_t;
+} esdm_mode;
 
 
 /*
@@ -62,7 +62,7 @@ typedef enum esdm_datatype_t {
 	ESDM_TYPE_CHAR_UTF8,		// esdm_sizeof will fail here
 	ESDM_TYPE_CHAR_UTF16,
 	ESDM_TYPE_CHAR_UTF32,
-} esdm_datatype_t;
+} esdm_datatype;
 
 
 
@@ -124,7 +124,7 @@ struct esdm_dataset_t {
 };
 
 struct esdm_dataspace_t {
-	esdm_datatype_t datatype;
+	esdm_datatype datatype;
 	int64_t dimensions;
 	int64_t *size;
 
@@ -366,7 +366,8 @@ typedef struct esdm_performance_t {
 } esdm_performance_t;
 
 
-typedef struct esdm_instance_t {
+typedef struct esdm_instance_t esdm_instance_t;
+struct esdm_instance_t {
 	int is_initialized;
 	int procs_per_node;
 	int total_procs;
@@ -375,8 +376,7 @@ typedef struct esdm_instance_t {
 	esdm_layout_t *layout;
 	esdm_scheduler_t *scheduler;
 	esdm_performance_t *performance;
-} esdm_instance_t;
-
+};
 
 
 
@@ -387,7 +387,7 @@ typedef struct esdm_instance_t {
 
 typedef struct esdm_bytesequence_t esdm_bytesyquence_t;
 struct esdm_bytesequence {
-	esdm_datatype_t type;
+	esdm_datatype type;
 	size_t count;
 	void * data;
 };

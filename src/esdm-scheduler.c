@@ -23,14 +23,15 @@
  *
  */
 
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+
+#include <glib.h>
 
 #include <esdm.h>
 #include <esdm-internal.h>
 
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <glib.h>
 
 #define DEBUG_ENTER ESDM_DEBUG_COM_FMT("SCHEDULER", "", "")
 #define DEBUG(fmt, ...) ESDM_DEBUG_COM_FMT("SCHEDULER", fmt, __VA_ARGS__)

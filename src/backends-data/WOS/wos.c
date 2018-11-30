@@ -226,7 +226,7 @@ int esdm_backend_wos_fini(esdm_backend_t * eb)
 	return ESDM_SUCCESS;
 }
 
-int esdm_backend_wos_alloc(esdm_backend_t * eb, int n_dims, int *dims_size, esdm_datatype_t type, char **out_object_id, char **out_wos_metadata)
+int esdm_backend_wos_alloc(esdm_backend_t * eb, int n_dims, int *dims_size, esdm_datatype type, char **out_object_id, char **out_wos_metadata)
 {
 	if (!out_object_id || !out_wos_metadata) {
 		DEBUG("Null pointer");
@@ -408,7 +408,7 @@ int esdm_backend_wos_delete(esdm_backend_t * eb, void *obj_handle)
 	return ESDM_SUCCESS;
 }
 
-int esdm_backend_wos_write(esdm_backend_t * eb, void *obj_handle, uint64_t start, uint64_t count, esdm_datatype_t type, void *data)
+int esdm_backend_wos_write(esdm_backend_t * eb, void *obj_handle, uint64_t start, uint64_t count, esdm_datatype type, void *data)
 {
 	if (!obj_handle) {
 		DEBUG("Null pointer");
@@ -500,7 +500,7 @@ int esdm_backend_wos_write(esdm_backend_t * eb, void *obj_handle, uint64_t start
 	return rc;
 }
 
-int esdm_backend_wos_read(esdm_backend_t * eb, void *obj_handle, uint64_t start, uint64_t count, esdm_datatype_t type, void *data)
+int esdm_backend_wos_read(esdm_backend_t * eb, void *obj_handle, uint64_t start, uint64_t count, esdm_datatype type, void *data)
 {
 	if (!obj_handle) {
 		DEBUG("Null pointer");

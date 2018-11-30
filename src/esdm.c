@@ -20,8 +20,8 @@
  * @brief Entry point for ESDM API Implementation
  */
 
-#include <stdlib.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 
 #include <esdm.h>
@@ -29,9 +29,10 @@
 
 
 
-
 // TODO: Decide on initialization mechanism.
 static int is_initialized = 0;
+
+
 esdm_instance_t esdm = {
 	.procs_per_node = 1,
 	.total_procs = 1,
@@ -57,21 +58,37 @@ esdm_status esdm_load_config_str(const char * str){
 	return ESDM_SUCCESS;
 }
 
-/**
-* Initialize ESDM:
-*	- allocate data structures for ESDM
-*	- allocate memory for node local caches
-*	- initialize submodules
-*	- initialize threadpool
-*
-* @return status
+
+
+/*
+void esdm_atexit() {
+	esdm_finalize();
+}
 */
+
+
+
+/**
+ * Initialize ESDM:
+ *	- allocate data structures for ESDM
+ *	- allocate memory for node local caches
+ *	- initialize submodules
+ *	- initialize threadpool
+ *
+ * @return status
+ */
 esdm_status esdm_init()
 {
 	ESDM_DEBUG("Init");
 
+	int status;
+
 	if (!is_initialized) {
 		ESDM_DEBUG("Initializing ESDM");
+
+
+		//status = atexit(esdm_atexit);
+		
 
 		// find configuration
 		if ( ! esdm.config ){
@@ -102,6 +119,17 @@ esdm_status esdm_init()
 	return ESDM_SUCCESS;
 }
 
+
+
+
+/**
+ * Initialize backend by invoking mkfs callback for matching target
+ *
+ * @param [in] enforce_format  force reformatting existing system (may result in data loss)
+ * @param [in] target  target descriptor 
+ *
+ * @return Status
+ */
 esdm_status esdm_mkfs(int enforce_format, data_accessibility_t target){
 	if(! is_initialized){
 		return ESDM_ERROR;
@@ -128,12 +156,12 @@ esdm_status esdm_mkfs(int enforce_format, data_accessibility_t target){
 
 
 /**
-* Display status information for objects stored in ESDM.
-*
-* @param [in] desc	Name or descriptor of object.
-*
-* @return Status
-*/
+ * Display status information for objects stored in ESDM.
+ *
+ * @param [in] desc	Name or descriptor of object.
+ *
+ * @return Status
+ */
 esdm_status esdm_finalize()
 {
 	ESDM_DEBUG(__func__);
@@ -162,13 +190,13 @@ esdm_status esdm_finalize()
 ///////////////////////////////////////////////////////////////////////////////
 
 /**
-* Display status information for objects stored in ESDM.
-*
-* @param [in]	desc	name or descriptor of object
-* @param [out]	result	where to write result of query
-*
-* @return Status
-*/
+ * Display status information for objects stored in ESDM.
+ *
+ * @param [in]	desc	name or descriptor of object
+ * @param [out]	result	where to write result of query
+ *
+ * @return Status
+ */
 esdm_status esdm_stat(char *desc, char *result)
 {
 	ESDM_DEBUG(__func__);
@@ -293,7 +321,7 @@ esdm_status esdm_close(void *desc)
  * If not called at the end of an application, ESDM can not guarantee all data
  * was written.
  *
- * @return status
+ * @return Status
  */
 esdm_status esdm_sync()
 {

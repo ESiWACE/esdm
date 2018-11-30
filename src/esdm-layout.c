@@ -35,7 +35,6 @@
  *
  */
 
-
 #include <stdio.h>
 #include <stdlib.h>
 
@@ -43,8 +42,6 @@
 
 #include <esdm.h>
 #include <esdm-internal.h>
-
-
 
 
 // layout component may like to have following capabilites:
@@ -68,7 +65,12 @@
 
 
 
-
+/**
+ * Initializes the init component by allocating and populating the esdm_layout
+ * structure.
+ *
+ * @return Status
+ */
 esdm_layout_t* esdm_layout_init(esdm_instance_t* esdm) {
 	ESDM_DEBUG(__func__);	
 
@@ -83,7 +85,7 @@ esdm_layout_t* esdm_layout_init(esdm_instance_t* esdm) {
 *  - finalize submodules
 *  - free data structures
 *
-* @return status
+* @return Status
 */
 esdm_status esdm_layout_finalize()
 {
@@ -98,6 +100,7 @@ esdm_status esdm_layout_finalize()
  * Splits pending requests into one or more requests based on performance
  * estimates obtained from available backends.
  *
+ * @return Status
  */
 esdm_status esdm_layout_recommendation(esdm_instance_t *esdm, esdm_fragment_t *in, esdm_fragment_t *out)
 {
@@ -112,6 +115,9 @@ esdm_status esdm_layout_recommendation(esdm_instance_t *esdm, esdm_fragment_t *i
 	//}
 
 	// now choice the best module
+	//
+	
+	return ESDM_SUCCESS;
 }
 
 
@@ -121,6 +127,8 @@ esdm_status esdm_layout_recommendation(esdm_instance_t *esdm, esdm_fragment_t *i
  * The layout reconstructor finds a reconstruction for subspace of a dataset.
  *
  * The reconstruction should take performance considerations into account. 
+ *
+ * @return Status
  */
 esdm_fragment_t* esdm_layout_reconstruction(esdm_dataset_t *dataset, esdm_dataspace_t *subspace)
 {
@@ -150,8 +158,11 @@ esdm_fragment_t* esdm_layout_reconstruction(esdm_dataset_t *dataset, esdm_datasp
 
 
 
-
-
+/**
+ *
+ *
+ * @return Status
+ */
 esdm_status esdm_layout_stat(char* desc)
 {
 	ESDM_DEBUG(__func__);	
@@ -168,6 +179,6 @@ esdm_status esdm_layout_stat(char* desc)
 	}
 
 
-
+	return ESDM_SUCCESS;
 }
 

@@ -294,6 +294,9 @@ static int container_create(esdm_backend_t* backend, esdm_container_t *container
 
 	free(path_metadata);
 	free(path_container);
+
+
+	return 0;
 }
 
 
@@ -303,7 +306,6 @@ static int container_retrieve(esdm_backend_t* backend, esdm_container_t *contain
 
 	char *path_metadata;
 	char *path_container;
-	struct stat sb;
 
 	metadummy_backend_options_t *options = (metadummy_backend_options_t*) backend->data;
 	const char* tgt = options->target;
@@ -318,6 +320,9 @@ static int container_retrieve(esdm_backend_t* backend, esdm_container_t *contain
 
 	free(path_metadata);
 	free(path_container);
+
+
+	return 0;
 }
 
 
@@ -327,7 +332,6 @@ static int container_update(esdm_backend_t* backend, esdm_container_t *container
 
 	char *path_metadata;
 	char *path_container;
-	struct stat sb;
 
 	metadummy_backend_options_t *options = (metadummy_backend_options_t*) backend->data;
 	const char* tgt = options->target;
@@ -341,6 +345,8 @@ static int container_update(esdm_backend_t* backend, esdm_container_t *container
 
 	free(path_metadata);
 	free(path_container);
+
+	return 0;
 }
 
 
@@ -350,7 +356,6 @@ static int container_destroy(esdm_backend_t* backend, esdm_container_t *containe
 
 	char *path_metadata;
 	char *path_container;
-	struct stat sb;
 
 	metadummy_backend_options_t *options = (metadummy_backend_options_t*) backend->data;
 	const char* tgt = options->target;
@@ -367,6 +372,8 @@ static int container_destroy(esdm_backend_t* backend, esdm_container_t *containe
 
 	free(path_metadata);
 	free(path_container);
+
+	return 0;
 }
 
 
@@ -400,24 +407,34 @@ static int dataset_create(esdm_backend_t* backend, esdm_dataset_t *dataset)
 	{
 		mkdir(path_dataset, 0700);
 	}
+
+
+
+	return 0;
 }
 
 
 static int dataset_retrieve(esdm_backend_t* backend, esdm_dataset_t *dataset)
 {
 	DEBUG_ENTER;
+
+	return 0;
 }
 
 
 static int dataset_update(esdm_backend_t* backend, esdm_dataset_t *dataset)
 {
 	DEBUG_ENTER;
+
+	return 0;
 }
 
 
 static int dataset_destroy(esdm_backend_t* backend, esdm_dataset_t *dataset)
 {
 	DEBUG_ENTER;
+
+	return 0;
 }
 
 
@@ -446,7 +463,6 @@ static int fragment_retrieve(esdm_backend_t* backend, esdm_fragment_t *fragment,
 
 		int status;
 		struct stat sb;
-		char *buf;
 
 		status = stat(path_fragment, &sb);
 		if (status == -1) {
@@ -471,7 +487,9 @@ static int fragment_retrieve(esdm_backend_t* backend, esdm_fragment_t *fragment,
 
 static esdm_fragment_t * create_fragment_from_metadata(int fd, esdm_dataset_t * dataset, esdm_dataspace_t * space){
 	struct stat sb;
-	int ret = fstat(fd, & sb);
+	int ret;
+	
+	ret = fstat(fd, & sb);
 	DEBUG("Fragment found size:%ld", sb.st_size);
 
 	esdm_fragment_t * f;
@@ -608,6 +626,9 @@ static int fragment_update(esdm_backend_t* backend, esdm_fragment_t *fragment)
 	// create metadata entry
 	mkdir_recursive(path);
 	entry_create(path_fragment, fragment->metadata);
+
+
+	return 0;
 }
 
 

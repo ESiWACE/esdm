@@ -22,8 +22,8 @@
 
 #define _GNU_SOURCE         /* See feature_test_macros(7) */
 
-#include <stdlib.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 
 #include <esdm.h>
@@ -36,7 +36,7 @@
 extern esdm_instance_t esdm;
 
 // Native Datatypes ///////////////////////////////////////////////////////////
-size_t esdm_sizeof(esdm_datatype_t type) {
+size_t esdm_sizeof(esdm_datatype type) {
 	switch (type) {
 
 		case ESDM_TYPE_INT8_T:
@@ -501,7 +501,7 @@ esdm_status esdm_dataset_commit(esdm_dataset_t *dataset)
  *	@return Pointer to new dateset.
  *
  */
-esdm_dataspace_t* esdm_dataspace_create(int64_t dimensions, int64_t* sizes, esdm_datatype_t datatype)
+esdm_dataspace_t* esdm_dataspace_create(int64_t dimensions, int64_t* sizes, esdm_datatype datatype)
 {
 	ESDM_DEBUG(__func__);
 	esdm_dataspace_t* dataspace = (esdm_dataspace_t*) malloc(sizeof(esdm_dataspace_t));
