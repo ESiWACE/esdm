@@ -26,20 +26,18 @@
 #include <assert.h>
 
 
-#define FILE "file-test.h5"
 
 int main()
 {
-
-	
 	char* filename = "file-test.h5";
 
 	hid_t fprop;
 	hid_t vol_id = H5VLregister_by_name("h5-esdm");
 
-	herr_t	status;
+	hid_t file_id, group_id, dataset_id, dataspace_id, attribute_id;
+	herr_t status;
 
-	char name[1024];
+	char plugin_name[1024];
 
 
 	// SET VOL PLUGIN /////////////////////////////////////////////////////////
@@ -52,12 +50,11 @@ int main()
 
 
 	// CREATE /////////////////////////////////////////////////////////////////
-	hid_t file_id;
 	file_id = H5Fcreate(filename, H5F_ACC_TRUNC, H5P_DEFAULT, fprop);
 
 	// check if VOL in use
-	H5VLget_plugin_name(file_id, name, 1024);
-	printf ("VOL plugin in use: %s\n", name);
+	H5VLget_plugin_name(file_id, plugin_name, 1024);
+	printf ("VOL plugin in use: %s\n", plugin_name);
 	// TODO: assert
 
 
@@ -66,8 +63,8 @@ int main()
 	file_id2 = H5Fopen(filename, H5F_ACC_RDWR, H5P_DEFAULT);
 
 	// check if VOL in use
-	H5VLget_plugin_name(file_id, name, 1024);
-	printf ("VOL plugin in use: %s\n", name);
+	H5VLget_plugin_name(file_id, plugin_name, 1024);
+	printf ("VOL plugin in use: %s\n", plugin_name);
 	// TODO: assert
 
 

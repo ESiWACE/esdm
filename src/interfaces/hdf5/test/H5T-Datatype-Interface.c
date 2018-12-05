@@ -19,7 +19,7 @@
 #include <assert.h>
 
 
-#define H5FILE_NAME   "SDScompound.h5"
+//#define H5FILE_NAME   "SDScompound.h5"
 #define DATASETNAME   "ArrayOfStructures"
 #define LENGTH        10
 #define RANK          1
@@ -27,6 +27,10 @@
 
 int main()
 {
+
+	char* filename = "file-compound-datatype.h5";
+
+
 	hid_t fprop;
 	hid_t vol_id = H5VLregister_by_name("h5-esdm");
 
@@ -84,7 +88,7 @@ int main()
     /*
      * Create the file.
      */
-    file = H5Fcreate(H5FILE_NAME, H5F_ACC_TRUNC, H5P_DEFAULT, fprop);
+    file = H5Fcreate(filename, H5F_ACC_TRUNC, H5P_DEFAULT, fprop);
 
     /*
      * Create the memory data type.
@@ -115,7 +119,7 @@ int main()
     /*
      * Open the file and the dataset.
      */
-    file = H5Fopen(H5FILE_NAME, H5F_ACC_RDONLY, H5P_DEFAULT);
+    file = H5Fopen(filename, H5F_ACC_RDONLY, H5P_DEFAULT);
 
     dataset = H5Dopen2(file, DATASETNAME, H5P_DEFAULT);
 

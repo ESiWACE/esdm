@@ -65,7 +65,7 @@ int main(int argc, char const* argv[])
 
 	// Interaction with ESDM
 	esdm_status ret;
-	esdm_container_t *container = NULL;
+	esdm_container *container = NULL;
 	esdm_dataset_t *dataset = NULL;
 
 

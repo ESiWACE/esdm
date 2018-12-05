@@ -23,7 +23,7 @@ int main(){
   }
 
   esdm_status ret;
-	esdm_container_t * container = esdm_container_create("testContainer");
+	esdm_container * container = esdm_container_create("testContainer");
 	esdm_dataset_t   * dataset   = esdm_dataset_create(container, "testDataset", dataspace);
 
   esdm_dataspace_t* s1, * s2, * s3, *s4;

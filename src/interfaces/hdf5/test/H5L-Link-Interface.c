@@ -19,14 +19,17 @@
 #include <assert.h>
 
 
-#define FILE "file-test.h5"
 
 int main()
 {
-	herr_t	status;
+	char* filename = "file-test.h5";
+
 	hid_t fprop;
-	hid_t file_id;
 	hid_t vol_id = H5VLregister_by_name("h5-esdm");
+
+	hid_t file_id, group_id, dataset_id, dataspace_id, attribute_id;
+	herr_t status;
+
 
 	char name[1024];
 

@@ -80,10 +80,10 @@ size_t esdm_sizeof(esdm_datatype type) {
  *	@return Pointer to new container.
  *
  */
-esdm_container_t* esdm_container_create(const char* name)
+esdm_container* esdm_container_create(const char* name)
 {
 	ESDM_DEBUG(__func__);
-	esdm_container_t* container = (esdm_container_t*) malloc(sizeof(esdm_container_t));
+	esdm_container* container = (esdm_container*) malloc(sizeof(esdm_container));
 
 	container->name = strdup(name);
 
@@ -95,10 +95,10 @@ esdm_container_t* esdm_container_create(const char* name)
 }
 
 
-esdm_container_t* esdm_container_retrieve(const char * name)
+esdm_container* esdm_container_retrieve(const char * name)
 {
 	ESDM_DEBUG(__func__);
-	esdm_container_t* container = (esdm_container_t*) malloc(sizeof(esdm_container_t));
+	esdm_container* container = (esdm_container*) malloc(sizeof(esdm_container));
 
 	// TODO: retrieve from MD
 	// TODO: retrieve associated data
@@ -122,7 +122,7 @@ esdm_container_t* esdm_container_retrieve(const char * name)
  * are part of the container.
  *
  */
-esdm_status esdm_container_commit(esdm_container_t* container)
+esdm_status esdm_container_commit(esdm_container* container)
 {
 	ESDM_DEBUG(__func__);
 
@@ -149,7 +149,7 @@ esdm_status esdm_container_commit(esdm_container_t* container)
  * Either from memory or from persistent storage.
  *
  */
-esdm_status esdm_container_destroy(esdm_container_t *container)
+esdm_status esdm_container_destroy(esdm_container *container)
 {
 	ESDM_DEBUG(__func__);
 
@@ -421,7 +421,7 @@ esdm_fragment_t* esdm_fragment_deserialize(void *serialized_fragment)
  *	@return Pointer to new dateset.
  *
  */
-esdm_dataset_t* esdm_dataset_create(esdm_container_t* container, char* name, esdm_dataspace_t* dataspace)
+esdm_dataset_t* esdm_dataset_create(esdm_container* container, char* name, esdm_dataspace_t* dataspace)
 {
 	ESDM_DEBUG(__func__);
 	esdm_dataset_t* dataset = (esdm_dataset_t*) malloc(sizeof(esdm_dataset_t));
@@ -438,7 +438,7 @@ esdm_dataset_t* esdm_dataset_create(esdm_container_t* container, char* name, esd
 }
 
 
-esdm_dataset_t* esdm_dataset_retrieve(esdm_container_t *container, const char* name)
+esdm_dataset_t* esdm_dataset_retrieve(esdm_container *container, const char* name)
 {
 	ESDM_DEBUG(__func__);
 	esdm_dataset_t* dataset = (esdm_dataset_t*) malloc(sizeof(esdm_dataset_t));

@@ -226,7 +226,13 @@ static void* H5VL_esdm_attribute_create (void *obj, H5VL_loc_params_t loc_params
 	return (void*) &mock_attr;
 }
 
-static void* H5VL_esdm_attribute_open (void *obj, H5VL_loc_params_t loc_params, const char *attr_name, hid_t aapl_id, hid_t dxpl_id, void **req) 
+static void* H5VL_esdm_attribute_open (
+		void *obj,
+		H5VL_loc_params_t loc_params,
+		const char *attr_name,
+		hid_t aapl_id,
+		hid_t dxpl_id,
+		void **req) 
 {
 	info("%s\n", __func__);
 	info("%s: *obj = %p\n", __func__, obj);
@@ -339,7 +345,12 @@ static void* H5VL_esdm_attribute_open (void *obj, H5VL_loc_params_t loc_params, 
 	return NULL;
 }
 
-static herr_t H5VL_esdm_attribute_read (void *attr, hid_t mem_type_id, void *buf, hid_t dxpl_id, void **req) 
+static herr_t H5VL_esdm_attribute_read (
+		void *attr,
+		hid_t mem_type_id,
+		void *buf,
+		hid_t dxpl_id,
+		void **req) 
 {
 	info("%s\n", __func__);
 
@@ -644,7 +655,7 @@ static void *H5VL_esdm_dataset_create(
 
 
 
-	//esdm_dataset_t* esdm_dataset_create(esdm_container_t *container, char * name, esdm_dataspace_t *dataspace);
+	//esdm_dataset_t* esdm_dataset_create(esdm_container *container, char * name, esdm_dataspace_t *dataspace);
 	
 
 
@@ -738,7 +749,7 @@ static void *H5VL_esdm_dataset_open(void *obj, H5VL_loc_params_t loc_params, con
 
     H5VL_esdm_group_t *parent = (H5VL_esdm_group_t *) ((H5VL_esdm_object_t*)obj)->object;
 
-	//esdm_dataset_t* esdm_dataset_retrieve(esdm_container_t *container, const char * name);
+	//esdm_dataset_t* esdm_dataset_retrieve(esdm_container *container, const char * name);
 
 
 	H5VL_esdm_object_t * child = g_hash_table_lookup(parent->childs_tbl, name);
@@ -1395,7 +1406,7 @@ static void * H5VL_esdm_file_create(const char *name, unsigned flags, hid_t fcpl
 	esdm_init();
 
 
-	esdm_container_t* cont = esdm_container_create(name);
+	esdm_container* cont = esdm_container_create(name);
 	esdm_container_commit(cont);
 
 
@@ -1418,7 +1429,7 @@ static void * H5VL_esdm_file_create(const char *name, unsigned flags, hid_t fcpl
 //
 //	// Interaction with ESDM
 //	esdm_status ret;
-//	esdm_container_t *container = NULL;
+//	esdm_container *container = NULL;
 //	esdm_dataset_t *dataset = NULL;
 //
 //	esdm_init();
@@ -1448,12 +1459,12 @@ static void * H5VL_esdm_file_create(const char *name, unsigned flags, hid_t fcpl
 	esdm_init();
     
 	
-    esdm_container_t* co = esdm_container_create(name);
+    esdm_container* co = esdm_container_create(name);
     esdm_container_commit(co); 
     */
 
-	//esdm_container_t* esdm_container_create(const char *name);
-	//esdm_container_t* esdm_container_retrieve(const char * name);
+	//esdm_container* esdm_container_create(const char *name);
+	//esdm_container* esdm_container_retrieve(const char * name);
 
 
 
@@ -1559,7 +1570,7 @@ static void * H5VL_esdm_file_open(const char *name, unsigned flags, hid_t fapl_i
 
     info("%s: name=%s \n", __func__, name);
 
-	//esdm_container_t* esdm_container_retrieve(const char * name);
+	//esdm_container* esdm_container_retrieve(const char * name);
 
 	esdm_init();
 
@@ -1788,9 +1799,6 @@ static herr_t H5VL_esdm_file_close(void *file, hid_t dxpl_id, void **req)
 //     herr_t (*close) (void *grp, hid_t dxpl_id, void **req);
 // } H5VL_group_class_t;
 
-
-
-
 // extract from ../install/download/vol/src/H5Gpkg.h:138 for reference (consider any structure strictly private!)
 /*
  * Shared information for all open group objects
@@ -1810,11 +1818,8 @@ static herr_t H5VL_esdm_file_close(void *file, hid_t dxpl_id, void **req)
 //    H5G_name_t path;                    /* Group hierarchy path   */
 //};
 
-
-
 // ../install/download/vol/src/H5VLnative.c
 // ../install/download/vol/src/H5G.c
-
 
 
 static void H5VL_esdm_group_init(H5VL_esdm_group_t * group)
@@ -1834,7 +1839,7 @@ static void * H5VL_esdm_group_create(void *obj, H5VL_loc_params_t loc_params, co
 	info("%s\n", __func__);
 
 	
-	//esdm_container_t* esdm_container_create(const char *name);
+	//esdm_container* esdm_container_create(const char *name);
 
 	// allocate resources
     object = (H5VL_esdm_object_t*) malloc(sizeof(H5VL_esdm_object_t));
@@ -1877,7 +1882,7 @@ static void *H5VL_esdm_group_open(void *obj, H5VL_loc_params_t loc_params, const
 	info("%s: Found group=%p with name=%s in parent=%p\n", __func__, child->object, name, obj);
 
 
-	//esdm_container_t* esdm_container_retrieve(const char * name);
+	//esdm_container* esdm_container_retrieve(const char * name);
 
 
 	return (void *)child;

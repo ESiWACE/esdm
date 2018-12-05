@@ -19,28 +19,35 @@
 #include <assert.h>
 
 
-#define FILE "file-test.h5"
 
 int main()
 {
-	herr_t	status;
+	char* filename = "file-test.h5";
+
 	hid_t fprop;
 	hid_t vol_id = H5VLregister_by_name("h5-esdm");
 
-	hid_t       file_id, dataset_id, dataspace_id;  /* identifiers */
+	hid_t file_id, group_id, dataset_id, dataspace_id, attribute_id;
+	herr_t status;
+
 	hsize_t     dims[2];
 
-	char name[1024];
+	char plugin_name[1024];
 
 
 	// SET VOL PLUGIN /////////////////////////////////////////////////////////
 	fprop = H5Pcreate(H5P_FILE_ACCESS);
 	H5Pset_vol(fprop, vol_id, &fprop);
 
-
 	// MOCK SETUP /////////////////////////////////////////////////////////////
 	/* Create a new file using default properties. */
-	file_id = H5Fcreate(FILE, H5F_ACC_TRUNC, H5P_DEFAULT, H5P_DEFAULT);
+	file_id = H5Fcreate(filename, H5F_ACC_TRUNC, H5P_DEFAULT, fprop);
+
+	// check if VOL in use
+	H5VLget_plugin_name(file_id, plugin_name, 1024);
+	printf ("VOL plugin in use: %s\n", plugin_name);
+
+
 
 	/* Create the data space for the dataset. */
 	dims[0] = 4; 
@@ -76,7 +83,7 @@ int main()
 
 
 	// Clean up ///////////////////////////////////////////////////////////////
-	H5VLunregister(vol_id);
+	//H5VLunregister(vol_id);
 
 	return 0;
 }

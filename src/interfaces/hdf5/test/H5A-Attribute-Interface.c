@@ -26,21 +26,22 @@
 #include <assert.h>
 
 
-#define FILE "file-test.h5"
-
 int main()
 {
 	hid_t fprop;
 	hid_t vol_id = H5VLregister_by_name("h5-esdm");
 
+	hid_t file_id, group_id, dataset_id, dataspace_id, attribute_id;
+	herr_t status;
 
-	herr_t	status;
-	hid_t       file_id, dataset_id, attribute_id, dataspace_id;  /* identifiers */
 	hsize_t     dims;
 	int         attr_data[2];
 
 
-	char name[1024];
+
+	char* filename = "file-test.h5";
+
+
 
 	// SET VOL PLUGIN /////////////////////////////////////////////////////////
 	fprop = H5Pcreate(H5P_FILE_ACCESS);
@@ -54,7 +55,7 @@ int main()
 
 
 	/* Open an existing file. */
-	file_id = H5Fopen(FILE, H5F_ACC_RDWR, fprop);
+	file_id = H5Fopen(filename, H5F_ACC_RDWR, fprop);
 
 	/* Open an existing dataset. */
 	dataset_id = H5Dopen2(file_id, "/dset", H5P_DEFAULT);

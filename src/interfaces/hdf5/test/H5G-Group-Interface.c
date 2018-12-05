@@ -19,15 +19,15 @@
 #include <assert.h>
 
 
-#define FILE "file-test.h5"
-
 int main()
 {
+	char* filename = "file-test.h5";
+
 	hid_t fprop;
 	hid_t vol_id = H5VLregister_by_name("h5-esdm");
 
-	hid_t       file_id, group_id;  /* identifiers */
-	herr_t      status;
+	hid_t file_id, group_id, dataset_id, dataspace_id, attribute_id;
+	herr_t status;
 
 	char name[1024];
 
@@ -41,7 +41,7 @@ int main()
 
 
 	/* Create a new file using default properties. */
-	file_id = H5Fcreate(FILE, H5F_ACC_TRUNC, H5P_DEFAULT, fprop);
+	file_id = H5Fcreate(filename, H5F_ACC_TRUNC, H5P_DEFAULT, fprop);
 
 	/* Create a group named "/MyGroup" in the file. */
 	group_id = H5Gcreate2(file_id, "/MyGroup", H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);

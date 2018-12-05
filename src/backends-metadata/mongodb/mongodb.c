@@ -279,7 +279,7 @@ static int entry_destroy(const char *path)
 // Container Helpers //////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////
 
-static int container_create(esdm_backend_t* backend, esdm_container_t *container)
+static int container_create(esdm_backend_t* backend, esdm_container *container)
 {
 	char *path_metadata;
 	char *path_container;
@@ -324,7 +324,7 @@ static int container_create(esdm_backend_t* backend, esdm_container_t *container
 }
 
 
-static int container_retrieve(esdm_backend_t* backend, esdm_container_t *container)
+static int container_retrieve(esdm_backend_t* backend, esdm_container *container)
 {
 	char *path_metadata;
 	char *path_container;
@@ -346,7 +346,7 @@ static int container_retrieve(esdm_backend_t* backend, esdm_container_t *contain
 }
 
 
-static int container_update(esdm_backend_t* backend, esdm_container_t *container)
+static int container_update(esdm_backend_t* backend, esdm_container *container)
 {
 	char *path_metadata;
 	char *path_container;
@@ -367,7 +367,7 @@ static int container_update(esdm_backend_t* backend, esdm_container_t *container
 }
 
 
-static int container_destroy(esdm_backend_t* backend, esdm_container_t *container) 
+static int container_destroy(esdm_backend_t* backend, esdm_container *container) 
 {
 	char *path_metadata;
 	char *path_container;

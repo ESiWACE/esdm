@@ -218,7 +218,7 @@ esdm_status esdm_stat(char *desc, char *result)
  *
  * @return Status
  */
-esdm_status esdm_create(char *name, int mode, esdm_container_t **container, esdm_dataset_t **dataset)
+esdm_status esdm_create(char *name, int mode, esdm_container **container, esdm_dataset_t **dataset)
 {
 	ESDM_DEBUG(__func__);
 

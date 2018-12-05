@@ -88,12 +88,12 @@ typedef enum {
 	ESDM_LOGLEVEL_INFO,
 	ESDM_LOGLEVEL_DEBUG,
 	ESDM_LOGLEVEL_NOTSET
-} esdm_loglevel_t;
+} esdm_loglevel;
 
 
 // LOGICAL/DOMAIN DATATYPES ///////////////////////////////////////////////////
 
-typedef struct esdm_container_t esdm_container_t;
+typedef struct esdm_container esdm_container;
 typedef struct esdm_metadata_t esdm_metadata_t;
 typedef struct esdm_dataset_t esdm_dataset_t;
 typedef struct esdm_dataspace_t esdm_dataspace_t;
@@ -102,7 +102,7 @@ typedef struct esdm_backend_t esdm_backend_t;
 typedef struct esdm_backend_callbacks_t esdm_backend_callbacks_t;
 
 
-struct esdm_container_t {
+struct esdm_container {
 	char *name;
 	esdm_metadata_t *metadata;
 	GHashTable *datasets;
@@ -116,7 +116,7 @@ struct esdm_metadata_t {
 
 struct esdm_dataset_t {
 	char *name;
-	esdm_container_t *container;
+	esdm_container *container;
 	esdm_metadata_t *metadata;
 	esdm_dataspace_t *dataspace;
 	GHashTable *fragments;
@@ -212,10 +212,10 @@ struct esdm_backend_callbacks_t {
 	int (*lookup)(esdm_backend_t * b, esdm_dataset_t * dataset,	esdm_dataspace_t * space, int * out_frag_count, esdm_fragment_t *** out_fragments);
 
 // ESDM Data Model Specific
-	int (*container_create)(esdm_backend_t*, esdm_container_t *container);
-	int (*container_retrieve)(esdm_backend_t*, esdm_container_t *container);
-	int (*container_update)(esdm_backend_t*, esdm_container_t *container);
-	int (*container_destroy)(esdm_backend_t*, esdm_container_t *container);
+	int (*container_create)(esdm_backend_t*, esdm_container *container);
+	int (*container_retrieve)(esdm_backend_t*, esdm_container *container);
+	int (*container_update)(esdm_backend_t*, esdm_container *container);
+	int (*container_destroy)(esdm_backend_t*, esdm_container *container);
 
 	int (*dataset_create)(esdm_backend_t*, esdm_dataset_t *dataset);
 	int (*dataset_retrieve)(esdm_backend_t*, esdm_dataset_t *dataset);

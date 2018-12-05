@@ -43,7 +43,7 @@
 
 
 #define warn(...) fprintf(stderr, "[H5 ESDM] Warning: "__VA_ARGS__)
-#define fail(...) { fprintf(stderr, "[H5 ESDM] Error: "__VA_ARGS__); exit(1); }
+#define fail(...) do { fprintf(stderr, "[H5 ESDM] Error: "__VA_ARGS__); exit(1); } while(0)
 
 
 /* HDF5 related integer defintions e.g. as required for herr_t */
