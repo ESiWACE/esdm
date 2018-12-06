@@ -48,6 +48,7 @@ int esdm_mpi_get_tasks_per_node() {
 	return count;
 }
 
+
 void esdm_mpi_distribute_config_file(char * config_filename){
 	int mpi_rank;
 	MPI_Comm_rank(MPI_COMM_WORLD, & mpi_rank);
@@ -68,6 +69,9 @@ void esdm_mpi_distribute_config_file(char * config_filename){
 	esdm_load_config_str(config);
 }
 
+
+
+
 void esdm_mpi_init(){
 	int mpi_size;
 	MPI_Comm_size(MPI_COMM_WORLD, & mpi_size);
@@ -76,6 +80,8 @@ void esdm_mpi_init(){
 	esdm_set_procs_per_node(pPerNode);
 	esdm_set_total_procs(mpi_size);
 }
+
+
 
 
 int main(int argc, char* argv[])
@@ -177,16 +183,29 @@ int main(int argc, char* argv[])
 
 
 
+
+
+	char* filename = "file-test.h5";
+
+
+
+	hid_t fprop;
+	hid_t vol_id = H5VLregister_by_name("h5-esdm");
+
+
+
+
 	// HDF5 state, refs
-	hid_t       file_id, dataset_id, dataspace_id;  /* identifiers */
-	hsize_t     dims[2];
+	hid_t file_id, group_id, dataset_id, dataspace_id, attribute_id;
 	herr_t      status;
+
+	hsize_t     dims[2];
     int         i, j, dset_data[4][6];
 
 
 
 	// create hdf5 file and populate with default settings
-	file_id = H5Fcreate(FILE, H5F_ACC_TRUNC, H5P_DEFAULT, H5P_DEFAULT);
+	file_id = H5Fcreate(filename, H5F_ACC_TRUNC, H5P_DEFAULT, fprop);
 
 
 
@@ -206,7 +225,7 @@ int main(int argc, char* argv[])
          dset_data[i][j] = i * 6 + j + 1;
 
 
-   file_id = H5Fopen(FILE, H5F_ACC_RDWR, H5P_DEFAULT);
+   file_id = H5Fopen(filename, H5F_ACC_RDWR, H5P_DEFAULT);
 
    // Open an existing dataset.
    dataset_id = H5Dopen2(file_id, "/mycontainer", H5P_DEFAULT);
