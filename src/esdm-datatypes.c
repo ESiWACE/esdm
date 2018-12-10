@@ -421,7 +421,7 @@ esdm_fragment_t* esdm_fragment_deserialize(void *serialized_fragment)
  *	@return Pointer to new dateset.
  *
  */
-esdm_dataset_t* esdm_dataset_create(esdm_container* container, char* name, esdm_dataspace_t* dataspace)
+esdm_dataset_t* esdm_dataset_create(esdm_container* container, const char* name, esdm_dataspace_t* dataspace)
 {
 	ESDM_DEBUG(__func__);
 	esdm_dataset_t* dataset = (esdm_dataset_t*) malloc(sizeof(esdm_dataset_t));
@@ -432,7 +432,7 @@ esdm_dataset_t* esdm_dataset_create(esdm_container* container, char* name, esdm_
 	dataset->dataspace = dataspace;
 	dataset->fragments = g_hash_table_new(g_direct_hash,  g_direct_equal);
 
-	g_hash_table_insert(container->datasets, name, dataset);
+	g_hash_table_insert(container->datasets, (char*) name, dataset);
 
 	return dataset;
 }

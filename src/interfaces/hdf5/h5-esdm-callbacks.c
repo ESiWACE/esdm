@@ -331,11 +331,10 @@ static void* H5VL_esdm_attribute_open (
 
 		case H5I_NTYPES:
 			info("%s: H5I_NTYPES \n", __func__);
-			fail("Not implemented");
 			break;
 
 		default:
-			fail("unsupported type");
+			fail("Unsupported type");
 	} /* end switch */
 
 	return (void *)attribute;
@@ -653,6 +652,73 @@ static void *H5VL_esdm_dataset_create(
 
 
 
+	// Inspect dataspace
+	hid_t space_id;
+	H5Pget(dcpl_id, "dataset_space_id", &space_id);
+	int ndims = H5Sget_simple_extent_ndims(space_id);
+	hsize_t maxdims[ndims];
+	hsize_t dims[ndims];
+	H5Sget_simple_extent_dims(space_id, dims, maxdims);
+
+	
+	
+	hid_t type_id;
+	H5Pget(dcpl_id, "dataset_type_id", &type_id);
+	size_t type_size = H5Tget_size(type_id);
+	size_t data_size = type_size;
+	for(int i = 0; i < ndims; ++i) {
+		data_size *= dims[i];
+	}
+
+
+
+
+
+	size_t height = 10;
+	size_t width = 4096;
+
+
+	// prepare data
+	uint64_t * buf_w = (uint64_t *) malloc(height * width *sizeof(uint64_t));
+	uint64_t * buf_r = (uint64_t *) malloc(height * width *sizeof(uint64_t));
+
+	int x, y;
+	for(x = 0; x < height; x++){
+		for(y = 0; y < width; y++){
+			buf_w[y * height + x] = (y) * height + x + 1;
+		}
+	}
+
+
+	// Interaction with ESDM
+	esdm_status ret;
+	esdm_container *cont = NULL;
+	esdm_dataset_t *dset = NULL;
+
+
+	esdm_init();
+
+
+	// define dataspace
+	int64_t bounds[] = {height, width};
+	esdm_dataspace_t *dspace = esdm_dataspace_create(2, bounds, ESDM_TYPE_UINT64_T);
+
+	cont = esdm_container_create("mycontainer");
+	dset = esdm_dataset_create(cont, name, dspace);
+
+	
+	esdm_container_commit(cont);
+	esdm_dataset_commit(dset);
+
+
+	// define subspace
+	int64_t size[] = {height, width};
+	int64_t offset[] = {0,0};
+	esdm_dataspace_t *subspace = esdm_dataspace_subspace(dspace, 2, size, offset);
+
+
+	// Write the data to the dataset
+	ret = esdm_write(dset, buf_w, subspace);
 
 
 	//esdm_dataset_t* esdm_dataset_create(esdm_container *container, char * name, esdm_dataspace_t *dataspace);

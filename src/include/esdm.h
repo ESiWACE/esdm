@@ -56,7 +56,7 @@ esdm_status esdm_container_commit(esdm_container *container);
 esdm_status esdm_container_destroy(esdm_container *container);
 
 // Datset
-esdm_dataset_t* esdm_dataset_create(esdm_container *container, char * name, esdm_dataspace_t *dataspace);
+esdm_dataset_t* esdm_dataset_create(esdm_container *container, const char * name, esdm_dataspace_t *dataspace);
 esdm_dataset_t* esdm_dataset_retrieve(esdm_container *container, const char * name);
 esdm_status esdm_dataset_commit(esdm_dataset_t *dataset);
 esdm_status esdm_dataset_destroy(esdm_dataset_t *dataset);

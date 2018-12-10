@@ -199,8 +199,9 @@ int main(int argc, char* argv[])
 	hid_t file_id, group_id, dataset_id, dataspace_id, attribute_id;
 	herr_t      status;
 
-	hsize_t     dims[2];
-    int         i, j, dset_data[4][6];
+	hsize_t     dims[3];
+    int         i, j, k;
+    int dset_data[4][6];
 
 
 
@@ -212,6 +213,9 @@ int main(int argc, char* argv[])
 	// Create the data space for the dataset.
 	dims[0] = 4; 
 	dims[1] = 6; 
+	dims[2] = 6; 
+
+
 	dataspace_id = H5Screate_simple(2, dims, NULL);
 
 	// Create the dataset
@@ -231,11 +235,9 @@ int main(int argc, char* argv[])
    dataset_id = H5Dopen2(file_id, "/mycontainer", H5P_DEFAULT);
 
    // Write the dataset.
-   status = H5Dwrite(dataset_id, H5T_NATIVE_INT, H5S_ALL, H5S_ALL, H5P_DEFAULT, 
-                     dset_data);
+   status = H5Dwrite(dataset_id, H5T_NATIVE_INT, H5S_ALL, H5S_ALL, H5P_DEFAULT, dset_data);
 
-   status = H5Dread(dataset_id, H5T_NATIVE_INT, H5S_ALL, H5S_ALL, H5P_DEFAULT, 
-                    dset_data);
+   status = H5Dread(dataset_id, H5T_NATIVE_INT, H5S_ALL, H5S_ALL, H5P_DEFAULT, dset_data);
 
 
 
