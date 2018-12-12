@@ -38,7 +38,7 @@ typedef struct {
 } wos_backend_data_t;
 typedef wos_backend_data_t esdm_backend_wos_t;
 
-esdm_backend_t *wos_backend_init(esdm_config_backend_t * config);
+esdm_backend *wos_backend_init(esdm_config_backend_t * config);
 
 extern esdm_backend_wos_t esdm_backend_wos;
 

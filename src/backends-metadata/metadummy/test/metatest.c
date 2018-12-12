@@ -13,7 +13,7 @@ int main(){
     	.target = "_metadummy-test",
   };
 
-  esdm_backend_t* b = metadummy_backend_init(& config);
+  esdm_backend* b = metadummy_backend_init(& config);
 
   char * buff = "test";
   esdm_dataspace_t * dataspace;

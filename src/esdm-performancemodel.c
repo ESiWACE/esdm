@@ -66,7 +66,7 @@ void fetch_performance_from_backend(gpointer key, gpointer value, gpointer user_
 {
 	DEBUG("GHashTable Entry: key=%p (s:%s), value=%p (s:%s), user_data=%p\n", key, key,value, value, user_data);
 
-	esdm_backend_t* backend = (esdm_backend_t*) value;
+	esdm_backend* backend = (esdm_backend*) value;
 	//backend->callbacks.performance_estimate(backend);
 }
 
@@ -81,7 +81,7 @@ esdm_status esdm_performance_recommendation(esdm_instance_t *esdm, esdm_fragment
 
 	//int i;
 	//for(i=0; i < backends->count; i++){
-	//	//esdm_backend_estimate_performance((esdm_backend_t*) backends->module, 1234);
+	//	//esdm_backend_estimate_performance((esdm_backend*) backends->module, 1234);
 	//}
 
 	// now choose the best module
@@ -93,7 +93,7 @@ esdm_status esdm_performance_recommendation(esdm_instance_t *esdm, esdm_fragment
 
 
 
-esdm_status esdm_backend_estimate_performance(esdm_backend_t* backend, int request)
+esdm_status esdm_backend_estimate_performance(esdm_backend* backend, int request)
 {
 	ESDM_DEBUG("Estimate performance call dummy");
 

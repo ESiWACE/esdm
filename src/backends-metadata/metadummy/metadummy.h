@@ -44,7 +44,7 @@ struct md_entry_struct  {
 
 
 
-esdm_backend_t* metadummy_backend_init(esdm_config_backend_t *config);
+esdm_backend* metadummy_backend_init(esdm_config_backend_t *config);
 
 
 #endif

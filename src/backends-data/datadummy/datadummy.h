@@ -37,8 +37,8 @@ typedef struct {
 
 
 
-int metadummy_backend_performance_estimate(esdm_backend_t* backend);
-esdm_backend_t* metadummy_backend_init(void* data);
+int metadummy_backend_performance_estimate(esdm_backend* backend);
+esdm_backend* metadummy_backend_init(void* data);
 
 
 #endif

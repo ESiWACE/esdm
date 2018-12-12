@@ -33,12 +33,12 @@ struct esdm_backend_xxxops {
 	 * The format of conf string would like this:
 	 * "laddr ha_addr prof_opt proc_fid".
 	 */
-	int (*esdm_backend_init)(char * conf, esdm_backend_t *eb);
+	int (*esdm_backend_init)(char * conf, esdm_backend *eb);
 
 	/**
 	 * Finalise the backend.
 	 */
-	int (*esdm_backend_fini)(esdm_backend_t *eb);
+	int (*esdm_backend_fini)(esdm_backend *eb);
 
 	/* object operations start here */
 	/**
@@ -53,7 +53,7 @@ struct esdm_backend_xxxops {
 	 * @param [out] out_object_id, the returned objects.
 	 * @param [out] out_mero_metadata, the returned metadata.
 	 */
-	int (*esdm_backend_obj_alloc)(esdm_backend_t *eb,
+	int (*esdm_backend_obj_alloc)(esdm_backend *eb,
 				      int       n_dims,
 				      int*      dims_size,
 				      esdm_type type,
@@ -67,14 +67,14 @@ struct esdm_backend_xxxops {
 	 *
 	 * return object handle in [out] obj_handle;
 	 */
-	int (*esdm_backend_obj_open) (esdm_backend_t *eb,
+	int (*esdm_backend_obj_open) (esdm_backend *eb,
 				      char*    object_id,
 				      void**   obj_handle);
 
 	/**
 	 * Write to an object.
 	 */
-	int (*esdm_backend_obj_write)(esdm_backend_t *eb,
+	int (*esdm_backend_obj_write)(esdm_backend *eb,
 				      void*    obj_handle,
 				      uint64_t start,
 				      uint64_t count,
@@ -83,7 +83,7 @@ struct esdm_backend_xxxops {
 	/**
 	 * Read from object.
 	 */
-	int (*esdm_backend_obj_read) (esdm_backend_t *eb,
+	int (*esdm_backend_obj_read) (esdm_backend *eb,
 				      void*    obj_handle,
 				      uint64_t start,
 				      uint64_t count,
@@ -92,25 +92,25 @@ struct esdm_backend_xxxops {
 	/**
 	 * Close an object.
 	 */
-	int (*esdm_backend_obj_close)(esdm_backend_t *eb,
+	int (*esdm_backend_obj_close)(esdm_backend *eb,
 				      void*  obj_handle);
 
     /**
      * Insert an mapping (fragment name -> object id) into internal index.
      */
-    int (*mapping_insert)(esdm_backend_t  *backend,
+    int (*mapping_insert)(esdm_backend  *backend,
                           const char *name,
                           const char *obj_id);
     /**
      * Query an mapping (fragment name -> object id) into internal index.
      */
-    int (*mapping_get)   (esdm_backend_t  *backend,
+    int (*mapping_get)   (esdm_backend  *backend,
                           const char *name,
                           char      **obj_id);
 };
 
 typedef struct {
-	esdm_backend_t              ebm_base;
+	esdm_backend              ebm_base;
 
 	/* Mero Clovis */
 	struct m0_clovis*           ebm_clovis_instance;

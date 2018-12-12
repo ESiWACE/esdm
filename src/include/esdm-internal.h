@@ -57,7 +57,7 @@ esdm_status esdm_performance_finalize();
 
 
 // Backend (generic)
-esdm_status esdm_backend_estimate_performance(esdm_backend_t *backend, int fragment);
+esdm_status esdm_backend_estimate_performance(esdm_backend *backend, int fragment);
 
 
 // Auxiliary

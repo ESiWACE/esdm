@@ -72,7 +72,7 @@ esdm_modules_t* esdm_modules_init(esdm_instance_t* esdm)
 
 	// Setup module registry
 	esdm_modules_t* modules = NULL;
-	esdm_backend_t* backend = NULL;
+	esdm_backend* backend = NULL;
 
 	modules = (esdm_modules_t*) malloc(sizeof(esdm_modules_t));
 
@@ -101,7 +101,7 @@ esdm_modules_t* esdm_modules_init(esdm_instance_t* esdm)
 
 	// Register data backends
 	modules->backend_count = config_backends->count;
-	modules->backends = malloc(config_backends->count * sizeof(esdm_backend_t*));
+	modules->backends = malloc(config_backends->count * sizeof(esdm_backend*));
 
 
 	int i;

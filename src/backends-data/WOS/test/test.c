@@ -9,7 +9,7 @@
 int main(int argc, char *argv[])
 {
 	char conf[] = "host=192.168.80.33;policy=test;";
-	esdm_backend_t *eb = &esdm_backend_wos.ebm_base;
+	esdm_backend *eb = &esdm_backend_wos.ebm_base;
 	char *object_id = NULL;
 	char *object_meta = NULL;
 	void *object_handle = NULL;

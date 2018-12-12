@@ -234,19 +234,8 @@ int main(int argc, char* argv[])
    // Open an existing dataset.
    dataset_id = H5Dopen2(file_id, "/mycontainer", H5P_DEFAULT);
 
-   // Write the dataset.
-   status = H5Dwrite(dataset_id, H5T_NATIVE_INT, H5S_ALL, H5S_ALL, H5P_DEFAULT, dset_data);
-
-   status = H5Dread(dataset_id, H5T_NATIVE_INT, H5S_ALL, H5S_ALL, H5P_DEFAULT, dset_data);
 
 
-
-
-
-
-
-	ret = esdm_init();
-	assert( ret == ESDM_SUCCESS );
 
 	// define dataspace
 	int64_t bounds[] = {timesteps, size, size};
@@ -273,6 +262,11 @@ int main(int argc, char* argv[])
 
 			ret = esdm_write(dataset, buf_w, subspace);
 			assert( ret == ESDM_SUCCESS );
+
+
+			// Write the dataset.
+			status = H5Dwrite(dataset_id, H5T_NATIVE_INT, H5S_ALL, H5S_ALL, H5P_DEFAULT, dset_data);
+
 		}
 
 		MPI_Barrier(MPI_COMM_WORLD);
@@ -297,7 +291,12 @@ int main(int argc, char* argv[])
 			esdm_dataspace_t *subspace = esdm_dataspace_subspace(dataspace, 3, dim, offset);
 
 
-			
+
+		
+			status = H5Dread(dataset_id, H5T_NATIVE_INT, H5S_ALL, H5S_ALL, H5P_DEFAULT, dset_data);
+
+
+	
 
 
 			ret = esdm_read(dataset, buf_r, subspace);

@@ -50,7 +50,7 @@
 ///////////////////////////////////////////////////////////////////////////////
 
 
-static int mkfs(esdm_backend_t* backend, int enforce_format)
+static int mkfs(esdm_backend* backend, int enforce_format)
 {
 	posix_backend_data_t* data = (posix_backend_data_t*)backend->data;
 
@@ -274,7 +274,7 @@ static int entry_destroy(const char *path)
 // Fragment Handlers //////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////
 
-static int fragment_retrieve(esdm_backend_t* backend, esdm_fragment_t *fragment, json_t * metadata)
+static int fragment_retrieve(esdm_backend* backend, esdm_fragment_t *fragment, json_t * metadata)
 {
 	DEBUG_ENTER;
 
@@ -306,7 +306,7 @@ static int fragment_retrieve(esdm_backend_t* backend, esdm_fragment_t *fragment,
 }
 
 
-static int fragment_update(esdm_backend_t* backend, esdm_fragment_t *fragment)
+static int fragment_update(esdm_backend* backend, esdm_fragment_t *fragment)
 {
 	DEBUG_ENTER;
 
@@ -349,7 +349,7 @@ static int fragment_update(esdm_backend_t* backend, esdm_fragment_t *fragment)
  * Callback implementation when beeing queried for a performance estimate.
  *
  */
-static int posix_backend_performance_estimate(esdm_backend_t* backend, esdm_fragment_t *fragment, float * out_time)
+static int posix_backend_performance_estimate(esdm_backend* backend, esdm_fragment_t *fragment, float * out_time)
 {
 	DEBUG_ENTER;
 
@@ -366,7 +366,7 @@ static int posix_backend_performance_estimate(esdm_backend_t* backend, esdm_frag
 * This is the last chance for a backend to make outstanding changes persistent.
 * This routine is also expected to clean up memory that is used by the backend.
 */
-int posix_finalize(esdm_backend_t* backend)
+int posix_finalize(esdm_backend* backend)
 {
 	DEBUG_ENTER;
 
@@ -379,7 +379,7 @@ int posix_finalize(esdm_backend_t* backend)
 // ESDM Module Registration ///////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////
 
-static esdm_backend_t backend_template = {
+static esdm_backend backend_template = {
 ///////////////////////////////////////////////////////////////////////////////
 // NOTE: This serves as a template for the posix plugin and is memcopied!    //
 ///////////////////////////////////////////////////////////////////////////////
@@ -428,11 +428,11 @@ static esdm_backend_t backend_template = {
 *	* Connect with support services e.g. for technical metadata
 *	* Setup directory structures used by this POSIX specific backend
 *
-*	* Populate esdm_backend_t struct and callbacks required for registration
+*	* Populate esdm_backend struct and callbacks required for registration
 *
 * @return pointer to backend struct
 */
-esdm_backend_t* posix_backend_init(esdm_config_backend_t *config)
+esdm_backend* posix_backend_init(esdm_config_backend_t *config)
 {
 	DEBUG_ENTER;
 
@@ -441,8 +441,8 @@ esdm_backend_t* posix_backend_init(esdm_config_backend_t *config)
 		return NULL;
 	}
 
-	esdm_backend_t* backend = (esdm_backend_t*) malloc(sizeof(esdm_backend_t));
-	memcpy(backend, &backend_template, sizeof(esdm_backend_t));
+	esdm_backend* backend = (esdm_backend*) malloc(sizeof(esdm_backend));
+	memcpy(backend, &backend_template, sizeof(esdm_backend));
 
 	// allocate memory for backend instance
 	backend->data = (void*) malloc(sizeof(posix_backend_data_t));

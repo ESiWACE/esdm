@@ -84,6 +84,11 @@ static void* H5VL_esdm_attribute_create (void *obj, H5VL_loc_params_t loc_params
 	info("%s\n", __func__);
 	info("%s: Attach new attribute=TODO '%s' to obj=%p\n", __func__, attr_name, obj);
 
+	// ensure ESDM initialized for HDF5 API entry points (H5*open, H5*create)
+	esdm_init();
+
+
+
 
 	size_t nprops = 0;
 	void * iter_data;
@@ -236,6 +241,10 @@ static void* H5VL_esdm_attribute_open (
 {
 	info("%s\n", __func__);
 	info("%s: *obj = %p\n", __func__, obj);
+
+	// ensure ESDM initialized for HDF5 API entry points (H5*open, H5*create)
+	esdm_init();
+
 
 
 	// provided container or dataset
@@ -649,6 +658,9 @@ static void *H5VL_esdm_dataset_create(
 	info("%s\n", __func__);
 
 
+	// ensure ESDM initialized for HDF5 API entry points (H5*open, H5*create)
+	esdm_init();
+
 
 
 
@@ -812,6 +824,11 @@ static void *H5VL_esdm_dataset_create(
 static void *H5VL_esdm_dataset_open(void *obj, H5VL_loc_params_t loc_params, const char *name,  hid_t dapl_id, hid_t dxpl_id, void **req)
 {
 	info("%s\n", __func__);
+
+	// ensure ESDM initialized for HDF5 API entry points (H5*open, H5*create)
+	esdm_init();
+
+
 
     H5VL_esdm_group_t *parent = (H5VL_esdm_group_t *) ((H5VL_esdm_object_t*)obj)->object;
 
@@ -1196,9 +1213,6 @@ static herr_t H5VL_esdm_dataset_close(void *dset, hid_t dxpl_id, void **req)
 // } H5VL_datatype_class_t;
 
 
-
-
-
 // TODO some locking here
 static GHashTable * type_table = NULL;
 
@@ -1459,79 +1473,30 @@ static void * H5VL_esdm_file_create(const char *name, unsigned flags, hid_t fcpl
 
     info("%s: name=%s \n", __func__, name);
 
-	
+
+
+	// ensure ESDM initialized for HDF5 API entry points (H5*open, H5*create)
+	esdm_init();
+
+
+	// map HDF5 Files to ESDM containers
+	esdm_container* cont = esdm_container_create(name);
+	esdm_container_commit(cont);	// TODO: commit only after metadata was added
+
+	// generate json object for hdf5 related container metadata
 	json_error_t *error;	
 	json_t * json = json_object();
 
+	// add some metadata and commit for persistence
 	json_path_set(json, "$.test.time", json_integer(21), 0, &error);
-
-
-	print_json(json);
-
+	print_json(json); // inspect
 	
-	esdm_init();
-
-
-	esdm_container* cont = esdm_container_create(name);
 	esdm_container_commit(cont);
 
 
-	//void print_json(const json_t *root) {
 
-	//int json_path_set_new(json_t *json, const char *path, json_t *value, size_t flags, json_error_t *error)
+
 	
-//
-//
-//	// prepare data
-//	uint64_t * buf_w = (uint64_t *) malloc(HEIGHT * WIDTH *sizeof(uint64_t));
-//	uint64_t * buf_r = (uint64_t *) malloc(HEIGHT * WIDTH *sizeof(uint64_t));
-//
-//	int x, y;
-//	for(x = 0; x < HEIGHT; x++){
-//		for(y = 0; y < WIDTH; y++){
-//			buf_w[y * HEIGHT + x] = (y) * HEIGHT + x + 1;
-//		}
-//	}
-//
-//	// Interaction with ESDM
-//	esdm_status ret;
-//	esdm_container *container = NULL;
-//	esdm_dataset_t *dataset = NULL;
-//
-//	esdm_init();
-//
-//	// define dataspace
-//	int64_t bounds[] = {HEIGHT, WIDTH};
-//	esdm_dataspace_t *dataspace = esdm_dataspace_create(2, bounds, ESDM_TYPE_UINT64_T);
-//
-//	container = esdm_container_create("mycontainer");
-//	dataset = esdm_dataset_create(container, "mydataset", dataspace);
-//	
-//	esdm_container_commit(container);
-//	esdm_dataset_commit(dataset);
-//
-//	// define subspace
-//	int64_t size[] = {HEIGHT, WIDTH};
-//	int64_t offset[] = {0,0};
-//	esdm_dataspace_t *subspace = esdm_dataspace_subspace(dataspace, 2, size, offset);
-//
-//	// Write the data to the dataset
-//	ret = esdm_write(dataset, buf_w, subspace);
-//
-//
-
-
-    /* 
-	esdm_init();
-    
-	
-    esdm_container* co = esdm_container_create(name);
-    esdm_container_commit(co); 
-    */
-
-	//esdm_container* esdm_container_create(const char *name);
-	//esdm_container* esdm_container_retrieve(const char * name);
-
 
 
 	// analyse property lists
@@ -1636,12 +1601,13 @@ static void * H5VL_esdm_file_open(const char *name, unsigned flags, hid_t fapl_i
 
     info("%s: name=%s \n", __func__, name);
 
-	//esdm_container* esdm_container_retrieve(const char * name);
 
+	// ensure ESDM initialized for HDF5 API entry points (H5*open, H5*create)
 	esdm_init();
 
 
 
+	//esdm_container* esdm_container_retrieve(const char * name);
 	//guchar * g_base64_decode (const gchar *text, gsize *out_len);
 
 
@@ -1904,7 +1870,12 @@ static void * H5VL_esdm_group_create(void *obj, H5VL_loc_params_t loc_params, co
 
 	info("%s\n", __func__);
 
-	
+	// ensure ESDM initialized for HDF5 API entry points (H5*open, H5*create)
+	esdm_init();
+
+
+
+
 	//esdm_container* esdm_container_create(const char *name);
 
 	// allocate resources
@@ -1941,6 +1912,26 @@ static void * H5VL_esdm_group_create(void *obj, H5VL_loc_params_t loc_params, co
 static void *H5VL_esdm_group_open(void *obj, H5VL_loc_params_t loc_params, const char *name,  hid_t gapl_id, hid_t dxpl_id, void **req)
 {
 	info("%s\n", __func__);
+
+	// ensure ESDM initialized for HDF5 API entry points (H5*open, H5*create)
+	esdm_init();
+
+	
+	// map HDF5 group to ESDM containers
+	esdm_container* cont = esdm_container_create(name);
+	esdm_container_commit(cont);	// TODO: commit only after metadata was added
+
+	// generate json object for hdf5 related container metadata
+	json_error_t *error;	
+	json_t * json = json_object();
+
+	// add some metadata and commit for persistence
+	json_path_set(json, "$.test.time", json_integer(21), 0, &error);
+	print_json(json); // inspect
+	
+	esdm_container_commit(cont);
+
+
 
     H5VL_esdm_group_t *parent = (H5VL_esdm_group_t *) ((H5VL_esdm_object_t*)obj)->object;
 
@@ -2109,6 +2100,10 @@ static herr_t H5VL_esdm_group_close(void *grp, hid_t dxpl_id, void **req)
 herr_t H5VL_esdm_link_create(H5VL_link_create_type_t create_type, void *obj, H5VL_loc_params_t loc_params, hid_t lcpl_id, hid_t lapl_id, hid_t dxpl_id, void **req)
 {
 	info("%s\n", __func__);
+
+	// ensure ESDM initialized for HDF5 API entry points (H5*open, H5*create)
+	esdm_init();
+
 
 	herr_t ret_value = SUCCEED;
 
@@ -2280,6 +2275,11 @@ herr_t H5VL_esdm_link_optional(void *obj, hid_t dxpl_id, void **req, va_list arg
 void * H5VL_esdm_object_open(void *obj, H5VL_loc_params_t loc_params, H5I_type_t *opened_type, hid_t dxpl_id, void **req)
 {
 	info("%s\n", __func__);
+
+	// ensure ESDM initialized for HDF5 API entry points (H5*open, H5*create)
+	esdm_init();
+
+
 	return NULL;
 }
 

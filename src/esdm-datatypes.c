@@ -212,7 +212,7 @@ esdm_fragment_t* esdm_fragment_create(esdm_dataset_t* dataset, esdm_dataspace_t*
 	DEBUG("Entries in subspace: %d x %d bytes = %d bytes \n", elements, esdm_sizeof(subspace->datatype), bytes);
 
 	fragment->metadata = malloc(ESDM_MAX_SIZE);
-	fragment->metadata->json = (char*)(fragment->metadata) + sizeof(esdm_metadata_t);
+	fragment->metadata->json = (char*)(fragment->metadata) + sizeof(esdm_metadata);
 	fragment->metadata->json[0] = 0;
 	fragment->metadata->size = 0;
 
@@ -293,7 +293,7 @@ esdm_status esdm_fragment_retrieve(esdm_fragment_t *fragment)
 	elem = json_object_get(root, "data");
 
 	// Call backend
-	esdm_backend_t *backend = fragment->backend;  // TODO: decision component, upon many
+	esdm_backend *backend = fragment->backend;  // TODO: decision component, upon many
 	backend->callbacks.fragment_retrieve(backend, fragment, elem);
 
 	return ESDM_SUCCESS;
@@ -338,7 +338,7 @@ void esdm_dataspace_string_descriptor(char* string, esdm_dataspace_t *dataspace)
 esdm_status esdm_fragment_commit(esdm_fragment_t *f)
 {
 	ESDM_DEBUG(__func__);
-	esdm_metadata_t * m = f->metadata;
+	esdm_metadata * m = f->metadata;
 	esdm_dataspace_t * d = f->dataspace;
 
 	m->size += sprintf(& m->json[m->size], "{\"plugin\" : \"%s\", \"id\" : \"%s\", \"size\": \"", f->backend->name, f->backend->config->id);

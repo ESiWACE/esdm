@@ -18,7 +18,7 @@ typedef int esdm_type;
 /**
  * ESDM Status codes and failure modes.
  */
-typedef enum {
+typedef enum esdm_mode  {
 	ESDM_OVERWRITE,
 	ESDM_CREATE,
 	ESDM_AUTOCOMMIT,
@@ -43,7 +43,7 @@ float			if IEEE 754 (32bit)
 double			if IEEE 754 (64bit)
 */
 
-typedef enum esdm_datatype_t {
+typedef enum esdm_datatype {
 	ESDM_TYPE_INT8_T,
 	ESDM_TYPE_INT16_T,
 	ESDM_TYPE_INT32_T,
@@ -71,7 +71,7 @@ typedef enum esdm_datatype_t {
 /**
  * ESDM Status codes and failure modes.
  */
-typedef enum {
+typedef enum esdm_status {
 	ESDM_SUCCESS = 0,
 	ESDM_ERROR,
 	ESDM_STATUS_DIRTY,
@@ -81,7 +81,7 @@ typedef enum {
 /**
  * ESDM provides logging helpers, the available loglevels are defined here.
  */
-typedef enum {
+typedef enum esdm_loglevel {
 	ESDM_LOGLEVEL_CRITICAL,
 	ESDM_LOGLEVEL_ERROR,
 	ESDM_LOGLEVEL_WARNING,
@@ -94,22 +94,22 @@ typedef enum {
 // LOGICAL/DOMAIN DATATYPES ///////////////////////////////////////////////////
 
 typedef struct esdm_container esdm_container;
-typedef struct esdm_metadata_t esdm_metadata_t;
+typedef struct esdm_metadata esdm_metadata;
 typedef struct esdm_dataset_t esdm_dataset_t;
 typedef struct esdm_dataspace_t esdm_dataspace_t;
 typedef struct esdm_fragment_t esdm_fragment_t;
-typedef struct esdm_backend_t esdm_backend_t;
+typedef struct esdm_backend esdm_backend;
 typedef struct esdm_backend_callbacks_t esdm_backend_callbacks_t;
 
 
 struct esdm_container {
 	char *name;
-	esdm_metadata_t *metadata;
+	esdm_metadata *metadata;
 	GHashTable *datasets;
 	esdm_status status;
 };
 
-struct esdm_metadata_t {
+struct esdm_metadata {
 	char *json;
 	int size;
 };
@@ -117,7 +117,7 @@ struct esdm_metadata_t {
 struct esdm_dataset_t {
 	char *name;
 	esdm_container *container;
-	esdm_metadata_t *metadata;
+	esdm_metadata *metadata;
 	esdm_dataspace_t *dataspace;
 	GHashTable *fragments;
 	esdm_status status;
@@ -137,10 +137,10 @@ struct esdm_dataspace_t {
 
 
 struct esdm_fragment_t {
-	esdm_metadata_t  *metadata; // only valid after written
+	esdm_metadata  *metadata; // only valid after written
 	esdm_dataset_t 	 *dataset;
 	esdm_dataspace_t *dataspace;
-	esdm_backend_t   *backend;
+	esdm_backend   *backend;
 
 	void *buf;
 	int in_place;
@@ -169,9 +169,14 @@ typedef struct esdm_fragment_index_t {
 // MODULES ////////////////////////////////////////////////////////////////////
 
 /**
+ * ESDM Module Types
+ *
+ *     DATA		   A backend that handles data
+ *     METADATA    A backend that handles metadata
+ *     HYBRID      A backend that handles both
  *
  */
-typedef enum {
+typedef enum esdm_module_type_t {
 	ESDM_TYPE_DATA,
 	ESDM_TYPE_METADATA,
 	ESDM_TYPE_HYBRID
@@ -195,39 +200,39 @@ typedef enum {
  */
 struct esdm_backend_callbacks_t {
 // General for ESDM
-	int (*finalize)(esdm_backend_t*);
-	int (*performance_estimate)(esdm_backend_t*, esdm_fragment_t *fragment, float * out_time);
+	int (*finalize)(esdm_backend*);
+	int (*performance_estimate)(esdm_backend*, esdm_fragment_t *fragment, float * out_time);
 
 // Data Callbacks (POSIX like)
-	int (*create)(esdm_backend_t*, char *name);
-	int (*open)(esdm_backend_t*);
-	int (*write)(esdm_backend_t*);
-	int (*read)(esdm_backend_t*);
-	int (*close)(esdm_backend_t*);
+	int (*create)(esdm_backend*, char *name);
+	int (*open)(esdm_backend*);
+	int (*write)(esdm_backend*);
+	int (*read)(esdm_backend*);
+	int (*close)(esdm_backend*);
 
 // Metadata Callbacks
-  /*
+    /*
 	 * Retrieve a list (and metadata) of fragments that contain data for the given subpatch with the size and offset.
 	 */
-	int (*lookup)(esdm_backend_t * b, esdm_dataset_t * dataset,	esdm_dataspace_t * space, int * out_frag_count, esdm_fragment_t *** out_fragments);
+	int (*lookup)(esdm_backend * b, esdm_dataset_t * dataset,	esdm_dataspace_t * space, int * out_frag_count, esdm_fragment_t *** out_fragments);
 
 // ESDM Data Model Specific
-	int (*container_create)(esdm_backend_t*, esdm_container *container);
-	int (*container_retrieve)(esdm_backend_t*, esdm_container *container);
-	int (*container_update)(esdm_backend_t*, esdm_container *container);
-	int (*container_destroy)(esdm_backend_t*, esdm_container *container);
+	int (*container_create)(esdm_backend*, esdm_container *container);
+	int (*container_retrieve)(esdm_backend*, esdm_container *container);
+	int (*container_update)(esdm_backend*, esdm_container *container);
+	int (*container_destroy)(esdm_backend*, esdm_container *container);
 
-	int (*dataset_create)(esdm_backend_t*, esdm_dataset_t *dataset);
-	int (*dataset_retrieve)(esdm_backend_t*, esdm_dataset_t *dataset);
-	int (*dataset_update)(esdm_backend_t*, esdm_dataset_t *dataset);
-	int (*dataset_destroy)(esdm_backend_t*, esdm_dataset_t *dataset);
+	int (*dataset_create)(esdm_backend*, esdm_dataset_t *dataset);
+	int (*dataset_retrieve)(esdm_backend*, esdm_dataset_t *dataset);
+	int (*dataset_update)(esdm_backend*, esdm_dataset_t *dataset);
+	int (*dataset_destroy)(esdm_backend*, esdm_dataset_t *dataset);
 
-	int (*fragment_create)(esdm_backend_t*, esdm_fragment_t *fragment);
-	int (*fragment_retrieve)(esdm_backend_t*, esdm_fragment_t *fragment, json_t *metadata);
-	int (*fragment_update)(esdm_backend_t*, esdm_fragment_t *fragment);
-	int (*fragment_destroy)(esdm_backend_t*, esdm_fragment_t *fragment);
+	int (*fragment_create)(esdm_backend*, esdm_fragment_t *fragment);
+	int (*fragment_retrieve)(esdm_backend*, esdm_fragment_t *fragment, json_t *metadata);
+	int (*fragment_update)(esdm_backend*, esdm_fragment_t *fragment);
+	int (*fragment_destroy)(esdm_backend*, esdm_fragment_t *fragment);
 
-	int (*mkfs)(esdm_backend_t*, int enforce_format);
+	int (*mkfs)(esdm_backend*, int enforce_format);
 };
 
 
@@ -235,12 +240,12 @@ typedef struct esdm_config_backend_t esdm_config_backend_t;
 
 /**
  * On backend registration ESDM expects the backend to return a pointer to
- * a esdm_backend_t struct.
+ * a esdm_backend struct.
  *
  * Each backend provides
  *
  */
-struct esdm_backend_t {
+struct esdm_backend {
 	esdm_config_backend_t * config;
 	char *name;
 	esdm_module_type_t type;
@@ -253,12 +258,12 @@ struct esdm_backend_t {
 	GThreadPool * threadPool;
 };
 
-typedef enum {
+typedef enum io_operation_t {
 	ESDM_OP_WRITE = 0,
 	ESDM_OP_READ
 } io_operation_t;
 
-typedef struct{
+typedef struct io_request_status_t {
   int pending_ops;
   GMutex mutex;
   GCond  done_condition;
@@ -282,7 +287,7 @@ struct io_work_t{
 };
 
 // where is the data accessible
-typedef enum {
+typedef enum data_accessibility_t {
 	ESDM_ACCESSIBILITY_GLOBAL, // shared file system etc.
 	ESDM_ACCESSIBILITY_NODELOCAL
 } data_accessibility_t;
@@ -343,8 +348,8 @@ typedef struct esdm_config_t {
 
 typedef struct esdm_modules_t {
 	int backend_count;
-	esdm_backend_t **backends;
-	esdm_backend_t *metadata;
+	esdm_backend **backends;
+	esdm_backend *metadata;
 	//esdm_modules_t** modules;
 } esdm_modules_t;
 

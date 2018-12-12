@@ -30,7 +30,7 @@ typedef struct {
 
 
 
-esdm_backend_t* posix_backend_init(esdm_config_backend_t *config);
+esdm_backend* posix_backend_init(esdm_config_backend_t *config);
 
 
 #endif

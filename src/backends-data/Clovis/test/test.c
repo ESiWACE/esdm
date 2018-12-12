@@ -8,7 +8,7 @@ int main(int argc, char* argv[])
 {
                 //"local_addr ha_addr profile process_fid"
     char conf[] = "192.168.168.144@tcp:12345:33:103 192.168.168.144@tcp:12345:34:1 <0x7000000000000001:0> <0x7200000000000001:64>";
-    esdm_backend_t *eb = &esdm_backend_clovis.ebm_base;
+    esdm_backend *eb = &esdm_backend_clovis.ebm_base;
     char *object_id = NULL;
     char *object_meta = NULL;
     void *object_handle = NULL;

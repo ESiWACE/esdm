@@ -24,7 +24,7 @@
 
 
 
-esdm_backend_t* mongodb_backend_init(esdm_config_backend_t *config);
+esdm_backend* mongodb_backend_init(esdm_config_backend_t *config);
 
 
 #endif
