@@ -1491,7 +1491,7 @@ static void * H5VL_esdm_file_create(const char *name, unsigned flags, hid_t fcpl
 	json_path_set(json, "$.test.time", json_integer(21), 0, &error);
 	print_json(json); // inspect
 	
-	esdm_container_commit(cont);
+	//esdm_container_commit(cont);
 
 
 

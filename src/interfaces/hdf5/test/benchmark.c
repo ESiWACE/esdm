@@ -151,6 +151,11 @@ int main(int argc, char* argv[])
 	int64_t dim[] = {1, size / mpi_size + (tmp_rank < (size % mpi_size) ? 1 : 0), size};
 	int64_t offset[] = {0, size / mpi_size * tmp_rank + (tmp_rank < (size % mpi_size) ? tmp_rank : size % mpi_size), 0};
 
+	hsize_t h5_dim[] = {1, size / mpi_size + (tmp_rank < (size % mpi_size) ? 1 : 0), size};
+	hsize_t h5_offset[] = {0, size / mpi_size * tmp_rank + (tmp_rank < (size % mpi_size) ? tmp_rank : size % mpi_size), 0};
+
+
+
 	const long volume = dim[1] * dim[2] * sizeof(uint64_t);
 	const long volume_all = timesteps * size * size * sizeof(uint64_t);
 
@@ -188,61 +193,33 @@ int main(int argc, char* argv[])
 	char* filename = "file-test.h5";
 
 
-
-	hid_t fprop;
-	hid_t vol_id = H5VLregister_by_name("h5-esdm");
-
-
-
-
-	// HDF5 state, refs
+	// HDF5 state, refs, ...
 	hid_t file_id, group_id, dataset_id, dataspace_id, attribute_id;
 	herr_t      status;
 
 	hsize_t     dims[3];
-    int         i, j, k;
     int dset_data[4][6];
 
-
-
-	// create hdf5 file and populate with default settings
-	file_id = H5Fcreate(filename, H5F_ACC_TRUNC, H5P_DEFAULT, fprop);
-
-
-
-	// Create the data space for the dataset.
-	dims[0] = 4; 
-	dims[1] = 6; 
-	dims[2] = 6; 
-
-
-	dataspace_id = H5Screate_simple(2, dims, NULL);
-
-	// Create the dataset
-	dataset_id = H5Dcreate2(file_id, "/mycontainer", H5T_STD_I32BE, dataspace_id, 
-			H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
-
-  
-  	// Init data for HDF5
-   	for (i = 0; i < 4; i++)
-      for (j = 0; j < 6; j++)
-         dset_data[i][j] = i * 6 + j + 1;
-
-
-   file_id = H5Fopen(filename, H5F_ACC_RDWR, H5P_DEFAULT);
-
-   // Open an existing dataset.
-   dataset_id = H5Dopen2(file_id, "/mycontainer", H5P_DEFAULT);
-
-
+	// Set up property list to use h5-esdm plugin to be used on create
+	hid_t fprop;
+	hid_t vol_id = H5VLregister_by_name("h5-esdm");
 
 
 	// define dataspace
 	int64_t bounds[] = {timesteps, size, size};
+	hsize_t h5_bounds[] = {timesteps, size, size};
+
 	esdm_dataspace_t *dataspace = esdm_dataspace_create(3, bounds, ESDM_TYPE_UINT64_T);
+	dataspace_id = H5Screate_simple(3, h5_bounds, NULL);
+
 
 	container = esdm_container_create("mycontainer");
 	dataset = esdm_dataset_create(container, "mydataset", dataspace);
+
+	file_id = H5Fcreate("mycontainer_h5", H5F_ACC_TRUNC, H5P_DEFAULT, fprop);
+	dataset_id = H5Dcreate2(file_id, "/mydataset_h5", H5T_NATIVE_UINT64, dataspace_id, H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
+
+
 
 	esdm_container_commit(container);
 	esdm_dataset_commit(dataset);
@@ -259,6 +236,10 @@ int main(int argc, char* argv[])
 		for(int t=0; t < timesteps; t++){
 			offset[0] = t;
 			esdm_dataspace_t *subspace = esdm_dataspace_subspace(dataspace, 3, dim, offset);
+
+			dataspace_id = H5Dget_space (dataset_id);
+			status = H5Sselect_hyperslab (dataspace_id, H5S_SELECT_SET, h5_offset, NULL, h5_dim, NULL);
+
 
 			ret = esdm_write(dataset, buf_w, subspace);
 			assert( ret == ESDM_SUCCESS );
@@ -290,13 +271,7 @@ int main(int argc, char* argv[])
 
 			esdm_dataspace_t *subspace = esdm_dataspace_subspace(dataspace, 3, dim, offset);
 
-
-
-		
 			status = H5Dread(dataset_id, H5T_NATIVE_INT, H5S_ALL, H5S_ALL, H5P_DEFAULT, dset_data);
-
-
-	
 
 
 			ret = esdm_read(dataset, buf_r, subspace);
@@ -333,10 +308,10 @@ int main(int argc, char* argv[])
 	}
 
 
-   // cleanup HDF5
-   status = H5Dclose(dataset_id);
-   status = H5Sclose(dataspace_id);
-   status = H5Fclose(file_id);
+	// cleanup HDF5
+	status = H5Dclose(dataset_id);
+	status = H5Sclose(dataspace_id);
+	status = H5Fclose(file_id);
 
 
 	// clean up
