@@ -203,7 +203,8 @@ int main(int argc, char* argv[])
 	// Set up property list to use h5-esdm plugin to be used on create
 	hid_t fprop;
 	hid_t vol_id = H5VLregister_by_name("h5-esdm");
-
+	fprop = H5Pcreate(H5P_FILE_ACCESS);
+	H5Pset_vol(fprop, vol_id, &fprop);
 
 	// define dataspace
 	int64_t bounds[] = {timesteps, size, size};

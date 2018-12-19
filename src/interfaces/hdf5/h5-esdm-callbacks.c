@@ -106,14 +106,6 @@ static void* H5VL_esdm_attribute_create (void *obj, H5VL_loc_params_t loc_params
 	H5Piterate(dxpl_id, NULL, print_property, iter_data);
 
 
-
-//	hid_t space_id;
-//	H5Pget(acpl_id, "attr_space_id", &space_id);
-//	int ndims = H5Sget_simple_extent_ndims(space_id);
-//	hsize_t maxdims[ndims];
-//	hsize_t dims[ndims];
-//	H5Sget_simple_extent_dims(/* in */ space_id, /* out */ dims, /* out */maxdims);
-//
 //
 //	hid_t type_id;
 //	H5Pget(acpl_id, "attr_type_id", &type_id);
@@ -245,9 +237,6 @@ static void* H5VL_esdm_attribute_open (
 	// ensure ESDM initialized for HDF5 API entry points (H5*open, H5*create)
 	esdm_init();
 
-
-
-	// provided container or dataset
 
 
 	void *attribute;
@@ -690,16 +679,7 @@ static void *H5VL_esdm_dataset_create(
 	size_t width = 4096;
 
 
-	// prepare data
-	uint64_t * buf_w = (uint64_t *) malloc(height * width *sizeof(uint64_t));
-	uint64_t * buf_r = (uint64_t *) malloc(height * width *sizeof(uint64_t));
 
-	int x, y;
-	for(x = 0; x < height; x++){
-		for(y = 0; y < width; y++){
-			buf_w[y * height + x] = (y) * height + x + 1;
-		}
-	}
 
 
 	// Interaction with ESDM
@@ -723,20 +703,9 @@ static void *H5VL_esdm_dataset_create(
 	esdm_dataset_commit(dset);
 
 
-	// define subspace
-	int64_t size[] = {height, width};
-	int64_t offset[] = {0,0};
-	esdm_dataspace_t *subspace = esdm_dataspace_subspace(dspace, 2, size, offset);
-
-
-	// Write the data to the dataset
-	ret = esdm_write(dset, buf_w, subspace);
-
 
 	//esdm_dataset_t* esdm_dataset_create(esdm_container *container, char * name, esdm_dataspace_t *dataspace);
 	
-
-
 	// (gdb) bt
 	// #0  H5VL_esdm_dataset_create (obj=0x95f9c0, loc_params=..., name=0x961db0 "lat", dcpl_id=792633534417207319,
 	//     dapl_id=792633534417207303, dxpl_id=792633534417207311, req=0x0) at /home/pq/ESiWACE/ESD-Middleware/src/m-dataset.c:86
@@ -753,7 +722,6 @@ static void *H5VL_esdm_dataset_create(
 	// #8  0x0000000000400e29 in main (argc=1, argv=0x7fffffffc8e8) at /home/pq/ESiWACE/ESD-Middleware/src/tools/netcdf-bench.c:53
 	// #9  0x00007ffff5cc1731 in __libc_start_main () from /lib64/libc.so.6
 	// #10 0x0000000000400b69 in ?? ()
-
 
 
 	// allocate resoources
@@ -862,18 +830,10 @@ static herr_t H5VL_esdm_dataset_write(void *dset, hid_t mem_type_id, hid_t mem_s
 	herr_t ret_value = SUCCEED;
 
 
-	/*
-dset = {
-	
 
-
-}
-	*/
 
 	dset_t *d = (dset_t*) malloc(sizeof(dset_t));	
 	//d->object = (obj_t*) malloc(sizeof(obj_t));
-	
-	
 	
 
 	int ndims = H5Sget_simple_extent_ndims(mem_space_id);
@@ -881,8 +841,6 @@ dset = {
 
 	// src/H5public.h:184:typedef unsigned long long 	hsize_t;
 
-
-	// TODO: do away with VLAs
 
 	hsize_t dims[ndims];
 	hsize_t max_dims[ndims];
@@ -1460,10 +1418,6 @@ static herr_t H5VL_esdm_datatype_close(void *dt, hid_t dxpl_id, void **req)
 static GHashTable * files_tbl = NULL;
 
 
-#define HEIGHT 10
-#define WIDTH  4096
-
-
 static void * H5VL_esdm_file_create(const char *name, unsigned flags, hid_t fcpl_id, hid_t fapl_id, hid_t fxpl_id, void **req)
 {
     H5VL_esdm_object_t *object;
@@ -1494,11 +1448,6 @@ static void * H5VL_esdm_file_create(const char *name, unsigned flags, hid_t fcpl
 	//esdm_container_commit(cont);
 
 
-
-
-	
-
-
 	// analyse property lists
 	size_t nprops = 0;
 	void * iter_data;
@@ -1518,7 +1467,6 @@ static void * H5VL_esdm_file_create(const char *name, unsigned flags, hid_t fcpl
 
 	//gchar * g_base64_encode (const guchar *data, gsize len);
 	
-
 
 
 	// create files hash map if not already existent
@@ -1605,11 +1553,8 @@ static void * H5VL_esdm_file_open(const char *name, unsigned flags, hid_t fapl_i
 	// ensure ESDM initialized for HDF5 API entry points (H5*open, H5*create)
 	esdm_init();
 
-
-
 	//esdm_container* esdm_container_retrieve(const char * name);
 	//guchar * g_base64_decode (const gchar *text, gsize *out_len);
-
 
 
     object = g_hash_table_lookup (files_tbl, name);
@@ -1875,7 +1820,6 @@ static void * H5VL_esdm_group_create(void *obj, H5VL_loc_params_t loc_params, co
 
 
 
-
 	//esdm_container* esdm_container_create(const char *name);
 
 	// allocate resources
@@ -1899,8 +1843,6 @@ static void * H5VL_esdm_group_create(void *obj, H5VL_loc_params_t loc_params, co
       g_hash_table_insert(parent->childs_tbl, strdup(name), object);
       g_array_append_val (parent->childs_ord_by_index_arr, object);
 
-      //g_hash_table_insert(parent->childs_tbl, strdup(name), group);
-      //g_array_append_val (parent->childs_ord_by_index_arr, group);
     }
 
     return (void *)object;
