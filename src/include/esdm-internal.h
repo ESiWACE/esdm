@@ -7,6 +7,7 @@
 #define ESDM_INTERNAL_H
 
 #include <esdm-debug.h>
+#include <esdm-datatypes-internal.h>
 #include <esdm.h>
 
 

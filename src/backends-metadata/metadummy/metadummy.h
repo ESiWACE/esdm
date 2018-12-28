@@ -16,7 +16,7 @@
 #ifndef METADUMMY_H
 #define METADUMMY_H
 
-#include <esdm.h>
+#include <esdm-internal.h>
 
 // Internal functions used by this backend.
 typedef struct {

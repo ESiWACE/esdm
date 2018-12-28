@@ -13,7 +13,7 @@
  * You should have received a copy of the GNU Lesser General Public License
  * along with ESDM.  If not, see <http://www.gnu.org/licenses/>.
  */
-#include <esdm-debug.h>
+#include <esdm-internal.h>
 #include <backends-data/generic-perf-model/lat-thr.h>
 
 int esdm_backend_parse_perf_model_lat_thp(json_t * str, esdm_perf_model_lat_thp_t * out_data){

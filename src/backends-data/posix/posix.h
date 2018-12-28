@@ -16,7 +16,8 @@
 #ifndef ESDM_BACKENDS_POSIX_H
 #define ESDM_BACKENDS_POSIX_H
 
-#include <esdm.h>
+#include <esdm-internal.h>
+
 #include <backends-data/generic-perf-model/lat-thr.h>
 
 // Internal functions used by this backend.

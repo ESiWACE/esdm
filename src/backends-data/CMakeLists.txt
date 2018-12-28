@@ -5,7 +5,7 @@ if(BACKEND_POSIX)
 	message(STATUS "WITH_BACKEND_POSIX")
 	add_definitions(-DESDM_HAS_POSIX=1)
 	SUBDIRS(posix)
-endif()
+	endif()
 
 option(BACKEND_LUSTRE "Compile backend for Lustre support?" OFF)
 if(BACKEND_LUSTRE)

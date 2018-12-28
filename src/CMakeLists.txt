@@ -26,7 +26,8 @@ find_package(MPI REQUIRED) # TODO this is optional
 set(THREADS_PREFER_PTHREAD_FLAG ON)
 find_package(Threads REQUIRED)
 
-
+set(CMAKE_MACOSX_RPATH 1)
+set(CMAKE_INSTALL_RPATH "${CMAKE_INSTALL_PREFIX}/lib")
 
 
 
@@ -86,13 +87,13 @@ add_subdirectory(utils)
 add_subdirectory(test)
 add_subdirectory(tools)
 
-
 # Include directories for all target in this CMakeLists.txt
 include_directories(${CMAKE_BINARY_DIR} ${ESDM_INCLUDE_DIRS} ${GLIB_INCLUDE_DIRS} ${JANSSON_INCLUDE_DIRS})
 
 # ESDM Utils and Database Library
 add_library(esdmutils SHARED esdm.c  esdm-datatypes.c  esdm-layout.c  esdm-performancemodel.c esdm-config.c  utils/debug.c utils/json.c utils/auxiliary.c)
 target_link_libraries(esdmutils ${GLIB_LDFLAGS} ${JANSSON_LDFLAGS})
+install(TARGETS esdmutils LIBRARY DESTINATION lib)
 
 
 # ESDM Middleware Library
