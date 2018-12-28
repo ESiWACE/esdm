@@ -1,10 +1,6 @@
-
-
-
-
 pkg_search_module(GLIB REQUIRED glib-2.0>=2.40)
 set_package_properties(GLIB PROPERTIES
-	DESCRIPTION "Implementation of common data structures, portabilitiy wrappers for standard OS features."
+	DESCRIPTION "Implementation of common data structures, portability wrappers for standard OS features."
 	URL "http://www.gtk.org"
 	TYPE REQUIRED
 	PURPOSE "Support for hash maps and tree data structures."
@@ -119,8 +115,10 @@ endif()
 
 #target_compile_definitions(esdm PRIVATE MYDEF=${MYVAR})       # TODO: replace backend/feature enablers with this mechanism
 #target_include_directories(esdm PUBLIC include PRIVATE src)   # TODO: decide on main-project/sub-project structure and switch away from include_directories directive where possible
-install(TARGETS esdm LIBRARY DESTINATION lib)
 
+install(TARGETS esdm LIBRARY DESTINATION lib)
+install(FILES "./include/esdm-datatypes.h" DESTINATION include)
+install(FILES "./include/esdm.h" DESTINATION include)
 
 
 
