@@ -59,15 +59,6 @@ include(CheckCSourceCompiles)
 find_package(PkgConfig REQUIRED)
 
 
-
-
-
-
-
-
-
-
-
 # For documentation (optional)
 find_package(Doxygen)
 if(DOXYGEN_FOUND)
@@ -110,6 +101,7 @@ add_feature_info(plantuml plantuml  "PlantUML for documentation" URL http://de.p
 
 enable_testing()
 
+add_subdirectory(deps)
 add_subdirectory(src)
 
 

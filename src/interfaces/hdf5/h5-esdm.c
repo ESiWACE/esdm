@@ -113,12 +113,12 @@ static const H5VL_class_t H5VL_esdm = {
         H5VL_esdm_dataset_close,
     },
     {                                           /* datatype_cls */
-        H5VL_esdm_datatype_commit,                 /* commit */
-        H5VL_esdm_datatype_open,                   /* open */
-        H5VL_esdm_datatype_get,                    /* get_size */
+        H5VL_esdm_datatype_t_commit,                 /* commit */
+        H5VL_esdm_datatype_t_open,                   /* open */
+        H5VL_esdm_datatype_t_get,                    /* get_size */
         NULL, //H5VL_log_datatype_specific,        /* specific */
         NULL, //H5VL_log_datatype_optional,        /* optional */
-        H5VL_esdm_datatype_close                   /* close */
+        H5VL_esdm_datatype_t_close                   /* close */
     },
     {                                           /* file_cls */
         H5VL_esdm_file_create,                     /* create */

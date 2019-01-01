@@ -79,12 +79,12 @@ typedef struct H5VL_esdm_link_t {
 
 
 
-typedef struct H5VL_esdm_datatype {
+typedef struct H5VL_esdm_datatype_t {
 	hid_t lcpl_id;
 	hid_t tcpl_id;
 	hid_t tapl_id;
 	hid_t dxpl_id;
-} H5VL_esdm_datatype;
+} H5VL_esdm_datatype_t;
 
 typedef struct H5VL_esdm_attribute_t {
     hid_t acpl_id;
@@ -141,7 +141,7 @@ typedef struct H5VL_esdm_object_t {
 	/* union {
 		H5VL_esdm_group_t* group;
 		H5VL_esdm_dataset_t* dataset;
-		H5VL_esdm_datatype* datatype;
+		H5VL_esdm_datatype_t* datatype;
 	} object; */
 } H5VL_esdm_object_t;
 

@@ -19,7 +19,7 @@ int main(){
   esdm_dataspace_t * dataspace;
   {
     int64_t size[]   = {50, 100};
-    dataspace = esdm_dataspace_create(2, size, ESDM_TYPE_UINT64_T);
+    dataspace = esdm_dataspace_create(2, size, SMD_DTYPE_UINT64);
   }
 
   esdm_status ret;

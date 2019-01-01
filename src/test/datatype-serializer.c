@@ -30,7 +30,7 @@ int main(){
 
 
   esdm_status ret;
-  esdm_dataspace_t* space = esdm_dataspace_create(2, dim, ESDM_TYPE_FLOAT);
+  esdm_dataspace_t* space = esdm_dataspace_create(2, dim, SMD_DTYPE_FLOAT);
   assert(space != NULL);
 
   // walk through all offsets
@@ -50,7 +50,7 @@ int main(){
   	{
   		off_buff *= space->size[i];
   	}
-  	off_buff *= esdm_sizeof(subspace->datatype);
+  	//off_buff *= esdm_sizeof(subspace->datatype);
 
     printf("Buffer offset: %lu %zu %zu\n", off_buff, (size_t)((char*) data_out[0]) + off_buff, (size_t)((char*) data[0]) + off_buff);
     memcpy(((char*) data_out[0]) + off_buff, ((char*) data[0]) + off_buff, size);

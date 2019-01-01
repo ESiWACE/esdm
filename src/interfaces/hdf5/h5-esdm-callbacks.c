@@ -693,7 +693,7 @@ static void *H5VL_esdm_dataset_create(
 
 	// define dataspace
 	int64_t bounds[] = {height, width};
-	esdm_dataspace_t *dspace = esdm_dataspace_create(2, bounds, ESDM_TYPE_UINT64_T);
+	esdm_dataspace_t *dspace = esdm_dataspace_create(2, bounds, SMD_DTYPE_UINT64);
 
 	cont = esdm_container_create("mycontainer");
 	dset = esdm_dataset_create(cont, name, dspace);
@@ -1184,7 +1184,7 @@ static void H5VL_esdm_init_datatype(hid_t vipl_id){
 
 
 
-static void * H5VL_esdm_datatype_commit(void *obj, H5VL_loc_params_t loc_params, const char *name, hid_t type_id, hid_t lcpl_id, hid_t tcpl_id, hid_t tapl_id, hid_t dxpl_id, void **req)
+static void * H5VL_esdm_datatype_t_commit(void *obj, H5VL_loc_params_t loc_params, const char *name, hid_t type_id, hid_t lcpl_id, hid_t tcpl_id, hid_t tapl_id, hid_t dxpl_id, void **req)
 {
   g_hash_table_insert(type_table, (char*) name, (void*) type_id);
   printf("C %p\n", (void*) type_id);
@@ -1192,7 +1192,7 @@ static void * H5VL_esdm_datatype_commit(void *obj, H5VL_loc_params_t loc_params,
   return (void*) type_id;
 }
 
-static void * H5VL_esdm_datatype_open(void *obj, H5VL_loc_params_t loc_params, const char * name, hid_t tapl_id, hid_t dxpl_id, void **req)
+static void * H5VL_esdm_datatype_t_open(void *obj, H5VL_loc_params_t loc_params, const char * name, hid_t tapl_id, hid_t dxpl_id, void **req)
 {
   void * found = g_hash_table_lookup(type_table, name);
   printf("O %p\n", found);
@@ -1202,7 +1202,7 @@ static void * H5VL_esdm_datatype_open(void *obj, H5VL_loc_params_t loc_params, c
 }
 
 
-static herr_t H5VL_esdm_datatype_get(void *obj, H5VL_datatype_get_t get_type, hid_t dxpl_id, void **req, va_list arguments)
+static herr_t H5VL_esdm_datatype_t_get(void *obj, H5VL_datatype_get_t get_type, hid_t dxpl_id, void **req, va_list arguments)
 {
 	herr_t ret_value = SUCCEED;
 
@@ -1238,7 +1238,7 @@ static herr_t H5VL_esdm_datatype_get(void *obj, H5VL_datatype_get_t get_type, hi
 }
 
 
-static herr_t H5VL_esdm_datatype_specific(void *obj, H5VL_datatype_specific_t specific_type, hid_t dxpl_id, void **req, va_list arguments)
+static herr_t H5VL_esdm_datatype_t_specific(void *obj, H5VL_datatype_specific_t specific_type, hid_t dxpl_id, void **req, va_list arguments)
 {
 	herr_t ret_value = SUCCEED;
 
@@ -1254,7 +1254,7 @@ static herr_t H5VL_esdm_datatype_specific(void *obj, H5VL_datatype_specific_t sp
 }
 
 
-static herr_t H5VL_esdm_datatype_optional(void *obj, hid_t dxpl_id, void **req, va_list arguments)
+static herr_t H5VL_esdm_datatype_t_optional(void *obj, hid_t dxpl_id, void **req, va_list arguments)
 {
 	herr_t ret_value = SUCCEED;
 
@@ -1264,7 +1264,7 @@ static herr_t H5VL_esdm_datatype_optional(void *obj, hid_t dxpl_id, void **req, 
 }
 
 
-static herr_t H5VL_esdm_datatype_close(void *dt, hid_t dxpl_id, void **req)
+static herr_t H5VL_esdm_datatype_t_close(void *dt, hid_t dxpl_id, void **req)
 {
 	herr_t ret_value = SUCCEED;
 

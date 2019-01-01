@@ -36,7 +36,7 @@ int main(int argc, char *argv[])
 	}
 	printf("wos connection succeeded\n");
 
-	rc = esdm_backend_wos.ebm_ops.esdm_backend_obj_alloc(eb, 1, &data_size, ESDM_TYPE_CHAR_UTF8, &object_id, &object_meta);
+	rc = esdm_backend_wos.ebm_ops.esdm_backend_obj_alloc(eb, 1, &data_size, SMD_DTYPE_CHAR_UTF8, &object_id, &object_meta);
 	if (rc != 0) {
 		printf("esdm_backend_wos.ebm_ops alloc failed rc=%d\n", rc);
 		goto fini;
@@ -50,14 +50,14 @@ int main(int argc, char *argv[])
 	}
 	printf("wos object opened: %s\n", object_id);
 
-	rc = esdm_backend_wos.ebm_ops.esdm_backend_obj_write(eb, object_handle, 0, data_size, ESDM_TYPE_CHAR_UTF8, data_w);
+	rc = esdm_backend_wos.ebm_ops.esdm_backend_obj_write(eb, object_handle, 0, data_size, SMD_DTYPE_CHAR_UTF8, data_w);
 	if (rc != 0) {
 		printf("esdm_backend_wos.ebm_ops write failed rc=%d\n", rc);
 		goto close;
 	}
 	printf("wos object write: %s\n", object_id);
 
-	rc = esdm_backend_wos.ebm_ops.esdm_backend_obj_read(eb, object_handle, 0, data_size, ESDM_TYPE_CHAR_UTF8, data_r);
+	rc = esdm_backend_wos.ebm_ops.esdm_backend_obj_read(eb, object_handle, 0, data_size, SMD_DTYPE_CHAR_UTF8, data_r);
 	if (rc != 0) {
 		printf("esdm_backend_wos.ebm_ops read failed rc=%d\n", rc);
 		goto close;
@@ -71,7 +71,7 @@ int main(int argc, char *argv[])
 		printf("esdm_backend_wos.ebm_ops write & read verification succeeded\n");
 	}
 
-	rc = esdm_backend_wos.ebm_ops.esdm_backend_obj_write(eb, object_handle, 0, 0, ESDM_TYPE_CHAR_UTF8, NULL);
+	rc = esdm_backend_wos.ebm_ops.esdm_backend_obj_write(eb, object_handle, 0, 0, SMD_DTYPE_CHAR_UTF8, NULL);
 	if (rc != 0) {
 		printf("esdm_backend_wos.ebm_ops delete failed rc=%d\n", rc);
 		goto close;

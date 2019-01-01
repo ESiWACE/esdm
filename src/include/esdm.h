@@ -44,7 +44,6 @@ esdm_status esdm_close(void * buf);
 esdm_status esdm_write(esdm_dataset_t *dataset, void *buf, esdm_dataspace_t* subspace);
 esdm_status esdm_read(esdm_dataset_t *dataset, void *buf, esdm_dataspace_t* subspace);
 
-
 ///////////////////////////////////////////////////////////////////////////////
 // Public API: Data Model Manipulators ////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////
@@ -57,12 +56,14 @@ esdm_status esdm_container_destroy(esdm_container *container);
 
 // Datset
 esdm_dataset_t* esdm_dataset_create(esdm_container *container, const char * name, esdm_dataspace_t *dataspace);
+esdm_dataspace_t * esdm_dataset_get_dataspace(esdm_dataset_t *dset);
+
 esdm_dataset_t* esdm_dataset_retrieve(esdm_container *container, const char * name);
 esdm_status esdm_dataset_commit(esdm_dataset_t *dataset);
 esdm_status esdm_dataset_destroy(esdm_dataset_t *dataset);
 
 // Dataspace
-esdm_dataspace_t* esdm_dataspace_create(int64_t dimensions, int64_t *bounds, esdm_datatype type);
+esdm_dataspace_t* esdm_dataspace_create(int64_t dimensions, int64_t *bounds, esdm_datatype_t type);
 esdm_dataspace_t* esdm_dataspace_deserialize(void *serialized_dataspace);
 esdm_dataspace_t* esdm_dataspace_subspace(esdm_dataspace_t *dataspace, int64_t dimensions, int64_t *size, int64_t *offset);
 esdm_status esdm_dataspace_destroy(esdm_dataspace_t *dataspace);
@@ -84,7 +85,9 @@ esdm_status esdm_fragment_serialize(esdm_fragment_t *fragment, void **out);
 void esdm_fragment_print(esdm_fragment_t *fragment);
 void esdm_dataspace_print(esdm_dataspace_t *dataspace);
 
-size_t esdm_sizeof(esdm_datatype type);
+//size_t esdm_sizeof(esdm_datatype_t type);
+
+#define esdm_sizeof(type) (type->size)
 
 /*
  * enforce_format = 1 => recreate structure deleting old stuff
@@ -110,7 +113,7 @@ const char *json_plural(int count);
 int json_path_set_new(json_t *json, const char *path, json_t *value, size_t flags, json_error_t *error);
 json_t *json_path_get(const json_t *json, const char *path);
 
-static inline 
+static inline
 int json_path_set(json_t *json, const char *path, json_t *value, size_t flags, json_error_t *error)
 {
     return json_path_set_new(json, path, json_incref(value), flags, error);

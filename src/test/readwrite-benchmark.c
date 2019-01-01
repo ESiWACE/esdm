@@ -168,7 +168,7 @@ int main(int argc, char* argv[])
 
 	// define dataspace
 	int64_t bounds[] = {timesteps, size, size};
-	esdm_dataspace_t *dataspace = esdm_dataspace_create(3, bounds, ESDM_TYPE_UINT64_T);
+	esdm_dataspace_t *dataspace = esdm_dataspace_create(3, bounds, SMD_DTYPE_UINT64);
 
 	container = esdm_container_create("mycontainer");
 	dataset = esdm_dataset_create(container, "mydataset", dataspace);

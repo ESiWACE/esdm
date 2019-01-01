@@ -210,7 +210,7 @@ static esdm_backend backend_template = {
 // WARNING: This serves as a template for the posix plugin and is memcpied!  //
 ///////////////////////////////////////////////////////////////////////////////
 	.name = "metadummy",
-	.type = ESDM_TYPE_METADATA,
+	.type = SMD_DTYPE_METADATA,
 	.version = "0.0.1",
 	.data = NULL,
 	.callbacks = {

@@ -72,7 +72,7 @@ int main(int argc, char const* argv[])
 
 	// define dataspace
 	int64_t bounds[] = {10, 20};
-	esdm_dataspace_t *dataspace = esdm_dataspace_create(2, bounds, ESDM_TYPE_UINT64_T);
+	esdm_dataspace_t *dataspace = esdm_dataspace_create(2, bounds, SMD_DTYPE_UINT64);
 
 	container = esdm_container_create("mycontainer");
 	dataset = esdm_dataset_create(container, "mydataset", dataspace);

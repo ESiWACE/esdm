@@ -35,40 +35,6 @@
 
 extern esdm_instance_t esdm;
 
-// Native Datatypes ///////////////////////////////////////////////////////////
-size_t esdm_sizeof(esdm_datatype type) {
-	switch (type) {
-
-		case ESDM_TYPE_INT8_T:
-		case ESDM_TYPE_CHAR_UTF8:
-			return sizeof(int8_t);
-		case ESDM_TYPE_INT16_T:
-		case ESDM_TYPE_CHAR_UTF16:
-			return sizeof(int16_t);
-		case ESDM_TYPE_INT32_T:
-		case ESDM_TYPE_CHAR_UTF32:
-			return sizeof(int32_t);
-		case ESDM_TYPE_INT64_T:
-			return sizeof(int64_t);
-
-		case ESDM_TYPE_UINT8_T:
-			return sizeof(uint8_t);
-		case ESDM_TYPE_UINT16_T:
-			return sizeof(uint16_t);
-		case ESDM_TYPE_UINT32_T:
-			return sizeof(uint32_t);
-		case ESDM_TYPE_UINT64_T:
-			return sizeof(uint64_t);
-
-		case ESDM_TYPE_FLOAT:		// if IEEE 754 (32bit)
-			return sizeof(float);
-		case ESDM_TYPE_DOUBLE:		// if IEEE 754 (64bit)
-			return sizeof(double);
-
-		default:
-			return 1;
-	}
-}
 
 // Container //////////////////////////////////////////////////////////////////
 /**
@@ -152,6 +118,8 @@ esdm_status esdm_container_commit(esdm_container* container)
 esdm_status esdm_container_destroy(esdm_container *container)
 {
 	ESDM_DEBUG(__func__);
+	esdm_container_commit(container);
+	free(container);
 
 	return ESDM_SUCCESS;
 }
@@ -501,7 +469,7 @@ esdm_status esdm_dataset_commit(esdm_dataset_t *dataset)
  *	@return Pointer to new dateset.
  *
  */
-esdm_dataspace_t* esdm_dataspace_create(int64_t dimensions, int64_t* sizes, esdm_datatype datatype)
+esdm_dataspace_t* esdm_dataspace_create(int64_t dimensions, int64_t* sizes, esdm_datatype_t datatype)
 {
 	ESDM_DEBUG(__func__);
 	esdm_dataspace_t* dataspace = (esdm_dataspace_t*) malloc(sizeof(esdm_dataspace_t));

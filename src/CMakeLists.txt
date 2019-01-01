@@ -77,7 +77,7 @@ option(ENABLE_HDF5 "Compile Plugin for HDF5 Virtual Object Layer?" OFF)
 # TARGETS
 # _____________________________________________________________________________
 
-set(ESDM_INCLUDE_DIRS "${CMAKE_SOURCE_DIR}/src/include")
+set(ESDM_INCLUDE_DIRS "${CMAKE_SOURCE_DIR}/src/include;${GLIB_INCLUDE_DIRS};${JANSSON_INCLUDE_DIRS};${SMD_INCLUDES}")
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}/)
 
 
@@ -88,11 +88,12 @@ add_subdirectory(test)
 add_subdirectory(tools)
 
 # Include directories for all target in this CMakeLists.txt
-include_directories(${CMAKE_BINARY_DIR} ${ESDM_INCLUDE_DIRS} ${GLIB_INCLUDE_DIRS} ${JANSSON_INCLUDE_DIRS})
+include_directories(${CMAKE_BINARY_DIR} ${ESDM_INCLUDE_DIRS} ${GLIB_INCLUDE_DIRS} ${JANSSON_INCLUDE_DIRS} ${SMD_INCLUDES})
+
 
 # ESDM Utils and Database Library
-add_library(esdmutils SHARED esdm.c  esdm-datatypes.c  esdm-layout.c  esdm-performancemodel.c esdm-config.c  utils/debug.c utils/json.c utils/auxiliary.c)
-target_link_libraries(esdmutils ${GLIB_LDFLAGS} ${JANSSON_LDFLAGS})
+add_library(esdmutils SHARED esdm.c esdm-attributes.c esdm-datatypes.c  esdm-layout.c  esdm-performancemodel.c esdm-config.c  utils/debug.c utils/json.c utils/auxiliary.c)
+target_link_libraries(esdmutils ${GLIB_LDFLAGS} ${JANSSON_LDFLAGS} smd)
 install(TARGETS esdmutils LIBRARY DESTINATION lib)
 
 

@@ -27,16 +27,6 @@ struct esdm_dataset_t {
 	esdm_status status;
 };
 
-struct esdm_dataspace_t {
-	esdm_datatype datatype;
-	int64_t dimensions;
-	int64_t *size;
-
-	esdm_dataspace_t *subspace_of;
-	int64_t *offset;
-
-	char *json;
-};
 
 
 
@@ -81,9 +71,9 @@ typedef struct esdm_fragment_index_t {
  *
  */
 typedef enum esdm_module_type_t {
-	ESDM_TYPE_DATA,
-	ESDM_TYPE_METADATA,
-	ESDM_TYPE_HYBRID
+	SMD_DTYPE_DATA,
+	SMD_DTYPE_METADATA,
+	SMD_DTYPE_HYBRID
 } esdm_module_type_t;
 
 
@@ -290,7 +280,7 @@ struct esdm_instance_t {
 
 typedef struct esdm_bytesequence_t esdm_bytesyquence_t;
 struct esdm_bytesequence {
-	esdm_datatype type;
+	esdm_datatype_t type;
 	size_t count;
 	void * data;
 };

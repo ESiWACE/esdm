@@ -66,6 +66,9 @@ void esdm_atexit() {
 }
 */
 
+esdm_dataspace_t * esdm_dataset_get_dataspace(esdm_dataset_t *dset){
+	return dset->dataspace;
+}
 
 
 /**
@@ -88,7 +91,7 @@ esdm_status esdm_init()
 
 
 		//status = atexit(esdm_atexit);
-		
+
 
 		// find configuration
 		if ( ! esdm.config ){
@@ -126,7 +129,7 @@ esdm_status esdm_init()
  * Initialize backend by invoking mkfs callback for matching target
  *
  * @param [in] enforce_format  force reformatting existing system (may result in data loss)
- * @param [in] target  target descriptor 
+ * @param [in] target  target descriptor
  *
  * @return Status
  */
@@ -226,7 +229,7 @@ esdm_status esdm_create(char *name, int mode, esdm_container **container, esdm_d
 
 
 	int64_t bounds[1] = {0};
-	esdm_dataspace_t *dataspace = esdm_dataspace_create(1 /* 1D */ , bounds, ESDM_TYPE_INT8_T);
+	esdm_dataspace_t *dataspace = esdm_dataspace_create(1 /* 1D */ , bounds, SMD_DTYPE_INT8);
 
 	*container = esdm_container_create(name);
 	*dataset = esdm_dataset_create(*container, "bytestream", dataspace);

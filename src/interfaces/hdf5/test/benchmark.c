@@ -210,7 +210,7 @@ int main(int argc, char* argv[])
 	int64_t bounds[] = {timesteps, size, size};
 	hsize_t h5_bounds[] = {timesteps, size, size};
 
-	esdm_dataspace_t *dataspace = esdm_dataspace_create(3, bounds, ESDM_TYPE_UINT64_T);
+	esdm_dataspace_t *dataspace = esdm_dataspace_create(3, bounds, SMD_DTYPE_UINT64);
 	dataspace_id = H5Screate_simple(3, h5_bounds, NULL);
 
 
