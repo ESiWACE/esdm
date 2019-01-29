@@ -26,9 +26,11 @@
 #include <string.h>
 #include <errno.h>
 #include <jansson.h>
+#include <sys/time.h>
 
 #include <esdm.h>
 #include <esdm-debug.h>
+#include <esdm-datatypes.h>
 
 #include "wos.h"
 
@@ -594,6 +596,63 @@ int esdm_backend_wos_close(esdm_backend * eb, void *obj_handle)
 	return ESDM_SUCCESS;
 }
 
+int wos_backend_performance_check(esdm_backend *eb, int data_size, float *out_time)
+{
+	if (!eb || (data_size <= 0))
+		return ESDM_ERROR;
+
+	if (out_time)
+		*out_time = 0.0;
+
+	struct timeval t0, t1;
+
+	char *object_id = NULL;
+	char *object_meta = NULL;
+	void *object_handle = NULL;
+
+	char *data_w = (char *) malloc(data_size * sizeof(char));
+	char *data_r = (char *) malloc(data_size * sizeof(char));
+
+	if (!data_w || !data_r)
+		return ESDM_ERROR;
+
+	data_w[data_size - 1] = 0;
+	data_r[data_size - 1] = 0;
+
+	if (esdm_backend_wos_alloc(eb, 1, &data_size, SMD_DTYPE_CHAR, &object_id, &object_meta))
+		goto fini;
+
+	if (esdm_backend_wos_open(eb, object_id, &object_handle))
+		goto fini;
+
+	gettimeofday(&t0, NULL);
+	if (esdm_backend_wos_write(eb, object_handle, 0, data_size, SMD_DTYPE_CHAR, data_w))
+		goto close;
+	gettimeofday(&t1, NULL);
+	if (out_time)
+		*out_time = t1.tv_sec - t0.tv_sec + (t1.tv_usec - t0.tv_usec) / 1000000.0;
+
+	if (esdm_backend_wos_read(eb, object_handle, 0, data_size, SMD_DTYPE_CHAR, data_r))
+		goto close;
+
+	if (esdm_backend_wos_write(eb, object_handle, 0, 0, SMD_DTYPE_CHAR, NULL))
+		goto close;
+
+      close:
+	if (esdm_backend_wos_close(eb, object_handle))
+		goto fini;
+
+      fini:
+	if (object_id)
+		free(object_id);
+	if (object_meta)
+		free(object_meta);
+	free(data_w);
+	free(data_r);
+
+	return ESDM_SUCCESS;
+}
+
 int wos_backend_performance_estimate(esdm_backend * eb, esdm_fragment_t * fragment, float *out_time)
 {
 	if (!fragment || !out_time) {
@@ -612,7 +671,7 @@ int wos_backend_performance_estimate(esdm_backend * eb, esdm_fragment_t * fragme
 		return ESDM_ERROR;
 	}
 
-	return esdm_backend_perf_model_long_lat_perf_estimate(&ebm->perf_model, fragment, out_time);
+	return esdm_backend_estimate_dynamic_perf_model_lat_thp(&ebm->perf_model, fragment, out_time);
 }
 
 int esdm_backend_wos_fragment_retrieve(esdm_backend * backend, esdm_fragment_t * fragment, json_t * metadata)
@@ -907,10 +966,11 @@ esdm_backend *wos_backend_init(esdm_config_backend_t * config)
 	if (esdm_backend_wos_init(config->target, backend))
 		return NULL;
 
-	if (config->performance_model)
-		esdm_backend_parse_perf_model_lat_thp(config->performance_model, &data->perf_model);
-	else
-		esdm_backend_reset_perf_model_lat_thp(&data->perf_model);
+	if (config->performance_model) {
+		esdm_backend_parse_dynamic_perf_model_lat_thp(config->performance_model, &data->perf_model);
+		esdm_backend_start_dynamic_perf_model_lat_thp(&data->perf_model, backend, &wos_backend_performance_check);
+	} else
+		esdm_backend_reset_dynamic_perf_model_lat_thp(&data->perf_model);
 
 	// configure backend instance
 	data->config = config;

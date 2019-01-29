@@ -18,7 +18,7 @@
 #define ESDM_BACKENDS_WOS_H
 
 #include <esdm-internal.h>
-#include <backends-data/generic-perf-model/lat-thr.h>
+#include <backends-data/dynamic-perf-model/lat-thr.h>
 
 #include "wrapper/wos_wrapper.h"
 
@@ -27,7 +27,7 @@ typedef struct {
 
 	esdm_config_backend_t *config;
 	const char *target;
-	esdm_perf_model_lat_thp_t perf_model;
+	esdm_dynamic_perf_model_lat_thp_t perf_model;
 
 	t_WosClusterPtr *wos_cluster;	// Pointer to WOS cluster
 	t_WosPolicy *wos_policy;	// Policy
