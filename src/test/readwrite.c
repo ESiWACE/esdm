@@ -73,11 +73,13 @@ int main(int argc, char const* argv[])
 
 
 	//ret = esdm_create("mytextfile", ESDM_CREATE, &container, &dataset);
+	//assert(ret == ESDM_SUCCESS);
+
 	//esdm_open("mycontainer/mydataset", ESDM_CREATE);
 	
 	// POSIX pwrite/pread interfaces for comparison
 	//ssize_t pread(int fd, void *buf, size_t count, off_t offset);
-    //ssize_t pwrite(int fd, const void *buf, size_t count, off_t offset);
+	//ssize_t pwrite(int fd, const void *buf, size_t count, off_t offset);
 
 
 	// define dataspace
@@ -100,9 +102,11 @@ int main(int argc, char const* argv[])
 
 	// Write the data to the dataset
 	ret = esdm_write(dataset, buf_w, subspace);
+	assert(ret == ESDM_SUCCESS);
 
 	// Read the data to the dataset
 	ret = esdm_read(dataset, buf_r, subspace);
+	assert(ret == ESDM_SUCCESS);
 
 	// TODO: write subset
 	// TODO: read subset -> subspace reconstruction

@@ -84,13 +84,11 @@ esdm_status esdm_init()
 {
 	ESDM_DEBUG("Init");
 
-	int status;
-
 	if (!is_initialized) {
 		ESDM_DEBUG("Initializing ESDM");
 
 
-		//status = atexit(esdm_atexit);
+		//int status = atexit(esdm_atexit);
 
 
 		// find configuration

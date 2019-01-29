@@ -113,6 +113,8 @@ static void backend_thread(io_work_t* work, esdm_backend* backend){
       ret = esdm_fragment_commit(work->fragment);
       break;
     }
+    default:
+      ret = ESDM_ERROR;
   }
 
   work->return_code = ret;
@@ -180,7 +182,7 @@ static void read_copy_callback(io_work_t * work){
 
 esdm_status esdm_scheduler_enqueue_read(esdm_instance_t *esdm, io_request_status_t * status, int frag_count, esdm_fragment_t** read_frag, void * buf, esdm_dataspace_t * buf_space){
 	GError * error;
-	esdm_status ret;
+
 	status->pending_ops += frag_count;
 
 	int i, x;
@@ -189,13 +191,13 @@ esdm_status esdm_scheduler_enqueue_read(esdm_instance_t *esdm, io_request_status
 		json_t *root = load_json(f->metadata->json);
 		json_t * elem;
 		elem = json_object_get(root, "plugin");
-		const char * plugin_type = json_string_value(elem);
+		//const char * plugin_type = json_string_value(elem);
 		elem = json_object_get(root, "id");
 		const char * plugin_id = json_string_value(elem);
 		elem = json_object_get(root, "offset");
-		const char * offset_str = json_string_value(elem);
+		//const char * offset_str = json_string_value(elem);
 		elem = json_object_get(root, "size");
-		const char * size_str = json_string_value(elem);
+		//const char * size_str = json_string_value(elem);
 
 		if(!plugin_id){
 			printf("Backend ID needs to be given\n");
@@ -224,7 +226,7 @@ esdm_status esdm_scheduler_enqueue_read(esdm_instance_t *esdm, io_request_status
 
 		//for verification purposes, we could read back the metadata stored and compare it...
 		//esdm_dataspace_t * space = NULL;
-		//ret = esdm_dataspace_overlap_str(parent_space, 'x', (char*)offset_str, (char*)size_str, & space);
+		//esdm_status ret = esdm_dataspace_overlap_str(parent_space, 'x', (char*)offset_str, (char*)size_str, & space);
 		//assert(ret == ESDM_SUCCESS);
 
 		uint64_t size = esdm_dataspace_size(f->dataspace);
@@ -389,9 +391,7 @@ esdm_status esdm_scheduler_process_blocking(esdm_instance_t *esdm, io_operation_
 
 	io_request_status_t status;
 
-	esdm_status ret;
-
-	ret = esdm_scheduler_status_init(& status);
+	esdm_status ret = esdm_scheduler_status_init(& status);
 	assert( ret == ESDM_SUCCESS );
 
 	esdm_fragment_t ** read_frag = NULL;

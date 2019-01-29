@@ -492,8 +492,6 @@ esdm_dataspace_t* esdm_dataspace_create(int64_t dimensions, int64_t* sizes, esdm
 
 uint8_t esdm_dataspace_overlap(esdm_dataspace_t *a, esdm_dataspace_t *b)
 {
-	uint8_t overlapping = 1;
-
 	// TODO: allow comparison of spaces of different size? Alternative maybe to transform into comparable space, provided a mask or dimension index mapping
 
 	if ( a->dimensions != b->dimensions )
@@ -565,7 +563,7 @@ void esdm_dataspace_print(esdm_dataspace_t * d){
 }
 
 void esdm_fragment_print(esdm_fragment_t * f){
-	printf("FRAGMENT(%p,", f);
+	printf("FRAGMENT(%p,", (void *)f);
 	esdm_dataspace_print(f->dataspace);
 	printf(", md(\"%s\")", f->metadata->json);
 	printf(")");

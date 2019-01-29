@@ -69,6 +69,8 @@ int main(int argc, char const* argv[])
 
 
 	//ret = esdm_create("mytextfile", ESDM_CREATE, &container, &dataset);
+	//assert(ret == ESDM_SUCCESS);
+
 	//esdm_open("mycontainer/mydataset", ESDM_CREATE);
 	
 	// POSIX pwrite/pread interfaces for comparison
@@ -97,6 +99,7 @@ int main(int argc, char const* argv[])
 
 	// Write the data to the dataset
 	ret = esdm_write(dataset, buf_w, subspace);
+	assert(ret == ESDM_SUCCESS);
 
 
 	// verify data and fail test if mismatches are found

@@ -17,7 +17,7 @@
 #ifndef ESDM_BACKENDS_WOS_H
 #define ESDM_BACKENDS_WOS_H
 
-#include <esdm.h>
+#include <esdm-internal.h>
 #include <backends-data/generic-perf-model/lat-thr.h>
 
 #include "wrapper/wos_wrapper.h"

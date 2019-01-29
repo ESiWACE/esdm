@@ -487,9 +487,8 @@ static int fragment_retrieve(esdm_backend* backend, esdm_fragment_t *fragment, j
 
 static esdm_fragment_t * create_fragment_from_metadata(int fd, esdm_dataset_t * dataset, esdm_dataspace_t * space){
 	struct stat sb;
-	int ret;
-	
-	ret = fstat(fd, & sb);
+
+	fstat(fd, & sb);
 	DEBUG("Fragment found size:%ld", sb.st_size);
 
 	esdm_fragment_t * f;

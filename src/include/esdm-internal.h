@@ -29,7 +29,7 @@ esdm_modules_t* esdm_modules_init(esdm_instance_t *esdm);
 esdm_status esdm_modules_finalize();
 esdm_status esdm_modules_register();
 
-esdm_status esdm_modules_get_by_type(esdm_module_type_t type, esdm_module_type_array_t *array);
+esdm_status esdm_modules_get_by_type(esdm_module_type_t type, esdm_module_type_array_t ** array);
 
 
 // I/O Scheduler

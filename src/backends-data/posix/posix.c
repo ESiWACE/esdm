@@ -299,7 +299,6 @@ static int fragment_retrieve(esdm_backend* backend, esdm_fragment_t *fragment, j
 
 	//entry_update()
 
-	size_t *count = NULL;
 	entry_retrieve(path_fragment, fragment->buf);
 	//DEBUG("buf=%s", fragment->buf);
 	return 0;

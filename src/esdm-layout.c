@@ -107,8 +107,8 @@ esdm_status esdm_layout_recommendation(esdm_instance_t *esdm, esdm_fragment_t *i
 	ESDM_DEBUG(__func__);	
 
 	// pickup the performance estimate for each backend module
-	esdm_module_type_array_t * backends;
-	esdm_modules_get_by_type(SMD_DTYPE_DATA, backends);
+	esdm_module_type_array_t * backends = NULL;
+	esdm_modules_get_by_type(SMD_DTYPE_DATA, &backends);
 	//int i;
 	//for(i=0; i < backends->count; i++){
 	//	//esdm_backend_estimate_performance((esdm_backend*) backends->module, 1234);

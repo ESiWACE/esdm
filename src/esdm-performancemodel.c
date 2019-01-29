@@ -66,7 +66,7 @@ void fetch_performance_from_backend(gpointer key, gpointer value, gpointer user_
 {
 	DEBUG("GHashTable Entry: key=%p (s:%s), value=%p (s:%s), user_data=%p\n", key, key,value, value, user_data);
 
-	esdm_backend* backend = (esdm_backend*) value;
+	//esdm_backend* backend = (esdm_backend*) value;
 	//backend->callbacks.performance_estimate(backend);
 }
 
