@@ -65,8 +65,8 @@ int main(int argc, char const* argv[])
 	esdm_dataset_t *dataset = NULL;
 
 
-	esdm_init();
-
+	ret = esdm_init();
+	assert( ret == ESDM_SUCCESS );
 
 	//ret = esdm_create("mytextfile", ESDM_CREATE, &container, &dataset);
 	//assert(ret == ESDM_SUCCESS);
@@ -75,7 +75,7 @@ int main(int argc, char const* argv[])
 	
 	// POSIX pwrite/pread interfaces for comparison
 	//ssize_t pread(int fd, void *buf, size_t count, off_t offset);
-    //ssize_t pwrite(int fd, const void *buf, size_t count, off_t offset);
+	//ssize_t pwrite(int fd, const void *buf, size_t count, off_t offset);
 
 
 
@@ -102,6 +102,10 @@ int main(int argc, char const* argv[])
 	assert(ret == ESDM_SUCCESS);
 
 
+	ret = esdm_finalize();
+	assert(ret == ESDM_SUCCESS);
+
+
 	// verify data and fail test if mismatches are found
 	int mismatches = verify_data(buf_w, buf_r);
 	printf("Mismatches: %d\n", mismatches);
@@ -111,7 +115,6 @@ int main(int argc, char const* argv[])
 		printf("OK\n");
 	}
 	assert(mismatches == 0);
-
 
 	// clean up
 	free(buf_w);

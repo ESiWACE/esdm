@@ -246,6 +246,9 @@ int main(int argc, char* argv[])
 		}
 	}
 
+	ret = esdm_finalize();
+	assert(ret == ESDM_SUCCESS);
+
 	// clean up
 	free(buf_w);
 

@@ -138,10 +138,11 @@ esdm_modules_t* esdm_modules_init(esdm_instance_t* esdm)
 		modules->backends[i] = backend;
 	}
 
+	esdm->modules = modules;
 	return modules;
 }
 
-esdm_status esdm_modules_finalize()
+esdm_status esdm_modules_finalize(esdm_instance_t* esdm)
 {
 	ESDM_DEBUG(__func__);
 
@@ -152,6 +153,12 @@ esdm_status esdm_modules_finalize()
 		modules[i]->finalize();
 	}
 	*/
+
+	if (esdm->modules) {
+		free(esdm->modules);
+		esdm->modules = NULL;
+	}
+
 	return ESDM_SUCCESS;
 }
 
@@ -160,12 +167,5 @@ esdm_status esdm_modules_finalize()
 esdm_status esdm_modules_get_by_type(esdm_module_type_t type, esdm_module_type_array_t ** array)
 {
 	ESDM_DEBUG(__func__);
-
-
-
-
-
-
-
 	return ESDM_SUCCESS;
 }

@@ -187,6 +187,9 @@ int esdm_backend_wos_init(const char *conf, esdm_backend * eb)
 	}
 	free(policy);
 
+	// Performance model
+	esdm_backend_init_dynamic_perf_model_lat_thp(&ebm->perf_model);
+
 	return ESDM_SUCCESS;
 }
 
@@ -224,6 +227,9 @@ int esdm_backend_wos_fini(esdm_backend * eb)
 		DeleteWosPolicy(ebm->wos_policy);
 		ebm->wos_policy = NULL;
 	}
+
+	// Performance model
+	esdm_backend_finalize_dynamic_perf_model_lat_thp(&ebm->perf_model);
 
 	return ESDM_SUCCESS;
 }

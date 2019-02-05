@@ -17,6 +17,7 @@
 #define ESDM_BACKENDS_DYNAMIC_PERF_MODEL_H
 
 #include <jansson.h>
+#include <pthread.h>
 
 #include <esdm.h>
 
@@ -26,9 +27,15 @@ typedef struct {
 	double period;	// seconds
 	int size;	// bytes for test
 	double alpha;
+	const char *log;
+	pthread_t tid;
+	pthread_mutex_t flag;
 	esdm_backend * backend;	// reference to the corresponding backend
 	int (*esdm_backend_check_dynamic_perf_model_lat_thp)(esdm_backend *, int, float *);	// Function to write data and remove
 } esdm_dynamic_perf_model_lat_thp_t;
+
+int esdm_backend_init_dynamic_perf_model_lat_thp(esdm_dynamic_perf_model_lat_thp_t * data);
+int esdm_backend_finalize_dynamic_perf_model_lat_thp(esdm_dynamic_perf_model_lat_thp_t * data);
 
 int esdm_backend_parse_dynamic_perf_model_lat_thp(json_t * perf_model_str, esdm_dynamic_perf_model_lat_thp_t * out_data);
 

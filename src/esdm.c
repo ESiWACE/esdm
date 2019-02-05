@@ -92,18 +92,16 @@ esdm_status esdm_init()
 
 
 		// find configuration
-		if ( ! esdm.config ){
-			esdm.config = esdm_config_init(&esdm);
-		}
+		if ( !esdm.config )
+			esdm_config_init(&esdm);
 
 		// optional modules (e.g. data and metadata backends)
-		esdm.modules = esdm_modules_init(&esdm);
+		esdm_modules_init(&esdm);
 
 		// core components
-		esdm.layout = esdm_layout_init(&esdm);
-		esdm.performance = esdm_performance_init(&esdm);
-		esdm.scheduler = esdm_scheduler_init(&esdm);
-
+		esdm_layout_init(&esdm);
+		esdm_performance_init(&esdm);
+		esdm_scheduler_init(&esdm);
 
 		ESDM_DEBUG_COM_FMT("ESDM", " esdm = {config = %p, modules = %p, scheduler = %p, layout = %p, performance = %p}\n",
 						  (void*)esdm.config,
@@ -171,10 +169,10 @@ esdm_status esdm_finalize()
 	// ESDM data data structures that require proper cleanup..
 	// in particular this effects data and cache state which is not yet persistent
 
-	esdm_scheduler_finalize(& esdm);
-	//esdm_performance_finalize();
-	//esdm_layout_finalize();
-	esdm_modules_finalize();
+	esdm_scheduler_finalize(&esdm);
+	esdm_performance_finalize(&esdm);
+	esdm_layout_finalize(&esdm);
+	esdm_modules_finalize(&esdm);
 
 	return ESDM_SUCCESS;
 }

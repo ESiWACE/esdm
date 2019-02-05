@@ -65,10 +65,8 @@ int main(int argc, char const* argv[])
 	esdm_dataset_t *dataset = NULL;
 
 
-	// ESDM needs to be initialized before you can use it
-	esdm_init();
-
-
+	ret = esdm_init();
+	assert( ret == ESDM_SUCCESS );
 
 	// define dataspace
 	int64_t bounds[] = {10, 20};
@@ -88,10 +86,14 @@ int main(int argc, char const* argv[])
 	esdm_dataspace_t *subspace = esdm_dataspace_subspace(dataspace, 2, size, offset);
 
 
-
 	// Read the data to the dataset
 	ret = esdm_read(dataset, buf_r, subspace);
 	assert(ret == ESDM_SUCCESS);
+
+
+	ret = esdm_finalize();
+	assert(ret == ESDM_SUCCESS);
+
 
 	// verify data and fail test if mismatches are found
 	int mismatches = verify_data(buf_w, buf_r);

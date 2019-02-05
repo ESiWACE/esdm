@@ -69,8 +69,8 @@ int main(int argc, char const* argv[])
 	esdm_dataset_t *dataset = NULL;
 
 
-	esdm_init();
-
+	ret = esdm_init();
+	assert( ret == ESDM_SUCCESS );
 
 	//ret = esdm_create("mytextfile", ESDM_CREATE, &container, &dataset);
 	//assert(ret == ESDM_SUCCESS);
@@ -104,12 +104,18 @@ int main(int argc, char const* argv[])
 	ret = esdm_write(dataset, buf_w, subspace);
 	assert(ret == ESDM_SUCCESS);
 
+
 	// Read the data to the dataset
 	ret = esdm_read(dataset, buf_r, subspace);
 	assert(ret == ESDM_SUCCESS);
 
+
 	// TODO: write subset
 	// TODO: read subset -> subspace reconstruction
+
+
+	ret = esdm_finalize();
+	assert(ret == ESDM_SUCCESS);
 
 
 	// verify data and fail test if mismatches are found
@@ -121,7 +127,6 @@ int main(int argc, char const* argv[])
 		printf("OK\n");
 	}
 	assert(mismatches == 0);
-
 
 	// clean up
 	free(buf_w);

@@ -51,13 +51,14 @@ esdm_config_t* esdm_config_init_from_str(const char * config_str){
  * @param	[in] esdm   Pointer to esdm instance.
  * @return	Pointer to newly created configuration instance.
  */
-esdm_config_t* esdm_config_init()
+esdm_config_t* esdm_config_init(esdm_instance_t* esdm)
 {
 	ESDM_DEBUG(__func__);
 
-	char * config_str = esdm_config_gather(0, NULL);
+	char *config_str = esdm_config_gather(0, NULL);
 
-	return esdm_config_init_from_str(config_str);
+	esdm->config = esdm_config_init_from_str(config_str);
+	return esdm->config;
 }
 
 
@@ -66,8 +67,11 @@ esdm_status esdm_config_finalize(esdm_instance_t *esdm)
 {
 	ESDM_DEBUG(__func__);
 
-	json_decref(esdm->config->json);
-	free(esdm->config);
+	if (esdm->config) {
+		json_decref(esdm->config->json);
+		free(esdm->config);
+		esdm->config = NULL;
+	}
 
 	return ESDM_SUCCESS;
 }

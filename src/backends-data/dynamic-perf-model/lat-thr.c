@@ -16,8 +16,6 @@
 #include <esdm-internal.h>
 #include <backends-data/dynamic-perf-model/lat-thr.h>
 
-#include <pthread.h>
-
 void *esdm_backend_update_dynamic_perf_model_lat_thp(esdm_dynamic_perf_model_lat_thp_t * data)
 {
 	pthread_detach(pthread_self());
@@ -56,8 +54,40 @@ void *esdm_backend_update_dynamic_perf_model_lat_thp(esdm_dynamic_perf_model_lat
 		if ((estimated_throughput <= 0) || (estimated_latency < 0))
 			continue;
 
+		pthread_mutex_lock(&data->flag);
 		data->throughput = data->alpha * data->throughput + (1.0 - data->alpha) * estimated_throughput;
 		data->latency = data->alpha * data->latency + (1.0 - data->alpha) * estimated_latency;
+		pthread_mutex_unlock(&data->flag);
+	}
+
+	return 0;
+}
+
+int esdm_backend_init_dynamic_perf_model_lat_thp(esdm_dynamic_perf_model_lat_thp_t * data) {
+
+	if (!data)
+		return -1;
+
+	pthread_mutex_init(&data->flag, NULL);
+
+	return 0;
+}
+
+int esdm_backend_finalize_dynamic_perf_model_lat_thp(esdm_dynamic_perf_model_lat_thp_t * data) {
+
+	if (!data)
+		return -1;
+
+	if (data->tid)
+		pthread_cancel(data->tid);
+	pthread_mutex_destroy(&data->flag);
+
+	if (data->log) {
+		FILE *file = fopen(data->log, "a");
+		if (file) {
+			fprintf(file, "{ \"latency\": %f, \"throughput\" : %f }\n", data->latency, data->throughput);
+			fclose(file);
+		}
 	}
 
 	return 0;
@@ -105,6 +135,13 @@ int esdm_backend_parse_dynamic_perf_model_lat_thp(json_t * str, esdm_dynamic_per
 	} else
 		data->alpha = 0.0;
 
+	elem = json_object_get(str, "log");
+	if (elem != NULL)
+		data->log = json_string_value(elem);
+	else
+		data->log = NULL;
+
+	data->tid = 0;
 	data->backend = NULL;
 	data->esdm_backend_check_dynamic_perf_model_lat_thp = NULL;
 
@@ -117,12 +154,9 @@ int esdm_backend_start_dynamic_perf_model_lat_thp(esdm_dynamic_perf_model_lat_th
 		return -1;
 
 	if (data->period > 0) {
-
 		data->backend = backend;
 		data->esdm_backend_check_dynamic_perf_model_lat_thp = checker;
-
-		pthread_t tid;
-		pthread_create(&tid, NULL, (void *(*)(void *)) &esdm_backend_update_dynamic_perf_model_lat_thp, data);
+		pthread_create(&data->tid, NULL, (void *(*)(void *)) &esdm_backend_update_dynamic_perf_model_lat_thp, data);
 	}
 
 	return 0;
@@ -138,6 +172,8 @@ int esdm_backend_reset_dynamic_perf_model_lat_thp(esdm_dynamic_perf_model_lat_th
 	data->period = 0.0;
 	data->size = 0;
 	data->alpha = 0.0;
+	data->log = NULL;
+	data->tid = 0;
 	data->backend = NULL;
 	data->esdm_backend_check_dynamic_perf_model_lat_thp = NULL;
 
@@ -149,10 +185,12 @@ int esdm_backend_estimate_dynamic_perf_model_lat_thp(esdm_dynamic_perf_model_lat
 	if (!data || !fragment | !out_time)
 		return -1;
 
+	pthread_mutex_lock(&data->flag);
 	if (data->throughput > 0)
 		*out_time = fragment->bytes / data->throughput + data->latency;
 	else
 		*out_time = 0.0;
+	pthread_mutex_unlock(&data->flag);
 
 	return 0;
 }

@@ -49,12 +49,18 @@ esdm_performance_t* esdm_performance_init(esdm_instance_t* esdm) {
 	//  => backend, estimate_timestamp, estimate question?, an actual estimate
 
 
+	esdm->performance = performance;
 	return performance;
 }
 
 
-esdm_status esdm_performance_finalize(esdm_performance_t* performance)
+esdm_status esdm_performance_finalize(esdm_instance_t *esdm)
 {
+	if (esdm->performance) {
+		free(esdm->performance);
+		esdm->performance = NULL;
+	}
+
 	return ESDM_SUCCESS;
 }
 

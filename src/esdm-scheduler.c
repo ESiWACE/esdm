@@ -81,18 +81,26 @@ esdm_scheduler_t* esdm_scheduler_init(esdm_instance_t* esdm)
     }
   }
 
+	esdm->scheduler = scheduler;
 	return scheduler;
 }
 
 esdm_status esdm_scheduler_finalize(esdm_instance_t *esdm)
 {
+	ESDM_DEBUG(__func__);
+
   for (int i = 0; i < esdm->modules->backend_count; i++) {
     esdm_backend* b = esdm->modules->backends[i];
     if(b->threadPool){
       g_thread_pool_free(b->threadPool, 0, 1);
     }
   }
-	ESDM_DEBUG(__func__);
+
+	if (esdm->scheduler) {
+		free(esdm->scheduler);
+		esdm->scheduler = NULL;
+	}
+
 	return ESDM_SUCCESS;
 }
 

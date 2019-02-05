@@ -76,6 +76,8 @@ esdm_layout_t* esdm_layout_init(esdm_instance_t* esdm) {
 
 	esdm_layout_t* layout = NULL;
 	layout = (esdm_layout_t*) malloc(sizeof(esdm_layout_t));
+
+	esdm->layout = layout;
 	return layout;
 }
 
@@ -87,9 +89,15 @@ esdm_layout_t* esdm_layout_init(esdm_instance_t* esdm) {
 *
 * @return Status
 */
-esdm_status esdm_layout_finalize()
+esdm_status esdm_layout_finalize(esdm_instance_t *esdm)
 {
-	ESDM_DEBUG(__func__);	
+	ESDM_DEBUG(__func__);
+
+	if (esdm->layout) {
+		free(esdm->layout);
+		esdm->layout = NULL;
+	}
+
 	return ESDM_SUCCESS;
 }
 
