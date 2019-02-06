@@ -16,7 +16,41 @@
 #include <esdm-internal.h>
 #include <backends-data/dynamic-perf-model/lat-thr.h>
 
-void *esdm_backend_update_dynamic_perf_model_lat_thp(esdm_dynamic_perf_model_lat_thp_t * data)
+#define ESDM_BACKENDS_DYNAMIC_PERF_MODEL_SIZE 256
+
+int _esdm_backend_update_dynamic_perf_model_lat_thp(esdm_dynamic_perf_model_lat_thp_t * data, double *estimated_throughput, double *estimated_latency)
+{
+	if (!data || !estimated_throughput || !estimated_latency)
+		return 1;
+
+	float time1, time2;
+
+	// Write the first test data
+	if ((*data->esdm_backend_check_dynamic_perf_model_lat_thp)(data->backend, data->size, &time1))
+		return 2;
+
+	// Write the second test data
+	if ((*data->esdm_backend_check_dynamic_perf_model_lat_thp)(data->backend, 2 * data->size, &time2))
+		return 3;
+
+	// Sanity check
+	time2 -= time1;	// Delta t
+	if (time2 <= 0)
+		return 4;
+
+	*estimated_throughput = data->size / time2;
+	*estimated_latency = time1 - time2; // Optimized for data->size and 2 * data->size
+
+	// Sanity check
+	if ((*estimated_throughput <= 0) || (*estimated_latency < 0))
+		return 5;
+
+	return 0;
+}
+
+#ifdef ESDM_BACKENDS_DYNAMIC_PERF_MODEL_WITH_THREAD
+
+void *esdm_backend_autoupdate_dynamic_perf_model_lat_thp(esdm_dynamic_perf_model_lat_thp_t * data)
 {
 	pthread_detach(pthread_self());
 
@@ -34,24 +68,7 @@ void *esdm_backend_update_dynamic_perf_model_lat_thp(esdm_dynamic_perf_model_lat
 		else
 			sleep(data->period);
 
-		// Write the first test data
-		if ((*data->esdm_backend_check_dynamic_perf_model_lat_thp)(data->backend, data->size, &time1))
-			continue;
-
-		// Write the second test data
-		if ((*data->esdm_backend_check_dynamic_perf_model_lat_thp)(data->backend, 2 * data->size, &time2))
-			continue;
-
-		// Sanity check
-		time2 -= time1;	// Delta t
-		if (time2 <= 0)
-			continue;
-
-		estimated_throughput = data->size / time2;
-		estimated_latency = time1 - time2; // Optimized for data->size and 2 * data->size
-
-		// Sanity check
-		if ((estimated_throughput <= 0) || (estimated_latency < 0))
+		if (_esdm_backend_update_dynamic_perf_model_lat_thp(data, &estimated_throughput, &estimated_latency))
 			continue;
 
 		pthread_mutex_lock(&data->flag);
@@ -63,32 +80,34 @@ void *esdm_backend_update_dynamic_perf_model_lat_thp(esdm_dynamic_perf_model_lat
 	return 0;
 }
 
+#endif
+
 int esdm_backend_init_dynamic_perf_model_lat_thp(esdm_dynamic_perf_model_lat_thp_t * data) {
 
 	if (!data)
 		return -1;
 
+#ifdef ESDM_BACKENDS_DYNAMIC_PERF_MODEL_WITH_THREAD
+
 	pthread_mutex_init(&data->flag, NULL);
+
+#endif
 
 	return 0;
 }
 
-int esdm_backend_finalize_dynamic_perf_model_lat_thp(esdm_dynamic_perf_model_lat_thp_t * data) {
-
+int esdm_backend_finalize_dynamic_perf_model_lat_thp(esdm_dynamic_perf_model_lat_thp_t * data)
+{
 	if (!data)
 		return -1;
+
+#ifdef ESDM_BACKENDS_DYNAMIC_PERF_MODEL_WITH_THREAD
 
 	if (data->tid)
 		pthread_cancel(data->tid);
 	pthread_mutex_destroy(&data->flag);
 
-	if (data->log) {
-		FILE *file = fopen(data->log, "a");
-		if (file) {
-			fprintf(file, "{ \"latency\": %f, \"throughput\" : %f }\n", data->latency, data->throughput);
-			fclose(file);
-		}
-	}
+#endif
 
 	return 0;
 }
@@ -113,19 +132,21 @@ int esdm_backend_parse_dynamic_perf_model_lat_thp(json_t * str, esdm_dynamic_per
 	} else
 		data->throughput = 0.0;
 
-	elem = json_object_get(str, "period");
-	if (elem != NULL) {
-		data->period = json_real_value(elem);
-		assert(data->period > 0.0);
-	} else
-		data->period = 0.0;
-
 	elem = json_object_get(str, "size");
 	if (elem != NULL) {
 		data->size = json_integer_value(elem);
 		assert(data->size > 0);
 	} else
 		data->size = 0;
+
+#ifdef ESDM_BACKENDS_DYNAMIC_PERF_MODEL_WITH_THREAD
+
+	elem = json_object_get(str, "period");
+	if (elem != NULL) {
+		data->period = json_real_value(elem);
+		assert(data->period > 0.0);
+	} else
+		data->period = 0.0;
 
 	elem = json_object_get(str, "alpha");
 	if (elem != NULL) {
@@ -135,13 +156,10 @@ int esdm_backend_parse_dynamic_perf_model_lat_thp(json_t * str, esdm_dynamic_per
 	} else
 		data->alpha = 0.0;
 
-	elem = json_object_get(str, "log");
-	if (elem != NULL)
-		data->log = json_string_value(elem);
-	else
-		data->log = NULL;
-
 	data->tid = 0;
+
+#endif
+
 	data->backend = NULL;
 	data->esdm_backend_check_dynamic_perf_model_lat_thp = NULL;
 
@@ -153,11 +171,19 @@ int esdm_backend_start_dynamic_perf_model_lat_thp(esdm_dynamic_perf_model_lat_th
 	if (!data)
 		return -1;
 
-	if (data->period > 0) {
-		data->backend = backend;
-		data->esdm_backend_check_dynamic_perf_model_lat_thp = checker;
-		pthread_create(&data->tid, NULL, (void *(*)(void *)) &esdm_backend_update_dynamic_perf_model_lat_thp, data);
-	}
+	data->backend = backend;
+	data->esdm_backend_check_dynamic_perf_model_lat_thp = checker;
+
+#ifdef ESDM_BACKENDS_DYNAMIC_PERF_MODEL_WITH_THREAD
+
+	pthread_create(&data->tid, NULL, (void *(*)(void *)) &esdm_backend_autoupdate_dynamic_perf_model_lat_thp, data);
+
+#else
+
+	// Estimate initial performance
+	esdm_backend_update_dynamic_perf_model_lat_thp(data);
+
+#endif
 
 	return 0;
 }
@@ -169,13 +195,29 @@ int esdm_backend_reset_dynamic_perf_model_lat_thp(esdm_dynamic_perf_model_lat_th
 
 	data->throughput = 0.0;
 	data->latency = 0.0;
-	data->period = 0.0;
 	data->size = 0;
-	data->alpha = 0.0;
-	data->log = NULL;
-	data->tid = 0;
 	data->backend = NULL;
 	data->esdm_backend_check_dynamic_perf_model_lat_thp = NULL;
+#ifdef ESDM_BACKENDS_DYNAMIC_PERF_MODEL_WITH_THREAD
+	data->period = 0.0;
+	data->alpha = 0.0;
+	data->tid = 0;
+#endif
+
+	return 0;
+}
+
+int esdm_backend_update_dynamic_perf_model_lat_thp(esdm_dynamic_perf_model_lat_thp_t* data)
+{
+	if (!data)
+		return -1;
+
+	double estimated_throughput, estimated_latency;
+	if (!_esdm_backend_update_dynamic_perf_model_lat_thp(data, &estimated_throughput, &estimated_latency)) {
+
+		data->throughput = estimated_throughput;
+		data->latency = estimated_latency;
+	}
 
 	return 0;
 }
@@ -185,12 +227,43 @@ int esdm_backend_estimate_dynamic_perf_model_lat_thp(esdm_dynamic_perf_model_lat
 	if (!data || !fragment | !out_time)
 		return -1;
 
+#ifdef ESDM_BACKENDS_DYNAMIC_PERF_MODEL_WITH_THREAD
+
 	pthread_mutex_lock(&data->flag);
 	if (data->throughput > 0)
 		*out_time = fragment->bytes / data->throughput + data->latency;
 	else
 		*out_time = 0.0;
 	pthread_mutex_unlock(&data->flag);
+
+#else
+
+	if (data->throughput > 0) {
+/*
+		// Update current performance estimate
+		esdm_backend_update_dynamic_perf_model_lat_thp(data);
+*/
+		*out_time = fragment->bytes / data->throughput + data->latency;
+
+	} else
+		*out_time = 0.0;
+
+#endif
+
+	return 0;
+}
+
+int esdm_backend_get_dynamic_perf_model_lat_thp(esdm_dynamic_perf_model_lat_thp_t* data, char **json)
+{
+	if (!data || !json)
+		return -1;
+
+	char tmp[ESDM_BACKENDS_DYNAMIC_PERF_MODEL_SIZE];
+	snprintf(tmp, ESDM_BACKENDS_DYNAMIC_PERF_MODEL_SIZE, "{ \"latency\": %f, \"throughput\" : %f }", data->latency, data->throughput);
+
+	*json = strdup(tmp);
+	if (!*json)
+		return -2;
 
 	return 0;
 }

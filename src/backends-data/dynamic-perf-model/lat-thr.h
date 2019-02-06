@@ -24,14 +24,15 @@
 typedef struct {
 	double latency;	// seconds
 	double throughput;	// bytes per seconds
-	double period;	// seconds
 	int size;	// bytes for test
-	double alpha;
-	const char *log;
-	pthread_t tid;
-	pthread_mutex_t flag;
 	esdm_backend * backend;	// reference to the corresponding backend
 	int (*esdm_backend_check_dynamic_perf_model_lat_thp)(esdm_backend *, int, float *);	// Function to write data and remove
+#ifdef ESDM_BACKENDS_DYNAMIC_PERF_MODEL_WITH_THREAD
+	double period;	// seconds
+	double alpha;
+	pthread_t tid;
+	pthread_mutex_t flag;
+#endif
 } esdm_dynamic_perf_model_lat_thp_t;
 
 int esdm_backend_init_dynamic_perf_model_lat_thp(esdm_dynamic_perf_model_lat_thp_t * data);
@@ -43,6 +44,10 @@ int esdm_backend_start_dynamic_perf_model_lat_thp(esdm_dynamic_perf_model_lat_th
 
 int esdm_backend_reset_dynamic_perf_model_lat_thp(esdm_dynamic_perf_model_lat_thp_t * data);
 
+int esdm_backend_update_dynamic_perf_model_lat_thp(esdm_dynamic_perf_model_lat_thp_t* data);
+
 int esdm_backend_estimate_dynamic_perf_model_lat_thp(esdm_dynamic_perf_model_lat_thp_t * data, esdm_fragment_t * fragment, float *out_time);
+
+int esdm_backend_get_dynamic_perf_model_lat_thp(esdm_dynamic_perf_model_lat_thp_t* data, char **json);
 
 #endif
