@@ -80,4 +80,4 @@ more efficiently organize metadata and data across a variety of storage backends
 
 
 - `tools` contains separate programs, e.g., for benchmarking HDF5.
-  They should only be loosly coupled with the source code and allow to be used with the regular HDF5.
+  They should only be loosely coupled with the source code and allow to be used with the regular HDF5.
