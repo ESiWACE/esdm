@@ -132,25 +132,24 @@ static int entry_create(const char *path, esdm_metadata * data)
 	// ENOENT => allow to create
 
 	status = stat(path, &sb);
-	if (status == -1) {
-		perror("stat");
-
-		// write to non existing file
-		int fd = open(path,	O_WRONLY | O_CREAT, S_IWUSR | S_IRUSR | S_IWGRP | S_IRGRP | S_IROTH);
-
-		// everything ok? write and close
-		if ( fd != -1 )
-		{
-			if(data != NULL && data->json != NULL){
-				int size = strlen(data->json) + 1;
-				int ret = write_check(fd, data->json, size);
-				assert( ret == 0 );
-			}
-			close(fd);
-			return 0;
-		}
+	if (status != -1) {
+		// TODO fix semantics, what should happen if the file exists.
+		perror("entry create file exists already");
 	}
-	
+	// write to non existing file
+	int fd = open(path,	O_WRONLY | O_CREAT, S_IWUSR | S_IRUSR | S_IWGRP | S_IRGRP | S_IROTH);
+	// everything ok? write and close
+	if ( fd != -1 )
+	{
+		if(data != NULL && data->json != NULL){
+			int size = strlen(data->json) + 1;
+			int ret = write_check(fd, data->json, size);
+			assert( ret == 0 );
+		}
+		close(fd);
+		return 0;
+	}
+
 	return 1;
 }
 

@@ -42,7 +42,7 @@ static void backend_thread(io_work_t* data_p, esdm_backend* backend_id);
 
 /**
  * Initialize scheduler component:
- *     * setup a thread pool 
+ *     * setup a thread pool
  *     * allow global and local limits
  *
  *     use globale limit only if ESDM_ACCESSIBILITY_GLOBAL is set    (data_accessibility_t enum)
@@ -229,8 +229,6 @@ esdm_status esdm_scheduler_enqueue_read(esdm_instance_t *esdm, io_request_status
 
 		// esdm_fragment_print(read_frag[i]);
 		// printf("\n");
-
-		DEBUG("OFFSET/SIZE: %s %s\n", offset_str, size_str);
 
 		//for verification purposes, we could read back the metadata stored and compare it...
 		//esdm_dataspace_t * space = NULL;
@@ -425,7 +423,3 @@ esdm_status esdm_scheduler_process_blocking(esdm_instance_t *esdm, io_operation_
 
 	return ESDM_SUCCESS;
 }
-
-
-
-
