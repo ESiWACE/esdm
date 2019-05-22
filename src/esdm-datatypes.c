@@ -245,7 +245,9 @@ esdm_status esdm_dataspace_overlap_str(esdm_dataspace_t *a, char delim_c, char *
 		if ( o2 + s2 <= o1 ) return ESDM_ERROR;
 	}
 	if(out_space != NULL){
-			*out_space = esdm_dataspace_subspace(a->subspace_of, a->dimensions, size, off);
+		// TODO always go to the parent space
+		esdm_dataspace_t * parent = a->subspace_of == NULL ? a : a->subspace_of;
+		*out_space = esdm_dataspace_subspace(parent, a->dimensions, size, off);
 	}
 	return ESDM_SUCCESS;
 }
