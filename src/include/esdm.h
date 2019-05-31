@@ -49,7 +49,7 @@ esdm_status esdm_read(esdm_dataset_t *dataset, void *buf, esdm_dataspace_t* subs
 ///////////////////////////////////////////////////////////////////////////////
 
 // Container
-esdm_container* esdm_container_create(const char *name);
+esdm_container* esdm_container_create(const char* name, esdm_metadata *metadata);
 esdm_container* esdm_container_retrieve(const char * name);
 esdm_status esdm_container_commit(esdm_container *container);
 esdm_status esdm_container_destroy(esdm_container *container);

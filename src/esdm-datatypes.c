@@ -46,14 +46,14 @@ extern esdm_instance_t esdm;
  *	@return Pointer to new container.
  *
  */
-esdm_container* esdm_container_create(const char* name)
+esdm_container* esdm_container_create(const char* name, esdm_metadata *metadata)
 {
 	ESDM_DEBUG(__func__);
 	esdm_container* container = (esdm_container*) malloc(sizeof(esdm_container));
 
 	container->name = strdup(name);
 
-	container->metadata = NULL;
+	container->metadata = metadata;
 	container->datasets = g_hash_table_new(g_direct_hash,  g_direct_equal);
 	container->status = ESDM_STATUS_DIRTY;
 
@@ -398,7 +398,7 @@ esdm_dataset_t* esdm_dataset_create(esdm_container* container, const char* name,
 
 	dataset->name = strdup(name);
 	dataset->container = container;
-	dataset->metadata = NULL;
+	dataset->metadata = container->metadata;
 	dataset->dataspace = dataspace;
 	dataset->fragments = g_hash_table_new(g_direct_hash,  g_direct_equal);
 
@@ -544,12 +544,6 @@ esdm_dataspace_t* esdm_dataspace_subspace(esdm_dataspace_t *dataspace, int64_t d
 
 	return subspace;
 }
-
-
-
-
-
-
 
 void esdm_dataspace_print(esdm_dataspace_t * d){
 	printf("DATASPACE(size(%ld", d->size[0]);

@@ -398,16 +398,20 @@ static int dataset_create(esdm_backend* backend, esdm_dataset_t *dataset)
 	sprintf(path_metadata, "%s/containers/%s/%s.md", tgt, dataset->container->name, dataset->name);
 	sprintf(path_dataset, "%s/containers/%s/%s", tgt, dataset->container->name, dataset->name);
 
+/*	struct esdm_metadata x = {
+		.json = "Luciana2",
+		.size = 10
+	};
+*/
 	// create metadata entry
-	entry_create(path_metadata, NULL);
+	entry_create(path_metadata, dataset->metadata);
+//		entry_create(path_metadata, &x);
 
 	// create directory for datsets
 	if (stat(path_dataset, &sb) == -1)
 	{
 		mkdir(path_dataset, 0700);
 	}
-
-
 
 	return 0;
 }

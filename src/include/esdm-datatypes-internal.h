@@ -16,6 +16,7 @@ struct esdm_container {
 struct esdm_metadata {
 	char *json;
 	int size;
+	smd_attr_t * smd; // if this is not NULL, we have metadata parsed from JSON to KV pairs.
 };
 
 struct esdm_dataset_t {
@@ -260,6 +261,7 @@ typedef struct esdm_performance_t {
 
 
 typedef struct esdm_instance_t esdm_instance_t;
+
 struct esdm_instance_t {
 	int is_initialized;
 	int procs_per_node;

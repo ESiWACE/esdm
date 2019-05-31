@@ -407,7 +407,7 @@ esdm_status esdm_scheduler_process_blocking(esdm_instance_t *esdm, io_operation_
 		ret = esdm_scheduler_enqueue_write(esdm, & status, dataset, buf, subspace);
 	} else if (op == ESDM_OP_READ) {
 		esdm_backend * md = esdm->modules->metadata;
-		ret = md->callbacks.lookup(md, dataset, subspace, & frag_count, & read_frag);
+		ret = md->callbacks.lookup(md, dataset, subspace, & frag_count, &read_frag);
 		DEBUG("fragments to read: %d", frag_count);
 		ret = esdm_scheduler_enqueue_read(esdm, & status, frag_count, read_frag, buf, subspace);
 	} else {
