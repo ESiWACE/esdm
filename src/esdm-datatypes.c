@@ -398,7 +398,7 @@ esdm_dataset_t* esdm_dataset_create(esdm_container* container, const char* name,
 
 	dataset->name = strdup(name);
 	dataset->container = container;
-	dataset->metadata = container->metadata;
+	dataset->metadata = NULL;
 	dataset->dataspace = dataspace;
 	dataset->fragments = g_hash_table_new(g_direct_hash,  g_direct_equal);
 
