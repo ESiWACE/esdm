@@ -24,7 +24,6 @@
 #include <esdm.h>
 #include <esdm-datatypes-internal.h>
 
-void esdm_dataset_link_metadata (esdm_dataset_t *, smd_attr_t *);
 
 int main(){
 	esdm_status ret;
@@ -108,7 +107,7 @@ int main(){
 	return 0;
 }
 
-void esdm_dataset_link_metadata (esdm_dataset_t *dataset, smd_attr_t *new) {
+esdm_status esdm_dataset_link_metadata (esdm_dataset_t *dataset, smd_attr_t *new) {
 
 	char *buff; // malloc
 	size_t j;
@@ -129,4 +128,5 @@ void esdm_dataset_link_metadata (esdm_dataset_t *dataset, smd_attr_t *new) {
 	strcpy(dataset->metadata->json, buff);
 	dataset->metadata->size = j;
 
+	return ESDM_SUCCESS;
 }
