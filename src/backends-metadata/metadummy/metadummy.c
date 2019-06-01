@@ -190,6 +190,8 @@ static int entry_retrieve_tst(const char *path)
 
 	DEBUG("Entry content: %s\n", (char*)buf);
 
+	printf("\n\nEntry content: %s\n\n\n\n", (char*)buf);
+
 	return 0;
 }
 
@@ -389,7 +391,6 @@ static int dataset_create(esdm_backend* backend, esdm_dataset_t *dataset)
 	char path_dataset[PATH_MAX];
 	struct stat sb;
 
-
 	metadummy_backend_options_t *options = (metadummy_backend_options_t*) backend->data;
 	const char* tgt = options->target;
 
@@ -420,6 +421,15 @@ static int dataset_create(esdm_backend* backend, esdm_dataset_t *dataset)
 static int dataset_retrieve(esdm_backend* backend, esdm_dataset_t *dataset)
 {
 	DEBUG_ENTER;
+
+	char path_metadata[PATH_MAX];
+
+	metadummy_backend_options_t *options = (metadummy_backend_options_t*) backend->data;
+	const char* tgt = options->target;
+
+	sprintf(path_metadata, "%s/containers/%s/%s.md", tgt, "mycontainer", "mydataset");
+
+	entry_retrieve_tst(path_metadata);
 
 	return 0;
 }

@@ -24,6 +24,7 @@
 #include <esdm.h>
 #include <esdm-datatypes-internal.h>
 
+esdm_status esdm_dataset_link_metadata (esdm_dataset_t *dataset, smd_attr_t *new);
 
 int main(){
 	esdm_status ret;
@@ -71,7 +72,7 @@ int main(){
 	// Use the smd_attr_t library to set some scientific metadata onto the object
 	// We create two different attributes, one is an array and one is an integer and attach it to the dataset
 
-	size_t len = 789;
+	size_t len = 123;
 	int a = 456;
 //	int *idp = &a;
 //	int idp[3] = {0, 1, 2};
@@ -99,6 +100,12 @@ int main(){
 	// inquire what scientific metadata exists
 	// return it somehow
 
+//	esdm_dataset_t* esdm_dataset_retrieve(esdm_container *container, const char* name)
+
+//	static int dataset_retrieve(esdm_backend* backend, esdm_dataset_t *dataset)
+
+	esdm_dataset_retrieve_from_file();
+
 	ret = esdm_finalize();
 	assert(ret == ESDM_SUCCESS);
 
@@ -107,7 +114,8 @@ int main(){
 	return 0;
 }
 
-esdm_status esdm_dataset_link_metadata (esdm_dataset_t *dataset, smd_attr_t *new) {
+esdm_status esdm_dataset_link_metadata (esdm_dataset_t *dataset, smd_attr_t *new)
+{
 
 	char *buff; // malloc
 	size_t j;

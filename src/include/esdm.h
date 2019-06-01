@@ -63,6 +63,7 @@ esdm_status esdm_dataset_link_metadata (esdm_dataset_t * dset, smd_attr_t * attr
 
 
 esdm_dataset_t* esdm_dataset_retrieve(esdm_container *container, const char * name);
+esdm_status esdm_dataset_retrieve_from_file();
 esdm_status esdm_dataset_commit(esdm_dataset_t *dataset);
 esdm_status esdm_dataset_destroy(esdm_dataset_t *dataset);
 
