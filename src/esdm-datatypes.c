@@ -46,14 +46,14 @@ extern esdm_instance_t esdm;
  *	@return Pointer to new container.
  *
  */
-esdm_container* esdm_container_create(const char* name, esdm_metadata *metadata)
+esdm_container* esdm_container_create(const char* name)
 {
 	ESDM_DEBUG(__func__);
 	esdm_container* container = (esdm_container*) malloc(sizeof(esdm_container));
 
 	container->name = strdup(name);
 
-	container->metadata = metadata;
+	container->metadata = NULL;
 	container->datasets = g_hash_table_new(g_direct_hash,  g_direct_equal);
 	container->status = ESDM_STATUS_DIRTY;
 
