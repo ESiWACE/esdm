@@ -51,6 +51,7 @@ static void metadummy_test();
 
 void posix_recursive_remove(const char * path);
 
+esdm_status esdm_dataset_read_metadata (esdm_dataset_t *dataset, char *buf);
 
 ///////////////////////////////////////////////////////////////////////////////
 // Helper and utility /////////////////////////////////////////////////////////
@@ -120,7 +121,7 @@ static int fsck()
 // Internal Helpers  //////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////
 
-static int entry_create(const char *path, esdm_metadata * data)
+static int entry_create(const char *path, esdm_metadata *data)
 {
 	DEBUG_ENTER;
 
@@ -142,7 +143,7 @@ static int entry_create(const char *path, esdm_metadata * data)
 	if ( fd != -1 )
 	{
 		if(data != NULL && data->json != NULL){
-			int size = strlen(data->json) + 1;
+			int size = strlen(data->json) + 1; // why? and what the correlation to metadata->size?
 			int ret = write_check(fd, data->json, size);
 			assert( ret == 0 );
 		}
@@ -153,7 +154,7 @@ static int entry_create(const char *path, esdm_metadata * data)
 	return 1;
 }
 
-static int entry_retrieve_tst(const char *path)
+static int entry_retrieve_tst(const char *path, esdm_dataset_t *dataset)
 {
 	DEBUG_ENTER;
 
@@ -187,14 +188,46 @@ static int entry_retrieve_tst(const char *path)
 		close(fd);
 	}
 
-
 	DEBUG("Entry content: %s\n", (char*)buf);
 
-	printf("\n\nEntry content: %s\n\n\n\n", (char*)buf);
+// I know this is not the appropriate place, but I needed to access the buffer somehow.
+// Better than change the return of this function, I think.
+
+	esdm_dataset_read_metadata (dataset, buf);
 
 	return 0;
 }
 
+// Again, I know this is not the appropriate place, but it was easier for now.
+
+esdm_status esdm_dataset_read_metadata (esdm_dataset_t *dataset, char *buf)
+{
+	dataset->metadata = (esdm_metadata *) malloc(sizeof(esdm_metadata));
+	dataset->metadata->json = (char *) malloc(64*sizeof(char));
+
+	smd_attr_t *out = smd_attr_create_from_json(buf);
+
+//	smd_attr_print(out);
+
+	// Retrieving the original data
+
+	const char *name = smd_attr_get_name(out);
+	int *len = smd_attr_get_value(out);
+	int idp = out->id;
+
+	printf("\n\nFinal Values\n\n");
+	printf("\n name = %s\n", name);
+	printf("\n len = %d\n", len);
+	printf("\n idp = %d \t(it's not my fault!)\n\n\n", idp);
+
+	// Copying the retrieved data to the dataset
+
+	strcpy(dataset->metadata->json, buf);
+	dataset->metadata->smd = out;
+	dataset->metadata->size = 123;  // where to get this info?
+
+	return ESDM_SUCCESS;
+}
 
 static int entry_update(const char *path, void *buf, size_t len)
 {
@@ -316,7 +349,8 @@ static int container_retrieve(esdm_backend* backend, esdm_container *container)
 	asprintf(&path_container, "%s/containers/%s", tgt, container->name);
 
 	// create metadata entry
-	entry_retrieve_tst(path_metadata);
+	esdm_dataset_t *dataset = NULL;
+	entry_retrieve_tst(path_metadata, dataset); // conflict
 
 
 	free(path_metadata);
@@ -427,9 +461,9 @@ static int dataset_retrieve(esdm_backend* backend, esdm_dataset_t *dataset)
 	metadummy_backend_options_t *options = (metadummy_backend_options_t*) backend->data;
 	const char* tgt = options->target;
 
-	sprintf(path_metadata, "%s/containers/%s/%s.md", tgt, "mycontainer", "mydataset");
+	sprintf(path_metadata, "%s/containers/%s/%s.md", tgt, "mycontainer", "mydataset"); //cheat, maybe
 
-	entry_retrieve_tst(path_metadata);
+	entry_retrieve_tst(path_metadata, dataset);
 
 	return 0;
 }
@@ -779,7 +813,8 @@ static void metadummy_test()
 	ret = entry_create(abc, NULL);
 	assert(ret == 0);
 
-	ret = entry_retrieve_tst(abc);
+	esdm_dataset_t *dataset = NULL;
+	ret = entry_retrieve_tst(abc, dataset);
 	assert(ret == 0);
 
 
@@ -793,11 +828,11 @@ static void metadummy_test()
 
 	// perform update and test
 	ret = entry_update(abc, "huhuhuhuh", 5);
-	ret = entry_retrieve_tst(abc);
 
+	ret = entry_retrieve_tst(abc, dataset);
 	// delete entry and expect retrieve to fail
 	ret = entry_destroy(abc);
-	ret = entry_retrieve_tst(abc);
+	ret = entry_retrieve_tst(abc, dataset);
 	assert(ret == -1);
 
 

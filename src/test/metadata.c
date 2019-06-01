@@ -72,16 +72,30 @@ int main(){
 	// Use the smd_attr_t library to set some scientific metadata onto the object
 	// We create two different attributes, one is an array and one is an integer and attach it to the dataset
 
-	size_t len = 123;
-	int a = 456;
+//	int a = 456;
 //	int *idp = &a;
 //	int idp[3] = {0, 1, 2};
-	int idp[123];
+	// int idp[123];
+	//
+	// for (int i=0; i<123; i++)
+	// 	idp[i] = 5*i;
 
-	for (int i=0; i<123; i++)
-		idp[i] = 5*i;
+	size_t len = 3;
+	int idp = 5;
 
-	smd_attr_t *new = smd_attr_new("int", SMD_DTYPE_UINT64, &len, *idp);
+	printf("\n\nInitial Values\n\n");
+
+	printf("\n name = %s\n", "int");
+	printf("\n len = %d\n", len);
+	printf("\n idp = %d\n\n\n", idp);
+
+//		smd_attr_t * smd_attr_new(const char* name, smd_dtype_t * type, const void * val, int id){
+
+// SMD_DTYPE_UINT64 -> when are we gonna expand this?
+
+	smd_attr_t *new = smd_attr_new("int", SMD_DTYPE_UINT64, &len, idp);
+
+//	smd_attr_print(new);
 
   // This call registers the metadata and links it to the dataset. You are not supposed to change the metadata thereafter. it is now owned by the dataset, don`t free it either.
 
@@ -117,7 +131,7 @@ int main(){
 esdm_status esdm_dataset_link_metadata (esdm_dataset_t *dataset, smd_attr_t *new)
 {
 
-	char *buff; // malloc
+	char *buff;
 	size_t j;
 
 //	fragment->metadata->size += sprintf(& fragment->metadata->json[fragment->metadata->size], "{\"path\" : \"%s\"}", path_fragment);
@@ -134,7 +148,7 @@ esdm_status esdm_dataset_link_metadata (esdm_dataset_t *dataset, smd_attr_t *new
 
 	dataset->metadata->smd = new;
 	strcpy(dataset->metadata->json, buff);
-	dataset->metadata->size = j;
+	dataset->metadata->size = j; // Is this right?
 
 	return ESDM_SUCCESS;
 }
