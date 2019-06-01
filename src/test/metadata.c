@@ -65,7 +65,8 @@ int main(){
 	// metadata->size = strlen(metadata->json);
 
 	dataspace = esdm_dataspace_create(2, bounds, SMD_DTYPE_UINT64);
-	container = esdm_container_create("mycontainer", NULL);
+//	container = esdm_container_create("mycontainer", metadata);
+	container = esdm_container_create("mycontainer");
 	dataset = esdm_dataset_create(container, "mydataset", dataspace);
 
 	// Use the smd_attr_t library to set some scientific metadata onto the object
