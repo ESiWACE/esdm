@@ -51,7 +51,7 @@ static void metadummy_test();
 
 void posix_recursive_remove(const char * path);
 
-esdm_status esdm_dataset_read_metadata (esdm_dataset_t *dataset, char *buf);
+esdm_status esdm_dataset_read_metadata (esdm_dataset_t *dataset);
 
 ///////////////////////////////////////////////////////////////////////////////
 // Helper and utility /////////////////////////////////////////////////////////
@@ -173,7 +173,6 @@ static int entry_retrieve_tst(const char *path, esdm_dataset_t *dataset)
 
 	//print_stat(sb);
 
-
 	// write to non existing file
 	int fd = open(path,	O_RDONLY | S_IWUSR | S_IRUSR | S_IWGRP | S_IRGRP | S_IROTH);
 
@@ -190,43 +189,13 @@ static int entry_retrieve_tst(const char *path, esdm_dataset_t *dataset)
 
 	DEBUG("Entry content: %s\n", (char*)buf);
 
-// I know this is not the appropriate place, but I needed to access the buffer somehow.
-// Better than change the return of this function, I think.
+	// Save the metadata in the dataset structure
 
-	esdm_dataset_read_metadata (dataset, buf);
+	dataset->metadata = (esdm_metadata *) malloc(sizeof(esdm_metadata));
+	dataset->metadata->json = (char *) malloc(456*sizeof(char)); // randon number
+	strcpy(dataset->metadata->json, buf);
 
 	return 0;
-}
-
-// Again, I know this is not the appropriate place, but it was easier for now.
-
-esdm_status esdm_dataset_read_metadata (esdm_dataset_t *dataset, char *buf)
-{
-	dataset->metadata = (esdm_metadata *) malloc(sizeof(esdm_metadata));
-	dataset->metadata->json = (char *) malloc(64*sizeof(char));
-
-	smd_attr_t *out = smd_attr_create_from_json(buf);
-
-//	smd_attr_print(out);
-
-	// Retrieving the original data
-
-	const char *name = smd_attr_get_name(out);
-	int *len = smd_attr_get_value(out);
-	int idp = out->id;
-
-	printf("\n\nFinal Values\n\n");
-	printf("\n name = %s\n", name);
-	printf("\n len = %d\n", len);
-	printf("\n idp = %d \t(it's not my fault!)\n\n\n", idp);
-
-	// Copying the retrieved data to the dataset
-
-	strcpy(dataset->metadata->json, buf);
-	dataset->metadata->smd = out;
-	dataset->metadata->size = 123;  // where to get this info?
-
-	return ESDM_SUCCESS;
 }
 
 static int entry_update(const char *path, void *buf, size_t len)

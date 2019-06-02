@@ -25,6 +25,7 @@
 #include <esdm-datatypes-internal.h>
 
 esdm_status esdm_dataset_link_metadata (esdm_dataset_t *dataset, smd_attr_t *new);
+esdm_status esdm_dataset_read_metadata (esdm_dataset_t *dataset);
 
 int main(){
 	esdm_status ret;
@@ -118,7 +119,9 @@ int main(){
 
 //	static int dataset_retrieve(esdm_backend* backend, esdm_dataset_t *dataset)
 
-	esdm_dataset_retrieve_from_file();
+	esdm_dataset_retrieve_from_file(dataset);
+	esdm_dataset_read_metadata(dataset);
+	esdm_dataset_destroy(dataset);
 
 	ret = esdm_finalize();
 	assert(ret == ESDM_SUCCESS);
@@ -128,7 +131,7 @@ int main(){
 	return 0;
 }
 
-esdm_status esdm_dataset_link_metadata (esdm_dataset_t *dataset, smd_attr_t *new)
+esdm_status esdm_dataset_link_metadata(esdm_dataset_t *dataset, smd_attr_t *new)
 {
 
 	char *buff;
@@ -142,13 +145,36 @@ esdm_status esdm_dataset_link_metadata (esdm_dataset_t *dataset, smd_attr_t *new
 	j = smd_attr_ser_json(buff, new);
 
 	dataset->metadata = (esdm_metadata *) malloc(sizeof(esdm_metadata));
-	dataset->metadata->json = (char *) malloc(456*sizeof(char));
 
-//	dataset->metadata->smd = (smd_attr_t *)malloc(sizeof(smd_attr_t));
+	//	dataset->metadata->smd = (smd_attr_t *)malloc(sizeof(smd_attr_t));
 
 	dataset->metadata->smd = new;
-	strcpy(dataset->metadata->json, buff);
 	dataset->metadata->size = j; // Is this right?
+
+	return ESDM_SUCCESS;
+}
+
+esdm_status esdm_dataset_read_metadata(esdm_dataset_t *dataset)
+{
+	smd_attr_t *out = smd_attr_create_from_json(dataset->metadata->json);
+
+//	smd_attr_print(out);
+
+	// Retrieving the original data
+
+	const char *name = smd_attr_get_name(out);
+	int *len = smd_attr_get_value(out);
+	int idp = out->id;
+
+	printf("\n\nFinal Values\n\n");
+	printf("\n name = %s\n", name);
+	printf("\n len = %d\n", len);
+	printf("\n idp = %d \t(it's not my fault!)\n\n\n", idp);
+
+	// Copying the retrieved data to the dataset
+
+	dataset->metadata->smd = out;
+	dataset->metadata->size = 123;  // where to get this info?
 
 	return ESDM_SUCCESS;
 }

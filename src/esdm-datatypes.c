@@ -460,7 +460,7 @@ esdm_status esdm_dataset_commit(esdm_dataset_t *dataset)
 	return ESDM_SUCCESS;
 }
 
-esdm_status esdm_dataset_retrieve_from_file()
+esdm_status esdm_dataset_retrieve_from_file(esdm_dataset_t *dataset)
 {
 //	ESDM_DEBUG(__func__);
 
@@ -468,7 +468,7 @@ esdm_status esdm_dataset_retrieve_from_file()
 	// md callback create/update container
 	//dataset = (esdm_dataset_t *) malloc(sizeof(esdm_dataset_t));
 
-	esdm_dataset_t *dataset = (esdm_dataset_t *) malloc(sizeof(esdm_dataset_t));
+	dataset = (esdm_dataset_t *) malloc(sizeof(esdm_dataset_t));
 	esdm.modules->metadata->callbacks.dataset_retrieve(esdm.modules->metadata, dataset);
 
 	return ESDM_SUCCESS;
