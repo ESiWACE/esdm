@@ -98,7 +98,7 @@ esdm_status esdm_container_commit(esdm_container* container)
 
 	// TODO: ensure callback is not NULL
 	// md callback create/update container
-	esdm.modules->metadata->callbacks.container_create(esdm.modules->metadata, container);
+	esdm.modules->metadata_backend->callbacks.container_create(esdm.modules->metadata_backend, container);
 
 
 	// Also commit uncommited datasets of this container?
@@ -331,7 +331,7 @@ esdm_status esdm_fragment_commit(esdm_fragment_t *f)
 	m->size += sprintf(& m->json[m->size], "}");
 
 	// Announce to metadata coordinator
-	esdm.modules->metadata->callbacks.fragment_update(esdm.modules->metadata, f);
+	esdm.modules->metadata_backend->callbacks.fragment_update(esdm.modules->metadata_backend, f);
 
 	f->status = ESDM_STATUS_PERSISTENT;
 
@@ -454,7 +454,7 @@ esdm_status esdm_dataset_commit(esdm_dataset_t *dataset)
 
 	// TODO: ensure callback is not NULL
 	// md callback create/update container
-	esdm.modules->metadata->callbacks.dataset_create(esdm.modules->metadata, dataset);
+	esdm.modules->metadata_backend->callbacks.dataset_create(esdm.modules->metadata_backend, dataset);
 
 
 	return ESDM_SUCCESS;
@@ -469,7 +469,7 @@ esdm_status esdm_dataset_retrieve_from_file(esdm_dataset_t *dataset)
 	//dataset = (esdm_dataset_t *) malloc(sizeof(esdm_dataset_t));
 
 	dataset = (esdm_dataset_t *) malloc(sizeof(esdm_dataset_t));
-	esdm.modules->metadata->callbacks.dataset_retrieve(esdm.modules->metadata, dataset);
+	esdm.modules->metadata_backend->callbacks.dataset_retrieve(esdm.modules->metadata_backend, dataset);
 
 	return ESDM_SUCCESS;
 }

@@ -135,16 +135,16 @@ esdm_status esdm_mkfs(int enforce_format, data_accessibility_t target){
 	}
 	int ret;
 	int ret_final = ESDM_SUCCESS;
-	if(esdm.modules->metadata->config->data_accessibility == target){
-		ret = esdm.modules->metadata->callbacks.mkfs(esdm.modules->metadata, enforce_format);
+	if(esdm.modules->metadata_backend->config->data_accessibility == target){
+		ret = esdm.modules->metadata_backend->callbacks.mkfs(esdm.modules->metadata_backend, enforce_format);
 		if (ret != ESDM_SUCCESS){
 			ret_final = ret;
 		}
 	}
 
-	for(int i=0; i < esdm.modules->backend_count; i++){
-		if(esdm.modules->backends[i]->config->data_accessibility == target){
-			ret = esdm.modules->backends[i]->callbacks.mkfs(esdm.modules->backends[i], enforce_format);
+	for(int i=0; i < esdm.modules->data_backend_count; i++){
+		if(esdm.modules->data_backends[i]->config->data_accessibility == target){
+			ret = esdm.modules->data_backends[i]->callbacks.mkfs(esdm.modules->data_backends[i], enforce_format);
 			if (ret != ESDM_SUCCESS){
 				ret_final = ret;
 			}

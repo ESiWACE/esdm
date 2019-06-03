@@ -61,8 +61,8 @@ esdm_scheduler_t* esdm_scheduler_init(esdm_instance_t* esdm)
   const int ppn = esdm->procs_per_node;
   const int gt = esdm->total_procs;
   GError * error;
-	for (int i = 0; i < esdm->modules->backend_count; i++) {
-		esdm_backend* b = esdm->modules->backends[i];
+	for (int i = 0; i < esdm->modules->data_backend_count; i++) {
+		esdm_backend* b = esdm->modules->data_backends[i];
 		// in total we should not use more than max_global total threads
 		int max_local = (b->config->max_threads_per_node + ppn - 1) / ppn;
 		int max_global = (b->config->max_global_threads + gt - 1) / gt;
@@ -89,8 +89,8 @@ esdm_status esdm_scheduler_finalize(esdm_instance_t *esdm)
 {
 	ESDM_DEBUG(__func__);
 
-  for (int i = 0; i < esdm->modules->backend_count; i++) {
-    esdm_backend* b = esdm->modules->backends[i];
+  for (int i = 0; i < esdm->modules->data_backend_count; i++) {
+    esdm_backend* b = esdm->modules->data_backends[i];
     if(b->threadPool){
       g_thread_pool_free(b->threadPool, 0, 1);
     }
@@ -214,8 +214,8 @@ esdm_status esdm_scheduler_enqueue_read(esdm_instance_t *esdm, io_request_status
 
 		// find the backend for the fragment
 		esdm_backend* backend_to_use = NULL;
-		for (x = 0; x < esdm->modules->backend_count; x++){
-			esdm_backend* b_tmp = esdm->modules->backends[x];
+		for (x = 0; x < esdm->modules->data_backend_count; x++){
+			esdm_backend* b_tmp = esdm->modules->data_backends[x];
 			if (strcmp(b_tmp->config->id, plugin_id) == 0){
 				DEBUG("Found plugin %s", plugin_id);
 				backend_to_use = b_tmp;
@@ -293,14 +293,14 @@ esdm_status esdm_scheduler_enqueue_write(esdm_instance_t *esdm, io_request_statu
 	}
 
 	uint64_t y_count = space->size[split_dim];
-	uint64_t per_backend[esdm->modules->backend_count];
+	uint64_t per_backend[esdm->modules->data_backend_count];
 
 	memset(per_backend, 0, sizeof(per_backend));
 
 	while(y_count > 0){
-		for (int i = 0; i < esdm->modules->backend_count; i++) {
+		for (int i = 0; i < esdm->modules->data_backend_count; i++) {
 			status->pending_ops++;
-			esdm_backend* b = esdm->modules->backends[i];
+			esdm_backend* b = esdm->modules->data_backends[i];
 			// how many of these fit into our buffer
 			uint64_t backend_y_per_buffer = b->config->max_fragment_size / one_y_size;
 			if (backend_y_per_buffer == 0){
@@ -324,8 +324,8 @@ esdm_status esdm_scheduler_enqueue_write(esdm_instance_t *esdm, io_request_statu
 	memcpy(offset, space->offset, space->dimensions * sizeof(int64_t));
 	memcpy(dim, space->size, space->dimensions * sizeof(int64_t));
 
-	for (int i = 0; i < esdm->modules->backend_count; i++) {
-		esdm_backend* b = esdm->modules->backends[i];
+	for (int i = 0; i < esdm->modules->data_backend_count; i++) {
+		esdm_backend* b = esdm->modules->data_backends[i];
 		// how many of these fit into our buffer
 		uint64_t backend_y_per_buffer = b->config->max_fragment_size / one_y_size;
 		if (backend_y_per_buffer == 0){
@@ -406,7 +406,7 @@ esdm_status esdm_scheduler_process_blocking(esdm_instance_t *esdm, io_operation_
 	if (op == ESDM_OP_WRITE) {
 		ret = esdm_scheduler_enqueue_write(esdm, & status, dataset, buf, subspace);
 	} else if (op == ESDM_OP_READ) {
-		esdm_backend * md = esdm->modules->metadata;
+		esdm_backend * md = esdm->modules->metadata_backend;
 		ret = md->callbacks.lookup(md, dataset, subspace, & frag_count, &read_frag);
 		DEBUG("fragments to read: %d", frag_count);
 		ret = esdm_scheduler_enqueue_read(esdm, & status, frag_count, read_frag, buf, subspace);

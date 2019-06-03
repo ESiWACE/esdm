@@ -236,9 +236,9 @@ typedef struct esdm_config_t {
 } esdm_config_t;
 
 typedef struct esdm_modules_t {
-	int backend_count;
-	esdm_backend **backends;
-	esdm_backend *metadata;
+	int data_backend_count;
+	esdm_backend **data_backends;
+	esdm_backend *metadata_backend;
 	//esdm_modules_t** modules;
 } esdm_modules_t;
 

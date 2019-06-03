@@ -86,12 +86,12 @@ esdm_modules_t* esdm_modules_init(esdm_instance_t* esdm)
 	// TODO: This backend is meant as metadata coordinator in a hierarchy of MD (later)
 	if (strncmp(metadata_coordinator->type,"metadummy",9) == 0)
 	{
-		modules->metadata = metadummy_backend_init(metadata_coordinator);
+		modules->metadata_backend = metadummy_backend_init(metadata_coordinator);
 	}
 #ifdef ESDM_HAS_MONGODB
 	else if (strncmp(metadata_coordinator->type,"mongodb",7) == 0)
 	{
-		modules->metadata = mongodb_backend_init(metadata_coordinator);
+		modules->metadata_backend = mongodb_backend_init(metadata_coordinator);
 	}
 #endif
 	else
@@ -100,8 +100,8 @@ esdm_modules_t* esdm_modules_init(esdm_instance_t* esdm)
 	}
 
 	// Register data backends
-	modules->backend_count = config_backends->count;
-	modules->backends = malloc(config_backends->count * sizeof(esdm_backend*));
+	modules->data_backend_count = config_backends->count;
+	modules->data_backends = malloc(config_backends->count * sizeof(esdm_backend*));
 
 
 	int i;
@@ -135,7 +135,7 @@ esdm_modules_t* esdm_modules_init(esdm_instance_t* esdm)
 			ESDM_ERROR("Unknown backend type. Please check your ESDM configuration.");
 		}
 		backend->config = b;
-		modules->backends[i] = backend;
+		modules->data_backends[i] = backend;
 	}
 
 	esdm->modules = modules;
