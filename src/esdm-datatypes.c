@@ -391,14 +391,14 @@ esdm_fragment_t* esdm_fragment_deserialize(void *serialized_fragment)
  *	@return Pointer to new dateset.
  *
  */
-esdm_dataset_t* esdm_dataset_create(esdm_container* container, const char* name, esdm_dataspace_t* dataspace)
+esdm_dataset_t* esdm_dataset_create(esdm_container* container, const char* name, esdm_dataspace_t* dataspace, esdm_metadata *metadata)
 {
 	ESDM_DEBUG(__func__);
 	esdm_dataset_t* dataset = (esdm_dataset_t*) malloc(sizeof(esdm_dataset_t));
 
 	dataset->name = strdup(name);
 	dataset->container = container;
-	dataset->metadata = NULL;
+	dataset->metadata = metadata;
 	dataset->dataspace = dataspace;
 	dataset->fragments = g_hash_table_new(g_direct_hash,  g_direct_equal);
 
@@ -437,7 +437,12 @@ esdm_status esdm_dataset_update(esdm_dataset_t *dataset)
 esdm_status esdm_dataset_destroy(esdm_dataset_t *dataset)
 {
 	ESDM_DEBUG(__func__);
-	free(dataset);
+//	free(dataset->name);
+	free(dataset->metadata);
+	dataset->metadata = NULL;
+//	free(dataset->container);
+//	free(dataset->dataspace);
+//	free(dataset);
 	return ESDM_SUCCESS;
 }
 
@@ -456,7 +461,6 @@ esdm_status esdm_dataset_commit(esdm_dataset_t *dataset)
 	// md callback create/update container
 	esdm.modules->metadata_backend->callbacks.dataset_create(esdm.modules->metadata_backend, dataset);
 
-
 	return ESDM_SUCCESS;
 }
 
@@ -468,7 +472,7 @@ esdm_status esdm_dataset_retrieve_from_file(esdm_dataset_t *dataset)
 	// md callback create/update container
 	//dataset = (esdm_dataset_t *) malloc(sizeof(esdm_dataset_t));
 
-	dataset = (esdm_dataset_t *) malloc(sizeof(esdm_dataset_t));
+//	dataset = (esdm_dataset_t *) malloc(sizeof(esdm_dataset_t));
 	esdm.modules->metadata_backend->callbacks.dataset_retrieve(esdm.modules->metadata_backend, dataset);
 
 	return ESDM_SUCCESS;

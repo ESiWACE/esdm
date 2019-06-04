@@ -55,7 +55,7 @@ esdm_status esdm_container_commit(esdm_container *container);
 esdm_status esdm_container_destroy(esdm_container *container);
 
 // Datset
-esdm_dataset_t* esdm_dataset_create(esdm_container *container, const char * name, esdm_dataspace_t *dataspace);
+esdm_dataset_t* esdm_dataset_create(esdm_container *container, const char * name, esdm_dataspace_t *dataspace, esdm_metadata *metadata);
 esdm_dataspace_t * esdm_dataset_get_dataspace(esdm_dataset_t *dset);
 
 /* This function adds the metadata to the ESDM */

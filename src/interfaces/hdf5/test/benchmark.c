@@ -215,7 +215,7 @@ int main(int argc, char* argv[])
 
 
 	container = esdm_container_create("mycontainer");
-	dataset = esdm_dataset_create(container, "mydataset", dataspace);
+	dataset = esdm_dataset_create(container, "mydataset", dataspace, NULL);
 
 	file_id = H5Fcreate("mycontainer_h5", H5F_ACC_TRUNC, H5P_DEFAULT, fprop);
 	dataset_id = H5Dcreate2(file_id, "/mydataset_h5", H5T_NATIVE_UINT64, dataspace_id, H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);

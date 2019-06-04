@@ -195,6 +195,8 @@ static int entry_retrieve_tst(const char *path, esdm_dataset_t *dataset)
 	dataset->metadata->json = (char *) malloc(456*sizeof(char)); // randon number
 	strcpy(dataset->metadata->json, buf);
 
+	printf("\njson: %s %s\n", dataset->metadata->json, buf);
+
 	return 0;
 }
 
@@ -430,7 +432,7 @@ static int dataset_retrieve(esdm_backend* backend, esdm_dataset_t *dataset)
 	metadummy_backend_options_t *options = (metadummy_backend_options_t*) backend->data;
 	const char* tgt = options->target;
 
-	sprintf(path_metadata, "%s/containers/%s/%s.md", tgt, "mycontainer", "mydataset"); //cheat, maybe
+	sprintf(path_metadata, "%s/containers/%s/%s.md", tgt, dataset->container->name, dataset->name);
 
 	entry_retrieve_tst(path_metadata, dataset);
 

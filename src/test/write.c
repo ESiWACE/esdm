@@ -72,7 +72,7 @@ int main(int argc, char const* argv[])
 	//assert(ret == ESDM_SUCCESS);
 
 	//esdm_open("mycontainer/mydataset", ESDM_CREATE);
-	
+
 	// POSIX pwrite/pread interfaces for comparison
 	//ssize_t pread(int fd, void *buf, size_t count, off_t offset);
 	//ssize_t pwrite(int fd, const void *buf, size_t count, off_t offset);
@@ -84,9 +84,9 @@ int main(int argc, char const* argv[])
 	esdm_dataspace_t *dataspace = esdm_dataspace_create(2, bounds, SMD_DTYPE_UINT64);
 
 	container = esdm_container_create("mycontainer");
-	dataset = esdm_dataset_create(container, "mydataset", dataspace);
+	dataset = esdm_dataset_create(container, "mydataset", dataspace, NULL);
 
-	
+
 	esdm_container_commit(container);
 	esdm_dataset_commit(dataset);
 

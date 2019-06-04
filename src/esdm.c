@@ -228,7 +228,7 @@ esdm_status esdm_create(char *name, int mode, esdm_container **container, esdm_d
 	esdm_dataspace_t *dataspace = esdm_dataspace_create(1 /* 1D */ , bounds, SMD_DTYPE_INT8);
 
 	*container = esdm_container_create(name);
-	*dataset = esdm_dataset_create(*container, "bytestream", dataspace);
+	*dataset = esdm_dataset_create(*container, "bytestream", dataspace, NULL);
 
 	printf("Dataset 'bytestream' creation: %p\n", (void*) *dataset);
 
