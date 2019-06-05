@@ -24,9 +24,10 @@
 #include <esdm.h>
 #include <esdm-datatypes-internal.h>
 
-esdm_metadata * convert_smd_to_metadata(smd_attr_t *smd_file);
+int convert_smd_to_metadata(smd_attr_t *smd_file, esdm_metadata ** out);
 //esdm_status esdm_dataset_link_metadata (esdm_dataset_t *dataset, smd_attr_t *new);
 esdm_status esdm_dataset_read_metadata (esdm_dataset_t *dataset);
+
 
 int main(){
 	esdm_status ret;
@@ -98,7 +99,8 @@ int main(){
 
   // This call registers the metadata and links it to the dataset. You are not supposed to change the metadata thereafter. it is now owned by the dataset, don`t free it either.
 
-	esdm_metadata *metadata = convert_smd_to_metadata(smd_file);
+	esdm_metadata *metadata = NULL;
+	convert_smd_to_metadata(smd_file, & metadata);
 
 // It was like this in the whole code. I can change it later. (== ever?)
 
@@ -119,7 +121,7 @@ int main(){
 	esdm_dataset_commit(dataset);
 
 	// remove everything from memory
-	esdm_dataset_destroy(dataset); // This function is not working the way it should
+	esdm_dataset_destroy(dataset);
 
 //	esdm_dataset_t* esdm_dataset_retrieve(esdm_container *container, const char* name)
 
@@ -143,7 +145,7 @@ int main(){
 	return 0;
 }
 
-esdm_metadata * convert_smd_to_metadata(smd_attr_t *smd_file)
+int convert_smd_to_metadata(smd_attr_t *smd_file, esdm_metadata ** out_metadata)
 {
 
 	char *buff;
@@ -153,21 +155,30 @@ esdm_metadata * convert_smd_to_metadata(smd_attr_t *smd_file)
 //	sprintf(& dataset->metadata, "{\"path\" : \"%s\"}", path_fragment);
 //	not used!
 
-	buff = (char *)malloc(123*sizeof(char));
+	buff = (char *) malloc(10000*sizeof(char));
 	j = smd_attr_ser_json(buff, smd_file);
+	/*
+	j = smd_attr_ser_json(buff, smd_file, 10000);
+	if(j > 10000){
+		free(buff);
+		buff = (char *) malloc(j);
+		j = smd_attr_ser_json(buff, smd_file, j);
+		// works similar than snprintf()
+	}
+	*/
 
 	esdm_metadata * metadata = (esdm_metadata *) malloc(sizeof(esdm_metadata));
-	metadata->json = (char *) malloc(456*sizeof(char)); // randon number
-	strcpy(metadata->json, buff);
-
+	metadata->json = buff;
 	metadata->smd = smd_file;
-	metadata->size = j; // Is this right?
+	metadata->size = j;
 
 	// smd_attr_print(smd_file);
 
 	printf("\nFinal\n");
 
-	return metadata;
+	*out_metadata = metadata;
+
+	return ESDM_SUCCESS;
 }
 
 // esdm_status esdm_dataset_link_metadata(esdm_dataset_t *dataset, smd_attr_t *new)
