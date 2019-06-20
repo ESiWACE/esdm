@@ -341,11 +341,13 @@ esdm_status esdm_scheduler_enqueue_write(esdm_instance_t *esdm, io_request_statu
 			offset[split_dim] = offset_y + space->offset[split_dim];
 
 			io_work_t * task = (io_work_t*) malloc(sizeof(io_work_t));
-			esdm_dataspace_t* subspace = esdm_dataspace_subspace(space, space->dimensions, dim, offset);
+			esdm_dataspace_t* subspace;
+
+			esdm_dataspace_subspace(space, space->dimensions, dim, offset, & subspace);
 
 			task->parent = status;
 			task->op = ESDM_OP_WRITE;
-			task->fragment = esdm_fragment_create(dataset, subspace, (char*) buf + offset_y * one_y_size);
+			esdm_fragment_create(dataset, subspace, (char*) buf + offset_y * one_y_size, & task->fragment);
 			task->fragment->backend = b;
 			task->callback = NULL;
 			if (b->threads == 0){

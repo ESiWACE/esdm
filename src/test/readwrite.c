@@ -84,10 +84,12 @@ int main(int argc, char const* argv[])
 
 	// define dataspace
 	int64_t bounds[] = {HEIGHT, WIDTH};
-	esdm_dataspace_t *dataspace = esdm_dataspace_create(2, bounds, SMD_DTYPE_UINT64);
+	esdm_dataspace_t *dataspace;
 
-	container = esdm_container_create("mycontainer");
-	dataset = esdm_dataset_create(container, "mydataset", dataspace, NULL);
+	esdm_dataspace_create(2, bounds, SMD_DTYPE_UINT64, & dataspace);
+
+	esdm_container_create("mycontainer", & container);
+	esdm_dataset_create(container, "mydataset", dataspace, NULL, & dataset);
 
 
 	esdm_container_commit(container);
@@ -97,7 +99,9 @@ int main(int argc, char const* argv[])
 	// define subspace
 	int64_t size[] = {HEIGHT, WIDTH};
 	int64_t offset[] = {0,0};
-	esdm_dataspace_t *subspace = esdm_dataspace_subspace(dataspace, 2, size, offset);
+	esdm_dataspace_t *subspace;
+
+	esdm_dataspace_subspace(dataspace, 2, size, offset, & subspace);
 
 
 	// Write the data to the dataset

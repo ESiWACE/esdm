@@ -46,7 +46,7 @@ extern esdm_instance_t esdm;
  *	@return Pointer to new container.
  *
  */
-esdm_container* esdm_container_create(const char* name)
+esdm_status esdm_container_create(const char* name, esdm_container **out_container)
 {
 	ESDM_DEBUG(__func__);
 	esdm_container* container = (esdm_container*) malloc(sizeof(esdm_container));
@@ -57,11 +57,13 @@ esdm_container* esdm_container_create(const char* name)
 	container->datasets = g_hash_table_new(g_direct_hash,  g_direct_equal);
 	container->status = ESDM_STATUS_DIRTY;
 
-	return container;
+	*out_container = container;
+
+	return ESDM_SUCCESS;
 }
 
 
-esdm_container* esdm_container_retrieve(const char * name)
+esdm_status esdm_container_retrieve(const char * name, esdm_container **out_container)
 {
 	ESDM_DEBUG(__func__);
 	esdm_container* container = (esdm_container*) malloc(sizeof(esdm_container));
@@ -75,7 +77,9 @@ esdm_container* esdm_container_retrieve(const char * name)
 	container->datasets = g_hash_table_new(g_direct_hash,  g_direct_equal);
 	container->status = ESDM_STATUS_DIRTY;
 
-	return container;
+	*out_container = container;
+
+	return ESDM_SUCCESS;
 }
 
 
@@ -164,7 +168,7 @@ uint64_t  esdm_dataspace_size(esdm_dataspace_t *dataspace){
  *	@return Pointer to new fragment.
  *
  */
-esdm_fragment_t* esdm_fragment_create(esdm_dataset_t* dataset, esdm_dataspace_t* subspace, void *buf)
+ esdm_status esdm_fragment_create(esdm_dataset_t *dataset, esdm_dataspace_t *subspace, void *buf, esdm_fragment_t ** out_fragment)
 {
 	ESDM_DEBUG(__func__);
 	esdm_fragment_t* fragment = (esdm_fragment_t*) malloc(sizeof(esdm_fragment_t));
@@ -191,7 +195,9 @@ esdm_fragment_t* esdm_fragment_create(esdm_dataset_t* dataset, esdm_dataspace_t*
 	fragment->bytes = bytes;
 	fragment->status = ESDM_STATUS_DIRTY;
 
-	return fragment;
+	*out_fragment = fragment;
+
+	return ESDM_SUCCESS;
 }
 
 
@@ -247,7 +253,7 @@ esdm_status esdm_dataspace_overlap_str(esdm_dataspace_t *a, char delim_c, char *
 	if(out_space != NULL){
 		// TODO always go to the parent space
 		esdm_dataspace_t * parent = a->subspace_of == NULL ? a : a->subspace_of;
-		*out_space = esdm_dataspace_subspace(parent, a->dimensions, size, off);
+		esdm_dataspace_subspace(parent, a->dimensions, size, off, out_space);
 	}
 	return ESDM_SUCCESS;
 }
@@ -372,7 +378,7 @@ esdm_status esdm_fragment_serialize(esdm_fragment_t *fragment, void **out)
 /**
  * Reinstantiate fragment from serialization.
  */
-esdm_fragment_t* esdm_fragment_deserialize(void *serialized_fragment)
+ esdm_status esdm_fragment_deserialize(void *serialized_fragment, esdm_fragment_t ** _out_fragment)
 {
 	ESDM_DEBUG(__func__);
 	return ESDM_SUCCESS;
@@ -391,7 +397,7 @@ esdm_fragment_t* esdm_fragment_deserialize(void *serialized_fragment)
  *	@return Pointer to new dateset.
  *
  */
-esdm_dataset_t* esdm_dataset_create(esdm_container* container, const char* name, esdm_dataspace_t* dataspace, esdm_metadata *metadata)
+esdm_status esdm_dataset_create(esdm_container* container, const char* name, esdm_dataspace_t* dataspace, esdm_metadata *metadata, esdm_dataset_t ** out_dataset)
 {
 	ESDM_DEBUG(__func__);
 	esdm_dataset_t* dataset = (esdm_dataset_t*) malloc(sizeof(esdm_dataset_t));
@@ -403,12 +409,13 @@ esdm_dataset_t* esdm_dataset_create(esdm_container* container, const char* name,
 	dataset->fragments = g_hash_table_new(g_direct_hash,  g_direct_equal);
 
 	g_hash_table_insert(container->datasets, (char*) name, dataset);
+	*out_dataset = dataset;
 
-	return dataset;
+	return ESDM_SUCCESS;
 }
 
 
-esdm_dataset_t* esdm_dataset_retrieve(esdm_container *container, const char* name)
+esdm_status esdm_dataset_retrieve(esdm_container *container, const char * name, esdm_dataset_t **out_dataset)
 {
 	ESDM_DEBUG(__func__);
 	esdm_dataset_t* dataset = (esdm_dataset_t*) malloc(sizeof(esdm_dataset_t));
@@ -422,7 +429,9 @@ esdm_dataset_t* esdm_dataset_retrieve(esdm_container *container, const char* nam
 	// TODO: Retrieve from MD
 	// TODO: Retrieve associated Data
 
-	return dataset;
+	*out_dataset = dataset;
+
+	return ESDM_SUCCESS;
 }
 
 
@@ -488,7 +497,7 @@ esdm_status esdm_dataset_retrieve_from_file(esdm_dataset_t *dataset)
  *	@return Pointer to new dateset.
  *
  */
-esdm_dataspace_t* esdm_dataspace_create(int64_t dimensions, int64_t* sizes, esdm_datatype_t datatype)
+esdm_status esdm_dataspace_create(int64_t dimensions, int64_t* sizes, esdm_datatype_t datatype, esdm_dataspace_t ** out_dataspace)
 {
 	ESDM_DEBUG(__func__);
 	esdm_dataspace_t* dataspace = (esdm_dataspace_t*) malloc(sizeof(esdm_dataspace_t));
@@ -504,7 +513,9 @@ esdm_dataspace_t* esdm_dataspace_create(int64_t dimensions, int64_t* sizes, esdm
 
 	DEBUG("New dataspace: dims=%d\n", dataspace->dimensions);
 
-	return dataspace;
+	* out_dataspace = dataspace;
+
+	return ESDM_SUCCESS;
 }
 
 
@@ -528,7 +539,7 @@ uint8_t esdm_dataspace_overlap(esdm_dataspace_t *a, esdm_dataspace_t *b)
  *
  *
  */
-esdm_dataspace_t* esdm_dataspace_subspace(esdm_dataspace_t *dataspace, int64_t dimensions, int64_t *size, int64_t *offset)
+esdm_status esdm_dataspace_subspace(esdm_dataspace_t *dataspace, int64_t dimensions, int64_t *size, int64_t *offset, esdm_dataspace_t **out_dataspace)
 {
 	ESDM_DEBUG(__func__);
 
@@ -559,7 +570,9 @@ esdm_dataspace_t* esdm_dataspace_subspace(esdm_dataspace_t *dataspace, int64_t d
 		ESDM_ERROR("Subspace dimensions do not match original space.");
 	}
 
-	return subspace;
+	* out_dataspace = subspace;
+
+	return ESDM_SUCCESS;
 }
 
 void esdm_dataspace_print(esdm_dataspace_t * d){
@@ -608,7 +621,7 @@ esdm_status esdm_dataspace_serialize(esdm_dataspace_t *dataspace, void **out)
 /**
  * Reinstantiate dataspace from serialization.
  */
-esdm_dataspace_t* esdm_dataspace_deserialize(void *serialized_dataspace)
+ esdm_status esdm_dataspace_deserialize(void *serialized_dataspace, esdm_dataspace_t ** out_dataspace)
 {
 	ESDM_DEBUG(__func__);
 	return ESDM_SUCCESS;

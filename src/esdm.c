@@ -66,8 +66,11 @@ void esdm_atexit() {
 }
 */
 
-esdm_dataspace_t * esdm_dataset_get_dataspace(esdm_dataset_t *dset){
-	return dset->dataspace;
+esdm_status esdm_dataset_get_dataspace(esdm_dataset_t *dset, esdm_dataspace_t ** out_dataspace){
+
+	* out_dataspace = dset->dataspace;
+
+	return ESDM_SUCCESS;
 }
 
 
@@ -225,10 +228,12 @@ esdm_status esdm_create(char *name, int mode, esdm_container **container, esdm_d
 
 
 	int64_t bounds[1] = {0};
-	esdm_dataspace_t *dataspace = esdm_dataspace_create(1 /* 1D */ , bounds, SMD_DTYPE_INT8);
+	esdm_dataspace_t *dataspace;
 
-	*container = esdm_container_create(name);
-	*dataset = esdm_dataset_create(*container, "bytestream", dataspace, NULL);
+	esdm_dataspace_create(1 /* 1D */ , bounds, SMD_DTYPE_INT8, & dataspace);
+
+	esdm_container_create(name, container);
+	esdm_dataset_create(*container, "bytestream", dataspace, NULL, dataset);
 
 	printf("Dataset 'bytestream' creation: %p\n", (void*) *dataset);
 

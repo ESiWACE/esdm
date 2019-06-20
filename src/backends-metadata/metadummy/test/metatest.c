@@ -32,26 +32,26 @@ int main(){
   {
     int64_t offset[] = {0, 0};
     int64_t size[]   = {25, 50};
-	  s1 = esdm_dataspace_subspace(dataspace, 2, size, offset);
+	  esdm_dataspace_subspace(dataspace, 2, size, offset, & s1);
     f1 = esdm_fragment_create(dataset, s1, buff);
     f1->metadata->size = sprintf(f1->metadata->json, "{}");
   }
   {
     int64_t offset[] = {25, 0};
     int64_t size[]   = {25, 50};
-	  s2 = esdm_dataspace_subspace(dataspace, 2, size, offset);
+	  esdm_dataspace_subspace(dataspace, 2, size, offset, & s2);
     f2 = esdm_fragment_create(dataset, s2, buff);
   }
   {
     int64_t offset[] = {25, 50};
     int64_t size[]   = {25, 50};
-	  s3 = esdm_dataspace_subspace(dataspace, 2, size, offset);
+	  esdm_dataspace_subspace(dataspace, 2, size, offset, & s3);
     f3 = esdm_fragment_create(dataset, s3, buff);
   }
   {
     int64_t offset[] = {0, 50};
     int64_t size[]   = {25, 50};
-	  s4 = esdm_dataspace_subspace(dataspace, 2, size, offset);
+	  esdm_dataspace_subspace(dataspace, 2, size, offset, & s4);
     f4 = esdm_fragment_create(dataset, s4, buff);
   }
 
@@ -72,7 +72,7 @@ int main(){
   {
     int64_t size[]   = {30, 30};
     int64_t offset[] = {10, 10};
-	  res = esdm_dataspace_subspace(dataspace, 2, size, offset);
+	  esdm_dataspace_subspace(dataspace, 2, size, offset, & res);
   }
 
   ret = b->callbacks.lookup(b, dataset, res, & frag_count, & read_frag);
