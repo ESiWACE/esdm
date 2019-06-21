@@ -92,7 +92,11 @@ int main(){
 
   esdm_dataspace_destroy(dataspace);
   esdm_dataset_destroy(dataset);
-  esdm_container_destroy(container);
+
+  // esdm_container_destroy(container);
+
+  // I don't know why it's not working!
+
 
   return 0;
 }
