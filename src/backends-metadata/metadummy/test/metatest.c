@@ -19,7 +19,7 @@ int main(){
   esdm_dataspace_t * dataspace;
   {
     int64_t size[]   = {50, 100};
-    dataspace = esdm_dataspace_create(2, size, SMD_DTYPE_UINT64);
+    esdm_dataspace_create(2, size, SMD_DTYPE_UINT64, & dataspace);
   }
 
   esdm_status ret;
@@ -44,19 +44,19 @@ int main(){
     int64_t offset[] = {25, 0};
     int64_t size[]   = {25, 50};
 	  esdm_dataspace_subspace(dataspace, 2, size, offset, & s2);
-    f2 = esdm_fragment_create(dataset, s2, buff);
+    esdm_fragment_create(dataset, s2, buff, & f2);
   }
   {
     int64_t offset[] = {25, 50};
     int64_t size[]   = {25, 50};
 	  esdm_dataspace_subspace(dataspace, 2, size, offset, & s3);
-    f3 = esdm_fragment_create(dataset, s3, buff);
+    esdm_fragment_create(dataset, s3, buff, & f3);
   }
   {
     int64_t offset[] = {0, 50};
     int64_t size[]   = {25, 50};
 	  esdm_dataspace_subspace(dataspace, 2, size, offset, & s4);
-    f4 = esdm_fragment_create(dataset, s4, buff);
+    esdm_fragment_create(dataset, s4, buff, & f4);
   }
 
   ret = b->callbacks.fragment_update(b, f1);
