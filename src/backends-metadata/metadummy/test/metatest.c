@@ -23,8 +23,12 @@ int main(){
   }
 
   esdm_status ret;
-	esdm_container * container = esdm_container_create("testContainer");
-	esdm_dataset_t   * dataset   = esdm_dataset_create(container, "testDataset", dataspace, NULL);
+	esdm_container * container;
+
+  esdm_container_create("testContainer", & container);
+	esdm_dataset_t   * dataset;
+
+  esdm_dataset_create(container, "testDataset", dataspace, NULL, & dataset);
 
   esdm_dataspace_t* s1, * s2, * s3, *s4;
   esdm_fragment_t * f1, * f2, *f3, *f4;
@@ -33,7 +37,7 @@ int main(){
     int64_t offset[] = {0, 0};
     int64_t size[]   = {25, 50};
 	  esdm_dataspace_subspace(dataspace, 2, size, offset, & s1);
-    f1 = esdm_fragment_create(dataset, s1, buff);
+    esdm_fragment_create(dataset, s1, buff, & f1);
     f1->metadata->size = sprintf(f1->metadata->json, "{}");
   }
   {
