@@ -259,7 +259,7 @@ int esdm_backend_get_dynamic_perf_model_lat_thp(esdm_dynamic_perf_model_lat_thp_
 		return -1;
 
 	char tmp[ESDM_BACKENDS_DYNAMIC_PERF_MODEL_SIZE];
-	snprintf(tmp, ESDM_BACKENDS_DYNAMIC_PERF_MODEL_SIZE, "{ \"latency\": %f, \"throughput\" : %f }", data->latency, data->throughput);
+	snprintf(tmp, ESDM_BACKENDS_DYNAMIC_PERF_MODEL_SIZE, "{ \"latency\": %f, \"throughput\" : %f }", data->latency, data->throughput / 1024 / 1024);
 
 	*json = strdup(tmp);
 	if (!*json)
