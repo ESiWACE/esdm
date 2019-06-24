@@ -51,8 +51,6 @@ static void metadummy_test();
 
 void posix_recursive_remove(const char * path);
 
-esdm_status esdm_dataset_read_metadata (esdm_dataset_t *dataset);
-
 ///////////////////////////////////////////////////////////////////////////////
 // Helper and utility /////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////
@@ -433,8 +431,34 @@ static int dataset_retrieve(esdm_backend* backend, esdm_dataset_t *dataset)
 	const char* tgt = options->target;
 
 	sprintf(path_metadata, "%s/containers/%s/%s.md", tgt, dataset->container->name, dataset->name);
+	struct stat statbuf;
+  int ret = stat(path_metadata, & statbuf);
+	if (ret != 0) return ESDM_ERROR;
+	off_t len = statbuf.st_size;
 
-	entry_retrieve_tst(path_metadata, dataset);
+	int fd = open(path_metadata,	O_RDONLY | S_IWUSR | S_IRUSR | S_IWGRP | S_IRGRP | S_IROTH);
+	if( fd < 0 ) return ESDM_ERROR;
+	dataset->metadata->json = (char *) malloc(len);
+	dataset->metadata->size = len;
+	dataset->metadata->buff_size = len;
+
+	char *bbuf = dataset->metadata->json;
+	while(len > 0){
+		ssize_t ret = read(fd, bbuf, len);
+		if (ret != -1){
+			bbuf += ret;
+			len -= ret;
+		}else{
+			if(errno == EINTR){
+				continue;
+			}else{
+				ESDM_ERROR_COM_FMT("POSIX MD", "read %s", strerror(errno));
+				return 1;
+			}
+		}
+	}
+
+	close(fd);
 
 	return 0;
 }

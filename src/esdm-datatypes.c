@@ -422,11 +422,14 @@ esdm_status esdm_dataset_retrieve(esdm_container *container, const char * name, 
 
 	dataset->name = strdup(name);
 	dataset->container = container;
-	dataset->metadata = NULL;
+	dataset->metadata = (esdm_metadata *) malloc(sizeof(esdm_metadata));
 	dataset->dataspace = NULL;
-	dataset->fragments = g_hash_table_new(g_direct_hash,  g_direct_equal);
 
-	// TODO: Retrieve from MD
+	dataset->metadata->size = 0;
+	dataset->metadata->buff_size = 0;
+
+	esdm.modules->metadata_backend->callbacks.dataset_retrieve(esdm.modules->metadata_backend, dataset);
+
 	// TODO: Retrieve associated Data
 
 	*out_dataset = dataset;
@@ -466,6 +469,8 @@ esdm_status esdm_dataset_commit(esdm_dataset_t *dataset)
 	// print datasets of this container
 	esdm_print_hashtable(dataset->fragments);
 
+	dataset->metadata->json[dataset->metadata->size] = 0;
+
 	// TODO: ensure callback is not NULL
 	// md callback create/update container
 	esdm.modules->metadata_backend->callbacks.dataset_create(esdm.modules->metadata_backend, dataset);
@@ -473,16 +478,29 @@ esdm_status esdm_dataset_commit(esdm_dataset_t *dataset)
 	return ESDM_SUCCESS;
 }
 
-esdm_status esdm_dataset_retrieve_from_file(esdm_dataset_t *dataset)
+
+esdm_status esdm_dataset_read_metadata(esdm_dataset_t *dataset, esdm_metadata ** out_metadata)
 {
-//	ESDM_DEBUG(__func__);
+	smd_attr_t *out = smd_attr_create_from_json(dataset->metadata->json);
+	printf("%d\n", dataset->metadata->size);
 
-	// TODO: ensure callback is not NULL
-	// md callback create/update container
-	//dataset = (esdm_dataset_t *) malloc(sizeof(esdm_dataset_t));
+	// Retrieving the original data
 
-//	dataset = (esdm_dataset_t *) malloc(sizeof(esdm_dataset_t));
-	esdm.modules->metadata_backend->callbacks.dataset_retrieve(esdm.modules->metadata_backend, dataset);
+	const char *name = smd_attr_get_name(out);
+	int *len = smd_attr_get_value(out);
+	int idp = out->id;
+
+	printf("\n\nFinal Values\n\n");
+	printf("\n name = %s\n", name);
+	printf("\n len = %d\n", len);
+	printf("\n idp = %d \t(it's not my fault!)\n\n\n", idp);
+
+	// Variable idp is being set to zero inside the code.
+
+	// Copying the retrieved data to the dataset
+
+	dataset->metadata->smd = out;
+	dataset->metadata->size = 123;  // how to get this info?
 
 	return ESDM_SUCCESS;
 }
@@ -623,6 +641,30 @@ esdm_status esdm_dataspace_serialize(esdm_dataspace_t *dataspace, void **out)
  */
  esdm_status esdm_dataspace_deserialize(void *serialized_dataspace, esdm_dataspace_t ** out_dataspace)
 {
+	ESDM_DEBUG(__func__);
+	return ESDM_SUCCESS;
+}
+
+esdm_status esdm_metadata_init(esdm_metadata ** output_metadata){
+	ESDM_DEBUG(__func__);
+
+	esdm_metadata * md = (esdm_metadata*) malloc(sizeof(esdm_metadata) + 10000);
+	assert(md != NULL);
+	*output_metadata = md;
+	md->buff_size = 10000;
+	md->size = 0;
+	md->json = ((char*) md) + sizeof(esdm_metadata);
+	md->smd = smd_attr_new("", SMD_DTYPE_EMPTY, NULL, 0);
+
+	return ESDM_SUCCESS;
+}
+
+esdm_status esdm_dataspace_name_dimensions(esdm_metadata * metadata, int dims, char ** names){
+	ESDM_DEBUG(__func__);
+	return ESDM_SUCCESS;
+}
+
+esdm_status esdm_link_metadata(esdm_metadata * metadata, smd_attr_t * attr){
 	ESDM_DEBUG(__func__);
 	return ESDM_SUCCESS;
 }

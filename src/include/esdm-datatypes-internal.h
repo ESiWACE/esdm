@@ -15,6 +15,7 @@ struct esdm_container {
 
 struct esdm_metadata {
 	char *json;
+	int buff_size;
 	int size;
 	smd_attr_t * smd; // if this is not NULL, we have metadata parsed from JSON to KV pairs.
 };

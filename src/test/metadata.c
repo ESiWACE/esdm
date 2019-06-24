@@ -26,7 +26,6 @@
 
 int convert_smd_to_metadata(smd_attr_t *smd_file, esdm_metadata ** out);
 //esdm_status esdm_dataset_link_metadata (esdm_dataset_t *dataset, smd_attr_t *new);
-esdm_status esdm_dataset_read_metadata (esdm_dataset_t *dataset);
 
 
 int main(){
@@ -95,8 +94,8 @@ int main(){
 
 //	ret = esdm_dataset_open(container, "mydataset", & dataset);
 
-	esdm_dataset_retrieve_from_file(dataset);
-	esdm_dataset_read_metadata(dataset);
+	//esdm_dataset_retrieve_from_file(dataset);
+	//esdm_dataset_read_metadata(dataset, & metadata);
 
 	esdm_dataset_destroy(dataset);
 	esdm_container_destroy(container);
@@ -134,31 +133,6 @@ int convert_smd_to_metadata(smd_attr_t *smd_file, esdm_metadata ** out_metadata)
 	printf("\nFinal\n");
 
 	*out_metadata = metadata;
-
-	return ESDM_SUCCESS;
-}
-
-esdm_status esdm_dataset_read_metadata(esdm_dataset_t *dataset)
-{
-	smd_attr_t *out = smd_attr_create_from_json(dataset->metadata->json);
-
-	// Retrieving the original data
-
-	const char *name = smd_attr_get_name(out);
-	int *len = smd_attr_get_value(out);
-	int idp = out->id;
-
-	printf("\n\nFinal Values\n\n");
-	printf("\n name = %s\n", name);
-	printf("\n len = %d\n", len);
-	printf("\n idp = %d \t(it's not my fault!)\n\n\n", idp);
-
-	// Variable idp is being set to zero inside the code.
-
-	// Copying the retrieved data to the dataset
-
-	dataset->metadata->smd = out;
-	dataset->metadata->size = 123;  // how to get this info?
 
 	return ESDM_SUCCESS;
 }
