@@ -462,7 +462,6 @@ esdm_status esdm_dataset_destroy(esdm_dataset_t *dataset)
 esdm_status esdm_dataset_commit(esdm_dataset_t *dataset)
 {
 	ESDM_DEBUG(__func__);
-
 	dataset->metadata->size = smd_attr_ser_json(dataset->metadata->json, dataset->metadata->smd) - 1;
 
 	// TODO: ensure callback is not NULL
@@ -657,5 +656,11 @@ esdm_status esdm_link_metadata(esdm_metadata * metadata, smd_attr_t * attr){
 	ESDM_DEBUG(__func__);
 
 	smd_link_ret_t ret = smd_attr_link(metadata->attr, attr, 0);
+	return ESDM_SUCCESS;
+}
+
+esdm_status esdm_dataset_iterator(esdm_container *container, esdm_dataset_iterator_t ** iter){
+	ESDM_DEBUG(__func__);
+
 	return ESDM_SUCCESS;
 }

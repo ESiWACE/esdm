@@ -56,7 +56,7 @@ void posix_recursive_remove(const char * path);
 ///////////////////////////////////////////////////////////////////////////////
 
 
-static int mkfs(esdm_backend* backend, int enforce_format)
+static int mkfs(esdm_md_backend_t* backend, int enforce_format)
 {
 	DEBUG_ENTER;
 
@@ -263,7 +263,7 @@ static int entry_destroy(const char *path)
 // Container Helpers //////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////
 
-static int container_create(esdm_backend* backend, esdm_container *container)
+static int container_create(esdm_md_backend_t* backend, esdm_container *container)
 {
 	DEBUG_ENTER;
 
@@ -296,7 +296,7 @@ static int container_create(esdm_backend* backend, esdm_container *container)
 }
 
 
-static int container_retrieve(esdm_backend* backend, esdm_container *container)
+static int container_retrieve(esdm_md_backend_t* backend, esdm_container *container)
 {
 	DEBUG_ENTER;
 
@@ -323,7 +323,7 @@ static int container_retrieve(esdm_backend* backend, esdm_container *container)
 }
 
 
-static int container_update(esdm_backend* backend, esdm_container *container)
+static int container_update(esdm_md_backend_t* backend, esdm_container *container)
 {
 	DEBUG_ENTER;
 
@@ -347,7 +347,7 @@ static int container_update(esdm_backend* backend, esdm_container *container)
 }
 
 
-static int container_destroy(esdm_backend* backend, esdm_container *container)
+static int container_destroy(esdm_md_backend_t* backend, esdm_container *container)
 {
 	DEBUG_ENTER;
 
@@ -379,7 +379,7 @@ static int container_destroy(esdm_backend* backend, esdm_container *container)
 // Dataset Helpers ////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////
 
-static int dataset_create(esdm_backend* backend, esdm_dataset_t *dataset)
+static int dataset_create(esdm_md_backend_t* backend, esdm_dataset_t *dataset)
 {
 	DEBUG_ENTER;
 
@@ -414,7 +414,7 @@ static int dataset_create(esdm_backend* backend, esdm_dataset_t *dataset)
 }
 
 
-static int dataset_retrieve(esdm_backend* backend, esdm_dataset_t *dataset)
+static int dataset_retrieve(esdm_md_backend_t* backend, esdm_dataset_t *dataset)
 {
 	DEBUG_ENTER;
 
@@ -457,7 +457,7 @@ static int dataset_retrieve(esdm_backend* backend, esdm_dataset_t *dataset)
 }
 
 
-static int dataset_update(esdm_backend* backend, esdm_dataset_t *dataset)
+static int dataset_update(esdm_md_backend_t* backend, esdm_dataset_t *dataset)
 {
 	DEBUG_ENTER;
 
@@ -465,7 +465,7 @@ static int dataset_update(esdm_backend* backend, esdm_dataset_t *dataset)
 }
 
 
-static int dataset_destroy(esdm_backend* backend, esdm_dataset_t *dataset)
+static int dataset_destroy(esdm_md_backend_t* backend, esdm_dataset_t *dataset)
 {
 	DEBUG_ENTER;
 
@@ -478,7 +478,7 @@ static int dataset_destroy(esdm_backend* backend, esdm_dataset_t *dataset)
 // Fragment Helpers ///////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////
 
-static int fragment_retrieve(esdm_backend* backend, esdm_fragment_t *fragment, json_t * metadata){
+static int fragment_retrieve(esdm_md_backend_t* backend, esdm_fragment_t *fragment, json_t * metadata){
 		// set data, options and tgt for convienience
 		metadummy_backend_options_t *options = (metadummy_backend_options_t*) backend->data;
 		const char* tgt = options->target;
@@ -551,7 +551,7 @@ static esdm_fragment_t * create_fragment_from_metadata(int fd, esdm_dataset_t * 
 /*
  * Assumptions: there are no fragments created while reading back data!
  */
-static int lookup(esdm_backend* backend, esdm_dataset_t * dataset, esdm_dataspace_t * space, int * out_frag_count, esdm_fragment_t *** out_fragments){
+static int lookup(esdm_md_backend_t* backend, esdm_dataset_t * dataset, esdm_dataspace_t * space, int * out_frag_count, esdm_fragment_t *** out_fragments){
 	DEBUG_ENTER;
 
 	// set data, options and tgt for convienience
@@ -634,7 +634,7 @@ static int lookup(esdm_backend* backend, esdm_dataset_t * dataset, esdm_dataspac
 /*
  * How to: concurrent access by multiple processes
  */
-static int fragment_update(esdm_backend* backend, esdm_fragment_t *fragment)
+static int fragment_update(esdm_md_backend_t* backend, esdm_fragment_t *fragment)
 {
 	DEBUG_ENTER;
 
@@ -672,7 +672,7 @@ static int fragment_update(esdm_backend* backend, esdm_fragment_t *fragment)
 // ESDM Callbacks /////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////
 
-static int metadummy_backend_performance_estimate(esdm_backend* backend, esdm_fragment_t *fragment, float * out_time)
+static int metadummy_backend_performance_estimate(esdm_md_backend_t* backend, esdm_fragment_t *fragment, float * out_time)
 {
 	DEBUG_ENTER;
 	*out_time = 0;
@@ -688,7 +688,7 @@ static int metadummy_backend_performance_estimate(esdm_backend* backend, esdm_fr
 * This is the last chance for a backend to make outstanding changes persistent.
 * This routine is also expected to clean up memory that is used by the backend.
 */
-static int metadummy_finalize(esdm_backend* b)
+static int metadummy_finalize(esdm_md_backend_t* b)
 {
 	DEBUG_ENTER;
 
@@ -701,25 +701,14 @@ static int metadummy_finalize(esdm_backend* b)
 // ESDM Module Registration ///////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////
 
-static esdm_backend backend_template = {
-///////////////////////////////////////////////////////////////////////////////
-// WARNING: This serves as a template for the metadummy plugin and is memcpied!  //
-///////////////////////////////////////////////////////////////////////////////
+static esdm_md_backend_t backend_template = {
 	.name = "metadummy",
-	.type = SMD_DTYPE_METADATA,
 	.version = "0.0.1",
 	.data = NULL,
 	.callbacks = {
 		// General for ESDM
 		metadummy_finalize, // finalize
 		metadummy_backend_performance_estimate, // performance_estimate
-
-		// Data Callbacks (POSIX like)
-		NULL, // create
-		NULL, // open
-		NULL, // write
-		NULL, // read
-		NULL, // close
 
 		// Metadata Callbacks
 		lookup, // lookup
@@ -752,16 +741,16 @@ static esdm_backend backend_template = {
 *	* Connect with support services e.g. for technical metadata
 *	* Setup directory structures used by this POSIX specific backend
 *
-*	* Populate esdm_backend struct and callbacks required for registration
+*	* Populate esdm_md_backend_t struct and callbacks required for registration
 *
 * @return pointer to backend struct
 */
-esdm_backend* metadummy_backend_init(esdm_config_backend_t *config)
+esdm_md_backend_t* metadummy_backend_init(esdm_config_backend_t *config)
 {
 	DEBUG_ENTER;
 
-	esdm_backend* backend = (esdm_backend*) malloc(sizeof(esdm_backend));
-	memcpy(backend, &backend_template, sizeof(esdm_backend));
+	esdm_md_backend_t* backend = (esdm_md_backend_t*) malloc(sizeof(esdm_md_backend_t));
+	memcpy(backend, &backend_template, sizeof(esdm_md_backend_t));
 
 	metadummy_backend_options_t* data = (metadummy_backend_options_t*) malloc(sizeof(metadummy_backend_options_t));
 

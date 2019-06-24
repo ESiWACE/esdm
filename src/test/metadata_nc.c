@@ -149,13 +149,13 @@ void read_test(){
   // Dimensions are implicitly part of ESDM when defining the bounds of a dataspace, but they are unnamed
   // So we have to name them
 
-//	esdm_dataset_t* esdm_dataset_retrieve(esdm_container *container, const char* name)
+  //	esdm_dataset_t* esdm_dataset_retrieve(esdm_container *container, const char* name)
+  //	static int dataset_retrieve(esdm_backend* backend, esdm_dataset_t *dataset)
 
-//	static int dataset_retrieve(esdm_backend* backend, esdm_dataset_t *dataset)
+  esdm_dataset_iterator_t * iter;
 
-// This function doesn't exist. So I'll proceed with the more important stuff for now.
-
-//	ret = esdm_dataset_open(container, "mydataset", & dataset);
+  ret = esdm_dataset_iterator(container, & iter);
+  assert(ret == ESDM_SUCCESS);
 
 	ret = esdm_dataset_retrieve(container, "myVariable", & dataset);
   assert(ret == ESDM_SUCCESS);

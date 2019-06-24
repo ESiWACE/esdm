@@ -67,7 +67,10 @@ typedef struct esdm_dataset_t esdm_dataset_t;
 typedef struct esdm_dataspace_t esdm_dataspace_t;
 typedef struct esdm_fragment_t esdm_fragment_t;
 typedef struct esdm_backend esdm_backend;
+typedef struct esdm_md_backend_t esdm_md_backend_t;
+typedef struct esdm_config_backend_t esdm_config_backend_t;
 typedef struct esdm_backend_callbacks_t esdm_backend_callbacks_t;
+typedef struct esdm_md_backend_callbacks_t esdm_md_backend_callbacks_t;
 typedef struct esdm_attr_t esdm_attr_t;
 typedef struct esdm_attr_group_t esdm_attr_group_t;
 

@@ -61,6 +61,9 @@ esdm_status esdm_dataset_create(esdm_container* container, const char* name, esd
 esdm_status esdm_dataspace_name_dimensions(esdm_metadata * metadata, int dims, char ** names);
 esdm_status esdm_dataset_get_dataspace(esdm_dataset_t *dset, esdm_dataspace_t ** out_dataspace);
 
+esdm_status esdm_dataset_iterator(esdm_container *container, esdm_dataset_iterator_t ** out_iter);
+
+
 /* This function adds the metadata to the ESDM */
 esdm_status esdm_dataset_link_metadata (esdm_dataset_t * dset, smd_attr_t * attr);
 
