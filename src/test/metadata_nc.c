@@ -93,31 +93,25 @@ static void write_test(){
     // 1) Dimensions
     // Dimensions are implicitly part of ESDM when defining the bounds of a dataspace, but they are unnamed
     // So we have to name them
-    esdm_metadata *metadata = NULL;
-    ret = esdm_metadata_init(& metadata);
+
+    // 2) Variables
+    ret = esdm_dataset_create(container, "myVariable", dataspace, & dataset);
     assert(ret == ESDM_SUCCESS);
 
     char * names[] = {"longitude", "latitude"};
-    ret = esdm_dataspace_name_dimensions(metadata, 2, names);
+    ret = esdm_dataset_name_dimensions(dataset, 2, names);
     assert(ret == ESDM_SUCCESS);
-
 
     // 3) Attributes
     char * str = {"This is some history"};
     smd_attr_t * attr1 = smd_attr_new("history", SMD_DTYPE_STRING, str, 0);
-    ret = esdm_link_metadata(metadata, attr1);
+    ret = esdm_dataset_link_attribute(dataset, attr1);
     assert(ret == ESDM_SUCCESS);
 
     char * unit = {"Celsius"};
     smd_attr_t * attr2 = smd_attr_new("unit", SMD_DTYPE_STRING, unit, 1);
-    ret = esdm_link_metadata(metadata, attr2);
+    ret = esdm_dataset_link_attribute(dataset, attr2);
     assert(ret == ESDM_SUCCESS);
-
-    // 2) Variables
-    ret = esdm_dataset_create(container, "myVariable", dataspace, metadata, & dataset);
-    assert(ret == ESDM_SUCCESS);
-
-  	//esdm_dataset_link_metadata(dataset, new);
 
   	// this step shall write out the metadata and make it persistent
     ret = esdm_dataset_commit(dataset);

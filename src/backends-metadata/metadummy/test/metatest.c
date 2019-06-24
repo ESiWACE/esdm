@@ -28,7 +28,7 @@ int main(){
   esdm_container_create("testContainer", & container);
 	esdm_dataset_t   * dataset;
 
-  esdm_dataset_create(container, "testDataset", dataspace, NULL, & dataset);
+  esdm_dataset_create(container, "testDataset", dataspace, & dataset);
 
   esdm_dataspace_t* s1, * s2, * s3, *s4;
   esdm_fragment_t * f1, * f2, *f3, *f4;

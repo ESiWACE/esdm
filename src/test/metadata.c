@@ -77,7 +77,7 @@ int main(){
 
 // It was like this in the whole code. I can change it later. (== ever?)
 
-	esdm_dataset_create(container, "mydataset", dataspace, metadata, &dataset);
+	esdm_dataset_create(container, "mydataset", dataspace, &dataset);
 
 	// this step shall write out the metadata and make it persistent
 	esdm_container_commit(container);

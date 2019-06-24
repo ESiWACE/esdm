@@ -57,15 +57,15 @@ esdm_status esdm_container_commit(esdm_container *container);
 esdm_status esdm_container_destroy(esdm_container *container);
 
 // Datset
-esdm_status esdm_dataset_create(esdm_container* container, const char* name, esdm_dataspace_t* dataspace, esdm_metadata *metadata, esdm_dataset_t ** out_dataset);
-esdm_status esdm_dataspace_name_dimensions(esdm_metadata * metadata, int dims, char ** names);
+esdm_status esdm_dataset_create(esdm_container* container, const char* name, esdm_dataspace_t* dataspace, esdm_dataset_t ** out_dataset);
+esdm_status esdm_dataset_name_dimensions(esdm_dataset_t * dataset, int dims, char ** names);
 esdm_status esdm_dataset_get_dataspace(esdm_dataset_t *dset, esdm_dataspace_t ** out_dataspace);
 
 esdm_status esdm_dataset_iterator(esdm_container *container, esdm_dataset_iterator_t ** out_iter);
 
 
 /* This function adds the metadata to the ESDM */
-esdm_status esdm_dataset_link_metadata (esdm_dataset_t * dset, smd_attr_t * attr);
+esdm_status esdm_dataset_link_attribute (esdm_dataset_t * dset, smd_attr_t * attr);
 
 /* This function reads the metadata from the file */
 esdm_status esdm_dataset_read_metadata (esdm_dataset_t *dataset, esdm_metadata ** out_metadata);
@@ -96,10 +96,6 @@ esdm_status esdm_fragment_serialize(esdm_fragment_t *fragment, void **out);
 
 void esdm_fragment_print(esdm_fragment_t *fragment);
 void esdm_dataspace_print(esdm_dataspace_t *dataspace);
-
-// Metadata management
-esdm_status esdm_metadata_init(esdm_metadata ** output_metadata);
-esdm_status esdm_link_metadata(esdm_metadata * metadata, smd_attr_t * attr);
 
 
 //size_t esdm_sizeof(esdm_datatype_t type);

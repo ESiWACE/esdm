@@ -64,5 +64,7 @@ esdm_status esdm_backend_estimate_performance(esdm_backend *backend, int fragmen
 // Auxiliary
 void esdm_print_hashtable (GHashTable * tbl);
 
+esdm_status esdm_metadata_init_(esdm_metadata ** output_metadata);
+
 
 #endif
