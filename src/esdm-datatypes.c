@@ -406,9 +406,6 @@ esdm_status esdm_dataset_create(esdm_container* container, const char* name, esd
 	dataset->container = container;
 	dataset->metadata = metadata;
 	dataset->dataspace = dataspace;
-	dataset->fragments = g_hash_table_new(g_direct_hash,  g_direct_equal);
-
-	g_hash_table_insert(container->datasets, (char*) name, dataset);
 	*out_dataset = dataset;
 
 	return ESDM_SUCCESS;
@@ -466,10 +463,7 @@ esdm_status esdm_dataset_commit(esdm_dataset_t *dataset)
 {
 	ESDM_DEBUG(__func__);
 
-	// print datasets of this container
-	esdm_print_hashtable(dataset->fragments);
-
-	dataset->metadata->json[dataset->metadata->size] = 0;
+	dataset->metadata->size = smd_attr_ser_json(dataset->metadata->json, dataset->metadata->smd) - 1;
 
 	// TODO: ensure callback is not NULL
 	// md callback create/update container
@@ -479,28 +473,10 @@ esdm_status esdm_dataset_commit(esdm_dataset_t *dataset)
 }
 
 
-esdm_status esdm_dataset_read_metadata(esdm_dataset_t *dataset, esdm_metadata ** out_metadata)
+esdm_status esdm_dataset_read_metadata(esdm_dataset_t * dataset, esdm_metadata ** out_metadata)
 {
-	smd_attr_t *out = smd_attr_create_from_json(dataset->metadata->json);
-	printf("%d\n", dataset->metadata->size);
-
-	// Retrieving the original data
-
-	const char *name = smd_attr_get_name(out);
-	int *len = smd_attr_get_value(out);
-	int idp = out->id;
-
-	printf("\n\nFinal Values\n\n");
-	printf("\n name = %s\n", name);
-	printf("\n len = %d\n", len);
-	printf("\n idp = %d \t(it's not my fault!)\n\n\n", idp);
-
-	// Variable idp is being set to zero inside the code.
-
-	// Copying the retrieved data to the dataset
-
-	dataset->metadata->smd = out;
-	dataset->metadata->size = 123;  // how to get this info?
+	//smd_attr_t *out = smd_attr_create_from_json(dataset->metadata->json, dataset->metadata->size);
+	*out_metadata = dataset->metadata;
 
 	return ESDM_SUCCESS;
 }
@@ -656,15 +632,30 @@ esdm_status esdm_metadata_init(esdm_metadata ** output_metadata){
 	md->json = ((char*) md) + sizeof(esdm_metadata);
 	md->smd = smd_attr_new("", SMD_DTYPE_EMPTY, NULL, 0);
 
+	md->tech = smd_attr_new("tech", SMD_DTYPE_EMPTY, NULL, 0);
+	md->attr = smd_attr_new("attr", SMD_DTYPE_EMPTY, NULL, 0);
+	md->special = smd_attr_new("special", SMD_DTYPE_EMPTY, NULL, 0);
+	smd_attr_link(md->smd, md->tech, 0);
+	smd_attr_link(md->smd, md->attr, 0);
+	smd_attr_link(md->smd, md->special, 0);
+
 	return ESDM_SUCCESS;
 }
 
 esdm_status esdm_dataspace_name_dimensions(esdm_metadata * metadata, int dims, char ** names){
 	ESDM_DEBUG(__func__);
+	// TODO check for error: int smd_find_position_by_name(const smd_attr_t * attr, const char * name);
+
+	smd_dtype_t * t_arr = smd_type_array(SMD_DTYPE_STRING, dims);
+	smd_attr_t * vars = smd_attr_new("vars", t_arr, names, 0);
+	smd_attr_link(metadata->special, vars, 0);
+
 	return ESDM_SUCCESS;
 }
 
 esdm_status esdm_link_metadata(esdm_metadata * metadata, smd_attr_t * attr){
 	ESDM_DEBUG(__func__);
+
+	smd_link_ret_t ret = smd_attr_link(metadata->attr, attr, 0);
 	return ESDM_SUCCESS;
 }

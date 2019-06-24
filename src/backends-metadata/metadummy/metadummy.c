@@ -129,20 +129,13 @@ static int entry_create(const char *path, esdm_metadata *data)
 	DEBUG("entry_create(%s - %s)\n", path, data != NULL ? data->json : NULL);
 
 	// ENOENT => allow to create
-
-	status = stat(path, &sb);
-	if (status != -1) {
-		// TODO fix semantics, what should happen if the file exists.
-		perror("entry create file exists already");
-	}
 	// write to non existing file
-	int fd = open(path,	O_WRONLY | O_CREAT, S_IWUSR | S_IRUSR | S_IWGRP | S_IRGRP | S_IROTH);
+	int fd = open(path,	O_WRONLY | O_CREAT | O_TRUNC, S_IWUSR | S_IRUSR | S_IWGRP | S_IRGRP | S_IROTH);
 	// everything ok? write and close
 	if ( fd != -1 )
 	{
 		if(data != NULL && data->json != NULL){
-			int size = strlen(data->json) + 1; // why? and what the correlation to metadata->size?
-			int ret = write_check(fd, data->json, size);
+			int ret = write_check(fd, data->json, data->size);
 			assert( ret == 0 );
 		}
 		close(fd);

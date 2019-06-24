@@ -18,6 +18,9 @@ struct esdm_metadata {
 	int buff_size;
 	int size;
 	smd_attr_t * smd; // if this is not NULL, we have metadata parsed from JSON to KV pairs.
+	smd_attr_t * tech;
+	smd_attr_t * attr;
+	smd_attr_t * special;
 };
 
 struct esdm_dataset_t {
