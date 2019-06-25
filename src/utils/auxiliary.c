@@ -1,11 +1,11 @@
 /* This file is part of ESDM.
  *
- * This program is is free software: you can redistribute it and/or modify
+ * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
  *
- * This program is is distributed in the hope that it will be useful,
+ * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
@@ -40,6 +40,7 @@
 
 
 // directory handling /////////////////////////////////////////////////////////
+
 
 void mkdir_recursive(const char *path) {
         char tmp[PATH_MAX];
@@ -98,8 +99,8 @@ void posix_recursive_remove(const char * path) {
 }
 
 
-
 // file I/O handling //////////////////////////////////////////////////////////
+
 
 int read_file(char *filepath, char **buf)
 {
@@ -135,10 +136,6 @@ int read_file(char *filepath, char **buf)
 }
 
 
-
-/**
- * Write while ensuring and retrying until len is written or error occured.
- */
 int write_check(int fd, char *buf, size_t len){
 	while(len > 0){
 		ssize_t ret = write(fd, buf, len);
@@ -157,9 +154,7 @@ int write_check(int fd, char *buf, size_t len){
 	return 0;
 }
 
-/**
- * Read while ensuring and retrying until len is read or error occured.
- */
+
 int read_check(int fd, char *buf, size_t len){
 	while(len > 0){
 		ssize_t ret = read(fd, buf, len);
@@ -181,17 +176,9 @@ int read_check(int fd, char *buf, size_t len){
 }
 
 
-
-
-
-
-
-
 // POSIX other ////////////////////////////////////////////////////////////////
 
-/**
- * Print a detailed summary for the stat system call.
- */
+
 void print_stat(struct stat sb)
 {
 	printf("\n");

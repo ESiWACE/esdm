@@ -1,18 +1,18 @@
-/* This file is part of ESDM.                                              
- *                                                                              
- * This program is is free software: you can redistribute it and/or modify         
- * it under the terms of the GNU Lesser General Public License as published by  
- * the Free Software Foundation, either version 3 of the License, or            
- * (at your option) any later version.                                          
- *                                                                              
- * This program is is distributed in the hope that it will be useful,           
- * but WITHOUT ANY WARRANTY; without even the implied warranty of               
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the                
- * GNU General Public License for more details.                                 
- *                                                                                 
- * You should have received a copy of the GNU Lesser General Public License        
- * along with ESDM.  If not, see <http://www.gnu.org/licenses/>.           
- */                                                                         
+/* This file is part of ESDM.
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Lesser General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public License
+ * along with ESDM.  If not, see <http://www.gnu.org/licenses/>.
+ */
 
 /**
  * @file
@@ -40,37 +40,7 @@
 #include <esdm.h>
 #include "mongodb.h"
 
-
-
-
-// Internal functions used by this backend.
-typedef struct {
-	const char* type;
-	const char* name;
-	const char* target;
-
-	mongoc_client_t *client;
-    mongoc_database_t *database;
-    mongoc_collection_t *collection;
-
-} mongodb_backend_options_t;
-
-
-
-
-// Internal functions used by this backend.
-typedef struct {
-	mongodb_backend_options_t* options;
-	int other;
-
-	mongoc_client_t *client;
-    mongoc_database_t *database;
-    mongoc_collection_t *collection;
-} mongodb_backend_data_t;
-
-
-
-
+#define DEBUG(msg) log("[METADUMMY] %-30s %s:%d\n", msg, __FILE__, __LINE__)
 
 
 static void log(const char* format, ...)
@@ -80,19 +50,14 @@ static void log(const char* format, ...)
 	vprintf(format,args);
 	va_end(args);
 }
-#define DEBUG(msg) log("[METADUMMY] %-30s %s:%d\n", msg, __FILE__, __LINE__)
-
-
-// forward declarations
-static void mongodb_test();
-
 
 
 ///////////////////////////////////////////////////////////////////////////////
 // Helper and utility /////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////
 
-static int mkfs(esdm_backend* backend) 
+
+static int mkfs(esdm_backend* backend)
 {
 	DEBUG("mongodb setup");
 
@@ -106,12 +71,12 @@ static int mkfs(esdm_backend* backend)
 
 	if (stat(tgt, &sb) == -1)
 	{
-		char* root; 
-		char* containers; 
-		
+		char* root;
+		char* containers;
+
 		asprintf(&root, "%s", tgt);
 		mkdir(root, 0700);
-	
+
 		asprintf(&containers, "%s/containers", tgt);
 		mkdir(containers, 0700);
 
@@ -121,30 +86,22 @@ static int mkfs(esdm_backend* backend)
 }
 
 
-/**
- * Similar to the command line counterpart fsck for ESDM plugins is responsible
- * to check and potentially repair the "filesystem".
- *
- */
 static int fsck()
 {
-
-
 	return 0;
 }
-
-
 
 
 ///////////////////////////////////////////////////////////////////////////////
 // Internal Helpers  //////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////
 
+
 static int entry_create(const char *path)
 {
 	int status;
 	struct stat sb;
-	
+
 	printf("entry_create(%s)\n", path);
 
 	// ENOENT => allow to create
@@ -188,7 +145,6 @@ static int entry_retrieve(const char *path)
 	}
 
 	//print_stat(sb);
-
 
 	// write to non existing file
 	int fd = open(path,	O_RDONLY | S_IWUSR | S_IRUSR | S_IWGRP | S_IRGRP | S_IROTH);
@@ -241,7 +197,7 @@ static int entry_update(const char *path, void *buf, size_t len)
 }
 
 
-static int entry_destroy(const char *path) 
+static int entry_destroy(const char *path)
 {
 	int status;
 	struct stat sb;
@@ -266,18 +222,10 @@ static int entry_destroy(const char *path)
 }
 
 
-
-
-
-
-
-
-
-
-
 ///////////////////////////////////////////////////////////////////////////////
 // Container Helpers //////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////
+
 
 static int container_create(esdm_backend* backend, esdm_container *container)
 {
@@ -294,7 +242,7 @@ static int container_create(esdm_backend* backend, esdm_container *container)
 	asprintf(&path_container, "%s/containers/%s", tgt, container->name);
 
 
-	bson_error_t error;	
+	bson_error_t error;
 	bson_oid_t oid;
 	bson_t *doc = bson_new();
 
@@ -307,8 +255,6 @@ static int container_create(esdm_backend* backend, esdm_container *container)
     }
 
     bson_destroy (doc);
-
-
 
 	// create metadata entry
 	entry_create(path_metadata);
@@ -367,7 +313,7 @@ static int container_update(esdm_backend* backend, esdm_container *container)
 }
 
 
-static int container_destroy(esdm_backend* backend, esdm_container *container) 
+static int container_destroy(esdm_backend* backend, esdm_container *container)
 {
 	char *path_metadata;
 	char *path_container;
@@ -391,10 +337,10 @@ static int container_destroy(esdm_backend* backend, esdm_container *container)
 }
 
 
-
 ///////////////////////////////////////////////////////////////////////////////
 // Dataset Helpers ////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////
+
 
 static int dataset_create(esdm_backend* backend, esdm_dataset_t *dataset)
 {
@@ -411,9 +357,7 @@ static int dataset_create(esdm_backend* backend, esdm_dataset_t *dataset)
 	asprintf(&path_metadata, "%s/containers/%s/%s.md", tgt, dataset->container->name, dataset->name);
 	asprintf(&path_dataset, "%s/containers/%s/%s", tgt, dataset->container->name, dataset->name);
 
-
-
-	bson_error_t error;	
+	bson_error_t error;
 	bson_oid_t oid;
 	bson_t *doc = bson_new ();
 
@@ -426,11 +370,6 @@ static int dataset_create(esdm_backend* backend, esdm_dataset_t *dataset)
     }
 
     bson_destroy (doc);
-
-
-
-
-
 
 	// create metadata entry
 	entry_create(path_metadata);
@@ -456,15 +395,15 @@ static int dataset_update(esdm_backend* backend, esdm_dataset_t *dataset)
 }
 
 
-static int dataset_destroy(esdm_backend* backend, esdm_dataset_t *dataset) 
+static int dataset_destroy(esdm_backend* backend, esdm_dataset_t *dataset)
 {
 }
-
 
 
 ///////////////////////////////////////////////////////////////////////////////
 // Fragment Helpers ///////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////
+
 
 static int fragment_update(esdm_backend* backend, esdm_fragment_t *fragment)
 {
@@ -476,7 +415,7 @@ static int fragment_update(esdm_backend* backend, esdm_fragment_t *fragment)
 	const char* tgt = options->target;
 
 	printf("tgt: %p\n", tgt);
-		
+
 	asprintf(&path, "%s/containers/%s/%s/", tgt, fragment->dataset->container->name, fragment->dataset->name);
 	asprintf(&path_fragment, "%s/containers/%s/%s/%p", tgt, fragment->dataset->container->name, fragment->dataset->name, fragment);
 
@@ -486,7 +425,6 @@ static int fragment_update(esdm_backend* backend, esdm_fragment_t *fragment)
 	// create metadata entry
 	//mkdir_recursive(path);
 	//entry_create(path_fragment);
-
 
 //	entry_update(path_fragment, "abc", 3);
 
@@ -498,19 +436,17 @@ static int fragment_update(esdm_backend* backend, esdm_fragment_t *fragment)
 	entry_retrieve(path_fragment, &buf, &count);
 	*/
 
-
 	free(path);
 	free(path_fragment);
 }
-
-
 
 
 ///////////////////////////////////////////////////////////////////////////////
 // ESDM Callbacks /////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////
 
-static int mongodb_backend_performance_estimate(esdm_backend* backend) 
+
+static int mongodb_backend_performance_estimate(esdm_backend* backend)
 {
 	DEBUG("Calculating performance estimate.");
 
@@ -518,16 +454,13 @@ static int mongodb_backend_performance_estimate(esdm_backend* backend)
 }
 
 
-static int mongodb_create(esdm_backend* backend, char* name) 
+static int mongodb_create(esdm_backend* backend, char* name)
 {
 	DEBUG("Create");
 
 	// TODO; Sanitize name, and reject forbidden names
 
-
 	//container_create(backend, name);
-
-
 
     //#include <unistd.h>
     //ssize_t pread(int fd, void *buf, size_t count, off_t offset);
@@ -538,63 +471,65 @@ static int mongodb_create(esdm_backend* backend, char* name)
 
 
 /**
- *	
+ *
  *	handle
  *	mode
- *	owner?	
+ *	owner?
  *
  */
-static int mongodb_open(esdm_backend* backend) 
+static int mongodb_open(esdm_backend* backend)
 {
 	DEBUG("Open");
 	return 0;
 }
 
-static int mongodb_write(esdm_backend* backend) 
+
+static int mongodb_write(esdm_backend* backend)
 {
 	DEBUG("Write");
 	return 0;
 }
 
-static int mongodb_read(esdm_backend* backend) 
+
+static int mongodb_read(esdm_backend* backend)
 {
 	DEBUG("Read");
 	return 0;
 }
 
-static int mongodb_close(esdm_backend* backend) 
+
+static int mongodb_close(esdm_backend* backend)
 {
 	DEBUG("Close");
 	return 0;
 }
 
 
-
-static int mongodb_allocate(esdm_backend* backend) 
+static int mongodb_allocate(esdm_backend* backend)
 {
 	DEBUG("Allocate");
 	return 0;
 }
 
 
-static int mongodb_update(esdm_backend* backend) 
+static int mongodb_update(esdm_backend* backend)
 {
 	DEBUG("Update");
 	return 0;
 }
 
 
-static int mongodb_lookup(esdm_backend* backend) 
+static int mongodb_lookup(esdm_backend* backend)
 {
 	DEBUG("Lookup");
 	return 0;
 }
 
 
-
 ///////////////////////////////////////////////////////////////////////////////
 // ESDM Module Registration ///////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////
+
 
 static esdm_backend backend_template = {
 ///////////////////////////////////////////////////////////////////////////////
@@ -637,21 +572,10 @@ static esdm_backend backend_template = {
 	},
 };
 
-/**
-* Initializes the POSIX plugin. In particular this involves:
-*
-*	* Load configuration of this backend
-*	* Load and potentially calibrate performance model
-*
-*	* Connect with support services e.g. for technical metadata
-*	* Setup directory structures used by this POSIX specific backend
-*
-*	* Populate esdm_backend struct and callbacks required for registration
-*
-* @return pointer to backend struct
-*/
-esdm_backend* mongodb_backend_init(esdm_config_backend_t *config) {
-	
+
+esdm_backend* mongodb_backend_init(esdm_config_backend_t *config)
+{
+
 	DEBUG("Initializing mongodb backend.");
 
 	esdm_backend* backend = (esdm_backend*) malloc(sizeof(esdm_backend));
@@ -663,18 +587,11 @@ esdm_backend* mongodb_backend_init(esdm_config_backend_t *config) {
 	asprintf(&tgt, "./_mongodb");
 	data->target = tgt;
 
-
-
-
-
 	//backend->data = init_data;
 	backend->data = data;
 
-
 	// todo check mongodb style persitency structure available?
-	mkfs(backend);	
-
-
+	mkfs(backend);
 
 	mongoc_client_t *client;
 	mongoc_collection_t *collection;
@@ -690,23 +607,17 @@ esdm_backend* mongodb_backend_init(esdm_config_backend_t *config) {
 	mongoc_client_set_appname (client, "ESDM Backend");
 	collection = mongoc_client_get_collection (client, "esdm", "esdm");
 
-
 	data->client = client;
 	data->collection = collection;
 
-
 	//mongodb_test();
 	//mongoconnect(0, NULL);
-
 
 	return backend;
 
 }
 
-/**
-* Initializes the POSIX plugin. In particular this involves:
-*
-*/
+
 int mongodb_finalize()
 {
 
@@ -717,13 +628,7 @@ int mongodb_finalize()
 }
 
 
-
-
-
-
-
-
-static void mongodb_test() 
+static void mongodb_test()
 {
 	int ret = -1;
 
@@ -768,5 +673,5 @@ static void mongodb_test()
 
 	ret = entry_destroy(def);
 	assert(ret == -1);
-	
+
 }

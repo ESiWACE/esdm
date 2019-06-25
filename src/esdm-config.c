@@ -1,11 +1,11 @@
 /* This file is part of ESDM.
  *
- * This program is is free software: you can redistribute it and/or modify
+ * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
  *
- * This program is is distributed in the hope that it will be useful,
+ * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
@@ -35,8 +35,6 @@
 #define DEBUG(fmt, ...) ESDM_DEBUG_COM_FMT("CONFIG", fmt, __VA_ARGS__)
 
 
-char* esdm_config_gather();
-
 esdm_config_t* esdm_config_init_from_str(const char * config_str){
 	esdm_config_t* config = NULL;
 	config = (esdm_config_t*) malloc(sizeof(esdm_config_t));
@@ -45,12 +43,7 @@ esdm_config_t* esdm_config_init_from_str(const char * config_str){
 	return config;
 }
 
-/**
- * Initializes the site configuration module.
- *
- * @param	[in] esdm   Pointer to esdm instance.
- * @return	Pointer to newly created configuration instance.
- */
+
 esdm_config_t* esdm_config_init(esdm_instance_t* esdm)
 {
 	ESDM_DEBUG(__func__);
@@ -60,7 +53,6 @@ esdm_config_t* esdm_config_init(esdm_instance_t* esdm)
 	esdm->config = esdm_config_init_from_str(config_str);
 	return esdm->config;
 }
-
 
 
 esdm_status esdm_config_finalize(esdm_instance_t *esdm)
@@ -78,8 +70,6 @@ esdm_status esdm_config_finalize(esdm_instance_t *esdm)
 
 
 /**
- * Gathers ESDM configuration settings from multiple locations to build one configuration string.
- *
  * TODO:
  *	/etc/esdm/esdm.conf
  *	~/.config/esdm/esdm.conf
@@ -111,7 +101,6 @@ esdm_config_backend_t* esdm_config_get_metadata_coordinator(esdm_instance_t* esd
 	print_json(elem);
 	#endif
 
-
 	esdm_config_backend_t *config_backend = (esdm_config_backend_t*) malloc(sizeof(esdm_config_backend_t));
 	config_backend->type = json_string_value(elem);
 	config_backend->esdm = root;
@@ -138,11 +127,6 @@ esdm_config_backend_t* esdm_config_get_metadata_coordinator(esdm_instance_t* esd
 }
 
 
-/**
- *	Fetches backends
- *
- *
- */
 esdm_config_backends_t* esdm_config_get_backends(esdm_instance_t* esdm)
 {
 	ESDM_DEBUG(__func__);
@@ -237,7 +221,6 @@ esdm_config_backends_t* esdm_config_get_backends(esdm_instance_t* esdm)
 	} else {
 		ESDM_ERROR("Invalid configuration! /esdm/backends is not an array.");
 	}
-
 
 	return config_backends;
 }

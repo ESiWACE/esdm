@@ -1,11 +1,11 @@
 /* This file is part of ESDM.
  *
- * This program is is free software: you can redistribute it and/or modify
+ * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
  *
- * This program is is distributed in the hope that it will be useful,
+ * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
@@ -39,16 +39,6 @@
 static void backend_thread(io_work_t* data_p, esdm_backend* backend_id);
 
 
-
-/**
- * Initialize scheduler component:
- *     * setup a thread pool
- *     * allow global and local limits
- *
- *     use globale limit only if ESDM_ACCESSIBILITY_GLOBAL is set    (data_accessibility_t enum)
- *
- *
- */
 esdm_scheduler_t* esdm_scheduler_init(esdm_instance_t* esdm)
 {
 	ESDM_DEBUG(__func__);
@@ -85,6 +75,7 @@ esdm_scheduler_t* esdm_scheduler_init(esdm_instance_t* esdm)
 	return scheduler;
 }
 
+
 esdm_status esdm_scheduler_finalize(esdm_instance_t *esdm)
 {
 	ESDM_DEBUG(__func__);
@@ -103,6 +94,7 @@ esdm_status esdm_scheduler_finalize(esdm_instance_t *esdm)
 
 	return ESDM_SUCCESS;
 }
+
 
 static void backend_thread(io_work_t* work, esdm_backend* backend){
   io_request_status_t * status = work->parent;
@@ -141,6 +133,7 @@ static void backend_thread(io_work_t* work, esdm_backend* backend){
 	//esdm_dataspace_destroy(work->fragment->dataspace);
   free(work);
 }
+
 
 static void read_copy_callback(io_work_t * work){
 	if(work->return_code != ESDM_SUCCESS){
@@ -263,6 +256,7 @@ esdm_status esdm_scheduler_enqueue_read(esdm_instance_t *esdm, io_request_status
 	return ESDM_SUCCESS;
 }
 
+
 esdm_status esdm_scheduler_enqueue_write(esdm_instance_t *esdm, io_request_status_t * status, esdm_dataset_t *dataset, void *buf,  esdm_dataspace_t* space){
     GError * error;
     //Gather I/O recommendations
@@ -364,6 +358,7 @@ esdm_status esdm_scheduler_enqueue_write(esdm_instance_t *esdm, io_request_statu
 	return ESDM_SUCCESS;
 }
 
+
 esdm_status esdm_scheduler_status_init(io_request_status_t * status){
 	g_mutex_init(& status->mutex);
 	g_cond_init(& status->done_condition);
@@ -371,11 +366,13 @@ esdm_status esdm_scheduler_status_init(io_request_status_t * status){
 	return ESDM_SUCCESS;
 }
 
+
 esdm_status esdm_scheduler_status_finalize(io_request_status_t * status){
 	g_mutex_clear(& status->mutex);
 	g_cond_clear(& status->done_condition);
 	return ESDM_SUCCESS;
 }
+
 
 esdm_status esdm_scheduler_wait(io_request_status_t * status){
     g_mutex_lock(& status->mutex);
@@ -387,13 +384,6 @@ esdm_status esdm_scheduler_wait(io_request_status_t * status){
 }
 
 
-
-/**
- * Calls to reads have to be completed before they can return to the application and are therefor blocking.
- * Use esdm_scheduler_process_blocking from functions in the application facing API to process blocking scheduling.
- *
- * Note: write is also blocking right now.
- */
 esdm_status esdm_scheduler_process_blocking(esdm_instance_t *esdm, io_operation_t op, esdm_dataset_t *dataset, void *buf,  esdm_dataspace_t* subspace){
 	ESDM_DEBUG(__func__);
 

@@ -21,10 +21,6 @@
 // JSON - Load and try to parse
 ///////////////////////////////////////////////////////////////////////////////
 
-/*
- * Parse text into a JSON object. If text is valid JSON, returns a
- * json_t structure, otherwise prints and error and returns null.
- */
 json_t *load_json(const char *text) {
     json_t *root;
     json_error_t error;
@@ -38,7 +34,6 @@ json_t *load_json(const char *text) {
         return (json_t *)0;
     }
 }
-
 
 ///////////////////////////////////////////////////////////////////////////////
 // JSON - Print helper to display json object contents.
@@ -58,6 +53,7 @@ static void print_json_null(const json_t *element, int indent);
 void print_json(const json_t *root) {
     print_json_aux(root, 0);
 }
+
 
 void print_json_aux(const json_t *element, int indent) {
     switch (json_typeof(element)) {
@@ -90,14 +86,17 @@ void print_json_aux(const json_t *element, int indent) {
     }
 }
 
+
 void print_json_indent(int indent) {
     int i;
     for (i = 0; i < indent; i++) { putchar(' '); }
 }
 
+
 const char *json_plural(int count) {
     return count == 1 ? "" : "s";
 }
+
 
 void print_json_object(const json_t *element, int indent) {
     size_t size;
@@ -115,6 +114,7 @@ void print_json_object(const json_t *element, int indent) {
     }
 }
 
+
 void print_json_array(const json_t *element, int indent) {
     size_t i;
     size_t size = json_array_size(element);
@@ -126,20 +126,24 @@ void print_json_array(const json_t *element, int indent) {
     }
 }
 
+
 void print_json_string(const json_t *element, int indent) {
     print_json_indent(indent);
     printf("JSON String: \"%s\"\n", json_string_value(element));
 }
+
 
 void print_json_integer(const json_t *element, int indent) {
     print_json_indent(indent);
     printf("JSON Integer: \"%" JSON_INTEGER_FORMAT "\"\n", json_integer_value(element));
 }
 
+
 void print_json_real(const json_t *element, int indent) {
     print_json_indent(indent);
     printf("JSON Real: %f\n", json_real_value(element));
 }
+
 
 void print_json_true(const json_t *element, int indent) {
     (void)element;
@@ -147,11 +151,13 @@ void print_json_true(const json_t *element, int indent) {
     printf("JSON True\n");
 }
 
+
 void print_json_false(const json_t *element, int indent) {
     (void)element;
     print_json_indent(indent);
     printf("JSON False\n");
 }
+
 
 void print_json_null(const json_t *element, int indent) {
     (void)element;
@@ -393,12 +399,6 @@ fail:
 }
 
 
-
-
-
-
-
-
 /* jansson private helper functions */
 static void *jsonp_malloc(size_t size) {
 	if(!size)
@@ -407,12 +407,14 @@ static void *jsonp_malloc(size_t size) {
 	return (*do_malloc)(size);
 }
 
+
 static void jsonp_free(void *ptr) {
 	if(!ptr)
 		return;
 
 	(*do_free)(ptr);
 }
+
 
 static char *jsonp_strdup(const char *str) {
 	char *new_str;

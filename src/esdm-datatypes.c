@@ -1,11 +1,11 @@
 /* This file is part of ESDM.
  *
- * This program is is free software: you can redistribute it and/or modify
+ * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
  *
- * This program is is distributed in the hope that it will be useful,
+ * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
@@ -37,15 +37,8 @@ extern esdm_instance_t esdm;
 
 
 // Container //////////////////////////////////////////////////////////////////
-/**
- * Create a new container.
- *
- *  - Allocate process local memory structures.
- *	- Register with metadata service.
- *
- *	@return Pointer to new container.
- *
- */
+
+
 esdm_status esdm_container_create(const char* name, esdm_container **out_container)
 {
 	ESDM_DEBUG(__func__);
@@ -83,15 +76,6 @@ esdm_status esdm_container_retrieve(const char * name, esdm_container **out_cont
 }
 
 
-
-/**
- * Make container persistent to storage.
- * Enqueue for writing to backends.
- *
- * Calling container commit may trigger subsequent commits for datasets that
- * are part of the container.
- *
- */
 esdm_status esdm_container_commit(esdm_container* container)
 {
 	ESDM_DEBUG(__func__);
@@ -99,26 +83,17 @@ esdm_status esdm_container_commit(esdm_container* container)
 	// print datasets of this container
 	esdm_print_hashtable(container->datasets);
 
-
 	// TODO: ensure callback is not NULL
 	// md callback create/update container
 	esdm.modules->metadata_backend->callbacks.container_create(esdm.modules->metadata_backend, container);
 
-
 	// Also commit uncommited datasets of this container?
 	//g_hash_table_foreach (container->datasets, /* TODO: dataset commit wrapper? */ print_hashtable_entry, NULL);
-
 
 	return ESDM_SUCCESS;
 }
 
 
-/**
- * Destroy a existing container.
- *
- * Either from memory or from persistent storage.
- *
- */
 esdm_status esdm_container_destroy(esdm_container *container)
 {
 	ESDM_DEBUG(__func__);
@@ -129,46 +104,16 @@ esdm_status esdm_container_destroy(esdm_container *container)
 }
 
 
-
-
-
-uint64_t esdm_dataspace_element_count(esdm_dataspace_t *subspace){
-	assert(subspace->size != NULL);
-	// calculate subspace element count
-	uint64_t size = subspace->size[0];
-	for (int i = 1; i < subspace->dimensions; i++)
-	{
-		size *= subspace->size[i];
-	}
-	return size;
-}
-
-uint64_t  esdm_dataspace_size(esdm_dataspace_t *dataspace){
-	uint64_t size = esdm_dataspace_element_count(dataspace);
-	uint64_t bytes = size*esdm_sizeof(dataspace->datatype);
-	return bytes;
-}
-
-
-
 // Fragment ///////////////////////////////////////////////////////////////////
+
+
 /**
- * Create a new fragment.
- *
- *  - Allocate process local memory structures.
- *
- *
- *	A fragment is part of a dataset.
- *
  *	TODO: there should be a mode to auto-commit on creation?
  *
  *	How does this integrate with the scheduler? On auto-commit this merely beeing pushed to sched for dispatch?
- *
- *
- *	@return Pointer to new fragment.
- *
  */
- esdm_status esdm_fragment_create(esdm_dataset_t *dataset, esdm_dataspace_t *subspace, void *buf, esdm_fragment_t ** out_fragment)
+
+esdm_status esdm_fragment_create(esdm_dataset_t *dataset, esdm_dataspace_t *subspace, void *buf, esdm_fragment_t ** out_fragment)
 {
 	ESDM_DEBUG(__func__);
 	esdm_fragment_t* fragment = (esdm_fragment_t*) malloc(sizeof(esdm_fragment_t));
@@ -259,7 +204,6 @@ esdm_status esdm_dataspace_overlap_str(esdm_dataspace_t *a, char delim_c, char *
 }
 
 
-
 esdm_status esdm_fragment_retrieve(esdm_fragment_t *fragment)
 {
 	ESDM_DEBUG(__func__);
@@ -305,12 +249,6 @@ void esdm_dataspace_string_descriptor(char* string, esdm_dataspace_t *dataspace)
 }
 
 
-
-
-/**
- * Make fragment persistent to storage.
- * Schedule for writing to backends.
- */
 esdm_status esdm_fragment_commit(esdm_fragment_t *f)
 {
 	ESDM_DEBUG(__func__);
@@ -329,7 +267,6 @@ esdm_status esdm_fragment_commit(esdm_fragment_t *f)
 	for(int i=1; i < d->dimensions; i++){
 		m->size += sprintf(& m->json[m->size], "x%ld", d->offset[i]);
 	}
-
 
 	m->size += sprintf(& m->json[m->size], "\", \"data\" :");
 
@@ -352,21 +289,6 @@ esdm_status esdm_fragment_destroy(esdm_fragment_t *fragment)
 }
 
 
-/**
- * Serializes fragment for storage.
- *
- * @startuml{fragment_serialization.png}
- *
- * User -> Fragment: serialize()
- *
- * Fragment -> Dataspace: serialize()
- * Fragment <- Dataspace: (status, string)
- *
- * User <- Fragment: (status, string)
- *
- * @enduml
- *
- */
 esdm_status esdm_fragment_serialize(esdm_fragment_t *fragment, void **out)
 {
 	ESDM_DEBUG(__func__);
@@ -375,9 +297,6 @@ esdm_status esdm_fragment_serialize(esdm_fragment_t *fragment, void **out)
 }
 
 
-/**
- * Reinstantiate fragment from serialization.
- */
  esdm_status esdm_fragment_deserialize(void *serialized_fragment, esdm_fragment_t ** _out_fragment)
 {
 	ESDM_DEBUG(__func__);
@@ -385,18 +304,9 @@ esdm_status esdm_fragment_serialize(esdm_fragment_t *fragment, void **out)
 }
 
 
-
-
 // Dataset ////////////////////////////////////////////////////////////////////
-/**
- * Create a new dataset.
- *
- *  - Allocate process local memory structures.
- *	- Register with metadata service.
- *
- *	@return Pointer to new dateset.
- *
- */
+
+
 esdm_status esdm_dataset_create(esdm_container* container, const char* name, esdm_dataspace_t* dataspace,  esdm_dataset_t ** out_dataset)
 {
 	ESDM_DEBUG(__func__);
@@ -442,7 +352,6 @@ esdm_status esdm_dataset_update(esdm_dataset_t *dataset)
 }
 
 
-
 esdm_status esdm_dataset_destroy(esdm_dataset_t *dataset)
 {
 	ESDM_DEBUG(__func__);
@@ -455,10 +364,7 @@ esdm_status esdm_dataset_destroy(esdm_dataset_t *dataset)
 	return ESDM_SUCCESS;
 }
 
-/**
- * Make dataset persistent to storage.
- * Schedule for writing to backends.
- */
+
 esdm_status esdm_dataset_commit(esdm_dataset_t *dataset)
 {
 	ESDM_DEBUG(__func__);
@@ -482,14 +388,8 @@ esdm_status esdm_dataset_read_metadata(esdm_dataset_t * dataset, esdm_metadata *
 
 
 // Dataspace //////////////////////////////////////////////////////////////////
-/**
- * Create a new dataspace.
- *
- *  - Allocate process local memory structures.
- *
- *	@return Pointer to new dateset.
- *
- */
+
+
 esdm_status esdm_dataspace_create(int64_t dimensions, int64_t* sizes, esdm_datatype_t datatype, esdm_dataspace_t ** out_dataspace)
 {
 	ESDM_DEBUG(__func__);
@@ -512,7 +412,6 @@ esdm_status esdm_dataspace_create(int64_t dimensions, int64_t* sizes, esdm_datat
 }
 
 
-
 uint8_t esdm_dataspace_overlap(esdm_dataspace_t *a, esdm_dataspace_t *b)
 {
 	// TODO: allow comparison of spaces of different size? Alternative maybe to transform into comparable space, provided a mask or dimension index mapping
@@ -525,7 +424,6 @@ uint8_t esdm_dataspace_overlap(esdm_dataspace_t *a, esdm_dataspace_t *b)
 
 	return 0;
 }
-
 
 /**
  * this could also be the fragment???
@@ -568,6 +466,7 @@ esdm_status esdm_dataspace_subspace(esdm_dataspace_t *dataspace, int64_t dimensi
 	return ESDM_SUCCESS;
 }
 
+
 void esdm_dataspace_print(esdm_dataspace_t * d){
 	printf("DATASPACE(size(%ld", d->size[0]);
 	for (int64_t i = 1; i < d->dimensions; i++) {
@@ -589,21 +488,13 @@ void esdm_fragment_print(esdm_fragment_t * f){
 }
 
 
-
-/**
- * Destroy dataspace in memory.
- */
 esdm_status esdm_dataspace_destroy(esdm_dataspace_t *dataspace)
 {
 	ESDM_DEBUG(__func__);
 	return ESDM_SUCCESS;
 }
 
-/**
- * Serializes dataspace description.
- *
- * e.g., to store along with fragment
- */
+
 esdm_status esdm_dataspace_serialize(esdm_dataspace_t *dataspace, void **out)
 {
 	ESDM_DEBUG(__func__);
@@ -611,14 +502,35 @@ esdm_status esdm_dataspace_serialize(esdm_dataspace_t *dataspace, void **out)
 	return ESDM_SUCCESS;
 }
 
-/**
- * Reinstantiate dataspace from serialization.
- */
- esdm_status esdm_dataspace_deserialize(void *serialized_dataspace, esdm_dataspace_t ** out_dataspace)
+
+esdm_status esdm_dataspace_deserialize(void *serialized_dataspace, esdm_dataspace_t ** out_dataspace)
 {
 	ESDM_DEBUG(__func__);
 	return ESDM_SUCCESS;
 }
+
+
+uint64_t esdm_dataspace_element_count(esdm_dataspace_t *subspace){
+	assert(subspace->size != NULL);
+	// calculate subspace element count
+	uint64_t size = subspace->size[0];
+	for (int i = 1; i < subspace->dimensions; i++)
+	{
+		size *= subspace->size[i];
+	}
+	return size;
+}
+
+
+uint64_t  esdm_dataspace_size(esdm_dataspace_t *dataspace){
+	uint64_t size = esdm_dataspace_element_count(dataspace);
+	uint64_t bytes = size*esdm_sizeof(dataspace->datatype);
+	return bytes;
+}
+
+
+// Metadata //////////////////////////////////////////////////////////////////
+
 
 esdm_status esdm_metadata_init_(esdm_metadata ** output_metadata){
 	ESDM_DEBUG(__func__);
@@ -641,6 +553,7 @@ esdm_status esdm_metadata_init_(esdm_metadata ** output_metadata){
 	return ESDM_SUCCESS;
 }
 
+
 esdm_status esdm_dataset_name_dimensions(esdm_dataset_t * dataset, int dims, char ** names){
 	ESDM_DEBUG(__func__);
 	// TODO check for error: int smd_find_position_by_name(const smd_attr_t * attr, const char * name);
@@ -652,12 +565,14 @@ esdm_status esdm_dataset_name_dimensions(esdm_dataset_t * dataset, int dims, cha
 	return ESDM_SUCCESS;
 }
 
+
 esdm_status esdm_dataset_link_attribute(esdm_dataset_t * dset, smd_attr_t * attr){
 	ESDM_DEBUG(__func__);
 
 	smd_link_ret_t ret = smd_attr_link(dset->metadata->attr, attr, 0);
 	return ESDM_SUCCESS;
 }
+
 
 esdm_status esdm_dataset_iterator(esdm_container *container, esdm_dataset_iterator_t ** iter){
 	ESDM_DEBUG(__func__);

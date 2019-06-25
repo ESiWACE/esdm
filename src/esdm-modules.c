@@ -1,11 +1,11 @@
 /* This file is part of ESDM.
  *
- * This program is is free software: you can redistribute it and/or modify
+ * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
  *
- * This program is is distributed in the hope that it will be useful,
+ * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
@@ -32,7 +32,6 @@
 
 #define DEBUG_ENTER ESDM_DEBUG_COM_FMT("MODULES", "", "")
 #define DEBUG(fmt, ...) ESDM_DEBUG_COM_FMT("MODULES", fmt, __VA_ARGS__)
-
 
 
 #ifdef ESDM_HAS_POSIX
@@ -63,7 +62,6 @@
 	#include "backends-metadata/mongodb/mongodb.h"
 	#pragma message ("Building ESDM with MongoDB support.")
 #endif
-
 
 
 esdm_modules_t* esdm_modules_init(esdm_instance_t* esdm)
@@ -103,7 +101,6 @@ esdm_modules_t* esdm_modules_init(esdm_instance_t* esdm)
 	modules->data_backend_count = config_backends->count;
 	modules->data_backends = malloc(config_backends->count * sizeof(esdm_backend*));
 
-
 	int i;
 	for (i = 0; i < config_backends->count; i++) {
 		b = &(config_backends->backends[i]);
@@ -142,6 +139,7 @@ esdm_modules_t* esdm_modules_init(esdm_instance_t* esdm)
 	return modules;
 }
 
+
 esdm_status esdm_modules_finalize(esdm_instance_t* esdm)
 {
 	ESDM_DEBUG(__func__);
@@ -161,7 +159,6 @@ esdm_status esdm_modules_finalize(esdm_instance_t* esdm)
 
 	return ESDM_SUCCESS;
 }
-
 
 
 esdm_status esdm_modules_get_by_type(esdm_module_type_t type, esdm_module_type_array_t ** array)

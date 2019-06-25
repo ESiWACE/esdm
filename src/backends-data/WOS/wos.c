@@ -1,11 +1,11 @@
 /* This file is part of ESDM.
  *
- * This program is is free software: you can redistribute it and/or modify
+ * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
  *
- * This program is is distributed in the hope that it will be useful,
+ * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
@@ -46,6 +46,7 @@
 #define DEBUG(fmt) ESDM_DEBUG(fmt)
 #define DEBUG_FMT(fmt, ...) ESDM_DEBUG_COM_FMT("WOS", fmt, __VA_ARGS__)
 
+
 int wos_get_param(const char *conf, char **output, const char *param)
 {
 	if (!conf || !output) {
@@ -83,15 +84,18 @@ int wos_get_param(const char *conf, char **output, const char *param)
 	return ESDM_SUCCESS;
 }
 
+
 int wos_get_host(const char *conf, char **host)
 {
 	return wos_get_param(conf, host, WOS_HOST);
 }
 
+
 int wos_get_policy(const char *conf, char **policy)
 {
 	return wos_get_param(conf, policy, WOS_POLICY);
 }
+
 
 void wos_delete_oid_list(esdm_backend_wos_t * ebm)
 {
@@ -107,6 +111,7 @@ void wos_delete_oid_list(esdm_backend_wos_t * ebm)
 		ebm->size_list = NULL;
 	}
 }
+
 
 int wos_object_list_encode(t_WosOID ** oid_list, char **out_object_id)
 {
@@ -137,6 +142,7 @@ int wos_object_list_encode(t_WosOID ** oid_list, char **out_object_id)
 
 	return ESDM_SUCCESS;
 }
+
 
 int esdm_backend_wos_init(const char *conf, esdm_backend * eb)
 {
@@ -193,6 +199,7 @@ int esdm_backend_wos_init(const char *conf, esdm_backend * eb)
 	return ESDM_SUCCESS;
 }
 
+
 int esdm_backend_wos_fini(esdm_backend * eb)
 {
 	if (!eb) {
@@ -233,6 +240,7 @@ int esdm_backend_wos_fini(esdm_backend * eb)
 
 	return ESDM_SUCCESS;
 }
+
 
 int esdm_backend_wos_alloc(esdm_backend * eb, int n_dims, int *dims_size, esdm_datatype_t type, char **out_object_id, char **out_wos_metadata)
 {
@@ -322,6 +330,7 @@ int esdm_backend_wos_alloc(esdm_backend * eb, int n_dims, int *dims_size, esdm_d
 	return ESDM_SUCCESS;
 }
 
+
 int esdm_backend_wos_open(esdm_backend * eb, char *object_id, void **obj_handle)
 {
 	if (!object_id || !obj_handle) {
@@ -376,6 +385,7 @@ int esdm_backend_wos_open(esdm_backend * eb, char *object_id, void **obj_handle)
 	return ESDM_SUCCESS;
 }
 
+
 int esdm_backend_wos_delete(esdm_backend * eb, void *obj_handle)
 {
 	if (!obj_handle) {
@@ -415,6 +425,7 @@ int esdm_backend_wos_delete(esdm_backend * eb, void *obj_handle)
 
 	return ESDM_SUCCESS;
 }
+
 
 int esdm_backend_wos_write(esdm_backend * eb, void *obj_handle, uint64_t start, uint64_t count, esdm_datatype_t type, void *data)
 {
@@ -508,6 +519,7 @@ int esdm_backend_wos_write(esdm_backend * eb, void *obj_handle, uint64_t start, 
 	return rc;
 }
 
+
 int esdm_backend_wos_read(esdm_backend * eb, void *obj_handle, uint64_t start, uint64_t count, esdm_datatype_t type, void *data)
 {
 	if (!obj_handle) {
@@ -590,6 +602,7 @@ int esdm_backend_wos_read(esdm_backend * eb, void *obj_handle, uint64_t start, u
 	return ESDM_SUCCESS;
 }
 
+
 int esdm_backend_wos_close(esdm_backend * eb, void *obj_handle)
 {
 	if (!eb || !obj_handle) {
@@ -601,6 +614,7 @@ int esdm_backend_wos_close(esdm_backend * eb, void *obj_handle)
 
 	return ESDM_SUCCESS;
 }
+
 
 int wos_backend_performance_check(esdm_backend *eb, int data_size, float *out_time)
 {
@@ -659,6 +673,7 @@ int wos_backend_performance_check(esdm_backend *eb, int data_size, float *out_ti
 	return ESDM_SUCCESS;
 }
 
+
 int wos_backend_performance_estimate(esdm_backend * eb, esdm_fragment_t * fragment, float *out_time)
 {
 	if (!fragment || !out_time) {
@@ -679,6 +694,7 @@ int wos_backend_performance_estimate(esdm_backend * eb, esdm_fragment_t * fragme
 
 	return esdm_backend_estimate_dynamic_perf_model_lat_thp(&ebm->perf_model, fragment, out_time);
 }
+
 
 int esdm_backend_wos_fragment_retrieve(esdm_backend * backend, esdm_fragment_t * fragment, json_t * metadata)
 {
@@ -741,6 +757,7 @@ int esdm_backend_wos_fragment_retrieve(esdm_backend * backend, esdm_fragment_t *
 
 	return rc;
 }
+
 
 int esdm_backend_wos_fragment_update(esdm_backend * backend, esdm_fragment_t * fragment)
 {
@@ -826,6 +843,7 @@ int esdm_backend_wos_fragment_update(esdm_backend * backend, esdm_fragment_t * f
 	return rc;
 }
 
+
 int esdm_backend_wos_fragment_delete(esdm_backend * backend, esdm_fragment_t * fragment, json_t * metadata)
 {
 	char *obj_id = NULL;
@@ -887,6 +905,7 @@ int esdm_backend_wos_fragment_delete(esdm_backend * backend, esdm_fragment_t * f
 	return rc;
 }
 
+
 int esdm_backend_wos_fragment_mkfs(esdm_backend * backend, int enforce_format)
 {
 	if (!backend)
@@ -939,19 +958,7 @@ static esdm_backend backend_template = {
 		      },
 };
 
-/**
-* Initializes the plugin. In particular this involves:
-*
-*	* Load configuration of this backend
-*	* Load and potenitally calibrate performance model
-*
-*	* Connect with support services e.g. for technical metadata
-*	* Setup directory structures used by this wos specific backend
-*
-*	* Popopulate esdm_backend struct and callbacks required for registration
-*
-* @return pointer to backend struct
-*/
+
 esdm_backend *wos_backend_init(esdm_config_backend_t * config)
 {
 	if (!config || !config->type || strcasecmp(config->type, "WOS") || !config->target) {
