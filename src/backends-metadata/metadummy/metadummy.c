@@ -423,9 +423,7 @@ static int dataset_retrieve(esdm_md_backend_t* backend, esdm_dataset_t *dataset)
 			}
 		}
 	}
-
 	close(fd);
-
 	return 0;
 }
 

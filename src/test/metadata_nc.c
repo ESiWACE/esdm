@@ -156,22 +156,32 @@ void read_test(){
 
 	// for NetCDF: dimensions
 	esdm_dataspace_t * dspace;
-	ret = esdm_dataset_get_dataspace(dataset, & dspace);
-	assert(ret == ESDM_SUCCESS);	
-	esdm_dataspace_print(dspace);
+	//ret = esdm_dataset_get_dataspace(dataset, & dspace);
+	assert(ret == ESDM_SUCCESS);
+	//esdm_dataspace_print(dspace);
 
 	// names of the dimensions
 
 	// get datatype
 
 	// get the attributes
-
-  esdm_metadata *metadata = NULL;
-	ret = esdm_dataset_read_metadata(dataset, & metadata);
+  smd_attr_t * md = NULL;
+	ret = esdm_dataset_get_attributes(dataset, & md);
   assert(ret == ESDM_SUCCESS);
 
-  // TODO retrieve the actual metadata here
+	char * txt;
+	smd_attr_t * a1;
+	a1 = smd_attr_get_child_by_name(md, "history");
+	assert(a1 != NULL);
+	assert(smd_attr_get_type(a1) == SMD_TYPE_STRING);
+	txt = (char*) smd_attr_get_value(a1);
+	assert(txt != NULL);
 
+	a1 = smd_attr_get_child_by_name(md, "unit");
+	assert(a1 != NULL);
+	assert(smd_attr_get_type(a1) == SMD_TYPE_STRING);
+	txt = (char*) smd_attr_get_value(a1);
+	assert(strcmp(txt, "Celsius") == 0);
 
 	ret = esdm_dataset_destroy(dataset);
   assert(ret == ESDM_SUCCESS);

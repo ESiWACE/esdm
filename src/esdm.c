@@ -64,7 +64,9 @@ void esdm_atexit() {
 */
 
 esdm_status esdm_dataset_get_dataspace(esdm_dataset_t *dset, esdm_dataspace_t ** out_dataspace){
+	assert(dset != NULL);
 	*out_dataspace = dset->dataspace;
+	assert(*out_dataspace != NULL);
 	return ESDM_SUCCESS;
 }
 

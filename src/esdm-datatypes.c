@@ -348,15 +348,22 @@ esdm_status esdm_dataset_retrieve(esdm_container *container, const char * name, 
 
 	dataset->name = strdup(name);
 	dataset->container = container;
-	dataset->metadata = (esdm_metadata *) malloc(sizeof(esdm_metadata));
-	dataset->dataspace = NULL;
 
-	dataset->metadata->size = 0;
-	dataset->metadata->buff_size = 0;
+	dataset->dataspace = NULL;
+	dataset->metadata = (esdm_metadata *) malloc(sizeof(esdm_metadata));
+	esdm_metadata * md = dataset->metadata;
+
+	md->size = 0;
+	md->buff_size = 0;
 
 	esdm.modules->metadata_backend->callbacks.dataset_retrieve(esdm.modules->metadata_backend, dataset);
 
-	// TODO: Retrieve associated Data
+	/* parse the data accordingly */
+	md->smd = smd_attr_create_from_json(md->json, md->size);
+	assert(dataset->metadata->smd != NULL);
+
+	md->attr = smd_attr_get_child_by_name(md->smd, "attr");
+
 
 	*out_dataset = dataset;
 
@@ -397,11 +404,9 @@ esdm_status esdm_dataset_commit(esdm_dataset_t *dataset)
 }
 
 
-esdm_status esdm_dataset_read_metadata(esdm_dataset_t * dataset, esdm_metadata ** out_metadata)
-{
-	//smd_attr_t *out = smd_attr_create_from_json(dataset->metadata->json, dataset->metadata->size);
-	*out_metadata = dataset->metadata;
-
+esdm_status esdm_dataset_get_attributes (esdm_dataset_t *dataset, smd_attr_t ** out_metadata){
+	assert(dataset->metadata->attr != NULL);
+	*out_metadata = dataset->metadata->attr;
 	return ESDM_SUCCESS;
 }
 
@@ -409,8 +414,7 @@ esdm_status esdm_dataset_read_metadata(esdm_dataset_t * dataset, esdm_metadata *
 // Dataspace //////////////////////////////////////////////////////////////////
 
 
-esdm_status esdm_dataspace_create(int64_t dimensions, int64_t* sizes, esdm_datatype_t datatype, esdm_dataspace_t ** out_dataspace)
-{
+esdm_status esdm_dataspace_create(int64_t dimensions, int64_t* sizes, esdm_datatype_t datatype, esdm_dataspace_t ** out_dataspace){
 	ESDM_DEBUG(__func__);
 	esdm_dataspace_t* dataspace = (esdm_dataspace_t*) malloc(sizeof(esdm_dataspace_t));
 

@@ -207,8 +207,8 @@ esdm_status esdm_dataset_destroy(esdm_dataset_t *dataset);
 /* This function adds the metadata to the ESDM */
 esdm_status esdm_dataset_link_attribute (esdm_dataset_t * dset, smd_attr_t * attr);
 
-/* This function reads the metadata from the file */
-esdm_status esdm_dataset_read_metadata (esdm_dataset_t *dataset, esdm_metadata ** out_metadata);
+/* This function returns the attributes */
+esdm_status esdm_dataset_get_attributes (esdm_dataset_t *dataset, smd_attr_t ** out_metadata);
 
 
 // Dataspace
