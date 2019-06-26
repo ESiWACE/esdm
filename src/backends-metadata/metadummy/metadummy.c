@@ -400,7 +400,7 @@ static int dataset_retrieve(esdm_md_backend_t* backend, esdm_dataset_t *dataset)
 	struct stat statbuf;
   int ret = stat(path_metadata, & statbuf);
 	if (ret != 0) return ESDM_ERROR;
-	off_t len = statbuf.st_size;
+	off_t len = statbuf.st_size + 1;
 
 	int fd = open(path_metadata,	O_RDONLY | S_IWUSR | S_IRUSR | S_IWGRP | S_IRGRP | S_IROTH);
 	if( fd < 0 ) return ESDM_ERROR;
@@ -408,7 +408,12 @@ static int dataset_retrieve(esdm_md_backend_t* backend, esdm_dataset_t *dataset)
 	dataset->metadata->size = len;
 	dataset->metadata->buff_size = len;
 
+
+
 	char *bbuf = dataset->metadata->json;
+	len--;
+	bbuf[len] = 0;
+
 	while(len > 0){
 		ssize_t ret = read(fd, bbuf, len);
 		if (ret != -1){
