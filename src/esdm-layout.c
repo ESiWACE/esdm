@@ -1,18 +1,18 @@
-/* This file is part of ESDM.                                              
- *                                                                              
- * This program is is free software: you can redistribute it and/or modify         
- * it under the terms of the GNU Lesser General Public License as published by  
- * the Free Software Foundation, either version 3 of the License, or            
- * (at your option) any later version.                                          
- *                                                                              
- * This program is is distributed in the hope that it will be useful,           
- * but WITHOUT ANY WARRANTY; without even the implied warranty of               
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the                
- * GNU General Public License for more details.                                 
- *                                                                                 
- * You should have received a copy of the GNU Lesser General Public License        
- * along with ESDM.  If not, see <http://www.gnu.org/licenses/>.           
- */                                                                         
+/* This file is part of ESDM.
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Lesser General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public License
+ * along with ESDM.  If not, see <http://www.gnu.org/licenses/>.
+ */
 
 
 /**
@@ -63,16 +63,8 @@
 // openmp:  map clause
 
 
-
-
-/**
- * Initializes the init component by allocating and populating the esdm_layout
- * structure.
- *
- * @return Status
- */
 esdm_layout_t* esdm_layout_init(esdm_instance_t* esdm) {
-	ESDM_DEBUG(__func__);	
+	ESDM_DEBUG(__func__);
 
 	esdm_layout_t* layout = NULL;
 	layout = (esdm_layout_t*) malloc(sizeof(esdm_layout_t));
@@ -82,13 +74,6 @@ esdm_layout_t* esdm_layout_init(esdm_instance_t* esdm) {
 }
 
 
-/**
-* Shutdown ESDM:
-*  - finalize submodules
-*  - free data structures
-*
-* @return Status
-*/
 esdm_status esdm_layout_finalize(esdm_instance_t *esdm)
 {
 	ESDM_DEBUG(__func__);
@@ -102,17 +87,31 @@ esdm_status esdm_layout_finalize(esdm_instance_t *esdm)
 }
 
 
+esdm_fragment_t* esdm_layout_reconstruction(esdm_dataset_t *dataset, esdm_dataspace_t *subspace)
+{
+	ESDM_DEBUG(__func__);
+
+	// TODO: consider decision components to choose fragments (also choose from replicas)
+
+	// for fragment in fragments
+	//		if   subspaces_overlap(subspace, fragment)
+	//			consider for reconstruction
 
 
-/**
- * Splits pending requests into one or more requests based on performance
- * estimates obtained from available backends.
- *
- * @return Status
- */
+	// subspaces_overlap?
+	//	overlap = true
+	//	while currentdim < totaldims
+	//		if
+
+	// TODO: There should to be a cache component that can be asked if fragment is present
+
+	return ESDM_SUCCESS;
+}
+
+
 esdm_status esdm_layout_recommendation(esdm_instance_t *esdm, esdm_fragment_t *in, esdm_fragment_t *out)
 {
-	ESDM_DEBUG(__func__);	
+	ESDM_DEBUG(__func__);
 
 	// pickup the performance estimate for each backend module
 	esdm_module_type_array_t * backends = NULL;
@@ -122,58 +121,16 @@ esdm_status esdm_layout_recommendation(esdm_instance_t *esdm, esdm_fragment_t *i
 	//	//esdm_backend_estimate_performance((esdm_backend*) backends->module, 1234);
 	//}
 
-	// now choice the best module
+	// now choose the best module
 	//
-	
-	return ESDM_SUCCESS;
-}
-
-
-
-
-/**
- * The layout reconstructor finds a reconstruction for subspace of a dataset.
- *
- * The reconstruction should take performance considerations into account. 
- *
- * @return Status
- */
-esdm_fragment_t* esdm_layout_reconstruction(esdm_dataset_t *dataset, esdm_dataspace_t *subspace)
-{
-	ESDM_DEBUG(__func__);	
-
-
-	// TODO: consider decision components to choose fragments (also choose from replicas)
-
-	// for fragment in fragments 
-	//		if   subspaces_overlap(subspace, fragment)
-	//			consider for reconstruction
-	
-	
-	// subspaces_overlap?
-	//	overlap = true
-	//	while currentdim < totaldims
-	//		if 
-
-
-
-	// TODO: There should to be a cache component that can be asked if fragment is present
-	
-
 
 	return ESDM_SUCCESS;
 }
 
 
-
-/**
- *
- *
- * @return Status
- */
 esdm_status esdm_layout_stat(char* desc)
 {
-	ESDM_DEBUG(__func__);	
+	ESDM_DEBUG(__func__);
 	ESDM_DEBUG("received metadata lookup request");
 
 
@@ -186,7 +143,5 @@ esdm_status esdm_layout_stat(char* desc)
 		json_decref(root);
 	}
 
-
 	return ESDM_SUCCESS;
 }
-

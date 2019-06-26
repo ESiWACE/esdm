@@ -1,11 +1,11 @@
 /* This file is part of ESDM.
  *
- * This program is is free software: you can redistribute it and/or modify
+ * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
  *
- * This program is is distributed in the hope that it will be useful,
+ * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
@@ -26,8 +26,6 @@
 
 #include <esdm.h>
 #include <esdm-internal.h>
-
-
 
 // TODO: Decide on initialization mechanism.
 static int is_initialized = 0;
@@ -59,7 +57,6 @@ esdm_status esdm_load_config_str(const char * str){
 }
 
 
-
 /*
 void esdm_atexit() {
 	esdm_finalize();
@@ -72,15 +69,6 @@ esdm_status esdm_dataset_get_dataspace(esdm_dataset_t *dset, esdm_dataspace_t **
 }
 
 
-/**
- * Initialize ESDM:
- *	- allocate data structures for ESDM
- *	- allocate memory for node local caches
- *	- initialize submodules
- *	- initialize threadpool
- *
- * @return status
- */
 esdm_status esdm_init()
 {
 	ESDM_DEBUG("Init");
@@ -88,9 +76,7 @@ esdm_status esdm_init()
 	if (!is_initialized) {
 		ESDM_DEBUG("Initializing ESDM");
 
-
 		//int status = atexit(esdm_atexit);
-
 
 		// find configuration
 		if ( !esdm.config )
@@ -120,16 +106,6 @@ esdm_status esdm_init()
 }
 
 
-
-
-/**
- * Initialize backend by invoking mkfs callback for matching target
- *
- * @param [in] enforce_format  force reformatting existing system (may result in data loss)
- * @param [in] target  target descriptor
- *
- * @return Status
- */
 esdm_status esdm_mkfs(int enforce_format, data_accessibility_t target){
 	if(! is_initialized){
 		return ESDM_ERROR;
@@ -155,13 +131,6 @@ esdm_status esdm_mkfs(int enforce_format, data_accessibility_t target){
 }
 
 
-/**
- * Display status information for objects stored in ESDM.
- *
- * @param [in] desc	Name or descriptor of object.
- *
- * @return Status
- */
 esdm_status esdm_finalize()
 {
 	ESDM_DEBUG(__func__);
@@ -179,24 +148,11 @@ esdm_status esdm_finalize()
 }
 
 
-
-
-
-
-
-
 ///////////////////////////////////////////////////////////////////////////////
 // Public API: POSIX Legacy Compaitbility /////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////
 
-/**
- * Display status information for objects stored in ESDM.
- *
- * @param [in]	desc	name or descriptor of object
- * @param [out]	result	where to write result of query
- *
- * @return Status
- */
+
 esdm_status esdm_stat(char *desc, char *result)
 {
 	ESDM_DEBUG(__func__);
@@ -209,15 +165,6 @@ esdm_status esdm_stat(char *desc, char *result)
 }
 
 
-/**
- * Create a new object.
- *
- * @param [in]	desc		string object identifier
- * @param [in]	mode		mode flags for creation
- * @param [out] container	pointer to new container
- *
- * @return Status
- */
 esdm_status esdm_create(char *name, int mode, esdm_container **container, esdm_dataset_t **dataset)
 {
 	ESDM_DEBUG(__func__);
@@ -242,16 +189,6 @@ esdm_status esdm_create(char *name, int mode, esdm_container **container, esdm_d
 }
 
 
-/**
- * Open a existing object.
- *
- * TODO: decide if also useable to create?
- *
- * @param [in] desc		string object identifier
- * @param [in] mode		mode flags for open/creation
- *
- * @return Status
- */
 esdm_status esdm_open(char *name, int mode)
 {
 	ESDM_DEBUG(__func__);
@@ -262,17 +199,6 @@ esdm_status esdm_open(char *name, int mode)
 }
 
 
-/**
- * Write data  of size starting from offset.
- *
- * @param [in] buf	The pointer to a contiguous memory region that shall be written
- * @param [in] dset	TODO, currently a stub, we assume it has been identified/created before...., json description?
- * @param [in] dims	The number of dimensions, needed for size and offset
- * @param [in] size	...
- *
- * @return Status
- */
-
 esdm_status esdm_write(esdm_dataset_t *dataset, void *buf, esdm_dataspace_t* subspace)
 {
 	ESDM_DEBUG(__func__);
@@ -281,17 +207,6 @@ esdm_status esdm_write(esdm_dataset_t *dataset, void *buf, esdm_dataspace_t* sub
 }
 
 
-
-/**
- * Reads a data fragment described by desc to the dataset dset.
- *
- * @param [out] buf	The pointer to a contiguous memory region that shall be written
- * @param [in] dset	TODO, currently a stub, we assume it has been identified/created before.... , json description?
- * @param [in] dims	The number of dimensions, needed for size and offset
- * @param [in] size	...
- *
- * @return Status
- */
 esdm_status esdm_read(esdm_dataset_t *dataset, void *buf, esdm_dataspace_t* subspace)
 {
 	ESDM_DEBUG("");
@@ -300,14 +215,6 @@ esdm_status esdm_read(esdm_dataset_t *dataset, void *buf, esdm_dataspace_t* subs
 }
 
 
-
-/**
- * Close opened object.
- *
- * @param [in] desc		String Object Identifier
- *
- * @return Status
- */
 esdm_status esdm_close(void *desc)
 {
 	ESDM_DEBUG(__func__);
@@ -317,14 +224,6 @@ esdm_status esdm_close(void *desc)
 }
 
 
-
-/**
- * Ensure all remaining data is syncronized with backends.
- * If not called at the end of an application, ESDM can not guarantee all data
- * was written.
- *
- * @return Status
- */
 esdm_status esdm_sync()
 {
 	ESDM_DEBUG(__func__);

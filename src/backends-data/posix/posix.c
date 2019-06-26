@@ -1,11 +1,11 @@
 /* This file is part of ESDM.
  *
- * This program is is free software: you can redistribute it and/or modify
+ * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
  *
- * This program is is distributed in the hope that it will be useful,
+ * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
@@ -94,24 +94,11 @@ static int mkfs(esdm_backend* backend, int enforce_format)
 	return ESDM_SUCCESS;
 }
 
-
-/**
- * Similar to the command line counterpart fsck for ESDM plugins is responsible
- * to check and potentially repair the "filesystem".
- *
- */
 static int fsck()
 {
 
 	return 0;
 }
-
-
-
-
-
-
-
 
 ///////////////////////////////////////////////////////////////////////////////
 // Internal Helpers ///////////////////////////////////////////////////////////
@@ -268,11 +255,10 @@ static int entry_destroy(const char *path)
 }
 
 
-
-
 ///////////////////////////////////////////////////////////////////////////////
 // Fragment Handlers //////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////
+
 
 static int fragment_retrieve(esdm_backend* backend, esdm_fragment_t *fragment, json_t * metadata)
 {
@@ -344,10 +330,6 @@ static int fragment_update(esdm_backend* backend, esdm_fragment_t *fragment)
 ///////////////////////////////////////////////////////////////////////////////
 
 
-/**
- * Callback implementation when beeing queried for a performance estimate.
- *
- */
 static int posix_backend_performance_estimate(esdm_backend* backend, esdm_fragment_t *fragment, float * out_time)
 {
 	DEBUG_ENTER;
@@ -359,20 +341,13 @@ static int posix_backend_performance_estimate(esdm_backend* backend, esdm_fragme
 	return esdm_backend_perf_model_long_lat_perf_estimate(& data->perf_model, fragment, out_time);
 }
 
-/**
-* Finalize callback implementation called on ESDM shutdown.
-*
-* This is the last chance for a backend to make outstanding changes persistent.
-* This routine is also expected to clean up memory that is used by the backend.
-*/
+
 int posix_finalize(esdm_backend* backend)
 {
 	DEBUG_ENTER;
 
 	return 0;
 }
-
-
 
 ///////////////////////////////////////////////////////////////////////////////
 // ESDM Module Registration ///////////////////////////////////////////////////
@@ -418,19 +393,10 @@ static esdm_backend backend_template = {
 	},
 };
 
-/**
-* Initializes the POSIX plugin. In particular this involves:
-*
-*	* Load configuration of this backend
-*	* Load and potentially calibrate performance model
-*
-*	* Connect with support services e.g. for technical metadata
-*	* Setup directory structures used by this POSIX specific backend
-*
-*	* Populate esdm_backend struct and callbacks required for registration
-*
-* @return pointer to backend struct
-*/
+// Two versions of this function!!!
+//
+// datadummy.c
+
 esdm_backend* posix_backend_init(esdm_config_backend_t *config)
 {
 	DEBUG_ENTER;

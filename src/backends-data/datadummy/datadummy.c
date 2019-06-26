@@ -1,11 +1,11 @@
 /* This file is part of ESDM.
  *
- * This program is is free software: you can redistribute it and/or modify
+ * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
  *
- * This program is is distributed in the hope that it will be useful,
+ * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
@@ -41,6 +41,7 @@
 ///////////////////////////////////////////////////////////////////////////////
 // Helper and utility /////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////
+
 
 int mkfs(esdm_backend* backend)
 {
@@ -94,18 +95,11 @@ int fsck()
 }
 
 
-
-
-
-
 ///////////////////////////////////////////////////////////////////////////////
 // Internal Handlers //////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////
 
 // find_fragment
-
-
-
 
 ///////////////////////////////////////////////////////////////////////////////
 // ESDM Callbacks /////////////////////////////////////////////////////////////
@@ -159,11 +153,13 @@ int posix_open()
 return 0;
 }
 
+
 int posix_write()
 {
 	DEBUG_ENTER("Write");
 	return 0;
 }
+
 
 int posix_read()
 {
@@ -171,12 +167,12 @@ int posix_read()
 	return 0;
 }
 
+
 int posix_close()
 {
 	DEBUG_ENTER("Close");
 	return 0;
 }
-
 
 
 int posix_allocate()
@@ -198,7 +194,6 @@ int posix_lookup()
 	DEBUG_ENTER("Lookup");
 	return 0;
 }
-
 
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -242,6 +237,11 @@ static esdm_backend backend_template = {
 *
 * @return pointer to backend struct
 */
+
+// Two versions of this function!!!
+//
+// posix.c
+
 esdm_backend* posix_backend_init(void* init_data) {
 
 	DEBUG_ENTER("Initializing POSIX backend.");
