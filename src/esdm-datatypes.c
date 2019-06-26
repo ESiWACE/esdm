@@ -386,6 +386,17 @@ esdm_status esdm_fragment_serialize(esdm_fragment_t *fragment, void **out)
 
 
 
+void esdm_dataset_dataspace_serialize_recursively_(smd_attr_t * smd, esdm_dataspace_t* dataspace){
+	if(dataspace != NULL){
+		smd_dtype_t * t_arr = smd_type_array(SMD_DTYPE_INT64, dataspace->dimensions);
+		smd_attr_t * vars = smd_attr_new("space", t_arr, dataspace->size, 0);
+		smd_attr_link(smd, vars, 0);
+		esdm_dataset_dataspace_serialize_recursively_(vars, dataspace->subspace_of);
+
+		vars = smd_attr_new("offset", t_arr, dataspace->offset, 0);
+		smd_attr_link(smd, vars, 0);
+	}
+}
 
 // Dataset ////////////////////////////////////////////////////////////////////
 /**
@@ -406,6 +417,14 @@ esdm_status esdm_dataset_create(esdm_container* container, const char* name, esd
 	dataset->container = container;
 	esdm_metadata_init_(& dataset->metadata);
 	dataset->dataspace = dataspace;
+
+	smd_dtype_t * t_arr = smd_type_array(SMD_DTYPE_INT64, dataspace->dimensions);
+	smd_attr_t * vars = smd_attr_new("dims", t_arr, dataspace->size, 0);
+	esdm_dataset_dataspace_serialize_recursively_(vars, dataspace->subspace_of);
+	smd_attr_link(dataset->metadata->tech, vars, 0);
+	vars = smd_attr_new("type", SMD_DTYPE_DTYPE, dataspace->datatype, 0);
+	smd_attr_link(dataset->metadata->tech, vars, 0);
+
 	*out_dataset = dataset;
 
 	return ESDM_SUCCESS;

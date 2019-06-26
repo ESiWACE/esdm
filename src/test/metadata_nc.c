@@ -146,19 +146,32 @@ void read_test(){
   //	esdm_dataset_t* esdm_dataset_retrieve(esdm_container *container, const char* name)
   //	static int dataset_retrieve(esdm_backend* backend, esdm_dataset_t *dataset)
 
-  esdm_dataset_iterator_t * iter;
-
-  ret = esdm_dataset_iterator(container, & iter);
-  assert(ret == ESDM_SUCCESS);
+  // TODO later:
+  // esdm_dataset_iterator_t * iter;
+  // ret = esdm_dataset_iterator(container, & iter);
+  // assert(ret == ESDM_SUCCESS);
 
 	ret = esdm_dataset_retrieve(container, "myVariable", & dataset);
   assert(ret == ESDM_SUCCESS);
+
+	// for NetCDF: dimensions
+	esdm_dataspace_t * dspace;
+	ret = esdm_dataset_get_dataspace(dataset, & dspace);
+	assert(ret == ESDM_SUCCESS);	
+	esdm_dataspace_print(dspace);
+
+	// names of the dimensions
+
+	// get datatype
+
+	// get the attributes
 
   esdm_metadata *metadata = NULL;
 	ret = esdm_dataset_read_metadata(dataset, & metadata);
   assert(ret == ESDM_SUCCESS);
 
   // TODO retrieve the actual metadata here
+
 
 	ret = esdm_dataset_destroy(dataset);
   assert(ret == ESDM_SUCCESS);
