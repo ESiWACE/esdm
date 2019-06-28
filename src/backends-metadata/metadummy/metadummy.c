@@ -510,8 +510,9 @@ static esdm_fragment_t * create_fragment_from_metadata(int fd, esdm_dataset_t * 
 
 	esdm_fragment_t * f;
 	f = malloc(sizeof(esdm_fragment_t));
-	f->metadata = malloc(sb.st_size + sizeof(esdm_metadata));
+	f->metadata = malloc(sb.st_size + sizeof(esdm_metadata) + 1);
 	f->metadata->json = (char*)(f->metadata) + sizeof(esdm_metadata);
+	f->metadata->json[0] = 0;
 	f->metadata->size = sb.st_size;
 	read_check(fd, f->metadata->json, sb.st_size);
 

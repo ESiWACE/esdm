@@ -497,7 +497,9 @@ void esdm_dataspace_print(esdm_dataspace_t * d){
 void esdm_fragment_print(esdm_fragment_t * f){
 	printf("FRAGMENT(%p,", (void *)f);
 	esdm_dataspace_print(f->dataspace);
-	printf(", md(\"%s\")", f->metadata->json);
+	if(f->metadata){
+		printf(", md(\"%s\")", f->metadata->json);
+	}
 	printf(")");
 }
 
