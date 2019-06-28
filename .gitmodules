@@ -1,3 +1,4 @@
 [submodule "deps/smd"]
 	path = deps/smd
-	url = git@github.com:JulianKunkel/smd.git
+        url = https://github.com/JulianKunkel/smd.git
+#	url = git@github.com:JulianKunkel/smd.git
