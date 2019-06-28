@@ -1,11 +1,11 @@
 /* This file is part of ESDM.
  *
- * This program is is free software: you can redistribute it and/or modify
+ * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
  *
- * This program is is distributed in the hope that it will be useful,
+ * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
@@ -70,10 +70,12 @@ int main(int argc, char const* argv[])
 
 	// define dataspace
 	int64_t bounds[] = {10, 20};
-	esdm_dataspace_t *dataspace = esdm_dataspace_create(2, bounds, SMD_DTYPE_UINT64);
+	esdm_dataspace_t *dataspace;
 
-	container = esdm_container_create("mycontainer");
-	dataset = esdm_dataset_create(container, "mydataset", dataspace, NULL);
+	esdm_dataspace_create(2, bounds, SMD_DTYPE_UINT64, & dataspace);
+
+	esdm_container_create("mycontainer", & container);
+	esdm_dataset_create(container, "mydataset", dataspace, & dataset);
 
 
 	esdm_container_commit(container);
@@ -83,7 +85,9 @@ int main(int argc, char const* argv[])
 	// define subspace
 	int64_t size[] = {10,20};
 	int64_t offset[] = {0,0};
-	esdm_dataspace_t *subspace = esdm_dataspace_subspace(dataspace, 2, size, offset);
+	esdm_dataspace_t *subspace;
+
+	esdm_dataspace_subspace(dataspace, 2, size, offset, & subspace);
 
 
 	// Read the data to the dataset

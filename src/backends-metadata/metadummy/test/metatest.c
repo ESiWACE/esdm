@@ -10,49 +10,63 @@ int main(){
   esdm_config_backend_t config = {
     	.type = "metadummy",
     	.id = "test1",
-    	.target = "_metadummy-test",
+    	.target = "_metadummy",
   };
 
-  esdm_backend* b = metadummy_backend_init(& config);
+  esdm_md_backend_t* b = metadummy_backend_init(& config);
 
   char * buff = "test";
   esdm_dataspace_t * dataspace;
   {
     int64_t size[]   = {50, 100};
-    dataspace = esdm_dataspace_create(2, size, SMD_DTYPE_UINT64);
+    esdm_dataspace_create(2, size, SMD_DTYPE_UINT64, & dataspace);
   }
 
   esdm_status ret;
-	esdm_container * container = esdm_container_create("testContainer");
-	esdm_dataset_t   * dataset   = esdm_dataset_create(container, "testDataset", dataspace, NULL);
+	esdm_container * container;
 
-  esdm_dataspace_t* s1, * s2, * s3, *s4;
-  esdm_fragment_t * f1, * f2, *f3, *f4;
+  ret = esdm_container_create("testContainer", & container);
+  assert(ret == ESDM_SUCCESS);
+	esdm_dataset_t   * dataset;
+
+  ret = esdm_dataset_create(container, "testDataset", dataspace, & dataset);
+  assert(ret == ESDM_SUCCESS);
+
+  esdm_dataspace_t * s1, * s2, *s3, *s4;
+  esdm_fragment_t  * f1, * f2, *f3, *f4;
 
   {
     int64_t offset[] = {0, 0};
     int64_t size[]   = {25, 50};
-	  s1 = esdm_dataspace_subspace(dataspace, 2, size, offset);
-    f1 = esdm_fragment_create(dataset, s1, buff);
+	  ret = esdm_dataspace_subspace(dataspace, 2, size, offset, & s1);
+    assert(ret == ESDM_SUCCESS);
+    ret = esdm_fragment_create(dataset, s1, buff, & f1);
+    assert(ret == ESDM_SUCCESS);
     f1->metadata->size = sprintf(f1->metadata->json, "{}");
   }
   {
     int64_t offset[] = {25, 0};
     int64_t size[]   = {25, 50};
-	  s2 = esdm_dataspace_subspace(dataspace, 2, size, offset);
-    f2 = esdm_fragment_create(dataset, s2, buff);
+	  ret = esdm_dataspace_subspace(dataspace, 2, size, offset, & s2);
+    assert(ret == ESDM_SUCCESS);
+    ret = esdm_fragment_create(dataset, s2, buff, & f2);
+    assert(ret == ESDM_SUCCESS);
   }
   {
     int64_t offset[] = {25, 50};
     int64_t size[]   = {25, 50};
-	  s3 = esdm_dataspace_subspace(dataspace, 2, size, offset);
-    f3 = esdm_fragment_create(dataset, s3, buff);
+	  ret = esdm_dataspace_subspace(dataspace, 2, size, offset, & s3);
+    assert(ret == ESDM_SUCCESS);
+    ret = esdm_fragment_create(dataset, s3, buff, & f3);
+    assert(ret == ESDM_SUCCESS);
   }
   {
     int64_t offset[] = {0, 50};
     int64_t size[]   = {25, 50};
-	  s4 = esdm_dataspace_subspace(dataspace, 2, size, offset);
-    f4 = esdm_fragment_create(dataset, s4, buff);
+	  ret = esdm_dataspace_subspace(dataspace, 2, size, offset, & s4);
+    assert(ret == ESDM_SUCCESS);
+    ret = esdm_fragment_create(dataset, s4, buff, & f4);
+    assert(ret == ESDM_SUCCESS);
   }
 
   ret = b->callbacks.fragment_update(b, f1);
@@ -72,7 +86,7 @@ int main(){
   {
     int64_t size[]   = {30, 30};
     int64_t offset[] = {10, 10};
-	  res = esdm_dataspace_subspace(dataspace, 2, size, offset);
+	  esdm_dataspace_subspace(dataspace, 2, size, offset, & res);
   }
 
   ret = b->callbacks.lookup(b, dataset, res, & frag_count, & read_frag);
@@ -88,6 +102,7 @@ int main(){
 
   esdm_dataspace_destroy(dataspace);
   esdm_dataset_destroy(dataset);
+
   esdm_container_destroy(container);
 
   return 0;

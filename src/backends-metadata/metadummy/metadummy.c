@@ -1,11 +1,11 @@
 /* This file is part of ESDM.
  *
- * This program is is free software: you can redistribute it and/or modify
+ * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
  *
- * This program is is distributed in the hope that it will be useful,
+ * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
@@ -46,19 +46,12 @@
 #define DEBUG(fmt, ...) ESDM_DEBUG_COM_FMT("METADUMMY", fmt, __VA_ARGS__)
 
 
-// forward declarations
-static void metadummy_test();
-
-void posix_recursive_remove(const char * path);
-
-esdm_status esdm_dataset_read_metadata (esdm_dataset_t *dataset);
-
 ///////////////////////////////////////////////////////////////////////////////
 // Helper and utility /////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////
 
 
-static int mkfs(esdm_backend* backend, int enforce_format)
+static int mkfs(esdm_md_backend_t* backend, int enforce_format)
 {
 	DEBUG_ENTER;
 
@@ -67,14 +60,12 @@ static int mkfs(esdm_backend* backend, int enforce_format)
 	// use target directory from backend configuration
 	metadummy_backend_options_t *options = (metadummy_backend_options_t*) backend->data;
 
-
 	// Enforce min target length?
 	const char* tgt = options->target;
 	if(strlen(tgt) < 6){
 		printf("[mkfs] error, the target name is to short (< 6 characters)!\n");
 		return ESDM_ERROR;
 	}
-
 
 	char containers[PATH_MAX];
 	sprintf(containers, "%s/containers", tgt);
@@ -94,18 +85,16 @@ static int mkfs(esdm_backend* backend, int enforce_format)
 	}
 	printf("[mkfs] Creating %s\n", tgt);
 
-	mkdir(tgt, 0700);
-	mkdir(containers, 0700);
+	int ret = mkdir(tgt, 0700);
+	if (ret != 0) return ESDM_ERROR;
+
+	ret = mkdir(containers, 0700);
+	if (ret != 0) return ESDM_ERROR;
+
 	return ESDM_SUCCESS;
 }
 
 
-
-/**
- * Similar to the command line counterpart fsck for ESDM plugins is responsible
- * to check and potentially repair the "filesystem".
- *
- */
 static int fsck()
 {
 	DEBUG_ENTER;
@@ -113,9 +102,6 @@ static int fsck()
 
 	return 0;
 }
-
-
-
 
 ///////////////////////////////////////////////////////////////////////////////
 // Internal Helpers  //////////////////////////////////////////////////////////
@@ -125,26 +111,19 @@ static int entry_create(const char *path, esdm_metadata *data)
 {
 	DEBUG_ENTER;
 
-	int status;
-	struct stat sb;
+	// int status;
+	// struct stat sb;
 
 	DEBUG("entry_create(%s - %s)\n", path, data != NULL ? data->json : NULL);
 
 	// ENOENT => allow to create
-
-	status = stat(path, &sb);
-	if (status != -1) {
-		// TODO fix semantics, what should happen if the file exists.
-		perror("entry create file exists already");
-	}
 	// write to non existing file
-	int fd = open(path,	O_WRONLY | O_CREAT, S_IWUSR | S_IRUSR | S_IWGRP | S_IRGRP | S_IROTH);
+	int fd = open(path,	O_WRONLY | O_CREAT | O_TRUNC, S_IWUSR | S_IRUSR | S_IWGRP | S_IRGRP | S_IROTH);
 	// everything ok? write and close
 	if ( fd != -1 )
 	{
 		if(data != NULL && data->json != NULL){
-			int size = strlen(data->json) + 1; // why? and what the correlation to metadata->size?
-			int ret = write_check(fd, data->json, size);
+			int ret = write_check(fd, data->json, data->size);
 			assert( ret == 0 );
 		}
 		close(fd);
@@ -153,6 +132,7 @@ static int entry_create(const char *path, esdm_metadata *data)
 
 	return 1;
 }
+
 
 static int entry_retrieve_tst(const char *path, esdm_dataset_t *dataset)
 {
@@ -199,6 +179,7 @@ static int entry_retrieve_tst(const char *path, esdm_dataset_t *dataset)
 
 	return 0;
 }
+
 
 static int entry_update(const char *path, void *buf, size_t len)
 {
@@ -259,20 +240,12 @@ static int entry_destroy(const char *path)
 }
 
 
-
-
-
-
-
-
-
-
-
 ///////////////////////////////////////////////////////////////////////////////
 // Container Helpers //////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////
 
-static int container_create(esdm_backend* backend, esdm_container *container)
+
+static int container_create(esdm_md_backend_t* backend, esdm_container *container)
 {
 	DEBUG_ENTER;
 
@@ -288,24 +261,25 @@ static int container_create(esdm_backend* backend, esdm_container *container)
 	asprintf(&path_metadata, "%s/containers/%s.md", tgt, container->name);
 	asprintf(&path_container, "%s/containers/%s", tgt, container->name);
 
-	// create metadata entry
-	entry_create(path_metadata, NULL);
-
 	// create directory for datsets
 	if (stat(path_container, &sb) == -1)
 	{
-		mkdir(path_container, 0700);
+		int ret = mkdir(path_container, 0700);
+		if (ret != 0) return ESDM_ERROR;
 	}
+
+	// create metadata entry
+	entry_create(path_metadata, NULL);
+
 
 	free(path_metadata);
 	free(path_container);
-
 
 	return 0;
 }
 
 
-static int container_retrieve(esdm_backend* backend, esdm_container *container)
+static int container_retrieve(esdm_md_backend_t* backend, esdm_container *container)
 {
 	DEBUG_ENTER;
 
@@ -332,7 +306,7 @@ static int container_retrieve(esdm_backend* backend, esdm_container *container)
 }
 
 
-static int container_update(esdm_backend* backend, esdm_container *container)
+static int container_update(esdm_md_backend_t* backend, esdm_container *container)
 {
 	DEBUG_ENTER;
 
@@ -356,7 +330,7 @@ static int container_update(esdm_backend* backend, esdm_container *container)
 }
 
 
-static int container_destroy(esdm_backend* backend, esdm_container *container)
+static int container_destroy(esdm_md_backend_t* backend, esdm_container *container)
 {
 	DEBUG_ENTER;
 
@@ -383,12 +357,12 @@ static int container_destroy(esdm_backend* backend, esdm_container *container)
 }
 
 
-
 ///////////////////////////////////////////////////////////////////////////////
 // Dataset Helpers ////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////
 
-static int dataset_create(esdm_backend* backend, esdm_dataset_t *dataset)
+
+static int dataset_create(esdm_md_backend_t* backend, esdm_dataset_t *dataset)
 {
 	DEBUG_ENTER;
 
@@ -403,27 +377,21 @@ static int dataset_create(esdm_backend* backend, esdm_dataset_t *dataset)
 
 	sprintf(path_metadata, "%s/containers/%s/%s.md", tgt, dataset->container->name, dataset->name);
 	sprintf(path_dataset, "%s/containers/%s/%s", tgt, dataset->container->name, dataset->name);
-
-/*	struct esdm_metadata x = {
-		.json = "Luciana2",
-		.size = 10
-	};
-*/
-	// create metadata entry
-	entry_create(path_metadata, dataset->metadata);
-//		entry_create(path_metadata, &x);
-
 	// create directory for datsets
 	if (stat(path_dataset, &sb) == -1)
 	{
-		mkdir(path_dataset, 0700);
+		int ret =	mkdir_recursive(path_dataset);
+		if (ret != 0) return ESDM_ERROR;
 	}
+
+	// create metadata entry
+	entry_create(path_metadata, dataset->metadata);
 
 	return 0;
 }
 
 
-static int dataset_retrieve(esdm_backend* backend, esdm_dataset_t *dataset)
+static int dataset_retrieve(esdm_md_backend_t* backend, esdm_dataset_t *dataset)
 {
 	DEBUG_ENTER;
 
@@ -433,14 +401,25 @@ static int dataset_retrieve(esdm_backend* backend, esdm_dataset_t *dataset)
 	const char* tgt = options->target;
 
 	sprintf(path_metadata, "%s/containers/%s/%s.md", tgt, dataset->container->name, dataset->name);
+	struct stat statbuf;
+  int ret = stat(path_metadata, & statbuf);
+	if (ret != 0) return ESDM_ERROR;
+	off_t len = statbuf.st_size + 1;
 
-	entry_retrieve_tst(path_metadata, dataset);
+	int fd = open(path_metadata,	O_RDONLY | S_IWUSR | S_IRUSR | S_IWGRP | S_IRGRP | S_IROTH);
+	if( fd < 0 ) return ESDM_ERROR;
+	dataset->metadata->json = (char *) malloc(len);
+	dataset->metadata->size = len;
+	dataset->metadata->buff_size = len;
 
+
+	read_check(fd, dataset->metadata->json, len - 1);
+	close(fd);
 	return 0;
 }
 
 
-static int dataset_update(esdm_backend* backend, esdm_dataset_t *dataset)
+static int dataset_update(esdm_md_backend_t* backend, esdm_dataset_t *dataset)
 {
 	DEBUG_ENTER;
 
@@ -448,20 +427,21 @@ static int dataset_update(esdm_backend* backend, esdm_dataset_t *dataset)
 }
 
 
-static int dataset_destroy(esdm_backend* backend, esdm_dataset_t *dataset)
+static int dataset_destroy(esdm_md_backend_t* backend, esdm_dataset_t *dataset)
 {
 	DEBUG_ENTER;
 
 	return 0;
 }
-
 
 
 ///////////////////////////////////////////////////////////////////////////////
 // Fragment Helpers ///////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////
 
-static int fragment_retrieve(esdm_backend* backend, esdm_fragment_t *fragment, json_t * metadata){
+
+static int fragment_retrieve(esdm_md_backend_t* backend, esdm_fragment_t *fragment, json_t * metadata)
+{
 		// set data, options and tgt for convienience
 		metadummy_backend_options_t *options = (metadummy_backend_options_t*) backend->data;
 		const char* tgt = options->target;
@@ -503,7 +483,8 @@ static int fragment_retrieve(esdm_backend* backend, esdm_fragment_t *fragment, j
 }
 
 
-static esdm_fragment_t * create_fragment_from_metadata(int fd, esdm_dataset_t * dataset, esdm_dataspace_t * space){
+static esdm_fragment_t * create_fragment_from_metadata(int fd, esdm_dataset_t * dataset, esdm_dataspace_t * space)
+{
 	struct stat sb;
 
 	fstat(fd, & sb);
@@ -511,8 +492,9 @@ static esdm_fragment_t * create_fragment_from_metadata(int fd, esdm_dataset_t * 
 
 	esdm_fragment_t * f;
 	f = malloc(sizeof(esdm_fragment_t));
-	f->metadata = malloc(sb.st_size + sizeof(esdm_metadata));
+	f->metadata = malloc(sb.st_size + sizeof(esdm_metadata) + 1);
 	f->metadata->json = (char*)(f->metadata) + sizeof(esdm_metadata);
+	f->metadata->json[0] = 0;
 	f->metadata->size = sb.st_size;
 	read_check(fd, f->metadata->json, sb.st_size);
 
@@ -534,7 +516,8 @@ static esdm_fragment_t * create_fragment_from_metadata(int fd, esdm_dataset_t * 
 /*
  * Assumptions: there are no fragments created while reading back data!
  */
-static int lookup(esdm_backend* backend, esdm_dataset_t * dataset, esdm_dataspace_t * space, int * out_frag_count, esdm_fragment_t *** out_fragments){
+static int lookup(esdm_md_backend_t* backend, esdm_dataset_t * dataset, esdm_dataspace_t * space, int * out_frag_count, esdm_fragment_t *** out_fragments)
+{
 	DEBUG_ENTER;
 
 	// set data, options and tgt for convienience
@@ -617,7 +600,7 @@ static int lookup(esdm_backend* backend, esdm_dataset_t * dataset, esdm_dataspac
 /*
  * How to: concurrent access by multiple processes
  */
-static int fragment_update(esdm_backend* backend, esdm_fragment_t *fragment)
+static int fragment_update(esdm_md_backend_t* backend, esdm_fragment_t *fragment)
 {
 	DEBUG_ENTER;
 
@@ -641,21 +624,25 @@ static int fragment_update(esdm_backend* backend, esdm_fragment_t *fragment)
 	DEBUG("path_fragment: %s\n", path_fragment);
 
 	// create metadata entry
-	mkdir_recursive(path);
-	entry_create(path_fragment, fragment->metadata);
+	struct stat sb;
 
+	if (stat(path, &sb) != 0){
+		int ret = mkdir_recursive(path);
+		if (ret != 0) return ESDM_ERROR;
+	}
+
+	entry_create(path_fragment, fragment->metadata);
 
 	return 0;
 }
-
-
 
 
 ///////////////////////////////////////////////////////////////////////////////
 // ESDM Callbacks /////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////
 
-static int metadummy_backend_performance_estimate(esdm_backend* backend, esdm_fragment_t *fragment, float * out_time)
+
+static int metadummy_backend_performance_estimate(esdm_md_backend_t* backend, esdm_fragment_t *fragment, float * out_time)
 {
 	DEBUG_ENTER;
 	*out_time = 0;
@@ -664,45 +651,26 @@ static int metadummy_backend_performance_estimate(esdm_backend* backend, esdm_fr
 }
 
 
-
-/**
-* Finalize callback implementation called on ESDM shutdown.
-*
-* This is the last chance for a backend to make outstanding changes persistent.
-* This routine is also expected to clean up memory that is used by the backend.
-*/
-static int metadummy_finalize(esdm_backend* b)
+static int metadummy_finalize(esdm_md_backend_t* b)
 {
 	DEBUG_ENTER;
 
 	return 0;
 }
 
-
-
 ///////////////////////////////////////////////////////////////////////////////
 // ESDM Module Registration ///////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////
 
-static esdm_backend backend_template = {
-///////////////////////////////////////////////////////////////////////////////
-// WARNING: This serves as a template for the metadummy plugin and is memcpied!  //
-///////////////////////////////////////////////////////////////////////////////
+
+static esdm_md_backend_t backend_template = {
 	.name = "metadummy",
-	.type = SMD_DTYPE_METADATA,
 	.version = "0.0.1",
 	.data = NULL,
 	.callbacks = {
 		// General for ESDM
 		metadummy_finalize, // finalize
 		metadummy_backend_performance_estimate, // performance_estimate
-
-		// Data Callbacks (POSIX like)
-		NULL, // create
-		NULL, // open
-		NULL, // write
-		NULL, // read
-		NULL, // close
 
 		// Metadata Callbacks
 		lookup, // lookup
@@ -726,25 +694,13 @@ static esdm_backend backend_template = {
 	},
 };
 
-/**
-* Initializes the POSIX plugin. In particular this involves:
-*
-*	* Load configuration of this backend
-*	* Load and potentially calibrate performance model
-*
-*	* Connect with support services e.g. for technical metadata
-*	* Setup directory structures used by this POSIX specific backend
-*
-*	* Populate esdm_backend struct and callbacks required for registration
-*
-* @return pointer to backend struct
-*/
-esdm_backend* metadummy_backend_init(esdm_config_backend_t *config)
+
+esdm_md_backend_t* metadummy_backend_init(esdm_config_backend_t *config)
 {
 	DEBUG_ENTER;
 
-	esdm_backend* backend = (esdm_backend*) malloc(sizeof(esdm_backend));
-	memcpy(backend, &backend_template, sizeof(esdm_backend));
+	esdm_md_backend_t* backend = (esdm_md_backend_t*) malloc(sizeof(esdm_md_backend_t));
+	memcpy(backend, &backend_template, sizeof(esdm_md_backend_t));
 
 	metadummy_backend_options_t* data = (metadummy_backend_options_t*) malloc(sizeof(metadummy_backend_options_t));
 
@@ -757,61 +713,5 @@ esdm_backend* metadummy_backend_init(esdm_config_backend_t *config)
 	mkfs(backend, 0);
 
 	return backend;
-
-}
-
-
-
-
-
-
-
-
-static void metadummy_test()
-{
-	int ret = -1;
-
-
-	char abc[PATH_MAX];
-	char def[PATH_MAX];
-
-	const char* tgt = "./_metadummy";
-	sprintf(abc, "%s/%s", tgt, "abc");
-	sprintf(def, "%s/%s", tgt, "def");
-
-
-	// create entry and test
-	ret = entry_create(abc, NULL);
-	assert(ret == 0);
-
-	esdm_dataset_t *dataset = NULL;
-	ret = entry_retrieve_tst(abc, dataset);
-	assert(ret == 0);
-
-
-	// double create
-	ret = entry_create(def, NULL);
-	assert(ret == 0);
-
-	ret = entry_create(def, NULL);
-	assert(ret == -1);
-
-
-	// perform update and test
-	ret = entry_update(abc, "huhuhuhuh", 5);
-
-	ret = entry_retrieve_tst(abc, dataset);
-	// delete entry and expect retrieve to fail
-	ret = entry_destroy(abc);
-	ret = entry_retrieve_tst(abc, dataset);
-	assert(ret == -1);
-
-
-	// clean up
-	ret = entry_destroy(def);
-	assert(ret == 0);
-
-	ret = entry_destroy(def);
-	assert(ret == -1);
 
 }

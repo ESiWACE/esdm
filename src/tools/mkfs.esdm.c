@@ -1,11 +1,11 @@
 /* This file is part of ESDM.
  *
- * This program is is free software: you can redistribute it and/or modify
+ * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
  *
- * This program is is distributed in the hope that it will be useful,
+ * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
@@ -47,7 +47,8 @@ static tool_options_t o = {
   .format_global = 0
 };
 
-void parse_args(int argc, char** argv){
+void parse_args(int argc, char** argv)
+{
   option_help options[] = {
     {'g', "global", "Formatting global storage system", OPTION_FLAG, 'd', & o.format_global},
     {'l', "local", "Formatting local storage systems", OPTION_FLAG, 'd', & o.format_local},
@@ -68,7 +69,8 @@ void parse_args(int argc, char** argv){
   }
 }
 
-int main(int argc, char** argv){
+int main(int argc, char** argv)
+{
   parse_args(argc, argv);
   if(o.format_global + o.format_local == 0){
     printf("Not formatting anything, use -g and/or -l\n");

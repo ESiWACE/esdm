@@ -1,11 +1,11 @@
 /* This file is part of ESDM.
  *
- * This program is is free software: you can redistribute it and/or modify
+ * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
  *
- * This program is is distributed in the hope that it will be useful,
+ * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
@@ -26,7 +26,6 @@
 
 int convert_smd_to_metadata(smd_attr_t *smd_file, esdm_metadata ** out);
 //esdm_status esdm_dataset_link_metadata (esdm_dataset_t *dataset, smd_attr_t *new);
-esdm_status esdm_dataset_read_metadata (esdm_dataset_t *dataset);
 
 
 int main(){
@@ -50,38 +49,14 @@ int main(){
 	int64_t bounds[] = {10, 20};
 	// write the actual metadata
 
-	/*
-	esdm_metadata metadata = {
-		.json = "Luciana Rocha Pedro",
-		.size = 30
-	};
-	*/
-
-	// esdm_metadata *metadata;
-	//
-	// metadata = (esdm_metadata *) malloc(sizeof(esdm_metadata));
-	// metadata->json = (char *) malloc(50*sizeof(char));
-	//
-	// strcpy(metadata->json, "Luciana Rocha Pedro");
-	// metadata->size = strlen(metadata->json);
-
-	dataspace = esdm_dataspace_create(2, bounds, SMD_DTYPE_UINT64);
-//	container = esdm_container_create("mycontainer", metadata);
-	container = esdm_container_create("mycontainer");
+	esdm_dataspace_create(2, bounds, SMD_DTYPE_UINT64, & dataspace);
+	esdm_container_create("mycontainer", & container);
 
 	// Use the smd_attr_t library to set some scientific metadata onto the object
 	// We create two different attributes, one is an array and one is an integer and attach it to the dataset
 
-//	int a = 456;
-//	int *idp = &a;
-//	int idp[3] = {0, 1, 2};
-	// int idp[123];
-	//
-	// for (int i=0; i<123; i++)
-	// 	idp[i] = 5*i;
-
 	size_t len = 3;
-	int idp = 5;
+	int idp = 5; // Can it be anything? How to get this info back?
 
 	printf("\n\nInitial Values\n\n");
 
@@ -89,9 +64,7 @@ int main(){
 	printf("\n len = %d\n", len);
 	printf("\n idp = %d\n\n\n", idp);
 
-//		smd_attrnt * smd_attr_new(const char* name, smd_dtype_t * type, const void * val, int id){
-
-// SMD_DTYPE_UINT64 -> when are we gonna expand this?
+	// SMD_DTYPE_UINT64 -> when are we gonna expand this?
 
 	smd_attr_t * smd_file = smd_attr_new("int", SMD_DTYPE_UINT64, & len, idp);
 
@@ -104,17 +77,7 @@ int main(){
 
 // It was like this in the whole code. I can change it later. (== ever?)
 
-	dataset = esdm_dataset_create(container, "mydataset", dataspace, metadata);
-
-// 	esdm_metadata metadata;
-//
-// 	convert_smd_to_metadata(smd_file, & metadata);
-//
-// // It was like this in the whole code. I can change it later. (== ever?)
-//
-// 	dataset = esdm_dataset_create(container, "mydataset", dataspace, & metadata);
-
-//	esdm_dataset_link_metadata(dataset, new);
+	esdm_dataset_create(container, "mydataset", dataspace, &dataset);
 
 	// this step shall write out the metadata and make it persistent
 	esdm_container_commit(container);
@@ -131,8 +94,8 @@ int main(){
 
 //	ret = esdm_dataset_open(container, "mydataset", & dataset);
 
-	esdm_dataset_retrieve_from_file(dataset);
-	esdm_dataset_read_metadata(dataset);
+	//esdm_dataset_retrieve_from_file(dataset);
+	//esdm_dataset_read_metadata(dataset, & metadata);
 
 	esdm_dataset_destroy(dataset);
 	esdm_container_destroy(container);
@@ -151,80 +114,25 @@ int convert_smd_to_metadata(smd_attr_t *smd_file, esdm_metadata ** out_metadata)
 	char *buff;
 	size_t j;
 
-//	fragment->metadata->size += sprintf(& fragment->metadata->json[fragment->metadata->size], "{\"path\" : \"%s\"}", path_fragment);
-//	sprintf(& dataset->metadata, "{\"path\" : \"%s\"}", path_fragment);
-//	not used!
+	buff = (char *) malloc(sizeof(char));
+	// j = smd_attr_ser_json(buff, smd_file);
 
-	buff = (char *) malloc(10000*sizeof(char));
 	j = smd_attr_ser_json(buff, smd_file);
-	/*
-	j = smd_attr_ser_json(buff, smd_file, 10000);
-	if(j > 10000){
+
+	if(j > 1){ //what's a good number to guess?
 		free(buff);
-		buff = (char *) malloc(j);
-		j = smd_attr_ser_json(buff, smd_file, j);
-		// works similar than snprintf()
+		buff = (char *) malloc(j*sizeof(char));
+		j = smd_attr_ser_json(buff, smd_file);
 	}
-	*/
 
 	esdm_metadata * metadata = (esdm_metadata *) malloc(sizeof(esdm_metadata));
 	metadata->json = buff;
 	metadata->smd = smd_file;
 	metadata->size = j;
 
-	// smd_attr_print(smd_file);
-
 	printf("\nFinal\n");
 
 	*out_metadata = metadata;
-
-	return ESDM_SUCCESS;
-}
-
-// esdm_status esdm_dataset_link_metadata(esdm_dataset_t *dataset, smd_attr_t *new)
-// {
-//
-// 	char *buff;
-// 	size_t j;
-//
-// //	fragment->metadata->size += sprintf(& fragment->metadata->json[fragment->metadata->size], "{\"path\" : \"%s\"}", path_fragment);
-// //	sprintf(& dataset->metadata, "{\"path\" : \"%s\"}", path_fragment);
-// //	not used!
-//
-// 	buff = (char *)malloc(123*sizeof(char));
-// 	j = smd_attr_ser_json(buff, new);
-//
-// 	dataset->metadata = (esdm_metadata *) malloc(sizeof(esdm_metadata));
-//
-// 	//	dataset->metadata->smd = (smd_attr_t *)malloc(sizeof(smd_attr_t));
-//
-// 	dataset->metadata->smd = new;
-// 	dataset->metadata->size = j; // Is this right?
-//
-// 	return ESDM_SUCCESS;
-// }
-
-esdm_status esdm_dataset_read_metadata(esdm_dataset_t *dataset)
-{
-	smd_attr_t *out = smd_attr_create_from_json(dataset->metadata->json);
-
-//	smd_attr_print(out);
-
-	// Retrieving the original data
-
-	const char *name = smd_attr_get_name(out);
-	int *len = smd_attr_get_value(out);
-	int idp = out->id;
-
-	printf("\n\nFinal Values\n\n");
-	printf("\n name = %s\n", name);
-	printf("\n len = %d\n", len);
-	printf("\n idp = %d \t(it's not my fault!)\n\n\n", idp);
-
-	// Copying the retrieved data to the dataset
-
-	dataset->metadata->smd = out;
-	dataset->metadata->size = 123;  // where to get this info?
 
 	return ESDM_SUCCESS;
 }

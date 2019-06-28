@@ -30,7 +30,9 @@ int main(){
 
 
   esdm_status ret;
-  esdm_dataspace_t* space = esdm_dataspace_create(2, dim, SMD_DTYPE_FLOAT);
+  esdm_dataspace_t* space;
+
+  esdm_dataspace_create(2, dim, SMD_DTYPE_FLOAT, & space);
   assert(space != NULL);
 
   // walk through all offsets
@@ -38,7 +40,9 @@ int main(){
     int offsetY = o * dim2[0];
     int64_t offset[2] = {offsetY, 0};
 
-  	esdm_dataspace_t* subspace = esdm_dataspace_subspace(space, 2, dim2, offset);
+  	esdm_dataspace_t* subspace;
+
+    esdm_dataspace_subspace(space, 2, dim2, offset, & subspace);
     assert(subspace != NULL);
 
     uint64_t size = esdm_dataspace_size(subspace);

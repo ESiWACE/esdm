@@ -1,11 +1,11 @@
 /* This file is part of ESDM.
  *
- * This program is is free software: you can redistribute it and/or modify
+ * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
  *
- * This program is is distributed in the hope that it will be useful,
+ * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
@@ -39,15 +39,12 @@
 #define DEBUG(fmt, ...) ESDM_DEBUG_COM_FMT("METADUMMY", fmt, __VA_ARGS__)
 
 
-
 esdm_performance_t* esdm_performance_init(esdm_instance_t* esdm) {
 	esdm_performance_t* performance = NULL;
 	performance = (esdm_performance_t*) malloc(sizeof(esdm_performance_t));
 
-
 	// TODO: allocate hash map that serves as perf estimate cache
 	//  => backend, estimate_timestamp, estimate question?, an actual estimate
-
 
 	esdm->performance = performance;
 	return performance;
@@ -65,9 +62,6 @@ esdm_status esdm_performance_finalize(esdm_instance_t *esdm)
 }
 
 
-/**
- * Queries backend for performance estimate for the given fragment. 
- */
 void fetch_performance_from_backend(gpointer key, gpointer value, gpointer user_data)
 {
 	DEBUG("GHashTable Entry: key=%p (s:%s), value=%p (s:%s), user_data=%p\n", key, key,value, value, user_data);
@@ -76,11 +70,7 @@ void fetch_performance_from_backend(gpointer key, gpointer value, gpointer user_
 	//backend->callbacks.performance_estimate(backend);
 }
 
-/**
- * Splits pending requests into one or more requests based on performance
- * estimates obtained from available backends.
- *
- */
+
 esdm_status esdm_performance_recommendation(esdm_instance_t *esdm, esdm_fragment_t *in, esdm_fragment_t *out)
 {
 	DEBUG_ENTER;
@@ -94,9 +84,6 @@ esdm_status esdm_performance_recommendation(esdm_instance_t *esdm, esdm_fragment
 
 	return ESDM_SUCCESS;
 }
-
-
-
 
 
 esdm_status esdm_backend_estimate_performance(esdm_backend* backend, int request)

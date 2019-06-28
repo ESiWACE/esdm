@@ -1,11 +1,11 @@
 /* This file is part of ESDM.
  *
- * This program is is free software: you can redistribute it and/or modify
+ * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
  *
- * This program is is distributed in the hope that it will be useful,
+ * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
@@ -236,7 +236,9 @@ int main(int argc, char* argv[])
 		// Write the data to the dataset
 		for(int t=0; t < timesteps; t++){
 			offset[0] = t;
-			esdm_dataspace_t *subspace = esdm_dataspace_subspace(dataspace, 3, dim, offset);
+			esdm_dataspace_t *subspace;
+
+			esdm_dataspace_subspace(dataspace, 3, dim, offset, & subspace);
 
 			dataspace_id = H5Dget_space (dataset_id);
 			status = H5Sselect_hyperslab (dataspace_id, H5S_SELECT_SET, h5_offset, NULL, h5_dim, NULL);
@@ -270,7 +272,9 @@ int main(int argc, char* argv[])
 			uint64_t * buf_r = (uint64_t *) malloc(volume);
 			assert(buf_r != NULL);
 
-			esdm_dataspace_t *subspace = esdm_dataspace_subspace(dataspace, 3, dim, offset);
+			esdm_dataspace_t *subspace;
+
+			esdm_dataspace_subspace(dataspace, 3, dim, offset, & subspace);
 
 			status = H5Dread(dataset_id, H5T_NATIVE_INT, H5S_ALL, H5S_ALL, H5P_DEFAULT, dset_data);
 
