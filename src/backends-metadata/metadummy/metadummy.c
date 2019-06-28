@@ -494,9 +494,9 @@ static esdm_fragment_t * create_fragment_from_metadata(int fd, esdm_dataset_t * 
 	f = malloc(sizeof(esdm_fragment_t));
 	f->metadata = malloc(sb.st_size + sizeof(esdm_metadata) + 1);
 	f->metadata->json = (char*)(f->metadata) + sizeof(esdm_metadata);
-	f->metadata->json[0] = 0;
 	f->metadata->size = sb.st_size;
 	read_check(fd, f->metadata->json, sb.st_size);
+	f->metadata->json[sb.st_size] = 0;
 
 	uint64_t elements = esdm_dataspace_element_count(space);
 	int64_t bytes = elements * esdm_sizeof(space->datatype);
@@ -508,7 +508,6 @@ static esdm_fragment_t * create_fragment_from_metadata(int fd, esdm_dataset_t * 
 	f->bytes = bytes;
 	f->status = ESDM_STATUS_PERSISTENT;
 	f->in_place = 0;
-	//printf("%s \n", f->metadata->json);
 
 	return f;
 }
