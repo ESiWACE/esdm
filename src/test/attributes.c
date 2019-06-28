@@ -6,16 +6,6 @@
 
 #include <smd.h>
 
-static int count;
-static void iter(int id, const char * name){
-	printf("%d %s\n",id,name);
-	count++;
-}
-
-int test_string(){
-	return 0;
-}
-
 int main(){
 	//Test  smd_attr_new
 	printf("Test smd_attr_new:\n");
@@ -140,8 +130,6 @@ int main(){
 
 	pos_ret = smd_find_position_by_name(attr, "test1");
 	assert(pos_ret == -1);
-	
-
 
 	printf("Pass\n");
 
@@ -196,13 +184,10 @@ int main(){
 	printf("Pass\n");
 
 	//test attr count
-	count = smd_attr_count(array_type);
+	count = smd_attr_count(attr);
+	assert(count == 2);
 
-
-	count = 0;
-	//smd_iterate(attr,iter);
-	//assert(count==1);
-	printf("%d\n",count);
+	//iter tested in basic_types
 
 
 	return 0;
