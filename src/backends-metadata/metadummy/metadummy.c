@@ -413,25 +413,7 @@ static int dataset_retrieve(esdm_md_backend_t* backend, esdm_dataset_t *dataset)
 	dataset->metadata->buff_size = len;
 
 
-
-	char *bbuf = dataset->metadata->json;
-	len--;
-	bbuf[len] = 0;
-
-	while(len > 0){
-		ssize_t ret = read(fd, bbuf, len);
-		if (ret != -1){
-			bbuf += ret;
-			len -= ret;
-		}else{
-			if(errno == EINTR){
-				continue;
-			}else{
-				ESDM_ERROR_COM_FMT("POSIX MD", "read %s", strerror(errno));
-				return 1;
-			}
-		}
-	}
+	read_check(fd, dataset->metadata->json, len - 1);
 	close(fd);
 	return 0;
 }
