@@ -35,7 +35,13 @@ int main(){
 	}
 	printf("Pass\n");
 
+	//test get type
+	printf("Test get type:\n");
+	assert(smd_attr_get_type(attr) == SMD_TYPE_INT32); 
+	assert(smd_attr_get_type(attr1) == SMD_TYPE_STRING); 
+	assert(smd_attr_get_type(attr2) == SMD_TYPE_ARRAY); 
 
+	printf("Pass\n");
 
 	//test copy_value
 	printf("Test smd_attr_copy_value:\n");
@@ -119,6 +125,7 @@ int main(){
 
 	pos_ret = smd_find_position_by_id(attr, 3);
 	assert(pos_ret == -1);
+	printf("Pass\n");
 
 	//repeat find position with name search
 	printf("Test smd_find_position_by_name:\n");
@@ -130,6 +137,20 @@ int main(){
 
 	pos_ret = smd_find_position_by_name(attr, "test1");
 	assert(pos_ret == -1);
+
+	printf("Pass\n");
+
+
+	//test find get child by name
+	printf("Test smd_attr_get_child_by_name:\n");
+	smd_attr_t * attr_ret = smd_attr_get_child_by_name(attr, "test3");
+	assert(attr_ret == attr4);
+
+	attr_ret = smd_attr_get_child_by_name(attr, "test5");
+	assert(attr_ret == attr5);
+
+	attr_ret = smd_attr_get_child_by_name(attr, "test1");
+	assert(attr_ret == NULL);
 
 	printf("Pass\n");
 
@@ -184,7 +205,7 @@ int main(){
 	printf("Pass\n");
 
 	//test attr count
-	count = smd_attr_count(attr);
+	int count = smd_attr_count(attr);
 	assert(count == 2);
 
 	//iter tested in basic_types
