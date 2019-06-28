@@ -176,14 +176,12 @@ void read_test(){
 	assert(smd_attr_get_type(a1) == SMD_TYPE_STRING);
 	txt = (char*) smd_attr_get_value(a1);
 	assert(txt != NULL);
-	free(txt);
 
 	a1 = smd_attr_get_child_by_name(md, "unit");
 	assert(a1 != NULL);
 	assert(smd_attr_get_type(a1) == SMD_TYPE_STRING);
 	txt = (char*) smd_attr_get_value(a1);
 	assert(strcmp(txt, "Celsius") == 0);
-	free(txt);
 
 	ret = esdm_dataset_destroy(dataset);
   assert(ret == ESDM_SUCCESS);
