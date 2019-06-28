@@ -85,8 +85,12 @@ static int mkfs(esdm_md_backend_t* backend, int enforce_format)
 	}
 	printf("[mkfs] Creating %s\n", tgt);
 
-	mkdir(tgt, 0700);
-	mkdir(containers, 0700);
+	int ret = mkdir(tgt, 0700);
+	if (ret != 0) return ESDM_ERROR;
+
+	ret = mkdir(containers, 0700);
+	if (ret != 0) return ESDM_ERROR;
+
 	return ESDM_SUCCESS;
 }
 
@@ -257,18 +261,19 @@ static int container_create(esdm_md_backend_t* backend, esdm_container *containe
 	asprintf(&path_metadata, "%s/containers/%s.md", tgt, container->name);
 	asprintf(&path_container, "%s/containers/%s", tgt, container->name);
 
-	// create metadata entry
-	entry_create(path_metadata, NULL);
-
 	// create directory for datsets
 	if (stat(path_container, &sb) == -1)
 	{
-		mkdir(path_container, 0700);
+		int ret = mkdir(path_container, 0700);
+		if (ret != 0) return ESDM_ERROR;
 	}
+
+	// create metadata entry
+	entry_create(path_metadata, NULL);
+
 
 	free(path_metadata);
 	free(path_container);
-
 
 	return 0;
 }
@@ -372,16 +377,15 @@ static int dataset_create(esdm_md_backend_t* backend, esdm_dataset_t *dataset)
 
 	sprintf(path_metadata, "%s/containers/%s/%s.md", tgt, dataset->container->name, dataset->name);
 	sprintf(path_dataset, "%s/containers/%s/%s", tgt, dataset->container->name, dataset->name);
-
-	// create metadata entry
-	entry_create(path_metadata, dataset->metadata);
-//		entry_create(path_metadata, &x);
-
 	// create directory for datsets
 	if (stat(path_dataset, &sb) == -1)
 	{
-		mkdir(path_dataset, 0700);
+		int ret =	mkdir_recursive(path_dataset);
+		if (ret != 0) return ESDM_ERROR;
 	}
+
+	// create metadata entry
+	entry_create(path_metadata, dataset->metadata);
 
 	return 0;
 }
@@ -637,7 +641,9 @@ static int fragment_update(esdm_md_backend_t* backend, esdm_fragment_t *fragment
 	DEBUG("path_fragment: %s\n", path_fragment);
 
 	// create metadata entry
-	mkdir_recursive(path);
+	int ret = mkdir_recursive(path);
+	if (ret != 0) return ESDM_ERROR;
+
 	entry_create(path_fragment, fragment->metadata);
 
 
@@ -721,50 +727,5 @@ esdm_md_backend_t* metadummy_backend_init(esdm_config_backend_t *config)
 	mkfs(backend, 0);
 
 	return backend;
-
-}
-
-
-static void metadummy_test()
-{
-	int ret = -1;
-
-	char abc[PATH_MAX];
-	char def[PATH_MAX];
-
-	const char* tgt = "./_metadummy";
-	sprintf(abc, "%s/%s", tgt, "abc");
-	sprintf(def, "%s/%s", tgt, "def");
-
-	// create entry and test
-	ret = entry_create(abc, NULL);
-	assert(ret == 0);
-
-	esdm_dataset_t *dataset = NULL;
-	ret = entry_retrieve_tst(abc, dataset);
-	assert(ret == 0);
-
-	// double create
-	ret = entry_create(def, NULL);
-	assert(ret == 0);
-
-	ret = entry_create(def, NULL);
-	assert(ret == -1);
-
-	// perform update and test
-	ret = entry_update(abc, "huhuhuhuh", 5);
-
-	ret = entry_retrieve_tst(abc, dataset);
-	// delete entry and expect retrieve to fail
-	ret = entry_destroy(abc);
-	ret = entry_retrieve_tst(abc, dataset);
-	assert(ret == -1);
-
-	// clean up
-	ret = entry_destroy(def);
-	assert(ret == 0);
-
-	ret = entry_destroy(def);
-	assert(ret == -1);
 
 }

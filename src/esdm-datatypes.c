@@ -47,8 +47,8 @@ esdm_status esdm_container_create(const char* name, esdm_container **out_contain
 	container->name = strdup(name);
 
 	container->metadata = NULL;
-	container->datasets = g_hash_table_new(g_direct_hash,  g_direct_equal);
 	container->status = ESDM_STATUS_DIRTY;
+
 
 	*out_container = container;
 
@@ -67,7 +67,6 @@ esdm_status esdm_container_retrieve(const char * name, esdm_container **out_cont
 	container->name = strdup(name);
 
 	container->metadata = NULL;
-	container->datasets = g_hash_table_new(g_direct_hash,  g_direct_equal);
 	container->status = ESDM_STATUS_DIRTY;
 
 	*out_container = container;
@@ -79,18 +78,12 @@ esdm_status esdm_container_retrieve(const char * name, esdm_container **out_cont
 esdm_status esdm_container_commit(esdm_container* container)
 {
 	ESDM_DEBUG(__func__);
-
-	// print datasets of this container
-	esdm_print_hashtable(container->datasets);
-
-	// TODO: ensure callback is not NULL
 	// md callback create/update container
-	esdm.modules->metadata_backend->callbacks.container_create(esdm.modules->metadata_backend, container);
+	esdm_status status = esdm.modules->metadata_backend->callbacks.container_create(esdm.modules->metadata_backend, container);
 
 	// Also commit uncommited datasets of this container?
-	//g_hash_table_foreach (container->datasets, /* TODO: dataset commit wrapper? */ print_hashtable_entry, NULL);
 
-	return ESDM_SUCCESS;
+	return status;
 }
 
 
@@ -398,9 +391,8 @@ esdm_status esdm_dataset_commit(esdm_dataset_t *dataset)
 
 	// TODO: ensure callback is not NULL
 	// md callback create/update container
-	esdm.modules->metadata_backend->callbacks.dataset_create(esdm.modules->metadata_backend, dataset);
-
-	return ESDM_SUCCESS;
+	esdm_status ret = esdm.modules->metadata_backend->callbacks.dataset_create(esdm.modules->metadata_backend, dataset);
+	return ret;
 }
 
 

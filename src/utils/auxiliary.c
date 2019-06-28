@@ -42,24 +42,23 @@
 // directory handling /////////////////////////////////////////////////////////
 
 
-void mkdir_recursive(const char *path) {
-        char tmp[PATH_MAX];
-        char *p = NULL;
-        size_t len;
+int mkdir_recursive(const char *path) {
+    char tmp[PATH_MAX];
+    char *p = NULL;
+    size_t len;
 
 		// copy provided path, as we modify it
-        snprintf(tmp, sizeof(tmp),"%s",path);
+    snprintf(tmp, sizeof(tmp),"%s",path);
 
 		// check if last char of string is a /
-        len = strlen(tmp);
-        if(tmp[len - 1] == '/')
-			// if it is, set to 0
-			tmp[len - 1] = 0;
+    len = strlen(tmp);
+    if(tmp[len - 1] == '/') tmp[len - 1] = 0;
+		// if it is, set to 0
 
 		// traverse string from start to end
 		for(p = tmp + 1; *p; p++)
 		{
-			if(*p == '/') {
+			if(*p == '/' && (p - tmp) > 1) {
 				// if current char is a /
 				// temporaly set character at address p to 0
 				// create dir from start of string
@@ -70,7 +69,7 @@ void mkdir_recursive(const char *path) {
 			}
 			// continue with next position in string
 		}
-		mkdir(tmp, S_IRWXU);
+		return mkdir(tmp, S_IRWXU);
 }
 
 
