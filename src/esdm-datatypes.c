@@ -90,7 +90,6 @@ esdm_status esdm_container_commit(esdm_container* container)
 esdm_status esdm_container_destroy(esdm_container *container)
 {
 	ESDM_DEBUG(__func__);
-	esdm_container_commit(container); // why??
 	free(container);
 
 	return ESDM_SUCCESS;

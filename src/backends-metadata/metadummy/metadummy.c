@@ -641,11 +641,14 @@ static int fragment_update(esdm_md_backend_t* backend, esdm_fragment_t *fragment
 	DEBUG("path_fragment: %s\n", path_fragment);
 
 	// create metadata entry
-	int ret = mkdir_recursive(path);
-	if (ret != 0) return ESDM_ERROR;
+	struct stat sb;
+
+	if (stat(path, &sb) != 0){
+		int ret = mkdir_recursive(path);
+		if (ret != 0) return ESDM_ERROR;
+	}
 
 	entry_create(path_fragment, fragment->metadata);
-
 
 	return 0;
 }
