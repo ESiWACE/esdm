@@ -149,12 +149,12 @@ esdm_status esdm_performance_recommendation(esdm_instance_t *esdm, esdm_fragment
 esdm_status esdm_performance_finalize();
 
 // Backend (generic)
-esdm_status esdm_backend_estimate_performance(esdm_backend *backend, int fragment);
+esdm_status esdm_backend_t_estimate_performance(esdm_backend_t *backend, int fragment);
 
 // Auxiliary
 void esdm_print_hashtable (GHashTable * tbl);
 
-esdm_status esdm_metadata_init_(esdm_metadata ** output_metadata);
+esdm_status esdm_metadata_t_init_(esdm_metadata_t ** output_metadata);
 
 
 #endif

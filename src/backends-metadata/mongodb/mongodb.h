@@ -48,7 +48,7 @@ static void mongodb_test();
 
 static void log(const char* format, ...);
 
-static int mkfs(esdm_backend* backend);
+static int mkfs(esdm_backend_t* backend);
 
 /**
  * Similar to the command line counterpart fsck for ESDM plugins is responsible
@@ -66,41 +66,41 @@ static int entry_update(const char *path, void *buf, size_t len);
 
 static int entry_destroy(const char *path);
 
-static int container_create(esdm_backend* backend, esdm_container *container);
+static int container_create(esdm_backend_t* backend, esdm_container_t *container);
 
-static int container_retrieve(esdm_backend* backend, esdm_container *container);
+static int container_retrieve(esdm_backend_t* backend, esdm_container_t *container);
 
-static int container_update(esdm_backend* backend, esdm_container *container);
+static int container_update(esdm_backend_t* backend, esdm_container_t *container);
 
-static int container_destroy(esdm_backend* backend, esdm_container *container);
+static int container_destroy(esdm_backend_t* backend, esdm_container_t *container);
 
-static int dataset_create(esdm_backend* backend, esdm_dataset_t *dataset);
+static int dataset_create(esdm_backend_t* backend, esdm_dataset_t *dataset);
 
-static int dataset_retrieve(esdm_backend* backend, esdm_dataset_t *dataset);
+static int dataset_retrieve(esdm_backend_t* backend, esdm_dataset_t *dataset);
 
-static int dataset_update(esdm_backend* backend, esdm_dataset_t *dataset);
+static int dataset_update(esdm_backend_t* backend, esdm_dataset_t *dataset);
 
-static int dataset_destroy(esdm_backend* backend, esdm_dataset_t *dataset);
+static int dataset_destroy(esdm_backend_t* backend, esdm_dataset_t *dataset);
 
-static int fragment_update(esdm_backend* backend, esdm_fragment_t *fragment);
+static int fragment_update(esdm_backend_t* backend, esdm_fragment_t *fragment);
 
-static int mongodb_backend_performance_estimate(esdm_backend* backend);
+static int mongodb_backend_performance_estimate(esdm_backend_t* backend);
 
-static int mongodb_create(esdm_backend* backend, char* name);
+static int mongodb_create(esdm_backend_t* backend, char* name);
 
-static int mongodb_open(esdm_backend* backend);
+static int mongodb_open(esdm_backend_t* backend);
 
-static int mongodb_write(esdm_backend* backend);
+static int mongodb_write(esdm_backend_t* backend);
 
-static int mongodb_read(esdm_backend* backend);
+static int mongodb_read(esdm_backend_t* backend);
 
-static int mongodb_close(esdm_backend* backend);
+static int mongodb_close(esdm_backend_t* backend);
 
-static int mongodb_allocate(esdm_backend* backend);
+static int mongodb_allocate(esdm_backend_t* backend);
 
-static int mongodb_update(esdm_backend* backend);
+static int mongodb_update(esdm_backend_t* backend);
 
-static int mongodb_lookup(esdm_backend* backend);
+static int mongodb_lookup(esdm_backend_t* backend);
 
 /**
 * Initializes the POSIX plugin. In particular this involves:
@@ -111,12 +111,12 @@ static int mongodb_lookup(esdm_backend* backend);
 *	* Connect with support services e.g. for technical metadata
 *	* Setup directory structures used by this POSIX specific backend
 *
-*	* Populate esdm_backend struct and callbacks required for registration
+*	* Populate esdm_backend_t struct and callbacks required for registration
 *
 * @return pointer to backend struct
 */
 
-esdm_backend* mongodb_backend_init(esdm_config_backend_t *config);
+esdm_backend_t* mongodb_backend_init(esdm_config_backend_t *config);
 
 /**
 * Initializes the POSIX plugin. In particular this involves:

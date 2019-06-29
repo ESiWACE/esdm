@@ -61,7 +61,7 @@ int main(int argc, char const* argv[])
 
 	// Interaction with ESDM
 	esdm_status ret;
-	esdm_container *container = NULL;
+	esdm_container_t *container = NULL;
 	esdm_dataset_t *dataset = NULL;
 
 
@@ -85,11 +85,11 @@ int main(int argc, char const* argv[])
 
 	esdm_dataspace_create(2, bounds, SMD_DTYPE_UINT64, & dataspace);
 
-	esdm_container_create("mycontainer", & container);
+	esdm_container_t_create("mycontainer", & container);
 	esdm_dataset_create(container, "mydataset", dataspace, & dataset);
 
 
-	esdm_container_commit(container);
+	esdm_container_t_commit(container);
 	esdm_dataset_commit(dataset);
 
 

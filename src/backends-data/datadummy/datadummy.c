@@ -43,7 +43,7 @@
 ///////////////////////////////////////////////////////////////////////////////
 
 
-int mkfs(esdm_backend* backend)
+int mkfs(esdm_backend_t* backend)
 {
 
 	posix_backend_data_t* data = (posix_backend_data_t*)backend->data;
@@ -105,7 +105,7 @@ int fsck()
 // ESDM Callbacks /////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////
 
-int posix_backend_performance_estimate(esdm_backend* backend)
+int posix_backend_performance_estimate(esdm_backend_t* backend)
 {
 	DEBUG_ENTER("Calculating performance estimate.");
 
@@ -200,7 +200,7 @@ int posix_lookup()
 // ESDM Module Registration ///////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////
 
-static esdm_backend backend_template = {
+static esdm_backend_t backend_template = {
 ///////////////////////////////////////////////////////////////////////////////
 // WARNING: This serves as a template for the posix plugin and is memcpied!  //
 ///////////////////////////////////////////////////////////////////////////////
@@ -233,7 +233,7 @@ static esdm_backend backend_template = {
 *	* Connect with support services e.g. for technical metadata
 *	* Setup directory structures used by this POSIX specific backend
 *
-*	* Populate esdm_backend struct and callbacks required for registration
+*	* Populate esdm_backend_t struct and callbacks required for registration
 *
 * @return pointer to backend struct
 */
@@ -242,12 +242,12 @@ static esdm_backend backend_template = {
 //
 // posix.c
 
-esdm_backend* posix_backend_init(void* init_data) {
+esdm_backend_t* posix_backend_init(void* init_data) {
 
 	DEBUG_ENTER("Initializing POSIX backend.");
 
-	esdm_backend* backend = (esdm_backend*) malloc(sizeof(esdm_backend));
-	memcpy(backend, &backend_template, sizeof(esdm_backend));
+	esdm_backend_t* backend = (esdm_backend_t*) malloc(sizeof(esdm_backend_t));
+	memcpy(backend, &backend_template, sizeof(esdm_backend_t));
 
 	backend->data = (void*) malloc(sizeof(posix_backend_data_t));
 	posix_backend_data_t* data = (posix_backend_data_t*) backend->data;

@@ -57,7 +57,7 @@ static void log(const char* format, ...)
 ///////////////////////////////////////////////////////////////////////////////
 
 
-static int mkfs(esdm_backend* backend)
+static int mkfs(esdm_backend_t* backend)
 {
 	DEBUG("mongodb setup");
 
@@ -227,7 +227,7 @@ static int entry_destroy(const char *path)
 ///////////////////////////////////////////////////////////////////////////////
 
 
-static int container_create(esdm_backend* backend, esdm_container *container)
+static int container_create(esdm_backend_t* backend, esdm_container_t *container)
 {
 	char *path_metadata;
 	char *path_container;
@@ -270,7 +270,7 @@ static int container_create(esdm_backend* backend, esdm_container *container)
 }
 
 
-static int container_retrieve(esdm_backend* backend, esdm_container *container)
+static int container_retrieve(esdm_backend_t* backend, esdm_container_t *container)
 {
 	char *path_metadata;
 	char *path_container;
@@ -292,7 +292,7 @@ static int container_retrieve(esdm_backend* backend, esdm_container *container)
 }
 
 
-static int container_update(esdm_backend* backend, esdm_container *container)
+static int container_update(esdm_backend_t* backend, esdm_container_t *container)
 {
 	char *path_metadata;
 	char *path_container;
@@ -313,7 +313,7 @@ static int container_update(esdm_backend* backend, esdm_container *container)
 }
 
 
-static int container_destroy(esdm_backend* backend, esdm_container *container)
+static int container_destroy(esdm_backend_t* backend, esdm_container_t *container)
 {
 	char *path_metadata;
 	char *path_container;
@@ -342,7 +342,7 @@ static int container_destroy(esdm_backend* backend, esdm_container *container)
 ///////////////////////////////////////////////////////////////////////////////
 
 
-static int dataset_create(esdm_backend* backend, esdm_dataset_t *dataset)
+static int dataset_create(esdm_backend_t* backend, esdm_dataset_t *dataset)
 {
 	char *path_metadata;
 	char *path_dataset;
@@ -385,17 +385,17 @@ static int dataset_create(esdm_backend* backend, esdm_dataset_t *dataset)
 }
 
 
-static int dataset_retrieve(esdm_backend* backend, esdm_dataset_t *dataset)
+static int dataset_retrieve(esdm_backend_t* backend, esdm_dataset_t *dataset)
 {
 }
 
 
-static int dataset_update(esdm_backend* backend, esdm_dataset_t *dataset)
+static int dataset_update(esdm_backend_t* backend, esdm_dataset_t *dataset)
 {
 }
 
 
-static int dataset_destroy(esdm_backend* backend, esdm_dataset_t *dataset)
+static int dataset_destroy(esdm_backend_t* backend, esdm_dataset_t *dataset)
 {
 }
 
@@ -405,7 +405,7 @@ static int dataset_destroy(esdm_backend* backend, esdm_dataset_t *dataset)
 ///////////////////////////////////////////////////////////////////////////////
 
 
-static int fragment_update(esdm_backend* backend, esdm_fragment_t *fragment)
+static int fragment_update(esdm_backend_t* backend, esdm_fragment_t *fragment)
 {
 	char *path;
 	char *path_fragment;
@@ -446,7 +446,7 @@ static int fragment_update(esdm_backend* backend, esdm_fragment_t *fragment)
 ///////////////////////////////////////////////////////////////////////////////
 
 
-static int mongodb_backend_performance_estimate(esdm_backend* backend)
+static int mongodb_backend_performance_estimate(esdm_backend_t* backend)
 {
 	DEBUG("Calculating performance estimate.");
 
@@ -454,7 +454,7 @@ static int mongodb_backend_performance_estimate(esdm_backend* backend)
 }
 
 
-static int mongodb_create(esdm_backend* backend, char* name)
+static int mongodb_create(esdm_backend_t* backend, char* name)
 {
 	DEBUG("Create");
 
@@ -477,49 +477,49 @@ static int mongodb_create(esdm_backend* backend, char* name)
  *	owner?
  *
  */
-static int mongodb_open(esdm_backend* backend)
+static int mongodb_open(esdm_backend_t* backend)
 {
 	DEBUG("Open");
 	return 0;
 }
 
 
-static int mongodb_write(esdm_backend* backend)
+static int mongodb_write(esdm_backend_t* backend)
 {
 	DEBUG("Write");
 	return 0;
 }
 
 
-static int mongodb_read(esdm_backend* backend)
+static int mongodb_read(esdm_backend_t* backend)
 {
 	DEBUG("Read");
 	return 0;
 }
 
 
-static int mongodb_close(esdm_backend* backend)
+static int mongodb_close(esdm_backend_t* backend)
 {
 	DEBUG("Close");
 	return 0;
 }
 
 
-static int mongodb_allocate(esdm_backend* backend)
+static int mongodb_allocate(esdm_backend_t* backend)
 {
 	DEBUG("Allocate");
 	return 0;
 }
 
 
-static int mongodb_update(esdm_backend* backend)
+static int mongodb_update(esdm_backend_t* backend)
 {
 	DEBUG("Update");
 	return 0;
 }
 
 
-static int mongodb_lookup(esdm_backend* backend)
+static int mongodb_lookup(esdm_backend_t* backend)
 {
 	DEBUG("Lookup");
 	return 0;
@@ -531,7 +531,7 @@ static int mongodb_lookup(esdm_backend* backend)
 ///////////////////////////////////////////////////////////////////////////////
 
 
-static esdm_backend backend_template = {
+static esdm_backend_t backend_template = {
 ///////////////////////////////////////////////////////////////////////////////
 // WARNING: This serves as a template for the mongodb plugin and is memcpied!  //
 ///////////////////////////////////////////////////////////////////////////////
@@ -573,13 +573,13 @@ static esdm_backend backend_template = {
 };
 
 
-esdm_backend* mongodb_backend_init(esdm_config_backend_t *config)
+esdm_backend_t* mongodb_backend_init(esdm_config_backend_t *config)
 {
 
 	DEBUG("Initializing mongodb backend.");
 
-	esdm_backend* backend = (esdm_backend*) malloc(sizeof(esdm_backend));
-	memcpy(backend, &backend_template, sizeof(esdm_backend));
+	esdm_backend_t* backend = (esdm_backend_t*) malloc(sizeof(esdm_backend_t));
+	memcpy(backend, &backend_template, sizeof(esdm_backend_t));
 
 	mongodb_backend_options_t* data = (mongodb_backend_options_t*) malloc(sizeof(mongodb_backend_options_t));
 

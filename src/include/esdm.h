@@ -101,7 +101,7 @@ esdm_status esdm_open(char* desc, int mode);
  * @return Status
  */
 
-esdm_status esdm_create(char* desc, int mode, esdm_container**, esdm_dataset_t**);
+esdm_status esdm_create(char* desc, int mode, esdm_container_t**, esdm_dataset_t**);
 
 /**
  * Close opened object.
@@ -155,8 +155,8 @@ esdm_status esdm_read(esdm_dataset_t *dataset, void *buf, esdm_dataspace_t* subs
  *
  */
 
-esdm_status esdm_container_create(const char* name, esdm_container **out_container);
-esdm_status esdm_container_retrieve(const char * name, esdm_container **out_container);
+esdm_status esdm_container_t_create(const char* name, esdm_container_t **out_container);
+esdm_status esdm_container_t_retrieve(const char * name, esdm_container_t **out_container);
 
 /**
  * Make container persistent to storage.
@@ -167,7 +167,7 @@ esdm_status esdm_container_retrieve(const char * name, esdm_container **out_cont
  *
  */
 
-esdm_status esdm_container_commit(esdm_container *container);
+esdm_status esdm_container_t_commit(esdm_container_t *container);
 
 /**
  * Destroy a existing container.
@@ -176,7 +176,7 @@ esdm_status esdm_container_commit(esdm_container *container);
  *
  */
 
-esdm_status esdm_container_destroy(esdm_container *container);
+esdm_status esdm_container_t_destroy(esdm_container_t *container);
 
 // Dataset
 
@@ -190,12 +190,12 @@ esdm_status esdm_container_destroy(esdm_container *container);
  *
  */
 
-esdm_status esdm_dataset_create(esdm_container* container, const char* name, esdm_dataspace_t* dataspace, esdm_dataset_t ** out_dataset);
+esdm_status esdm_dataset_create(esdm_container_t* container, const char* name, esdm_dataspace_t* dataspace, esdm_dataset_t ** out_dataset);
 esdm_status esdm_dataset_name_dimensions(esdm_dataset_t * dataset, int dims, char ** names);
 esdm_status esdm_dataset_get_dataspace(esdm_dataset_t *dset, esdm_dataspace_t ** out_dataspace);
 
-esdm_status esdm_dataset_iterator(esdm_container *container, esdm_dataset_iterator_t ** out_iter);
-esdm_status esdm_dataset_retrieve(esdm_container *container, const char * name, esdm_dataset_t **out_dataset);
+esdm_status esdm_dataset_iterator(esdm_container_t *container, esdm_dataset_iterator_t ** out_iter);
+esdm_status esdm_dataset_retrieve(esdm_container_t *container, const char * name, esdm_dataset_t **out_dataset);
 
 /**
  * Make dataset persistent to storage.

@@ -50,7 +50,7 @@
 ///////////////////////////////////////////////////////////////////////////////
 
 
-static int mkfs(esdm_backend* backend, int enforce_format)
+static int mkfs(esdm_backend_t* backend, int enforce_format)
 {
 	posix_backend_data_t* data = (posix_backend_data_t*)backend->data;
 
@@ -260,7 +260,7 @@ static int entry_destroy(const char *path)
 ///////////////////////////////////////////////////////////////////////////////
 
 
-static int fragment_retrieve(esdm_backend* backend, esdm_fragment_t *fragment, json_t * metadata)
+static int fragment_retrieve(esdm_backend_t* backend, esdm_fragment_t *fragment, json_t * metadata)
 {
 	DEBUG_ENTER;
 
@@ -291,7 +291,7 @@ static int fragment_retrieve(esdm_backend* backend, esdm_fragment_t *fragment, j
 }
 
 
-static int fragment_update(esdm_backend* backend, esdm_fragment_t *fragment)
+static int fragment_update(esdm_backend_t* backend, esdm_fragment_t *fragment)
 {
 	DEBUG_ENTER;
 
@@ -330,7 +330,7 @@ static int fragment_update(esdm_backend* backend, esdm_fragment_t *fragment)
 ///////////////////////////////////////////////////////////////////////////////
 
 
-static int posix_backend_performance_estimate(esdm_backend* backend, esdm_fragment_t *fragment, float * out_time)
+static int posix_backend_performance_estimate(esdm_backend_t* backend, esdm_fragment_t *fragment, float * out_time)
 {
 	DEBUG_ENTER;
 
@@ -338,11 +338,11 @@ static int posix_backend_performance_estimate(esdm_backend* backend, esdm_fragme
 		return 1;
 
 	posix_backend_data_t* data = (posix_backend_data_t*) backend->data;
-	return esdm_backend_perf_model_long_lat_perf_estimate(& data->perf_model, fragment, out_time);
+	return esdm_backend_t_perf_model_long_lat_perf_estimate(& data->perf_model, fragment, out_time);
 }
 
 
-int posix_finalize(esdm_backend* backend)
+int posix_finalize(esdm_backend_t* backend)
 {
 	DEBUG_ENTER;
 
@@ -353,7 +353,7 @@ int posix_finalize(esdm_backend* backend)
 // ESDM Module Registration ///////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////
 
-static esdm_backend backend_template = {
+static esdm_backend_t backend_template = {
 ///////////////////////////////////////////////////////////////////////////////
 // NOTE: This serves as a template for the posix plugin and is memcopied!    //
 ///////////////////////////////////////////////////////////////////////////////
@@ -397,7 +397,7 @@ static esdm_backend backend_template = {
 //
 // datadummy.c
 
-esdm_backend* posix_backend_init(esdm_config_backend_t *config)
+esdm_backend_t* posix_backend_init(esdm_config_backend_t *config)
 {
 	DEBUG_ENTER;
 
@@ -406,17 +406,17 @@ esdm_backend* posix_backend_init(esdm_config_backend_t *config)
 		return NULL;
 	}
 
-	esdm_backend* backend = (esdm_backend*) malloc(sizeof(esdm_backend));
-	memcpy(backend, &backend_template, sizeof(esdm_backend));
+	esdm_backend_t* backend = (esdm_backend_t*) malloc(sizeof(esdm_backend_t));
+	memcpy(backend, &backend_template, sizeof(esdm_backend_t));
 
 	// allocate memory for backend instance
 	backend->data = (void*) malloc(sizeof(posix_backend_data_t));
 	posix_backend_data_t* data = (posix_backend_data_t*) backend->data;
 
 	if (data && config->performance_model)
-		esdm_backend_parse_perf_model_lat_thp(config->performance_model, & data->perf_model);
+		esdm_backend_t_parse_perf_model_lat_thp(config->performance_model, & data->perf_model);
 	else
-		esdm_backend_reset_perf_model_lat_thp(& data->perf_model);
+		esdm_backend_t_reset_perf_model_lat_thp(& data->perf_model);
 
 	// configure backend instance
 	data->config = config;

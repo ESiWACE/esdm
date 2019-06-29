@@ -684,7 +684,7 @@ static void *H5VL_esdm_dataset_create(
 
 	// Interaction with ESDM
 	esdm_status ret;
-	esdm_container *cont = NULL;
+	esdm_container_t *cont = NULL;
 	esdm_dataset_t *dset = NULL;
 
 
@@ -695,16 +695,16 @@ static void *H5VL_esdm_dataset_create(
 	int64_t bounds[] = {height, width};
 	esdm_dataspace_t *dspace = esdm_dataspace_create(2, bounds, SMD_DTYPE_UINT64);
 
-	cont = esdm_container_create("mycontainer");
+	cont = esdm_container_t_create("mycontainer");
 	dset = esdm_dataset_create(cont, name, dspace);
 
 	
-	esdm_container_commit(cont);
+	esdm_container_t_commit(cont);
 	esdm_dataset_commit(dset);
 
 
 
-	//esdm_dataset_t* esdm_dataset_create(esdm_container *container, char * name, esdm_dataspace_t *dataspace);
+	//esdm_dataset_t* esdm_dataset_create(esdm_container_t *container, char * name, esdm_dataspace_t *dataspace);
 	
 	// (gdb) bt
 	// #0  H5VL_esdm_dataset_create (obj=0x95f9c0, loc_params=..., name=0x961db0 "lat", dcpl_id=792633534417207319,
@@ -800,7 +800,7 @@ static void *H5VL_esdm_dataset_open(void *obj, H5VL_loc_params_t loc_params, con
 
     H5VL_esdm_group_t *parent = (H5VL_esdm_group_t *) ((H5VL_esdm_object_t*)obj)->object;
 
-	//esdm_dataset_t* esdm_dataset_retrieve(esdm_container *container, const char * name);
+	//esdm_dataset_t* esdm_dataset_retrieve(esdm_container_t *container, const char * name);
 
 
 	H5VL_esdm_object_t * child = g_hash_table_lookup(parent->childs_tbl, name);
@@ -1434,8 +1434,8 @@ static void * H5VL_esdm_file_create(const char *name, unsigned flags, hid_t fcpl
 
 
 	// map HDF5 Files to ESDM containers
-	esdm_container* cont = esdm_container_create(name);
-	esdm_container_commit(cont);	// TODO: commit only after metadata was added
+	esdm_container_t* cont = esdm_container_t_create(name);
+	esdm_container_t_commit(cont);	// TODO: commit only after metadata was added
 
 	// generate json object for hdf5 related container metadata
 	json_error_t *error;	
@@ -1445,7 +1445,7 @@ static void * H5VL_esdm_file_create(const char *name, unsigned flags, hid_t fcpl
 	json_path_set(json, "$.test.time", json_integer(21), 0, &error);
 	print_json(json); // inspect
 	
-	//esdm_container_commit(cont);
+	//esdm_container_t_commit(cont);
 
 
 	// analyse property lists
@@ -1553,7 +1553,7 @@ static void * H5VL_esdm_file_open(const char *name, unsigned flags, hid_t fapl_i
 	// ensure ESDM initialized for HDF5 API entry points (H5*open, H5*create)
 	esdm_init();
 
-	//esdm_container* esdm_container_retrieve(const char * name);
+	//esdm_container_t* esdm_container_t_retrieve(const char * name);
 	//guchar * g_base64_decode (const gchar *text, gsize *out_len);
 
 
@@ -1820,7 +1820,7 @@ static void * H5VL_esdm_group_create(void *obj, H5VL_loc_params_t loc_params, co
 
 
 
-	//esdm_container* esdm_container_create(const char *name);
+	//esdm_container_t* esdm_container_t_create(const char *name);
 
 	// allocate resources
     object = (H5VL_esdm_object_t*) malloc(sizeof(H5VL_esdm_object_t));
@@ -1860,8 +1860,8 @@ static void *H5VL_esdm_group_open(void *obj, H5VL_loc_params_t loc_params, const
 
 	
 	// map HDF5 group to ESDM containers
-	esdm_container* cont = esdm_container_create(name);
-	esdm_container_commit(cont);	// TODO: commit only after metadata was added
+	esdm_container_t* cont = esdm_container_t_create(name);
+	esdm_container_t_commit(cont);	// TODO: commit only after metadata was added
 
 	// generate json object for hdf5 related container metadata
 	json_error_t *error;	
@@ -1871,7 +1871,7 @@ static void *H5VL_esdm_group_open(void *obj, H5VL_loc_params_t loc_params, const
 	json_path_set(json, "$.test.time", json_integer(21), 0, &error);
 	print_json(json); // inspect
 	
-	esdm_container_commit(cont);
+	esdm_container_t_commit(cont);
 
 
 
@@ -1881,7 +1881,7 @@ static void *H5VL_esdm_group_open(void *obj, H5VL_loc_params_t loc_params, const
 	info("%s: Found group=%p with name=%s in parent=%p\n", __func__, child->object, name, obj);
 
 
-	//esdm_container* esdm_container_retrieve(const char * name);
+	//esdm_container_t* esdm_container_t_retrieve(const char * name);
 
 
 	return (void *)child;

@@ -7,15 +7,20 @@
 #include <jansson.h>
 
 
-struct esdm_container{
+struct esdm_container_t_t{
 	char * name;
-	esdm_metadata * metadata;
+	esdm_metadata_t * metadata;
 	GHashTable * datasets;
 	esdm_status status;
 };
 
+struct esdm_json_t{
+	char * json;
+	int buff_size;
+	int size;
+};
 
-struct esdm_metadata{
+struct esdm_metadata_t{
 	char * json;
 	int buff_size;
 	int size;
@@ -25,8 +30,8 @@ struct esdm_metadata{
 
 struct esdm_dataset_t{
 	char * name;
-	esdm_container * container;
-	esdm_metadata * metadata;
+	esdm_container_t * container;
+	esdm_metadata_t * metadata;
 	esdm_dataspace_t * dataspace;
 	GHashTable * fragments;
 	esdm_status status;
@@ -34,10 +39,10 @@ struct esdm_dataset_t{
 
 
 struct esdm_fragment_t{
-	esdm_metadata * metadata; // only valid after written
+	esdm_metadata_t * metadata; // only valid after written
 	esdm_dataset_t * dataset;
 	esdm_dataspace_t * dataspace;
-	esdm_backend * backend;
+	esdm_backend_t * backend;
 	void * buf;
 	int in_place;
 	size_t elements;
@@ -101,41 +106,41 @@ typedef enum esdm_module_type_t{
  *	* No callback is expected for initialization as ESDM calls it on discovery.
  *
  */
-struct esdm_backend_callbacks_t{
+struct esdm_backend_t_callbacks_t{
 // General for ESDM
-	int (*finalize)(esdm_backend*);
-	int (*performance_estimate)(esdm_backend*, esdm_fragment_t *fragment, float * out_time);
+	int (*finalize)(esdm_backend_t*);
+	int (*performance_estimate)(esdm_backend_t*, esdm_fragment_t *fragment, float * out_time);
 
 // Data Callbacks (POSIX like)
-	int (*create)(esdm_backend*, char *name);
-	int (*open)(esdm_backend*);
-	int (*write)(esdm_backend*);
-	int (*read)(esdm_backend*);
-	int (*close)(esdm_backend*);
+	int (*create)(esdm_backend_t*, char *name);
+	int (*open)(esdm_backend_t*);
+	int (*write)(esdm_backend_t*);
+	int (*read)(esdm_backend_t*);
+	int (*close)(esdm_backend_t*);
 
 // Metadata Callbacks
     /*
 	 * Retrieve a list (and metadata) of fragments that contain data for the given subpatch with the size and offset.
 	 */
-	int (*lookup)(esdm_backend * b, esdm_dataset_t * dataset,	esdm_dataspace_t * space, int * out_frag_count, esdm_fragment_t *** out_fragments);
+	int (*lookup)(esdm_backend_t * b, esdm_dataset_t * dataset,	esdm_dataspace_t * space, int * out_frag_count, esdm_fragment_t *** out_fragments);
 
 // ESDM Data Model Specific
-	int (*container_create)(esdm_backend*, esdm_container *container);
-	int (*container_retrieve)(esdm_backend*, esdm_container *container);
-	int (*container_update)(esdm_backend*, esdm_container *container);
-	int (*container_destroy)(esdm_backend*, esdm_container *container);
+	int (*container_create)(esdm_backend_t*, esdm_container_t *container);
+	int (*container_retrieve)(esdm_backend_t*, esdm_container_t *container);
+	int (*container_update)(esdm_backend_t*, esdm_container_t *container);
+	int (*container_destroy)(esdm_backend_t*, esdm_container_t *container);
 
-	int (*dataset_create)(esdm_backend*, esdm_dataset_t *dataset);
-	int (*dataset_retrieve)(esdm_backend*, esdm_dataset_t *dataset);
-	int (*dataset_update)(esdm_backend*, esdm_dataset_t *dataset);
-	int (*dataset_destroy)(esdm_backend*, esdm_dataset_t *dataset);
+	int (*dataset_create)(esdm_backend_t*, esdm_dataset_t *dataset);
+	int (*dataset_retrieve)(esdm_backend_t*, esdm_dataset_t *dataset);
+	int (*dataset_update)(esdm_backend_t*, esdm_dataset_t *dataset);
+	int (*dataset_destroy)(esdm_backend_t*, esdm_dataset_t *dataset);
 
-	int (*fragment_create)(esdm_backend*, esdm_fragment_t *fragment);
-	int (*fragment_retrieve)(esdm_backend*, esdm_fragment_t *fragment, json_t *metadata);
-	int (*fragment_update)(esdm_backend*, esdm_fragment_t *fragment);
-	int (*fragment_destroy)(esdm_backend*, esdm_fragment_t *fragment);
+	int (*fragment_create)(esdm_backend_t*, esdm_fragment_t *fragment);
+	int (*fragment_retrieve)(esdm_backend_t*, esdm_fragment_t *fragment, json_t *metadata);
+	int (*fragment_update)(esdm_backend_t*, esdm_fragment_t *fragment);
+	int (*fragment_destroy)(esdm_backend_t*, esdm_fragment_t *fragment);
 
-	int (*mkfs)(esdm_backend*, int enforce_format);
+	int (*mkfs)(esdm_backend_t*, int enforce_format);
 };
 
 struct esdm_md_backend_callbacks_t{
@@ -150,10 +155,10 @@ struct esdm_md_backend_callbacks_t{
 	int (*lookup)(esdm_md_backend_t * b, esdm_dataset_t * dataset,	esdm_dataspace_t * space, int * out_frag_count, esdm_fragment_t *** out_fragments);
 
 // ESDM Data Model Specific
-	int (*container_create)(esdm_md_backend_t*, esdm_container *container);
-	int (*container_retrieve)(esdm_md_backend_t*, esdm_container *container);
-	int (*container_update)(esdm_md_backend_t*, esdm_container *container);
-	int (*container_destroy)(esdm_md_backend_t*, esdm_container *container);
+	int (*container_create)(esdm_md_backend_t*, esdm_container_t *container);
+	int (*container_retrieve)(esdm_md_backend_t*, esdm_container_t *container);
+	int (*container_update)(esdm_md_backend_t*, esdm_container_t *container);
+	int (*container_destroy)(esdm_md_backend_t*, esdm_container_t *container);
 
 	int (*dataset_create)(esdm_md_backend_t*, esdm_dataset_t *dataset);
 	int (*dataset_retrieve)(esdm_md_backend_t*, esdm_dataset_t *dataset);
@@ -171,19 +176,19 @@ struct esdm_md_backend_callbacks_t{
 
 /**
  * On backend registration ESDM expects the backend to return a pointer to
- * a esdm_backend struct.
+ * a esdm_backend_t struct.
  *
  * Each backend provides
  *
  */
-struct esdm_backend{
+struct esdm_backend_t{
 	esdm_config_backend_t * config;
 	char *name;
 	esdm_module_type_t type;
 	char *version; // 0.0.0
 	void *data;
 	uint32_t blocksize; /* any io must be multiple of 'blocksize' and aligned. */
-	esdm_backend_callbacks_t callbacks;
+	esdm_backend_t_callbacks_t callbacks;
 	int threads;
 	GThreadPool * threadPool;
 };
@@ -281,7 +286,7 @@ typedef struct esdm_config_t{
 
 typedef struct esdm_modules_t{
 	int data_backend_count;
-	esdm_backend **data_backends;
+	esdm_backend_t **data_backends;
 	esdm_md_backend_t *metadata_backend;
 	//esdm_modules_t** modules;
 } esdm_modules_t;

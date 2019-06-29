@@ -9,7 +9,7 @@
 int main(int argc, char *argv[])
 {
 	char conf[] = "host=192.168.80.33;policy=test;";
-	esdm_backend *eb = &esdm_backend_wos.ebm_base;
+	esdm_backend_t *eb = &esdm_backend_t_wos.ebm_base;
 	char *object_id = NULL;
 	char *object_meta = NULL;
 	void *object_handle = NULL;
@@ -29,59 +29,59 @@ int main(int argc, char *argv[])
 
 	printf("Test wos data-backend for ESDM\n");
 
-	rc = esdm_backend_wos.ebm_ops.esdm_backend_init(conf, eb);
+	rc = esdm_backend_t_wos.ebm_ops.esdm_backend_t_init(conf, eb);
 	if (rc != 0) {
-		printf("esdm_backend_wos.ebm_ops init failed rc=%d\n", rc);
+		printf("esdm_backend_t_wos.ebm_ops init failed rc=%d\n", rc);
 		return rc;
 	}
 	printf("wos connection succeeded\n");
 
-	rc = esdm_backend_wos.ebm_ops.esdm_backend_obj_alloc(eb, 1, &data_size, SMD_DTYPE_CHAR_UTF8, &object_id, &object_meta);
+	rc = esdm_backend_t_wos.ebm_ops.esdm_backend_t_obj_alloc(eb, 1, &data_size, SMD_DTYPE_CHAR_UTF8, &object_id, &object_meta);
 	if (rc != 0) {
-		printf("esdm_backend_wos.ebm_ops alloc failed rc=%d\n", rc);
+		printf("esdm_backend_t_wos.ebm_ops alloc failed rc=%d\n", rc);
 		goto fini;
 	}
 	printf("wos object allocated: %s\n", object_id);
 
-	rc = esdm_backend_wos.ebm_ops.esdm_backend_obj_open(eb, object_id, &object_handle);
+	rc = esdm_backend_t_wos.ebm_ops.esdm_backend_t_obj_open(eb, object_id, &object_handle);
 	if (rc != 0) {
-		printf("esdm_backend_wos.ebm_ops open failed rc=%d\n", rc);
+		printf("esdm_backend_t_wos.ebm_ops open failed rc=%d\n", rc);
 		goto fini;
 	}
 	printf("wos object opened: %s\n", object_id);
 
-	rc = esdm_backend_wos.ebm_ops.esdm_backend_obj_write(eb, object_handle, 0, data_size, SMD_DTYPE_CHAR_UTF8, data_w);
+	rc = esdm_backend_t_wos.ebm_ops.esdm_backend_t_obj_write(eb, object_handle, 0, data_size, SMD_DTYPE_CHAR_UTF8, data_w);
 	if (rc != 0) {
-		printf("esdm_backend_wos.ebm_ops write failed rc=%d\n", rc);
+		printf("esdm_backend_t_wos.ebm_ops write failed rc=%d\n", rc);
 		goto close;
 	}
 	printf("wos object write: %s\n", object_id);
 
-	rc = esdm_backend_wos.ebm_ops.esdm_backend_obj_read(eb, object_handle, 0, data_size, SMD_DTYPE_CHAR_UTF8, data_r);
+	rc = esdm_backend_t_wos.ebm_ops.esdm_backend_t_obj_read(eb, object_handle, 0, data_size, SMD_DTYPE_CHAR_UTF8, data_r);
 	if (rc != 0) {
-		printf("esdm_backend_wos.ebm_ops read failed rc=%d\n", rc);
+		printf("esdm_backend_t_wos.ebm_ops read failed rc=%d\n", rc);
 		goto close;
 	}
 	printf("wos object read: %s\n", object_id);
 
 	if (memcmp(data_w, data_r, data_size)) {
-		printf("esdm_backend_wos.ebm_ops write & read verification failed\n");
+		printf("esdm_backend_t_wos.ebm_ops write & read verification failed\n");
 		printf("write=%s\nread=%s\n", data_w, data_r);
 	} else {
-		printf("esdm_backend_wos.ebm_ops write & read verification succeeded\n");
+		printf("esdm_backend_t_wos.ebm_ops write & read verification succeeded\n");
 	}
 
-	rc = esdm_backend_wos.ebm_ops.esdm_backend_obj_write(eb, object_handle, 0, 0, SMD_DTYPE_CHAR_UTF8, NULL);
+	rc = esdm_backend_t_wos.ebm_ops.esdm_backend_t_obj_write(eb, object_handle, 0, 0, SMD_DTYPE_CHAR_UTF8, NULL);
 	if (rc != 0) {
-		printf("esdm_backend_wos.ebm_ops delete failed rc=%d\n", rc);
+		printf("esdm_backend_t_wos.ebm_ops delete failed rc=%d\n", rc);
 		goto close;
 	}
 	printf("wos object deleted\n");
 
       close:
-	rc = esdm_backend_wos.ebm_ops.esdm_backend_obj_close(eb, object_handle);
+	rc = esdm_backend_t_wos.ebm_ops.esdm_backend_t_obj_close(eb, object_handle);
 	if (rc != 0) {
-		printf("esdm_backend_wos.ebm_ops close failed rc=%d\n", rc);
+		printf("esdm_backend_t_wos.ebm_ops close failed rc=%d\n", rc);
 		goto fini;
 	}
 	printf("wos object closed\n");
@@ -92,9 +92,9 @@ int main(int argc, char *argv[])
 	if (object_meta)
 		free(object_meta);
 
-	rc = esdm_backend_wos.ebm_ops.esdm_backend_fini(eb);
+	rc = esdm_backend_t_wos.ebm_ops.esdm_backend_t_fini(eb);
 	if (rc != 0) {
-		printf("esdm_backend_wos.ebm_ops fini failed rc=%d\n", rc);
+		printf("esdm_backend_t_wos.ebm_ops fini failed rc=%d\n", rc);
 		return rc;
 	}
 

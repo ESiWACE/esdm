@@ -25,8 +25,8 @@ typedef struct {
 	double latency;	// seconds
 	double throughput;	// bytes per seconds
 	int size;	// bytes for test
-	esdm_backend * backend;	// reference to the corresponding backend
-	int (*esdm_backend_check_dynamic_perf_model_lat_thp)(esdm_backend *, int, float *);	// Function to write data and remove
+	esdm_backend_t * backend;	// reference to the corresponding backend
+	int (*esdm_backend_t_check_dynamic_perf_model_lat_thp)(esdm_backend_t *, int, float *);	// Function to write data and remove
 #ifdef ESDM_BACKENDS_DYNAMIC_PERF_MODEL_WITH_THREAD
 	double period;	// seconds
 	double alpha;
@@ -35,19 +35,19 @@ typedef struct {
 #endif
 } esdm_dynamic_perf_model_lat_thp_t;
 
-int esdm_backend_init_dynamic_perf_model_lat_thp(esdm_dynamic_perf_model_lat_thp_t * data);
-int esdm_backend_finalize_dynamic_perf_model_lat_thp(esdm_dynamic_perf_model_lat_thp_t * data);
+int esdm_backend_t_init_dynamic_perf_model_lat_thp(esdm_dynamic_perf_model_lat_thp_t * data);
+int esdm_backend_t_finalize_dynamic_perf_model_lat_thp(esdm_dynamic_perf_model_lat_thp_t * data);
 
-int esdm_backend_parse_dynamic_perf_model_lat_thp(json_t * perf_model_str, esdm_dynamic_perf_model_lat_thp_t * out_data);
+int esdm_backend_t_parse_dynamic_perf_model_lat_thp(json_t * perf_model_str, esdm_dynamic_perf_model_lat_thp_t * out_data);
 
-int esdm_backend_start_dynamic_perf_model_lat_thp(esdm_dynamic_perf_model_lat_thp_t * data, esdm_backend * backend, int (*checker)(esdm_backend *, int, float *));
+int esdm_backend_t_start_dynamic_perf_model_lat_thp(esdm_dynamic_perf_model_lat_thp_t * data, esdm_backend_t * backend, int (*checker)(esdm_backend_t *, int, float *));
 
-int esdm_backend_reset_dynamic_perf_model_lat_thp(esdm_dynamic_perf_model_lat_thp_t * data);
+int esdm_backend_t_reset_dynamic_perf_model_lat_thp(esdm_dynamic_perf_model_lat_thp_t * data);
 
-int esdm_backend_update_dynamic_perf_model_lat_thp(esdm_dynamic_perf_model_lat_thp_t* data);
+int esdm_backend_t_update_dynamic_perf_model_lat_thp(esdm_dynamic_perf_model_lat_thp_t* data);
 
-int esdm_backend_estimate_dynamic_perf_model_lat_thp(esdm_dynamic_perf_model_lat_thp_t * data, esdm_fragment_t * fragment, float *out_time);
+int esdm_backend_t_estimate_dynamic_perf_model_lat_thp(esdm_dynamic_perf_model_lat_thp_t * data, esdm_fragment_t * fragment, float *out_time);
 
-int esdm_backend_get_dynamic_perf_model_lat_thp(esdm_dynamic_perf_model_lat_thp_t* data, char **json);
+int esdm_backend_t_get_dynamic_perf_model_lat_thp(esdm_dynamic_perf_model_lat_thp_t* data, char **json);
 
 #endif

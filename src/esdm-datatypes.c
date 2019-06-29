@@ -39,10 +39,10 @@ extern esdm_instance_t esdm;
 // Container //////////////////////////////////////////////////////////////////
 
 
-esdm_status esdm_container_create(const char* name, esdm_container **out_container)
+esdm_status esdm_container_t_create(const char* name, esdm_container_t **out_container)
 {
 	ESDM_DEBUG(__func__);
-	esdm_container* container = (esdm_container*) malloc(sizeof(esdm_container));
+	esdm_container_t* container = (esdm_container_t*) malloc(sizeof(esdm_container_t));
 
 	container->name = strdup(name);
 
@@ -56,10 +56,10 @@ esdm_status esdm_container_create(const char* name, esdm_container **out_contain
 }
 
 
-esdm_status esdm_container_retrieve(const char * name, esdm_container **out_container)
+esdm_status esdm_container_t_retrieve(const char * name, esdm_container_t **out_container)
 {
 	ESDM_DEBUG(__func__);
-	esdm_container* container = (esdm_container*) malloc(sizeof(esdm_container));
+	esdm_container_t* container = (esdm_container_t*) malloc(sizeof(esdm_container_t));
 
 	// TODO: retrieve from MD
 	// TODO: retrieve associated data
@@ -75,7 +75,7 @@ esdm_status esdm_container_retrieve(const char * name, esdm_container **out_cont
 }
 
 
-esdm_status esdm_container_commit(esdm_container* container)
+esdm_status esdm_container_t_commit(esdm_container_t* container)
 {
 	ESDM_DEBUG(__func__);
 	// md callback create/update container
@@ -87,7 +87,7 @@ esdm_status esdm_container_commit(esdm_container* container)
 }
 
 
-esdm_status esdm_container_destroy(esdm_container *container)
+esdm_status esdm_container_t_destroy(esdm_container_t *container)
 {
 	ESDM_DEBUG(__func__);
 	free(container);
@@ -121,7 +121,7 @@ esdm_status esdm_fragment_create(esdm_dataset_t *dataset, esdm_dataspace_t *subs
 	DEBUG("Entries in subspace: %d x %d bytes = %d bytes \n", elements, esdm_sizeof(subspace->datatype), bytes);
 
 	fragment->metadata = malloc(ESDM_MAX_SIZE);
-	fragment->metadata->json = (char*)(fragment->metadata) + sizeof(esdm_metadata);
+	fragment->metadata->json = (char*)(fragment->metadata) + sizeof(esdm_metadata_t);
 	fragment->metadata->json[0] = 0;
 	fragment->metadata->size = 0;
 
@@ -205,7 +205,7 @@ esdm_status esdm_fragment_retrieve(esdm_fragment_t *fragment)
 	elem = json_object_get(root, "data");
 
 	// Call backend
-	esdm_backend *backend = fragment->backend;  // TODO: decision component, upon many
+	esdm_backend_t *backend = fragment->backend;  // TODO: decision component, upon many
 	backend->callbacks.fragment_retrieve(backend, fragment, elem);
 
 	return ESDM_SUCCESS;
@@ -244,7 +244,7 @@ void esdm_dataspace_string_descriptor(char* string, esdm_dataspace_t *dataspace)
 esdm_status esdm_fragment_commit(esdm_fragment_t *f)
 {
 	ESDM_DEBUG(__func__);
-	esdm_metadata * m = f->metadata;
+	esdm_metadata_t * m = f->metadata;
 	esdm_dataspace_t * d = f->dataspace;
 
 	m->size += sprintf(& m->json[m->size], "{\"plugin\" : \"%s\", \"id\" : \"%s\", \"size\": \"", f->backend->name, f->backend->config->id);
@@ -310,14 +310,14 @@ void esdm_dataset_dataspace_serialize_recursively_(smd_attr_t * smd, esdm_datasp
 	}
 }
 
-esdm_status esdm_dataset_create(esdm_container* container, const char* name, esdm_dataspace_t* dataspace,  esdm_dataset_t ** out_dataset)
+esdm_status esdm_dataset_create(esdm_container_t* container, const char* name, esdm_dataspace_t* dataspace,  esdm_dataset_t ** out_dataset)
 {
 	ESDM_DEBUG(__func__);
 	esdm_dataset_t* dataset = (esdm_dataset_t*) malloc(sizeof(esdm_dataset_t));
 
 	dataset->name = strdup(name);
 	dataset->container = container;
-	esdm_metadata_init_(& dataset->metadata);
+	esdm_metadata_t_init_(& dataset->metadata);
 	dataset->dataspace = dataspace;
 
 	*out_dataset = dataset;
@@ -326,7 +326,7 @@ esdm_status esdm_dataset_create(esdm_container* container, const char* name, esd
 }
 
 
-esdm_status esdm_dataset_retrieve(esdm_container *container, const char * name, esdm_dataset_t **out_dataset)
+esdm_status esdm_dataset_retrieve(esdm_container_t *container, const char * name, esdm_dataset_t **out_dataset)
 {
 	ESDM_DEBUG(__func__);
 	esdm_dataset_t* dataset = (esdm_dataset_t*) malloc(sizeof(esdm_dataset_t));
@@ -335,8 +335,8 @@ esdm_status esdm_dataset_retrieve(esdm_container *container, const char * name, 
 	dataset->container = container;
 
 	dataset->dataspace = NULL;
-	dataset->metadata = (esdm_metadata *) malloc(sizeof(esdm_metadata));
-	esdm_metadata * md = dataset->metadata;
+	dataset->metadata = (esdm_metadata_t *) malloc(sizeof(esdm_metadata_t));
+	esdm_metadata_t * md = dataset->metadata;
 
 	md->size = 0;
 	md->buff_size = 0;
@@ -539,15 +539,15 @@ uint64_t  esdm_dataspace_size(esdm_dataspace_t *dataspace){
 // Metadata //////////////////////////////////////////////////////////////////
 
 
-esdm_status esdm_metadata_init_(esdm_metadata ** output_metadata){
+esdm_status esdm_metadata_t_init_(esdm_metadata_t ** output_metadata){
 	ESDM_DEBUG(__func__);
 
-	esdm_metadata * md = (esdm_metadata*) malloc(sizeof(esdm_metadata) + 10000);
+	esdm_metadata_t * md = (esdm_metadata_t*) malloc(sizeof(esdm_metadata_t) + 10000);
 	assert(md != NULL);
 	*output_metadata = md;
 	md->buff_size = 10000;
 	md->size = 0;
-	md->json = ((char*) md) + sizeof(esdm_metadata);
+	md->json = ((char*) md) + sizeof(esdm_metadata_t);
 	md->attr = smd_attr_new("attr", SMD_DTYPE_EMPTY, NULL, 0);
 
 	return ESDM_SUCCESS;
@@ -568,7 +568,7 @@ esdm_status esdm_dataset_link_attribute(esdm_dataset_t * dset, smd_attr_t * attr
 }
 
 
-esdm_status esdm_dataset_iterator(esdm_container *container, esdm_dataset_iterator_t ** iter){
+esdm_status esdm_dataset_iterator(esdm_container_t *container, esdm_dataset_iterator_t ** iter){
 	ESDM_DEBUG(__func__);
 
 	return ESDM_SUCCESS;

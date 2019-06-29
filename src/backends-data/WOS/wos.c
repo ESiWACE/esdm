@@ -97,7 +97,7 @@ int wos_get_policy(const char *conf, char **policy)
 }
 
 
-void wos_delete_oid_list(esdm_backend_wos_t * ebm)
+void wos_delete_oid_list(esdm_backend_t_wos_t * ebm)
 {
 	if (ebm->oid_list) {
 		int j = 0;
@@ -144,14 +144,14 @@ int wos_object_list_encode(t_WosOID ** oid_list, char **out_object_id)
 }
 
 
-int esdm_backend_wos_init(const char *conf, esdm_backend * eb)
+int esdm_backend_t_wos_init(const char *conf, esdm_backend_t * eb)
 {
 	if (!eb) {
 		DEBUG("Unable to get struct");
 		return ESDM_ERROR;
 	}
 
-	esdm_backend_wos_t *ebm = (esdm_backend_wos_t *) eb->data;
+	esdm_backend_t_wos_t *ebm = (esdm_backend_t_wos_t *) eb->data;
 	if (!ebm) {
 		DEBUG("Unable to get struct");
 		return ESDM_ERROR;
@@ -194,20 +194,20 @@ int esdm_backend_wos_init(const char *conf, esdm_backend * eb)
 	free(policy);
 
 	// Performance model
-	esdm_backend_init_dynamic_perf_model_lat_thp(&ebm->perf_model);
+	esdm_backend_t_init_dynamic_perf_model_lat_thp(&ebm->perf_model);
 
 	return ESDM_SUCCESS;
 }
 
 
-int esdm_backend_wos_fini(esdm_backend * eb)
+int esdm_backend_t_wos_fini(esdm_backend_t * eb)
 {
 	if (!eb) {
 		DEBUG("Unable to get struct");
 		return ESDM_ERROR;
 	}
 
-	esdm_backend_wos_t *ebm = (esdm_backend_wos_t *) eb->data;
+	esdm_backend_t_wos_t *ebm = (esdm_backend_t_wos_t *) eb->data;
 	if (!ebm) {
 		DEBUG("Unable to get struct");
 		return ESDM_ERROR;
@@ -236,13 +236,13 @@ int esdm_backend_wos_fini(esdm_backend * eb)
 	}
 
 	// Performance model
-	esdm_backend_finalize_dynamic_perf_model_lat_thp(&ebm->perf_model);
+	esdm_backend_t_finalize_dynamic_perf_model_lat_thp(&ebm->perf_model);
 
 	return ESDM_SUCCESS;
 }
 
 
-int esdm_backend_wos_alloc(esdm_backend * eb, int n_dims, int *dims_size, esdm_datatype_t type, char **out_object_id, char **out_wos_metadata)
+int esdm_backend_t_wos_alloc(esdm_backend_t * eb, int n_dims, int *dims_size, esdm_datatype_t type, char **out_object_id, char **out_wos_metadata)
 {
 	if (!out_object_id || !out_wos_metadata) {
 		DEBUG("Null pointer");
@@ -263,7 +263,7 @@ int esdm_backend_wos_alloc(esdm_backend * eb, int n_dims, int *dims_size, esdm_d
 		return ESDM_ERROR;
 	}
 
-	esdm_backend_wos_t *ebm = (esdm_backend_wos_t *) eb->data;
+	esdm_backend_t_wos_t *ebm = (esdm_backend_t_wos_t *) eb->data;
 	if (!ebm) {
 		DEBUG("Unable to get struct");
 		return ESDM_ERROR;
@@ -331,7 +331,7 @@ int esdm_backend_wos_alloc(esdm_backend * eb, int n_dims, int *dims_size, esdm_d
 }
 
 
-int esdm_backend_wos_open(esdm_backend * eb, char *object_id, void **obj_handle)
+int esdm_backend_t_wos_open(esdm_backend_t * eb, char *object_id, void **obj_handle)
 {
 	if (!object_id || !obj_handle) {
 		DEBUG("Null pointer");
@@ -344,7 +344,7 @@ int esdm_backend_wos_open(esdm_backend * eb, char *object_id, void **obj_handle)
 		return ESDM_ERROR;
 	}
 
-	esdm_backend_wos_t *ebm = (esdm_backend_wos_t *) eb->data;
+	esdm_backend_t_wos_t *ebm = (esdm_backend_t_wos_t *) eb->data;
 	if (!ebm) {
 		DEBUG("Unable to get struct");
 		return ESDM_ERROR;
@@ -386,7 +386,7 @@ int esdm_backend_wos_open(esdm_backend * eb, char *object_id, void **obj_handle)
 }
 
 
-int esdm_backend_wos_delete(esdm_backend * eb, void *obj_handle)
+int esdm_backend_t_wos_delete(esdm_backend_t * eb, void *obj_handle)
 {
 	if (!obj_handle) {
 		DEBUG("Null pointer");
@@ -398,7 +398,7 @@ int esdm_backend_wos_delete(esdm_backend * eb, void *obj_handle)
 		return ESDM_ERROR;
 	}
 
-	esdm_backend_wos_t *ebm = (esdm_backend_wos_t *) eb->data;
+	esdm_backend_t_wos_t *ebm = (esdm_backend_t_wos_t *) eb->data;
 	if (!ebm) {
 		DEBUG("Unable to get struct");
 		return ESDM_ERROR;
@@ -427,21 +427,21 @@ int esdm_backend_wos_delete(esdm_backend * eb, void *obj_handle)
 }
 
 
-int esdm_backend_wos_write(esdm_backend * eb, void *obj_handle, uint64_t start, uint64_t count, esdm_datatype_t type, void *data)
+int esdm_backend_t_wos_write(esdm_backend_t * eb, void *obj_handle, uint64_t start, uint64_t count, esdm_datatype_t type, void *data)
 {
 	if (!obj_handle) {
 		DEBUG("Null pointer");
 		return ESDM_ERROR;
 	}
 	if (!data || !count)
-		return esdm_backend_wos_delete(eb, obj_handle);
+		return esdm_backend_t_wos_delete(eb, obj_handle);
 
 	if (!eb) {
 		DEBUG("Unable to get struct");
 		return ESDM_ERROR;
 	}
 
-	esdm_backend_wos_t *ebm = (esdm_backend_wos_t *) eb->data;
+	esdm_backend_t_wos_t *ebm = (esdm_backend_t_wos_t *) eb->data;
 	if (!ebm) {
 		DEBUG("Unable to get struct");
 		return ESDM_ERROR;
@@ -520,7 +520,7 @@ int esdm_backend_wos_write(esdm_backend * eb, void *obj_handle, uint64_t start, 
 }
 
 
-int esdm_backend_wos_read(esdm_backend * eb, void *obj_handle, uint64_t start, uint64_t count, esdm_datatype_t type, void *data)
+int esdm_backend_t_wos_read(esdm_backend_t * eb, void *obj_handle, uint64_t start, uint64_t count, esdm_datatype_t type, void *data)
 {
 	if (!obj_handle) {
 		DEBUG("Null pointer");
@@ -536,7 +536,7 @@ int esdm_backend_wos_read(esdm_backend * eb, void *obj_handle, uint64_t start, u
 		return ESDM_ERROR;
 	}
 
-	esdm_backend_wos_t *ebm = (esdm_backend_wos_t *) eb->data;
+	esdm_backend_t_wos_t *ebm = (esdm_backend_t_wos_t *) eb->data;
 	if (!ebm) {
 		DEBUG("Unable to get struct");
 		return ESDM_ERROR;
@@ -603,7 +603,7 @@ int esdm_backend_wos_read(esdm_backend * eb, void *obj_handle, uint64_t start, u
 }
 
 
-int esdm_backend_wos_close(esdm_backend * eb, void *obj_handle)
+int esdm_backend_t_wos_close(esdm_backend_t * eb, void *obj_handle)
 {
 	if (!eb || !obj_handle) {
 		DEBUG("Null pointer");
@@ -616,7 +616,7 @@ int esdm_backend_wos_close(esdm_backend * eb, void *obj_handle)
 }
 
 
-int wos_backend_performance_check(esdm_backend *eb, int data_size, float *out_time)
+int wos_backend_performance_check(esdm_backend_t *eb, int data_size, float *out_time)
 {
 	if (!eb || (data_size <= 0))
 		return ESDM_ERROR;
@@ -639,27 +639,27 @@ int wos_backend_performance_check(esdm_backend *eb, int data_size, float *out_ti
 	data_w[data_size - 1] = 0;
 	data_r[data_size - 1] = 0;
 
-	if (esdm_backend_wos_alloc(eb, 1, &data_size, SMD_DTYPE_CHAR, &object_id, &object_meta))
+	if (esdm_backend_t_wos_alloc(eb, 1, &data_size, SMD_DTYPE_CHAR, &object_id, &object_meta))
 		goto fini;
 
-	if (esdm_backend_wos_open(eb, object_id, &object_handle))
+	if (esdm_backend_t_wos_open(eb, object_id, &object_handle))
 		goto fini;
 
 	gettimeofday(&t0, NULL);
-	if (esdm_backend_wos_write(eb, object_handle, 0, data_size, SMD_DTYPE_CHAR, data_w))
+	if (esdm_backend_t_wos_write(eb, object_handle, 0, data_size, SMD_DTYPE_CHAR, data_w))
 		goto close;
 	gettimeofday(&t1, NULL);
 	if (out_time)
 		*out_time = t1.tv_sec - t0.tv_sec + (t1.tv_usec - t0.tv_usec) / 1000000.0;
 
-	if (esdm_backend_wos_read(eb, object_handle, 0, data_size, SMD_DTYPE_CHAR, data_r))
+	if (esdm_backend_t_wos_read(eb, object_handle, 0, data_size, SMD_DTYPE_CHAR, data_r))
 		goto close;
 
-	if (esdm_backend_wos_write(eb, object_handle, 0, 0, SMD_DTYPE_CHAR, NULL))
+	if (esdm_backend_t_wos_write(eb, object_handle, 0, 0, SMD_DTYPE_CHAR, NULL))
 		goto close;
 
       close:
-	if (esdm_backend_wos_close(eb, object_handle))
+	if (esdm_backend_t_wos_close(eb, object_handle))
 		goto fini;
 
       fini:
@@ -674,7 +674,7 @@ int wos_backend_performance_check(esdm_backend *eb, int data_size, float *out_ti
 }
 
 
-int wos_backend_performance_estimate(esdm_backend * eb, esdm_fragment_t * fragment, float *out_time)
+int wos_backend_performance_estimate(esdm_backend_t * eb, esdm_fragment_t * fragment, float *out_time)
 {
 	if (!fragment || !out_time) {
 		DEBUG("Null pointer");
@@ -686,17 +686,17 @@ int wos_backend_performance_estimate(esdm_backend * eb, esdm_fragment_t * fragme
 		return ESDM_ERROR;
 	}
 
-	esdm_backend_wos_t *ebm = (esdm_backend_wos_t *) eb->data;
+	esdm_backend_t_wos_t *ebm = (esdm_backend_t_wos_t *) eb->data;
 	if (!ebm) {
 		DEBUG("Unable to get struct");
 		return ESDM_ERROR;
 	}
 
-	return esdm_backend_estimate_dynamic_perf_model_lat_thp(&ebm->perf_model, fragment, out_time);
+	return esdm_backend_t_estimate_dynamic_perf_model_lat_thp(&ebm->perf_model, fragment, out_time);
 }
 
 
-int esdm_backend_wos_fragment_retrieve(esdm_backend * backend, esdm_fragment_t * fragment, json_t * metadata)
+int esdm_backend_t_wos_fragment_retrieve(esdm_backend_t * backend, esdm_fragment_t * fragment, json_t * metadata)
 {
 	char *obj_id = NULL;
 	void *obj_handle = NULL;
@@ -737,18 +737,18 @@ int esdm_backend_wos_fragment_retrieve(esdm_backend * backend, esdm_fragment_t *
 	}
 	DEBUG(obj_id);
 
-	rc = esdm_backend_wos_open(backend, obj_id, &obj_handle);
+	rc = esdm_backend_t_wos_open(backend, obj_id, &obj_handle);
 	if (rc) {
 		goto _RETRIEVE_EXIT;
 	}
 
-	rc = esdm_backend_wos_read(backend, obj_handle, 0, fragment->bytes, fragment->dataspace->datatype, fragment->buf);
+	rc = esdm_backend_t_wos_read(backend, obj_handle, 0, fragment->bytes, fragment->dataspace->datatype, fragment->buf);
 	if (rc) {
-		esdm_backend_wos_close(backend, obj_handle);
+		esdm_backend_t_wos_close(backend, obj_handle);
 		goto _RETRIEVE_EXIT;
 	}
 
-	rc = esdm_backend_wos_close(backend, obj_handle);
+	rc = esdm_backend_t_wos_close(backend, obj_handle);
 	if (rc) {
 		goto _RETRIEVE_EXIT;
 	}
@@ -759,7 +759,7 @@ int esdm_backend_wos_fragment_retrieve(esdm_backend * backend, esdm_fragment_t *
 }
 
 
-int esdm_backend_wos_fragment_update(esdm_backend * backend, esdm_fragment_t * fragment)
+int esdm_backend_t_wos_fragment_update(esdm_backend_t * backend, esdm_fragment_t * fragment)
 {
 	char *obj_id = NULL;
 	char *obj_meta = NULL;
@@ -789,18 +789,18 @@ int esdm_backend_wos_fragment_update(esdm_backend * backend, esdm_fragment_t * f
 
 	if (obj_id) {
 		DEBUG("Object found: it needs to be replaced");
-		rc = esdm_backend_wos_open(backend, obj_id, &obj_handle);
+		rc = esdm_backend_t_wos_open(backend, obj_id, &obj_handle);
 		if (rc) {
 			goto _UPDATE_EXIT;
 		}
 
-		rc = esdm_backend_wos_delete(backend, obj_handle);
+		rc = esdm_backend_t_wos_delete(backend, obj_handle);
 		if (rc) {
-			esdm_backend_wos_close(backend, obj_handle);
+			esdm_backend_t_wos_close(backend, obj_handle);
 			goto _UPDATE_EXIT;
 		}
 
-		rc = esdm_backend_wos_close(backend, obj_handle);
+		rc = esdm_backend_t_wos_close(backend, obj_handle);
 		if (rc) {
 			goto _UPDATE_EXIT;
 		}
@@ -809,7 +809,7 @@ int esdm_backend_wos_fragment_update(esdm_backend * backend, esdm_fragment_t * f
 	}
 
 	int size = fragment->bytes;
-	rc = esdm_backend_wos_alloc(backend, 1, &size, fragment->dataspace->datatype, &obj_id, &obj_meta);
+	rc = esdm_backend_t_wos_alloc(backend, 1, &size, fragment->dataspace->datatype, &obj_id, &obj_meta);
 	if (rc) {
 		goto _UPDATE_EXIT;
 	}
@@ -820,18 +820,18 @@ int esdm_backend_wos_fragment_update(esdm_backend * backend, esdm_fragment_t * f
 		goto _UPDATE_EXIT;
 	}
 
-	rc = esdm_backend_wos_open(backend, obj_id, &obj_handle);
+	rc = esdm_backend_t_wos_open(backend, obj_id, &obj_handle);
 	if (rc) {
 		goto _UPDATE_EXIT;
 	}
 
-	rc = esdm_backend_wos_write(backend, obj_handle, 0, fragment->bytes, fragment->dataspace->datatype, fragment->buf);
+	rc = esdm_backend_t_wos_write(backend, obj_handle, 0, fragment->bytes, fragment->dataspace->datatype, fragment->buf);
 	if (rc) {
-		esdm_backend_wos_close(backend, obj_handle);
+		esdm_backend_t_wos_close(backend, obj_handle);
 		goto _UPDATE_EXIT;
 	}
 
-	rc = esdm_backend_wos_close(backend, obj_handle);
+	rc = esdm_backend_t_wos_close(backend, obj_handle);
 	if (rc) {
 		goto _UPDATE_EXIT;
 	}
@@ -844,7 +844,7 @@ int esdm_backend_wos_fragment_update(esdm_backend * backend, esdm_fragment_t * f
 }
 
 
-int esdm_backend_wos_fragment_delete(esdm_backend * backend, esdm_fragment_t * fragment, json_t * metadata)
+int esdm_backend_t_wos_fragment_delete(esdm_backend_t * backend, esdm_fragment_t * fragment, json_t * metadata)
 {
 	char *obj_id = NULL;
 	void *obj_handle = NULL;
@@ -884,18 +884,18 @@ int esdm_backend_wos_fragment_delete(esdm_backend * backend, esdm_fragment_t * f
 		goto _DELETE_EXIT;
 	}
 
-	rc = esdm_backend_wos_open(backend, obj_id, &obj_handle);
+	rc = esdm_backend_t_wos_open(backend, obj_id, &obj_handle);
 	if (rc) {
 		goto _DELETE_EXIT;
 	}
 
-	rc = esdm_backend_wos_delete(backend, obj_handle);
+	rc = esdm_backend_t_wos_delete(backend, obj_handle);
 	if (rc) {
-		esdm_backend_wos_close(backend, obj_handle);
+		esdm_backend_t_wos_close(backend, obj_handle);
 		goto _DELETE_EXIT;
 	}
 
-	rc = esdm_backend_wos_close(backend, obj_handle);
+	rc = esdm_backend_t_wos_close(backend, obj_handle);
 	if (rc) {
 		goto _DELETE_EXIT;
 	}
@@ -906,7 +906,7 @@ int esdm_backend_wos_fragment_delete(esdm_backend * backend, esdm_fragment_t * f
 }
 
 
-int esdm_backend_wos_fragment_mkfs(esdm_backend * backend, int enforce_format)
+int esdm_backend_t_wos_fragment_mkfs(esdm_backend_t * backend, int enforce_format)
 {
 	if (!backend)
 		return ESDM_ERROR;
@@ -918,7 +918,7 @@ int esdm_backend_wos_fragment_mkfs(esdm_backend * backend, int enforce_format)
 // ESDM Module Registration ///////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////
 
-static esdm_backend backend_template = {
+static esdm_backend_t backend_template = {
 ///////////////////////////////////////////////////////////////////////////////
 // NOTE: This serves as a template for the posix plugin and is memcopied!    //
 ///////////////////////////////////////////////////////////////////////////////
@@ -927,14 +927,14 @@ static esdm_backend backend_template = {
 	.version = "0.0.1",
 	.data = NULL,
 	.callbacks = {
-		      (int (*)()) esdm_backend_wos_fini,	// finalize
+		      (int (*)()) esdm_backend_t_wos_fini,	// finalize
 		      wos_backend_performance_estimate,	// performance_estimate
 
-		      (int (*)()) esdm_backend_wos_alloc,
-		      (int (*)()) esdm_backend_wos_open,
-		      (int (*)()) esdm_backend_wos_write,
-		      (int (*)()) esdm_backend_wos_read,
-		      (int (*)()) esdm_backend_wos_close,
+		      (int (*)()) esdm_backend_t_wos_alloc,
+		      (int (*)()) esdm_backend_t_wos_open,
+		      (int (*)()) esdm_backend_t_wos_write,
+		      (int (*)()) esdm_backend_t_wos_read,
+		      (int (*)()) esdm_backend_t_wos_close,
 
 		      // Metadata Callbacks
 		      NULL,	// lookup
@@ -951,23 +951,23 @@ static esdm_backend backend_template = {
 		      NULL,	// dataset delete
 
 		      NULL,	// fragment create
-		      (int (*)()) esdm_backend_wos_fragment_retrieve,	// fragment retrieve
-		      (int (*)()) esdm_backend_wos_fragment_update,	// fragment update
-		      (int (*)()) esdm_backend_wos_fragment_delete,	// fragment delete
-		      (int (*)()) esdm_backend_wos_fragment_mkfs,	// TODO
+		      (int (*)()) esdm_backend_t_wos_fragment_retrieve,	// fragment retrieve
+		      (int (*)()) esdm_backend_t_wos_fragment_update,	// fragment update
+		      (int (*)()) esdm_backend_t_wos_fragment_delete,	// fragment delete
+		      (int (*)()) esdm_backend_t_wos_fragment_mkfs,	// TODO
 		      },
 };
 
 
-esdm_backend *wos_backend_init(esdm_config_backend_t * config)
+esdm_backend_t *wos_backend_init(esdm_config_backend_t * config)
 {
 	if (!config || !config->type || strcasecmp(config->type, "WOS") || !config->target) {
 		DEBUG("Wrong configuration");
 		return NULL;
 	}
 
-	esdm_backend *backend = (esdm_backend *) malloc(sizeof(esdm_backend));
-	memcpy(backend, &backend_template, sizeof(esdm_backend));
+	esdm_backend_t *backend = (esdm_backend_t *) malloc(sizeof(esdm_backend_t));
+	memcpy(backend, &backend_template, sizeof(esdm_backend_t));
 
 	// allocate memory for backend instance
 	backend->data = (void *) malloc(sizeof(wos_backend_data_t));
@@ -976,14 +976,14 @@ esdm_backend *wos_backend_init(esdm_config_backend_t * config)
 		return NULL;
 
 	// Initialize WOS backend
-	if (esdm_backend_wos_init(config->target, backend))
+	if (esdm_backend_t_wos_init(config->target, backend))
 		return NULL;
 
 	if (config->performance_model) {
-		esdm_backend_parse_dynamic_perf_model_lat_thp(config->performance_model, &data->perf_model);
-		esdm_backend_start_dynamic_perf_model_lat_thp(&data->perf_model, backend, &wos_backend_performance_check);
+		esdm_backend_t_parse_dynamic_perf_model_lat_thp(config->performance_model, &data->perf_model);
+		esdm_backend_t_start_dynamic_perf_model_lat_thp(&data->perf_model, backend, &wos_backend_performance_check);
 	} else
-		esdm_backend_reset_dynamic_perf_model_lat_thp(&data->perf_model);
+		esdm_backend_t_reset_dynamic_perf_model_lat_thp(&data->perf_model);
 
 	// configure backend instance
 	data->config = config;

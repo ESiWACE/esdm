@@ -36,7 +36,7 @@ typedef struct {
 	uint64_t *size_list;	// List of object sizes
 
 } wos_backend_data_t;
-typedef wos_backend_data_t esdm_backend_wos_t;
+typedef wos_backend_data_t esdm_backend_t_wos_t;
 
 /**
 * Initializes the plugin. In particular this involves:
@@ -47,7 +47,7 @@ typedef wos_backend_data_t esdm_backend_wos_t;
 *	* Connect with support services e.g. for technical metadata
 *	* Setup directory structures used by this wos specific backend
 *
-*	* Popopulate esdm_backend struct and callbacks required for registration
+*	* Popopulate esdm_backend_t struct and callbacks required for registration
 *
 * @return pointer to backend struct
 */
@@ -58,40 +58,40 @@ int wos_get_host(const char *conf, char **host);
 
 int wos_get_policy(const char *conf, char **policy);
 
-void wos_delete_oid_list(esdm_backend_wos_t * ebm);
+void wos_delete_oid_list(esdm_backend_t_wos_t * ebm);
 
 int wos_object_list_encode(t_WosOID ** oid_list, char **out_object_id);
 
-int esdm_backend_wos_init(const char *conf, esdm_backend * eb);
+int esdm_backend_t_wos_init(const char *conf, esdm_backend_t * eb);
 
-int esdm_backend_wos_fini(esdm_backend * eb);
+int esdm_backend_t_wos_fini(esdm_backend_t * eb);
 
-int esdm_backend_wos_alloc(esdm_backend * eb, int n_dims, int *dims_size, esdm_datatype_t type, char **out_object_id, char **out_wos_metadata);
+int esdm_backend_t_wos_alloc(esdm_backend_t * eb, int n_dims, int *dims_size, esdm_datatype_t type, char **out_object_id, char **out_wos_metadata);
 
-int esdm_backend_wos_open(esdm_backend * eb, char *object_id, void **obj_handle);
+int esdm_backend_t_wos_open(esdm_backend_t * eb, char *object_id, void **obj_handle);
 
-int esdm_backend_wos_delete(esdm_backend * eb, void *obj_handle);
+int esdm_backend_t_wos_delete(esdm_backend_t * eb, void *obj_handle);
 
-int esdm_backend_wos_write(esdm_backend * eb, void *obj_handle, uint64_t start, uint64_t count, esdm_datatype_t type, void *data);
+int esdm_backend_t_wos_write(esdm_backend_t * eb, void *obj_handle, uint64_t start, uint64_t count, esdm_datatype_t type, void *data);
 
-int esdm_backend_wos_read(esdm_backend * eb, void *obj_handle, uint64_t start, uint64_t count, esdm_datatype_t type, void *data);
+int esdm_backend_t_wos_read(esdm_backend_t * eb, void *obj_handle, uint64_t start, uint64_t count, esdm_datatype_t type, void *data);
 
-int esdm_backend_wos_close(esdm_backend * eb, void *obj_handle);
+int esdm_backend_t_wos_close(esdm_backend_t * eb, void *obj_handle);
 
-int wos_backend_performance_check(esdm_backend *eb, int data_size, float *out_time);
+int wos_backend_performance_check(esdm_backend_t *eb, int data_size, float *out_time);
 
-int wos_backend_performance_estimate(esdm_backend * eb, esdm_fragment_t * fragment, float *out_time);
+int wos_backend_performance_estimate(esdm_backend_t * eb, esdm_fragment_t * fragment, float *out_time);
 
-int esdm_backend_wos_fragment_retrieve(esdm_backend * backend, esdm_fragment_t * fragment, json_t * metadata);
+int esdm_backend_t_wos_fragment_retrieve(esdm_backend_t * backend, esdm_fragment_t * fragment, json_t * metadata);
 
-int esdm_backend_wos_fragment_update(esdm_backend * backend, esdm_fragment_t * fragment);
+int esdm_backend_t_wos_fragment_update(esdm_backend_t * backend, esdm_fragment_t * fragment);
 
-int esdm_backend_wos_fragment_delete(esdm_backend * backend, esdm_fragment_t * fragment, json_t * metadata);
+int esdm_backend_t_wos_fragment_delete(esdm_backend_t * backend, esdm_fragment_t * fragment, json_t * metadata);
 
-int esdm_backend_wos_fragment_mkfs(esdm_backend * backend, int enforce_format);
+int esdm_backend_t_wos_fragment_mkfs(esdm_backend_t * backend, int enforce_format);
 
-esdm_backend *wos_backend_init(esdm_config_backend_t * config);
+esdm_backend_t *wos_backend_init(esdm_config_backend_t * config);
 
-extern esdm_backend_wos_t esdm_backend_wos;
+extern esdm_backend_t_wos_t esdm_backend_t_wos;
 
 #endif

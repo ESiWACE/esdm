@@ -56,7 +56,7 @@ void posix_recursive_remove(const char * path);
 
 // static int fsck();
 //
-// static int entry_create(const char *path, esdm_metadata *data);
+// static int entry_create(const char *path, esdm_metadata_t *data);
 //
 // static int entry_retrieve_tst(const char *path, esdm_dataset_t *dataset);
 //
@@ -64,13 +64,13 @@ void posix_recursive_remove(const char * path);
 //
 // static int entry_destroy(const char *path);
 //
-// static int container_create(esdm_md_backend_t* backend, esdm_container *container);
+// static int container_create(esdm_md_backend_t* backend, esdm_container_t *container);
 //
-// static int container_retrieve(esdm_md_backend_t* backend, esdm_container *container);
+// static int container_retrieve(esdm_md_backend_t* backend, esdm_container_t *container);
 //
-// static int container_update(esdm_md_backend_t* backend, esdm_container *container);
+// static int container_update(esdm_md_backend_t* backend, esdm_container_t *container);
 //
-// static int container_destroy(esdm_md_backend_t* backend, esdm_container *container);
+// static int container_destroy(esdm_md_backend_t* backend, esdm_container_t *container);
 //
 // static int dataset_create(esdm_md_backend_t* backend, esdm_dataset_t *dataset);
 //

@@ -118,7 +118,7 @@ esdm_status esdm_layout_recommendation(esdm_instance_t *esdm, esdm_fragment_t *i
 	esdm_modules_get_by_type(SMD_DTYPE_DATA, &backends);
 	//int i;
 	//for(i=0; i < backends->count; i++){
-	//	//esdm_backend_estimate_performance((esdm_backend*) backends->module, 1234);
+	//	//esdm_backend_t_estimate_performance((esdm_backend_t*) backends->module, 1234);
 	//}
 
 	// now choose the best module

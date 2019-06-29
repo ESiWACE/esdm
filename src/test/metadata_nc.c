@@ -70,7 +70,7 @@ typedef struct  {
   char history[1000];
 } nc_attr;
 
-int convert_smd_to_metadata(smd_attr_t *smd_file, esdm_metadata ** out);
+int convert_smd_to_metadata(smd_attr_t *smd_file, esdm_metadata_t ** out);
 //esdm_status esdm_dataset_link_metadata (esdm_dataset_t *dataset, smd_attr_t *new);
 
 static void write_test(){
@@ -79,14 +79,14 @@ static void write_test(){
   	char* result = NULL;
   	// Interaction with ESDM
   	esdm_dataspace_t *dataspace = NULL;
-  	esdm_container *container = NULL;
+  	esdm_container_t *container = NULL;
   	esdm_dataset_t *dataset = NULL;
 
   	// define dataspace
   	int64_t bounds[] = {10, 20};
   	// write the actual metadata
 
-    ret = esdm_container_create("mycontainer", & container);
+    ret = esdm_container_t_create("mycontainer", & container);
   	ret = esdm_dataspace_create(2, bounds, SMD_DTYPE_UINT64, & dataspace);
 
     // NetCDF consists of three types of things
@@ -117,14 +117,14 @@ static void write_test(){
     ret = esdm_dataset_commit(dataset);
     assert(ret == ESDM_SUCCESS);
 
-  	ret = esdm_container_commit(container);
+  	ret = esdm_container_t_commit(container);
     assert(ret == ESDM_SUCCESS);
 
   	// remove everything from memory
   	ret = esdm_dataset_destroy(dataset);
     assert(ret == ESDM_SUCCESS);
 
-    ret = esdm_container_destroy(container);
+    ret = esdm_container_t_destroy(container);
     assert(ret == ESDM_SUCCESS);
 }
 
@@ -133,18 +133,18 @@ void read_test(){
 
 	// Interaction with ESDM
 	esdm_dataspace_t *dataspace = NULL;
-	esdm_container *container = NULL;
+	esdm_container_t *container = NULL;
 	esdm_dataset_t *dataset = NULL;
 
-  ret = esdm_container_retrieve("mycontainer", & container);
+  ret = esdm_container_t_retrieve("mycontainer", & container);
 
   // NetCDF consists of three types of things
   // 1) Dimensions
   // Dimensions are implicitly part of ESDM when defining the bounds of a dataspace, but they are unnamed
   // So we have to name them
 
-  //	esdm_dataset_t* esdm_dataset_retrieve(esdm_container *container, const char* name)
-  //	static int dataset_retrieve(esdm_backend* backend, esdm_dataset_t *dataset)
+  //	esdm_dataset_t* esdm_dataset_retrieve(esdm_container_t *container, const char* name)
+  //	static int dataset_retrieve(esdm_backend_t* backend, esdm_dataset_t *dataset)
 
   // TODO later:
   // esdm_dataset_iterator_t * iter;
@@ -186,7 +186,7 @@ void read_test(){
 	ret = esdm_dataset_destroy(dataset);
   assert(ret == ESDM_SUCCESS);
 
-	ret = esdm_container_destroy(container);
+	ret = esdm_container_t_destroy(container);
   assert(ret == ESDM_SUCCESS);
 }
 

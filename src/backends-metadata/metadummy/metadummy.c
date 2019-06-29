@@ -107,7 +107,7 @@ static int fsck()
 // Internal Helpers  //////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////
 
-static int entry_create(const char *path, esdm_metadata *data)
+static int entry_create(const char *path, esdm_metadata_t *data)
 {
 	DEBUG_ENTER;
 
@@ -171,7 +171,7 @@ static int entry_retrieve_tst(const char *path, esdm_dataset_t *dataset)
 
 	// Save the metadata in the dataset structure
 
-	dataset->metadata = (esdm_metadata *) malloc(sizeof(esdm_metadata));
+	dataset->metadata = (esdm_metadata_t *) malloc(sizeof(esdm_metadata_t));
 	dataset->metadata->json = (char *) malloc(456*sizeof(char)); // randon number
 	strcpy(dataset->metadata->json, buf);
 
@@ -245,7 +245,7 @@ static int entry_destroy(const char *path)
 ///////////////////////////////////////////////////////////////////////////////
 
 
-static int container_create(esdm_md_backend_t* backend, esdm_container *container)
+static int container_create(esdm_md_backend_t* backend, esdm_container_t *container)
 {
 	DEBUG_ENTER;
 
@@ -279,7 +279,7 @@ static int container_create(esdm_md_backend_t* backend, esdm_container *containe
 }
 
 
-static int container_retrieve(esdm_md_backend_t* backend, esdm_container *container)
+static int container_retrieve(esdm_md_backend_t* backend, esdm_container_t *container)
 {
 	DEBUG_ENTER;
 
@@ -306,7 +306,7 @@ static int container_retrieve(esdm_md_backend_t* backend, esdm_container *contai
 }
 
 
-static int container_update(esdm_md_backend_t* backend, esdm_container *container)
+static int container_update(esdm_md_backend_t* backend, esdm_container_t *container)
 {
 	DEBUG_ENTER;
 
@@ -330,7 +330,7 @@ static int container_update(esdm_md_backend_t* backend, esdm_container *containe
 }
 
 
-static int container_destroy(esdm_md_backend_t* backend, esdm_container *container)
+static int container_destroy(esdm_md_backend_t* backend, esdm_container_t *container)
 {
 	DEBUG_ENTER;
 
@@ -492,8 +492,8 @@ static esdm_fragment_t * create_fragment_from_metadata(int fd, esdm_dataset_t * 
 
 	esdm_fragment_t * f;
 	f = malloc(sizeof(esdm_fragment_t));
-	f->metadata = malloc(sb.st_size + sizeof(esdm_metadata) + 1);
-	f->metadata->json = (char*)(f->metadata) + sizeof(esdm_metadata);
+	f->metadata = malloc(sb.st_size + sizeof(esdm_metadata_t) + 1);
+	f->metadata->json = (char*)(f->metadata) + sizeof(esdm_metadata_t);
 	f->metadata->size = sb.st_size;
 	read_check(fd, f->metadata->json, sb.st_size);
 	f->metadata->json[sb.st_size] = 0;
