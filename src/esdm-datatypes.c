@@ -320,13 +320,6 @@ esdm_status esdm_dataset_create(esdm_container* container, const char* name, esd
 	esdm_metadata_init_(& dataset->metadata);
 	dataset->dataspace = dataspace;
 
-	smd_dtype_t * t_arr = smd_type_array(SMD_DTYPE_INT64, dataspace->dimensions);
-	smd_attr_t * vars = smd_attr_new("dims", t_arr, dataspace->size, 0);
-	esdm_dataset_dataspace_serialize_recursively_(vars, dataspace->subspace_of);
-	smd_attr_link(dataset->metadata->tech, vars, 0);
-	vars = smd_attr_new("type", SMD_DTYPE_DTYPE, dataspace->datatype, 0);
-	smd_attr_link(dataset->metadata->tech, vars, 0);
-
 	*out_dataset = dataset;
 
 	return ESDM_SUCCESS;
@@ -351,10 +344,7 @@ esdm_status esdm_dataset_retrieve(esdm_container *container, const char * name, 
 	esdm.modules->metadata_backend->callbacks.dataset_retrieve(esdm.modules->metadata_backend, dataset);
 
 	/* parse the data accordingly */
-	md->smd = smd_attr_create_from_json(md->json, md->size);
-	assert(dataset->metadata->smd != NULL);
-
-	md->attr = smd_attr_get_child_by_name(md->smd, "attr");
+	md->attr = smd_attr_create_from_json(md->json, md->size);
 
 
 	*out_dataset = dataset;
@@ -386,7 +376,8 @@ esdm_status esdm_dataset_destroy(esdm_dataset_t *dataset)
 esdm_status esdm_dataset_commit(esdm_dataset_t *dataset)
 {
 	ESDM_DEBUG(__func__);
-	dataset->metadata->size = smd_attr_ser_json(dataset->metadata->json, dataset->metadata->smd) - 1;
+	// TODO
+	dataset->metadata->size = smd_attr_ser_json(dataset->metadata->json, dataset->metadata->attr) - 1;
 
 	// TODO: ensure callback is not NULL
 	// md callback create/update container
@@ -557,14 +548,7 @@ esdm_status esdm_metadata_init_(esdm_metadata ** output_metadata){
 	md->buff_size = 10000;
 	md->size = 0;
 	md->json = ((char*) md) + sizeof(esdm_metadata);
-	md->smd = smd_attr_new("", SMD_DTYPE_EMPTY, NULL, 0);
-
-	md->tech = smd_attr_new("tech", SMD_DTYPE_EMPTY, NULL, 0);
 	md->attr = smd_attr_new("attr", SMD_DTYPE_EMPTY, NULL, 0);
-	md->special = smd_attr_new("special", SMD_DTYPE_EMPTY, NULL, 0);
-	smd_attr_link(md->smd, md->tech, 0);
-	smd_attr_link(md->smd, md->attr, 0);
-	smd_attr_link(md->smd, md->special, 0);
 
 	return ESDM_SUCCESS;
 }
@@ -573,18 +557,12 @@ esdm_status esdm_metadata_init_(esdm_metadata ** output_metadata){
 esdm_status esdm_dataset_name_dimensions(esdm_dataset_t * dataset, int dims, char ** names){
 	ESDM_DEBUG(__func__);
 	// TODO check for error: int smd_find_position_by_name(const smd_attr_t * attr, const char * name);
-
-	smd_dtype_t * t_arr = smd_type_array(SMD_DTYPE_STRING, dims);
-	smd_attr_t * vars = smd_attr_new("vars", t_arr, names, 0);
-	smd_attr_link(dataset->metadata->special, vars, 0);
-
 	return ESDM_SUCCESS;
 }
 
 
 esdm_status esdm_dataset_link_attribute(esdm_dataset_t * dset, smd_attr_t * attr){
 	ESDM_DEBUG(__func__);
-
 	smd_link_ret_t ret = smd_attr_link(dset->metadata->attr, attr, 0);
 	return ESDM_SUCCESS;
 }
