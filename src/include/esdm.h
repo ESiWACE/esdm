@@ -187,7 +187,8 @@ esdm_status esdm_container_t_destroy(esdm_container_t *container);
  */
 
 esdm_status esdm_dataset_create(esdm_container_t *container, const char *name, esdm_dataspace_t *dataspace, esdm_dataset_t **out_dataset);
-esdm_status esdm_dataset_name_dims(esdm_dataset_t *dataset, int dims, char **names);
+esdm_status esdm_dataset_name_dims(esdm_dataset_t *dataset, char **names);
+esdm_status esdm_dataset_get_name_dims(esdm_dataset_t *dataset, char const*const**out_names);
 esdm_status esdm_dataset_get_dataspace(esdm_dataset_t *dset, esdm_dataspace_t **out_dataspace);
 
 esdm_status esdm_dataset_iterator(esdm_container_t *container, esdm_dataset_iterator_t **out_iter);
@@ -317,36 +318,5 @@ void esdm_dataspace_print(esdm_dataspace_t *dataspace);
    */
 
 esdm_status esdm_mkfs(int enforce_format, data_accessibility_t target);
-
-
-///////////////////////////////////////////////////////////////////////////////
-// UTILS //////////////////////////////////////////////////////////////////////
-///////////////////////////////////////////////////////////////////////////////
-
-// auxiliary.c ////////////////////////////////////////////////////////////////
-
-/**
- * Print a detailed summary for the stat system call.
- */
-
-void print_stat(struct stat sb);
-
-int mkdir_recursive(const char *path);
-void posix_recursive_remove(const char *path);
-
-int read_file(char *filepath, char **buf);
-
-/**
- * Read while ensuring and retrying until len is read or error occured.
- */
-
-int read_check(int fd, char *buf, size_t len);
-
-/**
- * Write while ensuring and retrying until len is written or error occured.
- */
-
-int write_check(int fd, char *buf, size_t len);
-
 
 #endif

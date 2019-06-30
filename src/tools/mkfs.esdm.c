@@ -24,7 +24,7 @@
 #include <stdlib.h>
 //#include <mpi.h>
 
-#include <esdm.h>
+#include <esdm-internal.h>
 #include <tools/option.h>
 
 typedef struct {

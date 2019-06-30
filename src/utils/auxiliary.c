@@ -38,6 +38,13 @@
 #include <esdm-internal.h>
 
 
+int ea_is_valid_name(const char* str){
+  // TODO allow names with a-a, A-Z,0-9,_-
+  assert(str != NULL);
+  return 1;
+}
+
+
 // directory handling /////////////////////////////////////////////////////////
 
 

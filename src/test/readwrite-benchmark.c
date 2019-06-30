@@ -26,7 +26,7 @@
 #include <mpi.h>
 
 #include "util/test_util.h"
-#include <esdm.h>
+#include <esdm-internal.h>
 
 int esdm_mpi_get_tasks_per_node() {
   MPI_Comm shared_comm;

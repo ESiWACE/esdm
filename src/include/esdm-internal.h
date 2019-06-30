@@ -153,11 +153,43 @@ esdm_status esdm_performance_finalize();
 // Backend (generic)
 esdm_status esdm_backend_t_estimate_performance(esdm_backend_t *backend, int fragment);
 
-// Auxiliary
+
+
+
+///////////////////////////////////////////////////////////////////////////////
+// UTILS //////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////////
+
+// auxiliary.c ////////////////////////////////////////////////////////////////
+
+/**
+ * Print a detailed summary for the stat system call.
+ */
+
+void print_stat(struct stat sb);
+
+int mkdir_recursive(const char *path);
+void posix_recursive_remove(const char *path);
+
+int read_file(char *filepath, char **buf);
+
+/**
+ * Read while ensuring and retrying until len is read or error occured.
+ */
+
+int read_check(int fd, char *buf, size_t len);
+
+/**
+ * Write while ensuring and retrying until len is written or error occured.
+ */
+
+int write_check(int fd, char *buf, size_t len);
+
 void esdm_print_hashtable(GHashTable *tbl);
 
 esdm_status esdm_metadata_t_init_(esdm_metadata_t **output_metadata);
 
 json_t * load_json(const char * str);
+int ea_is_valid_name(const char* str);
 
 #endif

@@ -374,7 +374,7 @@ static int dataset_create(esdm_md_backend_t *backend, esdm_dataset_t *dataset) {
 }
 
 
-static int dataset_retrieve(esdm_md_backend_t *backend, esdm_dataset_t *dataset) {
+static int dataset_retrieve(esdm_md_backend_t *backend, esdm_dataset_t *d) {
   DEBUG_ENTER;
 
   char path_metadata[PATH_MAX];
@@ -382,7 +382,7 @@ static int dataset_retrieve(esdm_md_backend_t *backend, esdm_dataset_t *dataset)
   metadummy_backend_options_t *options = (metadummy_backend_options_t *)backend->data;
   const char *tgt                      = options->target;
 
-  sprintf(path_metadata, "%s/containers/%s/%s.md", tgt, dataset->container->name, dataset->name);
+  sprintf(path_metadata, "%s/containers/%s/%s.md", tgt, d->container->name, d->name);
   struct stat statbuf;
   int ret = stat(path_metadata, &statbuf);
   if (ret != 0) return ESDM_ERROR;
@@ -390,13 +390,13 @@ static int dataset_retrieve(esdm_md_backend_t *backend, esdm_dataset_t *dataset)
 
   int fd = open(path_metadata, O_RDONLY | S_IWUSR | S_IRUSR | S_IWGRP | S_IRGRP | S_IROTH);
   if (fd < 0) return ESDM_ERROR;
-  dataset->metadata->json      = (char *)malloc(len);
-  dataset->metadata->size      = len;
-  dataset->metadata->buff_size = len;
+  d->metadata->json      = (char *)malloc(len);
+  d->metadata->size      = len;
+  d->metadata->buff_size = len;
 
-
-  read_check(fd, dataset->metadata->json, len - 1);
+  read_check(fd, d->metadata->json, len - 1);
   close(fd);
+  d->metadata->json[statbuf.st_size] = 0;
   return 0;
 }
 
