@@ -41,7 +41,6 @@
 #include <jansson.h>
 
 #include <esdm-internal.h>
-#include <esdm.h>
 
 
 // layout component may like to have following capabilites:
@@ -120,24 +119,6 @@ esdm_status esdm_layout_recommendation(esdm_instance_t *esdm, esdm_fragment_t *i
 
   // now choose the best module
   //
-
-  return ESDM_SUCCESS;
-}
-
-
-esdm_status esdm_layout_stat(char *desc) {
-  ESDM_DEBUG(__func__);
-  ESDM_DEBUG("received metadata lookup request");
-
-
-  // parse text into JSON structure
-  json_t *root = load_json(desc);
-
-  if (root) {
-    // print and release the JSON structure
-    print_json(root);
-    json_decref(root);
-  }
 
   return ESDM_SUCCESS;
 }

@@ -10,11 +10,7 @@
 #include <sys/types.h>
 #include <unistd.h>
 
-#include <jansson.h>
-
-#include <esdm-datatypes-internal.h>
 #include <esdm-datatypes.h>
-#include <esdm-internal.h>
 
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -118,7 +114,7 @@ esdm_status esdm_close(void *buf);
  *
  * @param [in] buf	The pointer to a contiguous memory region that shall be written
  * @param [in] dset	TODO, currently a stub, we assume it has been identified/created before...., json description?
- * @param [in] dims	The number of dimensions, needed for size and offset
+ * @param [in] dims	The number of dims, needed for size and offset
  * @param [in] size	...
  *
  * @return Status
@@ -131,7 +127,7 @@ esdm_status esdm_write(esdm_dataset_t *dataset, void *buf, esdm_dataspace_t *sub
  *
  * @param [out] buf	The pointer to a contiguous memory region that shall be written
  * @param [in] dset	TODO, currently a stub, we assume it has been identified/created before.... , json description?
- * @param [in] dims	The number of dimensions, needed for size and offset
+ * @param [in] dims	The number of dims, needed for size and offset
  * @param [in] size	...
  *
  * @return Status
@@ -191,7 +187,7 @@ esdm_status esdm_container_t_destroy(esdm_container_t *container);
  */
 
 esdm_status esdm_dataset_create(esdm_container_t *container, const char *name, esdm_dataspace_t *dataspace, esdm_dataset_t **out_dataset);
-esdm_status esdm_dataset_name_dimensions(esdm_dataset_t *dataset, int dims, char **names);
+esdm_status esdm_dataset_name_dims(esdm_dataset_t *dataset, int dims, char **names);
 esdm_status esdm_dataset_get_dataspace(esdm_dataset_t *dset, esdm_dataspace_t **out_dataspace);
 
 esdm_status esdm_dataset_iterator(esdm_container_t *container, esdm_dataset_iterator_t **out_iter);
@@ -222,14 +218,14 @@ esdm_status esdm_dataset_get_attributes(esdm_dataset_t *dataset, smd_attr_t **ou
  *
  */
 
-esdm_status esdm_dataspace_create(int64_t dimensions, int64_t *sizes, esdm_datatype_t datatype, esdm_dataspace_t **out_dataspace);
+esdm_status esdm_dataspace_create(int64_t dims, int64_t *sizes, esdm_type_t type, esdm_dataspace_t **out_dataspace);
 
 /**
  * Reinstantiate dataspace from serialization.
  */
 
 esdm_status esdm_dataspace_deserialize(void *serialized_dataspace, esdm_dataspace_t **out_dataspace);
-esdm_status esdm_dataspace_subspace(esdm_dataspace_t *dataspace, int64_t dimensions, int64_t *size, int64_t *offset, esdm_dataspace_t **out_dataspace);
+esdm_status esdm_dataspace_subspace(esdm_dataspace_t *dataspace, int64_t dims, int64_t *size, int64_t *offset, esdm_dataspace_t **out_dataspace);
 
 /**
  * Destroy dataspace in memory.
@@ -303,7 +299,7 @@ void esdm_fragment_print(esdm_fragment_t *fragment);
 void esdm_dataspace_print(esdm_dataspace_t *dataspace);
 
 
-//size_t esdm_sizeof(esdm_datatype_t type);
+//size_t esdm_sizeof(esdm_type_t type);
 #define esdm_sizeof(type) (type->size)
 
 /**
@@ -326,29 +322,6 @@ esdm_status esdm_mkfs(int enforce_format, data_accessibility_t target);
 ///////////////////////////////////////////////////////////////////////////////
 // UTILS //////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////
-
-// json.c /////////////////////////////////////////////////////////////////////
-// load json helper
-
-/*
- * Parse text into a JSON object. If text is valid JSON, returns a
- * json_t structure, otherwise prints and error and returns null.
- */
-
-json_t *load_json(const char *text);
-
-// print json helper
-void print_json(const json_t *root);
-void print_json_aux(const json_t *element, int indent);
-const char *json_plural(int count);
-
-// json path for convienient access
-int json_path_set_new(json_t *json, const char *path, json_t *value, size_t flags, json_error_t *error);
-json_t *json_path_get(const json_t *json, const char *path);
-
-static inline int json_path_set(json_t *json, const char *path, json_t *value, size_t flags, json_error_t *error) {
-  return json_path_set_new(json, path, json_incref(value), flags, error);
-}
 
 // auxiliary.c ////////////////////////////////////////////////////////////////
 

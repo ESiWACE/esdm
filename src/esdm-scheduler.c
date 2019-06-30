@@ -145,13 +145,13 @@ static void read_copy_callback(io_work_t *work) {
   esdm_dataspace_t *fs = f->dataspace;
   //esdm_fragment_print(f);
   //printf("\n");
-  assert(bs->datatype == fs->datatype);
+  assert(bs->type == fs->type);
 
   //calculate where to copy the fetched data to
-  uint64_t size = esdm_sizeof(bs->datatype);
+  uint64_t size = esdm_sizeof(bs->type);
   // choose the dimension to split
   int split_dim = 0;
-  for (int i = 0; i < fs->dimensions; i++) {
+  for (int i = 0; i < fs->dims; i++) {
     if (fs->size[i] != 1) {
       split_dim = i;
       break;
@@ -159,7 +159,7 @@ static void read_copy_callback(io_work_t *work) {
   }
 
   //TODO proper serialization
-  for (int d = 0; d < fs->dimensions; d++) {
+  for (int d = 0; d < fs->dims; d++) {
     if (d != split_dim) {
       size *= fs->size[d];
     }
@@ -263,7 +263,7 @@ esdm_status esdm_scheduler_enqueue_write(esdm_instance_t *esdm, io_request_statu
 
   // choose the dimension to split
   int split_dim = 0;
-  for (int i = 0; i < space->dimensions; i++) {
+  for (int i = 0; i < space->dims; i++) {
     if (space->size[i] != 1) {
       split_dim = i;
       break;
@@ -272,12 +272,12 @@ esdm_status esdm_scheduler_enqueue_write(esdm_instance_t *esdm, io_request_statu
 
   // how big is one sub-hypercube? we call it y axis for the easier reading
   uint64_t one_y_size = 1;
-  for (int i = 0; i < space->dimensions; i++) {
+  for (int i = 0; i < space->dims; i++) {
     if (i != split_dim) {
       one_y_size *= space->size[i];
     }
   }
-  one_y_size *= esdm_sizeof(space->datatype);
+  one_y_size *= esdm_sizeof(space->type);
 
   if (one_y_size == 0) {
     return ESDM_SUCCESS;
@@ -310,10 +310,10 @@ esdm_status esdm_scheduler_enqueue_write(esdm_instance_t *esdm, io_request_statu
   ESDM_DEBUG_FMT("Will submit %d operations and for backend0: %d y-blocks", status->pending_ops, per_backend[0]);
 
   uint64_t offset_y = 0;
-  int64_t dim[space->dimensions];
-  int64_t offset[space->dimensions];
-  memcpy(offset, space->offset, space->dimensions * sizeof(int64_t));
-  memcpy(dim, space->size, space->dimensions * sizeof(int64_t));
+  int64_t dim[space->dims];
+  int64_t offset[space->dims];
+  memcpy(offset, space->offset, space->dims * sizeof(int64_t));
+  memcpy(dim, space->size, space->dims * sizeof(int64_t));
 
   for (int i = 0; i < esdm->modules->data_backend_count; i++) {
     esdm_backend_t *b = esdm->modules->data_backends[i];
@@ -334,7 +334,7 @@ esdm_status esdm_scheduler_enqueue_write(esdm_instance_t *esdm, io_request_statu
       io_work_t *task = (io_work_t *)malloc(sizeof(io_work_t));
       esdm_dataspace_t *subspace;
 
-      esdm_dataspace_subspace(space, space->dimensions, dim, offset, &subspace);
+      esdm_dataspace_subspace(space, space->dims, dim, offset, &subspace);
 
       task->parent = status;
       task->op     = ESDM_OP_WRITE;

@@ -52,7 +52,7 @@ int main() {
   H5Gclose(g2);
 
   // is this allowed?
-  //  '-> No, a group may have only one child with a certain name (regardless of object type: group, dateset, datatype)
+  //  '-> No, a group may have only one child with a certain name (regardless of object type: group, dateset, type)
   //g3 = H5Gcreate2(fid, "g1", H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
   //H5Gclose(g3);
 

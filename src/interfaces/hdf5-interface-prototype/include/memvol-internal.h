@@ -80,12 +80,12 @@ typedef struct memvol_attribute_t {
 } memvol_attribute_t;
 
 
-typedef struct memvol_datatype_t {
+typedef struct memvol_type_t {
   hid_t lcpl_id;
   hid_t tcpl_id;
   hid_t tapl_id;
   hid_t dxpl_id;
-} memvol_datatype_t;
+} memvol_type_t;
 
 
 typedef struct memvol_dataset_t {
@@ -96,7 +96,7 @@ typedef struct memvol_dataset_t {
   char *name;
   //H5VL_loc_params_t loc_params;
   hid_t dataspace;
-  hid_t datatype;
+  hid_t type;
 } memvol_dataset_t;
 
 
@@ -131,7 +131,7 @@ typedef struct memvol_object_t {
   /* union {
 		memvol_group_t* group;
 		memvol_dataset_t* dataset;
-		memvol_datatype_t* datatype;
+		memvol_type_t* type;
 	} object; */
 } memvol_object_t;
 

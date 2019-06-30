@@ -99,7 +99,7 @@ static void write_test() {
   assert(ret == ESDM_SUCCESS);
 
   char *names[] = {"longitude", "latitude"};
-  ret           = esdm_dataset_name_dimensions(dataset, 2, names);
+  ret           = esdm_dataset_name_dims(dataset, 2, names);
   assert(ret == ESDM_SUCCESS);
 
   // 3) Attributes
@@ -154,15 +154,18 @@ void read_test() {
   ret = esdm_dataset_retrieve(container, "myVariable", &dataset);
   assert(ret == ESDM_SUCCESS);
 
-  // for NetCDF: dimensions
+  // for NetCDF: dims
   esdm_dataspace_t *dspace;
-  //ret = esdm_dataset_get_dataspace(dataset, & dspace);
+  ret = esdm_dataset_get_dataspace(dataset, & dspace);
   assert(ret == ESDM_SUCCESS);
-  //esdm_dataspace_print(dspace);
+	assert(dspace != NULL);
+  esdm_dataspace_print(dspace);
+	assert(dspace->type != NULL);
+	assert(dspace->dims == 2);
 
-  // names of the dimensions
+  // names of the dims
 
-  // get datatype
+  // get type
 
   // get the attributes
   smd_attr_t *md = NULL;

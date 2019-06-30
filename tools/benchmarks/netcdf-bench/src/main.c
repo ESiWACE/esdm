@@ -111,7 +111,7 @@ static void parse_dims(const char *s, size_t **dims, size_t *size) {
 
   // Sanity checks
   if (i != *size) {
-    FATAL_ERR("Couldn't parse dimensions from %s. Correct format is t:x:y:z\n", s);
+    FATAL_ERR("Couldn't parse dims from %s. Correct format is t:x:y:z\n", s);
   }
 
   for (size_t i = 0; i < *size; ++i) {
@@ -246,7 +246,7 @@ int main(int argc, char **argv) {
   MPI_Comm_rank(MPI_COMM_WORLD, &rank);
   // check the correctness of the options only for rank 0
   if (rank == 0) {
-    printf("Benchtool (datatype: %s) \n", xstr(DATATYPE));
+    printf("Benchtool (type: %s) \n", xstr(DATATYPE));
     parseOptions(argc, argv, options);
   }
   MPI_Barrier(MPI_COMM_WORLD);
@@ -311,7 +311,7 @@ int main(int argc, char **argv) {
   }
 
   if (NDIMS != args.dgeom_size) {
-    FATAL_ERR("Found %zu dimensions (expected %d).\n", args.dgeom_size, NDIMS);
+    FATAL_ERR("Found %zu dims (expected %d).\n", args.dgeom_size, NDIMS);
   }
 
   // Automatic block layout
@@ -336,12 +336,12 @@ int main(int argc, char **argv) {
   }
 
   if (NDIMS != args.bgeom_size) {
-    FATAL_ERR("Found %zu dimensions (expected %d).\n", args.bgeom_size, NDIMS);
+    FATAL_ERR("Found %zu dims (expected %d).\n", args.bgeom_size, NDIMS);
   }
 
   if (NULL != args.cgeom) {
     if (NDIMS != args.cgeom_size) {
-      FATAL_ERR("Found %zu dimensions (expected %d).\n", args.cgeom_size, NDIMS);
+      FATAL_ERR("Found %zu dims (expected %d).\n", args.cgeom_size, NDIMS);
     }
   }
 

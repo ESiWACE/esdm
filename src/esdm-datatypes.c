@@ -17,7 +17,7 @@
 
 /**
  * @file
- * @brief This file implements ESDM datatypes, and associated methods.
+ * @brief This file implements ESDM types, and associated methods.
  */
 
 #define _GNU_SOURCE /* See feature_test_macros(7) */
@@ -25,6 +25,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <inttypes.h>
 
 #include <esdm-internal.h>
 #include <esdm.h>
@@ -106,14 +107,14 @@ esdm_status esdm_fragment_create(esdm_dataset_t *dataset, esdm_dataspace_t *subs
   esdm_fragment_t *fragment = (esdm_fragment_t *)malloc(sizeof(esdm_fragment_t));
 
   int64_t i;
-  for (i = 0; i < subspace->dimensions; i++) {
+  for (i = 0; i < subspace->dims; i++) {
     DEBUG("dim %d, size=%d (%p)\n", i, subspace->size[i], subspace->size);
     assert(subspace->size[i] > 0);
   }
 
   uint64_t elements = esdm_dataspace_element_count(subspace);
-  int64_t bytes     = elements * esdm_sizeof(subspace->datatype);
-  DEBUG("Entries in subspace: %d x %d bytes = %d bytes \n", elements, esdm_sizeof(subspace->datatype), bytes);
+  int64_t bytes     = elements * esdm_sizeof(subspace->type);
+  DEBUG("Entries in subspace: %d x %d bytes = %d bytes \n", elements, esdm_sizeof(subspace->type), bytes);
 
   fragment->metadata          = malloc(ESDM_MAX_SIZE);
   fragment->metadata->json    = (char *)(fragment->metadata) + sizeof(esdm_metadata_t);
@@ -141,10 +142,10 @@ esdm_status esdm_dataspace_overlap_str(esdm_dataspace_t *a, char delim_c, char *
   char *cur          = strtok_r(str_offset, delim, &save);
   if (cur == NULL) return ESDM_ERROR;
 
-  int64_t off[a->dimensions];
-  int64_t size[a->dimensions];
+  int64_t off[a->dims];
+  int64_t size[a->dims];
 
-  for (int d = 0; d < a->dimensions; d++) {
+  for (int d = 0; d < a->dims; d++) {
     if (cur == NULL) return ESDM_ERROR;
     off[d] = atol(cur);
     if (off[d] < 0) return ESDM_ERROR;
@@ -157,7 +158,7 @@ esdm_status esdm_dataspace_overlap_str(esdm_dataspace_t *a, char delim_c, char *
     cur = strtok_r(str_size, delim, &save);
   }
 
-  for (int d = 0; d < a->dimensions; d++) {
+  for (int d = 0; d < a->dims; d++) {
     if (cur == NULL) return ESDM_ERROR;
     size[d] = atol(cur);
     if (size[d] < 0) return ESDM_ERROR;
@@ -170,8 +171,8 @@ esdm_status esdm_dataspace_overlap_str(esdm_dataspace_t *a, char delim_c, char *
     return ESDM_ERROR;
   }
 
-  // dimensions match, now check for overlap
-  for (int d = 0; d < a->dimensions; d++) {
+  // dims match, now check for overlap
+  for (int d = 0; d < a->dims; d++) {
     int o1 = a->offset[d];
     int s1 = a->size[d];
 
@@ -185,7 +186,7 @@ esdm_status esdm_dataspace_overlap_str(esdm_dataspace_t *a, char delim_c, char *
   if (out_space != NULL) {
     // TODO always go to the parent space
     esdm_dataspace_t *parent = a->subspace_of == NULL ? a : a->subspace_of;
-    esdm_dataspace_subspace(parent, a->dimensions, size, off, out_space);
+    esdm_dataspace_subspace(parent, a->dims, size, off, out_space);
   }
   return ESDM_SUCCESS;
 }
@@ -210,21 +211,21 @@ void esdm_dataspace_string_descriptor(char *string, esdm_dataspace_t *dataspace)
   ESDM_DEBUG(__func__);
   int pos = 0;
 
-  int64_t dimensions = dataspace->dimensions;
+  int64_t dims = dataspace->dims;
   int64_t *size      = dataspace->size;
   int64_t *offset    = dataspace->offset;
 
   // offset to string
   int64_t i;
   pos += sprintf(&string[pos], "%ld", offset[0]);
-  for (i = 1; i < dimensions; i++) {
+  for (i = 1; i < dims; i++) {
     DEBUG("dim %d, offset=%ld (%p)\n", i, offset[i], offset);
     pos += sprintf(&string[pos], ",%ld", offset[i]);
   }
 
   // size to string
   pos += sprintf(&string[pos], ",%ld", size[0]);
-  for (i = 1; i < dimensions; i++) {
+  for (i = 1; i < dims; i++) {
     DEBUG("dim %d, size=%ld (%p)\n", i, size[i], size);
     pos += sprintf(&string[pos], ",%ld", size[i]);
   }
@@ -240,13 +241,13 @@ esdm_status esdm_fragment_commit(esdm_fragment_t *f) {
   m->size += sprintf(&m->json[m->size], "{\"plugin\" : \"%s\", \"id\" : \"%s\", \"size\": \"", f->backend->name, f->backend->config->id);
 
   m->size += sprintf(&m->json[m->size], "%ld", d->size[0]);
-  for (int i = 1; i < d->dimensions; i++) {
+  for (int i = 1; i < d->dims; i++) {
     m->size += sprintf(&m->json[m->size], "x%ld", d->size[i]);
   }
 
   m->size += sprintf(&m->json[m->size], "\", \"offset\" :\"");
   m->size += sprintf(&m->json[m->size], "%ld", d->offset[0]);
-  for (int i = 1; i < d->dimensions; i++) {
+  for (int i = 1; i < d->dims; i++) {
     m->size += sprintf(&m->json[m->size], "x%ld", d->offset[i]);
   }
 
@@ -333,7 +334,21 @@ esdm_status esdm_dataset_retrieve(esdm_container_t *container, const char *name,
     DEBUG("Cannot parse type: %s", str);
     return ESDM_ERROR;
   }
-  //esdm_status ret = esdm_dataspace_create(dims,  & d->dataspace);
+  elem = json_object_get(root, "dims");
+	int dims = json_integer_value(elem);
+	elem = json_object_get(root, "size");
+	size_t arrsize = json_array_size(elem);
+	if(dims != arrsize){
+		return ESDM_ERROR;
+	}
+	int64_t sizes[dims];
+	for(int i=0; i < dims; i++){
+		sizes[i] = json_integer_value(json_array_get(elem, i));
+	}
+  esdm_status ret = esdm_dataspace_create(dims, sizes, type, & d->dataspace);
+	if(ret != ESDM_SUCCESS){
+		return ret;
+	}
   *out_dataset = d;
 
   return ESDM_SUCCESS;
@@ -349,10 +364,10 @@ esdm_status esdm_dataset_commit(esdm_dataset_t *d) {
   js += snprintf(js, len + jso - js, "{");
   js += smd_attr_ser_json(js, d->metadata->attr) - 1;
   js += snprintf(js, len + jso - js, ",\"typ\":\"");
-  js += smd_type_ser(js, d->dataspace->datatype) - 1;
-  js += snprintf(js, len + jso - js, "\",\"dims\":%lld,\"size\":[%lld", d->dataspace->dimensions, d->dataspace->size[0]);
-  for (int i = 1; i < d->dataspace->dimensions; i++) {
-    js += snprintf(js, len + jso - js, ",%lld", d->dataspace->size[i]);
+  js += smd_type_ser(js, d->dataspace->type) - 1;
+  js += snprintf(js, len + jso - js, "\",\"dims\":%"PRId64",\"size\":[%"PRId64, d->dataspace->dims, d->dataspace->size[0]);
+  for (int i = 1; i < d->dataspace->dims; i++) {
+    js += snprintf(js, len + jso - js, ",%"PRId64, d->dataspace->size[i]);
   }
   js += snprintf(js, len + jso - js, "]}");
 
@@ -391,20 +406,20 @@ esdm_status esdm_dataset_get_attributes(esdm_dataset_t *dataset, smd_attr_t **ou
 // Dataspace //////////////////////////////////////////////////////////////////
 
 
-esdm_status esdm_dataspace_create(int64_t dimensions, int64_t *sizes, esdm_datatype_t datatype, esdm_dataspace_t **out_dataspace) {
+esdm_status esdm_dataspace_create(int64_t dims, int64_t *sizes, esdm_type_t type, esdm_dataspace_t **out_dataspace) {
   ESDM_DEBUG(__func__);
   esdm_dataspace_t *dataspace = (esdm_dataspace_t *)malloc(sizeof(esdm_dataspace_t));
 
-  dataspace->dimensions  = dimensions;
-  dataspace->size        = (int64_t *)malloc(sizeof(int64_t) * dimensions);
-  dataspace->datatype    = datatype;
-  dataspace->offset      = (int64_t *)malloc(sizeof(int64_t) * dimensions);
+  dataspace->dims  = dims;
+  dataspace->size        = (int64_t *)malloc(sizeof(int64_t) * dims);
+  dataspace->type    = type;
+  dataspace->offset      = (int64_t *)malloc(sizeof(int64_t) * dims);
   dataspace->subspace_of = NULL;
 
-  memcpy(dataspace->size, sizes, sizeof(int64_t) * dimensions);
-  memset(dataspace->offset, 0, sizeof(int64_t) * dimensions);
+  memcpy(dataspace->size, sizes, sizeof(int64_t) * dims);
+  memset(dataspace->offset, 0, sizeof(int64_t) * dims);
 
-  DEBUG("New dataspace: dims=%d\n", dataspace->dimensions);
+  DEBUG("New dataspace: dims=%d\n", dataspace->dims);
 
   *out_dataspace = dataspace;
 
@@ -415,8 +430,8 @@ esdm_status esdm_dataspace_create(int64_t dimensions, int64_t *sizes, esdm_datat
 uint8_t esdm_dataspace_overlap(esdm_dataspace_t *a, esdm_dataspace_t *b) {
   // TODO: allow comparison of spaces of different size? Alternative maybe to transform into comparable space, provided a mask or dimension index mapping
 
-  if (a->dimensions != b->dimensions) {
-    // dimensions do not match so, we say they can not overlap
+  if (a->dims != b->dims) {
+    // dims do not match so, we say they can not overlap
     return 0;
   }
 
@@ -428,31 +443,31 @@ uint8_t esdm_dataspace_overlap(esdm_dataspace_t *a, esdm_dataspace_t *b) {
  *
  *
  */
-esdm_status esdm_dataspace_subspace(esdm_dataspace_t *dataspace, int64_t dimensions, int64_t *size, int64_t *offset, esdm_dataspace_t **out_dataspace) {
+esdm_status esdm_dataspace_subspace(esdm_dataspace_t *dataspace, int64_t dims, int64_t *size, int64_t *offset, esdm_dataspace_t **out_dataspace) {
   ESDM_DEBUG(__func__);
 
   esdm_dataspace_t *subspace = NULL;
 
-  if (dimensions == dataspace->dimensions) {
+  if (dims == dataspace->dims) {
     // replicate original space
     subspace = (esdm_dataspace_t *)malloc(sizeof(esdm_dataspace_t));
     memcpy(subspace, dataspace, sizeof(esdm_dataspace_t));
 
     // populate subspace members
-    subspace->size        = (int64_t *)malloc(sizeof(int64_t) * dimensions);
-    subspace->offset      = (int64_t *)malloc(sizeof(int64_t) * dimensions);
+    subspace->size        = (int64_t *)malloc(sizeof(int64_t) * dims);
+    subspace->offset      = (int64_t *)malloc(sizeof(int64_t) * dims);
     subspace->subspace_of = dataspace;
 
     // make copies where necessary
-    memcpy(subspace->size, size, sizeof(int64_t) * dimensions);
-    memcpy(subspace->offset, offset, sizeof(int64_t) * dimensions);
+    memcpy(subspace->size, size, sizeof(int64_t) * dims);
+    memcpy(subspace->offset, offset, sizeof(int64_t) * dims);
 
-    for (int64_t i = 0; i < dimensions; i++) {
+    for (int64_t i = 0; i < dims; i++) {
       DEBUG("dim %d, size=%ld off=%ld", i, size[i], offset[i]);
       assert(size[i] > 0);
     }
   } else {
-    ESDM_ERROR("Subspace dimensions do not match original space.");
+    ESDM_ERROR("Subspace dims do not match original space.");
   }
 
   *out_dataspace = subspace;
@@ -463,12 +478,12 @@ esdm_status esdm_dataspace_subspace(esdm_dataspace_t *dataspace, int64_t dimensi
 
 void esdm_dataspace_print(esdm_dataspace_t *d) {
   printf("DATASPACE(size(%ld", d->size[0]);
-  for (int64_t i = 1; i < d->dimensions; i++) {
+  for (int64_t i = 1; i < d->dims; i++) {
     printf("x%ld", d->size[i]);
   }
   printf("),off(");
   printf("%ld", d->offset[0]);
-  for (int64_t i = 1; i < d->dimensions; i++) {
+  for (int64_t i = 1; i < d->dims; i++) {
     printf("x%ld", d->offset[i]);
   }
   printf("))");
@@ -507,7 +522,7 @@ uint64_t esdm_dataspace_element_count(esdm_dataspace_t *subspace) {
   assert(subspace->size != NULL);
   // calculate subspace element count
   uint64_t size = subspace->size[0];
-  for (int i = 1; i < subspace->dimensions; i++) {
+  for (int i = 1; i < subspace->dims; i++) {
     size *= subspace->size[i];
   }
   return size;
@@ -516,7 +531,7 @@ uint64_t esdm_dataspace_element_count(esdm_dataspace_t *subspace) {
 
 uint64_t esdm_dataspace_size(esdm_dataspace_t *dataspace) {
   uint64_t size  = esdm_dataspace_element_count(dataspace);
-  uint64_t bytes = size * esdm_sizeof(dataspace->datatype);
+  uint64_t bytes = size * esdm_sizeof(dataspace->type);
   return bytes;
 }
 
@@ -539,7 +554,7 @@ esdm_status esdm_metadata_t_init_(esdm_metadata_t **output_metadata) {
 }
 
 
-esdm_status esdm_dataset_name_dimensions(esdm_dataset_t *dataset, int dims, char **names) {
+esdm_status esdm_dataset_name_dims(esdm_dataset_t *dataset, int dims, char **names) {
   ESDM_DEBUG(__func__);
   // TODO check for error: int smd_find_position_by_name(const smd_attr_t * attr, const char * name);
   return ESDM_SUCCESS;

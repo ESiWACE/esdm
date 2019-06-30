@@ -69,9 +69,9 @@ typedef struct esdm_fragment_index_t {
 } esdm_fragment_index_t;
 
 
-typedef struct {
+struct esdm_dataset_iterator_t{
   int x;
-} esdm_dataset_iterator_t;
+};
 
 
 // MODULES ////////////////////////////////////////////////////////////////////
@@ -331,7 +331,7 @@ struct esdm_instance_t {
 
 typedef struct esdm_bytesequence_t esdm_bytesyquence_t;
 struct esdm_bytesequence {
-  esdm_datatype_t type;
+  esdm_type_t type;
   size_t count;
   void *data;
 };

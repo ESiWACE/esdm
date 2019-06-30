@@ -25,6 +25,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
+#include <jansson.h>
 
 #include <glib.h>
 
@@ -91,16 +92,16 @@ esdm_config_backend_t *esdm_config_get_metadata_coordinator(esdm_instance_t *esd
 
   json_t *root = (json_t *)esdm->config->json;
 
-  json_t *elem = json_path_get(root, "$.esdm.metadata.type");
-  DEBUG("json_path_get (metadata backend) => %p -> %s\n", elem, json_string_value(elem));
-#ifndef NDEBUG
-  print_json(elem);
-#endif
+  json_t * esdm_e, * md_e, * type_e, *elem;
+  esdm_e         = json_object_get(root, "esdm");
+  md_e           = json_object_get(esdm_e, "metadata");
+  type_e         = json_object_get(md_e, "type");
+  DEBUG("json_path_get (metadata backend) => %p -> %s\n", type_e, json_string_value(type_e));
 
   esdm_config_backend_t *config_backend = (esdm_config_backend_t *)malloc(sizeof(esdm_config_backend_t));
-  config_backend->type                  = json_string_value(elem);
+  config_backend->type                  = json_string_value(type_e);
   config_backend->esdm                  = root;
-  config_backend->backend               = json_path_get(root, "$.esdm.metadata");
+  config_backend->backend               = md_e;
 
   elem                   = json_object_get(config_backend->backend, "id");
   config_backend->id     = json_string_value(elem);
@@ -128,8 +129,11 @@ esdm_config_backends_t *esdm_config_get_backends(esdm_instance_t *esdm) {
 
   json_t *root = (json_t *)esdm->config->json;
 
+  json_t * esdm_e;
+  esdm_e         = json_object_get(root, "esdm");
+
   // fetch configured backends
-  json_t *element = json_path_get(root, "$.esdm.backends");
+  json_t *element = json_object_get(esdm_e, "backends");
 
   esdm_config_backends_t *config_backends = (esdm_config_backends_t *)malloc(sizeof(esdm_config_backends_t));
 

@@ -72,11 +72,11 @@ static herr_t memvol_attribute_get(void *obj, H5VL_attr_get_t get_type, hid_t dx
   //     H5VL_ATTR_GET_NAME,                     /* access property list                */
   //     H5VL_ATTR_GET_SPACE,                    /* dataspace                           */
   //     H5VL_ATTR_GET_STORAGE_SIZE,             /* storage size                        */
-  //     H5VL_ATTR_GET_TYPE                      /* datatype                            */
+  //     H5VL_ATTR_GET_TYPE                      /* type                            */
   // } H5VL_attr_get_t;
 
   // H5VL_ATTR_GET_SPACE:          Gets a copy of the dataspace for an attribute.
-  // H5VL_ATTR_GET_TYPE:           Gets an attribute datatype.
+  // H5VL_ATTR_GET_TYPE:           Gets an attribute type.
   // H5VL_ATTR_GET_ACPL:           Gets an attribute creation property list identifier.
   // H5VL_ATTR_GET_NAME:           Gets an attribute name.
   // H5VL_ATTR_GET_INFO:           Retrieves attribute information, by attribute identifier.
@@ -99,7 +99,7 @@ static herr_t memvol_attribute_get(void *obj, H5VL_attr_get_t get_type, hid_t dx
       //H5A_t   *attr = (H5A_t *)obj;
 
       //if((*ret_id = H5A_get_type(attr)) < 0)
-      //    HGOTO_ERROR(H5E_ARGS, H5E_CANTGET, FAIL, "can't get datatype ID of attribute")
+      //    HGOTO_ERROR(H5E_ARGS, H5E_CANTGET, FAIL, "can't get type ID of attribute")
       break;
     }
     /* H5Aget_create_plist */

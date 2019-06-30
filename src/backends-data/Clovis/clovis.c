@@ -721,7 +721,7 @@ esdm_fragment_t *fragment) {
 
   // 1. create a new object for this fragment
   rc = esdm_backend_t_clovis_alloc(backend,
-  fragment->dataspace->dimensions,
+  fragment->dataspace->dims,
   NULL, //fragment->dataspace->size,
   0,
   NULL,

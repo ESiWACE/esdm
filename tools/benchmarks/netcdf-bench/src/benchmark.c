@@ -131,7 +131,7 @@ const int use_fill_value) {
   // processes = number_of_nodes * processes_per_node
   bm->procs = procs;
 
-  // Data, block and chunk dimensions
+  // Data, block and chunk dims
   bm->ndims = ndims;
   for (size_t i = 0; i < bm->ndims; ++i) {
     bm->dgeom[i] = dgeom[i];

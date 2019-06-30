@@ -26,7 +26,7 @@
 
 
 int main() {
-  char *filename = "file-compound-datatype.h5";
+  char *filename = "file-compound-type.h5";
 
 
   hid_t fprop;
@@ -39,7 +39,7 @@ int main() {
     double c;
   } s1_t;
   s1_t s1[LENGTH];
-  hid_t s1_tid; /* File datatype identifier */
+  hid_t s1_tid; /* File type identifier */
 
   /* Second structure (subset of s1_t)  and dataset*/
   typedef struct s2_t {
@@ -47,16 +47,16 @@ int main() {
     int a;
   } s2_t;
   s2_t s2[LENGTH];
-  hid_t s2_tid; /* Memory datatype handle */
+  hid_t s2_tid; /* Memory type handle */
 
   /* Third "structure" ( will be used to read float field of s1) */
-  hid_t s3_tid; /* Memory datatype handle */
+  hid_t s3_tid; /* Memory type handle */
   float s3[LENGTH];
 
   int i;
   hid_t file, dataset, space; /* Handles */
   herr_t status;
-  hsize_t dim[] = {LENGTH}; /* Dataspace dimensions */
+  hsize_t dim[] = {LENGTH}; /* Dataspace dims */
 
   char name[1024];
 

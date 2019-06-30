@@ -16,7 +16,7 @@
 
 /**
  * @file
- * @brief Debug adds functionality for logging and inspection of ESDM datatypes
+ * @brief Debug adds functionality for logging and inspection of ESDM types
  *        during development.
  *
  */

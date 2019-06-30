@@ -45,7 +45,7 @@ struct esdm_backend_t_xxxops {
 	 * Allocate an object or objects in backend and return them
 	 * in @out out_object_id and their internal attributes @out out_mero_metadata.
 	 * @param [in] eb, the backend pointer.
-	 * @param [in] n_dims, number of dimensions.
+	 * @param [in] n_dims, number of dims.
 	 * @param [in] dims_size, dimension array.
 	 * @param [in] type, type of esdm.
 	 * @param [in] md1, metadata.

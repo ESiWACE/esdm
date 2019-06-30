@@ -65,15 +65,15 @@ int esdm_backend_t_wos_init(const char *conf, esdm_backend_t *eb);
 
 int esdm_backend_t_wos_fini(esdm_backend_t *eb);
 
-int esdm_backend_t_wos_alloc(esdm_backend_t *eb, int n_dims, int *dims_size, esdm_datatype_t type, char **out_object_id, char **out_wos_metadata);
+int esdm_backend_t_wos_alloc(esdm_backend_t *eb, int n_dims, int *dims_size, esdm_type_t type, char **out_object_id, char **out_wos_metadata);
 
 int esdm_backend_t_wos_open(esdm_backend_t *eb, char *object_id, void **obj_handle);
 
 int esdm_backend_t_wos_delete(esdm_backend_t *eb, void *obj_handle);
 
-int esdm_backend_t_wos_write(esdm_backend_t *eb, void *obj_handle, uint64_t start, uint64_t count, esdm_datatype_t type, void *data);
+int esdm_backend_t_wos_write(esdm_backend_t *eb, void *obj_handle, uint64_t start, uint64_t count, esdm_type_t type, void *data);
 
-int esdm_backend_t_wos_read(esdm_backend_t *eb, void *obj_handle, uint64_t start, uint64_t count, esdm_datatype_t type, void *data);
+int esdm_backend_t_wos_read(esdm_backend_t *eb, void *obj_handle, uint64_t start, uint64_t count, esdm_type_t type, void *data);
 
 int esdm_backend_t_wos_close(esdm_backend_t *eb, void *obj_handle);
 

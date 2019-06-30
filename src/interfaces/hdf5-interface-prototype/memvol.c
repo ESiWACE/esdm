@@ -37,7 +37,7 @@ herr_t print_property(hid_t id, const char *name, void *iter_data) {
 
 #include "m-attribute.c"
 #include "m-dataset.c"
-#include "m-datatype.c"
+#include "m-type.c"
 #include "m-dummy.c"
 #include "m-file.c"
 #include "m-group.c"
@@ -49,7 +49,7 @@ static herr_t memvol_file_term(hid_t vtpl_id) {
 }
 
 static herr_t memvol_init(hid_t vipl_id) {
-  memvol_init_datatype(vipl_id);
+  memvol_init_type(vipl_id);
   return 0;
 }
 
@@ -69,7 +69,7 @@ static herr_t memvol_init(hid_t vipl_id) {
 //    /* Data Model */
 //    H5VL_attr_class_t          attr_cls;          /* attribute class callbacks */
 //    H5VL_dataset_class_t       dataset_cls;       /* dataset class callbacks */
-//    H5VL_datatype_class_t      datatype_cls;      /* datatype class callbacks */
+//    H5VL_type_class_t      type_cls;      /* type class callbacks */
 //    H5VL_file_class_t          file_cls;          /* file class callbacks */
 //    H5VL_group_class_t         group_cls;         /* group class callbacks */
 //    H5VL_link_class_t          link_cls;          /* link class callbacks */
@@ -115,13 +115,13 @@ memvol_dataset_optional, /* optional */
 memvol_dataset_close,
 },
 {
-/* datatype_cls */
-memvol_datatype_commit, /* commit */
-memvol_datatype_open,   /* open */
-memvol_datatype_get,    /* get_size */
-NULL,                   //H5VL_log_datatype_specific,     /* specific */
-NULL,                   //H5VL_log_datatype_optional,     /* optional */
-memvol_datatype_close   /* close */
+/* type_cls */
+memvol_type_commit, /* commit */
+memvol_type_open,   /* open */
+memvol_type_get,    /* get_size */
+NULL,                   //H5VL_log_type_specific,     /* specific */
+NULL,                   //H5VL_log_type_optional,     /* optional */
+memvol_type_close   /* close */
 },
 {
 /* file_cls */

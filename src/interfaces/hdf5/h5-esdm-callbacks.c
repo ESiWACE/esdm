@@ -386,11 +386,11 @@ static herr_t H5VL_esdm_attribute_get(void *obj, H5VL_attr_get_t get_type, hid_t
   //     H5VL_ATTR_GET_NAME,                     /* access property list                */
   //     H5VL_ATTR_GET_SPACE,                    /* dataspace                           */
   //     H5VL_ATTR_GET_STORAGE_SIZE,             /* storage size                        */
-  //     H5VL_ATTR_GET_TYPE                      /* datatype                            */
+  //     H5VL_ATTR_GET_TYPE                      /* type                            */
   // } H5VL_attr_get_t;
 
   // H5VL_ATTR_GET_SPACE:          Gets a copy of the dataspace for an attribute.
-  // H5VL_ATTR_GET_TYPE:           Gets an attribute datatype.
+  // H5VL_ATTR_GET_TYPE:           Gets an attribute type.
   // H5VL_ATTR_GET_ACPL:           Gets an attribute creation property list identifier.
   // H5VL_ATTR_GET_NAME:           Gets an attribute name.
   // H5VL_ATTR_GET_INFO:           Retrieves attribute information, by attribute identifier.
@@ -413,7 +413,7 @@ static herr_t H5VL_esdm_attribute_get(void *obj, H5VL_attr_get_t get_type, hid_t
       //H5A_t   *attr = (H5A_t *)obj;
 
       //if((*ret_id = H5A_get_type(attr)) < 0)
-      //    HGOTO_ERROR(H5E_ARGS, H5E_CANTGET, FAIL, "can't get datatype ID of attribute")
+      //    HGOTO_ERROR(H5E_ARGS, H5E_CANTGET, FAIL, "can't get type ID of attribute")
       break;
     }
     /* H5Aget_create_plist */
@@ -554,7 +554,7 @@ static herr_t H5VL_esdm_attribute_close(void *attr, hid_t dxpl_id, void **req) {
 //typedef struct H5D_shared_t {
 //    size_t              fo_count;       /* Reference count */
 //    hbool_t             closing;        /* Flag to indicate dataset is closing */
-//    hid_t               type_id;        /* ID for dataset's datatype    */
+//    hid_t               type_id;        /* ID for dataset's type    */
 //    H5T_t              *type;           /* Datatype for this dataset     */
 //    H5S_t              *space;          /* Dataspace of this dataset    */
 //    hid_t               dcpl_id;        /* Dataset creation property id */
@@ -564,9 +564,9 @@ static herr_t H5VL_esdm_attribute_close(void *attr, hid_t dxpl_id, void **req) {
 //
 //    /* Cached dataspace info */
 //    unsigned            ndims;          /* The dataset's dataspace rank */
-//    hsize_t             curr_dims[H5S_MAX_RANK];    /* The curr. size of dataset dimensions */
+//    hsize_t             curr_dims[H5S_MAX_RANK];    /* The curr. size of dataset dims */
 //    hsize_t             curr_power2up[H5S_MAX_RANK];    /* The curr. dim sizes, rounded up to next power of 2 */
-//    hsize_t             max_dims[H5S_MAX_RANK];     /* The max. size of dataset dimensions */
+//    hsize_t             max_dims[H5S_MAX_RANK];     /* The max. size of dataset dims */
 //
 //    /* Buffered/cached information for types of raw data storage*/
 //    struct {
@@ -713,9 +713,9 @@ void **req) {
   info("%s: dxpl_id=%ld nprops= %ld \n", __func__, dxpl_id, nprops);
   H5Piterate(dxpl_id, NULL, print_property, iter_data);
 
-  // gather information about datatype
+  // gather information about type
   // fetch from cpl
-  info("%s: datatype: \n", __func__);
+  info("%s: type: \n", __func__);
 
   // gather information about dataspace
   // fetch from cpl
@@ -853,13 +853,13 @@ static herr_t H5VL_esdm_dataset_get(void *obj, H5VL_dataset_get_t get_type, hid_
   //     H5VL_DATASET_GET_SPACE,                 /* dataspace                           */
   //     H5VL_DATASET_GET_SPACE_STATUS,          /* space  status                       */
   //     H5VL_DATASET_GET_STORAGE_SIZE,          /* storage size                        */
-  //     H5VL_DATASET_GET_TYPE                   /* datatype                            */
+  //     H5VL_DATASET_GET_TYPE                   /* type                            */
   // } H5VL_dataset_get_t;
 
   // H5VL_DATASET_GET_SPACE:          Returns an identifier for a copy of the dataspace for a dataset.  (indeed makes a copy)
   // H5VL_DATASET_GET_SPACE_STATUS:   Determines whether space has been allocated for a dataset.
   //  '->  return: H5D_SPACE_STATUS_NOT_ALLOCATED, H5D_SPACE_STATUS_ALLOCATED, H5D_SPACE_STATUS_PART_ALLOCATED (e.g. chunked)
-  // H5VL_DATASET_GET_TYPE:           Returns an identifier for a copy of the datatype for a dataset.
+  // H5VL_DATASET_GET_TYPE:           Returns an identifier for a copy of the type for a dataset.
   // H5VL_DATASET_GET_DCPL:           Returns an identifier for a copy of the dataset creation property list for a dataset.
   // H5VL_DATASET_GET_DAPL:           Returns the dataset access property list associated with a dataset.
   // H5VL_DATASET_GET_STORAGE_SIZE:   Returns the amount of storage allocated for a dataset.
@@ -922,7 +922,7 @@ static herr_t H5VL_esdm_dataset_get(void *obj, H5VL_dataset_get_t get_type, hid_
       /*
 
                 if((*ret_id = H5D_get_type(dset)) < 0)
-                    HGOTO_ERROR(H5E_ARGS, H5E_CANTGET, FAIL, "can't get datatype ID of dataset")
+                    HGOTO_ERROR(H5E_ARGS, H5E_CANTGET, FAIL, "can't get type ID of dataset")
 
                 */
 
@@ -1016,7 +1016,7 @@ static herr_t H5VL_esdm_dataset_specific(void *obj, H5VL_dataset_specific_t spec
   // } H5VL_dataset_specific_t;
 
 
-  // H5VL_DATASET_SET_EXTENT:    Changes the sizes of a dataset’s dimensions.
+  // H5VL_DATASET_SET_EXTENT:    Changes the sizes of a dataset’s dims.
 
   switch (specific_type) {
     case H5VL_DATASET_SET_EXTENT: {
@@ -1082,32 +1082,32 @@ static herr_t H5VL_esdm_dataset_close(void *dset, hid_t dxpl_id, void **req) {
 // ../install/download/vol/src/H5T.c
 
 // /* H5T routines*/
-// typedef struct H5VL_datatype_class_t {
+// typedef struct H5VL_type_class_t {
 //     void *(*commit)(void *obj, H5VL_loc_params_t loc_params, const char *name, hid_t type_id, hid_t lcpl_id, hid_t tcpl_id, hid_t tapl_id, hid_t dxpl_id, void **req);
 //     void *(*open)(void *obj, H5VL_loc_params_t loc_params, const char * name, hid_t tapl_id, hid_t dxpl_id, void **req);
-//     herr_t (*get)   (void *obj, H5VL_datatype_get_t get_type, hid_t dxpl_id, void **req, va_list arguments);
-//     herr_t (*specific)(void *obj, H5VL_datatype_specific_t specific_type, hid_t dxpl_id, void **req, va_list arguments);
+//     herr_t (*get)   (void *obj, H5VL_type_get_t get_type, hid_t dxpl_id, void **req, va_list arguments);
+//     herr_t (*specific)(void *obj, H5VL_type_specific_t specific_type, hid_t dxpl_id, void **req, va_list arguments);
 //     herr_t (*optional)(void *obj, hid_t dxpl_id, void **req, va_list arguments);
 //     herr_t (*close) (void *dt, hid_t dxpl_id, void **req);
-// } H5VL_datatype_class_t;
+// } H5VL_type_class_t;
 
 
 // TODO some locking here
 static GHashTable *type_table = NULL;
 
-static void H5VL_esdm_init_datatype(hid_t vipl_id) {
+static void H5VL_esdm_init_type(hid_t vipl_id) {
   type_table = g_hash_table_new(g_str_hash, g_str_equal);
 }
 
 
-static void *H5VL_esdm_datatype_t_commit(void *obj, H5VL_loc_params_t loc_params, const char *name, hid_t type_id, hid_t lcpl_id, hid_t tcpl_id, hid_t tapl_id, hid_t dxpl_id, void **req) {
+static void *H5VL_esdm_type_t_commit(void *obj, H5VL_loc_params_t loc_params, const char *name, hid_t type_id, hid_t lcpl_id, hid_t tcpl_id, hid_t tapl_id, hid_t dxpl_id, void **req) {
   g_hash_table_insert(type_table, (char *)name, (void *)type_id);
   printf("C %p\n", (void *)type_id);
 
   return (void *)type_id;
 }
 
-static void *H5VL_esdm_datatype_t_open(void *obj, H5VL_loc_params_t loc_params, const char *name, hid_t tapl_id, hid_t dxpl_id, void **req) {
+static void *H5VL_esdm_type_t_open(void *obj, H5VL_loc_params_t loc_params, const char *name, hid_t tapl_id, hid_t dxpl_id, void **req) {
   void *found = g_hash_table_lookup(type_table, name);
   printf("O %p\n", found);
   hid_t tid = H5Tcreate(H5T_COMPOUND, 10);
@@ -1116,18 +1116,18 @@ static void *H5VL_esdm_datatype_t_open(void *obj, H5VL_loc_params_t loc_params, 
 }
 
 
-static herr_t H5VL_esdm_datatype_t_get(void *obj, H5VL_datatype_get_t get_type, hid_t dxpl_id, void **req, va_list arguments) {
+static herr_t H5VL_esdm_type_t_get(void *obj, H5VL_type_get_t get_type, hid_t dxpl_id, void **req, va_list arguments) {
   herr_t ret_value = SUCCEED;
 
-  // /* types for datatype GET callback */
-  // typedef enum H5VL_datatype_get_t {
+  // /* types for type GET callback */
+  // typedef enum H5VL_type_get_t {
   //     H5VL_DATATYPE_GET_BINARY,               /* get serialized form of transient type */
-  //     H5VL_DATATYPE_GET_TCPL	            /* datatype creation property list	   */
-  // } H5VL_datatype_get_t;
+  //     H5VL_DATATYPE_GET_TCPL	            /* type creation property list	   */
+  // } H5VL_type_get_t;
 
   switch (get_type) {
     case H5VL_DATATYPE_GET_BINARY: {
-      // serialize datatype
+      // serialize type
       ssize_t *nalloc = va_arg(arguments, ssize_t *);
       void *buf       = va_arg(arguments, void *);
       size_t size     = va_arg(arguments, size_t);
@@ -1135,7 +1135,7 @@ static herr_t H5VL_esdm_datatype_t_get(void *obj, H5VL_datatype_get_t get_type, 
     }
 
     case H5VL_DATATYPE_GET_TCPL: {
-      // property list when the datatype has been created
+      // property list when the type has been created
       hid_t *ret_id = va_arg(arguments, hid_t *);
       *ret_id       = H5P_DEFAULT;
       break;
@@ -1149,22 +1149,22 @@ static herr_t H5VL_esdm_datatype_t_get(void *obj, H5VL_datatype_get_t get_type, 
 }
 
 
-static herr_t H5VL_esdm_datatype_t_specific(void *obj, H5VL_datatype_specific_t specific_type, hid_t dxpl_id, void **req, va_list arguments) {
+static herr_t H5VL_esdm_type_t_specific(void *obj, H5VL_type_specific_t specific_type, hid_t dxpl_id, void **req, va_list arguments) {
   herr_t ret_value = SUCCEED;
 
   info("%s\n", __func__);
 
-  // /* types for datatype GET callback */
-  // typedef enum H5VL_datatype_get_t {
+  // /* types for type GET callback */
+  // typedef enum H5VL_type_get_t {
   //     H5VL_DATATYPE_GET_BINARY,               /* get serialized form of transient type */
-  //     H5VL_DATATYPE_GET_TCPL	            /* datatype creation property list	   */
-  // } H5VL_datatype_get_t;
+  //     H5VL_DATATYPE_GET_TCPL	            /* type creation property list	   */
+  // } H5VL_type_get_t;
 
   return ret_value;
 }
 
 
-static herr_t H5VL_esdm_datatype_t_optional(void *obj, hid_t dxpl_id, void **req, va_list arguments) {
+static herr_t H5VL_esdm_type_t_optional(void *obj, hid_t dxpl_id, void **req, va_list arguments) {
   herr_t ret_value = SUCCEED;
 
   info("%s\n", __func__);
@@ -1173,7 +1173,7 @@ static herr_t H5VL_esdm_datatype_t_optional(void *obj, hid_t dxpl_id, void **req
 }
 
 
-static herr_t H5VL_esdm_datatype_t_close(void *dt, hid_t dxpl_id, void **req) {
+static herr_t H5VL_esdm_type_t_close(void *dt, hid_t dxpl_id, void **req) {
   herr_t ret_value = SUCCEED;
 
   info("%s\n", __func__);
@@ -1582,7 +1582,7 @@ static herr_t H5VL_esdm_file_get(void *file, H5VL_file_get_t get_type, hid_t dxp
           break;
 
         default:
-          assert(0 && "Invalid datatype");
+          assert(0 && "Invalid type");
       }
 
       *ret = (void *)tmp;

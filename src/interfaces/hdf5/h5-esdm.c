@@ -104,13 +104,13 @@ H5VL_esdm_dataset_optional, /* optional */
 H5VL_esdm_dataset_close,
 },
 {
-/* datatype_cls */
-H5VL_esdm_datatype_t_commit, /* commit */
-H5VL_esdm_datatype_t_open,   /* open */
-H5VL_esdm_datatype_t_get,    /* get_size */
-NULL,                        //H5VL_log_datatype_specific,        /* specific */
-NULL,                        //H5VL_log_datatype_optional,        /* optional */
-H5VL_esdm_datatype_t_close   /* close */
+/* type_cls */
+H5VL_esdm_type_t_commit, /* commit */
+H5VL_esdm_type_t_open,   /* open */
+H5VL_esdm_type_t_get,    /* get_size */
+NULL,                        //H5VL_log_type_specific,        /* specific */
+NULL,                        //H5VL_log_type_optional,        /* optional */
+H5VL_esdm_type_t_close   /* close */
 },
 {
 /* file_cls */

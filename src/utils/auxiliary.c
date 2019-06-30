@@ -16,7 +16,7 @@
 
 /**
  * @file
- * @brief Debug adds functionality for logging and inspection of ESDM datatypes
+ * @brief Debug adds functionality for logging and inspection of ESDM types
  *        during development.
  *
  */
@@ -35,8 +35,7 @@
 
 #include <glib.h>
 
-#include <esdm-debug.h>
-#include <esdm.h>
+#include <esdm-internal.h>
 
 
 // directory handling /////////////////////////////////////////////////////////
@@ -199,4 +198,14 @@ void print_stat(struct stat sb) {
   printf("Last file access:         %s", ctime(&sb.st_atime));
   printf("Last file modification:   %s", ctime(&sb.st_mtime));
   printf("\n");
+}
+
+json_t * load_json(const char * str){
+  json_error_t error;
+  json_t * root = json_loads(str, 0, &error);
+  if(! root){
+    ESDM_DEBUG_FMT("JSON error on line %d: %s\n", error.line, error.text);
+    return (json_t*) NULL;
+  }
+  return root;
 }

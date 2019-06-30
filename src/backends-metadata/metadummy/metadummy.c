@@ -476,7 +476,7 @@ static esdm_fragment_t *create_fragment_from_metadata(int fd, esdm_dataset_t *da
   f->metadata->json[sb.st_size] = 0;
 
   uint64_t elements = esdm_dataspace_element_count(space);
-  int64_t bytes     = elements * esdm_sizeof(space->datatype);
+  int64_t bytes     = elements * esdm_sizeof(space->type);
 
   f->dataset   = dataset;
   f->dataspace = space;

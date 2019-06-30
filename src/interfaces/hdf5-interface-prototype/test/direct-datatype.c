@@ -31,7 +31,7 @@ int main() {
   hid_t vol_id = H5VL_memvol_init();
   char name[1024];
 
-  // create some datatypes
+  // create some types
 
   hid_t tid = H5Tcreate(H5T_COMPOUND, sizeof(complex_type));
   H5Tinsert(tid, "re", HOFFSET(complex_type, re), H5T_NATIVE_DOUBLE);
@@ -41,7 +41,7 @@ int main() {
   H5Tinsert(tid, "name", HOFFSET(complex_type, name), s10);
   H5Tinsert(tid, "val", HOFFSET(complex_type, val), H5T_NATIVE_INT);
 
-  // packed version of the datatype
+  // packed version of the type
   hid_t disk_tid = H5Tcopy(tid);
   H5Tpack(disk_tid);
 

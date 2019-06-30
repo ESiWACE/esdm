@@ -49,10 +49,10 @@ static herr_t H5VL_extlog_attr_specific(void *obj, H5VL_loc_params_t loc_params,
 static herr_t H5VL_extlog_attr_close(void *attr, hid_t dxpl_id, void **req);
 
 /* Datatype callbacks */
-static void *H5VL_extlog_datatype_commit(void *obj, H5VL_loc_params_t loc_params, const char *name, hid_t type_id, hid_t lcpl_id, hid_t tcpl_id, hid_t tapl_id, hid_t dxpl_id, void **req);
-static void *H5VL_extlog_datatype_open(void *obj, H5VL_loc_params_t loc_params, const char *name, hid_t tapl_id, hid_t dxpl_id, void **req);
-static herr_t H5VL_extlog_datatype_get(void *dt, H5VL_datatype_get_t get_type, hid_t dxpl_id, void **req, va_list arguments);
-static herr_t H5VL_extlog_datatype_close(void *dt, hid_t dxpl_id, void **req);
+static void *H5VL_extlog_type_commit(void *obj, H5VL_loc_params_t loc_params, const char *name, hid_t type_id, hid_t lcpl_id, hid_t tcpl_id, hid_t tapl_id, hid_t dxpl_id, void **req);
+static void *H5VL_extlog_type_open(void *obj, H5VL_loc_params_t loc_params, const char *name, hid_t tapl_id, hid_t dxpl_id, void **req);
+static herr_t H5VL_extlog_type_get(void *dt, H5VL_type_get_t get_type, hid_t dxpl_id, void **req, va_list arguments);
+static herr_t H5VL_extlog_type_close(void *dt, hid_t dxpl_id, void **req);
 
 /* Dataset callbacks */
 static void *H5VL_extlog_dataset_create(void *obj, H5VL_loc_params_t loc_params, const char *name, hid_t dcpl_id, hid_t dapl_id, hid_t dxpl_id, void **req);
@@ -136,13 +136,13 @@ NULL,                       //H5VL_extlog_dataset_optional,          /* optional
 H5VL_extlog_dataset_close   /* close */
 },
 {
-/* datatype_cls */
-H5VL_extlog_datatype_commit, /* commit */
-H5VL_extlog_datatype_open,   /* open */
-H5VL_extlog_datatype_get,    /* get_size */
-NULL,                        //H5VL_extlog_datatype_specific,         /* specific */
-NULL,                        //H5VL_extlog_datatype_optional,         /* optional */
-H5VL_extlog_datatype_close   /* close */
+/* type_cls */
+H5VL_extlog_type_commit, /* commit */
+H5VL_extlog_type_open,   /* open */
+H5VL_extlog_type_get,    /* get_size */
+NULL,                        //H5VL_extlog_type_specific,         /* specific */
+NULL,                        //H5VL_extlog_type_optional,         /* optional */
+H5VL_extlog_type_close   /* close */
 },
 {
 /* file_cls */
@@ -1087,7 +1087,7 @@ static herr_t H5VL_extlog_group_optional(void *obj, hid_t dxpl_id, void **req, v
 
 
 static void *
-H5VL_extlog_datatype_commit(void *obj, H5VL_loc_params_t loc_params, const char *name,
+H5VL_extlog_type_commit(void *obj, H5VL_loc_params_t loc_params, const char *name,
 hid_t type_id, hid_t lcpl_id, hid_t tcpl_id, hid_t tapl_id, hid_t dxpl_id, void **req) {
   TRACEMSG("");
   ERRORMSG("Not implemented");
@@ -1096,7 +1096,7 @@ hid_t type_id, hid_t lcpl_id, hid_t tcpl_id, hid_t tapl_id, hid_t dxpl_id, void 
 }
 
 static void *
-H5VL_extlog_datatype_open(void *obj, H5VL_loc_params_t loc_params, const char *name, hid_t tapl_id, hid_t dxpl_id, void **req) {
+H5VL_extlog_type_open(void *obj, H5VL_loc_params_t loc_params, const char *name, hid_t tapl_id, hid_t dxpl_id, void **req) {
   TRACEMSG("");
   ERRORMSG("Not implemented");
   SQD_t *o = (SQD_t *)obj;
@@ -1104,7 +1104,7 @@ H5VL_extlog_datatype_open(void *obj, H5VL_loc_params_t loc_params, const char *n
 }
 
 static herr_t
-H5VL_extlog_datatype_get(void *dt, H5VL_datatype_get_t get_type, hid_t dxpl_id, void **req, va_list arguments) {
+H5VL_extlog_type_get(void *dt, H5VL_type_get_t get_type, hid_t dxpl_id, void **req, va_list arguments) {
   TRACEMSG("");
   ERRORMSG("Not implemented");
   herr_t ret_value = 0;
@@ -1112,7 +1112,7 @@ H5VL_extlog_datatype_get(void *dt, H5VL_datatype_get_t get_type, hid_t dxpl_id, 
 }
 
 static herr_t
-H5VL_extlog_datatype_close(void *dt, hid_t dxpl_id, void **req) {
+H5VL_extlog_type_close(void *dt, hid_t dxpl_id, void **req) {
   //	TRACEMSG("");
   ERRORMSG("Not implemented");
   return 1;
@@ -1402,7 +1402,7 @@ hid_t file_space_id, hid_t plist_id, void *buf, void **req) {
 #elif ADAPTIVE
   // DATASET READ
 
-  // block_size is:   sizeof(datatype) * dim[0] * ... * dim[n]   -> here cuboid  x*y*z
+  // block_size is:   sizeof(type) * dim[0] * ... * dim[n]   -> here cuboid  x*y*z
   // call to ESDM Decision Component
 
   // Make tier decision if not already set.
@@ -1468,7 +1468,7 @@ hid_t file_space_id, hid_t plist_id, const void *buf, void **req) {
 #elif ADAPTIVE
   // DATASET WRITE
 
-  // block_size is:   sizeof(datatype) * dim[0] * ... * dim[n]   -> here cuboid  x*y*z
+  // block_size is:   sizeof(type) * dim[0] * ... * dim[n]   -> here cuboid  x*y*z
   // call to ESDM Decision Component
 
   // Make tier decision if not already set.

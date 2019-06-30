@@ -7,6 +7,8 @@
 #ifndef ESDM_INTERNAL_H
 #define ESDM_INTERNAL_H
 
+#include <jansson.h>
+
 #include <esdm-datatypes-internal.h>
 #include <esdm-debug.h>
 #include <esdm.h>
@@ -156,5 +158,6 @@ void esdm_print_hashtable(GHashTable *tbl);
 
 esdm_status esdm_metadata_t_init_(esdm_metadata_t **output_metadata);
 
+json_t * load_json(const char * str);
 
 #endif
