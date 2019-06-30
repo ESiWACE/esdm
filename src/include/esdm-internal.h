@@ -154,8 +154,6 @@ esdm_status esdm_performance_finalize();
 esdm_status esdm_backend_t_estimate_performance(esdm_backend_t *backend, int fragment);
 
 
-
-
 ///////////////////////////////////////////////////////////////////////////////
 // UTILS //////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////
@@ -189,7 +187,7 @@ void esdm_print_hashtable(GHashTable *tbl);
 
 esdm_status esdm_metadata_t_init_(esdm_metadata_t **output_metadata);
 
-json_t * load_json(const char * str);
-int ea_is_valid_name(const char* str);
+json_t *load_json(const char *str);
+int ea_is_valid_name(const char *str);
 
 #endif

@@ -68,7 +68,7 @@ int main(int argc, char **argv) {
 
   for (int i = 0; i < 10; i++) {
     size_t startp[] = {0, 0, i};
-    ret             = nc_put_vara_int(ncid, var, startp, countp, data);
+    ret = nc_put_vara_int(ncid, var, startp, countp, data);
     assert(ret == NC_NOERR);
   }
 
@@ -76,7 +76,7 @@ int main(int argc, char **argv) {
 
   for (int i = 0; i < 10; i++) {
     size_t startp[] = {0, 0, i};
-    ret             = nc_get_vara_int(ncid, var, startp, countp, data);
+    ret = nc_get_vara_int(ncid, var, startp, countp, data);
     assert(ret == NC_NOERR);
   }
 

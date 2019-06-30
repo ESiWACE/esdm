@@ -20,7 +20,7 @@
 
 char *create_path(SQO_t *sqo) {
   static const char *sep = "/";
-  char *res              = NULL;
+  char *res = NULL;
 
   if (NULL != sqo->location && NULL != sqo->name) {
     res = (char *)malloc(strlen(sqo->location) + strlen(sep) + strlen(sqo->name) + 1);

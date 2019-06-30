@@ -253,8 +253,8 @@ void option_print_current(option_help *args) {
 }
 
 int option_parse(int argc, char **argv, option_help *args, int *printhelp) {
-  int error              = 0;
-  int requiredArgsSeen   = 0;
+  int error = 0;
+  int requiredArgsSeen = 0;
   int requiredArgsNeeded = 0;
   int i;
 
@@ -264,9 +264,9 @@ int option_parse(int argc, char **argv, option_help *args, int *printhelp) {
     }
   }
   for (i = 1; i < argc; i++) {
-    char *txt          = argv[i];
-    int foundOption    = 0;
-    char *arg          = strstr(txt, "=");
+    char *txt = argv[i];
+    int foundOption = 0;
+    char *arg = strstr(txt, "=");
     int replaced_equal = 0;
     if (arg != NULL) {
       arg[0] = 0;

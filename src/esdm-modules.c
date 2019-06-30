@@ -49,7 +49,6 @@
 #  pragma message("Building ESDM with WOS support.")
 #endif
 
-
 // TODO: remove define on
 #define ESDM_HAS_METADUMMY
 #ifdef ESDM_HAS_METADUMMY
@@ -74,8 +73,7 @@ esdm_modules_t *esdm_modules_init(esdm_instance_t *esdm) {
   modules = (esdm_modules_t *)malloc(sizeof(esdm_modules_t));
 
   esdm_config_backends_t *config_backends = esdm_config_get_backends(esdm);
-  esdm_config_backend_t *b                = NULL;
-
+  esdm_config_backend_t *b = NULL;
 
   esdm_config_backend_t *metadata_coordinator = esdm_config_get_metadata_coordinator(esdm);
 
@@ -95,7 +93,7 @@ esdm_modules_t *esdm_modules_init(esdm_instance_t *esdm) {
 
   // Register data backends
   modules->data_backend_count = config_backends->count;
-  modules->data_backends      = malloc(config_backends->count * sizeof(esdm_backend_t *));
+  modules->data_backends = malloc(config_backends->count * sizeof(esdm_backend_t *));
 
   int i;
   for (i = 0; i < config_backends->count; i++) {
@@ -122,7 +120,7 @@ esdm_modules_t *esdm_modules_init(esdm_instance_t *esdm) {
     else {
       ESDM_ERROR("Unknown backend type. Please check your ESDM configuration.");
     }
-    backend->config           = b;
+    backend->config = b;
     modules->data_backends[i] = backend;
   }
 

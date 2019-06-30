@@ -143,9 +143,9 @@ void attr_create_database(const char *attr_name, const char *obj_name, const cha
   H5Sencode(space_id, space_buf, &space_size);
 
   const char *paramValues[7] = {attr_name, obj_name, obj_type, location, type_buf, space_buf, (char *)&data_size};
-  int paramLengths[7]        = {strlen(attr_name), strlen(obj_name), strlen(obj_type), strlen(location), type_size, space_size, sizeof(data_size)};
-  int paramFormats[7]        = {0, 0, 0, 0, 1, 1, 1};
-  res                        = PQexecParams(conn, "INSERT INTO ATTRIBUTE VALUES($1, $2, $3, $4, $5, $6, $7);", 7, NULL, paramValues, paramLengths, paramFormats, 1);
+  int paramLengths[7] = {strlen(attr_name), strlen(obj_name), strlen(obj_type), strlen(location), type_size, space_size, sizeof(data_size)};
+  int paramFormats[7] = {0, 0, 0, 0, 1, 1, 1};
+  res = PQexecParams(conn, "INSERT INTO ATTRIBUTE VALUES($1, $2, $3, $4, $5, $6, $7);", 7, NULL, paramValues, paramLengths, paramFormats, 1);
 
   if (PQresultStatus(res) != PGRES_COMMAND_OK) {
     DEBUGMSG("INSERT failed: %s", PQerrorMessage(conn));
@@ -190,7 +190,7 @@ static void attr_open_database(char *path, size_t *data_size, PGconn *conn) {
   for (int i = 0; i < PQntuples(res); i++) {
     size_t type_size;
     char *data_size_buf = PQunescapeBytea(PQgetvalue(res, i, 0), &type_size);
-    *data_size          = (size_t)*data_size_buf;
+    *data_size = (size_t)*data_size_buf;
     PQfreemem(data_size_buf);
   }
 
@@ -234,7 +234,7 @@ static void attr_get_database(const char *path, /*OUT*/ hid_t *type_id, /*OUT*/ 
     size_t type_size;
     size_t space_size;
 
-    char *type_buf  = PQunescapeBytea(PQgetvalue(res, i, 0), &type_size);
+    char *type_buf = PQunescapeBytea(PQgetvalue(res, i, 0), &type_size);
     char *space_buf = PQunescapeBytea(PQgetvalue(res, i, 1), &space_size);
 
     *type_id = H5Tdecode(type_buf);
@@ -278,9 +278,9 @@ void attr_write_database(const char *location, const void *data, int size, PGcon
   PQclear(res);
 
   const char *paramValues[2] = {location, (char *)data};
-  int paramLengths[2]        = {strlen(location), size};
-  int paramFormats[2]        = {0, 1};
-  res                        = PQexecParams(conn, "INSERT INTO DATA VALUES($1, $2);", 2, NULL, paramValues, paramLengths, paramFormats, 1);
+  int paramLengths[2] = {strlen(location), size};
+  int paramFormats[2] = {0, 1};
+  res = PQexecParams(conn, "INSERT INTO DATA VALUES($1, $2);", 2, NULL, paramValues, paramLengths, paramFormats, 1);
 
   if (PQresultStatus(res) != PGRES_COMMAND_OK) {
     DEBUGMSG("INSERT failed: %s", PQerrorMessage(conn));
@@ -323,7 +323,7 @@ void attr_read_database(const char *location, /*OUT*/ void *buf, PGconn *conn) {
   for (int i = 0; i < PQntuples(res); i++) {
     size_t data_size;
     char *data_size_buf = PQunescapeBytea(PQgetvalue(res, i, 0), &data_size);
-    buf                 = malloc(data_size);
+    buf = malloc(data_size);
     memcpy(buf, data_size_buf, data_size);
     PQfreemem(data_size_buf);
   }
@@ -360,9 +360,9 @@ void attr_read_database(const char *location, /*OUT*/ void *buf, PGconn *conn) {
     // insert
     //	if (0 == ginfo->mpi_rank)  {
     const char *paramValues[4] = {group_name, obj_name, obj_type, location};
-    int paramLengths[4]        = {strlen(group_name), strlen(obj_name), strlen(obj_type), strlen(location)};
-    int paramFormats[4]        = {0, 0, 0, 0};
-    res                        = PQexecParams(conn, "INSERT INTO GROUPS VALUES($1,$2,$3,$4);", 4, NULL, paramValues, paramLengths, paramFormats, 1);
+    int paramLengths[4] = {strlen(group_name), strlen(obj_name), strlen(obj_type), strlen(location)};
+    int paramFormats[4] = {0, 0, 0, 0};
+    res = PQexecParams(conn, "INSERT INTO GROUPS VALUES($1,$2,$3,$4);", 4, NULL, paramValues, paramLengths, paramFormats, 1);
 
     if (PQresultStatus(res) != PGRES_COMMAND_OK) {
       DEBUGMSG("INSERT failed: %s", PQerrorMessage(conn));
@@ -430,7 +430,7 @@ void attr_read_database(const char *location, /*OUT*/ void *buf, PGconn *conn) {
     type_size, space_size, sizeof(data_size)};
 
     int paramFormats[7] = {0, 0, 0, 0, 1, 1, 1};
-    res                 = PQexecParams(conn, "INSERT INTO DATASET VALUES($1,$2,$3,$4,$5,$6,$7);", 7, NULL, paramValues, paramLengths, paramFormats, 1);
+    res = PQexecParams(conn, "INSERT INTO DATASET VALUES($1,$2,$3,$4,$5,$6,$7);", 7, NULL, paramValues, paramLengths, paramFormats, 1);
 
     if (PQresultStatus(res) != PGRES_COMMAND_OK) {
       DEBUGMSG("INSERT failed: %s", PQerrorMessage(conn));
@@ -529,7 +529,7 @@ void attr_read_database(const char *location, /*OUT*/ void *buf, PGconn *conn) {
       size_t type_size;
       size_t space_size;
 
-      char *type_buf  = PQunescapeBytea(PQgetvalue(res, i, 0), &type_size);
+      char *type_buf = PQunescapeBytea(PQgetvalue(res, i, 0), &type_size);
       char *space_buf = PQunescapeBytea(PQgetvalue(res, i, 1), &space_size);
 
       *type_id = H5Tdecode(type_buf);

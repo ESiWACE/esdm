@@ -55,15 +55,15 @@ static herr_t memvol_type_get(void *obj, H5VL_type_get_t get_type, hid_t dxpl_id
     case H5VL_DATATYPE_GET_BINARY: {
       // serialize type
       ssize_t *nalloc = va_arg(arguments, ssize_t *);
-      void *buf       = va_arg(arguments, void *);
-      size_t size     = va_arg(arguments, size_t);
+      void *buf = va_arg(arguments, void *);
+      size_t size = va_arg(arguments, size_t);
       break;
     }
 
     case H5VL_DATATYPE_GET_TCPL: {
       // property list when the type has been created
       hid_t *ret_id = va_arg(arguments, hid_t *);
-      *ret_id       = H5P_DEFAULT;
+      *ret_id = H5P_DEFAULT;
       break;
     }
 

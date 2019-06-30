@@ -630,20 +630,20 @@ void **req) {
 
 
   size_t height = 10;
-  size_t width  = 4096;
+  size_t width = 4096;
 
 
   // Interaction with ESDM
   esdm_status ret;
   esdm_container_t *cont = NULL;
-  esdm_dataset_t *dset   = NULL;
+  esdm_dataset_t *dset = NULL;
 
 
   esdm_init();
 
 
   // define dataspace
-  int64_t bounds[]         = {height, width};
+  int64_t bounds[] = {height, width};
   esdm_dataspace_t *dspace = esdm_dataspace_create(2, bounds, SMD_DTYPE_UINT64);
 
   cont = esdm_container_t_create("mycontainer");
@@ -675,10 +675,10 @@ void **req) {
 
 
   // allocate resoources
-  object  = (H5VL_esdm_object_t *)malloc(sizeof(H5VL_esdm_object_t));
+  object = (H5VL_esdm_object_t *)malloc(sizeof(H5VL_esdm_object_t));
   dataset = (H5VL_esdm_dataset_t *)malloc(sizeof(H5VL_esdm_dataset_t));
 
-  object->type   = MEMVOL_DATASET;
+  object->type = MEMVOL_DATASET;
   object->object = dataset;
 
   dataset->dcpl_id = H5Pcopy(dcpl_id);
@@ -934,7 +934,7 @@ static herr_t H5VL_esdm_dataset_get(void *obj, H5VL_dataset_get_t get_type, hid_
 
       // va_args: &ret_value
       hid_t *ret_id = va_arg(arguments, hid_t *);
-      *ret_id       = H5Pcopy(dataset->dcpl_id);
+      *ret_id = H5Pcopy(dataset->dcpl_id);
 
       /*
                 if((*ret_id = H5D_get_create_plist(dset)) < 0)
@@ -950,7 +950,7 @@ static herr_t H5VL_esdm_dataset_get(void *obj, H5VL_dataset_get_t get_type, hid_
 
       // va_args: &ret_value
       hid_t *ret_id = va_arg(arguments, hid_t *);
-      *ret_id       = H5Pcopy(dataset->dapl_id);
+      *ret_id = H5Pcopy(dataset->dapl_id);
 
       /*
                 if((*ret_id = H5D_get_access_plist(dset)) < 0)
@@ -1028,7 +1028,7 @@ static herr_t H5VL_esdm_dataset_specific(void *obj, H5VL_dataset_specific_t spec
       rank = H5Sget_simple_extent_ndims(dataset->dataspace);
 
       hsize_t *dims = (hsize_t *)malloc(rank * sizeof(hsize_t));
-      hsize_t *max  = (hsize_t *)malloc(rank * sizeof(hsize_t));
+      hsize_t *max = (hsize_t *)malloc(rank * sizeof(hsize_t));
 
       for (int i = 0; i < rank; i++) {
         info("%s: rank[i]=%d, dims=%lld, max=%lld   =>   size=%lld\n", __func__, i, dims[i], max[i], size[i]);
@@ -1065,7 +1065,7 @@ static herr_t H5VL_esdm_dataset_optional(void *obj, hid_t dxpl_id, void **req, v
 static herr_t H5VL_esdm_dataset_close(void *dset, hid_t dxpl_id, void **req) {
   info("%s\n", __func__);
 
-  herr_t ret_value             = SUCCEED;
+  herr_t ret_value = SUCCEED;
   H5VL_esdm_dataset_t *dataset = (H5VL_esdm_dataset_t *)dset;
 
   info("%s: %p\n", __func__, (void *)dataset);
@@ -1129,15 +1129,15 @@ static herr_t H5VL_esdm_type_t_get(void *obj, H5VL_type_get_t get_type, hid_t dx
     case H5VL_DATATYPE_GET_BINARY: {
       // serialize type
       ssize_t *nalloc = va_arg(arguments, ssize_t *);
-      void *buf       = va_arg(arguments, void *);
-      size_t size     = va_arg(arguments, size_t);
+      void *buf = va_arg(arguments, void *);
+      size_t size = va_arg(arguments, size_t);
       break;
     }
 
     case H5VL_DATATYPE_GET_TCPL: {
       // property list when the type has been created
       hid_t *ret_id = va_arg(arguments, hid_t *);
-      *ret_id       = H5P_DEFAULT;
+      *ret_id = H5P_DEFAULT;
       break;
     }
 
@@ -1398,18 +1398,18 @@ static void *H5VL_esdm_file_create(const char *name, unsigned flags, hid_t fcpl_
   if (file == NULL) {
     // allocate resources
     object = (H5VL_esdm_object_t *)malloc(sizeof(H5VL_esdm_object_t));
-    file   = (H5VL_esdm_file_t *)malloc(sizeof(H5VL_esdm_file_t));
+    file = (H5VL_esdm_file_t *)malloc(sizeof(H5VL_esdm_file_t));
 
     // populate file and object data strutures
     H5VL_esdm_group_init(&file->root_grp);
 
-    object->type   = MEMVOL_GROUP;
+    object->type = MEMVOL_GROUP;
     object->object = &file->root_grp;
 
     g_hash_table_insert(file->root_grp.childs_tbl, strdup("/"), object);
     g_hash_table_insert(files_tbl, strdup(name), object);
 
-    file->name    = strdup(name);
+    file->name = strdup(name);
     file->fcpl_id = H5Pcopy(fcpl_id);
   }
 
@@ -1429,7 +1429,7 @@ static void *H5VL_esdm_file_create(const char *name, unsigned flags, hid_t fcpl_
 
   // attach to file struct
   file->mode_flags = flags;
-  file->fapl_id    = H5Pcopy(fapl_id);
+  file->fapl_id = H5Pcopy(fapl_id);
 
   info("%s: New file=%p with name=%s\n", __func__, (void *)file, name);
 
@@ -1463,7 +1463,7 @@ static void *H5VL_esdm_file_open(const char *name, unsigned flags, hid_t fapl_id
 
 
 static herr_t H5VL_esdm_file_get(void *file, H5VL_file_get_t get_type, hid_t dxpl_id, void **req, va_list arguments) {
-  herr_t ret_value    = SUCCEED;
+  herr_t ret_value = SUCCEED;
   H5VL_esdm_file_t *f = (H5VL_esdm_file_t *)file;
 
   info("%s\n", __func__);
@@ -1495,20 +1495,20 @@ static herr_t H5VL_esdm_file_get(void *file, H5VL_file_get_t get_type, hid_t dxp
     /* H5Fget_access_plist */
     case H5VL_FILE_GET_FAPL: {
       hid_t *plist_id = va_arg(arguments, hid_t *);
-      *plist_id       = H5Pcopy(f->fapl_id);
+      *plist_id = H5Pcopy(f->fapl_id);
 
       break;
     }
     /* H5Fget_create_plist */
     case H5VL_FILE_GET_FCPL: {
       hid_t *plist_id = va_arg(arguments, hid_t *);
-      *plist_id       = H5Pcopy(f->fcpl_id);
+      *plist_id = H5Pcopy(f->fcpl_id);
       break;
     }
     /* H5Fget_obj_count */
     case H5VL_FILE_GET_OBJ_COUNT: {
-      unsigned types   = va_arg(arguments, unsigned);
-      ssize_t *ret     = va_arg(arguments, ssize_t *);
+      unsigned types = va_arg(arguments, unsigned);
+      ssize_t *ret = va_arg(arguments, ssize_t *);
       size_t obj_count = 0; /* Number of opened objects */
       assert(0 && "TODO");
       /* Set the return value */
@@ -1517,10 +1517,10 @@ static herr_t H5VL_esdm_file_get(void *file, H5VL_file_get_t get_type, hid_t dxp
     }
     /* H5Fget_obj_ids */
     case H5VL_FILE_GET_OBJ_IDS: {
-      unsigned types   = va_arg(arguments, unsigned);
-      size_t max_objs  = va_arg(arguments, size_t);
-      hid_t *oid_list  = va_arg(arguments, hid_t *);
-      ssize_t *ret     = va_arg(arguments, ssize_t *);
+      unsigned types = va_arg(arguments, unsigned);
+      size_t max_objs = va_arg(arguments, size_t);
+      hid_t *oid_list = va_arg(arguments, hid_t *);
+      ssize_t *ret = va_arg(arguments, ssize_t *);
       size_t obj_count = 0; /* Number of opened objects */
 
       assert(0 && "TODO");
@@ -1532,16 +1532,16 @@ static herr_t H5VL_esdm_file_get(void *file, H5VL_file_get_t get_type, hid_t dxp
     /* H5Fget_intent */
     case H5VL_FILE_GET_INTENT: {
       unsigned *ret = va_arg(arguments, unsigned *);
-      *ret          = f->mode_flags;
+      *ret = f->mode_flags;
       break;
     }
     /* H5Fget_name */
     case H5VL_FILE_GET_NAME: {
       H5I_type_t type = va_arg(arguments, H5I_type_t);
-      size_t size     = va_arg(arguments, size_t);
-      char *name      = va_arg(arguments, char *);
-      ssize_t *ret    = va_arg(arguments, ssize_t *);
-      size_t len      = strlen(f->name);
+      size_t size = va_arg(arguments, size_t);
+      char *name = va_arg(arguments, char *);
+      ssize_t *ret = va_arg(arguments, ssize_t *);
+      size_t len = strlen(f->name);
 
       if (name) {
         strncpy(name, f->name, MIN(len + 1, size));
@@ -1555,7 +1555,7 @@ static herr_t H5VL_esdm_file_get(void *file, H5VL_file_get_t get_type, hid_t dxp
     /* H5I_get_file_id */
     case H5VL_OBJECT_GET_FILE: {
       H5I_type_t type = va_arg(arguments, H5I_type_t);
-      void **ret      = va_arg(arguments, void **);
+      void **ret = va_arg(arguments, void **);
       void *tmp;
       assert(0 && "TODO");
 
@@ -1683,7 +1683,7 @@ static herr_t H5VL_esdm_file_close(void *file, hid_t dxpl_id, void **req) {
 
 
 static void H5VL_esdm_group_init(H5VL_esdm_group_t *group) {
-  group->childs_tbl              = g_hash_table_new(g_str_hash, g_str_equal);
+  group->childs_tbl = g_hash_table_new(g_str_hash, g_str_equal);
   group->childs_ord_by_index_arr = g_array_new(0, 0, sizeof(void *));
   assert(group->childs_tbl != NULL);
 }
@@ -1704,9 +1704,9 @@ static void *H5VL_esdm_group_create(void *obj, H5VL_loc_params_t loc_params, con
 
   // allocate resources
   object = (H5VL_esdm_object_t *)malloc(sizeof(H5VL_esdm_object_t));
-  group  = (H5VL_esdm_group_t *)malloc(sizeof(H5VL_esdm_group_t));
+  group = (H5VL_esdm_group_t *)malloc(sizeof(H5VL_esdm_group_t));
 
-  object->type   = MEMVOL_GROUP;
+  object->type = MEMVOL_GROUP;
   object->object = group;
 
   H5VL_esdm_group_init(group);
@@ -1766,7 +1766,7 @@ static void *H5VL_esdm_group_open(void *obj, H5VL_loc_params_t loc_params, const
 static herr_t H5VL_esdm_group_get(void *obj, H5VL_group_get_t get_type, hid_t dxpl_id, void **req, va_list arguments) {
   info("%s\n", __func__);
 
-  herr_t ret_value         = SUCCEED;
+  herr_t ret_value = SUCCEED;
   H5VL_esdm_group_t *group = (H5VL_esdm_group_t *)((H5VL_esdm_object_t *)obj)->object;
 
   // Variadic variables in HDF5 VOL implementation are used to expose HDF5
@@ -1784,14 +1784,14 @@ static herr_t H5VL_esdm_group_get(void *obj, H5VL_group_get_t get_type, hid_t dx
       // group creation property list (GCPL)
       info("Group get: GCPL %p\n", obj);
       hid_t *new_gcpl_id = va_arg(arguments, hid_t *);
-      *new_gcpl_id       = H5Pcopy(group->gcpl_id);
+      *new_gcpl_id = H5Pcopy(group->gcpl_id);
       return 0;
     }
 
     case H5VL_GROUP_GET_INFO: {
       // This argument defines if we should retrieve information about ourselve or a child node
       H5VL_loc_params_t loc_params = va_arg(arguments, H5VL_loc_params_t);
-      H5G_info_t *grp_info         = va_arg(arguments, H5G_info_t *);
+      H5G_info_t *grp_info = va_arg(arguments, H5G_info_t *);
 
       info("Group get: INFO %p loc_param: %d \n", obj, loc_params.type);
 
@@ -1825,9 +1825,9 @@ static herr_t H5VL_esdm_group_get(void *obj, H5VL_group_get_t get_type, hid_t dx
       }
 
       grp_info->storage_type = H5G_STORAGE_TYPE_COMPACT;
-      grp_info->nlinks       = 0;
-      grp_info->max_corder   = g_hash_table_size(relevant_group->childs_tbl);
-      grp_info->mounted      = 0;
+      grp_info->nlinks = 0;
+      grp_info->max_corder = g_hash_table_size(relevant_group->childs_tbl);
+      grp_info->mounted = 0;
 
       return 0;
     }
@@ -1866,7 +1866,7 @@ static herr_t H5VL_esdm_group_optional(void *obj, hid_t dxpl_id, void **req, va_
 static herr_t H5VL_esdm_group_close(void *grp, hid_t dxpl_id, void **req) {
   info("%s\n", __func__);
 
-  herr_t ret_value         = SUCCEED;
+  herr_t ret_value = SUCCEED;
   H5VL_esdm_group_t *group = (H5VL_esdm_group_t *)((H5VL_esdm_object_t *)grp)->object;
 
   info("Group close: %p\n", (void *)group);

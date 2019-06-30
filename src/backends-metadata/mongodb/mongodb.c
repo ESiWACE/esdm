@@ -63,7 +63,7 @@ static int mkfs(esdm_backend_t *backend) {
 
   // use target directory from backend configuration
   mongodb_backend_options_t *options = (mongodb_backend_options_t *)backend->data;
-  const char *tgt                    = options->target;
+  const char *tgt = options->target;
   //const char* tgt = "./_mongodb";
 
 
@@ -144,7 +144,7 @@ static int entry_retrieve(const char *path) {
   // everything ok? write and close
   if (fd != -1) {
     // write some metadata
-    buf             = (char *)malloc(sb.st_size + 1);
+    buf = (char *)malloc(sb.st_size + 1);
     buf[sb.st_size] = 0;
 
     read(fd, buf, sb.st_size);
@@ -221,7 +221,7 @@ static int container_create(esdm_backend_t *backend, esdm_container_t *container
   struct stat sb;
 
   mongodb_backend_options_t *options = (mongodb_backend_options_t *)backend->data;
-  const char *tgt                    = options->target;
+  const char *tgt = options->target;
 
   printf("tgt: %p\n", tgt);
 
@@ -262,7 +262,7 @@ static int container_retrieve(esdm_backend_t *backend, esdm_container_t *contain
   struct stat sb;
 
   mongodb_backend_options_t *options = (mongodb_backend_options_t *)backend->data;
-  const char *tgt                    = options->target;
+  const char *tgt = options->target;
 
 
   asprintf(&path_metadata, "%s/containers/%s.md", tgt, container->name);
@@ -283,7 +283,7 @@ static int container_update(esdm_backend_t *backend, esdm_container_t *container
   struct stat sb;
 
   mongodb_backend_options_t *options = (mongodb_backend_options_t *)backend->data;
-  const char *tgt                    = options->target;
+  const char *tgt = options->target;
 
   asprintf(&path_metadata, "%s/containers/%s.md", tgt, container->name);
   asprintf(&path_container, "%s/containers/%s", tgt, container->name);
@@ -303,7 +303,7 @@ static int container_destroy(esdm_backend_t *backend, esdm_container_t *containe
   struct stat sb;
 
   mongodb_backend_options_t *options = (mongodb_backend_options_t *)backend->data;
-  const char *tgt                    = options->target;
+  const char *tgt = options->target;
 
   asprintf(&path_metadata, "%s/containers/%s.md", tgt, container->name);
   asprintf(&path_container, "%s/containers/%s", tgt, container->name);
@@ -332,7 +332,7 @@ static int dataset_create(esdm_backend_t *backend, esdm_dataset_t *dataset) {
 
 
   mongodb_backend_options_t *options = (mongodb_backend_options_t *)backend->data;
-  const char *tgt                    = options->target;
+  const char *tgt = options->target;
 
   printf("tgt: %p\n", tgt);
 
@@ -389,7 +389,7 @@ static int fragment_update(esdm_backend_t *backend, esdm_fragment_t *fragment) {
   struct stat sb;
 
   mongodb_backend_options_t *options = (mongodb_backend_options_t *)backend->data;
-  const char *tgt                    = options->target;
+  const char *tgt = options->target;
 
   printf("tgt: %p\n", tgt);
 
@@ -503,10 +503,10 @@ static esdm_backend_t backend_template = {
 ///////////////////////////////////////////////////////////////////////////////
 // WARNING: This serves as a template for the mongodb plugin and is memcpied!  //
 ///////////////////////////////////////////////////////////////////////////////
-.name      = "mongodb",
-.type      = SMD_DTYPE_METADATA,
-.version   = "0.0.1",
-.data      = NULL,
+.name = "mongodb",
+.type = SMD_DTYPE_METADATA,
+.version = "0.0.1",
+.data = NULL,
 .callbacks = {
 // General for ESDM
 NULL,                                 // finalize
@@ -573,7 +573,7 @@ esdm_backend_t *mongodb_backend_init(esdm_config_backend_t *config) {
   mongoc_client_set_appname(client, "ESDM Backend");
   collection = mongoc_client_get_collection(client, "esdm", "esdm");
 
-  data->client     = client;
+  data->client = client;
   data->collection = collection;
 
   //mongodb_test();

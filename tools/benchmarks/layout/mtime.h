@@ -10,10 +10,10 @@ static void start_timer(timer *t1) {
 static timer time_diff(struct timespec end, struct timespec start) {
   struct timespec diff;
   if (end.tv_nsec < start.tv_nsec) {
-    diff.tv_sec  = end.tv_sec - start.tv_sec - 1;
+    diff.tv_sec = end.tv_sec - start.tv_sec - 1;
     diff.tv_nsec = 1000000000 + end.tv_nsec - start.tv_nsec;
   } else {
-    diff.tv_sec  = end.tv_sec - start.tv_sec;
+    diff.tv_sec = end.tv_sec - start.tv_sec;
     diff.tv_nsec = end.tv_nsec - start.tv_nsec;
   }
   return diff;

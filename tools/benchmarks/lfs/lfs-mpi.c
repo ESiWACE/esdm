@@ -24,7 +24,7 @@ int lfs_mpi_open(lfs_mpi_file_p *fd_p, char *df, int flags, mode_t mode, MPI_Com
   char *lfsfilename;
   lfsfilename = malloc((strlen(df) + 100) * sizeof(char));
   sprintf(lfsfilename, "%s%d.log", df, rank);
-  fd->filename                           = strdup(lfsfilename);
+  fd->filename = strdup(lfsfilename);
   fd->filename[strlen(fd->filename) - 4] = 0;
 
   fd->mother_file = strdup(df);
@@ -37,9 +37,9 @@ int lfs_mpi_open(lfs_mpi_file_p *fd_p, char *df, int flags, mode_t mode, MPI_Com
   fd->log_file = fopen(lfsfilename, "a+"); // XXX: I had to change it to a+ from w. because for readying I want to read it and with w I couldn't! is it has to be w then I'll open it in r for the read as temp variable and close it when reading ends.
 
   fd->file_position = 0;
-  fd->proc_rank     = rank;
+  fd->proc_rank = rank;
   fd->current_epoch = 0;
-  ret               = MPI_Comm_dup(com, &fd->com);
+  ret = MPI_Comm_dup(com, &fd->com);
   assert(ret == MPI_SUCCESS);
   free(lfsfilename);
 
@@ -63,7 +63,7 @@ int lfs_mpi_open(lfs_mpi_file_p *fd_p, char *df, int flags, mode_t mode, MPI_Com
 void lfs_mpi_next_epoch(lfs_mpi_file_p fd) {
   fd->current_epoch++;
   off_t offset_zero = 0;
-  size_t size_zero  = 0;
+  size_t size_zero = 0;
 
   // we have a special marker (offset, size) = (0,0) to indicate that the next epoch starts
   fwrite(&offset_zero, sizeof(offset_zero), 1, fd->log_file);
@@ -129,13 +129,13 @@ int read_record(struct lfs_record **rec, FILE *fd, int depth) {
   fseek(fd, 0, SEEK_END);
   fileLen = ftell(fd);
   fseek(fd, 0, SEEK_SET);
-  int record_count     = fileLen / sizeof(lfs_record_on_disk);
-  lfs_record *records  = (lfs_record *)malloc(sizeof(lfs_record) * record_count);
+  int record_count = fileLen / sizeof(lfs_record_on_disk);
+  lfs_record *records = (lfs_record *)malloc(sizeof(lfs_record) * record_count);
   size_t file_position = 0;
   // printf("here rec_count: %d\n", record_count);
   // filling the created array with the values inside the metadata file
   for (int i = 0; i < record_count; i++) {
-    ret            = fread(&records[i], sizeof(lfs_record_on_disk), 1, fd);
+    ret = fread(&records[i], sizeof(lfs_record_on_disk), 1, fd);
     records[i].pos = file_position;
     assert(ret == 1);
     file_position += records[i].size;
@@ -146,14 +146,14 @@ int read_record(struct lfs_record **rec, FILE *fd, int depth) {
   for (int i = record_count - 1; i >= 0; i--) {
     if (records[i].addr == 0 && records[i].size == 0) {
       depth--;
-      end   = begin;
+      end = begin;
       begin = i;
       if (depth < 0)
         break;
       // end of IF
     } // end of IF
     if (i == 0) {
-      end   = begin;
+      end = begin;
       begin = -1;
     } // end of IF
   }   // end of FOR
@@ -203,8 +203,8 @@ int lfs_mpi_find_chunks(size_t a, size_t b, int index, struct lfs_record *my_rec
   if (a == b)
     return 0;
   struct tup res, rec, query;
-  res.a   = -1;
-  res.b   = -1;
+  res.a = -1;
+  res.b = -1;
   query.a = a;
   query.b = b;
   // search through the logs until you find a record that overlaps with the given query area
@@ -226,20 +226,20 @@ int lfs_mpi_find_chunks(size_t a, size_t b, int index, struct lfs_record *my_rec
       //printf("result: %lu, %lu\n", res.a, res.b);
       miss.addr = a;
       miss.size = b - a;
-      miss.pos  = a;
+      miss.pos = a;
       lfs_vec_add(missing_chunks, m_ch_s, miss);
       return -1;
     }
     rec.a = my_recs[index].addr;
     rec.b = my_recs[index].addr + my_recs[index].size;
-    res   = compare_tup(query, rec);
+    res = compare_tup(query, rec);
     index--;
   }
   struct lfs_record found;
   //printf("result: %lu, %lu\n", res.a, res.b);
   found.addr = res.a;
   found.size = res.b - res.a;
-  found.pos  = my_recs[index + 1].pos + res.a - my_recs[index + 1].addr;
+  found.pos = my_recs[index + 1].pos + res.a - my_recs[index + 1].addr;
   //chunks_stack.push_back(found);
   lfs_vec_add(chunks_stack, ch_s, found);
   // call yourself for the remaing areas of the query that have not been covered with the found record
@@ -256,8 +256,8 @@ off_t main_addr) {
   off_t offset1; //= offset;
   size_t ret;
   struct lfs_record temp;
-  chunks_stack    = (lfs_record *)malloc(sizeof(lfs_record) * 1001);
-  int ch_s        = 1;
+  chunks_stack = (lfs_record *)malloc(sizeof(lfs_record) * 1001);
+  int ch_s = 1;
   *missing_chunks = (lfs_record *)malloc(sizeof(lfs_record) * 1001);
   //      printf("internal_read: allocations are done, q_index is %d\n", *q_index - 1);
   for (int i = 0; i < (*q_index - 1); i++) {
@@ -265,7 +265,7 @@ off_t main_addr) {
     //              printf("internal_read: query is: %zu %zu %zu\n", temp.addr, temp.size ,temp.pos);
     lfs_mpi_find_chunks(temp.addr, temp.addr + temp.size, record_count - 1, rec, &chunks_stack, &ch_s, missing_chunks, m_ch_s);
   } // end of FOR
-    //      printf("internal_read: total found chunks = %d\n", ch_s - 1);
+  //      printf("internal_read: total found chunks = %d\n", ch_s - 1);
   int total_found_count = ch_s - 1;
   // perform the read
   for (int i = 0; i < total_found_count; i++) {
@@ -273,7 +273,7 @@ off_t main_addr) {
     //                printf("chunk stack: (%zu, %zu, %zu)\n", temp.addr, temp.size, temp.pos);
 
     //buf = &buf[(temp.addr - main_addr)/sizeof(char)];
-    count1  = temp.size;
+    count1 = temp.size;
     offset1 = temp.pos;
     while (count1 > 0) {
       ret = pread(fd, &buf[(temp.addr - main_addr) / sizeof(char)], count1, offset1);
@@ -311,7 +311,7 @@ lfs_mpi_read(lfs_mpi_file_p fd, char *buf, size_t count, off_t offset) {
   struct lfs_record *missing_chunks;
   int m_ch_s = 1;
   int proc_size;
-  int query_index   = 1;
+  int query_index = 1;
   int missing_count = 1;
   FILE *temp_log_file;
   int temp_data_file;
@@ -319,7 +319,7 @@ lfs_mpi_read(lfs_mpi_file_p fd, char *buf, size_t count, off_t offset) {
   char *lfsfilename2;
   temp.addr = offset;
   temp.size = count;
-  temp.pos  = 0;
+  temp.pos = 0;
   // filling the query stack with the main query information.
   query = (lfs_record *)malloc(sizeof(lfs_record) * 1001);
   lfs_vec_add(&query, &query_index, temp);
@@ -347,11 +347,11 @@ lfs_mpi_read(lfs_mpi_file_p fd, char *buf, size_t count, off_t offset) {
     // now we free the query stack and replace it with the missing stack (swap missing and query).
     //                      printf("swap missing and query\n");
     free(query);
-    swap_help      = query;
-    query          = missing_chunks;
-    query_index    = m_ch_s;
+    swap_help = query;
+    query = missing_chunks;
+    query_index = m_ch_s;
     missing_chunks = swap_help;
-    m_ch_s         = 1;
+    m_ch_s = 1;
     // checking all of the files and opening them to process the read.
     int epoch = 0;
 
@@ -400,11 +400,11 @@ lfs_mpi_read(lfs_mpi_file_p fd, char *buf, size_t count, off_t offset) {
         if (missing_count == 0) {
           break;
         }
-        swap_help      = query;
-        query          = missing_chunks;
-        query_index    = m_ch_s;
+        swap_help = query;
+        query = missing_chunks;
+        query_index = m_ch_s;
         missing_chunks = swap_help;
-        m_ch_s         = 1;
+        m_ch_s = 1;
       } // end of IF
     }
   } // end of FOR

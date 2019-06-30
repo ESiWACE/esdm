@@ -76,11 +76,11 @@ int convert_smd_to_metadata(smd_attr_t *smd_file, esdm_metadata_t **out);
 static void write_test() {
   esdm_status ret;
 
-  char *result = NULL;
+  // char *result = NULL;
   // Interaction with ESDM
   esdm_dataspace_t *dataspace = NULL;
   esdm_container_t *container = NULL;
-  esdm_dataset_t *dataset     = NULL;
+  esdm_dataset_t *dataset = NULL;
 
   // define dataspace
   int64_t bounds[] = {10, 20};
@@ -99,18 +99,18 @@ static void write_test() {
   assert(ret == ESDM_SUCCESS);
 
   char *names[] = {"longitude", "latitude"};
-  ret           = esdm_dataset_name_dims(dataset, names);
+  ret = esdm_dataset_name_dims(dataset, names);
   assert(ret == ESDM_SUCCESS);
 
   // 3) Attributes
-  char *str         = {"This is some history"};
+  char *str = {"This is some history"};
   smd_attr_t *attr1 = smd_attr_new("history", SMD_DTYPE_STRING, str, 0);
-  ret               = esdm_dataset_link_attribute(dataset, attr1);
+  ret = esdm_dataset_link_attribute(dataset, attr1);
   assert(ret == ESDM_SUCCESS);
 
-  char *unit        = {"Celsius"};
+  char *unit = {"Celsius"};
   smd_attr_t *attr2 = smd_attr_new("unit", SMD_DTYPE_STRING, unit, 1);
-  ret               = esdm_dataset_link_attribute(dataset, attr2);
+  ret = esdm_dataset_link_attribute(dataset, attr2);
   assert(ret == ESDM_SUCCESS);
 
   // this step shall write out the metadata and make it persistent
@@ -132,9 +132,9 @@ void read_test() {
   esdm_status ret;
 
   // Interaction with ESDM
-  esdm_dataspace_t *dataspace = NULL;
+  // esdm_dataspace_t *dataspace = NULL;
   esdm_container_t *container = NULL;
-  esdm_dataset_t *dataset     = NULL;
+  esdm_dataset_t *dataset = NULL;
 
   ret = esdm_container_t_retrieve("mycontainer", &container);
 
@@ -156,29 +156,29 @@ void read_test() {
 
   // for NetCDF: dims and type
   esdm_dataspace_t *dspace;
-  ret = esdm_dataset_get_dataspace(dataset, & dspace);
+  ret = esdm_dataset_get_dataspace(dataset, &dspace);
   assert(ret == ESDM_SUCCESS);
-	assert(dspace != NULL);
+  assert(dspace != NULL);
   esdm_dataspace_print(dspace);
-	assert(dspace->type != NULL);
-	assert(dspace->dims == 2);
+  assert(dspace->type != NULL);
+  assert(dspace->dims == 2);
 
-	char type[100];
-	char type_e[100];
-	smd_type_ser(type, dspace->type);
-	smd_type_ser(type_e, SMD_DTYPE_UINT64);
-	assert(strcmp(type, type_e) == 0);
+  char type[100];
+  char type_e[100];
+  smd_type_ser(type, dspace->type);
+  smd_type_ser(type_e, SMD_DTYPE_UINT64);
+  assert(strcmp(type, type_e) == 0);
 
   // names of the dims
-	char const*const* names = NULL;
-	ret = esdm_dataset_get_name_dims(dataset, & names);
-	assert(names != NULL);
-	assert(strcmp(names[0], "longitude") == 0);
-	assert(strcmp(names[1], "latitude") == 0);
+  char const *const *names = NULL;
+  ret = esdm_dataset_get_name_dims(dataset, &names);
+  assert(names != NULL);
+  assert(strcmp(names[0], "longitude") == 0);
+  assert(strcmp(names[1], "latitude") == 0);
 
   // get the attributes
   smd_attr_t *md = NULL;
-  ret            = esdm_dataset_get_attributes(dataset, &md);
+  ret = esdm_dataset_get_attributes(dataset, &md);
   assert(ret == ESDM_SUCCESS);
 
   char *txt;

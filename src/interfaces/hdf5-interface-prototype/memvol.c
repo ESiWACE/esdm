@@ -37,12 +37,12 @@ herr_t print_property(hid_t id, const char *name, void *iter_data) {
 
 #include "m-attribute.c"
 #include "m-dataset.c"
-#include "m-type.c"
 #include "m-dummy.c"
 #include "m-file.c"
 #include "m-group.c"
 #include "m-link.c"
 #include "m-object.c"
+#include "m-type.c"
 
 static herr_t memvol_file_term(hid_t vtpl_id) {
   return 0;
@@ -119,8 +119,8 @@ memvol_dataset_close,
 memvol_type_commit, /* commit */
 memvol_type_open,   /* open */
 memvol_type_get,    /* get_size */
-NULL,                   //H5VL_log_type_specific,     /* specific */
-NULL,                   //H5VL_log_type_optional,     /* optional */
+NULL,               //H5VL_log_type_specific,     /* specific */
+NULL,               //H5VL_log_type_optional,     /* optional */
 memvol_type_close   /* close */
 },
 {

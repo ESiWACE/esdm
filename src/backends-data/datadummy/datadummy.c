@@ -44,7 +44,7 @@
 
 
 int mkfs(esdm_backend_t *backend) {
-  posix_backend_data_t *data       = (posix_backend_data_t *)backend->data;
+  posix_backend_data_t *data = (posix_backend_data_t *)backend->data;
   posix_backend_options_t *options = data->options;
 
   ESDM_DEBUG("mkfs: backend->(void*)data->options->target = %s\n", options->target);
@@ -102,7 +102,7 @@ int fsck() {
 int posix_backend_performance_estimate(esdm_backend_t *backend) {
   DEBUG_ENTER("Calculating performance estimate.");
 
-  posix_backend_data_t *data       = (posix_backend_data_t *)backend->data;
+  posix_backend_data_t *data = (posix_backend_data_t *)backend->data;
   posix_backend_options_t *options = data->options;
 
   ESDM_DEBUG("perf_estimate: backend->(void*)data->options->target = %s\n", options->target);
@@ -188,10 +188,10 @@ static esdm_backend_t backend_template = {
 ///////////////////////////////////////////////////////////////////////////////
 // WARNING: This serves as a template for the posix plugin and is memcpied!  //
 ///////////////////////////////////////////////////////////////////////////////
-.name      = "metadummy",
-.type      = SMD_DTYPE_METADATA,
-.version   = "0.0.1",
-.data      = NULL,
+.name = "metadummy",
+.type = SMD_DTYPE_METADATA,
+.version = "0.0.1",
+.data = NULL,
 .callbacks = {
 NULL,                               // finalize
 posix_backend_performance_estimate, // performance_estimate
@@ -232,10 +232,10 @@ esdm_backend_t *posix_backend_init(void *init_data) {
   esdm_backend_t *backend = (esdm_backend_t *)malloc(sizeof(esdm_backend_t));
   memcpy(backend, &backend_template, sizeof(esdm_backend_t));
 
-  backend->data                    = (void *)malloc(sizeof(posix_backend_data_t));
-  posix_backend_data_t *data       = (posix_backend_data_t *)backend->data;
+  backend->data = (void *)malloc(sizeof(posix_backend_data_t));
+  posix_backend_data_t *data = (posix_backend_data_t *)backend->data;
   posix_backend_options_t *options = (posix_backend_options_t *)init_data;
-  data->options                    = options;
+  data->options = options;
 
   // valid refs for backend, data, options available now
   data->other = 47;

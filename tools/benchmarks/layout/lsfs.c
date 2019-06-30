@@ -46,7 +46,7 @@ size_t smalldatasize;
 char *buffer;
 
 void stdWrite() {
-  int fd     = open(filename, O_CREAT | O_TRUNC | O_RDWR, S_IRUSR | S_IWUSR);
+  int fd = open(filename, O_CREAT | O_TRUNC | O_RDWR, S_IRUSR | S_IWUSR);
   size_t ret = 0;
 
   timer t1;
@@ -60,7 +60,7 @@ void stdWrite() {
 
     for (int i = 0; i < iterationsSmall; i++) {
       size_t pos = rand() % (blocksize - smalldatasize) + startPos;
-      ret        = pwrite(fd, buffer, smalldatasize, pos);
+      ret = pwrite(fd, buffer, smalldatasize, pos);
       assert(ret == smalldatasize);
     }
 
@@ -69,13 +69,13 @@ void stdWrite() {
   close(fd);
 
   size_t data = timesteps * blocksize + iterationsSmall * smalldatasize;
-  t           = stop_timer(t1);
+  t = stop_timer(t1);
   printf("stdWrite: %f %zu bytes = %.1f MiB/s\n", t, data, data / t / 1024.0 / 1024);
 }
 
 void stdRead1DVar() {
   // we read one variable from each block
-  int fd     = open(filename, O_RDONLY);
+  int fd = open(filename, O_RDONLY);
   size_t ret = 0;
 
   timer t1;
@@ -100,7 +100,7 @@ void stdRead1DVar() {
 
 void stdReadAll() {
   // we read one variable from each block
-  int fd     = open(filename, O_RDONLY);
+  int fd = open(filename, O_RDONLY);
   size_t ret = 0;
 
   timer t1;
@@ -124,8 +124,8 @@ void stdReadAll() {
 
 // emulate log structured write
 void lfsWrite() {
-  int fd     = open(filename, O_CREAT | O_TRUNC | O_RDWR, S_IRUSR | S_IWUSR);
-  FILE *lfs  = fopen(lfsfilename, "w+");
+  int fd = open(filename, O_CREAT | O_TRUNC | O_RDWR, S_IRUSR | S_IWUSR);
+  FILE *lfs = fopen(lfsfilename, "w+");
   size_t ret = 0;
 
   timer t1;
@@ -141,7 +141,7 @@ void lfsWrite() {
 
     for (int i = 0; i < iterationsSmall; i++) {
       size_t pos = rand() % (blocksize - smalldatasize) + startPos;
-      ret        = pwrite(fd, buffer, smalldatasize, pos);
+      ret = pwrite(fd, buffer, smalldatasize, pos);
 
       fwrite(&pos, sizeof(startPos), 1, lfs);
       fwrite(&smalldatasize, sizeof(blocksize), 1, lfs);
@@ -155,7 +155,7 @@ void lfsWrite() {
   fclose(lfs);
 
   size_t data = timesteps * blocksize + iterationsSmall * smalldatasize;
-  t           = stop_timer(t1);
+  t = stop_timer(t1);
   printf("lfsWrite: %f %zu bytes = %.1f MiB/s\n", t, data, data / t / 1024.0 / 1024);
 }
 
@@ -212,9 +212,9 @@ lfs_index *lfsReadIndex() {
   lfs_record *records = malloc(sizeof(lfs_record) * record_count);
 
   size_t file_position = 0;
-  FILE *lfs            = fopen(lfsfilename, "r");
+  FILE *lfs = fopen(lfsfilename, "r");
   for (int i = 0; i < record_count; i++) {
-    ret                      = fread(&records[i], sizeof(lfs_record_on_disk), 1, lfs);
+    ret = fread(&records[i], sizeof(lfs_record_on_disk), 1, lfs);
     records[i].file_position = file_position;
     assert(ret == 1);
     data++;
@@ -235,7 +235,7 @@ lfs_index *lfsReadIndex() {
 
   printf("lfsReadIndex: %f %zu bytes = %.1f MiB/s\n", t, data, data / t / 1024.0 / 1024);
   lfs_index *index = (lfs_index *)malloc(sizeof(lfs_index));
-  *index           = (lfs_index) {record_count, records, records_end};
+  *index = (lfs_index) {record_count, records, records_end};
   return index;
 }
 
@@ -311,7 +311,7 @@ size_t lfs_pread(int fd, void *buf, size_t size, size_t offset, lfs_index *index
   }
 
   cur_pos = lfs_binsearch_right(offset, index->records, index->size);
-  r       = &index->records[cur_pos];
+  r = &index->records[cur_pos];
   //printf(" r %d %lu %lu\n", start_pos, r->pos, r->size);
   // right side overlaps
   while (cur_pos < index->size && r->pos < end) {
@@ -325,7 +325,7 @@ size_t lfs_pread(int fd, void *buf, size_t size, size_t offset, lfs_index *index
 
 void lfsReadAll(lfs_index *index) {
   // we read one variable from each block
-  int fd     = open(filename, O_RDONLY);
+  int fd = open(filename, O_RDONLY);
   size_t ret = 0;
 
   timer t1;
@@ -349,7 +349,7 @@ void lfsReadAll(lfs_index *index) {
 
 void lfsRead1DVar(lfs_index *index) {
   // we read one variable from each block
-  int fd     = open(filename, O_RDONLY);
+  int fd = open(filename, O_RDONLY);
   size_t ret = 0;
 
   timer t1;
@@ -383,11 +383,11 @@ int main(int argc, char **argv) {
     printf("Synopsis: %s <filename> <timesteps> <blocksize> <iterationsSmall> <small-data-size>\n", argv[0]);
     exit(1);
   }
-  filename        = argv[1];
-  timesteps       = atoi(argv[2]);
-  blocksize       = atoll(argv[3]);
+  filename = argv[1];
+  timesteps = atoi(argv[2]);
+  blocksize = atoll(argv[3]);
   iterationsSmall = atoi(argv[4]);
-  smalldatasize   = atoll(argv[5]);
+  smalldatasize = atoll(argv[5]);
 
   sprintf(lfsfilename, "%s.log", filename);
 

@@ -80,8 +80,8 @@ void startIO(long work, io_request_status_t *status) {
   // now enqueue the operations
   for (int i = 0; i < backend_count; i++) {
     io_work_t *task = (io_work_t *)malloc(sizeof(io_work_t));
-    task->num       = i;
-    task->parent    = status;
+    task->num = i;
+    task->parent = status;
     g_thread_pool_push(pools[i], task, &error);
   }
 }
@@ -109,7 +109,7 @@ void write_dataset(long iterations) {
 
   // atomically set the number of ops that need to be done.
   status.pending_ops = ATOMIC_VAR_INIT(backend_count * iterations);
-  status.waiting     = ATOMIC_VAR_INIT(0);
+  status.waiting = ATOMIC_VAR_INIT(0);
 
   // TODO evtl. check if we must stall due to short in memory
 
@@ -128,9 +128,9 @@ int main(int argc, char **argv) {
     printf("Syntax: %s [backends#] [threads per backend#] [Iterations#]\n", argv[0]);
     exit(1);
   }
-  backend_count           = atoi(argv[1]);
+  backend_count = atoi(argv[1]);
   int threads_per_backend = atoi(argv[2]);
-  long iterations         = atol(argv[3]);
+  long iterations = atol(argv[3]);
   register_backends(backend_count, threads_per_backend);
 
   timer t;

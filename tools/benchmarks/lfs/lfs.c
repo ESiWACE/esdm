@@ -22,14 +22,14 @@ struct lfs_files lfsfiles[20];
 int current_index = 0;
 
 int lfs_open(char *df, int flags, mode_t mode) {
-  filename       = strdup(df);
+  filename = strdup(df);
   char *metafile = (char *)malloc((strlen(df) + 4) * sizeof(char));
   strcpy(metafile, df);
   strcat(metafile, ".log");
   //printf("filename: %s\n", filename);
   //printf("lfsfilename: %s\n", metafile);
-  lfsfilename                       = strdup(metafile);
-  lfsfiles[current_index].log_file  = fopen(lfsfilename, "a+");
+  lfsfilename = strdup(metafile);
+  lfsfiles[current_index].log_file = fopen(lfsfilename, "a+");
   lfsfiles[current_index].data_file = open(filename, O_CREAT | O_RDWR, S_IRUSR | S_IWUSR);
   current_index++;
 
@@ -79,13 +79,13 @@ read_record(int fd) {
   //assert(ret == 0);
   int record_count = fileLen / sizeof(lfs_record_on_disk);
   //printf("this is size %d\n",record_count);
-  lfs_record *records  = (lfs_record *)malloc(sizeof(lfs_record) * record_count);
+  lfs_record *records = (lfs_record *)malloc(sizeof(lfs_record) * record_count);
   size_t file_position = 0;
 
   // filling the created array with the values inside the metadata file
   //  FILE * lfs = fopen(lfsfilename, "r");
   for (int i = 0; i < record_count; i++) {
-    ret            = fread(&records[i], sizeof(lfs_record_on_disk), 1, lfsfiles[fd].log_file);
+    ret = fread(&records[i], sizeof(lfs_record_on_disk), 1, lfsfiles[fd].log_file);
     records[i].pos = file_position;
     assert(ret == 1);
     file_position += records[i].size;
@@ -134,8 +134,8 @@ int lfs_find_chunks(size_t a, size_t b, int index, struct lfs_record *my_recs, s
   if (a == b)
     return 0;
   struct tup res, rec, query;
-  res.a   = -1;
-  res.b   = -1;
+  res.a = -1;
+  res.b = -1;
   query.a = a;
   query.b = b;
   // search through the logs until you find a record that overlaps with the given query area
@@ -157,14 +157,14 @@ int lfs_find_chunks(size_t a, size_t b, int index, struct lfs_record *my_recs, s
     }
     rec.a = my_recs[index].addr;
     rec.b = my_recs[index].addr + my_recs[index].size;
-    res   = compare_tup(query, rec);
+    res = compare_tup(query, rec);
     index--;
   }
   struct lfs_record found;
   //printf("result: %lu, %lu\n", res.a, res.b);
   found.addr = res.a;
   found.size = res.b - res.a;
-  found.pos  = my_recs[index + 1].pos + res.a - my_recs[index + 1].addr;
+  found.pos = my_recs[index + 1].pos + res.a - my_recs[index + 1].addr;
   //chunks_stack.push_back(found);
   lfs_vec_add(chunks_stack, ch_s, found);
   // call yourself for the remaing areas of the query that have not been covered with the found record
@@ -187,7 +187,7 @@ lfs_read(int fd, char *buf, size_t count, off_t offset) {
   // create the vector that acts like a stack for our finding chunks recursive function
   struct lfs_record *chunks_stack;
   chunks_stack = (lfs_record *)malloc(sizeof(lfs_record) * 1001);
-  int ch_s     = 1;
+  int ch_s = 1;
   // find the length of the log array
   //struct stat stats;
   // int  myfd;

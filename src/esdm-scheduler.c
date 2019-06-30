@@ -43,17 +43,17 @@ esdm_scheduler_t *esdm_scheduler_init(esdm_instance_t *esdm) {
   ESDM_DEBUG(__func__);
 
   esdm_scheduler_t *scheduler = NULL;
-  scheduler                   = (esdm_scheduler_t *)malloc(sizeof(esdm_scheduler_t));
+  scheduler = (esdm_scheduler_t *)malloc(sizeof(esdm_scheduler_t));
 
   // create thread pools per device
   // decide how many threads should be used per backend.
   const int ppn = esdm->procs_per_node;
-  const int gt  = esdm->total_procs;
+  const int gt = esdm->total_procs;
   GError *error;
   for (int i = 0; i < esdm->modules->data_backend_count; i++) {
     esdm_backend_t *b = esdm->modules->data_backends[i];
     // in total we should not use more than max_global total threads
-    int max_local  = (b->config->max_threads_per_node + ppn - 1) / ppn;
+    int max_local = (b->config->max_threads_per_node + ppn - 1) / ppn;
     int max_global = (b->config->max_global_threads + gt - 1) / gt;
 
     if (b->config->data_accessibility == ESDM_ACCESSIBILITY_GLOBAL) {
@@ -138,10 +138,10 @@ static void read_copy_callback(io_work_t *work) {
     DEBUG("Error reading from fragment ", work->fragment);
     return;
   }
-  char *b              = (char *)work->data.mem_buf;
+  char *b = (char *)work->data.mem_buf;
   esdm_dataspace_t *bs = work->data.buf_space;
 
-  esdm_fragment_t *f   = work->fragment;
+  esdm_fragment_t *f = work->fragment;
   esdm_dataspace_t *fs = f->dataspace;
   //esdm_fragment_print(f);
   //printf("\n");
@@ -164,9 +164,9 @@ static void read_copy_callback(io_work_t *work) {
       size *= fs->size[d];
     }
   }
-  uint64_t mn         = bs->size[split_dim] > fs->size[split_dim] ? fs->size[split_dim] : bs->size[split_dim];
+  uint64_t mn = bs->size[split_dim] > fs->size[split_dim] ? fs->size[split_dim] : bs->size[split_dim];
   uint64_t offset_mem = (fs->offset[split_dim] - bs->offset[split_dim]) * size;
-  uint64_t offset_f   = 0;
+  uint64_t offset_f = 0;
 
   size *= mn;
 
@@ -187,13 +187,13 @@ esdm_status esdm_scheduler_enqueue_read(esdm_instance_t *esdm, io_request_status
   int i, x;
   for (i = 0; i < frag_count; i++) {
     esdm_fragment_t *f = read_frag[i];
-    json_t *root       = load_json(f->metadata->json);
+    json_t *root = load_json(f->metadata->json);
     json_t *elem;
     elem = json_object_get(root, "plugin");
     //const char * plugin_type = json_string_value(elem);
-    elem                  = json_object_get(root, "id");
+    elem = json_object_get(root, "id");
     const char *plugin_id = json_string_value(elem);
-    elem                  = json_object_get(root, "offset");
+    elem = json_object_get(root, "offset");
     //const char * offset_str = json_string_value(elem);
     elem = json_object_get(root, "size");
     //const char * size_str = json_string_value(elem);
@@ -231,17 +231,17 @@ esdm_status esdm_scheduler_enqueue_read(esdm_instance_t *esdm, io_request_status
     f->backend = backend_to_use;
 
     io_work_t *task = (io_work_t *)malloc(sizeof(io_work_t));
-    task->parent    = status;
-    task->op        = ESDM_OP_READ;
-    task->fragment  = f;
+    task->parent = status;
+    task->op = ESDM_OP_READ;
+    task->fragment = f;
     if (f->in_place) {
       DEBUG("inplace!", "");
       task->callback = NULL;
-      f->buf         = buf;
+      f->buf = buf;
     } else {
-      f->buf               = malloc(size);
-      task->callback       = read_copy_callback;
-      task->data.mem_buf   = buf;
+      f->buf = malloc(size);
+      task->callback = read_copy_callback;
+      task->data.mem_buf = buf;
       task->data.buf_space = buf_space;
     }
     if (backend_to_use->threads == 0) {
@@ -328,7 +328,7 @@ esdm_status esdm_scheduler_enqueue_write(esdm_instance_t *esdm, io_request_statu
       uint64_t y_to_access = y_total_access > backend_y_per_buffer ? backend_y_per_buffer : y_total_access;
       y_total_access -= y_to_access;
 
-      dim[split_dim]    = y_to_access;
+      dim[split_dim] = y_to_access;
       offset[split_dim] = offset_y + space->offset[split_dim];
 
       io_work_t *task = (io_work_t *)malloc(sizeof(io_work_t));
@@ -337,10 +337,10 @@ esdm_status esdm_scheduler_enqueue_write(esdm_instance_t *esdm, io_request_statu
       esdm_dataspace_subspace(space, space->dims, dim, offset, &subspace);
 
       task->parent = status;
-      task->op     = ESDM_OP_WRITE;
+      task->op = ESDM_OP_WRITE;
       esdm_fragment_create(dataset, subspace, (char *)buf + offset_y * one_y_size, &task->fragment);
       task->fragment->backend = b;
-      task->callback          = NULL;
+      task->callback = NULL;
       if (b->threads == 0) {
         backend_thread(task, b);
       } else {
@@ -396,7 +396,7 @@ esdm_status esdm_scheduler_process_blocking(esdm_instance_t *esdm, io_operation_
     ret = esdm_scheduler_enqueue_write(esdm, &status, dataset, buf, subspace);
   } else if (op == ESDM_OP_READ) {
     esdm_md_backend_t *md = esdm->modules->metadata_backend;
-    ret                   = md->callbacks.lookup(md, dataset, subspace, &frag_count, &read_frag);
+    ret = md->callbacks.lookup(md, dataset, subspace, &frag_count, &read_frag);
     DEBUG("fragments to read: %d", frag_count);
     ret = esdm_scheduler_enqueue_read(esdm, &status, frag_count, read_frag, buf, subspace);
   } else {

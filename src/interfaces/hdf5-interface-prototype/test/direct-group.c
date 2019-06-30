@@ -48,7 +48,7 @@ int main() {
   //H5Gclose(g3);
 
   printf("Testing additional functions\n");
-  g1    = H5Gopen2(fid, "g1", H5P_DEFAULT);
+  g1 = H5Gopen2(fid, "g1", H5P_DEFAULT);
   plist = H5Gget_create_plist(g1);
   H5G_info_t group_info;
   H5Gget_info(g1, &group_info);
@@ -59,7 +59,7 @@ int main() {
   H5Pclose(plist);
 
   status = H5Gclose(g1);
-  g1     = H5Gopen2(fid, "g2", H5P_DEFAULT);
+  g1 = H5Gopen2(fid, "g2", H5P_DEFAULT);
   H5Gclose(g1);
   //g1 = H5Gopen2(fid, "INVALID", H5P_DEFAULT );
   //H5Gclose(g1);

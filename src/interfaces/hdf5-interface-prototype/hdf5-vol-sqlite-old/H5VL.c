@@ -64,11 +64,11 @@ int main(int argc, char **argv) {
   //pig.weight = 85;
 
   H5VL_loc_params_t par;
-  par.type             = TYPE_SCHUHE;
+  par.type = TYPE_SCHUHE;
   par.loc_data.box_t.x = 35.5;
 
   H5VL_loc_params_t parr;
-  parr.type                    = TYPE_BANANE;
+  parr.type = TYPE_BANANE;
   parr.loc_data.pig_t.days_old = 150;
 
 

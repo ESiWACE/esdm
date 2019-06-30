@@ -39,7 +39,7 @@
 
 
 static void memvol_group_init(memvol_group_t *group) {
-  group->childs_tbl              = g_hash_table_new(g_str_hash, g_str_equal);
+  group->childs_tbl = g_hash_table_new(g_str_hash, g_str_equal);
   group->childs_ord_by_index_arr = g_array_new(0, 0, sizeof(void *));
   assert(group->childs_tbl != NULL);
 }
@@ -55,9 +55,9 @@ static void *memvol_group_create(void *obj, H5VL_loc_params_t loc_params, const 
 
   // allocate resources
   object = (memvol_object_t *)malloc(sizeof(memvol_object_t));
-  group  = (memvol_group_t *)malloc(sizeof(memvol_group_t));
+  group = (memvol_group_t *)malloc(sizeof(memvol_group_t));
 
-  object->type   = MEMVOL_GROUP;
+  object->type = MEMVOL_GROUP;
   object->object = group;
 
   memvol_group_init(group);
@@ -98,7 +98,7 @@ static void *memvol_group_open(void *obj, H5VL_loc_params_t loc_params, const ch
 static herr_t memvol_group_get(void *obj, H5VL_group_get_t get_type, hid_t dxpl_id, void **req, va_list arguments) {
   debugI("%s\n", __func__);
 
-  herr_t ret_value      = SUCCEED;
+  herr_t ret_value = SUCCEED;
   memvol_group_t *group = (memvol_group_t *)((memvol_object_t *)obj)->object;
 
   // Variadic variables in HDF5 VOL implementation are used to expose HDF5
@@ -116,14 +116,14 @@ static herr_t memvol_group_get(void *obj, H5VL_group_get_t get_type, hid_t dxpl_
       // group creation property list (GCPL)
       debugI("Group get: GCPL %p\n", obj);
       hid_t *new_gcpl_id = va_arg(arguments, hid_t *);
-      *new_gcpl_id       = H5Pcopy(group->gcpl_id);
+      *new_gcpl_id = H5Pcopy(group->gcpl_id);
       return 0;
     }
 
     case H5VL_GROUP_GET_INFO: {
       // This argument defines if we should retrieve information about ourselve or a child node
       H5VL_loc_params_t loc_params = va_arg(arguments, H5VL_loc_params_t);
-      H5G_info_t *grp_info         = va_arg(arguments, H5G_info_t *);
+      H5G_info_t *grp_info = va_arg(arguments, H5G_info_t *);
 
       debugI("Group get: INFO %p loc_param: %d \n", obj, loc_params.type);
 
@@ -157,9 +157,9 @@ static herr_t memvol_group_get(void *obj, H5VL_group_get_t get_type, hid_t dxpl_
       }
 
       grp_info->storage_type = H5G_STORAGE_TYPE_COMPACT;
-      grp_info->nlinks       = 0;
-      grp_info->max_corder   = g_hash_table_size(relevant_group->childs_tbl);
-      grp_info->mounted      = 0;
+      grp_info->nlinks = 0;
+      grp_info->max_corder = g_hash_table_size(relevant_group->childs_tbl);
+      grp_info->mounted = 0;
 
       return 0;
     }
@@ -198,7 +198,7 @@ static herr_t memvol_group_optional(void *obj, hid_t dxpl_id, void **req, va_lis
 static herr_t memvol_group_close(void *grp, hid_t dxpl_id, void **req) {
   debugI("%s\n", __func__);
 
-  herr_t ret_value      = SUCCEED;
+  herr_t ret_value = SUCCEED;
   memvol_group_t *group = (memvol_group_t *)((memvol_object_t *)grp)->object;
 
   debugI("Group close: %p\n", (void *)group);

@@ -22,10 +22,10 @@
 
 #define _GNU_SOURCE /* See feature_test_macros(7) */
 
+#include <inttypes.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <inttypes.h>
 
 #include <esdm-internal.h>
 #include <esdm.h>
@@ -47,7 +47,7 @@ esdm_status esdm_container_t_create(const char *name, esdm_container_t **out_con
   container->name = strdup(name);
 
   container->metadata = NULL;
-  container->status   = ESDM_STATUS_DIRTY;
+  container->status = ESDM_STATUS_DIRTY;
 
 
   *out_container = container;
@@ -66,7 +66,7 @@ esdm_status esdm_container_t_retrieve(const char *name, esdm_container_t **out_c
   container->name = strdup(name);
 
   container->metadata = NULL;
-  container->status   = ESDM_STATUS_DIRTY;
+  container->status = ESDM_STATUS_DIRTY;
 
   *out_container = container;
 
@@ -113,20 +113,20 @@ esdm_status esdm_fragment_create(esdm_dataset_t *dataset, esdm_dataspace_t *subs
   }
 
   uint64_t elements = esdm_dataspace_element_count(subspace);
-  int64_t bytes     = elements * esdm_sizeof(subspace->type);
+  int64_t bytes = elements * esdm_sizeof(subspace->type);
   DEBUG("Entries in subspace: %d x %d bytes = %d bytes \n", elements, esdm_sizeof(subspace->type), bytes);
 
-  fragment->metadata          = malloc(ESDM_MAX_SIZE);
-  fragment->metadata->json    = (char *)(fragment->metadata) + sizeof(esdm_metadata_t);
+  fragment->metadata = malloc(ESDM_MAX_SIZE);
+  fragment->metadata->json = (char *)(fragment->metadata) + sizeof(esdm_metadata_t);
   fragment->metadata->json[0] = 0;
-  fragment->metadata->size    = 0;
+  fragment->metadata->size = 0;
 
-  fragment->dataset   = dataset;
+  fragment->dataset = dataset;
   fragment->dataspace = subspace;
-  fragment->buf       = buf; // zero copy?
-  fragment->elements  = elements;
-  fragment->bytes     = bytes;
-  fragment->status    = ESDM_STATUS_DIRTY;
+  fragment->buf = buf; // zero copy?
+  fragment->elements = elements;
+  fragment->bytes = bytes;
+  fragment->status = ESDM_STATUS_DIRTY;
 
   *out_fragment = fragment;
 
@@ -138,8 +138,8 @@ esdm_status esdm_dataspace_overlap_str(esdm_dataspace_t *a, char delim_c, char *
   //printf("str: %s %s\n", str_size, str_offset);
 
   const char delim[] = {delim_c, 0};
-  char *save         = NULL;
-  char *cur          = strtok_r(str_offset, delim, &save);
+  char *save = NULL;
+  char *cur = strtok_r(str_offset, delim, &save);
   if (cur == NULL) return ESDM_ERROR;
 
   int64_t off[a->dims];
@@ -151,7 +151,7 @@ esdm_status esdm_dataspace_overlap_str(esdm_dataspace_t *a, char delim_c, char *
     if (off[d] < 0) return ESDM_ERROR;
     //printf("o%ld,", off[d]);
     save[-1] = delim_c; // reset the overwritten text
-    cur      = strtok_r(NULL, delim, &save);
+    cur = strtok_r(NULL, delim, &save);
   }
   //printf("\n");
   if (str_size != NULL) {
@@ -212,8 +212,8 @@ void esdm_dataspace_string_descriptor(char *string, esdm_dataspace_t *dataspace)
   int pos = 0;
 
   int64_t dims = dataspace->dims;
-  int64_t *size      = dataspace->size;
-  int64_t *offset    = dataspace->offset;
+  int64_t *size = dataspace->size;
+  int64_t *offset = dataspace->offset;
 
   // offset to string
   int64_t i;
@@ -235,7 +235,7 @@ void esdm_dataspace_string_descriptor(char *string, esdm_dataspace_t *dataspace)
 
 esdm_status esdm_fragment_commit(esdm_fragment_t *f) {
   ESDM_DEBUG(__func__);
-  esdm_metadata_t *m  = f->metadata;
+  esdm_metadata_t *m = f->metadata;
   esdm_dataspace_t *d = f->dataspace;
 
   m->size += sprintf(&m->json[m->size], "{\"plugin\" : \"%s\", \"id\" : \"%s\", \"size\": \"", f->backend->name, f->backend->config->id);
@@ -290,8 +290,8 @@ esdm_status esdm_dataset_create(esdm_container_t *container, const char *name, e
   ESDM_DEBUG(__func__);
   esdm_dataset_t *dataset = (esdm_dataset_t *)malloc(sizeof(esdm_dataset_t));
 
-	dataset->varnames = NULL;
-  dataset->name      = strdup(name);
+  dataset->varnames = NULL;
+  dataset->name = strdup(name);
   dataset->container = container;
   esdm_metadata_t_init_(&dataset->metadata);
   dataset->dataspace = dataspace;
@@ -306,21 +306,21 @@ esdm_status esdm_dataset_retrieve(esdm_container_t *container, const char *name,
   ESDM_DEBUG(__func__);
   esdm_dataset_t *d = (esdm_dataset_t *)malloc(sizeof(esdm_dataset_t));
 
-	d->varnames = NULL;
-  d->name      = strdup(name);
+  d->varnames = NULL;
+  d->name = strdup(name);
   d->container = container;
   *out_dataset = NULL;
 
-  d->metadata         = (esdm_metadata_t *)malloc(sizeof(esdm_metadata_t));
+  d->metadata = (esdm_metadata_t *)malloc(sizeof(esdm_metadata_t));
   esdm_metadata_t *md = d->metadata;
 
-  md->size      = 0;
+  md->size = 0;
   md->buff_size = 0;
 
   esdm.modules->metadata_backend->callbacks.dataset_retrieve(esdm.modules->metadata_backend, d);
 
   /* parse the data */
-  char *js    = md->json;
+  char *js = md->json;
   size_t size = md->size;
   // first strip the attributes
   size_t parsed = smd_attr_create_from_json(js + 1, size, &md->attr);
@@ -329,38 +329,38 @@ esdm_status esdm_dataset_retrieve(esdm_container_t *container, const char *name,
   // for the rest we use JANSSON
   json_t *root = load_json(js);
   json_t *elem;
-  elem              = json_object_get(root, "typ");
-  char *str         = (char*) json_string_value(elem);
+  elem = json_object_get(root, "typ");
+  char *str = (char *)json_string_value(elem);
   smd_dtype_t *type = smd_type_from_ser(str);
   if (type == NULL) {
     DEBUG("Cannot parse type: %s", str);
     return ESDM_ERROR;
   }
   elem = json_object_get(root, "dims");
-	int dims = json_integer_value(elem);
-	elem = json_object_get(root, "size");
-	size_t arrsize = json_array_size(elem);
-	if(dims != arrsize){
-		return ESDM_ERROR;
-	}
-	int64_t sizes[dims];
-	for(int i=0; i < dims; i++){
-		sizes[i] = json_integer_value(json_array_get(elem, i));
-	}
-  esdm_status ret = esdm_dataspace_create(dims, sizes, type, & d->dataspace);
-	if(ret != ESDM_SUCCESS){
-		return ret;
-	}
-	elem = json_object_get(root, "varnames");
-	arrsize = json_array_size(elem);
-	if(dims != arrsize){
-		return ESDM_ERROR;
-	}
-	char * strs[dims];
-	for(int i=0; i < dims; i++){
-		strs[i] = (char*) json_string_value(json_array_get(elem, i));
-	}
-	esdm_dataset_name_dims(d, strs);
+  int dims = json_integer_value(elem);
+  elem = json_object_get(root, "size");
+  size_t arrsize = json_array_size(elem);
+  if (dims != arrsize) {
+    return ESDM_ERROR;
+  }
+  int64_t sizes[dims];
+  for (int i = 0; i < dims; i++) {
+    sizes[i] = json_integer_value(json_array_get(elem, i));
+  }
+  esdm_status ret = esdm_dataspace_create(dims, sizes, type, &d->dataspace);
+  if (ret != ESDM_SUCCESS) {
+    return ret;
+  }
+  elem = json_object_get(root, "varnames");
+  arrsize = json_array_size(elem);
+  if (dims != arrsize) {
+    return ESDM_ERROR;
+  }
+  char *strs[dims];
+  for (int i = 0; i < dims; i++) {
+    strs[i] = (char *)json_string_value(json_array_get(elem, i));
+  }
+  esdm_dataset_name_dims(d, strs);
   *out_dataset = d;
 
   return ESDM_SUCCESS;
@@ -370,26 +370,26 @@ esdm_status esdm_dataset_commit(esdm_dataset_t *d) {
   ESDM_DEBUG(__func__);
   // TODO
 
-  char *js        = d->metadata->json;
+  char *js = d->metadata->json;
   const char *jso = d->metadata->json;
-  int len         = 100000;
+  int len = 100000;
   js += snprintf(js, len + jso - js, "{");
   js += smd_attr_ser_json(js, d->metadata->attr) - 1;
   js += snprintf(js, len + jso - js, ",\"typ\":\"");
   js += smd_type_ser(js, d->dataspace->type) - 1;
-  js += snprintf(js, len + jso - js, "\",\"dims\":%"PRId64",\"size\":[%"PRId64, d->dataspace->dims, d->dataspace->size[0]);
+  js += snprintf(js, len + jso - js, "\",\"dims\":%" PRId64 ",\"size\":[%" PRId64, d->dataspace->dims, d->dataspace->size[0]);
   for (int i = 1; i < d->dataspace->dims; i++) {
-    js += snprintf(js, len + jso - js, ",%"PRId64, d->dataspace->size[i]);
+    js += snprintf(js, len + jso - js, ",%" PRId64, d->dataspace->size[i]);
   }
   js += snprintf(js, len + jso - js, "]");
-	if(d->varnames != NULL){
-		js += snprintf(js, len + jso - js, ",\"varnames\":[\"%s\"", d->varnames[0]);
-		for (int i = 1; i < d->dataspace->dims; i++) {
-	    js += snprintf(js, len + jso - js, ",\"%s\"", d->varnames[i]);
-		}
-		js += snprintf(js, len + jso - js, "]");
-	}
-	js += snprintf(js, len + jso - js, "}");
+  if (d->varnames != NULL) {
+    js += snprintf(js, len + jso - js, ",\"varnames\":[\"%s\"", d->varnames[0]);
+    for (int i = 1; i < d->dataspace->dims; i++) {
+      js += snprintf(js, len + jso - js, ",\"%s\"", d->varnames[i]);
+    }
+    js += snprintf(js, len + jso - js, "]");
+  }
+  js += snprintf(js, len + jso - js, "}");
 
   d->metadata->size = (js - jso);
 
@@ -410,9 +410,9 @@ esdm_status esdm_dataset_destroy(esdm_dataset_t *dataset) {
   free(dataset->metadata);
   dataset->metadata = NULL;
 
-	if(dataset->varnames == NULL){
-		free(dataset->varnames);
-	}
+  if (dataset->varnames == NULL) {
+    free(dataset->varnames);
+  }
   //	free(dataset->container);
   //	free(dataset->dataspace);
   free(dataset);
@@ -434,10 +434,10 @@ esdm_status esdm_dataspace_create(int64_t dims, int64_t *sizes, esdm_type_t type
   ESDM_DEBUG(__func__);
   esdm_dataspace_t *dataspace = (esdm_dataspace_t *)malloc(sizeof(esdm_dataspace_t));
 
-  dataspace->dims  = dims;
-  dataspace->size        = (int64_t *)malloc(sizeof(int64_t) * dims);
-  dataspace->type    = type;
-  dataspace->offset      = (int64_t *)malloc(sizeof(int64_t) * dims);
+  dataspace->dims = dims;
+  dataspace->size = (int64_t *)malloc(sizeof(int64_t) * dims);
+  dataspace->type = type;
+  dataspace->offset = (int64_t *)malloc(sizeof(int64_t) * dims);
   dataspace->subspace_of = NULL;
 
   memcpy(dataspace->size, sizes, sizeof(int64_t) * dims);
@@ -478,8 +478,8 @@ esdm_status esdm_dataspace_subspace(esdm_dataspace_t *dataspace, int64_t dims, i
     memcpy(subspace, dataspace, sizeof(esdm_dataspace_t));
 
     // populate subspace members
-    subspace->size        = (int64_t *)malloc(sizeof(int64_t) * dims);
-    subspace->offset      = (int64_t *)malloc(sizeof(int64_t) * dims);
+    subspace->size = (int64_t *)malloc(sizeof(int64_t) * dims);
+    subspace->offset = (int64_t *)malloc(sizeof(int64_t) * dims);
     subspace->subspace_of = dataspace;
 
     // make copies where necessary
@@ -554,7 +554,7 @@ uint64_t esdm_dataspace_element_count(esdm_dataspace_t *subspace) {
 
 
 uint64_t esdm_dataspace_size(esdm_dataspace_t *dataspace) {
-  uint64_t size  = esdm_dataspace_element_count(dataspace);
+  uint64_t size = esdm_dataspace_element_count(dataspace);
   uint64_t bytes = size * esdm_sizeof(dataspace->type);
   return bytes;
 }
@@ -569,10 +569,10 @@ esdm_status esdm_metadata_t_init_(esdm_metadata_t **output_metadata) {
   esdm_metadata_t *md = (esdm_metadata_t *)malloc(sizeof(esdm_metadata_t) + 10000);
   assert(md != NULL);
   *output_metadata = md;
-  md->buff_size    = 10000;
-  md->size         = 0;
-  md->json         = ((char *)md) + sizeof(esdm_metadata_t);
-  md->attr         = smd_attr_new("attr", SMD_DTYPE_EMPTY, NULL, 0);
+  md->buff_size = 10000;
+  md->size = 0;
+  md->json = ((char *)md) + sizeof(esdm_metadata_t);
+  md->attr = smd_attr_new("attr", SMD_DTYPE_EMPTY, NULL, 0);
 
   return ESDM_SUCCESS;
 }
@@ -580,39 +580,38 @@ esdm_status esdm_metadata_t_init_(esdm_metadata_t **output_metadata) {
 
 esdm_status esdm_dataset_name_dims(esdm_dataset_t *d, char **names) {
   ESDM_DEBUG(__func__);
-	assert(d != NULL);
-	assert(names != NULL);
-	int dims = d->dataspace->dims;
-	int size = 0;
-	// compute size and check that varname is conform
-	for(int i=0; i < dims; i++){
-		size += strlen(names[i]) + 1;
-		if (! ea_is_valid_name(names[i])){
-			return ESDM_ERROR;
-		}
-	}
-	if(d->varnames != NULL){
-		free(d->varnames);
-	}
-	d->varnames = (char **) malloc(dims * sizeof(void*) + size);
-	char * posVar = (char*) d->varnames + dims * sizeof(void*);
-	for(int i=0; i < dims; i++){
-		d->varnames[i] = posVar;
-		strcpy(posVar, names[i]);
-		posVar += 1 + strlen(names[i]);
-	}
+  assert(d != NULL);
+  assert(names != NULL);
+  int dims = d->dataspace->dims;
+  int size = 0;
+  // compute size and check that varname is conform
+  for (int i = 0; i < dims; i++) {
+    size += strlen(names[i]) + 1;
+    if (!ea_is_valid_name(names[i])) {
+      return ESDM_ERROR;
+    }
+  }
+  if (d->varnames != NULL) {
+    free(d->varnames);
+  }
+  d->varnames = (char **)malloc(dims * sizeof(void *) + size);
+  char *posVar = (char *)d->varnames + dims * sizeof(void *);
+  for (int i = 0; i < dims; i++) {
+    d->varnames[i] = posVar;
+    strcpy(posVar, names[i]);
+    posVar += 1 + strlen(names[i]);
+  }
 
   return ESDM_SUCCESS;
 }
 
-esdm_status esdm_dataset_get_name_dims(esdm_dataset_t *d, char const*const** out_names){
-	assert(d != NULL);
-	assert(out_names != NULL);
+esdm_status esdm_dataset_get_name_dims(esdm_dataset_t *d, char const *const **out_names) {
+  assert(d != NULL);
+  assert(out_names != NULL);
 
-	*out_names = (char const*const*) d->varnames;
-	return ESDM_SUCCESS;
+  *out_names = (char const *const *)d->varnames;
+  return ESDM_SUCCESS;
 }
-
 
 
 esdm_status esdm_dataset_link_attribute(esdm_dataset_t *dset, smd_attr_t *attr) {

@@ -35,9 +35,9 @@
 
 
 unsigned int to_char(const long long value, const size_t pos) {
-  const long long r   = value / ((long long)pow(10, pos)); // remove the last positions, e.g. pos=2 and value=2136 -> r=21
-  const long long x   = r / 10 * 10;                       // set last position to zero, e.g. r=21 -> x=20
-  const long long res = r - x;                             // e.g. r-x = 21-20 = 1
+  const long long r = value / ((long long)pow(10, pos)); // remove the last positions, e.g. pos=2 and value=2136 -> r=21
+  const long long x = r / 10 * 10;                       // set last position to zero, e.g. r=21 -> x=20
+  const long long res = r - x;                           // e.g. r-x = 21-20 = 1
   return res;
 }
 
@@ -48,7 +48,7 @@ char *create_pretty_number_ll(const double value) {
   FILE *stream = open_memstream(&pretty_number, &pretty_number_size);
 
   long long int a = (long long)value;
-  double b        = value - a;
+  double b = value - a;
 
   int n = floor(log10(a));
   for (size_t pos = n; pos >= n / 3 * 3; --pos) {
@@ -83,9 +83,9 @@ static void parse_dims(const char *s, size_t **dims, size_t *size) {
     return;
   }
   const char *seps = ":";
-  char sep         = seps[0];
-  size_t len       = strlen(s);
-  char *s_copy     = malloc(sizeof(char *) * len + 1);
+  char sep = seps[0];
+  size_t len = strlen(s);
+  char *s_copy = malloc(sizeof(char *) * len + 1);
   strcpy(s_copy, s);
 
   // Count separators
@@ -101,10 +101,10 @@ static void parse_dims(const char *s, size_t **dims, size_t *size) {
   // Get values
   char *pch = strtok(s_copy, seps);
   char *end = NULL;
-  size_t i  = 0;
+  size_t i = 0;
   while (pch != NULL) {
     (*dims)[i] = (size_t)strtol(pch, &end, 10);
-    pch        = strtok(NULL, seps);
+    pch = strtok(NULL, seps);
     ++i;
   }
   free(s_copy);
@@ -142,12 +142,12 @@ struct args {
 
 void print_header(benchmark_t *bm) {
   char buffer[200];
-  const int dist2    = 40;
-  const int dist3    = 20;
-  const int dist4    = 20;
+  const int dist2 = 40;
+  const int dist3 = 20;
+  const int dist4 = 20;
   const size_t dsize = bm->dgeom[0] * bm->dgeom[1] * bm->dgeom[2] * bm->dgeom[3] * sizeof(bm->block[0]);
   const size_t bsize = bm->bgeom[0] * bm->bgeom[1] * bm->bgeom[2] * bm->bgeom[3] * sizeof(bm->block[0]);
-  size_t csize       = 0;
+  size_t csize = 0;
   if (NC_CHUNKED == bm->storage) {
     csize = bm->cgeom[0] * bm->cgeom[1] * bm->cgeom[2] * bm->cgeom[3] * sizeof(bm->block[0]);
   }
@@ -208,22 +208,22 @@ int main(int argc, char **argv) {
 
   // Default values
   struct args args;
-  args.procs.nn     = 0;
-  args.procs.ppn    = 0;
-  args.dgeom_size   = 0;
-  args.dgeom        = NULL;
-  args.bgeom_size   = 0;
-  args.bgeom        = NULL;
-  args.cgeom_size   = 0;
-  args.cgeom        = NULL;
-  args.testfn       = NULL;
-  args.write_test   = 0;
-  args.read_test    = 0;
-  args.report_type  = REPORT_HUMAN;
-  args.par_access   = NC_INDEPENDENT;
+  args.procs.nn = 0;
+  args.procs.ppn = 0;
+  args.dgeom_size = 0;
+  args.dgeom = NULL;
+  args.bgeom_size = 0;
+  args.bgeom = NULL;
+  args.cgeom_size = 0;
+  args.cgeom = NULL;
+  args.testfn = NULL;
+  args.write_test = 0;
+  args.read_test = 0;
+  args.report_type = REPORT_HUMAN;
+  args.par_access = NC_INDEPENDENT;
   args.is_unlimited = 0;
-  args.verify       = 0;
-  args.fill_value   = 0;
+  args.verify = 0;
+  args.fill_value = 0;
 
   char *dg = NULL, *bg = NULL, *cg = NULL, *iot = "ind", *xf = "human";
 
@@ -274,7 +274,7 @@ int main(int argc, char **argv) {
   }
 
   if (0 == args.procs.nn) {
-    char *end       = NULL;
+    char *end = NULL;
     const char *env = getenv("SLURM_NNODES");
     if (NULL != env) {
       args.procs.nn = strtol(env, &end, 10);
@@ -285,7 +285,7 @@ int main(int argc, char **argv) {
   }
 
   if (0 == args.procs.ppn) {
-    char *end       = NULL;
+    char *end = NULL;
     const char *env = getenv("SLURM_NTASKS_PER_NODE");
     if (NULL != env) {
       args.procs.ppn = strtol(env, &end, 10);
@@ -297,17 +297,17 @@ int main(int argc, char **argv) {
 
   if (NULL == args.testfn) {
     const char *testfn = "./testfn.nc";
-    args.testfn        = (char *)malloc(sizeof(*args.testfn) * strlen(testfn) + 1);
+    args.testfn = (char *)malloc(sizeof(*args.testfn) * strlen(testfn) + 1);
     strcpy(args.testfn, testfn);
   }
 
   if (NULL == args.dgeom) {
     args.dgeom_size = NDIMS;
-    args.dgeom      = (size_t *)malloc(sizeof(*args.dgeom) * args.dgeom_size);
-    args.dgeom[DT]  = 100;
-    args.dgeom[DX]  = args.procs.nn * 100;
-    args.dgeom[DY]  = args.procs.ppn * 100;
-    args.dgeom[DZ]  = 10;
+    args.dgeom = (size_t *)malloc(sizeof(*args.dgeom) * args.dgeom_size);
+    args.dgeom[DT] = 100;
+    args.dgeom[DX] = args.procs.nn * 100;
+    args.dgeom[DY] = args.procs.ppn * 100;
+    args.dgeom[DZ] = 10;
   }
 
   if (NDIMS != args.dgeom_size) {
@@ -317,20 +317,20 @@ int main(int argc, char **argv) {
   // Automatic block layout
   if (NULL == args.bgeom) {
     args.bgeom_size = args.dgeom_size;
-    args.bgeom      = (size_t *)malloc(sizeof(*args.bgeom) * args.bgeom_size);
-    args.bgeom[DT]  = 1;
-    args.bgeom[DX]  = args.dgeom[DX] / args.procs.nn;
-    args.bgeom[DY]  = args.dgeom[DY] / args.procs.ppn;
-    args.bgeom[DZ]  = args.dgeom[DZ];
+    args.bgeom = (size_t *)malloc(sizeof(*args.bgeom) * args.bgeom_size);
+    args.bgeom[DT] = 1;
+    args.bgeom[DX] = args.dgeom[DX] / args.procs.nn;
+    args.bgeom[DY] = args.dgeom[DY] / args.procs.ppn;
+    args.bgeom[DZ] = args.dgeom[DZ];
   }
 
   if (cg != NULL && 0 == strcmp(cg, "auto")) {
     args.cgeom_size = args.bgeom_size;
-    args.cgeom      = (size_t *)malloc(sizeof(*args.cgeom) * args.cgeom_size);
-    args.cgeom[DT]  = 1;
-    args.cgeom[DX]  = args.bgeom[DX];
-    args.cgeom[DY]  = args.bgeom[DY];
-    args.cgeom[DZ]  = args.bgeom[DZ];
+    args.cgeom = (size_t *)malloc(sizeof(*args.cgeom) * args.cgeom_size);
+    args.cgeom[DT] = 1;
+    args.cgeom[DX] = args.bgeom[DX];
+    args.cgeom[DY] = args.bgeom[DY];
+    args.cgeom[DZ] = args.bgeom[DZ];
   } else {
     parse_dims(cg, &args.cgeom, &args.cgeom_size);
   }

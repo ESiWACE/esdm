@@ -74,7 +74,7 @@ int wos_get_param(const char *conf, char **output, const char *param) {
   char _output[1 + size];
   strncpy(_output, value, size);
   _output[size] = 0;
-  *output       = strdup(_output);
+  *output = strdup(_output);
   if (!*output) {
     DEBUG("Memory error");
     return ESDM_ERROR;
@@ -151,11 +151,11 @@ int esdm_backend_t_wos_init(const char *conf, esdm_backend_t *eb) {
     return ESDM_ERROR;
   }
 
-  ebm->wos_cluster  = NULL;
-  ebm->wos_policy   = NULL;
+  ebm->wos_cluster = NULL;
+  ebm->wos_policy = NULL;
   ebm->wos_meta_obj = NULL;
-  ebm->oid_list     = NULL;
-  ebm->size_list    = NULL;
+  ebm->oid_list = NULL;
+  ebm->size_list = NULL;
 
   char *host = NULL;
   if (wos_get_host(conf, &host) || !host) {
@@ -240,7 +240,7 @@ int esdm_backend_t_wos_alloc(esdm_backend_t *eb, int n_dims, int *dims_size, esd
     DEBUG("Null pointer");
     return ESDM_ERROR;
   }
-  *out_object_id    = NULL;
+  *out_object_id = NULL;
   *out_wos_metadata = NULL;
 
   //int item_size = esdm_sizeof(type);
@@ -280,15 +280,15 @@ int esdm_backend_t_wos_alloc(esdm_backend_t *eb, int n_dims, int *dims_size, esd
 
   /* Set the best fragmentation */
   //obj_num = wos_get_fragmentation(num_value, size);     /* To be completed */
-  int obj_num         = WOS_OBJ_NUM;
-  uint64_t obj_size   = size / obj_num;
+  int obj_num = WOS_OBJ_NUM;
+  uint64_t obj_size = size / obj_num;
   uint64_t obj_offset = size % obj_num;
 
   /* Create object for internal use */
   //rc = wos_metaobj_create(&ebm->wos_meta_obj, md1, md2);        /* To be completed */
 
   /* Reserve oids for storing data objects - null terminated array */
-  ebm->oid_list  = (t_WosOID **)calloc(obj_num + 1, sizeof(t_WosOID *));
+  ebm->oid_list = (t_WosOID **)calloc(obj_num + 1, sizeof(t_WosOID *));
   ebm->size_list = (uint64_t *)calloc(obj_num + 1, sizeof(uint64_t));
 
   for (i = 0; i < obj_num; i++) {
@@ -611,8 +611,8 @@ int wos_backend_performance_check(esdm_backend_t *eb, int data_size, float *out_
 
   struct timeval t0, t1;
 
-  char *object_id     = NULL;
-  char *object_meta   = NULL;
+  char *object_id = NULL;
+  char *object_meta = NULL;
   void *object_handle = NULL;
 
   char *data_w = (char *)malloc(data_size * sizeof(char));
@@ -681,9 +681,9 @@ int wos_backend_performance_estimate(esdm_backend_t *eb, esdm_fragment_t *fragme
 
 
 int esdm_backend_t_wos_fragment_retrieve(esdm_backend_t *backend, esdm_fragment_t *fragment, json_t *metadata) {
-  char *obj_id     = NULL;
+  char *obj_id = NULL;
   void *obj_handle = NULL;
-  int rc           = ESDM_SUCCESS;
+  int rc = ESDM_SUCCESS;
 
   if (!backend || !fragment || !fragment->buf || !metadata)
     return ESDM_ERROR;
@@ -743,10 +743,10 @@ _RETRIEVE_EXIT:
 
 
 int esdm_backend_t_wos_fragment_update(esdm_backend_t *backend, esdm_fragment_t *fragment) {
-  char *obj_id     = NULL;
-  char *obj_meta   = NULL;
+  char *obj_id = NULL;
+  char *obj_meta = NULL;
   void *obj_handle = NULL;
-  int rc           = ESDM_SUCCESS;
+  int rc = ESDM_SUCCESS;
 
   if (!backend || !fragment)
     return ESDM_ERROR;
@@ -791,7 +791,7 @@ int esdm_backend_t_wos_fragment_update(esdm_backend_t *backend, esdm_fragment_t 
   }
 
   int size = fragment->bytes;
-  rc       = esdm_backend_t_wos_alloc(backend, 1, &size, fragment->dataspace->type, &obj_id, &obj_meta);
+  rc = esdm_backend_t_wos_alloc(backend, 1, &size, fragment->dataspace->type, &obj_id, &obj_meta);
   if (rc) {
     goto _UPDATE_EXIT;
   }
@@ -827,9 +827,9 @@ _UPDATE_EXIT:
 
 
 int esdm_backend_t_wos_fragment_delete(esdm_backend_t *backend, esdm_fragment_t *fragment, json_t *metadata) {
-  char *obj_id     = NULL;
+  char *obj_id = NULL;
   void *obj_handle = NULL;
-  int rc           = ESDM_SUCCESS;
+  int rc = ESDM_SUCCESS;
 
   if (!backend || !fragment)
     return ESDM_ERROR;
@@ -902,10 +902,10 @@ static esdm_backend_t backend_template = {
 ///////////////////////////////////////////////////////////////////////////////
 // NOTE: This serves as a template for the posix plugin and is memcopied!    //
 ///////////////////////////////////////////////////////////////////////////////
-.name      = "WOS",
-.type      = SMD_DTYPE_DATA,
-.version   = "0.0.1",
-.data      = NULL,
+.name = "WOS",
+.type = SMD_DTYPE_DATA,
+.version = "0.0.1",
+.data = NULL,
 .callbacks = {
 (int (*)())esdm_backend_t_wos_fini, // finalize
 wos_backend_performance_estimate,   // performance_estimate
@@ -949,7 +949,7 @@ esdm_backend_t *wos_backend_init(esdm_config_backend_t *config) {
   memcpy(backend, &backend_template, sizeof(esdm_backend_t));
 
   // allocate memory for backend instance
-  backend->data            = (void *)malloc(sizeof(wos_backend_data_t));
+  backend->data = (void *)malloc(sizeof(wos_backend_data_t));
   wos_backend_data_t *data = (wos_backend_data_t *)backend->data;
   if (!data)
     return NULL;
@@ -967,7 +967,7 @@ esdm_backend_t *wos_backend_init(esdm_config_backend_t *config) {
   // configure backend instance
   data->config = config;
   json_t *elem;
-  elem         = json_object_get(config->backend, "target");
+  elem = json_object_get(config->backend, "target");
   data->target = json_string_value(elem);
 
   return backend;

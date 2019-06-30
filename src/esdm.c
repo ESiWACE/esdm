@@ -33,8 +33,8 @@ static int is_initialized = 0;
 
 esdm_instance_t esdm = {
 .procs_per_node = 1,
-.total_procs    = 1,
-.config         = NULL,
+.total_procs = 1,
+.config = NULL,
 };
 
 esdm_status esdm_set_procs_per_node(int procs) {

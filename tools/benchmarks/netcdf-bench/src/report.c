@@ -70,9 +70,9 @@ static void benchmark_receive(benchmark_t **bm, const int tag) {
       MPI_Recv(bm[i], sizeof(benchmark_t), MPI_BYTE, i, t, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
       // !!! Attention: All pointers are invalid !!!
       bm[i]->processor = malloc(0);
-      bm[i]->testfn    = malloc(0);
-      bm[i]->block     = malloc(0);
-      bm[i]->ms        = malloc(0);
+      bm[i]->testfn = malloc(0);
+      bm[i]->block = malloc(0);
+      bm[i]->ms = malloc(0);
       // !!! END Attention: All pointers are invalid !!!
 
       // Get processor
@@ -173,17 +173,17 @@ static void append_string(char **buf, size_t *buf_size, const char *vb) {
   assert(NULL != vb);
   assert(buf_size > 0);
 
-  const size_t vb_len  = strlen(vb);
+  const size_t vb_len = strlen(vb);
   const size_t buf_len = strlen(*buf);
-  size_t new_buf_size  = 0;
+  size_t new_buf_size = 0;
   char *new_buf;
   while (vb_len + buf_len + 1 > *buf_size) {
     new_buf_size = *buf_size * 2;
-    new_buf      = (char *)malloc(sizeof(*new_buf) * new_buf_size);
+    new_buf = (char *)malloc(sizeof(*new_buf) * new_buf_size);
     strcpy(new_buf, *buf);
     free(*buf);
     *buf_size = new_buf_size;
-    *buf      = new_buf;
+    *buf = new_buf;
   }
   snprintf(*buf + buf_len, *buf_size - buf_len, "%s", vb);
 }
@@ -250,12 +250,12 @@ static double get_open_time(const benchmark_t *bms) { return bms->duration.open;
 static double get_io_time(const benchmark_t *bms) { return bms->duration.io; }
 static double get_close_time(const benchmark_t *bms) { return bms->duration.close; }
 static double get_perf(const benchmark_t *bm) {
-  const size_t dsize      = bm->dgeom[0] * bm->dgeom[1] * bm->dgeom[2] * bm->dgeom[3] * sizeof(bm->block[0]);
+  const size_t dsize = bm->dgeom[0] * bm->dgeom[1] * bm->dgeom[2] * bm->dgeom[3] * sizeof(bm->block[0]);
   const double total_time = bm->duration.open + bm->duration.io + bm->duration.close;
   return dsize / total_time / (1024 * 1024);
 }
 static double get_perf_pure(const benchmark_t *bm) {
-  const size_t dsize      = bm->dgeom[0] * bm->dgeom[1] * bm->dgeom[2] * bm->dgeom[3] * sizeof(bm->block[0]);
+  const size_t dsize = bm->dgeom[0] * bm->dgeom[1] * bm->dgeom[2] * bm->dgeom[3] * sizeof(bm->block[0]);
   const double total_time = bm->duration.io;
   return dsize / total_time / (1024 * 1024);
 }
@@ -270,9 +270,9 @@ static double *create_bm_array(const benchmark_t **bms, size_t size, get_bm_valu
 
 static void compute_stat(mam_t *mam, const benchmark_t **bms, const size_t bms_size, get_bm_value_t get_bm_value) {
   double *array = (double *)malloc(sizeof(double) * bms_size);
-  mam->min      = min(create_bm_array(bms, bms_size, get_bm_value, array), bms_size);
-  mam->avg      = avg(create_bm_array(bms, bms_size, get_bm_value, array), bms_size);
-  mam->max      = max(create_bm_array(bms, bms_size, get_bm_value, array), bms_size);
+  mam->min = min(create_bm_array(bms, bms_size, get_bm_value, array), bms_size);
+  mam->avg = avg(create_bm_array(bms, bms_size, get_bm_value, array), bms_size);
+  mam->max = max(create_bm_array(bms, bms_size, get_bm_value, array), bms_size);
   free(array);
 }
 

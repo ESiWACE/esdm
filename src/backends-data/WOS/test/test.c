@@ -7,10 +7,10 @@
 #define NUM_OBJECTS 4
 
 int main(int argc, char *argv[]) {
-  char conf[]         = "host=192.168.80.33;policy=test;";
-  esdm_backend_t *eb  = &esdm_backend_t_wos.ebm_base;
-  char *object_id     = NULL;
-  char *object_meta   = NULL;
+  char conf[] = "host=192.168.80.33;policy=test;";
+  esdm_backend_t *eb = &esdm_backend_t_wos.ebm_base;
+  char *object_id = NULL;
+  char *object_meta = NULL;
   void *object_handle = NULL;
 
   int data_size = eb->blocksize * NUM_OBJECTS;

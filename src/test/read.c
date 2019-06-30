@@ -60,7 +60,7 @@ int main(int argc, char const *argv[]) {
   // Interaction with ESDM
   esdm_status ret;
   esdm_container_t *container = NULL;
-  esdm_dataset_t *dataset     = NULL;
+  esdm_dataset_t *dataset = NULL;
 
 
   ret = esdm_init();
@@ -81,7 +81,7 @@ int main(int argc, char const *argv[]) {
 
 
   // define subspace
-  int64_t size[]   = {10, 20};
+  int64_t size[] = {10, 20};
   int64_t offset[] = {0, 0};
   esdm_dataspace_t *subspace;
 

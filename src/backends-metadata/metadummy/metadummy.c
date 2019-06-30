@@ -153,7 +153,7 @@ static int entry_retrieve_tst(const char *path, esdm_dataset_t *dataset) {
   // everything ok? write and close
   if (fd != -1) {
     // write some metadata
-    buf             = (char *)malloc(sb.st_size + 1);
+    buf = (char *)malloc(sb.st_size + 1);
     buf[sb.st_size] = 0;
 
     read_check(fd, buf, sb.st_size);
@@ -164,7 +164,7 @@ static int entry_retrieve_tst(const char *path, esdm_dataset_t *dataset) {
 
   // Save the metadata in the dataset structure
 
-  dataset->metadata       = (esdm_metadata_t *)malloc(sizeof(esdm_metadata_t));
+  dataset->metadata = (esdm_metadata_t *)malloc(sizeof(esdm_metadata_t));
   dataset->metadata->json = (char *)malloc(456 * sizeof(char)); // randon number
   strcpy(dataset->metadata->json, buf);
 
@@ -243,7 +243,7 @@ static int container_create(esdm_md_backend_t *backend, esdm_container_t *contai
   struct stat sb;
 
   metadummy_backend_options_t *options = (metadummy_backend_options_t *)backend->data;
-  const char *tgt                      = options->target;
+  const char *tgt = options->target;
 
   DEBUG("tgt: %p\n", tgt);
 
@@ -274,7 +274,7 @@ static int container_retrieve(esdm_md_backend_t *backend, esdm_container_t *cont
   char *path_container;
 
   metadummy_backend_options_t *options = (metadummy_backend_options_t *)backend->data;
-  const char *tgt                      = options->target;
+  const char *tgt = options->target;
 
 
   asprintf(&path_metadata, "%s/containers/%s.md", tgt, container->name);
@@ -300,7 +300,7 @@ static int container_update(esdm_md_backend_t *backend, esdm_container_t *contai
   char *path_container;
 
   metadummy_backend_options_t *options = (metadummy_backend_options_t *)backend->data;
-  const char *tgt                      = options->target;
+  const char *tgt = options->target;
 
   asprintf(&path_metadata, "%s/containers/%s.md", tgt, container->name);
   asprintf(&path_container, "%s/containers/%s", tgt, container->name);
@@ -323,7 +323,7 @@ static int container_destroy(esdm_md_backend_t *backend, esdm_container_t *conta
   char *path_container;
 
   metadummy_backend_options_t *options = (metadummy_backend_options_t *)backend->data;
-  const char *tgt                      = options->target;
+  const char *tgt = options->target;
 
   asprintf(&path_metadata, "%s/containers/%s.md", tgt, container->name);
   asprintf(&path_container, "%s/containers/%s", tgt, container->name);
@@ -355,7 +355,7 @@ static int dataset_create(esdm_md_backend_t *backend, esdm_dataset_t *dataset) {
   struct stat sb;
 
   metadummy_backend_options_t *options = (metadummy_backend_options_t *)backend->data;
-  const char *tgt                      = options->target;
+  const char *tgt = options->target;
 
   DEBUG("tgt: %p\n", tgt);
 
@@ -380,7 +380,7 @@ static int dataset_retrieve(esdm_md_backend_t *backend, esdm_dataset_t *d) {
   char path_metadata[PATH_MAX];
 
   metadummy_backend_options_t *options = (metadummy_backend_options_t *)backend->data;
-  const char *tgt                      = options->target;
+  const char *tgt = options->target;
 
   sprintf(path_metadata, "%s/containers/%s/%s.md", tgt, d->container->name, d->name);
   struct stat statbuf;
@@ -390,8 +390,8 @@ static int dataset_retrieve(esdm_md_backend_t *backend, esdm_dataset_t *d) {
 
   int fd = open(path_metadata, O_RDONLY | S_IWUSR | S_IRUSR | S_IWGRP | S_IRGRP | S_IROTH);
   if (fd < 0) return ESDM_ERROR;
-  d->metadata->json      = (char *)malloc(len);
-  d->metadata->size      = len;
+  d->metadata->json = (char *)malloc(len);
+  d->metadata->size = len;
   d->metadata->buff_size = len;
 
   read_check(fd, d->metadata->json, len - 1);
@@ -423,7 +423,7 @@ static int dataset_destroy(esdm_md_backend_t *backend, esdm_dataset_t *dataset) 
 static int fragment_retrieve(esdm_md_backend_t *backend, esdm_fragment_t *fragment, json_t *metadata) {
   // set data, options and tgt for convienience
   metadummy_backend_options_t *options = (metadummy_backend_options_t *)backend->data;
-  const char *tgt                      = options->target;
+  const char *tgt = options->target;
 
   // serialization of subspace for fragment
   char fragment_name[PATH_MAX];
@@ -468,23 +468,23 @@ static esdm_fragment_t *create_fragment_from_metadata(int fd, esdm_dataset_t *da
   DEBUG("Fragment found size:%ld", sb.st_size);
 
   esdm_fragment_t *f;
-  f                 = malloc(sizeof(esdm_fragment_t));
-  f->metadata       = malloc(sb.st_size + sizeof(esdm_metadata_t) + 1);
+  f = malloc(sizeof(esdm_fragment_t));
+  f->metadata = malloc(sb.st_size + sizeof(esdm_metadata_t) + 1);
   f->metadata->json = (char *)(f->metadata) + sizeof(esdm_metadata_t);
   f->metadata->size = sb.st_size;
   read_check(fd, f->metadata->json, sb.st_size);
   f->metadata->json[sb.st_size] = 0;
 
   uint64_t elements = esdm_dataspace_element_count(space);
-  int64_t bytes     = elements * esdm_sizeof(space->type);
+  int64_t bytes = elements * esdm_sizeof(space->type);
 
-  f->dataset   = dataset;
+  f->dataset = dataset;
   f->dataspace = space;
-  f->buf       = NULL;
-  f->elements  = elements;
-  f->bytes     = bytes;
-  f->status    = ESDM_STATUS_PERSISTENT;
-  f->in_place  = 0;
+  f->buf = NULL;
+  f->elements = elements;
+  f->bytes = bytes;
+  f->status = ESDM_STATUS_PERSISTENT;
+  f->in_place = 0;
 
   return f;
 }
@@ -497,7 +497,7 @@ static int lookup(esdm_md_backend_t *backend, esdm_dataset_t *dataset, esdm_data
 
   // set data, options and tgt for convienience
   metadummy_backend_options_t *options = (metadummy_backend_options_t *)backend->data;
-  const char *tgt                      = options->target;
+  const char *tgt = options->target;
   // determine path
   char path[PATH_MAX];
   sprintf(path, "%s/containers/%s/%s/", tgt, dataset->container->name, dataset->name);
@@ -511,11 +511,11 @@ static int lookup(esdm_md_backend_t *backend, esdm_dataset_t *dataset, esdm_data
     int fd = open(path_full, O_RDONLY);
     if (fd >= 0) {
       // found a fragment
-      *out_frag_count        = 1;
+      *out_frag_count = 1;
       esdm_fragment_t **frag = (esdm_fragment_t **)malloc(sizeof(esdm_fragment_t *));
-      *out_fragments         = frag;
-      frag[0]                = create_fragment_from_metadata(fd, dataset, space);
-      frag[0]->in_place      = 1;
+      *out_fragments = frag;
+      frag[0] = create_fragment_from_metadata(fd, dataset, space);
+      frag[0]->in_place = 1;
       close(fd);
       return ESDM_SUCCESS;
     }
@@ -526,7 +526,7 @@ static int lookup(esdm_md_backend_t *backend, esdm_dataset_t *dataset, esdm_data
     return ESDM_ERROR;
   }
 
-  int frag_count   = 0;
+  int frag_count = 0;
   struct dirent *e = readdir(dir);
   while (e != NULL) {
     if (e->d_name[0] != '.') {
@@ -541,11 +541,11 @@ static int lookup(esdm_md_backend_t *backend, esdm_dataset_t *dataset, esdm_data
 
   // read fragments!
   esdm_fragment_t **frag = (esdm_fragment_t **)malloc(sizeof(esdm_fragment_t *) * frag_count);
-  *out_fragments         = frag;
+  *out_fragments = frag;
 
   rewinddir(dir);
   int frag_no = 0;
-  int dirfd   = open(path, O_RDONLY);
+  int dirfd = open(path, O_RDONLY);
   assert(dirfd >= 0);
   e = readdir(dir);
   while (e != NULL) {
@@ -553,7 +553,7 @@ static int lookup(esdm_md_backend_t *backend, esdm_dataset_t *dataset, esdm_data
       esdm_dataspace_t *subspace;
       if (esdm_dataspace_overlap_str(space, ',', e->d_name, NULL, &subspace) == ESDM_SUCCESS) {
         assert(frag_no < frag_count);
-        int fd        = openat(dirfd, e->d_name, O_RDONLY);
+        int fd = openat(dirfd, e->d_name, O_RDONLY);
         frag[frag_no] = create_fragment_from_metadata(fd, dataset, subspace);
         close(fd);
         frag_no++;
@@ -580,7 +580,7 @@ static int fragment_update(esdm_md_backend_t *backend, esdm_fragment_t *fragment
 
   // set data, options and tgt for convienience
   metadummy_backend_options_t *options = (metadummy_backend_options_t *)backend->data;
-  const char *tgt                      = options->target;
+  const char *tgt = options->target;
 
   // serialization of subspace for fragment
   char fragment_name[PATH_MAX];
@@ -636,9 +636,9 @@ static int metadummy_finalize(esdm_md_backend_t *b) {
 
 
 static esdm_md_backend_t backend_template = {
-.name      = "metadummy",
-.version   = "0.0.1",
-.data      = NULL,
+.name = "metadummy",
+.version = "0.0.1",
+.data = NULL,
 .callbacks = {
 // General for ESDM
 metadummy_finalize,                     // finalize
@@ -675,8 +675,8 @@ esdm_md_backend_t *metadummy_backend_init(esdm_config_backend_t *config) {
 
   metadummy_backend_options_t *data = (metadummy_backend_options_t *)malloc(sizeof(metadummy_backend_options_t));
 
-  data->target    = config->target;
-  backend->data   = data;
+  data->target = config->target;
+  backend->data = data;
   backend->config = config;
   //metadummy_test();
 

@@ -34,9 +34,9 @@ int main(int argc, char *argv[]) {
     argv[0]);
     return -1;
   }
-  size_t block_size   = atoi(argv[2]);
+  size_t block_size = atoi(argv[2]);
   long long file_size = (long long)atoll(argv[3]);
-  int iterations      = atoi(argv[4]);
+  int iterations = atoi(argv[4]);
 
   //      assert(block_size < (2^30));
 
@@ -66,7 +66,7 @@ int main(int argc, char *argv[]) {
   //      pid_t my_pid = getpid();
   //      system("cat /proc/%d/io", my_pid);
   size_t seq_io = 800 * 1024 * 1024;
-  fill_file     = (char *)malloc(seq_io);
+  fill_file = (char *)malloc(seq_io);
   memset(fill_file, 4, seq_io);
   for (long long iii = 0; iii < file_size; iii += seq_io) {
     //myrand = (long long)(rand() % 8192) * 1048576 * 2;
@@ -110,7 +110,7 @@ int main(int argc, char *argv[]) {
   lfs_close(myfd); // closing the file
 
   gettimeofday(&tv, NULL);
-  finish  = (unsigned long long)(tv.tv_sec) * 1000 + (unsigned long long)(tv.tv_usec) / 1000;
+  finish = (unsigned long long)(tv.tv_sec) * 1000 + (unsigned long long)(tv.tv_usec) / 1000;
   seconds = finish - start;
   printf("writes took %llu milli-seconds\n", seconds);
   printf("write bandwidth: %llu MB/s\n", (((unsigned long long)block_size * iterations * 1000) / (1024 * 1024)) / seconds);
@@ -126,14 +126,14 @@ int main(int argc, char *argv[]) {
   system("free -m | sed \"s/  */ /g\" | cut -d \" \" -f 7|tail -n 3");
   gettimeofday(&tv, NULL);
   start = (unsigned long long)(tv.tv_sec) * 1000 + (unsigned long long)(tv.tv_usec) / 1000;
-  myfd  = lfs_open(argv[1], O_CREAT | O_RDWR, S_IRUSR | S_IWUSR); // re-openning the file
+  myfd = lfs_open(argv[1], O_CREAT | O_RDWR, S_IRUSR | S_IWUSR); // re-openning the file
   char *test_read;
   srand(666);
   //system("free -m | sed \"s/  */ /g\" | cut -d \" \" -f 7|tail -n 3");
   //      size_t read_bytes;
   //test_read = (char *)malloc(8192 * 102400);
   long long blocksize = 8192 * 102400;
-  test_read           = (char *)malloc(blocksize);
+  test_read = (char *)malloc(blocksize);
 
   for (long long pos = 0; pos < file_size; pos += blocksize) {
     //      for(int i = 0; i < iterations; i++){
@@ -155,7 +155,7 @@ int main(int argc, char *argv[]) {
      fclose(my_io);
      } */
   gettimeofday(&tv, NULL);
-  finish  = (unsigned long long)(tv.tv_sec) * 1000 + (unsigned long long)(tv.tv_usec) / 1000;
+  finish = (unsigned long long)(tv.tv_sec) * 1000 + (unsigned long long)(tv.tv_usec) / 1000;
   seconds = finish - start;
   system("free -m | sed \"s/  */ /g\" | cut -d \" \" -f 7|tail -n 3");
   lfs_close(myfd); // closing the file

@@ -8,8 +8,8 @@
 
 int main() {
   esdm_config_backend_t config = {
-  .type   = "metadummy",
-  .id     = "test1",
+  .type = "metadummy",
+  .id = "test1",
   .target = "_metadummy",
   };
 
@@ -37,8 +37,8 @@ int main() {
 
   {
     int64_t offset[] = {0, 0};
-    int64_t size[]   = {25, 50};
-    ret              = esdm_dataspace_subspace(dataspace, 2, size, offset, &s1);
+    int64_t size[] = {25, 50};
+    ret = esdm_dataspace_subspace(dataspace, 2, size, offset, &s1);
     assert(ret == ESDM_SUCCESS);
     ret = esdm_fragment_create(dataset, s1, buff, &f1);
     assert(ret == ESDM_SUCCESS);
@@ -46,24 +46,24 @@ int main() {
   }
   {
     int64_t offset[] = {25, 0};
-    int64_t size[]   = {25, 50};
-    ret              = esdm_dataspace_subspace(dataspace, 2, size, offset, &s2);
+    int64_t size[] = {25, 50};
+    ret = esdm_dataspace_subspace(dataspace, 2, size, offset, &s2);
     assert(ret == ESDM_SUCCESS);
     ret = esdm_fragment_create(dataset, s2, buff, &f2);
     assert(ret == ESDM_SUCCESS);
   }
   {
     int64_t offset[] = {25, 50};
-    int64_t size[]   = {25, 50};
-    ret              = esdm_dataspace_subspace(dataspace, 2, size, offset, &s3);
+    int64_t size[] = {25, 50};
+    ret = esdm_dataspace_subspace(dataspace, 2, size, offset, &s3);
     assert(ret == ESDM_SUCCESS);
     ret = esdm_fragment_create(dataset, s3, buff, &f3);
     assert(ret == ESDM_SUCCESS);
   }
   {
     int64_t offset[] = {0, 50};
-    int64_t size[]   = {25, 50};
-    ret              = esdm_dataspace_subspace(dataspace, 2, size, offset, &s4);
+    int64_t size[] = {25, 50};
+    ret = esdm_dataspace_subspace(dataspace, 2, size, offset, &s4);
     assert(ret == ESDM_SUCCESS);
     ret = esdm_fragment_create(dataset, s4, buff, &f4);
     assert(ret == ESDM_SUCCESS);
@@ -84,7 +84,7 @@ int main() {
   esdm_fragment_t **read_frag = NULL;
 
   {
-    int64_t size[]   = {30, 30};
+    int64_t size[] = {30, 30};
     int64_t offset[] = {10, 10};
     esdm_dataspace_subspace(dataspace, 2, size, offset, &res);
   }

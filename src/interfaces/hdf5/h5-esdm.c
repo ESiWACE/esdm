@@ -108,8 +108,8 @@ H5VL_esdm_dataset_close,
 H5VL_esdm_type_t_commit, /* commit */
 H5VL_esdm_type_t_open,   /* open */
 H5VL_esdm_type_t_get,    /* get_size */
-NULL,                        //H5VL_log_type_specific,        /* specific */
-NULL,                        //H5VL_log_type_optional,        /* optional */
+NULL,                    //H5VL_log_type_specific,        /* specific */
+NULL,                    //H5VL_log_type_optional,        /* optional */
 H5VL_esdm_type_t_close   /* close */
 },
 {

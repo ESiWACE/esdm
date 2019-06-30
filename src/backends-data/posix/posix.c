@@ -254,7 +254,7 @@ static int fragment_retrieve(esdm_backend_t *backend, esdm_fragment_t *fragment,
 
   // set data, options and tgt for convienience
   posix_backend_data_t *data = (posix_backend_data_t *)backend->data;
-  const char *tgt            = data->target;
+  const char *tgt = data->target;
 
   // serialization of subspace for fragment
   char fragment_name[PATH_MAX];
@@ -284,7 +284,7 @@ static int fragment_update(esdm_backend_t *backend, esdm_fragment_t *fragment) {
 
   // set data, options and tgt for convienience
   posix_backend_data_t *data = (posix_backend_data_t *)backend->data;
-  const char *tgt            = data->target;
+  const char *tgt = data->target;
 
   // serialization of subspace for fragment
   char fragment_name[PATH_MAX];
@@ -342,10 +342,10 @@ static esdm_backend_t backend_template = {
 ///////////////////////////////////////////////////////////////////////////////
 // NOTE: This serves as a template for the posix plugin and is memcopied!    //
 ///////////////////////////////////////////////////////////////////////////////
-.name      = "POSIX",
-.type      = SMD_DTYPE_DATA,
-.version   = "0.0.1",
-.data      = NULL,
+.name = "POSIX",
+.type = SMD_DTYPE_DATA,
+.version = "0.0.1",
+.data = NULL,
 .callbacks = {
 NULL,                               // finalize
 posix_backend_performance_estimate, // performance_estimate
@@ -394,7 +394,7 @@ esdm_backend_t *posix_backend_init(esdm_config_backend_t *config) {
   memcpy(backend, &backend_template, sizeof(esdm_backend_t));
 
   // allocate memory for backend instance
-  backend->data              = (void *)malloc(sizeof(posix_backend_data_t));
+  backend->data = (void *)malloc(sizeof(posix_backend_data_t));
   posix_backend_data_t *data = (posix_backend_data_t *)backend->data;
 
   if (data && config->performance_model)
@@ -405,7 +405,7 @@ esdm_backend_t *posix_backend_init(esdm_config_backend_t *config) {
   // configure backend instance
   data->config = config;
   json_t *elem;
-  elem         = json_object_get(config->backend, "target");
+  elem = json_object_get(config->backend, "target");
   data->target = json_string_value(elem);
 
   DEBUG("Backend config: target=%s\n", data->target);

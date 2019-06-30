@@ -43,11 +43,11 @@ int main() {
 
 
   // CREATE /////////////////////////////////////////////////////////////////
-  g1     = H5Gcreate2(fid, "g1", H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
+  g1 = H5Gcreate2(fid, "g1", H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
   status = H5Gclose(g1);
 
-  g2     = H5Gcreate2(fid, "g2", H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
-  g1     = H5Gcreate2(g2, "g1", H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
+  g2 = H5Gcreate2(fid, "g2", H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
+  g1 = H5Gcreate2(g2, "g1", H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
   status = H5Gclose(g1);
   H5Gclose(g2);
 
@@ -59,7 +59,7 @@ int main() {
 
   // GET ////////////////////////////////////////////////////////////////////
   printf("Testing additional functions\n");
-  g1    = H5Gopen2(fid, "g1", H5P_DEFAULT);
+  g1 = H5Gopen2(fid, "g1", H5P_DEFAULT);
   plist = H5Gget_create_plist(g1);
   H5G_info_t group_info;
   H5Gget_info(g1, &group_info);

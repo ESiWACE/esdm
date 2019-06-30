@@ -30,7 +30,7 @@ struct esdm_metadata_t {
 
 struct esdm_dataset_t {
   char *name;
-  char ** varnames; // array of variable names != NULL if set
+  char **varnames; // array of variable names != NULL if set
   esdm_container_t *container;
   esdm_metadata_t *metadata;
   esdm_dataspace_t *dataspace;
@@ -70,7 +70,7 @@ typedef struct esdm_fragment_index_t {
 } esdm_fragment_index_t;
 
 
-struct esdm_dataset_iterator_t{
+struct esdm_dataset_iterator_t {
   int x;
 };
 

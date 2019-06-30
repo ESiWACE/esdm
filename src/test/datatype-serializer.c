@@ -4,11 +4,11 @@
 #include <string.h>
 
 int main() {
-  int64_t dim[2]  = {10, 20}; // dim order highest first: (y, x)
+  int64_t dim[2] = {10, 20}; // dim order highest first: (y, x)
   int64_t dim2[2] = {5, 20};
 
-  float *p         = malloc(sizeof(float) * dim[0] * dim[1] * 2);
-  float **data     = malloc(sizeof(float *) * dim[1]);
+  float *p = malloc(sizeof(float) * dim[0] * dim[1] * 2);
+  float **data = malloc(sizeof(float *) * dim[1]);
   float **data_out = malloc(sizeof(float *) * dim[1]);
 
   // prepare test data
@@ -37,7 +37,7 @@ int main() {
 
   // walk through all offsets
   for (int o = 0; o < dim[0] / dim2[0]; o++) {
-    int offsetY       = o * dim2[0];
+    int offsetY = o * dim2[0];
     int64_t offset[2] = {offsetY, 0};
 
     esdm_dataspace_t *subspace;

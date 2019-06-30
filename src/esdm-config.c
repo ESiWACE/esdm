@@ -21,11 +21,11 @@
  */
 
 #include <fcntl.h>
+#include <jansson.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
-#include <jansson.h>
 
 #include <glib.h>
 
@@ -38,8 +38,8 @@
 
 esdm_config_t *esdm_config_init_from_str(const char *config_str) {
   esdm_config_t *config = NULL;
-  config                = (esdm_config_t *)malloc(sizeof(esdm_config_t));
-  config->json          = load_json(config_str); // parse text into JSON structure
+  config = (esdm_config_t *)malloc(sizeof(esdm_config_t));
+  config->json = load_json(config_str); // parse text into JSON structure
 
   return config;
 }
@@ -92,20 +92,20 @@ esdm_config_backend_t *esdm_config_get_metadata_coordinator(esdm_instance_t *esd
 
   json_t *root = (json_t *)esdm->config->json;
 
-  json_t * esdm_e, * md_e, * type_e, *elem;
-  esdm_e         = json_object_get(root, "esdm");
-  md_e           = json_object_get(esdm_e, "metadata");
-  type_e         = json_object_get(md_e, "type");
+  json_t *esdm_e, *md_e, *type_e, *elem;
+  esdm_e = json_object_get(root, "esdm");
+  md_e = json_object_get(esdm_e, "metadata");
+  type_e = json_object_get(md_e, "type");
   DEBUG("json_path_get (metadata backend) => %p -> %s\n", type_e, json_string_value(type_e));
 
   esdm_config_backend_t *config_backend = (esdm_config_backend_t *)malloc(sizeof(esdm_config_backend_t));
-  config_backend->type                  = json_string_value(type_e);
-  config_backend->esdm                  = root;
-  config_backend->backend               = md_e;
+  config_backend->type = json_string_value(type_e);
+  config_backend->esdm = root;
+  config_backend->backend = md_e;
 
-  elem                   = json_object_get(config_backend->backend, "id");
-  config_backend->id     = json_string_value(elem);
-  elem                   = json_object_get(config_backend->backend, "target");
+  elem = json_object_get(config_backend->backend, "id");
+  config_backend->id = json_string_value(elem);
+  elem = json_object_get(config_backend->backend, "target");
   config_backend->target = json_string_value(elem);
 
   elem = json_object_get(config_backend->backend, "accessibility");
@@ -129,8 +129,8 @@ esdm_config_backends_t *esdm_config_get_backends(esdm_instance_t *esdm) {
 
   json_t *root = (json_t *)esdm->config->json;
 
-  json_t * esdm_e;
-  esdm_e         = json_object_get(root, "esdm");
+  json_t *esdm_e;
+  esdm_e = json_object_get(root, "esdm");
 
   // fetch configured backends
   json_t *element = json_object_get(esdm_e, "backends");
@@ -152,12 +152,12 @@ esdm_config_backends_t *esdm_config_get_backends(esdm_instance_t *esdm) {
         //print_json_aux(json_array_get(element, i), 0);
 
         json_t *backend = json_array_get(element, i);
-        json_t *elem    = NULL;
+        json_t *elem = NULL;
 
-        elem             = json_object_get(backend, "type");
+        elem = json_object_get(backend, "type");
         backends[i].type = json_string_value(elem);
 
-        elem           = json_object_get(backend, "id");
+        elem = json_object_get(backend, "id");
         backends[i].id = json_string_value(elem);
         for (j = 0; j < i; j++) {
           if (strcmp(backends[i].id, backends[j].id) == 0) {
@@ -166,8 +166,8 @@ esdm_config_backends_t *esdm_config_get_backends(esdm_instance_t *esdm) {
           }
         }
 
-        elem                          = json_object_get(backend, "target");
-        backends[i].target            = json_string_value(elem);
+        elem = json_object_get(backend, "target");
+        backends[i].target = json_string_value(elem);
         backends[i].performance_model = json_object_get(backend, "performance-model");
         DEBUG("type=%s id = %s target=%s\n", backends[i].type,
         backends[i].id,
@@ -207,11 +207,11 @@ esdm_config_backends_t *esdm_config_get_backends(esdm_instance_t *esdm) {
           backends[i].max_fragment_size = json_integer_value(elem);
         }
 
-        backends[i].esdm    = root;
+        backends[i].esdm = root;
         backends[i].backend = backend;
       }
 
-      config_backends->count    = size;
+      config_backends->count = size;
       config_backends->backends = backends;
     }
   } else {

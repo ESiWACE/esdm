@@ -38,7 +38,7 @@
 #include <esdm-internal.h>
 
 
-int ea_is_valid_name(const char* str){
+int ea_is_valid_name(const char *str) {
   // TODO allow names with a-a, A-Z,0-9,_-
   assert(str != NULL);
   return 1;
@@ -81,10 +81,10 @@ int mkdir_recursive(const char *path) {
 void posix_recursive_remove(const char *path) {
   printf("removing %s", path);
   struct stat sb = {0};
-  int ret        = stat(path, &sb);
+  int ret = stat(path, &sb);
   if (ret == 0) {
     if ((sb.st_mode & S_IFMT) == S_IFDIR) {
-      DIR *dir         = opendir(path);
+      DIR *dir = opendir(path);
       struct dirent *f = readdir(dir);
       while (f) {
         if (strcmp(f->d_name, ".") != 0 && strcmp(f->d_name, "..") != 0) {
@@ -207,12 +207,12 @@ void print_stat(struct stat sb) {
   printf("\n");
 }
 
-json_t * load_json(const char * str){
+json_t *load_json(const char *str) {
   json_error_t error;
-  json_t * root = json_loads(str, 0, &error);
-  if(! root){
+  json_t *root = json_loads(str, 0, &error);
+  if (!root) {
     ESDM_DEBUG_FMT("JSON error on line %d: %s\n", error.line, error.text);
-    return (json_t*) NULL;
+    return (json_t *)NULL;
   }
   return root;
 }

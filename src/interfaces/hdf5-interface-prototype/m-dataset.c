@@ -95,10 +95,10 @@ void **req) {
 
 
   // allocate resoources
-  object  = (memvol_object_t *)malloc(sizeof(memvol_object_t));
+  object = (memvol_object_t *)malloc(sizeof(memvol_object_t));
   dataset = (memvol_dataset_t *)malloc(sizeof(memvol_dataset_t));
 
-  object->type   = MEMVOL_DATASET;
+  object->type = MEMVOL_DATASET;
   object->object = dataset;
 
   dataset->dcpl_id = H5Pcopy(dcpl_id);
@@ -294,7 +294,7 @@ static herr_t memvol_dataset_get(void *obj, H5VL_dataset_get_t get_type, hid_t d
 
       // va_args: &ret_value
       hid_t *ret_id = va_arg(arguments, hid_t *);
-      *ret_id       = H5Pcopy(dataset->dcpl_id);
+      *ret_id = H5Pcopy(dataset->dcpl_id);
 
       /*
                 if((*ret_id = H5D_get_create_plist(dset)) < 0)
@@ -310,7 +310,7 @@ static herr_t memvol_dataset_get(void *obj, H5VL_dataset_get_t get_type, hid_t d
 
       // va_args: &ret_value
       hid_t *ret_id = va_arg(arguments, hid_t *);
-      *ret_id       = H5Pcopy(dataset->dapl_id);
+      *ret_id = H5Pcopy(dataset->dapl_id);
 
       /*
                 if((*ret_id = H5D_get_access_plist(dset)) < 0)
@@ -388,7 +388,7 @@ static herr_t memvol_dataset_specific(void *obj, H5VL_dataset_specific_t specifi
       rank = H5Sget_simple_extent_ndims(dataset->dataspace);
 
       hsize_t *dims = (hsize_t *)malloc(rank * sizeof(hsize_t));
-      hsize_t *max  = (hsize_t *)malloc(rank * sizeof(hsize_t));
+      hsize_t *max = (hsize_t *)malloc(rank * sizeof(hsize_t));
 
       for (int i = 0; i < rank; i++) {
         debugI("%s: rank[i]=%d, dims=%lld, max=%lld   =>   size=%lld\n", __func__, i, dims[i], max[i], size[i]);
@@ -425,7 +425,7 @@ static herr_t memvol_dataset_optional(void *obj, hid_t dxpl_id, void **req, va_l
 static herr_t memvol_dataset_close(void *dset, hid_t dxpl_id, void **req) {
   debugI("%s\n", __func__);
 
-  herr_t ret_value          = SUCCEED;
+  herr_t ret_value = SUCCEED;
   memvol_dataset_t *dataset = (memvol_dataset_t *)dset;
 
   debugI("%s: %p\n", __func__, (void *)dataset);

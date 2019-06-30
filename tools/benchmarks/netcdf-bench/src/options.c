@@ -126,9 +126,9 @@ static void print_help(char *name, option_help *args) {
 }
 
 void parseOptions(int argc, char **argv, option_help *args) {
-  int error              = 0;
-  int printhelp          = 0;
-  int requiredArgsSeen   = 0;
+  int error = 0;
+  int printhelp = 0;
+  int requiredArgsSeen = 0;
   int requiredArgsNeeded = 0;
   int i;
 
@@ -141,9 +141,9 @@ void parseOptions(int argc, char **argv, option_help *args) {
   MPI_Comm_rank(MPI_COMM_WORLD, &rank);
 
   for (i = 1; i < argc; i++) {
-    char *txt       = argv[i];
+    char *txt = argv[i];
     int foundOption = 0;
-    char *arg       = strstr(txt, "=");
+    char *arg = strstr(txt, "=");
     if (arg != NULL) {
       arg[0] = 0;
       arg++;

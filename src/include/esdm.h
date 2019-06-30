@@ -188,7 +188,7 @@ esdm_status esdm_container_t_destroy(esdm_container_t *container);
 
 esdm_status esdm_dataset_create(esdm_container_t *container, const char *name, esdm_dataspace_t *dataspace, esdm_dataset_t **out_dataset);
 esdm_status esdm_dataset_name_dims(esdm_dataset_t *dataset, char **names);
-esdm_status esdm_dataset_get_name_dims(esdm_dataset_t *dataset, char const*const**out_names);
+esdm_status esdm_dataset_get_name_dims(esdm_dataset_t *dataset, char const *const **out_names);
 esdm_status esdm_dataset_get_dataspace(esdm_dataset_t *dset, esdm_dataspace_t **out_dataspace);
 
 esdm_status esdm_dataset_iterator(esdm_container_t *container, esdm_dataset_iterator_t **out_iter);

@@ -58,7 +58,7 @@ int main() {
   dataset_id = H5Dopen2(file_id, "/dset", H5P_DEFAULT);
 
   /* Create the data space for the attribute. */
-  dims         = 2;
+  dims = 2;
   dataspace_id = H5Screate_simple(1, &dims, NULL);
 
 

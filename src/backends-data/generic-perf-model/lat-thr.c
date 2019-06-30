@@ -21,7 +21,7 @@ int esdm_backend_t_parse_perf_model_lat_thp(json_t *str, esdm_perf_model_lat_thp
     return -1;
 
   json_t *elem = NULL;
-  elem         = json_object_get(str, "latency");
+  elem = json_object_get(str, "latency");
   assert(elem != NULL);
   out_data->latency_in_s = json_real_value(elem);
 

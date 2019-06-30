@@ -39,12 +39,12 @@ typedef struct {
 static int rank;
 
 static tool_options_t o = {
-.config_file    = "esdm.conf",
-.verbosity      = 0,
+.config_file = "esdm.conf",
+.verbosity = 0,
 .enforce_format = 0,
-.remove_data    = 0,
-.format_local   = 0,
-.format_global  = 0};
+.remove_data = 0,
+.format_local = 0,
+.format_global = 0};
 
 void parse_args(int argc, char **argv) {
   option_help options[] = {
@@ -59,7 +59,7 @@ void parse_args(int argc, char **argv) {
 
   int ret;
   int print_help = 0;
-  ret            = option_parse(argc, argv, options, &print_help);
+  ret = option_parse(argc, argv, options, &print_help);
   if (print_help) {
     if (rank == 0) option_print_help(options, 0);
     exit(0);

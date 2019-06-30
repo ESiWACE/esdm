@@ -6,10 +6,10 @@
 
 int main(int argc, char *argv[]) {
   //"local_addr ha_addr profile process_fid"
-  char conf[]         = "192.168.168.144@tcp:12345:33:103 192.168.168.144@tcp:12345:34:1 <0x7000000000000001:0> <0x7200000000000001:64>";
-  esdm_backend_t *eb  = &esdm_backend_t_clovis.ebm_base;
-  char *object_id     = NULL;
-  char *object_meta   = NULL;
+  char conf[] = "192.168.168.144@tcp:12345:33:103 192.168.168.144@tcp:12345:34:1 <0x7000000000000001:0> <0x7200000000000001:64>";
+  esdm_backend_t *eb = &esdm_backend_t_clovis.ebm_base;
+  char *object_id = NULL;
+  char *object_meta = NULL;
   void *object_handle = NULL;
 
   char data_w[4096 * 4];
@@ -82,7 +82,7 @@ close:
 
   /* index op tests. */
   const char *name = "This is one of my fragments";
-  const char *oid  = "<12345678:90aacdef>";
+  const char *oid = "<12345678:90aacdef>";
 
   printf("Clovis mapping insert: '%s' --> '%s'\n", name, oid);
   rc = esdm_backend_t_clovis.ebm_ops.mapping_insert(eb, name, oid);
@@ -93,7 +93,7 @@ close:
   printf("Clovis mapping insert done\n");
 
   char *new_oid = NULL;
-  rc            = esdm_backend_t_clovis.ebm_ops.mapping_get(eb, name, &new_oid);
+  rc = esdm_backend_t_clovis.ebm_ops.mapping_get(eb, name, &new_oid);
   if (rc != 0) {
     printf("esdm_backend_t_clovis.ebm_ops mapping_get failed rc=%d\n", rc);
     goto fini;
@@ -103,9 +103,9 @@ close:
   free(new_oid);
 
   /* try to find non-existent mapping */
-  new_oid             = NULL;
+  new_oid = NULL;
   const char *newname = "This my fragments";
-  rc                  = esdm_backend_t_clovis.ebm_ops.mapping_get(eb, newname, &new_oid);
+  rc = esdm_backend_t_clovis.ebm_ops.mapping_get(eb, newname, &new_oid);
   if (rc == 0) {
     printf("Failure expected, but something wrong happened = %s\n", new_oid);
     goto fini;

@@ -47,8 +47,8 @@ int main() {
 
 
   /* Create the data space for the dataset. */
-  dims[0]      = 4;
-  dims[1]      = 6;
+  dims[0] = 4;
+  dims[1] = 6;
   dataspace_id = H5Screate_simple(2, dims, NULL);
 
   // CREATE /////////////////////////////////////////////////////////////////

@@ -38,7 +38,7 @@ int _esdm_backend_t_update_dynamic_perf_model_lat_thp(esdm_dynamic_perf_model_la
     return 4;
 
   *estimated_throughput = data->size / time2;
-  *estimated_latency    = time1 - time2; // Optimized for data->size and 2 * data->size
+  *estimated_latency = time1 - time2; // Optimized for data->size and 2 * data->size
 
   // Sanity check
   if ((*estimated_throughput <= 0) || (*estimated_latency < 0))
@@ -70,7 +70,7 @@ void *esdm_backend_t_autoupdate_dynamic_perf_model_lat_thp(esdm_dynamic_perf_mod
 
     pthread_mutex_lock(&data->flag);
     data->throughput = data->alpha * data->throughput + (1.0 - data->alpha) * estimated_throughput;
-    data->latency    = data->alpha * data->latency + (1.0 - data->alpha) * estimated_latency;
+    data->latency = data->alpha * data->latency + (1.0 - data->alpha) * estimated_latency;
     pthread_mutex_unlock(&data->flag);
   }
 
@@ -112,7 +112,7 @@ int esdm_backend_t_parse_dynamic_perf_model_lat_thp(json_t *str, esdm_dynamic_pe
     return -1;
 
   json_t *elem = NULL;
-  elem         = json_object_get(str, "latency");
+  elem = json_object_get(str, "latency");
   if (elem != NULL) {
     data->latency = json_real_value(elem);
     assert(data->latency >= 0.0);
@@ -154,7 +154,7 @@ int esdm_backend_t_parse_dynamic_perf_model_lat_thp(json_t *str, esdm_dynamic_pe
 
 #endif
 
-  data->backend                                         = NULL;
+  data->backend = NULL;
   data->esdm_backend_t_check_dynamic_perf_model_lat_thp = NULL;
 
   return 0;
@@ -164,7 +164,7 @@ int esdm_backend_t_start_dynamic_perf_model_lat_thp(esdm_dynamic_perf_model_lat_
   if (!data)
     return -1;
 
-  data->backend                                         = backend;
+  data->backend = backend;
   data->esdm_backend_t_check_dynamic_perf_model_lat_thp = checker;
 
 #ifdef ESDM_BACKENDS_DYNAMIC_PERF_MODEL_WITH_THREAD
@@ -185,15 +185,15 @@ int esdm_backend_t_reset_dynamic_perf_model_lat_thp(esdm_dynamic_perf_model_lat_
   if (!data)
     return -1;
 
-  data->throughput                                      = 0.0;
-  data->latency                                         = 0.0;
-  data->size                                            = 0;
-  data->backend                                         = NULL;
+  data->throughput = 0.0;
+  data->latency = 0.0;
+  data->size = 0;
+  data->backend = NULL;
   data->esdm_backend_t_check_dynamic_perf_model_lat_thp = NULL;
 #ifdef ESDM_BACKENDS_DYNAMIC_PERF_MODEL_WITH_THREAD
   data->period = 0.0;
-  data->alpha  = 0.0;
-  data->tid    = 0;
+  data->alpha = 0.0;
+  data->tid = 0;
 #endif
 
   return 0;
@@ -206,7 +206,7 @@ int esdm_backend_t_update_dynamic_perf_model_lat_thp(esdm_dynamic_perf_model_lat
   double estimated_throughput, estimated_latency;
   if (!_esdm_backend_t_update_dynamic_perf_model_lat_thp(data, &estimated_throughput, &estimated_latency)) {
     data->throughput = estimated_throughput;
-    data->latency    = estimated_latency;
+    data->latency = estimated_latency;
   }
 
   return 0;

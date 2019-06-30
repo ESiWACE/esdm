@@ -75,8 +75,8 @@ int main(int argc, char *argv[]) {
 
   int mpi_size;
   int mpi_rank;
-  int run_read   = 0;
-  int run_write  = 0;
+  int run_read = 0;
+  int run_write = 0;
   long timesteps = 0;
   int cycleBlock = 0;
 
@@ -96,7 +96,7 @@ int main(int argc, char *argv[]) {
     exit(1);
   }
 
-  _size       = atol(argv[1]);
+  _size = atol(argv[1]);
   config_file = argv[2];
   switch (argv[3][0]) {
     case ('R'): {
@@ -108,7 +108,7 @@ int main(int argc, char *argv[]) {
       break;
     }
     case ('B'): {
-      run_read  = 1;
+      run_read = 1;
       run_write = 1;
       break;
     }
@@ -118,7 +118,7 @@ int main(int argc, char *argv[]) {
     }
   }
   cycleBlock = argv[3][1] == 'C';
-  timesteps  = atol(argv[4]);
+  timesteps = atol(argv[4]);
 
   const int64_t size = _size;
 
@@ -130,12 +130,12 @@ int main(int argc, char *argv[]) {
     exit(1);
   }
 
-  int pPerNode     = esdm_mpi_get_tasks_per_node();
-  int tmp_rank     = (mpi_rank + (cycleBlock * pPerNode)) % mpi_size;
-  int64_t dim[]    = {1, size / mpi_size + (tmp_rank < (size % mpi_size) ? 1 : 0), size};
+  int pPerNode = esdm_mpi_get_tasks_per_node();
+  int tmp_rank = (mpi_rank + (cycleBlock * pPerNode)) % mpi_size;
+  int64_t dim[] = {1, size / mpi_size + (tmp_rank < (size % mpi_size) ? 1 : 0), size};
   int64_t offset[] = {0, size / mpi_size * tmp_rank + (tmp_rank < (size % mpi_size) ? tmp_rank : size % mpi_size), 0};
 
-  const long volume     = dim[1] * dim[2] * sizeof(uint64_t);
+  const long volume = dim[1] * dim[2] * sizeof(uint64_t);
   const long volume_all = timesteps * size * size * sizeof(uint64_t);
 
   if (!volume_all) {
@@ -149,7 +149,7 @@ int main(int argc, char *argv[]) {
   long x, y;
   for (y = offset[1]; y < dim[1]; y++) {
     for (x = offset[2]; x < dim[2]; x++) {
-      long idx   = (y - offset[1]) * size + x;
+      long idx = (y - offset[1]) * size + x;
       buf_w[idx] = y * size + x + 1 + mpi_rank;
     }
   }
@@ -157,7 +157,7 @@ int main(int argc, char *argv[]) {
   // Interaction with ESDM
   esdm_status ret;
   esdm_container_t *container = NULL;
-  esdm_dataset_t *dataset     = NULL;
+  esdm_dataset_t *dataset = NULL;
 
   esdm_mpi_init();
   esdm_mpi_distribute_config_file(config_file);
@@ -211,7 +211,7 @@ int main(int argc, char *argv[]) {
     start_timer(&t);
     // Read the data to the dataset
     for (int t = 0; t < timesteps; t++) {
-      offset[0]       = t;
+      offset[0] = t;
       uint64_t *buf_r = (uint64_t *)malloc(volume);
       assert(buf_r != NULL);
 

@@ -74,14 +74,14 @@ void benchmark_init(benchmark_t *bm) {
   MPI_Get_processor_name(processor, &len);
   bm->processor = (char *)malloc(sizeof(*bm->processor) * len + 1);
   strcpy(bm->processor, processor);
-  bm->testfn         = malloc(0);
-  bm->block          = malloc(0);
-  bm->duration.open  = -1;
-  bm->duration.io    = -1;
+  bm->testfn = malloc(0);
+  bm->block = malloc(0);
+  bm->duration.open = -1;
+  bm->duration.io = -1;
   bm->duration.close = -1;
-  bm->mssize         = 0;
-  bm->ms             = malloc(0);
-  bm->ndims          = 0;
+  bm->mssize = 0;
+  bm->ms = malloc(0);
+  bm->ndims = 0;
 }
 
 
@@ -113,7 +113,7 @@ const int use_fill_value) {
   assert(dgeom[DY] % procs.ppn == 0);
 
   bm->use_fill_value = use_fill_value;
-  bm->par_access     = par_access;
+  bm->par_access = par_access;
   switch (bm->par_access) {
     case NC_COLLECTIVE:
       bm->is_unlimited = is_unlimited;
@@ -152,16 +152,16 @@ const int use_fill_value) {
 
   // Testfile
   bm->io_mode = io_mode;
-  bm->testfn  = (char *)realloc(bm->testfn, sizeof(char *) * strlen(testfn) + 1);
+  bm->testfn = (char *)realloc(bm->testfn, sizeof(char *) * strlen(testfn) + 1);
   strcpy(bm->testfn, testfn);
 
   // Memory allocation for measurements
   bm->mssize = bm->dgeom[DT] / bm->bgeom[DT];
-  bm->ms     = (measurement_t *)realloc(bm->ms, sizeof(*bm->ms) * bm->mssize);
+  bm->ms = (measurement_t *)realloc(bm->ms, sizeof(*bm->ms) * bm->mssize);
 
   // Memory allocation and initialization of block
   bm->block_size = bm->bgeom[DT] * bm->bgeom[DX] * bm->bgeom[DY] * bm->bgeom[DZ] * sizeof(DATATYPE);
-  bm->block      = (DATATYPE *)realloc(bm->block, bm->block_size);
+  bm->block = (DATATYPE *)realloc(bm->block, bm->block_size);
   if (bm->block == NULL) {
     DEBUG_MESSAGE("Could not allocate> %lu\n", bm->block_size);
     exit(1);
@@ -184,9 +184,9 @@ const int use_fill_value) {
 
 int benchmark_run(benchmark_t *bm, DATATYPE *compare_block) {
   int verify_results = 1;
-  int err            = 0;
-  int cmode          = 0;
-  int ncid           = 0;
+  int err = 0;
+  int cmode = 0;
+  int ncid = 0;
   char dimname[80];
   int dimids[bm->ndims];
   int varid = 0;
@@ -211,7 +211,7 @@ int benchmark_run(benchmark_t *bm, DATATYPE *compare_block) {
   switch (bm->io_mode) {
     case IO_MODE_WRITE:
       cmode = NC_CLOBBER | NC_MPIIO | NC_NETCDF4;
-      err   = nc_create_par(bm->testfn, cmode, MPI_COMM_WORLD, MPI_INFO_NULL, &ncid);
+      err = nc_create_par(bm->testfn, cmode, MPI_COMM_WORLD, MPI_INFO_NULL, &ncid);
       FATAL_NC_ERR;
 
       if (!bm->use_fill_value) {
@@ -275,7 +275,7 @@ int benchmark_run(benchmark_t *bm, DATATYPE *compare_block) {
   DEBUG_MESSAGE("IO_BENCHMARK[%d]\n", bm->rank);
   timespec_t start_io, stop_io;
   timespec_t start_io_slice, stop_io_slice;
-  int i          = 0;
+  int i = 0;
   size_t start[] = {0, bm->bgeom[DX] * (bm->rank / bm->procs.ppn), bm->bgeom[DY] * (bm->rank % bm->procs.ppn), 0};
 
   MPI_Barrier(MPI_COMM_WORLD);
@@ -300,7 +300,7 @@ int benchmark_run(benchmark_t *bm, DATATYPE *compare_block) {
     }
 
     bm->ms[i].time_offset = to;
-    bm->ms[i].duration    = time_to_double(stop_io_slice) - time_to_double(start_io_slice);
+    bm->ms[i].duration = time_to_double(stop_io_slice) - time_to_double(start_io_slice);
     ++i;
   }
   MPI_Barrier(MPI_COMM_WORLD);
@@ -320,8 +320,8 @@ int benchmark_run(benchmark_t *bm, DATATYPE *compare_block) {
 
 
   /* REPORT */
-  bm->duration.open  = time_to_double(stop_open) - time_to_double(start_open);
-  bm->duration.io    = time_to_double(stop_io) - time_to_double(start_io);
+  bm->duration.open = time_to_double(stop_open) - time_to_double(start_open);
+  bm->duration.io = time_to_double(stop_io) - time_to_double(start_io);
   bm->duration.close = time_to_double(stop_close) - time_to_double(start_close);
   /* END: REPORT */
 

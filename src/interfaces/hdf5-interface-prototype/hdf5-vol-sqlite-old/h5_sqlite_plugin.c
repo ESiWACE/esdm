@@ -101,8 +101,8 @@ static herr_t H5VL_extlog_object_optional(void *obj, hid_t dxpl_id, void **req, 
 //static herr_t H5VL_extlog_object_specific(void *obj, H5VL_loc_params_t loc_params, H5VL_object_specific_t specific_type, hid_t dxpl_id, void **req, va_list arguments);
 //
 hid_t native_plugin_id = -1;
-haddr_t addr_g         = 0;
-size_t counter_g       = 0;
+haddr_t addr_g = 0;
+size_t counter_g = 0;
 
 static const H5VL_class_t H5VL_log_g = {
 0,
@@ -140,8 +140,8 @@ H5VL_extlog_dataset_close   /* close */
 H5VL_extlog_type_commit, /* commit */
 H5VL_extlog_type_open,   /* open */
 H5VL_extlog_type_get,    /* get_size */
-NULL,                        //H5VL_extlog_type_specific,         /* specific */
-NULL,                        //H5VL_extlog_type_optional,         /* optional */
+NULL,                    //H5VL_extlog_type_specific,         /* specific */
+NULL,                    //H5VL_extlog_type_optional,         /* optional */
 H5VL_extlog_type_close   /* close */
 },
 {
@@ -186,28 +186,28 @@ NULL};
 
 
 static void SQO_init_info(H5O_info_t *info) {
-  info->fileno                    = 0;
-  info->addr                      = 0;
-  info->type                      = H5O_TYPE_UNKNOWN;
-  info->rc                        = 0;
-  info->atime                     = 0;
-  info->mtime                     = 0;
-  info->ctime                     = 0;
-  info->btime                     = 0;
-  info->num_attrs                 = 0;
-  info->hdr.version               = 0; /* Version number of header format in file  */
-  info->hdr.nmesgs                = 0; /* Number of object header messages         */
-  info->hdr.nchunks               = 0; /* Number of object header chunks           */
-  info->hdr.flags                 = 0; /* Object header status flags               */
-  info->hdr.space.total           = 0; /* Total space for storing object header in */
-  info->hdr.space.meta            = 0; /* Space within header for object header    */
-  info->hdr.space.mesg            = 0; /* Space within header for actual message   */
-  info->hdr.space.free            = 0; /* Free space within object header          */
-  info->hdr.mesg.present          = 0; /* Flags to indicate presence of message    */
-  info->hdr.mesg.shared           = 0; /* Flags to indicate message type is        */
-  info->meta_size.obj.heap_size   = 0;
-  info->meta_size.obj.index_size  = 0;
-  info->meta_size.attr.heap_size  = 0;
+  info->fileno = 0;
+  info->addr = 0;
+  info->type = H5O_TYPE_UNKNOWN;
+  info->rc = 0;
+  info->atime = 0;
+  info->mtime = 0;
+  info->ctime = 0;
+  info->btime = 0;
+  info->num_attrs = 0;
+  info->hdr.version = 0;      /* Version number of header format in file  */
+  info->hdr.nmesgs = 0;       /* Number of object header messages         */
+  info->hdr.nchunks = 0;      /* Number of object header chunks           */
+  info->hdr.flags = 0;        /* Object header status flags               */
+  info->hdr.space.total = 0;  /* Total space for storing object header in */
+  info->hdr.space.meta = 0;   /* Space within header for object header    */
+  info->hdr.space.mesg = 0;   /* Space within header for actual message   */
+  info->hdr.space.free = 0;   /* Free space within object header          */
+  info->hdr.mesg.present = 0; /* Flags to indicate presence of message    */
+  info->hdr.mesg.shared = 0;  /* Flags to indicate message type is        */
+  info->meta_size.obj.heap_size = 0;
+  info->meta_size.obj.index_size = 0;
+  info->meta_size.attr.heap_size = 0;
   info->meta_size.attr.index_size = 0;
 }
 
@@ -218,17 +218,17 @@ static void SQO_init_info(H5O_info_t *info) {
 
 static void *H5VL_extlog_fapl_copy(const void *info) {
   const h5sqlite_fapl_t *fapl_source = (h5sqlite_fapl_t *)info;
-  h5sqlite_fapl_t *fapl_target       = (h5sqlite_fapl_t *)malloc(sizeof(*fapl_target));
+  h5sqlite_fapl_t *fapl_target = (h5sqlite_fapl_t *)malloc(sizeof(*fapl_target));
   memcpy(fapl_target, fapl_source, sizeof(fapl_source));
-  fapl_target->fn      = strdup(fapl_source->fn);
-  fapl_target->db_fn   = strdup(fapl_source->db_fn);
+  fapl_target->fn = strdup(fapl_source->fn);
+  fapl_target->db_fn = strdup(fapl_source->db_fn);
   fapl_target->data_fn = strdup(fapl_source->data_fn);
   //	fapl_target->offset = fapl_source->offset;
   return (void *)fapl_target;
 }
 
 static herr_t H5VL_extlog_fapl_free(void *info) {
-  herr_t err            = 0;
+  herr_t err = 0;
   h5sqlite_fapl_t *fapl = (h5sqlite_fapl_t *)info;
   free(fapl->fn);
   free(fapl->db_fn);
@@ -294,10 +294,10 @@ H5VL_extlog_attr_create(void *obj, H5VL_loc_params_t loc_params, const char *att
       SQO_t *sqo = (SQO_t *)obj;
       sqo->info.num_attrs++;
       attribute->object.location = create_path(sqo);
-      attribute->object.name     = strdup(attr_name);
-      attribute->object.root     = sqo->root;
-      attribute->object.fapl     = sqo->fapl;
-      attribute->data_size       = data_size;
+      attribute->object.name = strdup(attr_name);
+      attribute->object.root = sqo->root;
+      attribute->object.fapl = sqo->fapl;
+      attribute->data_size = data_size;
 
       MPI_Barrier(MPI_COMM_WORLD);
       if (0 == sqo->fapl->mpi_rank) {
@@ -367,7 +367,7 @@ static void *
 H5VL_extlog_attr_open(void *obj, H5VL_loc_params_t loc_params, const char *attr_name, hid_t aapl_id, hid_t dxpl_id, void **req) {
   TRACEMSG("");
   SQA_t *attribute = (SQA_t *)malloc(sizeof(*attribute));
-  SQO_t *sqo       = (SQO_t *)obj;
+  SQO_t *sqo = (SQO_t *)obj;
 
   switch (loc_params.obj_type) {
     case H5I_GROUP:
@@ -469,9 +469,9 @@ H5VL_extlog_attr_get(void *obj, H5VL_attr_get_t get_type, hid_t dxpl_id, void **
       break;
     case H5VL_ATTR_GET_NAME: {
       H5VL_loc_params_t loc_params = va_arg(arguments, H5VL_loc_params_t);
-      size_t buf_size              = va_arg(arguments, size_t);
-      char *buf                    = va_arg(arguments, char *);
-      ssize_t *ret_val             = va_arg(arguments, ssize_t *);
+      size_t buf_size = va_arg(arguments, size_t);
+      char *buf = va_arg(arguments, char *);
+      ssize_t *ret_val = va_arg(arguments, ssize_t *);
       switch (loc_params.type) {
         case H5VL_OBJECT_BY_SELF: {
           SQA_t *sqa = (SQA_t *)obj;
@@ -540,7 +540,7 @@ hsize_t *idx,
 H5A_operator2_t op,
 void *op_data,
 hid_t dxpl_id) {
-  SQO_t *obj2  = NULL;
+  SQO_t *obj2 = NULL;
   hid_t vol_id = H5VLget_plugin_id("extlog");
   assert(-1 != vol_id);
   hid_t loc_id = -1;
@@ -569,10 +569,10 @@ hid_t dxpl_id) {
       ERRORMSG("Not supported");
   }
 
-  obj2->fapl       = obj->fapl;
-  obj2->root       = obj->root;
-  obj2->location   = strdup(obj->location);
-  obj2->name       = strdup(obj->name);
+  obj2->fapl = obj->fapl;
+  obj2->root = obj->root;
+  obj2->location = strdup(obj->location);
+  obj2->name = strdup(obj->name);
   obj2->info.btime = ++counter_g;
 
   loc_id = H5VLobject_register(obj2, loc_params.obj_type, vol_id);
@@ -589,7 +589,7 @@ hid_t dxpl_id) {
             case H5I_DATASPACE:
             case H5I_DATASET: {
               H5A_info_t ainfo;
-              char **attr_list      = NULL;
+              char **attr_list = NULL;
               size_t attr_list_size = 0;
               DB_create_name_list(obj, loc_params, "ATTRIBUTES", &attr_list, &attr_list_size);
 
@@ -645,11 +645,11 @@ static herr_t H5VL_extlog_attr_specific(void *obj, H5VL_loc_params_t loc_params,
       break;
     case H5VL_ATTR_EXISTS: {
       const char *attr_name = va_arg(arguments, const char *);
-      ret_id                = va_arg(arguments, htri_t *);
+      ret_id = va_arg(arguments, htri_t *);
       switch (loc_params.type) {
         case H5VL_OBJECT_BY_SELF: {
           SQO_t *sqo = (SQO_t *)obj;
-          *ret_id    = SQA_exists_by_self(obj, loc_params, attr_name, dxpl_id);
+          *ret_id = SQA_exists_by_self(obj, loc_params, attr_name, dxpl_id);
         } break;
         case H5VL_OBJECT_BY_NAME:
           ERRORMSG("Not implemented");
@@ -660,11 +660,11 @@ static herr_t H5VL_extlog_attr_specific(void *obj, H5VL_loc_params_t loc_params,
       break;
     }
     case H5VL_ATTR_ITER: {
-      H5_index_t idx_type   = va_arg(arguments, H5_index_t);
+      H5_index_t idx_type = va_arg(arguments, H5_index_t);
       H5_iter_order_t order = va_arg(arguments, H5_iter_order_t);
-      hsize_t *idx          = va_arg(arguments, hsize_t *);
-      H5A_operator2_t op    = va_arg(arguments, H5A_operator2_t);
-      void *op_data         = va_arg(arguments, void *);
+      hsize_t *idx = va_arg(arguments, hsize_t *);
+      H5A_operator2_t op = va_arg(arguments, H5A_operator2_t);
+      void *op_data = va_arg(arguments, void *);
 
       SQA_iterate(obj, loc_params, idx_type, order, idx, op, op_data, dxpl_id);
     } break;
@@ -719,7 +719,7 @@ H5VL_extlog_file_create(const char *fname, unsigned flags, hid_t fcpl_id, hid_t 
   TRACEMSG("");
 
   int err;
-  SQF_t *file           = (SQF_t *)malloc(sizeof(*file));
+  SQF_t *file = (SQF_t *)malloc(sizeof(*file));
   h5sqlite_fapl_t *fapl = (h5sqlite_fapl_t *)H5VL_extlog_fapl_copy(H5Pget_vol_info(fapl_id));
 
   MPI_Comm_rank(MPI_COMM_WORLD, &fapl->mpi_rank);
@@ -751,15 +751,15 @@ H5VL_extlog_file_create(const char *fname, unsigned flags, hid_t fcpl_id, hid_t 
 
 
   file->object.location = strdup(FILE_DEFAULT_PATH);
-  file->object.name     = strdup(basename((char *)fname));
-  file->object.root     = file;
-  file->object.fapl     = fapl;
+  file->object.name = strdup(basename((char *)fname));
+  file->object.root = file;
+  file->object.fapl = fapl;
 
   DB_connect(fapl->db_fn, &file->db);
 
 #ifdef MULTIFILE
   char *rfname = real_filename_create(fapl);
-  file->fd     = open64(rfname, O_RDWR | O_CREAT, 0666);
+  file->fd = open64(rfname, O_RDWR | O_CREAT, 0666);
   real_filename_destroy(rfname);
 #elif ADAPTIVE
   // FILE CREATE
@@ -799,9 +799,9 @@ H5VL_extlog_file_create(const char *fname, unsigned flags, hid_t fcpl_id, hid_t 
   H5VL_loc_params_t loc_params;
   SQG_t group;
   group.object.location = create_path((SQO_t *)file);
-  group.object.name     = strdup("/");
-  group.object.root     = file;
-  group.object.fapl     = fapl;
+  group.object.name = strdup("/");
+  group.object.root = file;
+  group.object.fapl = fapl;
   SQO_init_info(&group.object.info);
   group.object.info.type = H5O_TYPE_GROUP;
   MPI_Barrier(MPI_COMM_WORLD);
@@ -828,7 +828,7 @@ H5VL_extlog_file_open(const char *fname, unsigned flags, hid_t fapl_id, hid_t dx
   DB_connect(info->db_fn, &file->db);
 #ifdef MULTIFILE
   char *rfname = real_filename_create(info);
-  file->fd     = open64(rfname, O_RDWR | O_CREAT, 0666);
+  file->fd = open64(rfname, O_RDWR | O_CREAT, 0666);
   real_filename_destroy(rfname);
 #elif ADAPTIVE
   // FILE OPEN
@@ -855,16 +855,16 @@ H5VL_extlog_file_open(const char *fname, unsigned flags, hid_t fapl_id, hid_t dx
 #endif
 
   file->object.location = strdup(FILE_DEFAULT_PATH);
-  file->object.name     = strdup(basename((char *)fname));
-  file->object.root     = file;
-  file->object.fapl     = info;
+  file->object.name = strdup(basename((char *)fname));
+  file->object.root = file;
+  file->object.fapl = info;
   return (void *)file;
 }
 
 
 static herr_t
 H5VL_extlog_file_get(void *obj, H5VL_file_get_t get_type, hid_t dxpl_id, void **req, va_list arguments) {
-  SQF_t *file      = (SQF_t *)obj;
+  SQF_t *file = (SQF_t *)obj;
   herr_t ret_value = 0;
   hid_t *ret_id;
 
@@ -872,13 +872,13 @@ H5VL_extlog_file_get(void *obj, H5VL_file_get_t get_type, hid_t dxpl_id, void **
     case H5VL_FILE_GET_FAPL: {
       hid_t fapl_id = 0;
       DBF_get_fapl(file, &fapl_id);
-      ret_id  = va_arg(arguments, hid_t *);
+      ret_id = va_arg(arguments, hid_t *);
       *ret_id = fapl_id;
     } break;
     case H5VL_FILE_GET_FCPL: {
       hid_t fcpl_id = 0;
       DBF_get_fcpl(file, &fcpl_id);
-      ret_id  = va_arg(arguments, hid_t *);
+      ret_id = va_arg(arguments, hid_t *);
       *ret_id = fcpl_id;
     } break;
     case H5VL_FILE_GET_INTENT:
@@ -947,20 +947,20 @@ static void *
 H5VL_extlog_group_create(void *obj, H5VL_loc_params_t loc_params, const char *name, hid_t gcpl_id, hid_t gapl_id, hid_t dxpl_id, void **req) {
   TRACEMSG("");
   SQG_t *group = NULL;
-  group        = (SQG_t *)malloc(sizeof(*group));
+  group = (SQG_t *)malloc(sizeof(*group));
 
   switch (loc_params.obj_type) {
     case H5I_FILE:
     case H5I_GROUP: {
-      SQO_t *sqo             = (SQO_t *)obj;
+      SQO_t *sqo = (SQO_t *)obj;
       group->object.location = create_path(sqo);
-      group->object.name     = strdup(name);
-      group->object.root     = sqo->root;
-      group->object.fapl     = sqo->fapl;
+      group->object.name = strdup(name);
+      group->object.root = sqo->root;
+      group->object.fapl = sqo->fapl;
 
       SQO_init_info(&group->object.info);
       group->object.info.fileno = 0;
-      group->object.info.addr   = ++addr_g;
+      group->object.info.addr = ++addr_g;
       group->object.info.num_attrs += 1;
       group->object.info.type += H5O_TYPE_GROUP;
       MPI_Barrier(MPI_COMM_WORLD);
@@ -1039,7 +1039,7 @@ static void *H5VL_extlog_group_open(void *obj, H5VL_loc_params_t loc_params, con
 
 static herr_t H5VL_extlog_group_get(void *obj, H5VL_group_get_t get_type, hid_t dxpl_id, void **req, va_list arguments) {
   TRACEMSG("");
-  SQG_t *group     = (SQG_t *)obj;
+  SQG_t *group = (SQG_t *)obj;
   herr_t ret_value = 0;
   switch (get_type) {
     case H5VL_GROUP_GET_GCPL: {
@@ -1138,7 +1138,7 @@ static void *
 H5VL_extlog_dataset_create(void *obj, H5VL_loc_params_t loc_params, const char *name, hid_t dcpl_id, hid_t dapl_id, hid_t dxpl_id, void **req) {
   DEBUGMSG("%s", name);
   SQD_t *dset = NULL;
-  dset        = (SQD_t *)malloc(sizeof(*dset));
+  dset = (SQD_t *)malloc(sizeof(*dset));
 
   hid_t space_id;
   H5Pget(dcpl_id, "dataset_space_id", &space_id);
@@ -1158,13 +1158,13 @@ H5VL_extlog_dataset_create(void *obj, H5VL_loc_params_t loc_params, const char *
   switch (loc_params.obj_type) {
     case H5I_FILE:
     case H5I_GROUP: {
-      SQO_t *sqo            = (SQO_t *)obj;
-      dset->object.root     = sqo->root;
-      dset->object.fapl     = sqo->fapl;
+      SQO_t *sqo = (SQO_t *)obj;
+      dset->object.root = sqo->root;
+      dset->object.fapl = sqo->fapl;
       dset->object.location = create_path(sqo);
-      dset->object.name     = strdup(name);
-      dset->data_size       = data_size;
-      dset->offset          = sqo->root->offset;
+      dset->object.name = strdup(name);
+      dset->data_size = data_size;
+      dset->offset = sqo->root->offset;
 #ifdef MULTIFILE
       dset->object.root->offset += data_size / dset->object.fapl->mpi_size;
 #elif ADAPTIVE
@@ -1178,11 +1178,11 @@ H5VL_extlog_dataset_create(void *obj, H5VL_loc_params_t loc_params, const char *
       dset->object.root->offset += data_size; // free position for the next datasets
 #endif
       SQO_init_info(&dset->object.info);
-      dset->object.info.fileno    = sqo->root->fd;
-      dset->object.info.addr      = ++addr_g; // todo
+      dset->object.info.fileno = sqo->root->fd;
+      dset->object.info.addr = ++addr_g; // todo
       dset->object.info.num_attrs = 0;
-      dset->object.info.type      = H5O_TYPE_DATASET;
-      dset->object.info.btime     = ++counter_g; // todo
+      dset->object.info.type = H5O_TYPE_DATASET;
+      dset->object.info.btime = ++counter_g; // todo
 
       MPI_Barrier(MPI_COMM_WORLD);
       if (0 == sqo->fapl->mpi_rank) {
@@ -1264,7 +1264,7 @@ H5VL_extlog_dataset_open(void *obj, H5VL_loc_params_t loc_params, const char *na
 static herr_t
 H5VL_extlog_dataset_get(void *dset, H5VL_dataset_get_t get_type, hid_t dxpl_id, void **req, va_list arguments) {
   TRACEMSG("");
-  SQD_t *d         = (SQD_t *)dset;
+  SQD_t *d = (SQD_t *)dset;
   herr_t ret_value = 0;
   //	hid_t type_id = 0;
   //	hid_t space_id = 0;
@@ -1323,13 +1323,13 @@ static off64_t coord_to_offset(const hsize_t *bend, const hsize_t *start, const 
 
 static ssize_t SQD_read64(SQO_t *sqo, void *buf, size_t count, off64_t offset) {
   ssize_t bytes_read_total = 0;
-  ssize_t bytes_read       = 0;
-  ssize_t block_size       = count;
+  ssize_t bytes_read = 0;
+  ssize_t block_size = count;
   assert(0 <= sqo->root->fd);
 
   while (bytes_read_total != block_size) {
     size_t bytes_left = block_size - bytes_read_total;
-    count             = (COUNT_MAX < bytes_left) ? COUNT_MAX : bytes_left;
+    count = (COUNT_MAX < bytes_left) ? COUNT_MAX : bytes_left;
     DEBUGMSG("in %s read %zu bytes at offset %zu", sqo->name, count, offset + bytes_read_total);
     bytes_read = pread64(sqo->root->fd, buf + bytes_read_total, count, offset + bytes_read_total);
     if (bytes_read != count) {
@@ -1343,13 +1343,13 @@ static ssize_t SQD_read64(SQO_t *sqo, void *buf, size_t count, off64_t offset) {
 
 static ssize_t SQD_pwrite64(SQO_t *sqo, const void *buf, size_t count, off64_t offset) {
   ssize_t bytes_written_total = 0;
-  ssize_t bytes_written       = 0;
-  ssize_t block_size          = count;
+  ssize_t bytes_written = 0;
+  ssize_t block_size = count;
   assert(0 <= sqo->root->fd);
 
   while (bytes_written_total != block_size) {
     size_t bytes_left = block_size - bytes_written_total;
-    count             = (COUNT_MAX < bytes_left) ? COUNT_MAX : bytes_left;
+    count = (COUNT_MAX < bytes_left) ? COUNT_MAX : bytes_left;
     DEBUGMSG("in %s write %zu bytes at offset %zu", sqo->name, count, offset + bytes_written_total);
     bytes_written = pwrite64(sqo->root->fd, ((char *)buf) + bytes_written_total, count, offset + bytes_written_total);
     if (bytes_written != count) {
@@ -1366,7 +1366,7 @@ H5VL_extlog_dataset_read(void *dset, hid_t mem_type_id, hid_t mem_space_id,
 hid_t file_space_id, hid_t plist_id, void *buf, void **req) {
   TRACEMSG("");
   herr_t ret = 0;
-  SQD_t *d   = (SQD_t *)dset;
+  SQD_t *d = (SQD_t *)dset;
 
   int ndims = H5Sget_simple_extent_ndims(mem_space_id);
   hsize_t dims[ndims];
@@ -1410,7 +1410,7 @@ hid_t file_space_id, hid_t plist_id, void *buf, void **req) {
   SQO_t *esdm_sqo = (SQO_t *)dset;
   if (esdm_sqo->root->fd == -1) {
     char *esdm_tiername = esdm_suggest_tier(d->object.fapl, d->object.fapl->mpi_size, block_size);
-    esdm_sqo->root->fd  = open64(esdm_tiername, O_RDWR | O_CREAT, 0666);
+    esdm_sqo->root->fd = open64(esdm_tiername, O_RDWR | O_CREAT, 0666);
     real_filename_destroy(esdm_tiername);
   }
 
@@ -1432,7 +1432,7 @@ H5VL_extlog_dataset_write(void *dset, hid_t mem_type_id, hid_t mem_space_id,
 hid_t file_space_id, hid_t plist_id, const void *buf, void **req) {
   TRACEMSG("");
   herr_t ret = 0;
-  SQD_t *d   = (SQD_t *)dset;
+  SQD_t *d = (SQD_t *)dset;
 
   int ndims = H5Sget_simple_extent_ndims(mem_space_id);
   hsize_t dims[ndims];
@@ -1476,7 +1476,7 @@ hid_t file_space_id, hid_t plist_id, const void *buf, void **req) {
   SQO_t *esdm_sqo = (SQO_t *)dset;
   if (esdm_sqo->root->fd == -1) {
     char *esdm_tiername = esdm_suggest_tier(d->object.fapl, d->object.fapl->mpi_size, block_size);
-    esdm_sqo->root->fd  = open64(esdm_tiername, O_RDWR | O_CREAT, 0666);
+    esdm_sqo->root->fd = open64(esdm_tiername, O_RDWR | O_CREAT, 0666);
     real_filename_destroy(esdm_tiername);
   }
 
@@ -1543,12 +1543,12 @@ H5VL_extlog_link_specific(void *obj, H5VL_loc_params_t loc_params, H5VL_link_spe
   memcpy(sqg, obj, sizeof(*sqg));
   SQO_t *obj2 = (SQO_t *)sqg;
 
-  SQO_t *obj1    = (SQO_t *)obj;
-  obj2->root     = obj1->root;
-  obj2->fapl     = obj1->fapl;
-  obj2->info     = obj1->info;
+  SQO_t *obj1 = (SQO_t *)obj;
+  obj2->root = obj1->root;
+  obj2->fapl = obj1->fapl;
+  obj2->info = obj1->info;
   obj2->location = strdup(obj1->location);
-  obj2->name     = strdup(obj1->name);
+  obj2->name = strdup(obj1->name);
 
   hid_t vol_id = H5VLget_plugin_id("extlog");
   assert(-1 != vol_id);
@@ -1563,26 +1563,26 @@ H5VL_extlog_link_specific(void *obj, H5VL_loc_params_t loc_params, H5VL_link_spe
       ERRORMSG("Not implemented");
       break;
     case H5VL_LINK_ITER: {
-      hbool_t recursive     = va_arg(arguments, int);
-      H5_index_t idx_type   = va_arg(arguments, H5_index_t);
+      hbool_t recursive = va_arg(arguments, int);
+      H5_index_t idx_type = va_arg(arguments, H5_index_t);
       H5_iter_order_t order = va_arg(arguments, H5_iter_order_t);
-      hsize_t *idx_p        = va_arg(arguments, hsize_t *);
-      H5L_iterate_t op      = va_arg(arguments, H5L_iterate_t);
-      void *op_data         = va_arg(arguments, void *);
+      hsize_t *idx_p = va_arg(arguments, hsize_t *);
+      H5L_iterate_t op = va_arg(arguments, H5L_iterate_t);
+      void *op_data = va_arg(arguments, void *);
 
       switch (idx_type) {
         case H5_INDEX_NAME:
           switch (order) {
             case H5_ITER_INC: {
-              H5L_info_t *link_info   = (H5L_info_t *)malloc(sizeof(*link_info));
-              link_info->type         = H5L_TYPE_HARD;
+              H5L_info_t *link_info = (H5L_info_t *)malloc(sizeof(*link_info));
+              link_info->type = H5L_TYPE_HARD;
               link_info->corder_valid = false;
-              link_info->corder       = 0;
-              link_info->cset         = H5T_CSET_ASCII;
+              link_info->corder = 0;
+              link_info->cset = H5T_CSET_ASCII;
               //									link_info->u.val_size = 0;
               link_info->u.address = 0;
 
-              char **dset_list      = NULL;
+              char **dset_list = NULL;
               size_t dset_list_size = 0;
               DB_create_name_list(obj, loc_params, "DATASETS", &dset_list, &dset_list_size);
               //									DB_create_name_list(obj, loc_params, "GROUPS", &dset_list, &dset_list_size);
@@ -1694,10 +1694,10 @@ static herr_t H5VL_extlog_object_specific(void *obj, H5VL_loc_params_t loc_param
       ERRORMSG("Not implemented");
       break;
     case H5VL_REF_CREATE: {
-      void *ref           = va_arg(arguments, void *);
-      const char *name    = va_arg(arguments, char *);
+      void *ref = va_arg(arguments, void *);
+      const char *name = va_arg(arguments, char *);
       H5R_type_t ref_type = va_arg(arguments, H5R_type_t);
-      hid_t space_id      = va_arg(arguments, hid_t);
+      hid_t space_id = va_arg(arguments, hid_t);
       //				H5S_t       *space = NULL;   /* Pointer to dataspace containing region */
 
       TODOMSG("Not implemented H5VL_REF_CREATE");
@@ -1713,7 +1713,7 @@ static herr_t
 H5VL_extlog_object_optional(void *obj, hid_t dxpl_id, void **req, va_list arguments) {
   TRACEMSG("");
   H5VL_object_optional_t optional_type = va_arg(arguments, H5VL_object_optional_t);
-  H5VL_loc_params_t loc_params         = va_arg(arguments, H5VL_loc_params_t);
+  H5VL_loc_params_t loc_params = va_arg(arguments, H5VL_loc_params_t);
 
   //    H5G_loc_t	loc;                    /* Location of group */
   herr_t ret_value = 0; /* Return value */
@@ -1722,7 +1722,7 @@ H5VL_extlog_object_optional(void *obj, hid_t dxpl_id, void **req, va_list argume
     /* H5Oget_info / H5Oget_info_by_name / H5Oget_info_by_idx */
     case H5VL_OBJECT_GET_INFO: {
       H5O_info_t *obj_info = va_arg(arguments, H5O_info_t *);
-      SQO_t *sqo           = (SQO_t *)obj;
+      SQO_t *sqo = (SQO_t *)obj;
 
       if (loc_params.type == H5VL_OBJECT_BY_SELF) { /* H5Oget_info */
         *obj_info = sqo->info;
@@ -1737,9 +1737,9 @@ H5VL_extlog_object_optional(void *obj, hid_t dxpl_id, void **req, va_list argume
     }
       /* H5Oget_comment / H5Oget_comment_by_name */
     case H5VL_OBJECT_GET_COMMENT: {
-      char *comment  = va_arg(arguments, char *);
+      char *comment = va_arg(arguments, char *);
       size_t bufsize = va_arg(arguments, size_t);
-      ssize_t *ret   = va_arg(arguments, ssize_t *);
+      ssize_t *ret = va_arg(arguments, ssize_t *);
 
       /* Retrieve the object's comment */
       if (loc_params.type == H5VL_OBJECT_BY_SELF) { /* H5Oget_comment */

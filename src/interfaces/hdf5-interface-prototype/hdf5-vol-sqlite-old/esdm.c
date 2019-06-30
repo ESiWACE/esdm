@@ -72,10 +72,10 @@ char *esdm_suggest_tier(h5sqlite_fapl_t *fapl, int mpi_size, size_t total_bytes)
   printf("[ESDM] WARNIGN: do not execute using mpiexec.. this section will try to access SLURM environment variables which will result in a segfault if unpopulated\n");
 
   int slurm_nodes = 0;
-  int slurm_ppn   = 0;
+  int slurm_ppn = 0;
 
   slurm_nodes = atoi(getenv("SLURM_NNODES"));
-  slurm_ppn   = atoi(getenv("SLURM_TASKS_PER_NODE"));
+  slurm_ppn = atoi(getenv("SLURM_TASKS_PER_NODE"));
 
   printf("[ESDM] KNOWLEDGE: SLURM:  nodes=%d, ppn=%d  \n", slurm_nodes, slurm_ppn);
   printf("[ESDM] KNOWLEDGE: MPI  :  mpi_size=%d  \n", mpi_size);

@@ -169,18 +169,18 @@ static void *memvol_file_create(const char *name, unsigned flags, hid_t fcpl_id,
   if (file == NULL) {
     // allocate resources
     object = (memvol_object_t *)malloc(sizeof(memvol_object_t));
-    file   = (memvol_file_t *)malloc(sizeof(memvol_file_t));
+    file = (memvol_file_t *)malloc(sizeof(memvol_file_t));
 
     // populate file and object data strutures
     memvol_group_init(&file->root_grp);
 
-    object->type   = MEMVOL_GROUP;
+    object->type = MEMVOL_GROUP;
     object->object = &file->root_grp;
 
     g_hash_table_insert(file->root_grp.childs_tbl, strdup("/"), object);
     g_hash_table_insert(files_tbl, strdup(name), object);
 
-    file->name    = strdup(name);
+    file->name = strdup(name);
     file->fcpl_id = H5Pcopy(fcpl_id);
   }
 
@@ -200,7 +200,7 @@ static void *memvol_file_create(const char *name, unsigned flags, hid_t fcpl_id,
 
   // attach to file struct
   file->mode_flags = flags;
-  file->fapl_id    = H5Pcopy(fapl_id);
+  file->fapl_id = H5Pcopy(fapl_id);
 
   debugI("%s: New file=%p with name=%s\n", __func__, (void *)file, name);
 
@@ -252,20 +252,20 @@ static herr_t memvol_file_get(void *file, H5VL_file_get_t get_type, hid_t dxpl_i
     /* H5Fget_access_plist */
     case H5VL_FILE_GET_FAPL: {
       hid_t *plist_id = va_arg(arguments, hid_t *);
-      *plist_id       = H5Pcopy(f->fapl_id);
+      *plist_id = H5Pcopy(f->fapl_id);
 
       break;
     }
     /* H5Fget_create_plist */
     case H5VL_FILE_GET_FCPL: {
       hid_t *plist_id = va_arg(arguments, hid_t *);
-      *plist_id       = H5Pcopy(f->fcpl_id);
+      *plist_id = H5Pcopy(f->fcpl_id);
       break;
     }
     /* H5Fget_obj_count */
     case H5VL_FILE_GET_OBJ_COUNT: {
-      unsigned types   = va_arg(arguments, unsigned);
-      ssize_t *ret     = va_arg(arguments, ssize_t *);
+      unsigned types = va_arg(arguments, unsigned);
+      ssize_t *ret = va_arg(arguments, ssize_t *);
       size_t obj_count = 0; /* Number of opened objects */
       assert(0 && "TODO");
       /* Set the return value */
@@ -274,10 +274,10 @@ static herr_t memvol_file_get(void *file, H5VL_file_get_t get_type, hid_t dxpl_i
     }
     /* H5Fget_obj_ids */
     case H5VL_FILE_GET_OBJ_IDS: {
-      unsigned types   = va_arg(arguments, unsigned);
-      size_t max_objs  = va_arg(arguments, size_t);
-      hid_t *oid_list  = va_arg(arguments, hid_t *);
-      ssize_t *ret     = va_arg(arguments, ssize_t *);
+      unsigned types = va_arg(arguments, unsigned);
+      size_t max_objs = va_arg(arguments, size_t);
+      hid_t *oid_list = va_arg(arguments, hid_t *);
+      ssize_t *ret = va_arg(arguments, ssize_t *);
       size_t obj_count = 0; /* Number of opened objects */
 
       assert(0 && "TODO");
@@ -289,16 +289,16 @@ static herr_t memvol_file_get(void *file, H5VL_file_get_t get_type, hid_t dxpl_i
     /* H5Fget_intent */
     case H5VL_FILE_GET_INTENT: {
       unsigned *ret = va_arg(arguments, unsigned *);
-      *ret          = f->mode_flags;
+      *ret = f->mode_flags;
       break;
     }
     /* H5Fget_name */
     case H5VL_FILE_GET_NAME: {
       H5I_type_t type = va_arg(arguments, H5I_type_t);
-      size_t size     = va_arg(arguments, size_t);
-      char *name      = va_arg(arguments, char *);
-      ssize_t *ret    = va_arg(arguments, ssize_t *);
-      size_t len      = strlen(f->name);
+      size_t size = va_arg(arguments, size_t);
+      char *name = va_arg(arguments, char *);
+      ssize_t *ret = va_arg(arguments, ssize_t *);
+      size_t len = strlen(f->name);
 
       if (name) {
         strncpy(name, f->name, MIN(len + 1, size));
@@ -312,7 +312,7 @@ static herr_t memvol_file_get(void *file, H5VL_file_get_t get_type, hid_t dxpl_i
     /* H5I_get_file_id */
     case H5VL_OBJECT_GET_FILE: {
       H5I_type_t type = va_arg(arguments, H5I_type_t);
-      void **ret      = va_arg(arguments, void **);
+      void **ret = va_arg(arguments, void **);
       void *tmp;
       assert(0 && "TODO");
 

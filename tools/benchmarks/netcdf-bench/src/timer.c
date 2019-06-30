@@ -30,10 +30,10 @@ void stop_timer(timespec_t *t1) {
 timespec_t time_diff(const timespec_t end, const timespec_t start) {
   timespec_t diff;
   if (end.tv_nsec < start.tv_nsec) {
-    diff.tv_sec  = end.tv_sec - start.tv_sec - 1;
+    diff.tv_sec = end.tv_sec - start.tv_sec - 1;
     diff.tv_nsec = 1000000000 + end.tv_nsec - start.tv_nsec;
   } else {
-    diff.tv_sec  = end.tv_sec - start.tv_sec;
+    diff.tv_sec = end.tv_sec - start.tv_sec;
     diff.tv_nsec = end.tv_nsec - start.tv_nsec;
   }
   return diff;
