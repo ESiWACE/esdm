@@ -298,18 +298,6 @@ esdm_status esdm_fragment_serialize(esdm_fragment_t *fragment, void **out)
 
 // Dataset ////////////////////////////////////////////////////////////////////
 
-void esdm_dataset_dataspace_serialize_recursively_(smd_attr_t * smd, esdm_dataspace_t* dataspace){
-	if(dataspace != NULL){
-		smd_dtype_t * t_arr = smd_type_array(SMD_DTYPE_INT64, dataspace->dimensions);
-		smd_attr_t * vars = smd_attr_new("space", t_arr, dataspace->size, 0);
-		smd_attr_link(smd, vars, 0);
-		esdm_dataset_dataspace_serialize_recursively_(vars, dataspace->subspace_of);
-
-		vars = smd_attr_new("offset", t_arr, dataspace->offset, 0);
-		smd_attr_link(smd, vars, 0);
-	}
-}
-
 esdm_status esdm_dataset_create(esdm_container_t* container, const char* name, esdm_dataspace_t* dataspace,  esdm_dataset_t ** out_dataset)
 {
 	ESDM_DEBUG(__func__);
@@ -329,29 +317,67 @@ esdm_status esdm_dataset_create(esdm_container_t* container, const char* name, e
 esdm_status esdm_dataset_retrieve(esdm_container_t *container, const char * name, esdm_dataset_t **out_dataset)
 {
 	ESDM_DEBUG(__func__);
-	esdm_dataset_t* dataset = (esdm_dataset_t*) malloc(sizeof(esdm_dataset_t));
+	esdm_dataset_t* d = (esdm_dataset_t*) malloc(sizeof(esdm_dataset_t));
 
-	dataset->name = strdup(name);
-	dataset->container = container;
+	d->name = strdup(name);
+	d->container = container;
+	*out_dataset = NULL;
 
-	dataset->dataspace = NULL;
-	dataset->metadata = (esdm_metadata_t *) malloc(sizeof(esdm_metadata_t));
-	esdm_metadata_t * md = dataset->metadata;
+	d->metadata = (esdm_metadata_t *) malloc(sizeof(esdm_metadata_t));
+	esdm_metadata_t * md = d->metadata;
 
 	md->size = 0;
 	md->buff_size = 0;
 
-	esdm.modules->metadata_backend->callbacks.dataset_retrieve(esdm.modules->metadata_backend, dataset);
+	esdm.modules->metadata_backend->callbacks.dataset_retrieve(esdm.modules->metadata_backend, d);
 
-	/* parse the data accordingly */
-	md->attr = smd_attr_create_from_json(md->json, md->size);
-
-
-	*out_dataset = dataset;
+	/* parse the data */
+	char * js = md->json;
+	size_t size = md->size - 1;
+	// first strip the attributes
+	size_t parsed = smd_attr_create_from_json(js + 1, size - 1, & md->attr);
+	js += 1 + parsed;
+	js[0] = '{';
+	// for the rest we use JANSSON
+	json_t *root = load_json(js);
+	json_t *elem;
+	elem = json_object_get(root, "typ");
+	char * str = (char *) json_string_value(elem);
+	smd_dtype_t * type = smd_type_from_ser(str);
+	if (type == NULL){
+		DEBUG("Cannot parse type: %s", str);
+		return ESDM_ERROR;
+	}
+	//esdm_status ret = esdm_dataspace_create(dims,  & d->dataspace);
+	*out_dataset = d;
 
 	return ESDM_SUCCESS;
 }
 
+esdm_status esdm_dataset_commit(esdm_dataset_t *d)
+{
+	ESDM_DEBUG(__func__);
+	// TODO
+
+	char * js = d->metadata->json;
+	const char * jso = d->metadata->json;
+	int len = 100000;
+	js += snprintf(js, len + jso - js, "{");
+	js += smd_attr_ser_json(js, d->metadata->attr) - 1;
+	js += snprintf(js, len + jso - js, ",\"typ\":\"");
+	js += smd_type_ser(js, d->dataspace->datatype) - 1;
+	js += snprintf(js, len + jso - js, "\",\"dims\":%lld,\"size\":[%lld", d->dataspace->dimensions, d->dataspace->size[0]);
+	for (int i=1; i < d->dataspace->dimensions; i++){
+		js += snprintf(js, len + jso - js, ",%lld", d->dataspace->size[i]);
+	}
+	js += snprintf(js, len + jso - js, "]}");
+
+	d->metadata->size = (js - jso);
+
+	// md callback create/update container
+	esdm_status ret = esdm.modules->metadata_backend->callbacks.dataset_create(esdm.modules->metadata_backend, d);
+	return ret;
+}
 
 esdm_status esdm_dataset_update(esdm_dataset_t *dataset)
 {
@@ -372,18 +398,6 @@ esdm_status esdm_dataset_destroy(esdm_dataset_t *dataset)
 	return ESDM_SUCCESS;
 }
 
-
-esdm_status esdm_dataset_commit(esdm_dataset_t *dataset)
-{
-	ESDM_DEBUG(__func__);
-	// TODO
-	dataset->metadata->size = smd_attr_ser_json(dataset->metadata->json, dataset->metadata->attr) - 1;
-
-	// TODO: ensure callback is not NULL
-	// md callback create/update container
-	esdm_status ret = esdm.modules->metadata_backend->callbacks.dataset_create(esdm.modules->metadata_backend, dataset);
-	return ret;
-}
 
 
 esdm_status esdm_dataset_get_attributes (esdm_dataset_t *dataset, smd_attr_t ** out_metadata){
