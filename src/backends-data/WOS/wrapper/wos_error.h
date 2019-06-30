@@ -17,11 +17,10 @@
 #ifndef __WOS_ERROR_H
 #define __WOS_ERROR_H
 
-char wos_error[][50] = { "No node for policy", "no node for object", "unknown policy name", "Internal Error",
-	"Object frozen", "Invalid id for object", "No Space", "Object not found", "Object Corrupted",
-	"File System corrupted", "Policy not supported", "Error I/O", "Invalid Object Size", "Missing Object",
-	"Temporarily Not supported", "Out of Memory", "Reservation not found", "Empty object", "Invalid Metadata key",
-	"Unused Reservation", "Wire corruption", "Command Timeout"
-};
+char wos_error[][50] = {"No node for policy", "no node for object", "unknown policy name", "Internal Error",
+"Object frozen", "Invalid id for object", "No Space", "Object not found", "Object Corrupted",
+"File System corrupted", "Policy not supported", "Error I/O", "Invalid Object Size", "Missing Object",
+"Temporarily Not supported", "Out of Memory", "Reservation not found", "Empty object", "Invalid Metadata key",
+"Unused Reservation", "Wire corruption", "Command Timeout"};
 
 #endif

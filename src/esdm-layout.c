@@ -40,8 +40,8 @@
 
 #include <jansson.h>
 
-#include <esdm.h>
 #include <esdm-internal.h>
+#include <esdm.h>
 
 
 // layout component may like to have following capabilites:
@@ -63,85 +63,81 @@
 // openmp:  map clause
 
 
-esdm_layout_t* esdm_layout_init(esdm_instance_t* esdm) {
-	ESDM_DEBUG(__func__);
+esdm_layout_t *esdm_layout_init(esdm_instance_t *esdm) {
+  ESDM_DEBUG(__func__);
 
-	esdm_layout_t* layout = NULL;
-	layout = (esdm_layout_t*) malloc(sizeof(esdm_layout_t));
+  esdm_layout_t *layout = NULL;
+  layout                = (esdm_layout_t *)malloc(sizeof(esdm_layout_t));
 
-	esdm->layout = layout;
-	return layout;
+  esdm->layout = layout;
+  return layout;
 }
 
 
-esdm_status esdm_layout_finalize(esdm_instance_t *esdm)
-{
-	ESDM_DEBUG(__func__);
+esdm_status esdm_layout_finalize(esdm_instance_t *esdm) {
+  ESDM_DEBUG(__func__);
 
-	if (esdm->layout) {
-		free(esdm->layout);
-		esdm->layout = NULL;
-	}
+  if (esdm->layout) {
+    free(esdm->layout);
+    esdm->layout = NULL;
+  }
 
-	return ESDM_SUCCESS;
+  return ESDM_SUCCESS;
 }
 
 
-esdm_fragment_t* esdm_layout_reconstruction(esdm_dataset_t *dataset, esdm_dataspace_t *subspace)
-{
-	ESDM_DEBUG(__func__);
+esdm_fragment_t *esdm_layout_reconstruction(esdm_dataset_t *dataset, esdm_dataspace_t *subspace) {
+  ESDM_DEBUG(__func__);
 
-	// TODO: consider decision components to choose fragments (also choose from replicas)
+  // TODO: consider decision components to choose fragments (also choose from replicas)
 
-	// for fragment in fragments
-	//		if   subspaces_overlap(subspace, fragment)
-	//			consider for reconstruction
+  // for fragment in fragments
+  //		if   subspaces_overlap(subspace, fragment)
+  //			consider for reconstruction
 
 
-	// subspaces_overlap?
-	//	overlap = true
-	//	while currentdim < totaldims
-	//		if
+  // subspaces_overlap?
+  //	overlap = true
+  //	while currentdim < totaldims
+  //		if
 
-	// TODO: There should to be a cache component that can be asked if fragment is present
+  // TODO: There should to be a cache component that can be asked if fragment is present
 
-	return ESDM_SUCCESS;
+  return ESDM_SUCCESS;
 }
 
 
-esdm_status esdm_layout_recommendation(esdm_instance_t *esdm, esdm_fragment_t *in, esdm_fragment_t *out)
-{
-	ESDM_DEBUG(__func__);
+esdm_status esdm_layout_recommendation(esdm_instance_t *esdm, esdm_fragment_t *in, esdm_fragment_t *out) {
+  ESDM_DEBUG(__func__);
 
-	// pickup the performance estimate for each backend module
-	esdm_module_type_array_t * backends = NULL;
-	esdm_modules_get_by_type(SMD_DTYPE_DATA, &backends);
-	//int i;
-	//for(i=0; i < backends->count; i++){
-	//	//esdm_backend_t_estimate_performance((esdm_backend_t*) backends->module, 1234);
-	//}
+  // pickup the performance estimate for each backend module
+  esdm_module_type_array_t *backends = NULL;
+  esdm_modules_get_by_type(SMD_DTYPE_DATA, &backends);
+  //int i;
+  //for(i=0; i < backends->count; i++){
+  //	//esdm_backend_t_estimate_performance((esdm_backend_t*) backends->module, 1234);
+  //}
 
-	// now choose the best module
-	//
+  // now choose the best module
+  //
 
-	return ESDM_SUCCESS;
+  return ESDM_SUCCESS;
 }
 
 
-esdm_status esdm_layout_stat(char* desc)
-{
-	ESDM_DEBUG(__func__);
-	ESDM_DEBUG("received metadata lookup request");
+esdm_status esdm_layout_stat(char *desc) {
+  ESDM_DEBUG(__func__);
+  ESDM_DEBUG("received metadata lookup request");
 
 
-	// parse text into JSON structure
-	json_t *root = load_json(desc);
+  // parse text into JSON structure
+  json_t *root = load_json(desc);
 
-	if (root) {
-		// print and release the JSON structure
-		print_json(root);
-		json_decref(root);
-	}
+  if (root) {
+    // print and release the JSON structure
+    print_json(root);
+    json_decref(root);
+  }
 
-	return ESDM_SUCCESS;
+  return ESDM_SUCCESS;
 }

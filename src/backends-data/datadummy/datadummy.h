@@ -12,7 +12,7 @@
  *                                                                                 
  * You should have received a copy of the GNU Lesser General Public License        
  * along with ESDM.  If not, see <http://www.gnu.org/licenses/>.           
- */   
+ */
 #ifndef METADUMMY_H
 #define METADUMMY_H
 
@@ -20,25 +20,21 @@
 
 // Internal functions used by this backend.
 typedef struct {
-	const char* type;
-	const char* name;
-	const char* target;
+  const char *type;
+  const char *name;
+  const char *target;
 } metadummy_backend_options_t;
-
 
 
 // Internal functions used by this backend.
 typedef struct {
-	metadummy_backend_options_t* options;
-	int other;
+  metadummy_backend_options_t *options;
+  int other;
 } metadummy_backend_data_t;
 
 
-
-
-
-int metadummy_backend_performance_estimate(esdm_backend_t* backend);
-esdm_backend_t* metadummy_backend_init(void* data);
+int metadummy_backend_performance_estimate(esdm_backend_t *backend);
+esdm_backend_t *metadummy_backend_init(void *data);
 
 
 #endif

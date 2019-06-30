@@ -14,7 +14,6 @@
 // along with h5-memvol.  If not, see <http://www.gnu.org/licenses/>.
 
 
-
 // extract from ../install/download/vol/src/H5Fpkg.h:233 for reference (consider any structure strictly private!)
 ///*
 // * Define the structure to store the file information for HDF5 files. One of
@@ -112,277 +111,260 @@
 //};
 
 
-
 // ../install/download/vol/src/H5VLnative.c
 // ../install/download/vol/src/H5G.c
 
 
-
-static GHashTable * files_tbl = NULL;
-
-
-static void * memvol_file_create(const char *name, unsigned flags, hid_t fcpl_id, hid_t fapl_id, hid_t fxpl_id, void **req)
-{
-    memvol_object_t *object;
-    memvol_file_t *file;
-
-	debugI("%s\n", __func__);
+static GHashTable *files_tbl = NULL;
 
 
+static void *memvol_file_create(const char *name, unsigned flags, hid_t fcpl_id, hid_t fapl_id, hid_t fxpl_id, void **req) {
+  memvol_object_t *object;
+  memvol_file_t *file;
 
-	// analyse property lists
-	size_t nprops = 0;
-	void * iter_data;
-
-	H5Pget_nprops(fcpl_id, &nprops );
-    debugI("%s: fcpl_id=%ld nprops= %d \n", __func__, fcpl_id,  nprops);
-	H5Piterate(fcpl_id, NULL, print_property, iter_data);
-
-	H5Pget_nprops(fapl_id, &nprops );
-    debugI("%s: fapl_id=%ld nprops= %d \n", __func__, fapl_id,  nprops);
-	H5Piterate(fapl_id, NULL, print_property, iter_data);
-
-	H5Pget_nprops(fxpl_id, &nprops );
-    debugI("%s: fxpl_id=%ld nprops= %d \n", __func__, fcpl_id,  nprops);
-	H5Piterate(fxpl_id, NULL, print_property, iter_data);
+  debugI("%s\n", __func__);
 
 
-	// create files hash map if not already existent
-	if(files_tbl == NULL){
-		files_tbl = g_hash_table_new (g_str_hash,g_str_equal);
-	}
+  // analyse property lists
+  size_t nprops = 0;
+  void *iter_data;
 
-	// lookup the filename in the lsit of files
-	file = g_hash_table_lookup (files_tbl, name);
+  H5Pget_nprops(fcpl_id, &nprops);
+  debugI("%s: fcpl_id=%ld nprops= %d \n", __func__, fcpl_id, nprops);
+  H5Piterate(fcpl_id, NULL, print_property, iter_data);
 
+  H5Pget_nprops(fapl_id, &nprops);
+  debugI("%s: fapl_id=%ld nprops= %d \n", __func__, fapl_id, nprops);
+  H5Piterate(fapl_id, NULL, print_property, iter_data);
 
-	debugI("%s: files_tbl.size=%d\n", __func__, g_hash_table_size(files_tbl));
-
-
-	// conform to HDF5: invalid https://www.hdfgroup.org/HDF5/doc/RM/RM_H5F.html#File-Create
-	if((flags & H5F_ACC_EXCL) && file != NULL){
-		return NULL;
-	}
-
-	if((flags & H5F_ACC_TRUNC) && file != NULL){
-		// TODO: truncate the file. Free all structures...
-		memvol_group_init(& file->root_grp);
-	}
+  H5Pget_nprops(fxpl_id, &nprops);
+  debugI("%s: fxpl_id=%ld nprops= %d \n", __func__, fcpl_id, nprops);
+  H5Piterate(fxpl_id, NULL, print_property, iter_data);
 
 
-	// create the file if not already existent
-	if ( file == NULL ){
+  // create files hash map if not already existent
+  if (files_tbl == NULL) {
+    files_tbl = g_hash_table_new(g_str_hash, g_str_equal);
+  }
 
-		// allocate resources
-		object = (memvol_object_t*) malloc(sizeof(memvol_object_t));
-		file = (memvol_file_t *) malloc(sizeof(memvol_file_t));
-
-		// populate file and object data strutures
-		memvol_group_init(& file->root_grp);
-
-		object->type = MEMVOL_GROUP;
-		object->object =  & file->root_grp;
-
-		g_hash_table_insert( file->root_grp.childs_tbl, strdup("/"), object);
-		g_hash_table_insert( files_tbl, strdup(name), object);
-
-		file->name = strdup(name);
-		file->fcpl_id = H5Pcopy(fcpl_id);
-	}
-
-	// validate and set flags
-	if( flags & H5F_ACC_RDONLY) {
-		file->mode_flags = H5F_ACC_RDONLY;
-
-	} else if (flags & H5F_ACC_RDWR) {
-		file->mode_flags = H5F_ACC_RDWR;
-
-	} else if (flags & H5F_ACC_TRUNC) {
-		file->mode_flags = H5F_ACC_RDWR;
-
-	} else {
-		assert(0 && "Modeflags are invalid");
-	}
-
-	// attach to file struct
-    file->mode_flags = flags;
-    file->fapl_id = H5Pcopy(fapl_id);
-
-    debugI("%s: New file=%p with name=%s\n", __func__, (void*) file, name);
+  // lookup the filename in the lsit of files
+  file = g_hash_table_lookup(files_tbl, name);
 
 
-	debugI("%s: files_tbl.size=%d\n", __func__, g_hash_table_size(files_tbl));
+  debugI("%s: files_tbl.size=%d\n", __func__, g_hash_table_size(files_tbl));
 
 
-    return (void *)object;
+  // conform to HDF5: invalid https://www.hdfgroup.org/HDF5/doc/RM/RM_H5F.html#File-Create
+  if ((flags & H5F_ACC_EXCL) && file != NULL) {
+    return NULL;
+  }
+
+  if ((flags & H5F_ACC_TRUNC) && file != NULL) {
+    // TODO: truncate the file. Free all structures...
+    memvol_group_init(&file->root_grp);
+  }
+
+
+  // create the file if not already existent
+  if (file == NULL) {
+    // allocate resources
+    object = (memvol_object_t *)malloc(sizeof(memvol_object_t));
+    file   = (memvol_file_t *)malloc(sizeof(memvol_file_t));
+
+    // populate file and object data strutures
+    memvol_group_init(&file->root_grp);
+
+    object->type   = MEMVOL_GROUP;
+    object->object = &file->root_grp;
+
+    g_hash_table_insert(file->root_grp.childs_tbl, strdup("/"), object);
+    g_hash_table_insert(files_tbl, strdup(name), object);
+
+    file->name    = strdup(name);
+    file->fcpl_id = H5Pcopy(fcpl_id);
+  }
+
+  // validate and set flags
+  if (flags & H5F_ACC_RDONLY) {
+    file->mode_flags = H5F_ACC_RDONLY;
+
+  } else if (flags & H5F_ACC_RDWR) {
+    file->mode_flags = H5F_ACC_RDWR;
+
+  } else if (flags & H5F_ACC_TRUNC) {
+    file->mode_flags = H5F_ACC_RDWR;
+
+  } else {
+    assert(0 && "Modeflags are invalid");
+  }
+
+  // attach to file struct
+  file->mode_flags = flags;
+  file->fapl_id    = H5Pcopy(fapl_id);
+
+  debugI("%s: New file=%p with name=%s\n", __func__, (void *)file, name);
+
+
+  debugI("%s: files_tbl.size=%d\n", __func__, g_hash_table_size(files_tbl));
+
+
+  return (void *)object;
 }
 
 
-static void * memvol_file_open(const char *name, unsigned flags, hid_t fapl_id, hid_t dxpl_id, void **req)
-{
-    memvol_object_t *object;
+static void *memvol_file_open(const char *name, unsigned flags, hid_t fapl_id, hid_t dxpl_id, void **req) {
+  memvol_object_t *object;
 
-	debugI("%s\n", __func__);
+  debugI("%s\n", __func__);
 
-    object = g_hash_table_lookup (files_tbl, name);
+  object = g_hash_table_lookup(files_tbl, name);
 
-    return (void *)object;
+  return (void *)object;
 }
 
 
-static herr_t memvol_file_get(void *file, H5VL_file_get_t get_type, hid_t dxpl_id, void **req, va_list arguments)
-{
-	herr_t ret_value = SUCCEED;
-    memvol_file_t *f = (memvol_file_t *)file;
+static herr_t memvol_file_get(void *file, H5VL_file_get_t get_type, hid_t dxpl_id, void **req, va_list arguments) {
+  herr_t ret_value = SUCCEED;
+  memvol_file_t *f = (memvol_file_t *)file;
 
-	debugI("%s\n", __func__);
+  debugI("%s\n", __func__);
 
-	// /* types for file GET callback */
-	// typedef enum H5VL_file_get_t {
-	//     H5VL_FILE_GET_FAPL,                     /* file access property list	*/
-	//     H5VL_FILE_GET_FCPL,	                    /* file creation property list	*/
-	//     H5VL_FILE_GET_INTENT,	            /* file intent           		*/
-	//     H5VL_FILE_GET_NAME,	                    /* file name             		*/
-	//     H5VL_FILE_GET_OBJ_COUNT,	            /* object count in file	       	*/
-	//     H5VL_FILE_GET_OBJ_IDS,	            /* object ids in file     		*/
-	//     H5VL_OBJECT_GET_FILE                    /* retrieve or resurrect file of object */
-	// } H5VL_file_get_t;
+  // /* types for file GET callback */
+  // typedef enum H5VL_file_get_t {
+  //     H5VL_FILE_GET_FAPL,                     /* file access property list	*/
+  //     H5VL_FILE_GET_FCPL,	                    /* file creation property list	*/
+  //     H5VL_FILE_GET_INTENT,	            /* file intent           		*/
+  //     H5VL_FILE_GET_NAME,	                    /* file name             		*/
+  //     H5VL_FILE_GET_OBJ_COUNT,	            /* object count in file	       	*/
+  //     H5VL_FILE_GET_OBJ_IDS,	            /* object ids in file     		*/
+  //     H5VL_OBJECT_GET_FILE                    /* retrieve or resurrect file of object */
+  // } H5VL_file_get_t;
 
-	// H5VL_FILE_GET_FAPL:            
-	// H5VL_FILE_GET_FCPL:	          
-	// H5VL_FILE_GET_INTENT:	      
-	// H5VL_FILE_GET_NAME:	          
-	// H5VL_FILE_GET_OBJ_COUNT:	      
-	// H5VL_FILE_GET_OBJ_IDS:	      
-	// H5VL_OBJECT_GET_FILE           
+  // H5VL_FILE_GET_FAPL:
+  // H5VL_FILE_GET_FCPL:
+  // H5VL_FILE_GET_INTENT:
+  // H5VL_FILE_GET_NAME:
+  // H5VL_FILE_GET_OBJ_COUNT:
+  // H5VL_FILE_GET_OBJ_IDS:
+  // H5VL_OBJECT_GET_FILE
 
-    switch (get_type) {
-      /* H5Fget_access_plist */
-      case H5VL_FILE_GET_FAPL:
-      {
-        hid_t *plist_id = va_arg (arguments, hid_t *);
-        *plist_id = H5Pcopy(f->fapl_id);
+  switch (get_type) {
+    /* H5Fget_access_plist */
+    case H5VL_FILE_GET_FAPL: {
+      hid_t *plist_id = va_arg(arguments, hid_t *);
+      *plist_id       = H5Pcopy(f->fapl_id);
 
-        break;
+      break;
+    }
+    /* H5Fget_create_plist */
+    case H5VL_FILE_GET_FCPL: {
+      hid_t *plist_id = va_arg(arguments, hid_t *);
+      *plist_id       = H5Pcopy(f->fcpl_id);
+      break;
+    }
+    /* H5Fget_obj_count */
+    case H5VL_FILE_GET_OBJ_COUNT: {
+      unsigned types   = va_arg(arguments, unsigned);
+      ssize_t *ret     = va_arg(arguments, ssize_t *);
+      size_t obj_count = 0; /* Number of opened objects */
+      assert(0 && "TODO");
+      /* Set the return value */
+      *ret = (ssize_t)obj_count;
+      break;
+    }
+    /* H5Fget_obj_ids */
+    case H5VL_FILE_GET_OBJ_IDS: {
+      unsigned types   = va_arg(arguments, unsigned);
+      size_t max_objs  = va_arg(arguments, size_t);
+      hid_t *oid_list  = va_arg(arguments, hid_t *);
+      ssize_t *ret     = va_arg(arguments, ssize_t *);
+      size_t obj_count = 0; /* Number of opened objects */
+
+      assert(0 && "TODO");
+
+      /* Set the return value */
+      *ret = (ssize_t)obj_count;
+      break;
+    }
+    /* H5Fget_intent */
+    case H5VL_FILE_GET_INTENT: {
+      unsigned *ret = va_arg(arguments, unsigned *);
+      *ret          = f->mode_flags;
+      break;
+    }
+    /* H5Fget_name */
+    case H5VL_FILE_GET_NAME: {
+      H5I_type_t type = va_arg(arguments, H5I_type_t);
+      size_t size     = va_arg(arguments, size_t);
+      char *name      = va_arg(arguments, char *);
+      ssize_t *ret    = va_arg(arguments, ssize_t *);
+      size_t len      = strlen(f->name);
+
+      if (name) {
+        strncpy(name, f->name, MIN(len + 1, size));
+        if (len >= size) name[size - 1] = '\0';
       }
-      /* H5Fget_create_plist */
-      case H5VL_FILE_GET_FCPL:
-      {
-        hid_t *plist_id = va_arg (arguments, hid_t *);
-        *plist_id = H5Pcopy(f->fcpl_id);
-        break;
-      }
-      /* H5Fget_obj_count */
-      case H5VL_FILE_GET_OBJ_COUNT:
-      {
-        unsigned types = va_arg (arguments, unsigned);
-        ssize_t *ret = va_arg (arguments, ssize_t *);
-        size_t  obj_count = 0;      /* Number of opened objects */
-        assert(0 && "TODO");
-        /* Set the return value */
-        *ret = (ssize_t)obj_count;
-        break;
-      }
-      /* H5Fget_obj_ids */
-      case H5VL_FILE_GET_OBJ_IDS:
-      {
-        unsigned types = va_arg (arguments, unsigned);
-        size_t max_objs = va_arg (arguments, size_t);
-        hid_t *oid_list = va_arg (arguments, hid_t *);
-        ssize_t *ret = va_arg (arguments, ssize_t *);
-        size_t  obj_count = 0;      /* Number of opened objects */
 
-        assert(0 && "TODO");
+      /* Set the return value for the API call */
+      *ret = (ssize_t)len;
+      break;
+    }
+    /* H5I_get_file_id */
+    case H5VL_OBJECT_GET_FILE: {
+      H5I_type_t type = va_arg(arguments, H5I_type_t);
+      void **ret      = va_arg(arguments, void **);
+      void *tmp;
+      assert(0 && "TODO");
 
-        /* Set the return value */
-        *ret = (ssize_t)obj_count;
-        break;
-      }
-      /* H5Fget_intent */
-      case H5VL_FILE_GET_INTENT:
-      {
-        unsigned *ret = va_arg (arguments, unsigned *);
-        *ret = f->mode_flags;
-        break;
-      }
-      /* H5Fget_name */
-      case H5VL_FILE_GET_NAME:
-      {
-        H5I_type_t type = va_arg (arguments, H5I_type_t);
-        size_t     size = va_arg (arguments, size_t);
-        char      *name = va_arg (arguments, char *);
-        ssize_t   *ret  = va_arg (arguments, ssize_t *);
-        size_t     len = strlen(f->name);
-
-        if(name) {
-          strncpy(name, f->name, MIN(len + 1,size));
-          if(len >= size) name[size-1]='\0';
-        }
-
-        /* Set the return value for the API call */
-        *ret = (ssize_t)len;
-        break;
-      }
-      /* H5I_get_file_id */
-      case H5VL_OBJECT_GET_FILE:
-      {
-        H5I_type_t type = va_arg (arguments, H5I_type_t);
-        void ** ret = va_arg (arguments, void **);
-        void * tmp;
-        assert(0 && "TODO");
-
-        switch(type) {
-          case H5I_FILE:
+      switch (type) {
+        case H5I_FILE:
           tmp = f;
           break;
-          case H5I_GROUP:
-            break;
-          case H5I_DATATYPE:
-            break;
-          case H5I_DATASET:
-            break;
-          case H5I_ATTR:
-            break;
-          default:
-            assert(0 && "Invalid datatype");
-        }
-
-        *ret = (void*) tmp;
-        break;
+        case H5I_GROUP:
+          break;
+        case H5I_DATATYPE:
+          break;
+        case H5I_DATASET:
+          break;
+        case H5I_ATTR:
+          break;
+        default:
+          assert(0 && "Invalid datatype");
       }
-      default:
-        assert(0);
-    } /* end switch */
 
-    return ret_value;
+      *ret = (void *)tmp;
+      break;
+    }
+    default:
+      assert(0);
+  } /* end switch */
+
+  return ret_value;
 }
 
 
-herr_t memvol_file_specific(void *obj, H5VL_file_specific_t specific_type, hid_t dxpl_id, void **req, va_list arguments)
-{
-	debugI("%s\n", __func__);
-	
-	herr_t ret_value = SUCCEED;
+herr_t memvol_file_specific(void *obj, H5VL_file_specific_t specific_type, hid_t dxpl_id, void **req, va_list arguments) {
+  debugI("%s\n", __func__);
 
-    return ret_value;
+  herr_t ret_value = SUCCEED;
+
+  return ret_value;
 }
 
 
-herr_t memvol_file_optional(void *obj, hid_t dxpl_id, void **req, va_list arguments)
-{
-	debugI("%s\n", __func__);
-	
-	herr_t ret_value = SUCCEED;
+herr_t memvol_file_optional(void *obj, hid_t dxpl_id, void **req, va_list arguments) {
+  debugI("%s\n", __func__);
 
-    return ret_value;
+  herr_t ret_value = SUCCEED;
+
+  return ret_value;
 }
 
 
-static herr_t memvol_file_close(void *file, hid_t dxpl_id, void **req)
-{
-	debugI("%s\n", __func__);
-	
-	herr_t ret_value = SUCCEED;
+static herr_t memvol_file_close(void *file, hid_t dxpl_id, void **req) {
+  debugI("%s\n", __func__);
 
-    return ret_value;
+  herr_t ret_value = SUCCEED;
+
+  return ret_value;
 }

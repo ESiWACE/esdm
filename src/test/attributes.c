@@ -1,10 +1,9 @@
+#include <assert.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <assert.h>
 
 #include <smd.h>
 
-int main(){
-
+int main() {
   return 0;
 }

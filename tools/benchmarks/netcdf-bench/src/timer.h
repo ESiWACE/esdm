@@ -17,8 +17,8 @@
  */
 
 
-#ifndef  timer_INC
-#define  timer_INC
+#ifndef timer_INC
+#define timer_INC
 
 #include <time.h>
 
@@ -27,7 +27,7 @@ typedef struct timespec timespec_t;
 void start_timer(timespec_t *t1);
 void stop_timer(timespec_t *t1);
 
-timespec_t time_diff (const timespec_t end, const timespec_t start);
-double time_to_double (const timespec_t t);
+timespec_t time_diff(const timespec_t end, const timespec_t start);
+double time_to_double(const timespec_t t);
 
-#endif   /* ----- #ifndef timer_INC  ----- */
+#endif /* ----- #ifndef timer_INC  ----- */

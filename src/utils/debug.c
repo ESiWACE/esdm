@@ -21,33 +21,31 @@
  *
  */
 
-#include <stdio.h>
 #include <stdarg.h>
+#include <stdio.h>
 
 #include <glib.h>
 
 #include <esdm-internal.h>
 
 
-void esdm_log(uint32_t loglevel, const char* format, ...)
-{
-    uint32_t active_loglevel = 99;
+void esdm_log(uint32_t loglevel, const char *format, ...) {
+  uint32_t active_loglevel = 99;
 
-	if ( loglevel <= active_loglevel ) {
-		va_list args;
+  if (loglevel <= active_loglevel) {
+    va_list args;
     printf("[ESDM] ");
-		va_start(args,format);
-		vprintf(format,args);
-		va_end(args);
-	}
+    va_start(args, format);
+    vprintf(format, args);
+    va_end(args);
+  }
 }
 
 
-static void print_hashtable_entry (gpointer key, gpointer value, gpointer user_data)
-{
-	ESDM_DEBUG_FMT("GHashTable Entry: key=%p (s:%s), value=%p (s:%s), user_data=%p\n", key, key, value, value, user_data);
+static void print_hashtable_entry(gpointer key, gpointer value, gpointer user_data) {
+  ESDM_DEBUG_FMT("GHashTable Entry: key=%p (s:%s), value=%p (s:%s), user_data=%p\n", key, key, value, value, user_data);
 }
 
-void esdm_print_hashtable (GHashTable * tbl){
-  g_hash_table_foreach (tbl, print_hashtable_entry, NULL);
+void esdm_print_hashtable(GHashTable *tbl) {
+  g_hash_table_foreach(tbl, print_hashtable_entry, NULL);
 }

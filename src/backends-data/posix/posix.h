@@ -22,9 +22,9 @@
 
 // Internal functions used by this backend.
 typedef struct {
-	esdm_config_backend_t *config;
-	const char *target;
-	esdm_perf_model_lat_thp_t perf_model;
+  esdm_config_backend_t *config;
+  const char *target;
+  esdm_perf_model_lat_thp_t perf_model;
 } posix_backend_data_t;
 
 
@@ -64,7 +64,7 @@ typedef struct {
 * This routine is also expected to clean up memory that is used by the backend.
 */
 
-int posix_finalize(esdm_backend_t* backend);
+int posix_finalize(esdm_backend_t *backend);
 
 /**
 * Initializes the POSIX plugin. In particular this involves:
@@ -81,7 +81,7 @@ int posix_finalize(esdm_backend_t* backend);
 */
 
 
-esdm_backend_t* posix_backend_init(esdm_config_backend_t *config);
+esdm_backend_t *posix_backend_init(esdm_config_backend_t *config);
 
 
 #endif

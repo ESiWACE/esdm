@@ -13,100 +13,98 @@
 // You should have received a copy of the GNU Lesser General Public License
 // along with h5-memvol.  If not, see <http://www.gnu.org/licenses/>.
 
-#include <stdio.h>
 #include <hdf5.h>
+#include <stdio.h>
 
 #define FILE "dataset-test.h5"
 
-int main()
-{
-	herr_t	status;
-	hid_t	fprop;
-	hid_t	file_id, dataset_id, dataspace_id;
-	hid_t	vol_id = H5VLregister_by_name("h5-memvol");
+int main() {
+  herr_t status;
+  hid_t fprop;
+  hid_t file_id, dataset_id, dataspace_id;
+  hid_t vol_id = H5VLregister_by_name("h5-memvol");
 
-	hsize_t	dims[2];
-	hid_t	plist;
+  hsize_t dims[2];
+  hid_t plist;
 
-	char name[1024];
-
-
-	// Bootstrap //////////////////////////////////////////////////////////////
-	// set VOL plugin
-	fprop = H5Pcreate(H5P_FILE_ACCESS);
-	H5Pset_vol(fprop, vol_id, &fprop);
-	
-	file_id = H5Fcreate(FILE, H5F_ACC_TRUNC, H5P_DEFAULT, fprop);
-  
-  	// check if correct VOL plugin is used
-	H5VLget_plugin_name(file_id, name, 1024);
-	printf ("VOL plugin in use: %s\n", name);
+  char name[1024];
 
 
-	// CREATE /////////////////////////////////////////////////////////////////
-	/* Create the data space for the dataset. */
-	dims[0] = 4; 
-	dims[1] = 6; 
-	dataspace_id = H5Screate_simple(2, dims, NULL);
+  // Bootstrap //////////////////////////////////////////////////////////////
+  // set VOL plugin
+  fprop = H5Pcreate(H5P_FILE_ACCESS);
+  H5Pset_vol(fprop, vol_id, &fprop);
 
-	/* Create the dataset. */
-	dataset_id = H5Dcreate2(file_id, "/dset", H5T_STD_I32BE, dataspace_id, H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
+  file_id = H5Fcreate(FILE, H5F_ACC_TRUNC, H5P_DEFAULT, fprop);
 
-
-	// CLOSE //////////////////////////////////////////////////////////////////
-	status = H5Dclose(dataset_id);
-	status = H5Sclose(dataspace_id);
+  // check if correct VOL plugin is used
+  H5VLget_plugin_name(file_id, name, 1024);
+  printf("VOL plugin in use: %s\n", name);
 
 
-	// OPEN ///////////////////////////////////////////////////////////////////
-    dataset_id = H5Dopen2(file_id, "/dset", H5P_DEFAULT);
+  // CREATE /////////////////////////////////////////////////////////////////
+  /* Create the data space for the dataset. */
+  dims[0]      = 4;
+  dims[1]      = 6;
+  dataspace_id = H5Screate_simple(2, dims, NULL);
+
+  /* Create the dataset. */
+  dataset_id = H5Dcreate2(file_id, "/dset", H5T_STD_I32BE, dataspace_id, H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
 
 
-	// WRITE //////////////////////////////////////////////////////////////////
-	int i, j, dset_data[4][6];
-
-	/* Prepare the dataset. */
-	printf("BUFFER: ");
-	for (i = 0; i < 4; i++) {
-		for (j = 0; j < 6; j++) {
-			dset_data[i][j] = i * 6 + j + 1;
-			printf("%d,", dset_data[i][j]);
-		}
-	}
-	printf("\n");
-
-	/* Write the dataset. */
-	status = H5Dwrite(dataset_id, H5T_NATIVE_INT, H5S_ALL, H5S_ALL, H5P_DEFAULT, dset_data);
+  // CLOSE //////////////////////////////////////////////////////////////////
+  status = H5Dclose(dataset_id);
+  status = H5Sclose(dataspace_id);
 
 
-	// READ ///////////////////////////////////////////////////////////////////
-	int buf_read[4][5];
-
-	//herr_t H5Dread( hid_t dataset_id, hid_t mem_type_id, hid_t mem_space_id, hid_t file_space_id, hid_t xfer_plist_id, void * buf ) 
-	status = H5Dread( dataset_id,       H5T_NATIVE_INT,    H5S_ALL,            H5S_ALL,             H5P_DEFAULT,         buf_read);
-	
-	printf("BUFFER: ");
-	for (i = 0; i < 4; i++) {
-		for (j = 0; j < 5; j++) {
-			printf("%d,", buf_read[i][j]);
-		}
-	}
-	printf("\n");
+  // OPEN ///////////////////////////////////////////////////////////////////
+  dataset_id = H5Dopen2(file_id, "/dset", H5P_DEFAULT);
 
 
-	printf("Status: %d\n", status);
+  // WRITE //////////////////////////////////////////////////////////////////
+  int i, j, dset_data[4][6];
+
+  /* Prepare the dataset. */
+  printf("BUFFER: ");
+  for (i = 0; i < 4; i++) {
+    for (j = 0; j < 6; j++) {
+      dset_data[i][j] = i * 6 + j + 1;
+      printf("%d,", dset_data[i][j]);
+    }
+  }
+  printf("\n");
+
+  /* Write the dataset. */
+  status = H5Dwrite(dataset_id, H5T_NATIVE_INT, H5S_ALL, H5S_ALL, H5P_DEFAULT, dset_data);
 
 
-	// Clean up ///////////////////////////////////////////////////////////////
-	status = H5Dclose(dataset_id);
-	status = H5Fclose(file_id);
+  // READ ///////////////////////////////////////////////////////////////////
+  int buf_read[4][5];
 
-	// end hdf5 as usual
-	H5VLunregister(vol_id);
+  //herr_t H5Dread( hid_t dataset_id, hid_t mem_type_id, hid_t mem_space_id, hid_t file_space_id, hid_t xfer_plist_id, void * buf )
+  status = H5Dread(dataset_id, H5T_NATIVE_INT, H5S_ALL, H5S_ALL, H5P_DEFAULT, buf_read);
+
+  printf("BUFFER: ");
+  for (i = 0; i < 4; i++) {
+    for (j = 0; j < 5; j++) {
+      printf("%d,", buf_read[i][j]);
+    }
+  }
+  printf("\n");
 
 
+  printf("Status: %d\n", status);
 
-	printf("Status: %d\n", status);
 
-	return 0;
+  // Clean up ///////////////////////////////////////////////////////////////
+  status = H5Dclose(dataset_id);
+  status = H5Fclose(file_id);
+
+  // end hdf5 as usual
+  H5VLunregister(vol_id);
+
+
+  printf("Status: %d\n", status);
+
+  return 0;
 }

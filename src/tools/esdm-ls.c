@@ -20,7 +20,5 @@
  * @brief View and list ESDM objects.
  */
 
-int main (int argc , char * argv[argc +1]) {
-
-
+int main(int argc, char *argv[argc + 1]) {
 }

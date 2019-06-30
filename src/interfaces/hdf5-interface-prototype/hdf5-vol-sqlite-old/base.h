@@ -17,8 +17,8 @@
  */
 
 
-#ifndef  base_INC
-#define  base_INC
+#ifndef base_INC
+#define base_INC
 
 #include "debug.h"
 #include "h5_sqlite_plugin.h"
@@ -27,7 +27,7 @@
 #include <string.h>
 
 
-char* create_path(SQO_t* sqo);
-void destroy_path(char* path);
+char *create_path(SQO_t *sqo);
+void destroy_path(char *path);
 
-#endif   /* ----- #ifndef base_INC  ----- */
+#endif /* ----- #ifndef base_INC  ----- */

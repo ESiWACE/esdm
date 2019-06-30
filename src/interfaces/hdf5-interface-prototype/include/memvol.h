@@ -53,8 +53,8 @@
 #ifndef H5_MEMVOL_HEADER__
 #define H5_MEMVOL_HEADER__
 
-#include <stdio.h>
 #include <hdf5.h>
+#include <stdio.h>
 
 /*
   Returns the volume id.

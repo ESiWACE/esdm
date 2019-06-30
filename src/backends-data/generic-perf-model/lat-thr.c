@@ -13,16 +13,15 @@
  * You should have received a copy of the GNU Lesser General Public License
  * along with ESDM.  If not, see <http://www.gnu.org/licenses/>.
  */
-#include <esdm-internal.h>
 #include <backends-data/generic-perf-model/lat-thr.h>
+#include <esdm-internal.h>
 
-int esdm_backend_t_parse_perf_model_lat_thp(json_t * str, esdm_perf_model_lat_thp_t * out_data){
-
+int esdm_backend_t_parse_perf_model_lat_thp(json_t *str, esdm_perf_model_lat_thp_t *out_data) {
   if (!str || !out_data)
     return -1;
 
   json_t *elem = NULL;
-  elem = json_object_get(str, "latency");
+  elem         = json_object_get(str, "latency");
   assert(elem != NULL);
   out_data->latency_in_s = json_real_value(elem);
 
@@ -36,8 +35,7 @@ int esdm_backend_t_parse_perf_model_lat_thp(json_t * str, esdm_perf_model_lat_th
   return 0;
 }
 
-int esdm_backend_t_perf_model_long_lat_perf_estimate(esdm_perf_model_lat_thp_t* data, esdm_fragment_t *fragment, float * out_time){
-
+int esdm_backend_t_perf_model_long_lat_perf_estimate(esdm_perf_model_lat_thp_t *data, esdm_fragment_t *fragment, float *out_time) {
   if (!data || !fragment | !out_time)
     return -1;
 
@@ -49,8 +47,7 @@ int esdm_backend_t_perf_model_long_lat_perf_estimate(esdm_perf_model_lat_thp_t* 
   return 0;
 }
 
-int esdm_backend_t_reset_perf_model_lat_thp(esdm_perf_model_lat_thp_t * out_data) {
-
+int esdm_backend_t_reset_perf_model_lat_thp(esdm_perf_model_lat_thp_t *out_data) {
   if (!out_data)
     return -1;
 

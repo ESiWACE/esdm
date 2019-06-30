@@ -20,23 +20,23 @@
 
 // Internal functions used by this backend.
 typedef struct {
-	const char* type;
-	const char* name;
-	const char* target;
+  const char *type;
+  const char *name;
+  const char *target;
 } metadummy_backend_options_t;
 
 
 // Internal functions used by this backend.
 typedef struct {
-	metadummy_backend_options_t* options;
-	int other;
+  metadummy_backend_options_t *options;
+  int other;
 } metadummy_backend_data_t;
 
 
 typedef struct md_entry_struct md_entry_t;
 
-struct md_entry_struct  {
-	int type;
+struct md_entry_struct {
+  int type;
 };
 
 
@@ -44,7 +44,7 @@ struct md_entry_struct  {
 
 // static void metadummy_test();
 
-void posix_recursive_remove(const char * path);
+void posix_recursive_remove(const char *path);
 
 // static int mkfs(esdm_md_backend_t* backend, int enforce_format);
 
@@ -111,7 +111,7 @@ void posix_recursive_remove(const char * path);
 * @return pointer to backend struct
 */
 
-esdm_md_backend_t* metadummy_backend_init(esdm_config_backend_t *config);
+esdm_md_backend_t *metadummy_backend_init(esdm_config_backend_t *config);
 
 // static void metadummy_test();
 

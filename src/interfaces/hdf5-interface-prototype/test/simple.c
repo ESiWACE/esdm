@@ -17,7 +17,7 @@
 
 #include <memvol.h>
 
-int main(){
+int main() {
   hid_t fprop;
   hid_t fid;
   hid_t vol_id = H5VL_memvol_init();
@@ -29,7 +29,7 @@ int main(){
 
   fid = H5Fcreate("test", H5F_ACC_TRUNC, H5P_DEFAULT, fprop);
   H5VLget_plugin_name(fid, name, 1024);
-  printf ("Using VOL %s\n", name);
+  printf("Using VOL %s\n", name);
 
   H5Fclose(fid);
   H5VL_memvol_finalize();

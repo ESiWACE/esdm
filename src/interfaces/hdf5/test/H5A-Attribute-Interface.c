@@ -20,93 +20,85 @@
  * @brief Test for HDF5 attribute interface on top of ESDM.
  */
 
-#include <stdio.h>
 #include <hdf5.h>
+#include <stdio.h>
 
 #include <assert.h>
 
 
-int main()
-{
-	hid_t fprop;
-	hid_t vol_id = H5VLregister_by_name("h5-esdm");
+int main() {
+  hid_t fprop;
+  hid_t vol_id = H5VLregister_by_name("h5-esdm");
 
-	hid_t file_id, group_id, dataset_id, dataspace_id, attribute_id;
-	herr_t status;
+  hid_t file_id, group_id, dataset_id, dataspace_id, attribute_id;
+  herr_t status;
 
-	hsize_t     dims;
-	int         attr_data[2];
-
+  hsize_t dims;
+  int attr_data[2];
 
 
-	char* filename = "file-test.h5";
+  char *filename = "file-test.h5";
 
 
-
-	// SET VOL PLUGIN /////////////////////////////////////////////////////////
-	fprop = H5Pcreate(H5P_FILE_ACCESS);
-	H5Pset_vol(fprop, vol_id, &fprop);
-
-
-	// MOCK SETUP /////////////////////////////////////////////////////////////
-	/* Initialize the attribute data. */
-	attr_data[0] = 100;
-	attr_data[1] = 200;
+  // SET VOL PLUGIN /////////////////////////////////////////////////////////
+  fprop = H5Pcreate(H5P_FILE_ACCESS);
+  H5Pset_vol(fprop, vol_id, &fprop);
 
 
-	/* Open an existing file. */
-	file_id = H5Fopen(filename, H5F_ACC_RDWR, fprop);
-
-	/* Open an existing dataset. */
-	dataset_id = H5Dopen2(file_id, "/dset", H5P_DEFAULT);
-
-	/* Create the data space for the attribute. */
-	dims = 2;
-	dataspace_id = H5Screate_simple(1, &dims, NULL);
+  // MOCK SETUP /////////////////////////////////////////////////////////////
+  /* Initialize the attribute data. */
+  attr_data[0] = 100;
+  attr_data[1] = 200;
 
 
+  /* Open an existing file. */
+  file_id = H5Fopen(filename, H5F_ACC_RDWR, fprop);
 
-	// CREATE /////////////////////////////////////////////////////////////////
-	/* Create a dataset attribute. */
-	attribute_id = H5Acreate2 (dataset_id, "Units", H5T_STD_I32BE, dataspace_id, 
-			H5P_DEFAULT, H5P_DEFAULT);
+  /* Open an existing dataset. */
+  dataset_id = H5Dopen2(file_id, "/dset", H5P_DEFAULT);
 
-	/* Write the attribute data. */
-	status = H5Awrite(attribute_id, H5T_NATIVE_INT, attr_data);
-
-	
-	
-	// CLOSE //////////////////////////////////////////////////////////////////
-	/* Close the attribute. */
-	status = H5Aclose(attribute_id);
+  /* Create the data space for the attribute. */
+  dims         = 2;
+  dataspace_id = H5Screate_simple(1, &dims, NULL);
 
 
+  // CREATE /////////////////////////////////////////////////////////////////
+  /* Create a dataset attribute. */
+  attribute_id = H5Acreate2(dataset_id, "Units", H5T_STD_I32BE, dataspace_id,
+  H5P_DEFAULT, H5P_DEFAULT);
+
+  /* Write the attribute data. */
+  status = H5Awrite(attribute_id, H5T_NATIVE_INT, attr_data);
 
 
-	// TODO
-	// OPEN ///////////////////////////////////////////////////////////////////
-	// CLOSE //////////////////////////////////////////////////////////////////
-	// READ ///////////////////////////////////////////////////////////////////
-	// WRITE //////////////////////////////////////////////////////////////////
-	// GET ////////////////////////////////////////////////////////////////////
-	// SPECIFIC ///////////////////////////////////////////////////////////////
-	// OPTIONAL ///////////////////////////////////////////////////////////////
+  // CLOSE //////////////////////////////////////////////////////////////////
+  /* Close the attribute. */
+  status = H5Aclose(attribute_id);
 
 
-
-	// MOCK CLEANUP ///////////////////////////////////////////////////////////
-	/* Close the dataspace. */
-	status = H5Sclose(dataspace_id);
-
-	/* Close to the dataset. */
-	status = H5Dclose(dataset_id);
-
-	/* Close the file. */
-	status = H5Fclose(file_id);
+  // TODO
+  // OPEN ///////////////////////////////////////////////////////////////////
+  // CLOSE //////////////////////////////////////////////////////////////////
+  // READ ///////////////////////////////////////////////////////////////////
+  // WRITE //////////////////////////////////////////////////////////////////
+  // GET ////////////////////////////////////////////////////////////////////
+  // SPECIFIC ///////////////////////////////////////////////////////////////
+  // OPTIONAL ///////////////////////////////////////////////////////////////
 
 
-	// Clean up ///////////////////////////////////////////////////////////////
-	H5VLunregister(vol_id);
+  // MOCK CLEANUP ///////////////////////////////////////////////////////////
+  /* Close the dataspace. */
+  status = H5Sclose(dataspace_id);
 
-	return 0;
+  /* Close to the dataset. */
+  status = H5Dclose(dataset_id);
+
+  /* Close the file. */
+  status = H5Fclose(file_id);
+
+
+  // Clean up ///////////////////////////////////////////////////////////////
+  H5VLunregister(vol_id);
+
+  return 0;
 }
