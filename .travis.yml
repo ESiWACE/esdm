@@ -5,5 +5,5 @@ install:
 script:
   - which mpicc
   - locate mpicc
-  - ./configure --with-cc=mpicc && cd build && make && make CTEST_OUTPUT_ON_FAILURE=1 test
+  - ./configure --with-cc=mpicc && cd build && make -j 2 && make CTEST_OUTPUT_ON_FAILURE=1 test && true
 
