@@ -58,7 +58,6 @@ void backend_thread(gpointer data_p, gpointer backend_id) {
   free(data);
 }
 
-
 void startIO(long work, io_request_status_t *status) {
   // for now each IO starts one fragment per backend
   // add the number of outstanding requests

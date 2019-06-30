@@ -23,12 +23,10 @@ int main() {
   hid_t fprop;
   hid_t file_id, dataset_id, dataspace_id;
   hid_t vol_id = H5VLregister_by_name("h5-memvol");
-
   hsize_t dims[2];
   hid_t plist;
 
   char name[1024];
-
 
   // Bootstrap //////////////////////////////////////////////////////////////
   // set VOL plugin
@@ -41,7 +39,6 @@ int main() {
   H5VLget_plugin_name(file_id, name, 1024);
   printf("VOL plugin in use: %s\n", name);
 
-
   // CREATE /////////////////////////////////////////////////////////////////
   /* Create the data space for the dataset. */
   dims[0] = 4;
@@ -51,15 +48,12 @@ int main() {
   /* Create the dataset. */
   dataset_id = H5Dcreate2(file_id, "/dset", H5T_STD_I32BE, dataspace_id, H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
 
-
   // CLOSE //////////////////////////////////////////////////////////////////
   status = H5Dclose(dataset_id);
   status = H5Sclose(dataspace_id);
 
-
   // OPEN ///////////////////////////////////////////////////////////////////
   dataset_id = H5Dopen2(file_id, "/dset", H5P_DEFAULT);
-
 
   // WRITE //////////////////////////////////////////////////////////////////
   int i, j, dset_data[4][6];
@@ -77,7 +71,6 @@ int main() {
   /* Write the dataset. */
   status = H5Dwrite(dataset_id, H5T_NATIVE_INT, H5S_ALL, H5S_ALL, H5P_DEFAULT, dset_data);
 
-
   // READ ///////////////////////////////////////////////////////////////////
   int buf_read[4][5];
 
@@ -92,9 +85,7 @@ int main() {
   }
   printf("\n");
 
-
   printf("Status: %d\n", status);
-
 
   // Clean up ///////////////////////////////////////////////////////////////
   status = H5Dclose(dataset_id);
@@ -102,7 +93,6 @@ int main() {
 
   // end hdf5 as usual
   H5VLunregister(vol_id);
-
 
   printf("Status: %d\n", status);
 

@@ -13,11 +13,9 @@
 // You should have received a copy of the GNU Lesser General Public License
 // along with h5-memvol.  If not, see <http://www.gnu.org/licenses/>.
 
+#include <assert.h>
 #include <hdf5.h>
 #include <stdio.h>
-
-#include <assert.h>
-
 
 int main() {
   char *filename = "file-test.h5";
@@ -27,7 +25,6 @@ int main() {
 
   hid_t file_id, group_id, dataset_id, dataspace_id, attribute_id;
   herr_t status;
-
 
   char name[1024];
 
@@ -47,7 +44,6 @@ int main() {
   // GET ////////////////////////////////////////////////////////////////////
   // SPECIFIC ///////////////////////////////////////////////////////////////
   // OPTIONAL ///////////////////////////////////////////////////////////////
-
 
   // Clean up ///////////////////////////////////////////////////////////////
   H5VLunregister(vol_id);

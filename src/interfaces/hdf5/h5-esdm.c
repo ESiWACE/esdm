@@ -14,12 +14,10 @@
  * along with ESDM.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-
 /**
  * @file
  * @brief HDF5 Virtual Object Layer Plugin providing ESDM Support
  */
-
 
 #pragma GCC diagnostic ignored "-Wunused-parameter"
 #pragma GCC diagnostic ignored "-Wunused-function"
@@ -28,27 +26,20 @@
 #pragma GCC diagnostic ignored "-Wformat"
 #pragma GCC diagnostic ignored "-Wformat-extra-args"
 
-
 #include <assert.h>
+#include <glib.h>
+#include <hdf5.h>
+#include <jansson.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <sys/types.h>
 #include <unistd.h>
 
-
-#include <hdf5.h>
-
-#include <glib.h>
-#include <jansson.h>
-
-
 #include "esdm.h"
 #include "h5-esdm.h"
 
-
 #define VOL_PLUGIN_ID 71
 #define VOL_PLUGIN_NAME "h5-esdm"
-
 
 // helper to inspect property lists
 herr_t print_property(hid_t id, const char *name, void *iter_data) {
@@ -56,19 +47,16 @@ herr_t print_property(hid_t id, const char *name, void *iter_data) {
   return 0;
 }
 
-
 // Declaration of callbacks for VOL functions. Forward declarations ommitted
 // on purpose to avoid changes at multiple locations.
 #include "h5-esdm-callbacks.c"
-
 
 // Forward declaration of init and terminate.
 herr_t H5VL_esdm_init(hid_t vipl_id);
 int H5VL_esdm_term();
 
-
 /**
- * Populate a HDF5 VOL object with plugin metadata and callbacks prior to 
+ * Populate a HDF5 VOL object with plugin metadata and callbacks prior to
  * registration with HDF5.
  */
 static const H5VL_class_t H5VL_esdm = {
@@ -152,9 +140,7 @@ H5VL_esdm_async_wait},
 NULL /* Optional callback */
 };
 
-
 static hid_t vol_id = -1;
-
 
 herr_t H5VL_esdm_init(hid_t vipl_id) {
   info("H5VL_esdm_init()");
@@ -164,13 +150,10 @@ herr_t H5VL_esdm_init(hid_t vipl_id) {
 
   assert(H5VLget_plugin_id(VOL_PLUGIN_NAME) != -1);
 
-
   esdm_init();
-
 
   return (herr_t)vol_id;
 }
-
 
 int H5VL_esdm_term() {
   info("H5VL_esdm_term()");
@@ -182,12 +165,10 @@ int H5VL_esdm_term() {
   return 0;
 }
 
-
 // see H5PL.c:695 for a description how the plugin is loaded.
 H5PL_type_t H5PLget_plugin_type(void) {
   return H5PL_TYPE_VOL;
 }
-
 
 const void *H5PLget_plugin_info(void) {
   return &H5VL_esdm;

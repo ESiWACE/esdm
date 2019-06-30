@@ -14,7 +14,6 @@
  * along with ESDM.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-
 /**
  * @file
  * @brief The layout component fragments and reconstructs logical data.
@@ -35,13 +34,10 @@
  *
  */
 
+#include <esdm-internal.h>
+#include <jansson.h>
 #include <stdio.h>
 #include <stdlib.h>
-
-#include <jansson.h>
-
-#include <esdm-internal.h>
-
 
 // layout component may like to have following capabilites:
 //
@@ -53,14 +49,12 @@
 //
 // minimization surface vs volume
 
-
 // space filling curves
 //	hilber curve
 //	z-ordering?
 
 // also have a look at device data environments from openmp
 // openmp:  map clause
-
 
 esdm_layout_t *esdm_layout_init(esdm_instance_t *esdm) {
   ESDM_DEBUG(__func__);
@@ -71,7 +65,6 @@ esdm_layout_t *esdm_layout_init(esdm_instance_t *esdm) {
   esdm->layout = layout;
   return layout;
 }
-
 
 esdm_status esdm_layout_finalize(esdm_instance_t *esdm) {
   ESDM_DEBUG(__func__);
@@ -84,7 +77,6 @@ esdm_status esdm_layout_finalize(esdm_instance_t *esdm) {
   return ESDM_SUCCESS;
 }
 
-
 esdm_fragment_t *esdm_layout_reconstruction(esdm_dataset_t *dataset, esdm_dataspace_t *subspace) {
   ESDM_DEBUG(__func__);
 
@@ -93,7 +85,6 @@ esdm_fragment_t *esdm_layout_reconstruction(esdm_dataset_t *dataset, esdm_datasp
   // for fragment in fragments
   //		if   subspaces_overlap(subspace, fragment)
   //			consider for reconstruction
-
 
   // subspaces_overlap?
   //	overlap = true
@@ -104,7 +95,6 @@ esdm_fragment_t *esdm_layout_reconstruction(esdm_dataset_t *dataset, esdm_datasp
 
   return ESDM_SUCCESS;
 }
-
 
 esdm_status esdm_layout_recommendation(esdm_instance_t *esdm, esdm_fragment_t *in, esdm_fragment_t *out) {
   ESDM_DEBUG(__func__);

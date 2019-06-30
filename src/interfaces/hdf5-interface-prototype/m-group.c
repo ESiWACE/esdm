@@ -13,7 +13,6 @@
 // You should have received a copy of the GNU Lesser General Public License
 // along with h5-memvol.  If not, see <http://www.gnu.org/licenses/>.
 
-
 // extract from ../install/download/vol/src/H5Gpkg.h:138 for reference (consider any structure strictly private!)
 /*
  * Shared information for all open group objects
@@ -33,10 +32,8 @@
 //    H5G_name_t path;                    /* Group hierarchy path   */
 //};
 
-
 // ../install/download/vol/src/H5VLnative.c
 // ../install/download/vol/src/H5G.c
-
 
 static void memvol_group_init(memvol_group_t *group) {
   group->childs_tbl = g_hash_table_new(g_str_hash, g_str_equal);
@@ -44,14 +41,12 @@ static void memvol_group_init(memvol_group_t *group) {
   assert(group->childs_tbl != NULL);
 }
 
-
 static void *memvol_group_create(void *obj, H5VL_loc_params_t loc_params, const char *name, hid_t gcpl_id, hid_t gapl_id, hid_t dxpl_id, void **req) {
   memvol_object_t *object;
   memvol_group_t *group;
   memvol_group_t *parent = (memvol_group_t *)((memvol_object_t *)obj)->object;
 
   debugI("%s\n", __func__);
-
 
   // allocate resources
   object = (memvol_object_t *)malloc(sizeof(memvol_object_t));
@@ -81,7 +76,6 @@ static void *memvol_group_create(void *obj, H5VL_loc_params_t loc_params, const 
   return (void *)object;
 }
 
-
 static void *memvol_group_open(void *obj, H5VL_loc_params_t loc_params, const char *name, hid_t gapl_id, hid_t dxpl_id, void **req) {
   debugI("%s\n", __func__);
 
@@ -90,10 +84,8 @@ static void *memvol_group_open(void *obj, H5VL_loc_params_t loc_params, const ch
   memvol_object_t *child = g_hash_table_lookup(parent->childs_tbl, name);
   debugI("%s: Found group=%p with name=%s in parent=%p\n", __func__, child->object, name, obj);
 
-
   return (void *)child;
 }
-
 
 static herr_t memvol_group_get(void *obj, H5VL_group_get_t get_type, hid_t dxpl_id, void **req, va_list arguments) {
   debugI("%s\n", __func__);
@@ -128,7 +120,6 @@ static herr_t memvol_group_get(void *obj, H5VL_group_get_t get_type, hid_t dxpl_
       debugI("Group get: INFO %p loc_param: %d \n", obj, loc_params.type);
 
       memvol_group_t *relevant_group;
-
 
       if (loc_params.type == H5VL_OBJECT_BY_SELF) {
         relevant_group = group;
@@ -168,7 +159,6 @@ static herr_t memvol_group_get(void *obj, H5VL_group_get_t get_type, hid_t dxpl_
   return ret_value;
 }
 
-
 static herr_t memvol_group_specific(void *obj, H5VL_group_specific_t specific_type, hid_t dxpl_id, void **req, va_list arguments) {
   debugI("%s\n", __func__);
 
@@ -182,7 +172,6 @@ static herr_t memvol_group_specific(void *obj, H5VL_group_specific_t specific_ty
   return ret_value;
 }
 
-
 static herr_t memvol_group_optional(void *obj, hid_t dxpl_id, void **req, va_list arguments) {
   debugI("%s\n", __func__);
 
@@ -193,7 +182,6 @@ static herr_t memvol_group_optional(void *obj, hid_t dxpl_id, void **req, va_lis
 
   return ret_value;
 }
-
 
 static herr_t memvol_group_close(void *grp, hid_t dxpl_id, void **req) {
   debugI("%s\n", __func__);

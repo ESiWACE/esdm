@@ -13,10 +13,8 @@
 // You should have received a copy of the GNU Lesser General Public License
 // along with h5-memvol.  If not, see <http://www.gnu.org/licenses/>.
 
-
 // ../install/download/vol/src/H5VLnative.c
 // ../install/download/vol/src/H5L.c
-
 
 herr_t memvol_link_create(H5VL_link_create_type_t create_type, void *obj, H5VL_loc_params_t loc_params, hid_t lcpl_id, hid_t lapl_id, hid_t dxpl_id, void **req) {
   debugI("%s\n", __func__);

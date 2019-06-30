@@ -1,14 +1,11 @@
 #ifndef h5_sqlite_plugin_h
 #define h5_sqlite_plugin_h
 
-
 #include <hdf5.h>
 #include <sys/types.h>
 #include <unistd.h>
 
-
 #define FILE_DEFAULT_PATH "/root"
-
 
 typedef struct h5sqlite_fapl_t {
   int mpi_size;
@@ -57,12 +54,10 @@ typedef struct SQA_t {
   size_t corder; // creation order
 } SQA_t;         /*structure for attribute*/
 
-
 typedef enum H5VL_object_optional_t {
   H5VL_OBJECT_GET_COMMENT, /* get object comment                */
   H5VL_OBJECT_GET_INFO,    /* get object info                   */
   H5VL_OBJECT_SET_COMMENT  /* set object comment                */
 } H5VL_object_optional_t;
-
 
 #endif

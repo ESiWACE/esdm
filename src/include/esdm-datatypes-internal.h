@@ -6,8 +6,7 @@
 #include <glib.h>
 #include <jansson.h>
 
-
-struct esdm_container_t_t {
+struct esdm_container_t {
   char *name;
   esdm_metadata_t *metadata;
   GHashTable *datasets;
@@ -27,7 +26,6 @@ struct esdm_metadata_t {
   smd_attr_t *attr;
 };
 
-
 struct esdm_dataset_t {
   char *name;
   char **varnames; // array of variable names != NULL if set
@@ -37,7 +35,6 @@ struct esdm_dataset_t {
   GHashTable *fragments;
   esdm_status status;
 };
-
 
 struct esdm_fragment_t {
   esdm_metadata_t *metadata; // only valid after written
@@ -51,13 +48,11 @@ struct esdm_fragment_t {
   esdm_status status;
 };
 
-
 // multiple fragments
 typedef struct {
   struct esdm_fragment_t *fragment;
   int count;
 } esdm_fragments_t;
-
 
 typedef struct esdm_fragment_index_t {
   char *json;
@@ -69,11 +64,9 @@ typedef struct esdm_fragment_index_t {
 	*/
 } esdm_fragment_index_t;
 
-
 struct esdm_dataset_iterator_t {
   int x;
 };
-
 
 // MODULES ////////////////////////////////////////////////////////////////////
 
@@ -90,7 +83,6 @@ typedef enum esdm_module_type_t {
   SMD_DTYPE_METADATA,
   SMD_DTYPE_HYBRID
 } esdm_module_type_t;
-
 
 // Callbacks
 /**
@@ -174,7 +166,6 @@ struct esdm_md_backend_callbacks_t {
   int (*mkfs)(esdm_md_backend_t *, int enforce_format);
 };
 
-
 /**
  * On backend registration ESDM expects the backend to return a pointer to
  * a esdm_backend_t struct.
@@ -229,7 +220,6 @@ struct io_work_t {
   io_work_callback_data_t data;
 };
 
-
 ///////////////////////////////////////////////////////////////////////////////
 // INTERNAL
 ///////////////////////////////////////////////////////////////////////////////
@@ -252,15 +242,12 @@ struct esdm_config_backend_t {
   json_t *backend;
 };
 
-
 struct esdm_config_backends_t {
   int count;
   esdm_config_backend_t *backends;
 };
 
-
 typedef struct esdm_config_backends_t esdm_config_backends_t;
-
 
 // Modules
 typedef struct esdm_module_type_array_t esdm_module_type_array_t;
@@ -269,7 +256,6 @@ struct esdm_module_type_array_t {
   esdm_module_type_t *module;
 };
 
-
 // Scheduler
 typedef struct esdm_io_t esdm_io_t;
 struct esdm_io_t {
@@ -277,13 +263,11 @@ struct esdm_io_t {
   int callback;
 };
 
-
 // Entry points and state for core components /////////////////////////////////
 
 typedef struct esdm_config_t {
   void *json;
 } esdm_config_t;
-
 
 typedef struct esdm_modules_t {
   int data_backend_count;
@@ -292,12 +276,10 @@ typedef struct esdm_modules_t {
   //esdm_modules_t** modules;
 } esdm_modules_t;
 
-
 typedef struct esdm_layout_t {
   int info;
   GHashTable *containers;
 } esdm_layout_t;
-
 
 typedef struct esdm_scheduler_t {
   int info;
@@ -306,15 +288,12 @@ typedef struct esdm_scheduler_t {
   GAsyncQueue *write_queue;
 } esdm_scheduler_t;
 
-
 typedef struct esdm_performance_t {
   int info;
   GHashTable *cache;
 } esdm_performance_t;
 
-
 typedef struct esdm_instance_t esdm_instance_t;
-
 
 struct esdm_instance_t {
   int is_initialized;
@@ -327,7 +306,6 @@ struct esdm_instance_t {
   esdm_performance_t *performance;
 };
 
-
 // Auxiliary? /////////////////////////////////////////////////////////////////
 
 typedef struct esdm_bytesequence_t esdm_bytesyquence_t;
@@ -336,6 +314,5 @@ struct esdm_bytesequence {
   size_t count;
   void *data;
 };
-
 
 #endif

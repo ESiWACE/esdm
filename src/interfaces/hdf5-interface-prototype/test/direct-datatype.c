@@ -14,7 +14,6 @@
 // along with h5-memvol.  If not, see <http://www.gnu.org/licenses/>.
 
 #include <assert.h>
-
 #include <memvol.h>
 
 typedef struct {
@@ -23,7 +22,6 @@ typedef struct {
   char name[10];
   int val;
 } complex_type;
-
 
 int main() {
   hid_t fprop;

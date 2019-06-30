@@ -19,12 +19,14 @@
  * @brief A data backend to provide POSIX compatibility.
  */
 
-
 #define _GNU_SOURCE /* See feature_test_macros(7) */
 
-
 #include <assert.h>
+#include <bson.h>
+#include <esdm.h>
 #include <fcntl.h>
+#include <jansson.h>
+#include <mongoc.h>
 #include <stdarg.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -33,15 +35,9 @@
 #include <sys/types.h>
 #include <unistd.h>
 
-#include <bson.h>
-#include <jansson.h>
-#include <mongoc.h>
-
 #include "mongodb.h"
-#include <esdm.h>
 
 #define DEBUG(msg) log("[METADUMMY] %-30s %s:%d\n", msg, __FILE__, __LINE__)
-
 
 static void log(const char *format, ...) {
   va_list args;
@@ -50,11 +46,9 @@ static void log(const char *format, ...) {
   va_end(args);
 }
 
-
 ///////////////////////////////////////////////////////////////////////////////
 // Helper and utility /////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////
-
 
 static int mkfs(esdm_backend_t *backend) {
   DEBUG("mongodb setup");
@@ -65,7 +59,6 @@ static int mkfs(esdm_backend_t *backend) {
   mongodb_backend_options_t *options = (mongodb_backend_options_t *)backend->data;
   const char *tgt = options->target;
   //const char* tgt = "./_mongodb";
-
 
   if (stat(tgt, &sb) == -1) {
     char *root;
@@ -82,16 +75,13 @@ static int mkfs(esdm_backend_t *backend) {
   }
 }
 
-
 static int fsck() {
   return 0;
 }
 
-
 ///////////////////////////////////////////////////////////////////////////////
 // Internal Helpers  //////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////
-
 
 static int entry_create(const char *path) {
   int status;
@@ -120,7 +110,6 @@ static int entry_create(const char *path) {
     return -1;
   }
 }
-
 
 static int entry_retrieve(const char *path) {
   int status;
@@ -151,12 +140,10 @@ static int entry_retrieve(const char *path) {
     close(fd);
   }
 
-
   printf("Entry content: %s\n", (char *)buf);
 
   return 0;
 }
-
 
 static int entry_update(const char *path, void *buf, size_t len) {
   int status;
@@ -185,7 +172,6 @@ static int entry_update(const char *path, void *buf, size_t len) {
   return 0;
 }
 
-
 static int entry_destroy(const char *path) {
   int status;
   struct stat sb;
@@ -209,11 +195,9 @@ static int entry_destroy(const char *path) {
   return 0;
 }
 
-
 ///////////////////////////////////////////////////////////////////////////////
 // Container Helpers //////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////
-
 
 static int container_create(esdm_backend_t *backend, esdm_container_t *container) {
   char *path_metadata;
@@ -227,7 +211,6 @@ static int container_create(esdm_backend_t *backend, esdm_container_t *container
 
   asprintf(&path_metadata, "%s/containers/%s.md", tgt, container->name);
   asprintf(&path_container, "%s/containers/%s", tgt, container->name);
-
 
   bson_error_t error;
   bson_oid_t oid;
@@ -255,7 +238,6 @@ static int container_create(esdm_backend_t *backend, esdm_container_t *container
   free(path_container);
 }
 
-
 static int container_retrieve(esdm_backend_t *backend, esdm_container_t *container) {
   char *path_metadata;
   char *path_container;
@@ -264,18 +246,15 @@ static int container_retrieve(esdm_backend_t *backend, esdm_container_t *contain
   mongodb_backend_options_t *options = (mongodb_backend_options_t *)backend->data;
   const char *tgt = options->target;
 
-
   asprintf(&path_metadata, "%s/containers/%s.md", tgt, container->name);
   asprintf(&path_container, "%s/containers/%s", tgt, container->name);
 
   // create metadata entry
   entry_retrieve(path_metadata);
 
-
   free(path_metadata);
   free(path_container);
 }
-
 
 static int container_update(esdm_backend_t *backend, esdm_container_t *container) {
   char *path_metadata;
@@ -291,11 +270,9 @@ static int container_update(esdm_backend_t *backend, esdm_container_t *container
   // create metadata entry
   entry_update(path_metadata, "abc", 3);
 
-
   free(path_metadata);
   free(path_container);
 }
-
 
 static int container_destroy(esdm_backend_t *backend, esdm_container_t *container) {
   char *path_metadata;
@@ -311,25 +288,20 @@ static int container_destroy(esdm_backend_t *backend, esdm_container_t *containe
   // create metadata entry
   entry_destroy(path_metadata);
 
-
   // TODO: also remove existing datasets?
-
 
   free(path_metadata);
   free(path_container);
 }
 
-
 ///////////////////////////////////////////////////////////////////////////////
 // Dataset Helpers ////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////
-
 
 static int dataset_create(esdm_backend_t *backend, esdm_dataset_t *dataset) {
   char *path_metadata;
   char *path_dataset;
   struct stat sb;
-
 
   mongodb_backend_options_t *options = (mongodb_backend_options_t *)backend->data;
   const char *tgt = options->target;
@@ -365,23 +337,18 @@ static int dataset_create(esdm_backend_t *backend, esdm_dataset_t *dataset) {
   free(path_dataset);
 }
 
-
 static int dataset_retrieve(esdm_backend_t *backend, esdm_dataset_t *dataset) {
 }
-
 
 static int dataset_update(esdm_backend_t *backend, esdm_dataset_t *dataset) {
 }
 
-
 static int dataset_destroy(esdm_backend_t *backend, esdm_dataset_t *dataset) {
 }
-
 
 ///////////////////////////////////////////////////////////////////////////////
 // Fragment Helpers ///////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////
-
 
 static int fragment_update(esdm_backend_t *backend, esdm_fragment_t *fragment) {
   char *path;
@@ -417,18 +384,15 @@ static int fragment_update(esdm_backend_t *backend, esdm_fragment_t *fragment) {
   free(path_fragment);
 }
 
-
 ///////////////////////////////////////////////////////////////////////////////
 // ESDM Callbacks /////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////
-
 
 static int mongodb_backend_performance_estimate(esdm_backend_t *backend) {
   DEBUG("Calculating performance estimate.");
 
   return 0;
 }
-
 
 static int mongodb_create(esdm_backend_t *backend, char *name) {
   DEBUG("Create");
@@ -444,7 +408,6 @@ static int mongodb_create(esdm_backend_t *backend, char *name) {
   return 0;
 }
 
-
 /**
  *
  *	handle
@@ -457,47 +420,39 @@ static int mongodb_open(esdm_backend_t *backend) {
   return 0;
 }
 
-
 static int mongodb_write(esdm_backend_t *backend) {
   DEBUG("Write");
   return 0;
 }
-
 
 static int mongodb_read(esdm_backend_t *backend) {
   DEBUG("Read");
   return 0;
 }
 
-
 static int mongodb_close(esdm_backend_t *backend) {
   DEBUG("Close");
   return 0;
 }
-
 
 static int mongodb_allocate(esdm_backend_t *backend) {
   DEBUG("Allocate");
   return 0;
 }
 
-
 static int mongodb_update(esdm_backend_t *backend) {
   DEBUG("Update");
   return 0;
 }
-
 
 static int mongodb_lookup(esdm_backend_t *backend) {
   DEBUG("Lookup");
   return 0;
 }
 
-
 ///////////////////////////////////////////////////////////////////////////////
 // ESDM Module Registration ///////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////
-
 
 static esdm_backend_t backend_template = {
 ///////////////////////////////////////////////////////////////////////////////
@@ -540,7 +495,6 @@ NULL,            // fragment destroy
 },
 };
 
-
 esdm_backend_t *mongodb_backend_init(esdm_config_backend_t *config) {
   DEBUG("Initializing mongodb backend.");
 
@@ -582,7 +536,6 @@ esdm_backend_t *mongodb_backend_init(esdm_config_backend_t *config) {
   return backend;
 }
 
-
 int mongodb_finalize() {
   //mongoc_collection_destroy (collection);
   //mongoc_client_destroy (client);
@@ -590,10 +543,8 @@ int mongodb_finalize() {
   return 0;
 }
 
-
 static void mongodb_test() {
   int ret = -1;
-
 
   char *abc;
   char *def;
@@ -602,7 +553,6 @@ static void mongodb_test() {
   asprintf(&abc, "%s/%s", tgt, "abc");
   asprintf(&def, "%s/%s", tgt, "def");
 
-
   // create entry and test
   ret = entry_create(abc);
   assert(ret == 0);
@@ -610,14 +560,12 @@ static void mongodb_test() {
   ret = entry_retrieve(abc);
   assert(ret == 0);
 
-
   // double create
   ret = entry_create(def);
   assert(ret == 0);
 
   ret = entry_create(def);
   assert(ret == -1);
-
 
   // perform update and test
   ret = entry_update(abc, "huhuhuhuh", 5);
@@ -627,7 +575,6 @@ static void mongodb_test() {
   ret = entry_destroy(abc);
   ret = entry_retrieve(abc);
   assert(ret == -1);
-
 
   // clean up
   ret = entry_destroy(def);

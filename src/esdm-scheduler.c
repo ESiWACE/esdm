@@ -14,7 +14,6 @@
  * along with ESDM.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-
 /**
  * @file
  * @brief The scheduler receives application requests and schedules subsequent
@@ -23,21 +22,17 @@
  *
  */
 
+#include <esdm-internal.h>
+#include <esdm.h>
+#include <glib.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-
-#include <glib.h>
-
-#include <esdm-internal.h>
-#include <esdm.h>
-
 
 #define DEBUG_ENTER ESDM_DEBUG_COM_FMT("SCHEDULER", "", "")
 #define DEBUG(fmt, ...) ESDM_DEBUG_COM_FMT("SCHEDULER", fmt, __VA_ARGS__)
 
 static void backend_thread(io_work_t *data_p, esdm_backend_t *backend_id);
-
 
 esdm_scheduler_t *esdm_scheduler_init(esdm_instance_t *esdm) {
   ESDM_DEBUG(__func__);
@@ -74,7 +69,6 @@ esdm_scheduler_t *esdm_scheduler_init(esdm_instance_t *esdm) {
   return scheduler;
 }
 
-
 esdm_status esdm_scheduler_finalize(esdm_instance_t *esdm) {
   ESDM_DEBUG(__func__);
 
@@ -92,7 +86,6 @@ esdm_status esdm_scheduler_finalize(esdm_instance_t *esdm) {
 
   return ESDM_SUCCESS;
 }
-
 
 static void backend_thread(io_work_t *work, esdm_backend_t *backend) {
   io_request_status_t *status = work->parent;
@@ -131,7 +124,6 @@ static void backend_thread(io_work_t *work, esdm_backend_t *backend) {
   //esdm_dataspace_destroy(work->fragment->dataspace);
   free(work);
 }
-
 
 static void read_copy_callback(io_work_t *work) {
   if (work->return_code != ESDM_SUCCESS) {
@@ -177,7 +169,6 @@ static void read_copy_callback(io_work_t *work) {
 
   free(f->buf);
 }
-
 
 esdm_status esdm_scheduler_enqueue_read(esdm_instance_t *esdm, io_request_status_t *status, int frag_count, esdm_fragment_t **read_frag, void *buf, esdm_dataspace_t *buf_space) {
   GError *error;
@@ -253,7 +244,6 @@ esdm_status esdm_scheduler_enqueue_read(esdm_instance_t *esdm, io_request_status
 
   return ESDM_SUCCESS;
 }
-
 
 esdm_status esdm_scheduler_enqueue_write(esdm_instance_t *esdm, io_request_status_t *status, esdm_dataset_t *dataset, void *buf, esdm_dataspace_t *space) {
   GError *error;
@@ -355,7 +345,6 @@ esdm_status esdm_scheduler_enqueue_write(esdm_instance_t *esdm, io_request_statu
   return ESDM_SUCCESS;
 }
 
-
 esdm_status esdm_scheduler_status_init(io_request_status_t *status) {
   g_mutex_init(&status->mutex);
   g_cond_init(&status->done_condition);
@@ -363,13 +352,11 @@ esdm_status esdm_scheduler_status_init(io_request_status_t *status) {
   return ESDM_SUCCESS;
 }
 
-
 esdm_status esdm_scheduler_status_finalize(io_request_status_t *status) {
   g_mutex_clear(&status->mutex);
   g_cond_clear(&status->done_condition);
   return ESDM_SUCCESS;
 }
-
 
 esdm_status esdm_scheduler_wait(io_request_status_t *status) {
   g_mutex_lock(&status->mutex);
@@ -379,7 +366,6 @@ esdm_status esdm_scheduler_wait(io_request_status_t *status) {
   g_mutex_unlock(&status->mutex);
   return ESDM_SUCCESS;
 }
-
 
 esdm_status esdm_scheduler_process_blocking(esdm_instance_t *esdm, io_operation_t op, esdm_dataset_t *dataset, void *buf, esdm_dataspace_t *subspace) {
   ESDM_DEBUG(__func__);

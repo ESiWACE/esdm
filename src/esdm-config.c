@@ -20,21 +20,18 @@
  *
  */
 
+#include <esdm-internal.h>
+#include <esdm.h>
 #include <fcntl.h>
+#include <glib.h>
 #include <jansson.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
 
-#include <glib.h>
-
-#include <esdm-internal.h>
-#include <esdm.h>
-
 #define DEBUG_ENTER ESDM_DEBUG_COM_FMT("CONFIG", "", "")
 #define DEBUG(fmt, ...) ESDM_DEBUG_COM_FMT("CONFIG", fmt, __VA_ARGS__)
-
 
 esdm_config_t *esdm_config_init_from_str(const char *config_str) {
   esdm_config_t *config = NULL;
@@ -44,7 +41,6 @@ esdm_config_t *esdm_config_init_from_str(const char *config_str) {
   return config;
 }
 
-
 esdm_config_t *esdm_config_init(esdm_instance_t *esdm) {
   ESDM_DEBUG(__func__);
 
@@ -53,7 +49,6 @@ esdm_config_t *esdm_config_init(esdm_instance_t *esdm) {
   esdm->config = esdm_config_init_from_str(config_str);
   return esdm->config;
 }
-
 
 esdm_status esdm_config_finalize(esdm_instance_t *esdm) {
   ESDM_DEBUG(__func__);
@@ -66,7 +61,6 @@ esdm_status esdm_config_finalize(esdm_instance_t *esdm) {
 
   return ESDM_SUCCESS;
 }
-
 
 /**
  * TODO:
@@ -85,7 +79,6 @@ char *esdm_config_gather() {
   read_file("_esdm.conf", &config_json);
   return config_json;
 }
-
 
 esdm_config_backend_t *esdm_config_get_metadata_coordinator(esdm_instance_t *esdm) {
   DEBUG_ENTER;
@@ -122,7 +115,6 @@ esdm_config_backend_t *esdm_config_get_metadata_coordinator(esdm_instance_t *esd
     config_backend->data_accessibility = ESDM_ACCESSIBILITY_GLOBAL;
   return config_backend;
 }
-
 
 esdm_config_backends_t *esdm_config_get_backends(esdm_instance_t *esdm) {
   ESDM_DEBUG(__func__);

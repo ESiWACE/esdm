@@ -14,7 +14,6 @@
  * along with ESDM.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-
 #ifndef TEST_UTIL_H
 #define TEST_UTIL_H
 

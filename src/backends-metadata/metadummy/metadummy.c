@@ -19,9 +19,7 @@
  * @brief A metadata backend on top of a POSIX compatible filesystem.
  */
 
-
 #define _GNU_SOURCE /* See feature_test_macros(7) */
-
 
 #include <assert.h>
 #include <dirent.h>
@@ -41,15 +39,12 @@
 #include <esdm-debug.h>
 #include <esdm.h>
 
-
 #define DEBUG_ENTER ESDM_DEBUG_COM_FMT("METADUMMY", "", "")
 #define DEBUG(fmt, ...) ESDM_DEBUG_COM_FMT("METADUMMY", fmt, __VA_ARGS__)
-
 
 ///////////////////////////////////////////////////////////////////////////////
 // Helper and utility /////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////
-
 
 static int mkfs(esdm_md_backend_t *backend, int enforce_format) {
   DEBUG_ENTER;
@@ -92,10 +87,8 @@ static int mkfs(esdm_md_backend_t *backend, int enforce_format) {
   return ESDM_SUCCESS;
 }
 
-
 static int fsck() {
   DEBUG_ENTER;
-
 
   return 0;
 }
@@ -127,7 +120,6 @@ static int entry_create(const char *path, esdm_metadata_t *data) {
 
   return 1;
 }
-
 
 static int entry_retrieve_tst(const char *path, esdm_dataset_t *dataset) {
   DEBUG_ENTER;
@@ -173,7 +165,6 @@ static int entry_retrieve_tst(const char *path, esdm_dataset_t *dataset) {
   return 0;
 }
 
-
 static int entry_update(const char *path, void *buf, size_t len) {
   DEBUG_ENTER;
 
@@ -203,7 +194,6 @@ static int entry_update(const char *path, void *buf, size_t len) {
   return 0;
 }
 
-
 static int entry_destroy(const char *path) {
   DEBUG_ENTER;
 
@@ -229,11 +219,9 @@ static int entry_destroy(const char *path) {
   return 0;
 }
 
-
 ///////////////////////////////////////////////////////////////////////////////
 // Container Helpers //////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////
-
 
 static int container_create(esdm_md_backend_t *backend, esdm_container_t *container) {
   DEBUG_ENTER;
@@ -259,13 +247,11 @@ static int container_create(esdm_md_backend_t *backend, esdm_container_t *contai
   // create metadata entry
   entry_create(path_metadata, NULL);
 
-
   free(path_metadata);
   free(path_container);
 
   return 0;
 }
-
 
 static int container_retrieve(esdm_md_backend_t *backend, esdm_container_t *container) {
   DEBUG_ENTER;
@@ -276,7 +262,6 @@ static int container_retrieve(esdm_md_backend_t *backend, esdm_container_t *cont
   metadummy_backend_options_t *options = (metadummy_backend_options_t *)backend->data;
   const char *tgt = options->target;
 
-
   asprintf(&path_metadata, "%s/containers/%s.md", tgt, container->name);
   asprintf(&path_container, "%s/containers/%s", tgt, container->name);
 
@@ -284,14 +269,11 @@ static int container_retrieve(esdm_md_backend_t *backend, esdm_container_t *cont
   esdm_dataset_t *dataset = NULL;
   entry_retrieve_tst(path_metadata, dataset); // conflict
 
-
   free(path_metadata);
   free(path_container);
 
-
   return 0;
 }
-
 
 static int container_update(esdm_md_backend_t *backend, esdm_container_t *container) {
   DEBUG_ENTER;
@@ -308,13 +290,11 @@ static int container_update(esdm_md_backend_t *backend, esdm_container_t *contai
   // create metadata entry
   entry_update(path_metadata, "abc", 3);
 
-
   free(path_metadata);
   free(path_container);
 
   return 0;
 }
-
 
 static int container_destroy(esdm_md_backend_t *backend, esdm_container_t *container) {
   DEBUG_ENTER;
@@ -331,9 +311,7 @@ static int container_destroy(esdm_md_backend_t *backend, esdm_container_t *conta
   // create metadata entry
   entry_destroy(path_metadata);
 
-
   // TODO: also remove existing datasets?
-
 
   free(path_metadata);
   free(path_container);
@@ -341,11 +319,9 @@ static int container_destroy(esdm_md_backend_t *backend, esdm_container_t *conta
   return 0;
 }
 
-
 ///////////////////////////////////////////////////////////////////////////////
 // Dataset Helpers ////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////
-
 
 static int dataset_create(esdm_md_backend_t *backend, esdm_dataset_t *dataset) {
   DEBUG_ENTER;
@@ -373,7 +349,6 @@ static int dataset_create(esdm_md_backend_t *backend, esdm_dataset_t *dataset) {
   return 0;
 }
 
-
 static int dataset_retrieve(esdm_md_backend_t *backend, esdm_dataset_t *d) {
   DEBUG_ENTER;
 
@@ -400,13 +375,11 @@ static int dataset_retrieve(esdm_md_backend_t *backend, esdm_dataset_t *d) {
   return 0;
 }
 
-
 static int dataset_update(esdm_md_backend_t *backend, esdm_dataset_t *dataset) {
   DEBUG_ENTER;
 
   return 0;
 }
-
 
 static int dataset_destroy(esdm_md_backend_t *backend, esdm_dataset_t *dataset) {
   DEBUG_ENTER;
@@ -414,11 +387,9 @@ static int dataset_destroy(esdm_md_backend_t *backend, esdm_dataset_t *dataset) 
   return 0;
 }
 
-
 ///////////////////////////////////////////////////////////////////////////////
 // Fragment Helpers ///////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////
-
 
 static int fragment_retrieve(esdm_md_backend_t *backend, esdm_fragment_t *fragment, json_t *metadata) {
   // set data, options and tgt for convienience
@@ -436,7 +407,6 @@ static int fragment_retrieve(esdm_md_backend_t *backend, esdm_fragment_t *fragme
   // determine path to fragment
   char path_fragment[PATH_MAX];
   sprintf(path_fragment, "%s/containers/%s/%s/%s", tgt, fragment->dataset->container->name, fragment->dataset->name, fragment_name);
-
 
   int status;
   struct stat sb;
@@ -459,7 +429,6 @@ static int fragment_retrieve(esdm_md_backend_t *backend, esdm_fragment_t *fragme
 
   return 0;
 }
-
 
 static esdm_fragment_t *create_fragment_from_metadata(int fd, esdm_dataset_t *dataset, esdm_dataspace_t *space) {
   struct stat sb;
@@ -610,11 +579,9 @@ static int fragment_update(esdm_md_backend_t *backend, esdm_fragment_t *fragment
   return 0;
 }
 
-
 ///////////////////////////////////////////////////////////////////////////////
 // ESDM Callbacks /////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////
-
 
 static int metadummy_backend_performance_estimate(esdm_md_backend_t *backend, esdm_fragment_t *fragment, float *out_time) {
   DEBUG_ENTER;
@@ -622,7 +589,6 @@ static int metadummy_backend_performance_estimate(esdm_md_backend_t *backend, es
 
   return 0;
 }
-
 
 static int metadummy_finalize(esdm_md_backend_t *b) {
   DEBUG_ENTER;
@@ -633,7 +599,6 @@ static int metadummy_finalize(esdm_md_backend_t *b) {
 ///////////////////////////////////////////////////////////////////////////////
 // ESDM Module Registration ///////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////
-
 
 static esdm_md_backend_t backend_template = {
 .name = "metadummy",
@@ -666,7 +631,6 @@ mkfs,
 },
 };
 
-
 esdm_md_backend_t *metadummy_backend_init(esdm_config_backend_t *config) {
   DEBUG_ENTER;
 
@@ -679,7 +643,6 @@ esdm_md_backend_t *metadummy_backend_init(esdm_config_backend_t *config) {
   backend->data = data;
   backend->config = config;
   //metadummy_test();
-
 
   mkfs(backend, 0);
 

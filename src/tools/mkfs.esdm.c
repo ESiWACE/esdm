@@ -14,18 +14,16 @@
  * along with ESDM.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-
 /**
  * @file
  * @brief Format storage target for ESDM from configuration file.
  */
 
+#include <esdm-internal.h>
 #include <stdio.h>
 #include <stdlib.h>
-//#include <mpi.h>
-
-#include <esdm-internal.h>
 #include <tools/option.h>
+//#include <mpi.h>
 
 typedef struct {
   char *config_file;

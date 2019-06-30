@@ -123,7 +123,6 @@ typedef struct {
   struct esdm_backend_t_xxxops ebm_ops;
 } esdm_backend_t_clovis_t;
 
-
 extern esdm_backend_t_clovis_t esdm_backend_t_clovis;
 
 #endif

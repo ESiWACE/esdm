@@ -33,7 +33,6 @@
 #include "report.h"
 #include "types.h"
 
-
 unsigned int to_char(const long long value, const size_t pos) {
   const long long r = value / ((long long)pow(10, pos)); // remove the last positions, e.g. pos=2 and value=2136 -> r=21
   const long long x = r / 10 * 10;                       // set last position to zero, e.g. r=21 -> x=20
@@ -69,7 +68,6 @@ void destroy_pretty_number_ll(char *number) {
   free(number);
   number = NULL;
 }
-
 
 /**
  * @brief
@@ -120,7 +118,6 @@ static void parse_dims(const char *s, size_t **dims, size_t *size) {
     }
   }
 }
-
 
 struct args {
   procs_t procs;
@@ -204,7 +201,6 @@ void print_header(benchmark_t *bm) {
 
 int main(int argc, char **argv) {
   MPI_Init(&argc, &argv);
-
 
   // Default values
   struct args args;
@@ -375,7 +371,6 @@ int main(int argc, char **argv) {
     nranks, args.procs.nn, args.procs.ppn);
   }
 
-
   if ((args.read_test == false) & (args.write_test == false) & (args.verify == false)) {
     args.write_test = true;
   }
@@ -432,7 +427,6 @@ int main(int argc, char **argv) {
       }
     }
   }
-
 
   MPI_Finalize();
   benchmark_destroy(&wbm);

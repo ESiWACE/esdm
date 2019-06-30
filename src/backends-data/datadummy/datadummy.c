@@ -19,10 +19,9 @@
  * @brief A data backend to provide POSIX compatibility.
  */
 
-
 #define _GNU_SOURCE /* See feature_test_macros(7) */
 
-
+#include <esdm-debug.h>
 #include <stdarg.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -31,17 +30,13 @@
 #include <sys/types.h>
 #include <unistd.h>
 
-#include <esdm-debug.h>
-
 #include "metadummy.h"
 
 #define DEBUG_ENTER(msg) ESDM_DEBUG_COM_FMT("DUMMY", "%s", msg)
 
-
 ///////////////////////////////////////////////////////////////////////////////
 // Helper and utility /////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////
-
 
 int mkfs(esdm_backend_t *backend) {
   posix_backend_data_t *data = (posix_backend_data_t *)backend->data;
@@ -49,7 +44,6 @@ int mkfs(esdm_backend_t *backend) {
 
   ESDM_DEBUG("mkfs: backend->(void*)data->options->target = %s\n", options->target);
   ESDM_DEBUG("\n\n\n");
-
 
   const char *tgt = options->target;
 
@@ -78,16 +72,9 @@ int mkfs(esdm_backend_t *backend) {
   }
 }
 
-
-/**
- * Similar to the command line counterpart fsck for ESDM plugins is responsible
- * to check and potentially repair the "filesystem".
- *
- */
 int fsck() {
   return 0;
 }
-
 
 ///////////////////////////////////////////////////////////////////////////////
 // Internal Handlers //////////////////////////////////////////////////////////
@@ -110,10 +97,8 @@ int posix_backend_performance_estimate(esdm_backend_t *backend) {
   return 0;
 }
 
-
 int posix_create() {
   DEBUG_ENTER("Create");
-
 
   // check if container already exists
 
@@ -122,14 +107,12 @@ int posix_create() {
     mkdir("_esdm-fs/containers", 0700);
   }
 
-
   //#include <unistd.h>
   //ssize_t pread(int fd, void *buf, size_t count, off_t offset);
   //ssize_t pwrite(int fd, const void *buf, size_t count, off_t offset);
 
   return 0;
 }
-
 
 /**
  *
@@ -143,42 +126,35 @@ int posix_open() {
   return 0;
 }
 
-
 int posix_write() {
   DEBUG_ENTER("Write");
   return 0;
 }
-
 
 int posix_read() {
   DEBUG_ENTER("Read");
   return 0;
 }
 
-
 int posix_close() {
   DEBUG_ENTER("Close");
   return 0;
 }
-
 
 int posix_allocate() {
   DEBUG_ENTER("Allocate");
   return 0;
 }
 
-
 int posix_update() {
   DEBUG_ENTER("Update");
   return 0;
 }
 
-
 int posix_lookup() {
   DEBUG_ENTER("Lookup");
   return 0;
 }
-
 
 ///////////////////////////////////////////////////////////////////////////////
 // ESDM Module Registration ///////////////////////////////////////////////////
@@ -208,24 +184,6 @@ NULL, // lookup
 },
 };
 
-/**
-* Initializes the POSIX plugin. In particular this involves:
-*
-*	* Load configuration of this backend
-*	* Load and potentially calibrate performance model
-*
-*	* Connect with support services e.g. for technical metadata
-*	* Setup directory structures used by this POSIX specific backend
-*
-*	* Populate esdm_backend_t struct and callbacks required for registration
-*
-* @return pointer to backend struct
-*/
-
-// Two versions of this function!!!
-//
-// posix.c
-
 esdm_backend_t *posix_backend_init(void *init_data) {
   DEBUG_ENTER("Initializing POSIX backend.");
 
@@ -246,10 +204,6 @@ esdm_backend_t *posix_backend_init(void *init_data) {
   return backend;
 }
 
-/**
-* Initializes the POSIX plugin. In particular this involves:
-*
-*/
 int posix_finalize() {
   return 0;
 }

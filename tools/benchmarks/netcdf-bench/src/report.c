@@ -16,8 +16,6 @@
  * =====================================================================================
  */
 
-#include "report.h"
-#include "debug.h"
 #include <assert.h>
 #include <errno.h>
 #include <mpi.h>
@@ -26,9 +24,11 @@
 #include <stdio.h>
 #include <string.h>
 
+#include "debug.h"
+#include "report.h"
 
 /**
- * @brief 
+ * @brief
  *
  * @param bm
  * @param tag
@@ -49,13 +49,6 @@ static void benchmark_send(benchmark_t *bm, const int tag) {
   }
 }
 
-
-/**
- * @brief 
- *
- * @param bm
- * @param tag
- */
 static void benchmark_receive(benchmark_t **bm, const int tag) {
   int rank;
   MPI_Comm_rank(MPI_COMM_WORLD, &rank);
@@ -99,40 +92,19 @@ static void benchmark_receive(benchmark_t **bm, const int tag) {
   }
 }
 
-
-/**
- * @brief
- *
- * @param
- */
 void report_init(report_t *report) {
   report->bm = NULL;
 }
 
-/**
- * @brief
- *
- * @param report
- * @param bm
- */
 void report_setup(report_t *report, benchmark_t *bm) {
   report->bm = bm;
 }
 
-/**
- * @brief
- *
- * @param report
- */
 void report_destroy(report_t *report) {
   report->bm = NULL;
 }
 
-
-static void table_write_entry(
-table_t *table,
-const size_t nrows, const size_t ncols, const size_t pos,
-const char *name, const char *type, const char *quantity, const char *unit, const char *value) {
+static void table_write_entry(table_t *table, const size_t nrows, const size_t ncols, const size_t pos, const char *name, const char *type, const char *quantity, const char *unit, const char *value) {
   assert(pos < ncols);
   table_t tab = *table;
 
@@ -156,7 +128,6 @@ const char *name, const char *type, const char *quantity, const char *unit, cons
   tab[pos][4] = (char *)malloc(sizeof(char *) * vlen + 1);
   strcpy(tab[pos][4], value);
 }
-
 
 static void table_destroy(table_t *table, const size_t nrows, const size_t ncols) {
   table_t tab = *table;
@@ -188,7 +159,6 @@ static void append_string(char **buf, size_t *buf_size, const char *vb) {
   snprintf(*buf + buf_len, *buf_size - buf_len, "%s", vb);
 }
 
-
 //typedef struct benchmark_t {
 //	char* processor;
 //	char* testfn;
@@ -209,7 +179,6 @@ static void append_string(char **buf, size_t *buf_size, const char *vb) {
 //	int storage;
 //	bool is_unlimited;
 //} benchmark_t;
-
 
 static double sum(const double *elems, const size_t size) {
   double sum = 0;
@@ -245,21 +214,29 @@ static double max(const double *elems, const size_t size) {
   return max;
 }
 
+static double get_open_time(const benchmark_t *bms) {
+  return bms->duration.open;
+}
 
-static double get_open_time(const benchmark_t *bms) { return bms->duration.open; }
-static double get_io_time(const benchmark_t *bms) { return bms->duration.io; }
-static double get_close_time(const benchmark_t *bms) { return bms->duration.close; }
+static double get_io_time(const benchmark_t *bms) {
+  return bms->duration.io;
+}
+
+static double get_close_time(const benchmark_t *bms) {
+  return bms->duration.close;
+}
+
 static double get_perf(const benchmark_t *bm) {
   const size_t dsize = bm->dgeom[0] * bm->dgeom[1] * bm->dgeom[2] * bm->dgeom[3] * sizeof(bm->block[0]);
   const double total_time = bm->duration.open + bm->duration.io + bm->duration.close;
   return dsize / total_time / (1024 * 1024);
 }
+
 static double get_perf_pure(const benchmark_t *bm) {
   const size_t dsize = bm->dgeom[0] * bm->dgeom[1] * bm->dgeom[2] * bm->dgeom[3] * sizeof(bm->block[0]);
   const double total_time = bm->duration.io;
   return dsize / total_time / (1024 * 1024);
 }
-
 
 static double *create_bm_array(const benchmark_t **bms, size_t size, get_bm_value_t get_bm_value, double *array) {
   for (size_t i = 0; i < size; ++i) {
@@ -284,13 +261,6 @@ static void compute_stats(mam_t *open, mam_t *io, mam_t *close, mam_t *perf, mam
   compute_stat(perf_pure, bms, bms_size, get_perf_pure);
 }
 
-
-/**
- * @brief
- *
- * @param report
- * @param type
- */
 void report_print(const report_t *report, const report_type_t type) {
   int nranks;
   int rank;
@@ -331,7 +301,6 @@ void report_print(const report_t *report, const report_type_t type) {
     mam_t perf_pure_stats;
     const size_t bms_size = benchmarks[0]->nranks;
     compute_stats(&open_stats, &io_stats, &close_stats, &perf_stats, &perf_pure_stats, (const benchmark_t **)benchmarks, bms_size);
-
 
     char id[200];
     sprintf(id, "%s:%s", "benchmark", io_mode_str);

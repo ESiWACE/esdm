@@ -23,7 +23,6 @@ int main() {
   hid_t fprop;
   hid_t fid;
   hid_t vol_id = H5VLregister_by_name("h5-memvol");
-
   hid_t g1, g2;
   hid_t plist;
 
@@ -33,14 +32,12 @@ int main() {
   fprop = H5Pcreate(H5P_FILE_ACCESS);
   H5Pset_vol(fprop, vol_id, &fprop);
 
-
   // Bootstrap //////////////////////////////////////////////////////////////
   fid = H5Fcreate(FILE, H5F_ACC_TRUNC, H5P_DEFAULT, fprop);
 
   // check if correct vol plugin is used
   H5VLget_plugin_name(fid, name, 1024);
   printf("VOL plugin in use: %s\n", name);
-
 
   // CREATE /////////////////////////////////////////////////////////////////
   g1 = H5Gcreate2(fid, "g1", H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
@@ -56,7 +53,6 @@ int main() {
   //g3 = H5Gcreate2(fid, "g1", H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
   //H5Gclose(g3);
 
-
   // GET ////////////////////////////////////////////////////////////////////
   printf("Testing additional functions\n");
   g1 = H5Gopen2(fid, "g1", H5P_DEFAULT);
@@ -69,7 +65,6 @@ int main() {
   H5Gget_info_by_name(fid, "g1", &group_info, H5P_DEFAULT);
   H5Pclose(plist);
 
-
   // NESTING? ///////////////////////////////////////////////////////////////
   H5Gclose(g1);
   g1 = H5Gopen2(fid, "g2", H5P_DEFAULT);
@@ -80,13 +75,11 @@ int main() {
   g1 = H5Gcreate_anon(fid, H5P_DEFAULT, H5P_DEFAULT);
   H5Gclose(g1);
 
-
   // Clean up ///////////////////////////////////////////////////////////////
   H5Fclose(fid);
 
   // end hdf5 as usual
   H5VLunregister(vol_id);
-
 
   printf("Status: %d\n", status);
 

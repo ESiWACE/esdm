@@ -176,7 +176,6 @@ typedef struct {
   lfs_record *records_end; // sorted by the end position of an record
 } lfs_index;
 
-
 static int lfsRecordComparePos(const void *u1, const void *v1) {
   const lfs_record_on_disk *u = (const lfs_record_on_disk *)u1;
   const lfs_record_on_disk *v = (const lfs_record_on_disk *)v1;
@@ -288,7 +287,6 @@ static inline int lfs_binsearch_right(off_t end, lfs_record *r, int size) {
   //}
   return p;
 }
-
 
 size_t lfs_pread(int fd, void *buf, size_t size, size_t offset, lfs_index *index) {
   printf("pread %zu - %zu\n", offset, size);

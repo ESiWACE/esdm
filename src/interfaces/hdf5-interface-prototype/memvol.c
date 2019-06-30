@@ -13,12 +13,9 @@
 // You should have received a copy of the GNU Lesser General Public License
 // along with h5-memvol.  If not, see <http://www.gnu.org/licenses/>.
 
-
 #include <assert.h>
-#include <stdlib.h>
-
 #include <glib.h>
-
+#include <stdlib.h>
 
 #pragma GCC diagnostic ignored "-Wunused-parameter"
 
@@ -33,7 +30,6 @@ herr_t print_property(hid_t id, const char *name, void *iter_data) {
   debugI("%s: hid=%ld name=%s data=%p\n", __func__, id, name, iter_data);
   return 0;
 }
-
 
 #include "m-attribute.c"
 #include "m-dataset.c"
@@ -52,7 +48,6 @@ static herr_t memvol_init(hid_t vipl_id) {
   memvol_init_type(vipl_id);
   return 0;
 }
-
 
 // iextract from ../install/download/vol/src/H5VLpublic.h:327
 /* Class information for each VOL driver */
@@ -165,7 +160,6 @@ NULL /* Optional callback */
 
 static hid_t vol_id = -1;
 
-
 hid_t H5VL_memvol_init() {
   vol_id = H5VLregister(&H5VL_memvol);
   H5VLinitialize(vol_id, H5P_DEFAULT);
@@ -175,7 +169,6 @@ hid_t H5VL_memvol_init() {
   return vol_id;
 }
 
-
 int H5VL_memvol_finalize() {
   assert(vol_id != -1);
 
@@ -183,7 +176,6 @@ int H5VL_memvol_finalize() {
   vol_id = -1;
   return 0;
 }
-
 
 // see H5PL.c:695 ff for a description how the plugin is loaded.
 H5PL_type_t H5PLget_plugin_type(void) {

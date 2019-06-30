@@ -3,7 +3,7 @@
  *
  *       Filename:  constants.h
  *
- *    Description:  
+ *    Description:
  *
  *        Version:  1.0
  *        Created:  08/17/2016 11:41:22 AM
@@ -20,7 +20,6 @@
 #define constants_INC
 
 #define NDIMS 4
-
 #define DT 0
 #define DX 1
 #define DY 2

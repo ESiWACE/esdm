@@ -28,16 +28,13 @@
  *
  */
 
-
+#include <esdm-internal.h>
+#include <esdm.h>
 #include <stdio.h>
 #include <stdlib.h>
 
-#include <esdm-internal.h>
-#include <esdm.h>
-
 #define DEBUG_ENTER ESDM_DEBUG_COM_FMT("METADUMMY", "", "")
 #define DEBUG(fmt, ...) ESDM_DEBUG_COM_FMT("METADUMMY", fmt, __VA_ARGS__)
-
 
 esdm_performance_t *esdm_performance_init(esdm_instance_t *esdm) {
   esdm_performance_t *performance = NULL;
@@ -50,7 +47,6 @@ esdm_performance_t *esdm_performance_init(esdm_instance_t *esdm) {
   return performance;
 }
 
-
 esdm_status esdm_performance_finalize(esdm_instance_t *esdm) {
   if (esdm->performance) {
     free(esdm->performance);
@@ -60,14 +56,12 @@ esdm_status esdm_performance_finalize(esdm_instance_t *esdm) {
   return ESDM_SUCCESS;
 }
 
-
 void fetch_performance_from_backend(gpointer key, gpointer value, gpointer user_data) {
   DEBUG("GHashTable Entry: key=%p (s:%s), value=%p (s:%s), user_data=%p\n", key, key, value, value, user_data);
 
   //esdm_backend_t* backend = (esdm_backend_t*) value;
   //backend->callbacks.performance_estimate(backend);
 }
-
 
 esdm_status esdm_performance_recommendation(esdm_instance_t *esdm, esdm_fragment_t *in, esdm_fragment_t *out) {
   DEBUG_ENTER;
@@ -81,7 +75,6 @@ esdm_status esdm_performance_recommendation(esdm_instance_t *esdm, esdm_fragment
 
   return ESDM_SUCCESS;
 }
-
 
 esdm_status esdm_backend_t_estimate_performance(esdm_backend_t *backend, int request) {
   ESDM_DEBUG("Estimate performance call dummy");

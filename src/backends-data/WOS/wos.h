@@ -27,13 +27,11 @@ typedef struct {
   esdm_config_backend_t *config;
   const char *target;
   esdm_dynamic_perf_model_lat_thp_t perf_model;
-
   t_WosClusterPtr *wos_cluster; // Pointer to WOS cluster
   t_WosPolicy *wos_policy;      // Policy
   t_WosObjPtr *wos_meta_obj;    // Used for internal purposes to store metadata info
   t_WosOID **oid_list;          // List of object ids
   uint64_t *size_list;          // List of object sizes
-
 } wos_backend_data_t;
 typedef wos_backend_data_t esdm_backend_t_wos_t;
 

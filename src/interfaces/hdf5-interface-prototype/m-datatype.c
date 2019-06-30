@@ -13,10 +13,8 @@
 // You should have received a copy of the GNU Lesser General Public License
 // along with h5-memvol.  If not, see <http://www.gnu.org/licenses/>.
 
-
 // ../install/download/vol/src/H5VLnative.c
 // ../install/download/vol/src/H5T.c
-
 
 // TODO some locking here
 static GHashTable *type_table = NULL;
@@ -24,7 +22,6 @@ static GHashTable *type_table = NULL;
 static void memvol_init_type(hid_t vipl_id) {
   type_table = g_hash_table_new(g_str_hash, g_str_equal);
 }
-
 
 static void *memvol_type_commit(void *obj, H5VL_loc_params_t loc_params, const char *name, hid_t type_id, hid_t lcpl_id, hid_t tcpl_id, hid_t tapl_id, hid_t dxpl_id, void **req) {
   g_hash_table_insert(type_table, (char *)name, (void *)type_id);
@@ -40,7 +37,6 @@ static void *memvol_type_open(void *obj, H5VL_loc_params_t loc_params, const cha
 
   return (void *)tid;
 }
-
 
 static herr_t memvol_type_get(void *obj, H5VL_type_get_t get_type, hid_t dxpl_id, void **req, va_list arguments) {
   herr_t ret_value = SUCCEED;
@@ -74,7 +70,6 @@ static herr_t memvol_type_get(void *obj, H5VL_type_get_t get_type, hid_t dxpl_id
   return ret_value;
 }
 
-
 static herr_t memvol_type_specific(void *obj, H5VL_type_specific_t specific_type, hid_t dxpl_id, void **req, va_list arguments) {
   herr_t ret_value = SUCCEED;
 
@@ -89,7 +84,6 @@ static herr_t memvol_type_specific(void *obj, H5VL_type_specific_t specific_type
   return ret_value;
 }
 
-
 static herr_t memvol_type_optional(void *obj, hid_t dxpl_id, void **req, va_list arguments) {
   herr_t ret_value = SUCCEED;
 
@@ -97,7 +91,6 @@ static herr_t memvol_type_optional(void *obj, hid_t dxpl_id, void **req, va_list
 
   return ret_value;
 }
-
 
 static herr_t memvol_type_close(void *dt, hid_t dxpl_id, void **req) {
   herr_t ret_value = SUCCEED;

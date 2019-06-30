@@ -14,9 +14,8 @@
 // along with h5-memvol.  If not, see <http://www.gnu.org/licenses/>.
 
 #include <assert.h>
-#include <stdio.h>
-
 #include <hdf5.h>
+#include <stdio.h>
 
 int main() {
   hid_t fprop;

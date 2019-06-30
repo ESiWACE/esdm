@@ -18,11 +18,10 @@
  * Test to check the metadata APIs of ESDM.
  */
 
-#include <stdio.h>
-#include <stdlib.h>
-
 #include <esdm-datatypes-internal.h>
 #include <esdm.h>
+#include <stdio.h>
+#include <stdlib.h>
 
 typedef struct {
   float longitude;

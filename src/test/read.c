@@ -19,11 +19,9 @@
  */
 
 #include <assert.h>
+#include <esdm.h>
 #include <stdio.h>
 #include <stdlib.h>
-
-#include <esdm.h>
-
 
 int verify_data(uint64_t *a, uint64_t *b) {
   int mismatches = 0;
@@ -40,10 +38,8 @@ int verify_data(uint64_t *a, uint64_t *b) {
     }
   }
 
-
   return mismatches;
 }
-
 
 int main(int argc, char const *argv[]) {
   // prepare data
@@ -56,12 +52,10 @@ int main(int argc, char const *argv[]) {
     }
   }
 
-
   // Interaction with ESDM
   esdm_status ret;
   esdm_container_t *container = NULL;
   esdm_dataset_t *dataset = NULL;
-
 
   ret = esdm_init();
   assert(ret == ESDM_SUCCESS);
@@ -75,10 +69,8 @@ int main(int argc, char const *argv[]) {
   esdm_container_t_create("mycontainer", &container);
   esdm_dataset_create(container, "mydataset", dataspace, &dataset);
 
-
   esdm_container_t_commit(container);
   esdm_dataset_commit(dataset);
-
 
   // define subspace
   int64_t size[] = {10, 20};
@@ -87,15 +79,12 @@ int main(int argc, char const *argv[]) {
 
   esdm_dataspace_subspace(dataspace, 2, size, offset, &subspace);
 
-
   // Read the data to the dataset
   ret = esdm_read(dataset, buf_r, subspace);
   assert(ret == ESDM_SUCCESS);
 
-
   ret = esdm_finalize();
   assert(ret == ESDM_SUCCESS);
-
 
   // verify data and fail test if mismatches are found
   int mismatches = verify_data(buf_w, buf_r);
@@ -106,7 +95,6 @@ int main(int argc, char const *argv[]) {
     printf("OK\n");
   }
   assert(mismatches == 0);
-
 
   // clean up
   free(buf_w);

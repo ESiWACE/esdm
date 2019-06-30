@@ -1,15 +1,13 @@
 // Author: Julian Kunkel
 
 #include <assert.h>
+#include <mpi.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
 
-#include <mpi.h>
-
 #include "options.h"
-
 
 static int print_value(option_help *o) {
   int pos = 0;

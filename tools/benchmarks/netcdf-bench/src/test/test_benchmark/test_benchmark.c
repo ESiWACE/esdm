@@ -16,14 +16,12 @@
  * =====================================================================================
  */
 
-
 #include <netcdf.h>
 #include <netcdf_par.h>
 #include <stdio.h>
 #include <string.h>
 
 #include "../../benchmark.h"
-
 
 //void benchmark_init(benchmark_t* benchmark);
 //void benchmark_setup(
@@ -38,7 +36,6 @@
 //		const int par_access,
 //		const bool is_unlimited
 //		);
-
 
 int main(int argc, char **argv) {
   MPI_Init(&argc, &argv);

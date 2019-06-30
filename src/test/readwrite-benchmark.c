@@ -19,14 +19,13 @@
  */
 
 #include <assert.h>
+#include <esdm-internal.h>
+#include <mpi.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 
-#include <mpi.h>
-
 #include "util/test_util.h"
-#include <esdm-internal.h>
 
 int esdm_mpi_get_tasks_per_node() {
   MPI_Comm shared_comm;
@@ -67,7 +66,6 @@ void esdm_mpi_init() {
   esdm_set_procs_per_node(pPerNode);
   esdm_set_total_procs(mpi_size);
 }
-
 
 int main(int argc, char *argv[]) {
   int provided;

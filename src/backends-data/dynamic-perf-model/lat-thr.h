@@ -16,10 +16,9 @@
 #ifndef ESDM_BACKENDS_DYNAMIC_PERF_MODEL_H
 #define ESDM_BACKENDS_DYNAMIC_PERF_MODEL_H
 
+#include <esdm.h>
 #include <jansson.h>
 #include <pthread.h>
-
-#include <esdm.h>
 
 typedef struct {
   double latency;                                                                         // seconds
@@ -36,6 +35,7 @@ typedef struct {
 } esdm_dynamic_perf_model_lat_thp_t;
 
 int esdm_backend_t_init_dynamic_perf_model_lat_thp(esdm_dynamic_perf_model_lat_thp_t *data);
+
 int esdm_backend_t_finalize_dynamic_perf_model_lat_thp(esdm_dynamic_perf_model_lat_thp_t *data);
 
 int esdm_backend_t_parse_dynamic_perf_model_lat_thp(json_t *perf_model_str, esdm_dynamic_perf_model_lat_thp_t *out_data);

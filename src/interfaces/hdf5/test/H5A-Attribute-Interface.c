@@ -14,17 +14,14 @@
  * along with ESDM.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-
 /**
  * @file
  * @brief Test for HDF5 attribute interface on top of ESDM.
  */
 
+#include <assert.h>
 #include <hdf5.h>
 #include <stdio.h>
-
-#include <assert.h>
-
 
 int main() {
   hid_t fprop;
@@ -36,20 +33,16 @@ int main() {
   hsize_t dims;
   int attr_data[2];
 
-
   char *filename = "file-test.h5";
-
 
   // SET VOL PLUGIN /////////////////////////////////////////////////////////
   fprop = H5Pcreate(H5P_FILE_ACCESS);
   H5Pset_vol(fprop, vol_id, &fprop);
 
-
   // MOCK SETUP /////////////////////////////////////////////////////////////
   /* Initialize the attribute data. */
   attr_data[0] = 100;
   attr_data[1] = 200;
-
 
   /* Open an existing file. */
   file_id = H5Fopen(filename, H5F_ACC_RDWR, fprop);
@@ -61,7 +54,6 @@ int main() {
   dims = 2;
   dataspace_id = H5Screate_simple(1, &dims, NULL);
 
-
   // CREATE /////////////////////////////////////////////////////////////////
   /* Create a dataset attribute. */
   attribute_id = H5Acreate2(dataset_id, "Units", H5T_STD_I32BE, dataspace_id,
@@ -70,11 +62,9 @@ int main() {
   /* Write the attribute data. */
   status = H5Awrite(attribute_id, H5T_NATIVE_INT, attr_data);
 
-
   // CLOSE //////////////////////////////////////////////////////////////////
   /* Close the attribute. */
   status = H5Aclose(attribute_id);
-
 
   // TODO
   // OPEN ///////////////////////////////////////////////////////////////////
@@ -85,7 +75,6 @@ int main() {
   // SPECIFIC ///////////////////////////////////////////////////////////////
   // OPTIONAL ///////////////////////////////////////////////////////////////
 
-
   // MOCK CLEANUP ///////////////////////////////////////////////////////////
   /* Close the dataspace. */
   status = H5Sclose(dataspace_id);
@@ -95,7 +84,6 @@ int main() {
 
   /* Close the file. */
   status = H5Fclose(file_id);
-
 
   // Clean up ///////////////////////////////////////////////////////////////
   H5VLunregister(vol_id);

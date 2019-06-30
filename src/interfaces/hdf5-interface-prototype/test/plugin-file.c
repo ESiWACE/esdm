@@ -29,20 +29,16 @@ int main() {
   fprop = H5Pcreate(H5P_FILE_ACCESS);
   H5Pset_vol(fprop, vol_id, &fprop);
 
-
   // CREATE /////////////////////////////////////////////////////////////////
   file_id = H5Fcreate(FILE, H5F_ACC_TRUNC, H5P_DEFAULT, fprop);
   H5VLget_plugin_name(file_id, name, 1024);
   printf("VOL plugin in use: %s\n", name);
 
-
   // CLOSE //////////////////////////////////////////////////////////////////
   status = H5Fclose(file_id);
 
-
   // OPEN ///////////////////////////////////////////////////////////////////
   file_id = H5Fopen(FILE, H5P_DEFAULT, fprop);
-
 
   // Clean up ///////////////////////////////////////////////////////////////
   H5VLunregister(vol_id);

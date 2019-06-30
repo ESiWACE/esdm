@@ -37,15 +37,12 @@
 #define PAGE_4K (4096ULL)
 #define BLOCKSIZE (PAGE_4K)
 #define BLOCKMASK (BLOCKSIZE - 1)
-
 #define WOS_HOST "host"
 #define WOS_POLICY "policy"
 #define WOS_OBJ_NUM 1
 #define WOS_OBJECT_ID "object_id"
-
 #define DEBUG(fmt) ESDM_DEBUG(fmt)
 #define DEBUG_FMT(fmt, ...) ESDM_DEBUG_COM_FMT("WOS", fmt, __VA_ARGS__)
-
 
 int wos_get_param(const char *conf, char **output, const char *param) {
   if (!conf || !output) {
@@ -83,16 +80,13 @@ int wos_get_param(const char *conf, char **output, const char *param) {
   return ESDM_SUCCESS;
 }
 
-
 int wos_get_host(const char *conf, char **host) {
   return wos_get_param(conf, host, WOS_HOST);
 }
 
-
 int wos_get_policy(const char *conf, char **policy) {
   return wos_get_param(conf, policy, WOS_POLICY);
 }
-
 
 void wos_delete_oid_list(esdm_backend_t_wos_t *ebm) {
   if (ebm->oid_list) {
@@ -107,7 +101,6 @@ void wos_delete_oid_list(esdm_backend_t_wos_t *ebm) {
     ebm->size_list = NULL;
   }
 }
-
 
 int wos_object_list_encode(t_WosOID **oid_list, char **out_object_id) {
   if (!out_object_id) {
@@ -137,7 +130,6 @@ int wos_object_list_encode(t_WosOID **oid_list, char **out_object_id) {
 
   return ESDM_SUCCESS;
 }
-
 
 int esdm_backend_t_wos_init(const char *conf, esdm_backend_t *eb) {
   if (!eb) {
@@ -193,7 +185,6 @@ int esdm_backend_t_wos_init(const char *conf, esdm_backend_t *eb) {
   return ESDM_SUCCESS;
 }
 
-
 int esdm_backend_t_wos_fini(esdm_backend_t *eb) {
   if (!eb) {
     DEBUG("Unable to get struct");
@@ -233,7 +224,6 @@ int esdm_backend_t_wos_fini(esdm_backend_t *eb) {
 
   return ESDM_SUCCESS;
 }
-
 
 int esdm_backend_t_wos_alloc(esdm_backend_t *eb, int n_dims, int *dims_size, esdm_type_t type, char **out_object_id, char **out_wos_metadata) {
   if (!out_object_id || !out_wos_metadata) {
@@ -322,7 +312,6 @@ int esdm_backend_t_wos_alloc(esdm_backend_t *eb, int n_dims, int *dims_size, esd
   return ESDM_SUCCESS;
 }
 
-
 int esdm_backend_t_wos_open(esdm_backend_t *eb, char *object_id, void **obj_handle) {
   if (!object_id || !obj_handle) {
     DEBUG("Null pointer");
@@ -376,7 +365,6 @@ int esdm_backend_t_wos_open(esdm_backend_t *eb, char *object_id, void **obj_hand
   return ESDM_SUCCESS;
 }
 
-
 int esdm_backend_t_wos_delete(esdm_backend_t *eb, void *obj_handle) {
   if (!obj_handle) {
     DEBUG("Null pointer");
@@ -415,7 +403,6 @@ int esdm_backend_t_wos_delete(esdm_backend_t *eb, void *obj_handle) {
 
   return ESDM_SUCCESS;
 }
-
 
 int esdm_backend_t_wos_write(esdm_backend_t *eb, void *obj_handle, uint64_t start, uint64_t count, esdm_type_t type, void *data) {
   if (!obj_handle) {
@@ -507,7 +494,6 @@ int esdm_backend_t_wos_write(esdm_backend_t *eb, void *obj_handle, uint64_t star
   return rc;
 }
 
-
 int esdm_backend_t_wos_read(esdm_backend_t *eb, void *obj_handle, uint64_t start, uint64_t count, esdm_type_t type, void *data) {
   if (!obj_handle) {
     DEBUG("Null pointer");
@@ -589,7 +575,6 @@ int esdm_backend_t_wos_read(esdm_backend_t *eb, void *obj_handle, uint64_t start
   return ESDM_SUCCESS;
 }
 
-
 int esdm_backend_t_wos_close(esdm_backend_t *eb, void *obj_handle) {
   if (!eb || !obj_handle) {
     DEBUG("Null pointer");
@@ -600,7 +585,6 @@ int esdm_backend_t_wos_close(esdm_backend_t *eb, void *obj_handle) {
 
   return ESDM_SUCCESS;
 }
-
 
 int wos_backend_performance_check(esdm_backend_t *eb, int data_size, float *out_time) {
   if (!eb || (data_size <= 0))
@@ -658,7 +642,6 @@ fini:
   return ESDM_SUCCESS;
 }
 
-
 int wos_backend_performance_estimate(esdm_backend_t *eb, esdm_fragment_t *fragment, float *out_time) {
   if (!fragment || !out_time) {
     DEBUG("Null pointer");
@@ -678,7 +661,6 @@ int wos_backend_performance_estimate(esdm_backend_t *eb, esdm_fragment_t *fragme
 
   return esdm_backend_t_estimate_dynamic_perf_model_lat_thp(&ebm->perf_model, fragment, out_time);
 }
-
 
 int esdm_backend_t_wos_fragment_retrieve(esdm_backend_t *backend, esdm_fragment_t *fragment, json_t *metadata) {
   char *obj_id = NULL;
@@ -740,7 +722,6 @@ _RETRIEVE_EXIT:
 
   return rc;
 }
-
 
 int esdm_backend_t_wos_fragment_update(esdm_backend_t *backend, esdm_fragment_t *fragment) {
   char *obj_id = NULL;
@@ -825,7 +806,6 @@ _UPDATE_EXIT:
   return rc;
 }
 
-
 int esdm_backend_t_wos_fragment_delete(esdm_backend_t *backend, esdm_fragment_t *fragment, json_t *metadata) {
   char *obj_id = NULL;
   void *obj_handle = NULL;
@@ -886,7 +866,6 @@ _DELETE_EXIT:
   return rc;
 }
 
-
 int esdm_backend_t_wos_fragment_mkfs(esdm_backend_t *backend, int enforce_format) {
   if (!backend)
     return ESDM_ERROR;
@@ -937,7 +916,6 @@ NULL,                                            // fragment create
 (int (*)())esdm_backend_t_wos_fragment_mkfs,     // TODO
 },
 };
-
 
 esdm_backend_t *wos_backend_init(esdm_config_backend_t *config) {
   if (!config || !config->type || strcasecmp(config->type, "WOS") || !config->target) {

@@ -3,19 +3,18 @@
  *
  *       Filename:  db-sqlite.c
  *
- *    Description:  
+ *    Description:
  *
  *        Version:  1.0
  *        Created:  07/19/2017 08:46:14 PM
  *       Revision:  none
  *       Compiler:  gcc
  *
- *         Author:  YOUR NAME (), 
- *   Organization:  
+ *         Author:  YOUR NAME (),
+ *   Organization:
  *
  * =====================================================================================
  */
-
 
 #include <hdf5.h>
 #include <sqlite3.h>
@@ -26,7 +25,6 @@
 #include "db_iface.h"
 
 char *err_msg = 0; /* pointer to an error string */
-
 
 void DB_connect(const char *db_fn, void **db_ptr) {
   TRACEMSG("");
@@ -44,14 +42,12 @@ void DB_connect(const char *db_fn, void **db_ptr) {
   //	sqlite3_busy_timeout(*db, 10000);
 }
 
-
 void DB_disconnect(void *db_ptr) {
   TRACEMSG("");
   sqlite3 *db = (sqlite3 *)db_ptr;
   sqlite3_close(db);
   db = NULL;
 }
-
 
 //typedef struct {
 //    hbool_t             corder_valid;   /* Indicate if creation order is valid */
@@ -67,7 +63,6 @@ int DBA_get_info(SQO_t *obj, const char *attr_name, H5A_info_t *ainfo) {
   ainfo->data_size = 100;
   return ret;
 }
-
 
 int DBF_create(SQF_t *file, unsigned flags, void *db_ptr, hid_t fcpl_id, hid_t fapl_id) {
   int ret = 0;
@@ -185,7 +180,6 @@ int DBF_create(SQF_t *file, unsigned flags, void *db_ptr, hid_t fcpl_id, hid_t f
   return ret;
 }
 
-
 int DBF_get_fapl(SQF_t *file, hid_t *plist) {
   TRACEMSG("");
   int ret = 0;
@@ -219,7 +213,6 @@ int DBF_get_fapl(SQF_t *file, hid_t *plist) {
   sqlite3_finalize(res);
   return ret;
 }
-
 
 int DBF_get_fcpl(SQF_t *file, hid_t *plist) {
   TRACEMSG("");
@@ -255,7 +248,6 @@ int DBF_get_fcpl(SQF_t *file, hid_t *plist) {
   return ret;
 }
 
-
 int DB_entry_exists(SQO_t *obj, const char *table, const char *name, int *exists) {
   TRACEMSG("");
   sqlite3 *db = (sqlite3 *)obj->root->db;
@@ -290,7 +282,6 @@ int DB_entry_exists(SQO_t *obj, const char *table, const char *name, int *exists
   free(sql_query);
   return ret;
 }
-
 
 int DB_create_name_list(SQO_t *parent, H5VL_loc_params_t loc_params, const char *tab_name, char ***attr_list, size_t *attr_list_size) {
   sqlite3 *db = (sqlite3 *)parent->root->db;
@@ -370,7 +361,6 @@ int DB_create_name_list(SQO_t *parent, H5VL_loc_params_t loc_params, const char 
   return ret;
 }
 
-
 int DB_destroy_name_list(char **list, size_t size) {
   for (size_t i = 0; i < size; ++i) {
     free(list[i]);
@@ -380,7 +370,6 @@ int DB_destroy_name_list(char **list, size_t size) {
   list = NULL;
   return 0;
 }
-
 
 int DBA_create(SQA_t *attr, H5VL_loc_params_t loc_params, hid_t acpl_id, hid_t aapl_id, hid_t dxpl_id) {
   TRACEMSG("");
@@ -460,7 +449,6 @@ int DBA_create(SQA_t *attr, H5VL_loc_params_t loc_params, hid_t acpl_id, hid_t a
   return ret;
 }
 
-
 int DBA_open(SQO_t *parent, H5VL_loc_params_t loc_params, const char *attr_name, SQA_t *attr) {
   TRACEMSG("");
   sqlite3 *db = (sqlite3 *)parent->root->db;
@@ -497,7 +485,6 @@ int DBA_open(SQO_t *parent, H5VL_loc_params_t loc_params, const char *attr_name,
   sqlite3_finalize(res);
   return ret;
 }
-
 
 int DBA_open_by_idx(SQO_t *obj, H5VL_loc_params_t loc_params, const unsigned int idx, SQA_t *attr) {
   TRACEMSG("");
@@ -556,7 +543,6 @@ int DBA_open_by_idx(SQO_t *obj, H5VL_loc_params_t loc_params, const unsigned int
   return ret;
 }
 
-
 int DBA_get_acpl(SQA_t *attr, hid_t *acpl_id) {
   TRACEMSG("");
   int ret = 0;
@@ -596,7 +582,6 @@ int DBA_get_acpl(SQA_t *attr, hid_t *acpl_id) {
   sqlite3_finalize(res);
   return ret;
 }
-
 
 int DBA_get_type(SQA_t *attr, hid_t *type_id) {
   TRACEMSG("");
@@ -638,7 +623,6 @@ int DBA_get_type(SQA_t *attr, hid_t *type_id) {
   return ret;
 }
 
-
 int DBA_get_space(SQA_t *attr, hid_t *space_id) {
   TRACEMSG("");
   int ret = 0;
@@ -679,7 +663,6 @@ int DBA_get_space(SQA_t *attr, hid_t *space_id) {
   return ret;
 }
 
-
 int DBA_write(SQA_t *attr, const void *data) {
   TRACEMSG("");
   int ret = 0;
@@ -704,7 +687,6 @@ int DBA_write(SQA_t *attr, const void *data) {
   sqlite3_finalize(res);
   return ret;
 }
-
 
 int DBA_read(SQA_t *attr, void *data) {
   TRACEMSG("");
@@ -732,7 +714,6 @@ int DBA_read(SQA_t *attr, void *data) {
   sqlite3_finalize(res);
   return ret;
 }
-
 
 int DBG_create(SQG_t *group, H5VL_loc_params_t loc_params, hid_t gcpl_id, hid_t gapl_id, hid_t gxpl_id) {
   TRACEMSG("");
@@ -778,7 +759,6 @@ int DBG_create(SQG_t *group, H5VL_loc_params_t loc_params, hid_t gcpl_id, hid_t 
   return ret;
 }
 
-
 int DBG_open(SQO_t *parent, H5VL_loc_params_t loc_params, const char *group_name, SQG_t *group) {
   TRACEMSG("");
   int ret = 0;
@@ -821,7 +801,6 @@ int DBG_open(SQO_t *parent, H5VL_loc_params_t loc_params, const char *group_name
   return ret;
 }
 
-
 int DBG_get_gcpl(SQG_t *group, hid_t *plist) {
   TRACEMSG("");
   int ret = 0;
@@ -856,12 +835,10 @@ int DBG_get_gcpl(SQG_t *group, hid_t *plist) {
   return ret;
 }
 
-
 static int busy_handler(void *parm, int n) {
   DEBUGMSG("Handler activated");
   return 0;
 }
-
 
 int DBD_create(SQD_t *dset, H5VL_loc_params_t loc_params, hid_t dcpl_id, hid_t dapl_id, hid_t dxpl_id) {
   TRACEMSG("");
@@ -933,7 +910,6 @@ int DBD_create(SQD_t *dset, H5VL_loc_params_t loc_params, hid_t dcpl_id, hid_t d
   return ret;
 }
 
-
 int DBD_open(SQO_t *parent, H5VL_loc_params_t loc_params, const char *name, SQD_t *dset) {
   TRACEMSG("");
   int ret = 0;
@@ -979,7 +955,6 @@ int DBD_open(SQO_t *parent, H5VL_loc_params_t loc_params, const char *name, SQD_
   return ret;
 }
 
-
 int DBD_get_dcpl(SQD_t *dset, hid_t *plist) {
   TRACEMSG("");
   int ret = 0;
@@ -1020,7 +995,6 @@ int DBD_get_dcpl(SQD_t *dset, hid_t *plist) {
   sqlite3_finalize(res);
   return ret;
 }
-
 
 int DBD_get_dapl(SQD_t *dset, hid_t *plist) {
   TRACEMSG("");
@@ -1063,7 +1037,6 @@ int DBD_get_dapl(SQD_t *dset, hid_t *plist) {
   return ret;
 }
 
-
 int DBD_get_type(SQD_t *dset, hid_t *type_id) {
   TRACEMSG("");
   int ret = 0;
@@ -1104,7 +1077,6 @@ int DBD_get_type(SQD_t *dset, hid_t *type_id) {
   return ret;
 }
 
-
 int DBD_get_space(SQD_t *dset, hid_t *space_id) {
   TRACEMSG("");
   int ret = 0;
@@ -1143,7 +1115,6 @@ int DBD_get_space(SQD_t *dset, hid_t *space_id) {
   sqlite3_finalize(res);
   return ret;
 }
-
 
 hid_t DBO_open(SQO_t *obj, H5VL_loc_params_t loc_params) {
   hid_t res = -1;

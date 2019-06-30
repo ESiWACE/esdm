@@ -13,21 +13,17 @@
 // You should have received a copy of the GNU Lesser General Public License
 // along with h5-memvol.  If not, see <http://www.gnu.org/licenses/>.
 
+#include <assert.h>
 #include <hdf5.h>
 #include <stdio.h>
-
-#include <assert.h>
-
 
 //#define H5FILE_NAME   "SDScompound.h5"
 #define DATASETNAME "ArrayOfStructures"
 #define LENGTH 10
 #define RANK 1
 
-
 int main() {
   char *filename = "file-compound-type.h5";
-
 
   hid_t fprop;
   hid_t vol_id = H5VLregister_by_name("h5-esdm");
@@ -65,7 +61,6 @@ int main() {
 
   // TODO
   // MOCK SETUP /////////////////////////////////////////////////////////////
-
 
   /*
      * Initialize the data
@@ -177,7 +172,6 @@ int main() {
   H5Dclose(dataset);
   H5Fclose(file);
 
-
   // MOCK CLEANUP ///////////////////////////////////////////////////////////
 
   // CREATE /////////////////////////////////////////////////////////////////
@@ -188,7 +182,6 @@ int main() {
   // GET ////////////////////////////////////////////////////////////////////
   // SPECIFIC ///////////////////////////////////////////////////////////////
   // OPTIONAL ///////////////////////////////////////////////////////////////
-
 
   // Clean up ///////////////////////////////////////////////////////////////
   H5VLunregister(vol_id);

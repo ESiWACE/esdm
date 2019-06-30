@@ -1,5 +1,6 @@
 #include <assert.h>
 #include <fcntl.h>
+#include <lfs-mpi.h>
 #include <mpi.h>
 #include <stdint.h>
 #include <stdio.h>
@@ -18,8 +19,6 @@ char *bench_type = "dummy";
 char *bench_type = "LFS";
 #endif
 */
-#include <lfs-mpi.h>
-
 
 void clear_cache() {
   sync();
@@ -28,7 +27,6 @@ void clear_cache() {
   //      write(fd, "1", 1);
   //      close(fd);
 }
-
 
 int main(int argc, char *argv[]) {
   printf("---------------------\n");
@@ -55,7 +53,6 @@ int main(int argc, char *argv[]) {
   MPI_Comm_size(MPI_COMM_WORLD, &num_procs);
 
   printf("Hello world! I'm process %i out of %i processes\n", my_id, num_procs);
-
 
   lfs_mpi_file_p myfd;
   int ret = lfs_mpi_open(&myfd, "MP.data", O_TRUNC | O_CREAT | O_RDWR, S_IRUSR | S_IWUSR, MPI_COMM_WORLD);

@@ -30,7 +30,6 @@ typedef struct {
 
 } mongodb_backend_options_t;
 
-
 // Internal functions used by this backend.
 typedef struct {
   mongodb_backend_options_t *options;
@@ -40,7 +39,6 @@ typedef struct {
   mongoc_database_t *database;
   mongoc_collection_t *collection;
 } mongodb_backend_data_t;
-
 
 // forward declarations
 

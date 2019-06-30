@@ -1,10 +1,8 @@
 #include <stdio.h>
-
 #include <stdlib.h>
 
 typedef enum type_t { TYPE_SCHUHE,
   TYPE_BANANE } type_t;
-
 
 struct box_t {
   double x;
@@ -12,12 +10,10 @@ struct box_t {
   double z;
 };
 
-
 struct pig_t {
   int days_old;
   int weight;
 };
-
 
 typedef struct H5VL_loc_params_t {
   type_t type;
@@ -26,7 +22,6 @@ typedef struct H5VL_loc_params_t {
     struct pig_t pig_t;
   } loc_data;
 } H5VL_loc_params_t;
-
 
 void do_something(void *obj, H5VL_loc_params_t etype) {
   switch (etype.type) {
@@ -56,7 +51,6 @@ int main(int argc, char **argv) {
 
   //box.z = 15.1;
 
-
   pig_t pig;
 
   //pig.days_old = 230;
@@ -70,7 +64,6 @@ int main(int argc, char **argv) {
   H5VL_loc_params_t parr;
   parr.type = TYPE_BANANE;
   parr.loc_data.pig_t.days_old = 150;
-
 
   //par.type = TYPE_SCHUHE;
 

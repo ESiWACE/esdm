@@ -21,7 +21,6 @@
 
 #include "esdm.h"
 
-
 /**
 * Initializes the CLOVIS plugin. In particular this involves:
 *

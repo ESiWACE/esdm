@@ -13,7 +13,6 @@
 // You should have received a copy of the GNU Lesser General Public License
 // along with h5-memvol.  If not, see <http://www.gnu.org/licenses/>.
 
-
 // extract from ../install/download/vol/src/H5Fpkg.h:233 for reference (consider any structure strictly private!)
 ///*
 // * Define the structure to store the file information for HDF5 files. One of
@@ -110,20 +109,16 @@
 //#endif /* H5_HAVE_PARALLEL */
 //};
 
-
 // ../install/download/vol/src/H5VLnative.c
 // ../install/download/vol/src/H5G.c
 
-
 static GHashTable *files_tbl = NULL;
-
 
 static void *memvol_file_create(const char *name, unsigned flags, hid_t fcpl_id, hid_t fapl_id, hid_t fxpl_id, void **req) {
   memvol_object_t *object;
   memvol_file_t *file;
 
   debugI("%s\n", __func__);
-
 
   // analyse property lists
   size_t nprops = 0;
@@ -141,7 +136,6 @@ static void *memvol_file_create(const char *name, unsigned flags, hid_t fcpl_id,
   debugI("%s: fxpl_id=%ld nprops= %d \n", __func__, fcpl_id, nprops);
   H5Piterate(fxpl_id, NULL, print_property, iter_data);
 
-
   // create files hash map if not already existent
   if (files_tbl == NULL) {
     files_tbl = g_hash_table_new(g_str_hash, g_str_equal);
@@ -150,9 +144,7 @@ static void *memvol_file_create(const char *name, unsigned flags, hid_t fcpl_id,
   // lookup the filename in the lsit of files
   file = g_hash_table_lookup(files_tbl, name);
 
-
   debugI("%s: files_tbl.size=%d\n", __func__, g_hash_table_size(files_tbl));
-
 
   // conform to HDF5: invalid https://www.hdfgroup.org/HDF5/doc/RM/RM_H5F.html#File-Create
   if ((flags & H5F_ACC_EXCL) && file != NULL) {
@@ -163,7 +155,6 @@ static void *memvol_file_create(const char *name, unsigned flags, hid_t fcpl_id,
     // TODO: truncate the file. Free all structures...
     memvol_group_init(&file->root_grp);
   }
-
 
   // create the file if not already existent
   if (file == NULL) {
@@ -204,13 +195,10 @@ static void *memvol_file_create(const char *name, unsigned flags, hid_t fcpl_id,
 
   debugI("%s: New file=%p with name=%s\n", __func__, (void *)file, name);
 
-
   debugI("%s: files_tbl.size=%d\n", __func__, g_hash_table_size(files_tbl));
-
 
   return (void *)object;
 }
-
 
 static void *memvol_file_open(const char *name, unsigned flags, hid_t fapl_id, hid_t dxpl_id, void **req) {
   memvol_object_t *object;
@@ -221,7 +209,6 @@ static void *memvol_file_open(const char *name, unsigned flags, hid_t fapl_id, h
 
   return (void *)object;
 }
-
 
 static herr_t memvol_file_get(void *file, H5VL_file_get_t get_type, hid_t dxpl_id, void **req, va_list arguments) {
   herr_t ret_value = SUCCEED;
@@ -342,7 +329,6 @@ static herr_t memvol_file_get(void *file, H5VL_file_get_t get_type, hid_t dxpl_i
   return ret_value;
 }
 
-
 herr_t memvol_file_specific(void *obj, H5VL_file_specific_t specific_type, hid_t dxpl_id, void **req, va_list arguments) {
   debugI("%s\n", __func__);
 
@@ -351,7 +337,6 @@ herr_t memvol_file_specific(void *obj, H5VL_file_specific_t specific_type, hid_t
   return ret_value;
 }
 
-
 herr_t memvol_file_optional(void *obj, hid_t dxpl_id, void **req, va_list arguments) {
   debugI("%s\n", __func__);
 
@@ -359,7 +344,6 @@ herr_t memvol_file_optional(void *obj, hid_t dxpl_id, void **req, va_list argume
 
   return ret_value;
 }
-
 
 static herr_t memvol_file_close(void *file, hid_t dxpl_id, void **req) {
   debugI("%s\n", __func__);

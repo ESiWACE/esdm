@@ -3,7 +3,6 @@
 */
 
 #include <assert.h>
-
 #include <backends-metadata/metadummy/metadummy.h>
 
 int main() {

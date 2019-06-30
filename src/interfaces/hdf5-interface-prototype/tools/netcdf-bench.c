@@ -31,11 +31,9 @@ int main(int argc, char **argv) {
   int dimsize = 3;
   int var, dimids[dimsize];
 
-
   MPI_Init(&argc, &argv);
 
   // ret = nc_create(file, NC_NETCDF4, & ncid);
-
 
   //ret = nc_create_par(file, NC_MPIIO, MPI_COMM_WORLD, MPI_INFO_NULL, & ncid);
   ret = nc_create(file, NC_NETCDF4 | NC_H5VOL_MEMVOL, &ncid);
@@ -44,12 +42,10 @@ int main(int argc, char **argv) {
   ret = nc_def_dim(ncid, "lat", 100, &dimids[0]);
   assert(ret == NC_NOERR);
 
-
   ret = nc_def_dim(ncid, "lon", 100, &dimids[1]);
   assert(ret == NC_NOERR);
   ret = nc_def_dim(ncid, "time", NC_UNLIMITED, &dimids[2]);
   assert(ret == NC_NOERR);
-
 
   ret = nc_def_var(ncid, "var1", NC_INT, dimsize, dimids, &var);
   assert(ret == NC_NOERR);
@@ -82,7 +78,6 @@ int main(int argc, char **argv) {
     ret = nc_get_vara_int(ncid, var, startp, countp, data);
     assert(ret == NC_NOERR);
   }
-
 
   free(data);
 

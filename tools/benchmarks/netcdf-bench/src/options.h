@@ -1,6 +1,5 @@
 // Author: Julian Kunkel
 
-
 #ifndef options_INC
 #define options_INC
 
@@ -14,7 +13,6 @@ typedef struct {
   char shortVar;
   char *longVar;
   char *help;
-
   option_value_type arg;
   char type; // data type
   void *variable;

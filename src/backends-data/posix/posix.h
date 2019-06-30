@@ -27,7 +27,6 @@ typedef struct {
   esdm_perf_model_lat_thp_t perf_model;
 } posix_backend_data_t;
 
-
 // static int mkfs(esdm_backend_t* backend, int enforce_format);
 
 /**
@@ -80,8 +79,6 @@ int posix_finalize(esdm_backend_t *backend);
 * @return pointer to backend struct
 */
 
-
 esdm_backend_t *posix_backend_init(esdm_config_backend_t *config);
-
 
 #endif

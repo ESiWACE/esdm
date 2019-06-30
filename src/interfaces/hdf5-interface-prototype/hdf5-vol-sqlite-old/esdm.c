@@ -4,7 +4,6 @@
 #include <string.h> // strcpy(), strcat(),
 #include <unistd.h> //
 
-
 #include "esdm.h"
 #include "h5_sqlite_plugin.h"
 
@@ -29,7 +28,6 @@ ESDM_policy_t policies[] = {
 {.min_total_bytes = 0, .max_total_bytes = 1024 * 1024 * 5, .min_nodes = 5, .max_nodes = 20, .min_tasks_per_node = 0, .max_tasks_per_node = 5, .tierid = ESDM_TIER_SHM},
 {.min_total_bytes = 0, .max_total_bytes = 1024 * 1024 * 5, .min_nodes = 5, .max_nodes = 20, .min_tasks_per_node = 5, .max_tasks_per_node = 70, .tierid = ESDM_TIER_SSD},
 
-
 // 16 MiB /////////
 // Nodes=1
 // Nodes=2
@@ -40,7 +38,6 @@ ESDM_policy_t policies[] = {
 // Nodes=8
 // Nodes=16
 {.min_total_bytes = 1024 * 1024 * 5, .max_total_bytes = 1024 * 1024 * 20, .min_nodes = 5, .max_nodes = 20, .min_tasks_per_node = 0, .max_tasks_per_node = 64, .tierid = ESDM_TIER_LUSTRE},
-
 
 // 128 MiB /////////
 // Nodes=1
@@ -54,11 +51,9 @@ ESDM_policy_t policies[] = {
 {.min_total_bytes = 1024 * 1024 * 20, .max_total_bytes = 1024 * 1024 * 500, .min_nodes = 2, .max_nodes = 20, .min_tasks_per_node = 0, .max_tasks_per_node = 64, .tierid = ESDM_TIER_LUSTRE},
 };
 
-
 char *esdm_suggest_tier(h5sqlite_fapl_t *fapl, int mpi_size, size_t total_bytes) {
   char rank_buf[50];
   sprintf(rank_buf, "%d", fapl->mpi_rank);
-
 
   int num_policies = sizeof(policies) / sizeof(ESDM_policy_t);
   printf("[ESDM] Considering %d policies.\n", num_policies);
@@ -67,7 +62,6 @@ char *esdm_suggest_tier(h5sqlite_fapl_t *fapl, int mpi_size, size_t total_bytes)
   //char* fname = malloc(strlen(fapl->data_fn) + strlen(rank_buf) + 1);
   //strcpy(fname, fapl->data_fn);
   //strcat(fname, rank_buf);
-
 
   printf("[ESDM] WARNIGN: do not execute using mpiexec.. this section will try to access SLURM environment variables which will result in a segfault if unpopulated\n");
 
@@ -80,7 +74,6 @@ char *esdm_suggest_tier(h5sqlite_fapl_t *fapl, int mpi_size, size_t total_bytes)
   printf("[ESDM] KNOWLEDGE: SLURM:  nodes=%d, ppn=%d  \n", slurm_nodes, slurm_ppn);
   printf("[ESDM] KNOWLEDGE: MPI  :  mpi_size=%d  \n", mpi_size);
   printf("[ESDM] KNOWLEDGE: HDF5 :  total_bytes=%d  \n", total_bytes);
-
 
   int tierid = 99;
   for (int i = 0; i < num_policies; i++) {
@@ -100,15 +93,12 @@ char *esdm_suggest_tier(h5sqlite_fapl_t *fapl, int mpi_size, size_t total_bytes)
       continue;
     }
 
-
     printf("[ESDM] P%d: size=%d-%d nodes=%d-%d ppn=%d-%d tier=%d - YES", i, policies[i].min_total_bytes, policies[i].max_total_bytes, policies[i].min_nodes, policies[i].max_nodes, policies[i].min_tasks_per_node, policies[i].max_tasks_per_node, policies[i].tierid);
-
 
     // if reached, the policy applies, the remaining policies loose
     tierid = policies[i].tierid;
     break;
   }
-
 
   char *tiername = NULL;
   switch (tierid) {
@@ -132,7 +122,6 @@ char *esdm_suggest_tier(h5sqlite_fapl_t *fapl, int mpi_size, size_t total_bytes)
   }
 
   printf("[ESDM] ADAPTIVE TIER SELECTOR: %s\n", tiername);
-
 
   return tiername;
 }

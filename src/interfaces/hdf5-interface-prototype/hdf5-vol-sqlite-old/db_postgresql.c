@@ -19,14 +19,12 @@
 #include "db_iface.h"
 #include <libpq-fe.h>
 
-
 static void
 exit_nicely(PGconn *conn) {
   //    PQfinish(conn);
   assert(false);
   exit(1);
 }
-
 
 // TODO: Fix
 void connect(const char *db_fn, void *db) {
@@ -38,7 +36,6 @@ void connect(const char *db_fn, void *db) {
   }
   file->db = conn;
 }
-
 
 void file_create_database(const char *name, unsigned flags, PGconn *conn) {
   DEBUGMSG("");
@@ -98,7 +95,6 @@ void file_create_database(const char *name, unsigned flags, PGconn *conn) {
   res = PQexec(conn, "END");
   PQclear(res);
 }
-
 
 void attr_create_database(const char *attr_name, const char *obj_name, const char *obj_type, const char *location, hid_t type_id, hid_t space_id, hid_t data_size, PGconn *conn) {
   DEBUGMSG("");
@@ -161,7 +157,6 @@ void attr_create_database(const char *attr_name, const char *obj_name, const cha
   free(space_buf);
 }
 
-
 static void attr_open_database(char *path, size_t *data_size, PGconn *conn) {
   DEBUGMSG("");
   PGresult *res;
@@ -200,7 +195,6 @@ static void attr_open_database(char *path, size_t *data_size, PGconn *conn) {
   res = PQexec(conn, "END");
   PQclear(res);
 }
-
 
 static void attr_get_database(const char *path, /*OUT*/ hid_t *type_id, /*OUT*/ hid_t *space_id, PGconn *conn) {
   DEBUGMSG("");
@@ -248,7 +242,6 @@ static void attr_get_database(const char *path, /*OUT*/ hid_t *type_id, /*OUT*/ 
   PQclear(res);
 }
 
-
 void attr_write_database(const char *location, const void *data, int size, PGconn *conn) {
   DEBUGMSG("");
   PGresult *res;
@@ -267,7 +260,6 @@ void attr_write_database(const char *location, const void *data, int size, PGcon
               "Path TEXT, "
               "Data BYTEA, "
               "PRIMARY KEY(Path));";
-
 
   res = PQexec(conn, sql);
   if (PQresultStatus(res) != PGRES_COMMAND_OK) {
@@ -293,7 +285,6 @@ void attr_write_database(const char *location, const void *data, int size, PGcon
   res = PQexec(conn, "END");
   PQclear(res);
 }
-
 
 void attr_read_database(const char *location, /*OUT*/ void *buf, PGconn *conn) {
   DEBUGMSG("");
@@ -328,7 +319,6 @@ void attr_read_database(const char *location, /*OUT*/ void *buf, PGconn *conn) {
     PQfreemem(data_size_buf);
   }
   PQclear(res);
-
 
   void group_create_database(const char *group_name, const char *obj_name, const char *obj_type, const char *location, PGconn *conn) {
     DEBUGMSG("");
@@ -377,7 +367,6 @@ void attr_read_database(const char *location, /*OUT*/ void *buf, PGconn *conn) {
     //	}
     //MPI_Barrier(MPI_COMM_WORLD);
   }
-
 
   static void dataset_create_database(const char *dataset_name, const char *obj_name, const char *obj_type, const char *location, hid_t type_id, hid_t space_id, hid_t data_size, PGconn *conn) {
     DEBUGMSG("");
@@ -446,7 +435,6 @@ void attr_read_database(const char *location, /*OUT*/ void *buf, PGconn *conn) {
     free(space_buf);
   }
 
-
   static void dataset_open_database(const char *path, size_t *data_size, PGconn *conn) {
     DEBUGMSG("");
     PGresult *res;
@@ -485,7 +473,6 @@ void attr_read_database(const char *location, /*OUT*/ void *buf, PGconn *conn) {
     res = PQexec(conn, "END");
     PQclear(res);
   }
-
 
   static void dataset_get_database(const char *path, /*OUT*/ hid_t *type_id, /*OUT*/ hid_t *space_id, PGconn *conn) {
     DEBUGMSG("");
@@ -536,7 +523,6 @@ void attr_read_database(const char *location, /*OUT*/ void *buf, PGconn *conn) {
       assert(-1 != H5Tget_class(*type_id));
       *space_id = H5Sdecode(space_buf);
     }
-
 
     PQclear(res);
 

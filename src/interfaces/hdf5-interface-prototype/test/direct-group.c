@@ -13,16 +13,14 @@
 // You should have received a copy of the GNU Lesser General Public License
 // along with h5-memvol.  If not, see <http://www.gnu.org/licenses/>.
 
-#include <stdio.h>
-
 #include <memvol.h>
+#include <stdio.h>
 
 int main() {
   hid_t fprop;
   hid_t fid;
   hid_t vol_id = H5VL_memvol_init();
   herr_t status;
-
   hid_t g1, g2;
   hid_t plist;
 
@@ -69,7 +67,6 @@ int main() {
 
   H5Fclose(fid);
   H5VL_memvol_finalize();
-
 
   printf("Status: %d\n", status);
 

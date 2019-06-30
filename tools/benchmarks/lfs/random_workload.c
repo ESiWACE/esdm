@@ -5,10 +5,10 @@
 #include <stdlib.h>
 #include <string.h>
 #include <sys/stat.h>
+#include <sys/time.h>
 #include <sys/types.h>
 #include <unistd.h>
 //#include <mpi.h>
-#include <sys/time.h>
 
 #ifdef LFS_DUMMY_OPERATION
 #  include <lfs-dummy.h>
@@ -25,7 +25,6 @@ void clear_cache() {
   //      write(fd, "1", 1);
   //      close(fd);
 }
-
 
 int main(int argc, char *argv[]) {
   printf("---------------------\n");

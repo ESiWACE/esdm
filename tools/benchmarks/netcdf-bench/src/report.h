@@ -16,7 +16,6 @@
  * =====================================================================================
  */
 
-
 #ifndef report_INC
 #define report_INC
 
@@ -39,14 +38,39 @@ typedef struct mam_t {
   double max;
 } mam_t;
 
-
 typedef struct report_t {
   benchmark_t *bm;
 } report_t;
 
+/**
+ * @brief
+ *
+ * @param
+ */
 void report_init(report_t *report);
+
+/**
+ * @brief
+ *
+ * @param report
+ * @param bm
+ */
 void report_setup(report_t *report, benchmark_t *bm);
+
+/**
+ * @brief
+ *
+ * @param report
+ */
 void report_destroy(report_t *report);
+
+/**
+ * @brief
+ *
+ * @param report
+ * @param type
+ */
+
 void report_print(const report_t *report, const report_type_t type);
 
 #endif /* ----- #ifndef report_INC  ----- */

@@ -7,11 +7,10 @@
 #ifndef ESDM_INTERNAL_H
 #define ESDM_INTERNAL_H
 
-#include <jansson.h>
-
 #include <esdm-datatypes-internal.h>
 #include <esdm-debug.h>
 #include <esdm.h>
+#include <jansson.h>
 
 // ESDM Core //////////////////////////////////////////////////////////////////
 
@@ -25,7 +24,9 @@
  */
 
 esdm_config_t *esdm_config_init();
+
 esdm_config_t *esdm_config_init_from_str(const char *str);
+
 esdm_status esdm_config_finalize(esdm_instance_t *esdm);
 
 /**
@@ -42,18 +43,19 @@ char *esdm_config_gather();
  */
 
 esdm_config_backends_t *esdm_config_get_backends(esdm_instance_t *esdm);
+
 esdm_config_backend_t *esdm_config_get_metadata_coordinator(esdm_instance_t *esdm);
 
 // Datatypes
 
-
 // Modules
 esdm_modules_t *esdm_modules_init(esdm_instance_t *esdm);
+
 esdm_status esdm_modules_finalize();
+
 esdm_status esdm_modules_register();
 
 esdm_status esdm_modules_get_by_type(esdm_module_type_t type, esdm_module_type_array_t **array);
-
 
 // I/O Scheduler
 
@@ -68,8 +70,11 @@ esdm_status esdm_modules_get_by_type(esdm_module_type_t type, esdm_module_type_a
  */
 
 esdm_scheduler_t *esdm_scheduler_init(esdm_instance_t *esdm);
+
 esdm_status esdm_scheduler_finalize(esdm_instance_t *esdm);
+
 esdm_status esdm_scheduler_status_init(io_request_status_t *status);
+
 esdm_status esdm_scheduler_status_finalize(io_request_status_t *status);
 
 /**
@@ -80,9 +85,10 @@ esdm_status esdm_scheduler_status_finalize(io_request_status_t *status);
  */
 
 esdm_status esdm_scheduler_process_blocking(esdm_instance_t *esdm, io_operation_t type, esdm_dataset_t *dataset, void *buf, esdm_dataspace_t *subspace);
-esdm_status esdm_scheduler_enqueue(esdm_instance_t *esdm, io_request_status_t *status, io_operation_t type, esdm_dataset_t *dataset, void *buf, esdm_dataspace_t *subspace);
-esdm_status esdm_scheduler_wait(io_request_status_t *status);
 
+esdm_status esdm_scheduler_enqueue(esdm_instance_t *esdm, io_request_status_t *status, io_operation_t type, esdm_dataset_t *dataset, void *buf, esdm_dataspace_t *subspace);
+
+esdm_status esdm_scheduler_wait(io_request_status_t *status);
 
 // Layout
 
@@ -139,6 +145,7 @@ esdm_status esdm_layout_stat(char *desc);
 void fetch_performance_from_backend(gpointer key, gpointer value, gpointer user_data);
 
 // Performance Model
+
 esdm_performance_t *esdm_performance_init(esdm_instance_t *esdm);
 
 /**
@@ -148,11 +155,12 @@ esdm_performance_t *esdm_performance_init(esdm_instance_t *esdm);
  */
 
 esdm_status esdm_performance_recommendation(esdm_instance_t *esdm, esdm_fragment_t *in, esdm_fragment_t *out);
+
 esdm_status esdm_performance_finalize();
 
 // Backend (generic)
-esdm_status esdm_backend_t_estimate_performance(esdm_backend_t *backend, int fragment);
 
+esdm_status esdm_backend_t_estimate_performance(esdm_backend_t *backend, int fragment);
 
 ///////////////////////////////////////////////////////////////////////////////
 // UTILS //////////////////////////////////////////////////////////////////////
@@ -167,6 +175,7 @@ esdm_status esdm_backend_t_estimate_performance(esdm_backend_t *backend, int fra
 void print_stat(struct stat sb);
 
 int mkdir_recursive(const char *path);
+
 void posix_recursive_remove(const char *path);
 
 int read_file(char *filepath, char **buf);
@@ -188,6 +197,7 @@ void esdm_print_hashtable(GHashTable *tbl);
 esdm_status esdm_metadata_t_init_(esdm_metadata_t **output_metadata);
 
 json_t *load_json(const char *str);
+
 int ea_is_valid_name(const char *str);
 
 #endif

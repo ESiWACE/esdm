@@ -19,10 +19,9 @@
  */
 
 #include <assert.h>
+#include <esdm.h>
 #include <stdio.h>
 #include <stdlib.h>
-
-#include <esdm.h>
 
 #define HEIGHT 10
 #define WIDTH 4096
@@ -43,10 +42,8 @@ int verify_data(uint64_t *a, uint64_t *b) {
     }
   }
 
-
   return mismatches;
 }
-
 
 int main(int argc, char const *argv[]) {
   // prepare data
@@ -60,12 +57,10 @@ int main(int argc, char const *argv[]) {
     }
   }
 
-
   // Interaction with ESDM
   esdm_status ret;
   esdm_container_t *container = NULL;
   esdm_dataset_t *dataset = NULL;
-
 
   ret = esdm_init();
   assert(ret == ESDM_SUCCESS);
@@ -79,7 +74,6 @@ int main(int argc, char const *argv[]) {
   //ssize_t pread(int fd, void *buf, size_t count, off_t offset);
   //ssize_t pwrite(int fd, const void *buf, size_t count, off_t offset);
 
-
   // define dataspace
   int64_t bounds[] = {HEIGHT, WIDTH};
   esdm_dataspace_t *dataspace;
@@ -87,12 +81,12 @@ int main(int argc, char const *argv[]) {
   esdm_dataspace_create(2, bounds, SMD_DTYPE_UINT64, &dataspace);
 
   esdm_container_t_create("mycontainer", &container);
+
   esdm_dataset_create(container, "mydataset", dataspace, &dataset);
 
-
   esdm_container_t_commit(container);
-  esdm_dataset_commit(dataset);
 
+  esdm_dataset_commit(dataset);
 
   // define subspace
   int64_t size[] = {HEIGHT, WIDTH};
@@ -101,24 +95,19 @@ int main(int argc, char const *argv[]) {
 
   esdm_dataspace_subspace(dataspace, 2, size, offset, &subspace);
 
-
   // Write the data to the dataset
   ret = esdm_write(dataset, buf_w, subspace);
   assert(ret == ESDM_SUCCESS);
-
 
   // Read the data to the dataset
   ret = esdm_read(dataset, buf_r, subspace);
   assert(ret == ESDM_SUCCESS);
 
-
   // TODO: write subset
   // TODO: read subset -> subspace reconstruction
 
-
   ret = esdm_finalize();
   assert(ret == ESDM_SUCCESS);
-
 
   // verify data and fail test if mismatches are found
   int mismatches = verify_data(buf_w, buf_r);

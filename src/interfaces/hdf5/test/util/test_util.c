@@ -14,14 +14,12 @@
  * along with ESDM.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-
 #include <fcntl.h>
-#include <sys/stat.h>
-#include <sys/types.h>
-
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <sys/stat.h>
+#include <sys/types.h>
 #include <unistd.h>
 
 #include "test_util.h"
@@ -36,7 +34,6 @@ double stop_timer(timer t1) {
   start_timer(&end);
   return (end - t1) / 1000.0 / 1000.0;
 }
-
 
 double timer_subtract(timer number, timer subtract) {
   return (number - subtract) / 1000.0 / 1000.0;

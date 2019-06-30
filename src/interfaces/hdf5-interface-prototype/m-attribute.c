@@ -13,9 +13,7 @@
 // You should have received a copy of the GNU Lesser General Public License
 // along with h5-memvol.  If not, see <http://www.gnu.org/licenses/>.
 
-
 // extract from ../install/download/vol/src/H5Apkg.h:233 for reference (consider any structure strictly private!)
-
 
 // ../install/download/vol/src/H5VLnative.c
 // ../install/download/vol/src/H5A.c
@@ -156,7 +154,6 @@ static herr_t memvol_attribute_specific(void *obj, H5VL_loc_params_t loc_params,
   // H5VL_ATTR_ITER:       Calls a user’s function for each attribute on an object.
   // H5VL_ATTR_RENAME:     Renames an attribute.
 
-
   switch (specific_type) {
     case H5VL_ATTR_DELETE: {
       debugI("%s: H5VL_ATTR_DELETE \n", __func__);
@@ -181,7 +178,6 @@ static herr_t memvol_attribute_specific(void *obj, H5VL_loc_params_t loc_params,
     default:
       break;
   }
-
 
   return ret_value;
 }

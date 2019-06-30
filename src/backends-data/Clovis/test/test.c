@@ -28,14 +28,12 @@ int main(int argc, char *argv[]) {
 
   printf("bs = %llu\n", (unsigned long long)eb->blocksize);
 
-
   rc = esdm_backend_t_clovis.ebm_ops.esdm_backend_t_init(conf, eb);
   if (rc != 0) {
     printf("esdm_backend_t_clovis.ebm_ops init failed rc=%d\n", rc);
     return rc;
   }
   printf("Clovis connection succeeded\n");
-
 
   rc = esdm_backend_t_clovis.ebm_ops.esdm_backend_t_obj_alloc(eb, 0, NULL, 0, NULL, NULL, &object_id, &object_meta);
   if (rc != 0) {

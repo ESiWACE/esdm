@@ -1,5 +1,7 @@
 #include <assert.h>
 #include <fcntl.h>
+#include <lfs-mpi-internal.h>
+#include <lfs-mpi.h>
 #include <mpi.h>
 #include <stdint.h>
 #include <stdio.h>
@@ -9,9 +11,6 @@
 #include <sys/time.h>
 #include <time.h>
 #include <unistd.h>
-
-#include <lfs-mpi-internal.h>
-#include <lfs-mpi.h>
 
 int lfs_mpi_open(lfs_mpi_file_p *fd_p, char *df, int flags, mode_t mode, MPI_Comm com) {
   *fd_p = (lfs_mpi_file_p)malloc(sizeof(struct lfs_file));
@@ -89,8 +88,7 @@ void lfs_mpi_next_epoch(lfs_mpi_file_p fd) {
 }
 
 // this is the LFS write function
-size_t
-lfs_mpi_write(lfs_mpi_file_p fd, char *buf, size_t count, off_t offset) {
+size_t lfs_mpi_write(lfs_mpi_file_p fd, char *buf, size_t count, off_t offset) {
   size_t count1 = count;
   off_t offset1 = fd->file_position;
   size_t ret;
@@ -119,7 +117,6 @@ lfs_mpi_write(lfs_mpi_file_p fd, char *buf, size_t count, off_t offset) {
   fwrite(&count, sizeof(count), 1, fd->log_file);
   return ret;
 }
-
 
 // extracts the mapping dict from our metadata(log) file
 int read_record(struct lfs_record **rec, FILE *fd, int depth) {
@@ -164,10 +161,8 @@ int read_record(struct lfs_record **rec, FILE *fd, int depth) {
   return end - begin;
 }
 
-
 // finds the common are between two given tuples
-struct tup
-compare_tup(struct tup first, struct tup second) {
+struct tup compare_tup(struct tup first, struct tup second) {
   struct tup res;
   res.a = -1;
   res.b = -1;
@@ -193,7 +188,6 @@ compare_tup(struct tup first, struct tup second) {
   //printf("res in here: %d, %d    ", res.a, res.b);
   return res;
 }
-
 
 // recursive function that finds all of the areas that should be read to complete a read query
 int lfs_mpi_find_chunks(size_t a, size_t b, int index, struct lfs_record *my_recs, struct lfs_record **chunks_stack, int *ch_s, struct lfs_record **missing_chunks, int *m_ch_s) {
@@ -248,8 +242,7 @@ int lfs_mpi_find_chunks(size_t a, size_t b, int index, struct lfs_record *my_rec
   return 0;
 }
 
-size_t
-lfs_mpi_internal_read(int fd, char *buf, struct lfs_record **query, int *q_index, struct lfs_record *rec, int record_count, struct lfs_record **missing_chunks, int *m_ch_s,
+size_t lfs_mpi_internal_read(int fd, char *buf, struct lfs_record **query, int *q_index, struct lfs_record *rec, int record_count, struct lfs_record **missing_chunks, int *m_ch_s,
 off_t main_addr) {
   struct lfs_record *chunks_stack;
   size_t count1; //= count;
@@ -299,8 +292,7 @@ off_t main_addr) {
 }
 
 // main function for read query
-size_t
-lfs_mpi_read(lfs_mpi_file_p fd, char *buf, size_t count, off_t offset) {
+size_t lfs_mpi_read(lfs_mpi_file_p fd, char *buf, size_t count, off_t offset) {
   struct lfs_record temp;
   struct lfs_record *my_recs;
   int my_recs_size;

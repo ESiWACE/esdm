@@ -31,11 +31,9 @@ int main(int argc, char **argv) {
   int dimsize = 3;
   int var, dimids[dimsize];
 
-
   MPI_Init(&argc, &argv);
 
   // ret = nc_create(file, NC_NETCDF4, & ncid);
-
 
   //ret = nc_create_par(file, NC_MPIIO, MPI_COMM_WORLD, MPI_INFO_NULL, & ncid);
   ret = nc_create(file, NC_NETCDF4, &ncid);
@@ -79,7 +77,6 @@ int main(int argc, char **argv) {
     ret = nc_get_vara_int(ncid, var, startp, countp, data);
     assert(ret == NC_NOERR);
   }
-
 
   free(data);
 

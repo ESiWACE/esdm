@@ -1,6 +1,5 @@
 #include <time.h>
 
-
 typedef struct timespec timer;
 
 static void start_timer(timer *t1) {
@@ -25,7 +24,6 @@ static double time_to_double(struct timespec t) {
   d += (double)t.tv_sec;
   return d;
 }
-
 
 static double stop_timer(timer t1) {
   timer end;

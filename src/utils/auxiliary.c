@@ -23,7 +23,9 @@
 
 #include <assert.h>
 #include <errno.h>
+#include <esdm-internal.h>
 #include <fcntl.h>
+#include <glib.h>
 #include <limits.h>
 #include <stdarg.h>
 #include <stdio.h>
@@ -33,20 +35,13 @@
 #include <sys/types.h>
 #include <unistd.h>
 
-#include <glib.h>
-
-#include <esdm-internal.h>
-
-
 int ea_is_valid_name(const char *str) {
   // TODO allow names with a-a, A-Z,0-9,_-
   assert(str != NULL);
   return 1;
 }
 
-
 // directory handling /////////////////////////////////////////////////////////
-
 
 int mkdir_recursive(const char *path) {
   char tmp[PATH_MAX];
@@ -77,7 +72,6 @@ int mkdir_recursive(const char *path) {
   return mkdir(tmp, S_IRWXU);
 }
 
-
 void posix_recursive_remove(const char *path) {
   printf("removing %s", path);
   struct stat sb = {0};
@@ -102,9 +96,7 @@ void posix_recursive_remove(const char *path) {
   }
 }
 
-
 // file I/O handling //////////////////////////////////////////////////////////
-
 
 int read_file(char *filepath, char **buf) {
   if (*buf != NULL) {
@@ -119,7 +111,6 @@ int read_file(char *filepath, char **buf) {
     exit(1);
   }
 
-
   fseek(fp, 0, SEEK_END);
   long fsize = ftell(fp);
   fseek(fp, 0, SEEK_SET); //same as rewind(f);
@@ -130,13 +121,11 @@ int read_file(char *filepath, char **buf) {
 
   string[fsize] = 0;
 
-
   *buf = string;
 
   ESDM_DEBUG_COM_FMT("AUX", "read_file(): %s\n", string);
   return 0;
 }
-
 
 int write_check(int fd, char *buf, size_t len) {
   while (len > 0) {
@@ -155,7 +144,6 @@ int write_check(int fd, char *buf, size_t len) {
   }
   return 0;
 }
-
 
 int read_check(int fd, char *buf, size_t len) {
   while (len > 0) {
@@ -177,9 +165,7 @@ int read_check(int fd, char *buf, size_t len) {
   return 0;
 }
 
-
 // POSIX other ////////////////////////////////////////////////////////////////
-
 
 void print_stat(struct stat sb) {
   printf("\n");

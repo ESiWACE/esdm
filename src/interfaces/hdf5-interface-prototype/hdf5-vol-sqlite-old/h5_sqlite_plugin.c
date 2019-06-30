@@ -26,75 +26,101 @@
 #  include "esdm.h"
 #endif /* adaptive */
 
-
 #define COUNT_MAX 2147479552
 #define SSDDIR "/tmp"
 #define SHMDIR "/dev/shm"
 
-
 static herr_t H5VL_extlog_fapl_free(void *info);
 static void *H5VL_extlog_fapl_copy(const void *info);
-
 
 static herr_t H5VL_log_init(hid_t vipl_id);
 static herr_t H5VL_log_term(hid_t vtpl_id);
 
 /* Atrribute callbacks */
 static void *H5VL_extlog_attr_create(void *obj, H5VL_loc_params_t loc_params, const char *attr_name, hid_t acpl_id, hid_t aapl_id, hid_t dxpl_id, void **req);
+
 static void *H5VL_extlog_attr_open(void *obj, H5VL_loc_params_t loc_params, const char *attr_name, hid_t aapl_id, hid_t dxpl_id, void **req);
+
 static herr_t H5VL_extlog_attr_read(void *attr, hid_t dtype_id, void *buf, hid_t dxpl_id, void **req);
+
 static herr_t H5VL_extlog_attr_write(void *attr, hid_t dtype_id, const void *buf, hid_t dxpl_id, void **req);
+
 static herr_t H5VL_extlog_attr_get(void *obj, H5VL_attr_get_t get_type, hid_t dxpl_id, void **req, va_list arguments);
+
 static herr_t H5VL_extlog_attr_specific(void *obj, H5VL_loc_params_t loc_params, H5VL_attr_specific_t specific_type, hid_t dxpl_id, void **req, va_list arguments);
+
 static herr_t H5VL_extlog_attr_close(void *attr, hid_t dxpl_id, void **req);
 
 /* Datatype callbacks */
 static void *H5VL_extlog_type_commit(void *obj, H5VL_loc_params_t loc_params, const char *name, hid_t type_id, hid_t lcpl_id, hid_t tcpl_id, hid_t tapl_id, hid_t dxpl_id, void **req);
+
 static void *H5VL_extlog_type_open(void *obj, H5VL_loc_params_t loc_params, const char *name, hid_t tapl_id, hid_t dxpl_id, void **req);
+
 static herr_t H5VL_extlog_type_get(void *dt, H5VL_type_get_t get_type, hid_t dxpl_id, void **req, va_list arguments);
+
 static herr_t H5VL_extlog_type_close(void *dt, hid_t dxpl_id, void **req);
 
 /* Dataset callbacks */
 static void *H5VL_extlog_dataset_create(void *obj, H5VL_loc_params_t loc_params, const char *name, hid_t dcpl_id, hid_t dapl_id, hid_t dxpl_id, void **req);
+
 static void *H5VL_extlog_dataset_open(void *obj, H5VL_loc_params_t loc_params, const char *name, hid_t dapl_id, hid_t dxpl_id, void **req);
+
 static herr_t H5VL_extlog_dataset_read(void *dset, hid_t mem_type_id, hid_t mem_space_id, hid_t file_space_id, hid_t plist_id, void *buf, void **req);
+
 static herr_t H5VL_extlog_dataset_get(void *dset, H5VL_dataset_get_t get_type, hid_t dxpl_id, void **req, va_list arguments);
+
 static herr_t H5VL_extlog_dataset_write(void *dset, hid_t mem_type_id, hid_t mem_space_id, hid_t file_space_id, hid_t plist_id, const void *buf, void **req);
+
 static herr_t H5VL_extlog_dataset_close(void *dset, hid_t dxpl_id, void **req);
 
 /* File callbacks */
 static void *H5VL_extlog_file_create(const char *name, unsigned flags, hid_t fcpl_id, hid_t fapl_id, hid_t dxpl_id, void **req);
-static void *H5VL_extlog_file_open(const char *name, unsigned flags, hid_t fapl_id, hid_t dxpl_id, void **req);
-static herr_t H5VL_extlog_file_get(void *file, H5VL_file_get_t get_type, hid_t dxpl_id, void **req, va_list arguments);
-static herr_t H5VL_extlog_file_close(void *file, hid_t dxpl_id, void **req);
-static herr_t H5VL_extlog_file_specific(void *obj, H5VL_file_specific_t specific_type, hid_t dxpl_id, void **req, va_list arguments);
 
+static void *H5VL_extlog_file_open(const char *name, unsigned flags, hid_t fapl_id, hid_t dxpl_id, void **req);
+
+static herr_t H5VL_extlog_file_get(void *file, H5VL_file_get_t get_type, hid_t dxpl_id, void **req, va_list arguments);
+
+static herr_t H5VL_extlog_file_close(void *file, hid_t dxpl_id, void **req);
+
+static herr_t H5VL_extlog_file_specific(void *obj, H5VL_file_specific_t specific_type, hid_t dxpl_id, void **req, va_list arguments);
 
 /* Group callbacks */
 static void *H5VL_extlog_group_create(void *obj, H5VL_loc_params_t loc_params, const char *name, hid_t gcpl_id, hid_t gapl_id, hid_t dxpl_id, void **req);
-static void *H5VL_extlog_group_open(void *obj, H5VL_loc_params_t loc_params, const char *name, hid_t gapl_id, hid_t dxpl_id, void **req);
-static herr_t H5VL_extlog_group_get(void *obj, H5VL_group_get_t get_type, hid_t dxpl_id, void **req, va_list arguments);
-static herr_t H5VL_extlog_group_close(void *grp, hid_t dxpl_id, void **req);
-static herr_t H5VL_extlog_group_specific(void *obj, H5VL_group_specific_t specific_type, hid_t dxpl_id, void **req, va_list arguments);
-static herr_t H5VL_extlog_group_optional(void *obj, hid_t dxpl_id, void **req, va_list arguments);
 
+static void *H5VL_extlog_group_open(void *obj, H5VL_loc_params_t loc_params, const char *name, hid_t gapl_id, hid_t dxpl_id, void **req);
+
+static herr_t H5VL_extlog_group_get(void *obj, H5VL_group_get_t get_type, hid_t dxpl_id, void **req, va_list arguments);
+
+static herr_t H5VL_extlog_group_close(void *grp, hid_t dxpl_id, void **req);
+
+static herr_t H5VL_extlog_group_specific(void *obj, H5VL_group_specific_t specific_type, hid_t dxpl_id, void **req, va_list arguments);
+
+static herr_t H5VL_extlog_group_optional(void *obj, hid_t dxpl_id, void **req, va_list arguments);
 
 /* Link callbacks */
 static herr_t H5VL_extlog_link_create(H5VL_link_create_type_t create_type, void *obj, H5VL_loc_params_t loc_params, hid_t lcpl_id, hid_t lapl_id, hid_t dxpl_id, void **req);
+
 static herr_t H5VL_extlog_link_copy(void *src_obj, H5VL_loc_params_t loc_params1, void *dst_obj, H5VL_loc_params_t loc_params2, hid_t lcpl, hid_t lapl, hid_t dxpl_id, void **req);
+
 static herr_t H5VL_extlog_link_move(void *src_obj, H5VL_loc_params_t loc_params1, void *dst_obj, H5VL_loc_params_t loc_params2, hid_t lcpl, hid_t lapl, hid_t dxpl_id, void **req);
+
 static herr_t H5VL_extlog_link_get(void *obj, H5VL_loc_params_t loc_params, H5VL_link_get_t get_type, hid_t dxpl_id, void **req, va_list arguments);
+
 static herr_t H5VL_extlog_link_specific(void *obj, H5VL_loc_params_t loc_params, H5VL_link_specific_t specific_type, hid_t dxpl_id, void **req, va_list arguments);
+
 static herr_t H5VL_extlog_link_optional(void *obj, hid_t dxpl_id, void **req, va_list arguments);
 
-
 /* H5O routines */
-static void *H5VL_extlog_object_open(void *obj, H5VL_loc_params_t loc_params, H5I_type_t *opened_type, hid_t dxpl_id, void **req);
-static herr_t H5VL_extlog_object_copy(void *src_obj, H5VL_loc_params_t loc_params1, const char *src_name, void *dst_obj, H5VL_loc_params_t loc_params2, const char *dst_name, hid_t ocpypl_id, hid_t lcpl_id, hid_t dxpl_id, void **req);
-static herr_t H5VL_extlog_object_get(void *obj, H5VL_loc_params_t loc_params, H5VL_object_get_t get_type, hid_t dxpl_id, void **req, va_list arguments);
-static herr_t H5VL_extlog_object_specific(void *obj, H5VL_loc_params_t loc_params, H5VL_object_specific_t specific_type, hid_t dxpl_id, void **req, va_list arguments);
-static herr_t H5VL_extlog_object_optional(void *obj, hid_t dxpl_id, void **req, va_list arguments);
 
+static void *H5VL_extlog_object_open(void *obj, H5VL_loc_params_t loc_params, H5I_type_t *opened_type, hid_t dxpl_id, void **req);
+
+static herr_t H5VL_extlog_object_copy(void *src_obj, H5VL_loc_params_t loc_params1, const char *src_name, void *dst_obj, H5VL_loc_params_t loc_params2, const char *dst_name, hid_t ocpypl_id, hid_t lcpl_id, hid_t dxpl_id, void **req);
+
+static herr_t H5VL_extlog_object_get(void *obj, H5VL_loc_params_t loc_params, H5VL_object_get_t get_type, hid_t dxpl_id, void **req, va_list arguments);
+
+static herr_t H5VL_extlog_object_specific(void *obj, H5VL_loc_params_t loc_params, H5VL_object_specific_t specific_type, hid_t dxpl_id, void **req, va_list arguments);
+
+static herr_t H5VL_extlog_object_optional(void *obj, hid_t dxpl_id, void **req, va_list arguments);
 
 ///* Object callbacks */
 //static void *H5VL_extlog_object_open(void *obj, H5VL_loc_params_t loc_params, H5I_type_t *opened_type, hid_t dxpl_id, void **req);
@@ -184,7 +210,6 @@ NULL,
 NULL},
 NULL};
 
-
 static void SQO_init_info(H5O_info_t *info) {
   info->fileno = 0;
   info->addr = 0;
@@ -211,7 +236,6 @@ static void SQO_init_info(H5O_info_t *info) {
   info->meta_size.attr.index_size = 0;
 }
 
-
 //char *err_msg = 0;  /* pointer to an error string */
 
 //h5sqlite_fapl_t* ginfo = NULL;
@@ -236,7 +260,6 @@ static herr_t H5VL_extlog_fapl_free(void *info) {
   return err;
 }
 
-
 static herr_t H5VL_log_init(hid_t vipl_id) {
   TRACEMSG("");
   native_plugin_id = H5VLget_plugin_id("native");
@@ -249,7 +272,6 @@ static herr_t H5VL_log_term(hid_t vtpl_id) {
   DEBUGMSG("------- LOG TERM\n");
   return 0;
 }
-
 
 static herr_t
 print_property(hid_t id, const char *name, void *iter_data) {
@@ -264,18 +286,15 @@ print_property(hid_t id, const char *name, void *iter_data) {
  *-------------------------------------------------------------------------
  */
 
-static void *
-H5VL_extlog_attr_create(void *obj, H5VL_loc_params_t loc_params, const char *attr_name, hid_t acpl_id, hid_t aapl_id, hid_t dxpl_id, void **req) {
+static void *H5VL_extlog_attr_create(void *obj, H5VL_loc_params_t loc_params, const char *attr_name, hid_t acpl_id, hid_t aapl_id, hid_t dxpl_id, void **req) {
   TRACEMSG("");
   SQA_t *attribute = (SQA_t *)malloc(sizeof(*attribute));
-
   hid_t space_id;
   H5Pget(acpl_id, "attr_space_id", &space_id);
   int ndims = H5Sget_simple_extent_ndims(space_id);
   hsize_t maxdims[ndims];
   hsize_t dims[ndims];
   H5Sget_simple_extent_dims(/* in */ space_id, /* out */ dims, /* out */ maxdims);
-
 
   hid_t type_id;
   H5Pget(acpl_id, "attr_type_id", &type_id);
@@ -354,7 +373,6 @@ H5VL_extlog_attr_create(void *obj, H5VL_loc_params_t loc_params, const char *att
 
   return attribute;
 }
-
 
 /*-------------------------------------------------------------------------
  * Function:	H5VL_extlog_attr_open
@@ -448,7 +466,6 @@ H5VL_extlog_attr_write(void *obj, hid_t dtype_id, const void *buf, hid_t dxpl_id
   return 1;
 }
 
-
 /*-------------------------------------------------------------------------
  * Function:	H5VL_extlog_attr_get
  *
@@ -506,9 +523,7 @@ H5VL_extlog_attr_get(void *obj, H5VL_attr_get_t get_type, hid_t dxpl_id, void **
   return ret_value;
 }
 
-
-static htri_t
-SQA_exists_by_self(void *obj, H5VL_loc_params_t loc_params, const char *attr_name, hid_t dxpl_id) {
+static htri_t SQA_exists_by_self(void *obj, H5VL_loc_params_t loc_params, const char *attr_name, hid_t dxpl_id) {
   TRACEMSG("");
   htri_t ret_val = false;
   switch (loc_params.obj_type) {
@@ -530,16 +545,7 @@ SQA_exists_by_self(void *obj, H5VL_loc_params_t loc_params, const char *attr_nam
   return ret_val;
 }
 
-
-static herr_t SQA_iterate(
-SQO_t *obj,
-H5VL_loc_params_t loc_params,
-H5_index_t idx_type,
-H5_iter_order_t order,
-hsize_t *idx,
-H5A_operator2_t op,
-void *op_data,
-hid_t dxpl_id) {
+static herr_t SQA_iterate(SQO_t *obj, H5VL_loc_params_t loc_params, H5_index_t idx_type, H5_iter_order_t order, hsize_t *idx, H5A_operator2_t op, void *op_data, hid_t dxpl_id) {
   SQO_t *obj2 = NULL;
   hid_t vol_id = H5VLget_plugin_id("extlog");
   assert(-1 != vol_id);
@@ -604,7 +610,6 @@ hid_t dxpl_id) {
               ERRORMSG("Not implemented");
           }
 
-
           break;
         case H5_ITER_DEC:
           ERRORMSG("Not implemented");
@@ -634,7 +639,6 @@ hid_t dxpl_id) {
   }
   return 0;
 }
-
 
 static herr_t H5VL_extlog_attr_specific(void *obj, H5VL_loc_params_t loc_params, H5VL_attr_specific_t specific_type, hid_t dxpl_id, void **req, va_list arguments) {
   TRACEMSG("");
@@ -678,15 +682,13 @@ static herr_t H5VL_extlog_attr_specific(void *obj, H5VL_loc_params_t loc_params,
   return 0;
 }
 
-
 /*-------------------------------------------------------------------------
  * Function:	H5VL_extlog_attr_close
  *
  * Purpose:	Closes an attribute
  *-------------------------------------------------------------------------
  */
-static herr_t
-H5VL_extlog_attr_close(void *attr, hid_t dxpl_id, void **req) {
+static herr_t H5VL_extlog_attr_close(void *attr, hid_t dxpl_id, void **req) {
   //	TRACEMSG("");
   SQA_t *a = (SQA_t *)attr;
   free(a->object.location);
@@ -697,7 +699,6 @@ H5VL_extlog_attr_close(void *attr, hid_t dxpl_id, void **req) {
   a = NULL;
   return 0;
 }
-
 
 char *real_filename_create(h5sqlite_fapl_t *fapl) {
   char rank_buf[50];
@@ -713,9 +714,7 @@ void real_filename_destroy(char *fname) {
   fname = NULL;
 }
 
-
-static void *
-H5VL_extlog_file_create(const char *fname, unsigned flags, hid_t fcpl_id, hid_t fapl_id, hid_t dxpl_id, void **req) {
+static void *H5VL_extlog_file_create(const char *fname, unsigned flags, hid_t fcpl_id, hid_t fapl_id, hid_t dxpl_id, void **req) {
   TRACEMSG("");
 
   int err;
@@ -724,7 +723,6 @@ H5VL_extlog_file_create(const char *fname, unsigned flags, hid_t fcpl_id, hid_t 
 
   MPI_Comm_rank(MPI_COMM_WORLD, &fapl->mpi_rank);
   MPI_Comm_size(MPI_COMM_WORLD, &fapl->mpi_size);
-
 
   if (access(fapl->db_fn, F_OK) != -1) {
     if (H5F_ACC_TRUNC == flags) {
@@ -748,7 +746,6 @@ H5VL_extlog_file_create(const char *fname, unsigned flags, hid_t fcpl_id, hid_t 
     }
   }
   MPI_Barrier(MPI_COMM_WORLD);
-
 
   file->object.location = strdup(FILE_DEFAULT_PATH);
   file->object.name = strdup(basename((char *)fname));
@@ -814,9 +811,7 @@ H5VL_extlog_file_create(const char *fname, unsigned flags, hid_t fcpl_id, hid_t 
   return (void *)file;
 }
 
-
-static void *
-H5VL_extlog_file_open(const char *fname, unsigned flags, hid_t fapl_id, hid_t dxpl_id, void **req) {
+static void *H5VL_extlog_file_open(const char *fname, unsigned flags, hid_t fapl_id, hid_t dxpl_id, void **req) {
   TRACEMSG("");
   SQF_t *file;
   file = (SQF_t *)calloc(1, sizeof(SQF_t));
@@ -861,9 +856,7 @@ H5VL_extlog_file_open(const char *fname, unsigned flags, hid_t fapl_id, hid_t dx
   return (void *)file;
 }
 
-
-static herr_t
-H5VL_extlog_file_get(void *obj, H5VL_file_get_t get_type, hid_t dxpl_id, void **req, va_list arguments) {
+static herr_t H5VL_extlog_file_get(void *obj, H5VL_file_get_t get_type, hid_t dxpl_id, void **req, va_list arguments) {
   SQF_t *file = (SQF_t *)obj;
   herr_t ret_value = 0;
   hid_t *ret_id;
@@ -902,9 +895,7 @@ H5VL_extlog_file_get(void *obj, H5VL_file_get_t get_type, hid_t dxpl_id, void **
   return ret_value;
 }
 
-
-static herr_t
-H5VL_extlog_file_close(void *obj, hid_t dxpl_id, void **req) {
+static herr_t H5VL_extlog_file_close(void *obj, hid_t dxpl_id, void **req) {
   //	TRACEMSG("");
   SQF_t *file = (SQF_t *)obj;
   close(file->fd);
@@ -942,9 +933,7 @@ static herr_t H5VL_extlog_file_specific(void *obj, H5VL_file_specific_t specific
   return 0;
 }
 
-
-static void *
-H5VL_extlog_group_create(void *obj, H5VL_loc_params_t loc_params, const char *name, hid_t gcpl_id, hid_t gapl_id, hid_t dxpl_id, void **req) {
+static void *H5VL_extlog_group_create(void *obj, H5VL_loc_params_t loc_params, const char *name, hid_t gcpl_id, hid_t gapl_id, hid_t dxpl_id, void **req) {
   TRACEMSG("");
   SQG_t *group = NULL;
   group = (SQG_t *)malloc(sizeof(*group));
@@ -1036,7 +1025,6 @@ static void *H5VL_extlog_group_open(void *obj, H5VL_loc_params_t loc_params, con
   return group;
 }
 
-
 static herr_t H5VL_extlog_group_get(void *obj, H5VL_group_get_t get_type, hid_t dxpl_id, void **req, va_list arguments) {
   TRACEMSG("");
   SQG_t *group = (SQG_t *)obj;
@@ -1055,9 +1043,7 @@ static herr_t H5VL_extlog_group_get(void *obj, H5VL_group_get_t get_type, hid_t 
   return ret_value;
 }
 
-
-static herr_t
-H5VL_extlog_group_close(void *grp, hid_t dxpl_id, void **req) {
+static herr_t H5VL_extlog_group_close(void *grp, hid_t dxpl_id, void **req) {
   //	TRACEMSG("");
   SQG_t *g = (SQG_t *)grp;
   free(g->object.location);
@@ -1069,14 +1055,12 @@ H5VL_extlog_group_close(void *grp, hid_t dxpl_id, void **req) {
   return 0;
 }
 
-
 static herr_t H5VL_extlog_group_specific(void *obj, H5VL_group_specific_t specific_type, hid_t dxpl_id, void **req, va_list arguments) {
   TRACEMSG("");
   ERRORMSG("Not implemented");
   herr_t ret_value = 0;
   return ret_value;
 }
-
 
 static herr_t H5VL_extlog_group_optional(void *obj, hid_t dxpl_id, void **req, va_list arguments) {
   TRACEMSG("");
@@ -1085,9 +1069,7 @@ static herr_t H5VL_extlog_group_optional(void *obj, hid_t dxpl_id, void **req, v
   return ret_value;
 }
 
-
-static void *
-H5VL_extlog_type_commit(void *obj, H5VL_loc_params_t loc_params, const char *name,
+static void *H5VL_extlog_type_commit(void *obj, H5VL_loc_params_t loc_params, const char *name,
 hid_t type_id, hid_t lcpl_id, hid_t tcpl_id, hid_t tapl_id, hid_t dxpl_id, void **req) {
   TRACEMSG("");
   ERRORMSG("Not implemented");
@@ -1095,24 +1077,21 @@ hid_t type_id, hid_t lcpl_id, hid_t tcpl_id, hid_t tapl_id, hid_t dxpl_id, void 
   return NULL;
 }
 
-static void *
-H5VL_extlog_type_open(void *obj, H5VL_loc_params_t loc_params, const char *name, hid_t tapl_id, hid_t dxpl_id, void **req) {
+static void *H5VL_extlog_type_open(void *obj, H5VL_loc_params_t loc_params, const char *name, hid_t tapl_id, hid_t dxpl_id, void **req) {
   TRACEMSG("");
   ERRORMSG("Not implemented");
   SQD_t *o = (SQD_t *)obj;
   return NULL;
 }
 
-static herr_t
-H5VL_extlog_type_get(void *dt, H5VL_type_get_t get_type, hid_t dxpl_id, void **req, va_list arguments) {
+static herr_t H5VL_extlog_type_get(void *dt, H5VL_type_get_t get_type, hid_t dxpl_id, void **req, va_list arguments) {
   TRACEMSG("");
   ERRORMSG("Not implemented");
   herr_t ret_value = 0;
   return ret_value;
 }
 
-static herr_t
-H5VL_extlog_type_close(void *dt, hid_t dxpl_id, void **req) {
+static herr_t H5VL_extlog_type_close(void *dt, hid_t dxpl_id, void **req) {
   //	TRACEMSG("");
   ERRORMSG("Not implemented");
   return 1;
@@ -1133,9 +1112,7 @@ H5VL_extlog_type_close(void *dt, hid_t dxpl_id, void **req) {
 //	return 1;
 //}
 
-
-static void *
-H5VL_extlog_dataset_create(void *obj, H5VL_loc_params_t loc_params, const char *name, hid_t dcpl_id, hid_t dapl_id, hid_t dxpl_id, void **req) {
+static void *H5VL_extlog_dataset_create(void *obj, H5VL_loc_params_t loc_params, const char *name, hid_t dcpl_id, hid_t dapl_id, hid_t dxpl_id, void **req) {
   DEBUGMSG("%s", name);
   SQD_t *dset = NULL;
   dset = (SQD_t *)malloc(sizeof(*dset));
@@ -1220,8 +1197,7 @@ H5VL_extlog_dataset_create(void *obj, H5VL_loc_params_t loc_params, const char *
   return (void *)dset;
 }
 
-static void *
-H5VL_extlog_dataset_open(void *obj, H5VL_loc_params_t loc_params, const char *name, hid_t dapl_id, hid_t dxpl_id, void **req) {
+static void *H5VL_extlog_dataset_open(void *obj, H5VL_loc_params_t loc_params, const char *name, hid_t dapl_id, hid_t dxpl_id, void **req) {
   DEBUGMSG("%s", name);
   SQD_t *dset = (SQD_t *)malloc(sizeof(*dset));
 
@@ -1260,9 +1236,7 @@ H5VL_extlog_dataset_open(void *obj, H5VL_loc_params_t loc_params, const char *na
   return dset;
 }
 
-
-static herr_t
-H5VL_extlog_dataset_get(void *dset, H5VL_dataset_get_t get_type, hid_t dxpl_id, void **req, va_list arguments) {
+static herr_t H5VL_extlog_dataset_get(void *dset, H5VL_dataset_get_t get_type, hid_t dxpl_id, void **req, va_list arguments) {
   TRACEMSG("");
   SQD_t *d = (SQD_t *)dset;
   herr_t ret_value = 0;
@@ -1306,7 +1280,6 @@ H5VL_extlog_dataset_get(void *dset, H5VL_dataset_get_t get_type, hid_t dxpl_id, 
   return ret_value;
 }
 
-
 //	return  (bend[1]*bend[2]*bend[3]*start[0] + bend[2]*bend[3]*start[1] + bend[3]*start[2] + start[3]) * type_size;
 static off64_t coord_to_offset(const hsize_t *bend, const hsize_t *start, const size_t type_size, const size_t size) {
   off64_t offset = 0;
@@ -1319,7 +1292,6 @@ static off64_t coord_to_offset(const hsize_t *bend, const hsize_t *start, const 
   }
   return offset * type_size;
 }
-
 
 static ssize_t SQD_read64(SQO_t *sqo, void *buf, size_t count, off64_t offset) {
   ssize_t bytes_read_total = 0;
@@ -1340,7 +1312,6 @@ static ssize_t SQD_read64(SQO_t *sqo, void *buf, size_t count, off64_t offset) {
   return bytes_read_total;
 }
 
-
 static ssize_t SQD_pwrite64(SQO_t *sqo, const void *buf, size_t count, off64_t offset) {
   ssize_t bytes_written_total = 0;
   ssize_t bytes_written = 0;
@@ -1360,9 +1331,7 @@ static ssize_t SQD_pwrite64(SQO_t *sqo, const void *buf, size_t count, off64_t o
   return bytes_written_total;
 }
 
-
-static herr_t
-H5VL_extlog_dataset_read(void *dset, hid_t mem_type_id, hid_t mem_space_id,
+static herr_t H5VL_extlog_dataset_read(void *dset, hid_t mem_type_id, hid_t mem_space_id,
 hid_t file_space_id, hid_t plist_id, void *buf, void **req) {
   TRACEMSG("");
   herr_t ret = 0;
@@ -1426,10 +1395,7 @@ hid_t file_space_id, hid_t plist_id, void *buf, void **req) {
   return ret;
 }
 
-
-static herr_t
-H5VL_extlog_dataset_write(void *dset, hid_t mem_type_id, hid_t mem_space_id,
-hid_t file_space_id, hid_t plist_id, const void *buf, void **req) {
+static herr_t H5VL_extlog_dataset_write(void *dset, hid_t mem_type_id, hid_t mem_space_id, hid_t file_space_id, hid_t plist_id, const void *buf, void **req) {
   TRACEMSG("");
   herr_t ret = 0;
   SQD_t *d = (SQD_t *)dset;
@@ -1494,9 +1460,7 @@ hid_t file_space_id, hid_t plist_id, const void *buf, void **req) {
   return ret;
 }
 
-
-static herr_t
-H5VL_extlog_dataset_close(void *dset, hid_t dxpl_id, void **req) {
+static herr_t H5VL_extlog_dataset_close(void *dset, hid_t dxpl_id, void **req) {
   //	TRACEMSG("");
   SQD_t *d = (SQD_t *)dset;
   free(d->object.location);
@@ -1508,37 +1472,27 @@ H5VL_extlog_dataset_close(void *dset, hid_t dxpl_id, void **req) {
   return 0;
 }
 
-
-static herr_t
-H5VL_extlog_link_create(H5VL_link_create_type_t create_type, void *obj, H5VL_loc_params_t loc_params, hid_t lcpl_id, hid_t lapl_id, hid_t dxpl_id, void **req) {
+static herr_t H5VL_extlog_link_create(H5VL_link_create_type_t create_type, void *obj, H5VL_loc_params_t loc_params, hid_t lcpl_id, hid_t lapl_id, hid_t dxpl_id, void **req) {
   ERRORMSG("Not implemented");
   return 0;
 }
 
-
-static herr_t
-H5VL_extlog_link_copy(void *src_obj, H5VL_loc_params_t loc_params1, void *dst_obj, H5VL_loc_params_t loc_params2, hid_t lcpl, hid_t lapl, hid_t dxpl_id, void **req) {
+static herr_t H5VL_extlog_link_copy(void *src_obj, H5VL_loc_params_t loc_params1, void *dst_obj, H5VL_loc_params_t loc_params2, hid_t lcpl, hid_t lapl, hid_t dxpl_id, void **req) {
   ERRORMSG("Not implemented");
   return 0;
 }
 
-
-static herr_t
-H5VL_extlog_link_move(void *src_obj, H5VL_loc_params_t loc_params1, void *dst_obj, H5VL_loc_params_t loc_params2, hid_t lcpl, hid_t lapl, hid_t dxpl_id, void **req) {
+static herr_t H5VL_extlog_link_move(void *src_obj, H5VL_loc_params_t loc_params1, void *dst_obj, H5VL_loc_params_t loc_params2, hid_t lcpl, hid_t lapl, hid_t dxpl_id, void **req) {
   ERRORMSG("Not implemented");
   return 0;
 }
 
-
-static herr_t
-H5VL_extlog_link_get(void *obj, H5VL_loc_params_t loc_params, H5VL_link_get_t get_type, hid_t dxpl_id, void **req, va_list arguments) {
+static herr_t H5VL_extlog_link_get(void *obj, H5VL_loc_params_t loc_params, H5VL_link_get_t get_type, hid_t dxpl_id, void **req, va_list arguments) {
   ERRORMSG("Not implemented");
   return 0;
 }
 
-
-static herr_t
-H5VL_extlog_link_specific(void *obj, H5VL_loc_params_t loc_params, H5VL_link_specific_t specific_type, hid_t dxpl_id, void **req, va_list arguments) {
+static herr_t H5VL_extlog_link_specific(void *obj, H5VL_loc_params_t loc_params, H5VL_link_specific_t specific_type, hid_t dxpl_id, void **req, va_list arguments) {
   SQG_t *sqg = (SQG_t *)malloc(sizeof(*sqg));
   memcpy(sqg, obj, sizeof(*sqg));
   SQO_t *obj2 = (SQO_t *)sqg;
@@ -1619,17 +1573,13 @@ H5VL_extlog_link_specific(void *obj, H5VL_loc_params_t loc_params, H5VL_link_spe
   return 0;
 }
 
-
-static herr_t
-H5VL_extlog_link_optional(void *obj, hid_t dxpl_id, void **req, va_list arguments) {
+static herr_t H5VL_extlog_link_optional(void *obj, hid_t dxpl_id, void **req, va_list arguments) {
   ERRORMSG("Not implemented");
   return 0;
 }
 
-
 /* H5O routines */
-static void *
-H5VL_extlog_object_open(void *obj, H5VL_loc_params_t loc_params, H5I_type_t *opened_type, hid_t dxpl_id, void **req) {
+static void *H5VL_extlog_object_open(void *obj, H5VL_loc_params_t loc_params, H5I_type_t *opened_type, hid_t dxpl_id, void **req) {
   void *ret_obj = NULL;
   switch (loc_params.type) {
     case H5VL_OBJECT_BY_NAME:
@@ -1656,15 +1606,12 @@ H5VL_extlog_object_open(void *obj, H5VL_loc_params_t loc_params, H5I_type_t *ope
   return ret_obj;
 }
 
-
-static herr_t
-H5VL_extlog_object_copy(void *src_obj, H5VL_loc_params_t loc_params1, const char *src_name, void *dst_obj, H5VL_loc_params_t loc_params2, const char *dst_name, hid_t ocpypl_id, hid_t lcpl_id, hid_t dxpl_id, void **req) {
+static herr_t H5VL_extlog_object_copy(void *src_obj, H5VL_loc_params_t loc_params1, const char *src_name, void *dst_obj, H5VL_loc_params_t loc_params2, const char *dst_name, hid_t ocpypl_id, hid_t lcpl_id, hid_t dxpl_id, void **req) {
   ERRORMSG("Not implemented");
   return 0;
 }
 
-static herr_t
-H5VL_extlog_object_get(void *obj, H5VL_loc_params_t loc_params, H5VL_object_get_t get_type, hid_t dxpl_id, void **req, va_list arguments) {
+static herr_t H5VL_extlog_object_get(void *obj, H5VL_loc_params_t loc_params, H5VL_object_get_t get_type, hid_t dxpl_id, void **req, va_list arguments) {
   switch (get_type) {
     case H5VL_REF_GET_NAME:
       ERRORMSG("Not implemented");
@@ -1680,7 +1627,6 @@ H5VL_extlog_object_get(void *obj, H5VL_loc_params_t loc_params, H5VL_object_get_
   }
   return 0;
 }
-
 
 static herr_t H5VL_extlog_object_specific(void *obj, H5VL_loc_params_t loc_params, H5VL_object_specific_t specific_type, hid_t dxpl_id, void **req, va_list arguments) {
   switch (specific_type) {
@@ -1708,9 +1654,7 @@ static herr_t H5VL_extlog_object_specific(void *obj, H5VL_loc_params_t loc_param
   return 0;
 }
 
-
-static herr_t
-H5VL_extlog_object_optional(void *obj, hid_t dxpl_id, void **req, va_list arguments) {
+static herr_t H5VL_extlog_object_optional(void *obj, hid_t dxpl_id, void **req, va_list arguments) {
   TRACEMSG("");
   H5VL_object_optional_t optional_type = va_arg(arguments, H5VL_object_optional_t);
   H5VL_loc_params_t loc_params = va_arg(arguments, H5VL_loc_params_t);
@@ -1770,10 +1714,8 @@ H5VL_extlog_object_optional(void *obj, hid_t dxpl_id, void **req, va_list argume
   return 0;
 }
 
-
 /* return the library type which should always be H5PL_TYPE_VOL */
-H5PL_type_t
-H5PLget_plugin_type(void) {
+H5PL_type_t H5PLget_plugin_type(void) {
   TRACEMSG("");
   return H5PL_TYPE_VOL;
 }

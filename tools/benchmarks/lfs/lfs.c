@@ -1,5 +1,6 @@
 #include <assert.h>
 #include <fcntl.h>
+#include <lfs-internal.h>
 #include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -7,16 +8,12 @@
 #include <sys/stat.h>
 #include <unistd.h>
 
-
-#include <lfs-internal.h>
-
 char *filename;
 char *lfsfilename;
 //std::string temp = "datafile.df";
 //filename = strdup(temp.c_str());
 //temp = "metafile.mf";
 //lfsfilename = strdup(temp.c_str());
-
 
 struct lfs_files lfsfiles[20];
 int current_index = 0;
@@ -37,8 +34,7 @@ int lfs_open(char *df, int flags, mode_t mode) {
 }
 
 // this is the LFS write function
-ssize_t
-lfs_write(int fd, void *buf, size_t count, off_t offset) {
+ssize_t lfs_write(int fd, void *buf, size_t count, off_t offset) {
   int ret = 0;
   size_t data_size;
   data_size = count;
@@ -63,10 +59,8 @@ lfs_write(int fd, void *buf, size_t count, off_t offset) {
   // fclose(lfs);
 }
 
-
 // extracts the mapping dict from our metadata(log) file
-lfs_record *
-read_record(int fd) {
+lfs_record *read_record(int fd) {
   int ret;
   // find the number of items in the array by using the size of the metadata file
   //struct stat stats;
@@ -95,10 +89,8 @@ read_record(int fd) {
   return records;
 }
 
-
 // finds the common are between two given tuples
-struct tup
-compare_tup(struct tup first, struct tup second) {
+struct tup compare_tup(struct tup first, struct tup second) {
   struct tup res;
   res.a = -1;
   res.b = -1;
@@ -124,7 +116,6 @@ compare_tup(struct tup first, struct tup second) {
   //printf("res in here: %d, %d    ", res.a, res.b);
   return res;
 }
-
 
 // recursive function that finds all of the areas that should be read to complete a read query
 int lfs_find_chunks(size_t a, size_t b, int index, struct lfs_record *my_recs, struct lfs_record **chunks_stack, int *ch_s) {
@@ -173,10 +164,8 @@ int lfs_find_chunks(size_t a, size_t b, int index, struct lfs_record *my_recs, s
   return 0;
 }
 
-
 // main function for read query
-size_t
-lfs_read(int fd, char *buf, size_t count, off_t offset) {
+size_t lfs_read(int fd, char *buf, size_t count, off_t offset) {
   //size_t lfs_read(size_t addr, size_t size, char * res){
   //int fd = open(filename, O_RDONLY);
   struct lfs_record temp;

@@ -14,12 +14,10 @@
  * along with ESDM.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-
 /**
  * @file
  * @brief Implements the callbacks for the HDF5 VOL Plugin
  */
-
 
 ///////////////////////////////////////////////////////////////////////////////
 // Attributes
@@ -45,7 +43,6 @@
 //
 //
 
-
 // extract from ../install/download/vol/src/H5Apkg.h:233 for reference (consider any structure strictly private!)
 
 // /* H5A routines */
@@ -70,7 +67,6 @@
 //     H5A_shared_t *shared;    /* Shared attribute information */
 // };
 
-
 // ../install/download/vol/src/H5VLnative.c
 // ../install/download/vol/src/H5A.c
 
@@ -82,7 +78,6 @@ static void *H5VL_esdm_attribute_create(void *obj, H5VL_loc_params_t loc_params,
 
   // ensure ESDM initialized for HDF5 API entry points (H5*open, H5*create)
   esdm_init();
-
 
   size_t nprops = 0;
   void *iter_data;
@@ -98,7 +93,6 @@ static void *H5VL_esdm_attribute_create(void *obj, H5VL_loc_params_t loc_params,
   H5Pget_nprops(dxpl_id, &nprops);
   info("%s: dxpl_id=%ld nprops= %ld \n", __func__, dxpl_id, nprops);
   H5Piterate(dxpl_id, NULL, print_property, iter_data);
-
 
   //
   //	hid_t type_id;
@@ -213,23 +207,15 @@ static void *H5VL_esdm_attribute_create(void *obj, H5VL_loc_params_t loc_params,
   //
   //	return attribute;
 
-
   return (void *)&mock_attr;
 }
 
-static void *H5VL_esdm_attribute_open(
-void *obj,
-H5VL_loc_params_t loc_params,
-const char *attr_name,
-hid_t aapl_id,
-hid_t dxpl_id,
-void **req) {
+static void *H5VL_esdm_attribute_open(void *obj, H5VL_loc_params_t loc_params, const char *attr_name, hid_t aapl_id, hid_t dxpl_id, void **req) {
   info("%s\n", __func__);
   info("%s: *obj = %p\n", __func__, obj);
 
   // ensure ESDM initialized for HDF5 API entry points (H5*open, H5*create)
   esdm_init();
-
 
   void *attribute;
 
@@ -322,27 +308,19 @@ void **req) {
 
   return (void *)attribute;
 
-
   return NULL;
 }
 
-static herr_t H5VL_esdm_attribute_read(
-void *attr,
-hid_t mem_type_id,
-void *buf,
-hid_t dxpl_id,
-void **req) {
+static herr_t H5VL_esdm_attribute_read(void *attr, hid_t mem_type_id, void *buf, hid_t dxpl_id, void **req) {
   info("%s\n", __func__);
 
   herr_t ret_value = SUCCEED;
-
 
   //	TRACEMSG("");
   //	assert(NULL != buf);
   //	SQA_t *attr = (SQA_t *)obj;
   //	DBA_read(attr, buf);
   //	return 1;
-
 
   return ret_value;
 }
@@ -361,7 +339,6 @@ static herr_t H5VL_esdm_attribute_write(void *attr, hid_t mem_type_id, const voi
   //	}
   //	MPI_Barrier(MPI_COMM_WORLD);
   //	return 1;
-
 
   return ret_value;
 }
@@ -471,7 +448,6 @@ static herr_t H5VL_esdm_attribute_specific(void *obj, H5VL_loc_params_t loc_para
   // H5VL_ATTR_ITER:       Calls a user’s function for each attribute on an object.
   // H5VL_ATTR_RENAME:     Renames an attribute.
 
-
   switch (specific_type) {
     case H5VL_ATTR_DELETE: {
       info("%s: H5VL_ATTR_DELETE \n", __func__);
@@ -498,7 +474,6 @@ static herr_t H5VL_esdm_attribute_specific(void *obj, H5VL_loc_params_t loc_para
       break;
   }
 
-
   return ret_value;
 }
 
@@ -516,7 +491,6 @@ static herr_t H5VL_esdm_attribute_optional(void *obj, hid_t dxpl_id, void **req,
 static herr_t H5VL_esdm_attribute_close(void *attr, hid_t dxpl_id, void **req) {
   info("%s\n", __func__);
 
-
   // Ensure persistence
   // Free memory
   // inform ESDM, ESDM may decide to keep things cached?
@@ -525,7 +499,6 @@ static herr_t H5VL_esdm_attribute_close(void *attr, hid_t dxpl_id, void **req) {
 
   return ret_value;
 }
-
 
 ///////////////////////////////////////////////////////////////////////////////
 // Datatset
@@ -542,7 +515,6 @@ static herr_t H5VL_esdm_attribute_close(void *attr, hid_t dxpl_id, void **req) {
 //     herr_t (*optional)(void *obj, hid_t dxpl_id, void **req, va_list arguments);
 //     herr_t (*close) (void *dset, hid_t dxpl_id, void **req);
 // } H5VL_dataset_class_t;
-
 
 // extract from ../install/download/vol/src/H5Dpkg.h:435 for reference (consider any structure strictly private!)
 /*
@@ -587,29 +559,18 @@ static herr_t H5VL_esdm_attribute_close(void *attr, hid_t dxpl_id, void **req) {
 //    H5D_shared_t        *shared;        /* cached information from file */
 //};
 
-
 // ../install/download/vol/src/H5VLnative.c
 // ../install/download/vol/src/H5D.c
 
-
-static void *H5VL_esdm_dataset_create(
-void *obj,
-H5VL_loc_params_t loc_params,
-const char *name,
-hid_t dcpl_id,
-hid_t dapl_id,
-hid_t dxpl_id,
-void **req) {
+static void *H5VL_esdm_dataset_create(void *obj, H5VL_loc_params_t loc_params, const char *name, hid_t dcpl_id, hid_t dapl_id, hid_t dxpl_id, void **req) {
   H5VL_esdm_object_t *object;
   H5VL_esdm_dataset_t *dataset;
   H5VL_esdm_group_t *parent = (H5VL_esdm_group_t *)((H5VL_esdm_object_t *)obj)->object;
 
   info("%s\n", __func__);
 
-
   // ensure ESDM initialized for HDF5 API entry points (H5*open, H5*create)
   esdm_init();
-
 
   // Inspect dataspace
   hid_t space_id;
@@ -619,7 +580,6 @@ void **req) {
   hsize_t dims[ndims];
   H5Sget_simple_extent_dims(space_id, dims, maxdims);
 
-
   hid_t type_id;
   H5Pget(dcpl_id, "dataset_type_id", &type_id);
   size_t type_size = H5Tget_size(type_id);
@@ -628,19 +588,15 @@ void **req) {
     data_size *= dims[i];
   }
 
-
   size_t height = 10;
   size_t width = 4096;
-
 
   // Interaction with ESDM
   esdm_status ret;
   esdm_container_t *cont = NULL;
   esdm_dataset_t *dset = NULL;
 
-
   esdm_init();
-
 
   // define dataspace
   int64_t bounds[] = {height, width};
@@ -649,10 +605,8 @@ void **req) {
   cont = esdm_container_t_create("mycontainer");
   dset = esdm_dataset_create(cont, name, dspace);
 
-
   esdm_container_t_commit(cont);
   esdm_dataset_commit(dset);
-
 
   //esdm_dataset_t* esdm_dataset_create(esdm_container_t *container, char * name, esdm_dataspace_t *dataspace);
 
@@ -672,7 +626,6 @@ void **req) {
   // #8  0x0000000000400e29 in main (argc=1, argv=0x7fffffffc8e8) at /home/pq/ESiWACE/ESD-Middleware/src/tools/netcdf-bench.c:53
   // #9  0x00007ffff5cc1731 in __libc_start_main () from /lib64/libc.so.6
   // #10 0x0000000000400b69 in ?? ()
-
 
   // allocate resoources
   object = (H5VL_esdm_object_t *)malloc(sizeof(H5VL_esdm_object_t));
@@ -721,7 +674,6 @@ void **req) {
   // fetch from cpl
   info("%s: dataspace: \n", __func__);
 
-
   if (name != NULL) { // anonymous object/datset
     // check if the object exists already in the parent
     if (g_hash_table_lookup(parent->childs_tbl, name) != NULL) {
@@ -737,25 +689,21 @@ void **req) {
   return (void *)object;
 }
 
-
 static void *H5VL_esdm_dataset_open(void *obj, H5VL_loc_params_t loc_params, const char *name, hid_t dapl_id, hid_t dxpl_id, void **req) {
   info("%s\n", __func__);
 
   // ensure ESDM initialized for HDF5 API entry points (H5*open, H5*create)
   esdm_init();
 
-
   H5VL_esdm_group_t *parent = (H5VL_esdm_group_t *)((H5VL_esdm_object_t *)obj)->object;
 
   //esdm_dataset_t* esdm_dataset_retrieve(esdm_container_t *container, const char * name);
-
 
   H5VL_esdm_object_t *child = g_hash_table_lookup(parent->childs_tbl, name);
   info("Group open: %p with %s child %p\n", obj, name, child);
 
   return (void *)child;
 }
-
 
 static herr_t H5VL_esdm_dataset_read(void *dset, hid_t mem_type_id, hid_t mem_space_id, hid_t file_space_id, hid_t xfer_plist_id, void *buf, void **req) {
   info("%s\n", __func__);
@@ -765,22 +713,17 @@ static herr_t H5VL_esdm_dataset_read(void *dset, hid_t mem_type_id, hid_t mem_sp
   return ret_value;
 }
 
-
 static herr_t H5VL_esdm_dataset_write(void *dset, hid_t mem_type_id, hid_t mem_space_id, hid_t file_space_id, hid_t xfer_plist_id, const void *buf, void **req) {
   info("%s\n", __func__);
 
   herr_t ret_value = SUCCEED;
 
-
   dset_t *d = (dset_t *)malloc(sizeof(dset_t));
   //d->object = (obj_t*) malloc(sizeof(obj_t));
 
-
   int ndims = H5Sget_simple_extent_ndims(mem_space_id);
 
-
   // src/H5public.h:184:typedef unsigned long long 	hsize_t;
-
 
   hsize_t dims[ndims];
   hsize_t max_dims[ndims];
@@ -816,18 +759,14 @@ static herr_t H5VL_esdm_dataset_write(void *dset, hid_t mem_type_id, hid_t mem_s
     fail("Unsupported dataspace.");
   }
 
-
   off_t rel_offset = start[0] * block_size * d->object.fapl.mpi_size + block_size * d->object.fapl.mpi_rank;
 
   off_t offset = d->offset + rel_offset;
 
-
   //dataset_update(dset, buf, block_size, offset);
-
 
   return ret_value;
 }
-
 
 static herr_t H5VL_esdm_dataset_get(void *obj, H5VL_dataset_get_t get_type, hid_t dxpl_id, void **req, va_list arguments) {
   info("%s\n", __func__);
@@ -836,7 +775,6 @@ static herr_t H5VL_esdm_dataset_get(void *obj, H5VL_dataset_get_t get_type, hid_
   H5VL_esdm_object_t *object;
   H5VL_esdm_dataset_t *dataset;
   dataset = (H5VL_esdm_dataset_t *)((H5VL_esdm_object_t *)obj)->object;
-
 
   info("%s: obj=%p\n", __func__, obj);
 
@@ -881,10 +819,8 @@ static herr_t H5VL_esdm_dataset_get(void *obj, H5VL_dataset_get_t get_type, hid_
       info("%s: spaceid=%ld status=%d is_simple=%d\n", __func__, spaceid, spaceid, status, H5Sis_simple(spaceid));
       info("%s: dataset->dataspace=%ld status=%d is_simple=%d\n", __func__, dataset->dataspace, status, H5Sis_simple(dataset->dataspace));
 
-
       *ret_id = H5Scopy(dataset->dataspace);
       //*ret_id = spaceid;
-
 
       /*
                 hid_t	*ret_id = va_arg (arguments, hid_t *);
@@ -904,7 +840,7 @@ static herr_t H5VL_esdm_dataset_get(void *obj, H5VL_dataset_get_t get_type, hid_
       H5D_space_status_t *allocation = va_arg(arguments, H5D_space_status_t *);
 
       /*
-                // Read data space address and return 
+                // Read data space address and return
                 if(H5D__get_space_status(dset, allocation, dxpl_id) < 0)
                     HGOTO_ERROR(H5E_DATASET, H5E_CANTINIT, FAIL, "unable to get space status")
 
@@ -967,7 +903,7 @@ static herr_t H5VL_esdm_dataset_get(void *obj, H5VL_dataset_get_t get_type, hid_
       hsize_t *ret = va_arg(arguments, hsize_t *);
 
       /*
-                // Set return value 
+                // Set return value
                 if(H5D__get_storage_size(dset, dxpl_id, ret) < 0)
                     HGOTO_ERROR(H5E_DATASET, H5E_CANTGET, 0, "can't get size of dataset's storage")
                 */
@@ -981,7 +917,7 @@ static herr_t H5VL_esdm_dataset_get(void *obj, H5VL_dataset_get_t get_type, hid_
       // var_args: &ret_value
       haddr_t *ret = va_arg(arguments, haddr_t *);
 
-      /* Set return value 
+      /* Set return value
                 *ret = H5D__get_offset(dset);
                 if(!H5F_addr_defined(*ret))
                     *ret = HADDR_UNDEF;
@@ -995,10 +931,8 @@ static herr_t H5VL_esdm_dataset_get(void *obj, H5VL_dataset_get_t get_type, hid_
       break;
   }
 
-
   return ret_value;
 }
-
 
 static herr_t H5VL_esdm_dataset_specific(void *obj, H5VL_dataset_specific_t specific_type, hid_t dxpl_id, void **req, va_list arguments) {
   info("%s\n", __func__);
@@ -1014,7 +948,6 @@ static herr_t H5VL_esdm_dataset_specific(void *obj, H5VL_dataset_specific_t spec
   // typedef enum H5VL_dataset_specific_t {
   //     H5VL_DATASET_SET_EXTENT                 /* H5Dset_extent */
   // } H5VL_dataset_specific_t;
-
 
   // H5VL_DATASET_SET_EXTENT:    Changes the sizes of a dataset’s dims.
 
@@ -1038,7 +971,6 @@ static herr_t H5VL_esdm_dataset_specific(void *obj, H5VL_dataset_specific_t spec
         info("%s: rank[i]=%d, dims=%lld, max=%lld   =>   size=%lld\n", __func__, i, dims[i], max[i], size[i]);
       }
 
-
       // herr_t H5Sset_extent_simple( hid_t space_id, int rank, const hsize_t *current_size, const hsize_t *maximum_size )
       H5Sset_extent_simple(dataset->dataspace, rank, size, max);
 
@@ -1052,7 +984,6 @@ static herr_t H5VL_esdm_dataset_specific(void *obj, H5VL_dataset_specific_t spec
   return ret_value;
 }
 
-
 static herr_t H5VL_esdm_dataset_optional(void *obj, hid_t dxpl_id, void **req, va_list arguments) {
   info("%s\n", __func__);
 
@@ -1060,7 +991,6 @@ static herr_t H5VL_esdm_dataset_optional(void *obj, hid_t dxpl_id, void **req, v
 
   return ret_value;
 }
-
 
 static herr_t H5VL_esdm_dataset_close(void *dset, hid_t dxpl_id, void **req) {
   info("%s\n", __func__);
@@ -1072,7 +1002,6 @@ static herr_t H5VL_esdm_dataset_close(void *dset, hid_t dxpl_id, void **req) {
 
   return 0;
 }
-
 
 ///////////////////////////////////////////////////////////////////////////////
 // Datatype
@@ -1091,14 +1020,12 @@ static herr_t H5VL_esdm_dataset_close(void *dset, hid_t dxpl_id, void **req) {
 //     herr_t (*close) (void *dt, hid_t dxpl_id, void **req);
 // } H5VL_type_class_t;
 
-
 // TODO some locking here
 static GHashTable *type_table = NULL;
 
 static void H5VL_esdm_init_type(hid_t vipl_id) {
   type_table = g_hash_table_new(g_str_hash, g_str_equal);
 }
-
 
 static void *H5VL_esdm_type_t_commit(void *obj, H5VL_loc_params_t loc_params, const char *name, hid_t type_id, hid_t lcpl_id, hid_t tcpl_id, hid_t tapl_id, hid_t dxpl_id, void **req) {
   g_hash_table_insert(type_table, (char *)name, (void *)type_id);
@@ -1114,7 +1041,6 @@ static void *H5VL_esdm_type_t_open(void *obj, H5VL_loc_params_t loc_params, cons
 
   return (void *)tid;
 }
-
 
 static herr_t H5VL_esdm_type_t_get(void *obj, H5VL_type_get_t get_type, hid_t dxpl_id, void **req, va_list arguments) {
   herr_t ret_value = SUCCEED;
@@ -1148,7 +1074,6 @@ static herr_t H5VL_esdm_type_t_get(void *obj, H5VL_type_get_t get_type, hid_t dx
   return ret_value;
 }
 
-
 static herr_t H5VL_esdm_type_t_specific(void *obj, H5VL_type_specific_t specific_type, hid_t dxpl_id, void **req, va_list arguments) {
   herr_t ret_value = SUCCEED;
 
@@ -1163,7 +1088,6 @@ static herr_t H5VL_esdm_type_t_specific(void *obj, H5VL_type_specific_t specific
   return ret_value;
 }
 
-
 static herr_t H5VL_esdm_type_t_optional(void *obj, hid_t dxpl_id, void **req, va_list arguments) {
   herr_t ret_value = SUCCEED;
 
@@ -1172,7 +1096,6 @@ static herr_t H5VL_esdm_type_t_optional(void *obj, hid_t dxpl_id, void **req, va
   return ret_value;
 }
 
-
 static herr_t H5VL_esdm_type_t_close(void *dt, hid_t dxpl_id, void **req) {
   herr_t ret_value = SUCCEED;
 
@@ -1180,7 +1103,6 @@ static herr_t H5VL_esdm_type_t_close(void *dt, hid_t dxpl_id, void **req) {
 
   return ret_value;
 }
-
 
 ///////////////////////////////////////////////////////////////////////////////
 // File
@@ -1197,7 +1119,6 @@ static herr_t H5VL_esdm_type_t_close(void *dt, hid_t dxpl_id, void **req) {
 //     herr_t (*close) (void *file, hid_t dxpl_id, void **req);
 // } H5VL_file_class_t;
 //
-
 
 // /* Structure specifically to store superblock. This was originally
 //  * maintained entirely within H5F_file_t, but is now extracted
@@ -1217,7 +1138,6 @@ static herr_t H5VL_esdm_type_t_close(void *dt, hid_t dxpl_id, void **req) {
 //     haddr_t     root_addr;      /* Root group address                         */
 //     H5G_entry_t *root_ent;      /* Root group symbol table entry              */
 // } H5F_super_t;
-
 
 // extract from ../install/download/vol/src/H5Fpkg.h:233 for reference (consider any structure strictly private!)
 ///*
@@ -1315,13 +1235,10 @@ static herr_t H5VL_esdm_type_t_close(void *dt, hid_t dxpl_id, void **req) {
 //#endif /* H5_HAVE_PARALLEL */
 //};
 
-
 // ../install/download/vol/src/H5VLnative.c
 // ../install/download/vol/src/H5G.c
 
-
 static GHashTable *files_tbl = NULL;
-
 
 static void *H5VL_esdm_file_create(const char *name, unsigned flags, hid_t fcpl_id, hid_t fapl_id, hid_t fxpl_id, void **req) {
   H5VL_esdm_object_t *object;
@@ -1331,10 +1248,8 @@ static void *H5VL_esdm_file_create(const char *name, unsigned flags, hid_t fcpl_
 
   info("%s: name=%s \n", __func__, name);
 
-
   // ensure ESDM initialized for HDF5 API entry points (H5*open, H5*create)
   esdm_init();
-
 
   // map HDF5 Files to ESDM containers
   esdm_container_t *cont = esdm_container_t_create(name);
@@ -1349,7 +1264,6 @@ static void *H5VL_esdm_file_create(const char *name, unsigned flags, hid_t fcpl_
   print_json(json); // inspect
 
   //esdm_container_t_commit(cont);
-
 
   // analyse property lists
   size_t nprops = 0;
@@ -1367,9 +1281,7 @@ static void *H5VL_esdm_file_create(const char *name, unsigned flags, hid_t fcpl_
   info("%s: fxpl_id=%ld nprops= %d \n", __func__, fxpl_id, nprops);
   H5Piterate(fxpl_id, NULL, print_property, iter_data);
 
-
   //gchar * g_base64_encode (const guchar *data, gsize len);
-
 
   // create files hash map if not already existent
   if (files_tbl == NULL) {
@@ -1379,9 +1291,7 @@ static void *H5VL_esdm_file_create(const char *name, unsigned flags, hid_t fcpl_
   // lookup the filename in the lsit of files
   file = g_hash_table_lookup(files_tbl, name);
 
-
   info("%s: files_tbl.size=%d\n", __func__, g_hash_table_size(files_tbl));
-
 
   // conform to HDF5: invalid https://www.hdfgroup.org/HDF5/doc/RM/RM_H5F.html#File-Create
   if ((flags & H5F_ACC_EXCL) && file != NULL) {
@@ -1392,7 +1302,6 @@ static void *H5VL_esdm_file_create(const char *name, unsigned flags, hid_t fcpl_
     // TODO: truncate the file. Free all structures...
     H5VL_esdm_group_init(&file->root_grp);
   }
-
 
   // create the file if not already existent
   if (file == NULL) {
@@ -1433,13 +1342,10 @@ static void *H5VL_esdm_file_create(const char *name, unsigned flags, hid_t fcpl_
 
   info("%s: New file=%p with name=%s\n", __func__, (void *)file, name);
 
-
   info("%s: files_tbl.size=%d\n", __func__, g_hash_table_size(files_tbl));
-
 
   return (void *)object;
 }
-
 
 static void *H5VL_esdm_file_open(const char *name, unsigned flags, hid_t fapl_id, hid_t dxpl_id, void **req) {
   H5VL_esdm_object_t *object;
@@ -1448,19 +1354,16 @@ static void *H5VL_esdm_file_open(const char *name, unsigned flags, hid_t fapl_id
 
   info("%s: name=%s \n", __func__, name);
 
-
   // ensure ESDM initialized for HDF5 API entry points (H5*open, H5*create)
   esdm_init();
 
   //esdm_container_t* esdm_container_t_retrieve(const char * name);
   //guchar * g_base64_decode (const gchar *text, gsize *out_len);
 
-
   object = g_hash_table_lookup(files_tbl, name);
 
   return (void *)object;
 }
-
 
 static herr_t H5VL_esdm_file_get(void *file, H5VL_file_get_t get_type, hid_t dxpl_id, void **req, va_list arguments) {
   herr_t ret_value = SUCCEED;
@@ -1487,9 +1390,7 @@ static herr_t H5VL_esdm_file_get(void *file, H5VL_file_get_t get_type, hid_t dxp
   // H5VL_FILE_GET_OBJ_IDS:
   // H5VL_OBJECT_GET_FILE
 
-
   //guchar * g_base64_decode (const gchar *text, gsize *out_len);
-
 
   switch (get_type) {
     /* H5Fget_access_plist */
@@ -1595,12 +1496,10 @@ static herr_t H5VL_esdm_file_get(void *file, H5VL_file_get_t get_type, hid_t dxp
   return ret_value;
 }
 
-
 herr_t H5VL_esdm_file_specific(void *obj, H5VL_file_specific_t specific_type, hid_t dxpl_id, void **req, va_list arguments) {
   info("%s\n", __func__);
 
   herr_t ret_value = SUCCEED;
-
 
   //	TRACEMSG("");
   //	SQF_t *file = (SQF_t *)obj;
@@ -1626,7 +1525,6 @@ herr_t H5VL_esdm_file_specific(void *obj, H5VL_file_specific_t specific_type, hi
   return ret_value;
 }
 
-
 herr_t H5VL_esdm_file_optional(void *obj, hid_t dxpl_id, void **req, va_list arguments) {
   info("%s\n", __func__);
 
@@ -1635,7 +1533,6 @@ herr_t H5VL_esdm_file_optional(void *obj, hid_t dxpl_id, void **req, va_list arg
   return ret_value;
 }
 
-
 static herr_t H5VL_esdm_file_close(void *file, hid_t dxpl_id, void **req) {
   info("%s\n", __func__);
 
@@ -1643,7 +1540,6 @@ static herr_t H5VL_esdm_file_close(void *file, hid_t dxpl_id, void **req) {
 
   return ret_value;
 }
-
 
 ///////////////////////////////////////////////////////////////////////////////
 // Group
@@ -1681,13 +1577,11 @@ static herr_t H5VL_esdm_file_close(void *file, hid_t dxpl_id, void **req) {
 // ../install/download/vol/src/H5VLnative.c
 // ../install/download/vol/src/H5G.c
 
-
 static void H5VL_esdm_group_init(H5VL_esdm_group_t *group) {
   group->childs_tbl = g_hash_table_new(g_str_hash, g_str_equal);
   group->childs_ord_by_index_arr = g_array_new(0, 0, sizeof(void *));
   assert(group->childs_tbl != NULL);
 }
-
 
 static void *H5VL_esdm_group_create(void *obj, H5VL_loc_params_t loc_params, const char *name, hid_t gcpl_id, hid_t gapl_id, hid_t dxpl_id, void **req) {
   H5VL_esdm_object_t *object;
@@ -1698,7 +1592,6 @@ static void *H5VL_esdm_group_create(void *obj, H5VL_loc_params_t loc_params, con
 
   // ensure ESDM initialized for HDF5 API entry points (H5*open, H5*create)
   esdm_init();
-
 
   //esdm_container_t* esdm_container_t_create(const char *name);
 
@@ -1727,13 +1620,11 @@ static void *H5VL_esdm_group_create(void *obj, H5VL_loc_params_t loc_params, con
   return (void *)object;
 }
 
-
 static void *H5VL_esdm_group_open(void *obj, H5VL_loc_params_t loc_params, const char *name, hid_t gapl_id, hid_t dxpl_id, void **req) {
   info("%s\n", __func__);
 
   // ensure ESDM initialized for HDF5 API entry points (H5*open, H5*create)
   esdm_init();
-
 
   // map HDF5 group to ESDM containers
   esdm_container_t *cont = esdm_container_t_create(name);
@@ -1749,19 +1640,15 @@ static void *H5VL_esdm_group_open(void *obj, H5VL_loc_params_t loc_params, const
 
   esdm_container_t_commit(cont);
 
-
   H5VL_esdm_group_t *parent = (H5VL_esdm_group_t *)((H5VL_esdm_object_t *)obj)->object;
 
   H5VL_esdm_object_t *child = g_hash_table_lookup(parent->childs_tbl, name);
   info("%s: Found group=%p with name=%s in parent=%p\n", __func__, child->object, name, obj);
 
-
   //esdm_container_t* esdm_container_t_retrieve(const char * name);
-
 
   return (void *)child;
 }
-
 
 static herr_t H5VL_esdm_group_get(void *obj, H5VL_group_get_t get_type, hid_t dxpl_id, void **req, va_list arguments) {
   info("%s\n", __func__);
@@ -1796,7 +1683,6 @@ static herr_t H5VL_esdm_group_get(void *obj, H5VL_group_get_t get_type, hid_t dx
       info("Group get: INFO %p loc_param: %d \n", obj, loc_params.type);
 
       H5VL_esdm_group_t *relevant_group;
-
 
       if (loc_params.type == H5VL_OBJECT_BY_SELF) {
         relevant_group = group;
@@ -1836,7 +1722,6 @@ static herr_t H5VL_esdm_group_get(void *obj, H5VL_group_get_t get_type, hid_t dx
   return ret_value;
 }
 
-
 static herr_t H5VL_esdm_group_specific(void *obj, H5VL_group_specific_t specific_type, hid_t dxpl_id, void **req, va_list arguments) {
   info("%s\n", __func__);
 
@@ -1850,7 +1735,6 @@ static herr_t H5VL_esdm_group_specific(void *obj, H5VL_group_specific_t specific
   return ret_value;
 }
 
-
 static herr_t H5VL_esdm_group_optional(void *obj, hid_t dxpl_id, void **req, va_list arguments) {
   info("%s\n", __func__);
 
@@ -1862,7 +1746,6 @@ static herr_t H5VL_esdm_group_optional(void *obj, hid_t dxpl_id, void **req, va_
   return ret_value;
 }
 
-
 static herr_t H5VL_esdm_group_close(void *grp, hid_t dxpl_id, void **req) {
   info("%s\n", __func__);
 
@@ -1873,7 +1756,6 @@ static herr_t H5VL_esdm_group_close(void *grp, hid_t dxpl_id, void **req) {
 
   return ret_value;
 }
-
 
 ///////////////////////////////////////////////////////////////////////////////
 // Link
@@ -1891,17 +1773,14 @@ static herr_t H5VL_esdm_group_close(void *grp, hid_t dxpl_id, void **req) {
 // } H5VL_link_class_t;
 //
 
-
 // ../install/download/vol/src/H5VLnative.c
 // ../install/download/vol/src/H5L.c
-
 
 herr_t H5VL_esdm_link_create(H5VL_link_create_type_t create_type, void *obj, H5VL_loc_params_t loc_params, hid_t lcpl_id, hid_t lapl_id, hid_t dxpl_id, void **req) {
   info("%s\n", __func__);
 
   // ensure ESDM initialized for HDF5 API entry points (H5*open, H5*create)
   esdm_init();
-
 
   herr_t ret_value = SUCCEED;
 
@@ -1965,11 +1844,9 @@ herr_t H5VL_esdm_link_optional(void *obj, hid_t dxpl_id, void **req, va_list arg
   return ret_value;
 }
 
-
 ///////////////////////////////////////////////////////////////////////////////
 // Object
 ///////////////////////////////////////////////////////////////////////////////
-
 
 // /* H5O routines */
 // typedef struct H5VL_object_class_t {
@@ -1980,7 +1857,6 @@ herr_t H5VL_esdm_link_optional(void *obj, hid_t dxpl_id, void **req, va_list arg
 //     herr_t (*optional)(void *obj, hid_t dxpl_id, void **req, va_list arguments);
 // } H5VL_object_class_t;
 //
-
 
 // Extract from : src/H5Opkg.h:263:struct H5O_t {
 
@@ -2052,10 +1928,8 @@ herr_t H5VL_esdm_link_optional(void *obj, hid_t dxpl_id, void **req, va_list arg
 //     herr_t      (*flush)(void *obj_ptr, hid_t dxpl_id); /*flush an opened object of this class */
 // } H5O_obj_class_t;
 
-
 // ../install/download/vol/src/H5VLnative.c
 // ../install/download/vol/src/H5G.c
-
 
 void *H5VL_esdm_object_open(void *obj, H5VL_loc_params_t loc_params, H5I_type_t *opened_type, hid_t dxpl_id, void **req) {
   info("%s\n", __func__);
@@ -2063,10 +1937,8 @@ void *H5VL_esdm_object_open(void *obj, H5VL_loc_params_t loc_params, H5I_type_t 
   // ensure ESDM initialized for HDF5 API entry points (H5*open, H5*create)
   esdm_init();
 
-
   return NULL;
 }
-
 
 herr_t H5VL_esdm_object_copy(void *src_obj, H5VL_loc_params_t loc_params1, const char *src_name, void *dst_obj, H5VL_loc_params_t loc_params2, const char *dst_name, hid_t ocpypl_id, hid_t lcpl_id, hid_t dxpl_id, void **req) {
   info("%s\n", __func__);
@@ -2075,7 +1947,6 @@ herr_t H5VL_esdm_object_copy(void *src_obj, H5VL_loc_params_t loc_params1, const
 
   return ret_value;
 }
-
 
 herr_t H5VL_esdm_object_get(void *obj, H5VL_loc_params_t loc_params, H5VL_object_get_t get_type, hid_t dxpl_id, void **req, va_list arguments) {
   info("%s\n", __func__);
@@ -2089,10 +1960,8 @@ herr_t H5VL_esdm_object_get(void *obj, H5VL_loc_params_t loc_params, H5VL_object
   //     H5VL_REF_GET_TYPE                  /* type of object                    */
   // } H5VL_object_get_t;
 
-
   return ret_value;
 }
-
 
 herr_t H5VL_esdm_object_specific(void *obj, H5VL_loc_params_t loc_params, H5VL_object_specific_t specific_type, hid_t dxpl_id, void **req, va_list arguments) {
   info("%s\n", __func__);
@@ -2106,7 +1975,6 @@ herr_t H5VL_esdm_object_specific(void *obj, H5VL_loc_params_t loc_params, H5VL_o
   //     H5VL_OBJECT_VISIT,                 /* H5Ovisit(_by_name)                 */
   //     H5VL_REF_CREATE                    /* H5Rcreate                          */
   // } H5VL_object_specific_t;
-
 
   switch (specific_type) {
     case H5VL_OBJECT_CHANGE_REF_COUNT: {
@@ -2133,10 +2001,8 @@ herr_t H5VL_esdm_object_specific(void *obj, H5VL_loc_params_t loc_params, H5VL_o
       break;
   }
 
-
   return ret_value;
 }
-
 
 herr_t H5VL_esdm_object_optional(void *obj, hid_t dxpl_id, void **req, va_list arguments) {
   info("%s\n", __func__);
@@ -2149,7 +2015,6 @@ herr_t H5VL_esdm_object_optional(void *obj, hid_t dxpl_id, void **req, va_list a
   return ret_value;
 }
 
-
 ///////////////////////////////////////////////////////////////////////////////
 // Async
 ///////////////////////////////////////////////////////////////////////////////
@@ -2161,10 +2026,8 @@ herr_t H5VL_esdm_object_optional(void *obj, hid_t dxpl_id, void **req, va_list a
 //     herr_t (*wait)  (void **, H5ES_status_t *);
 // } H5VL_async_class_t;
 
-
 herr_t H5VL_esdm_async_cancel() {
   info("%s (NOT IMPLEMENTED)\n", __func__);
-
 
   herr_t ret_value = SUCCEED;
   return ret_value;

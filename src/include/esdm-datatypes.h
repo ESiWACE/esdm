@@ -5,7 +5,6 @@
 #ifndef ESDM_DATATYPES_H
 #define ESDM_DATATYPES_H
 
-
 #include <smd.h>
 
 #define ESDM_MAX_SIZE 1024
@@ -26,7 +25,6 @@ typedef enum esdm_mode {
   ESDM_DATASET,
   ESDM_CONTAINER,
 } esdm_mode;
-
 
 // where is the data accessible
 typedef enum data_accessibility_t {
@@ -56,11 +54,9 @@ typedef enum esdm_loglevel {
   ESDM_LOGLEVEL_NOTSET
 } esdm_loglevel;
 
-
 // LOGICAL/DOMAIN DATATYPES ///////////////////////////////////////////////////
 
-
-typedef struct esdm_container_t_t esdm_container_t;
+typedef struct esdm_container_t esdm_container_t;
 typedef struct esdm_metadata_t esdm_metadata_t;
 typedef struct esdm_dataset_t esdm_dataset_t;
 typedef struct esdm_dataspace_t esdm_dataspace_t;
@@ -78,10 +74,8 @@ struct esdm_dataspace_t {
   esdm_type_t type;
   int64_t dims;
   int64_t *size;
-
   esdm_dataspace_t *subspace_of;
   int64_t *offset;
-
   char *json;
 };
 

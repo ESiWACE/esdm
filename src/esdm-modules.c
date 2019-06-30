@@ -20,19 +20,15 @@
  *
  */
 
+#include <backends-data/posix/posix.h>
+#include <esdm-internal.h>
+#include <esdm.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 
-#include <esdm-internal.h>
-#include <esdm.h>
-
-#include <backends-data/posix/posix.h>
-
-
 #define DEBUG_ENTER ESDM_DEBUG_COM_FMT("MODULES", "", "")
 #define DEBUG(fmt, ...) ESDM_DEBUG_COM_FMT("MODULES", fmt, __VA_ARGS__)
-
 
 #ifdef ESDM_HAS_POSIX
 #  include "backends-data/posix/posix.h"
@@ -61,7 +57,6 @@
 #  include "backends-metadata/mongodb/mongodb.h"
 #  pragma message("Building ESDM with MongoDB support.")
 #endif
-
 
 esdm_modules_t *esdm_modules_init(esdm_instance_t *esdm) {
   ESDM_DEBUG(__func__);
@@ -128,7 +123,6 @@ esdm_modules_t *esdm_modules_init(esdm_instance_t *esdm) {
   return modules;
 }
 
-
 esdm_status esdm_modules_finalize(esdm_instance_t *esdm) {
   ESDM_DEBUG(__func__);
 
@@ -147,7 +141,6 @@ esdm_status esdm_modules_finalize(esdm_instance_t *esdm) {
 
   return ESDM_SUCCESS;
 }
-
 
 esdm_status esdm_modules_get_by_type(esdm_module_type_t type, esdm_module_type_array_t **array) {
   ESDM_DEBUG(__func__);

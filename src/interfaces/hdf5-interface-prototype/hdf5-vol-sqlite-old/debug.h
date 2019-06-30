@@ -16,7 +16,6 @@
  * =====================================================================================
  */
 
-
 #ifndef debug_INC
 #define debug_INC
 
@@ -41,7 +40,6 @@
 #  define TRACEMSG(...)
 #endif
 
-
 // debug
 #if DEBUG
 #  define DEBUGMSG(...)                                                               \
@@ -56,7 +54,6 @@
 #  define DEBUGMSG(...)
 #endif
 
-
 // error
 #define ERRORMSG(...)                                                               \
   {                                                                                 \
@@ -68,7 +65,6 @@
     assert(false);                                                                  \
     exit(1);                                                                        \
   }
-
 
 // todo
 #define TODOMSG(...)                                                               \

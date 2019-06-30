@@ -14,22 +14,19 @@
  * along with ESDM.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-
 /**
  * @file
  * @brief Entry point for ESDM API Implementation
  */
 
+#include <esdm-internal.h>
+#include <esdm.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 
-#include <esdm-internal.h>
-#include <esdm.h>
-
 // TODO: Decide on initialization mechanism.
 static int is_initialized = 0;
-
 
 esdm_instance_t esdm = {
 .procs_per_node = 1,
@@ -49,13 +46,11 @@ esdm_status esdm_set_total_procs(int procs) {
   return ESDM_SUCCESS;
 }
 
-
 esdm_status esdm_load_config_str(const char *str) {
   assert(str != NULL);
   esdm.config = esdm_config_init_from_str(str);
   return ESDM_SUCCESS;
 }
-
 
 /*
 void esdm_atexit() {
@@ -69,7 +64,6 @@ esdm_status esdm_dataset_get_dataspace(esdm_dataset_t *dset, esdm_dataspace_t **
   assert(*out_dataspace != NULL);
   return ESDM_SUCCESS;
 }
-
 
 esdm_status esdm_init() {
   ESDM_DEBUG("Init");
@@ -106,7 +100,6 @@ esdm_status esdm_init() {
   return ESDM_SUCCESS;
 }
 
-
 esdm_status esdm_mkfs(int enforce_format, data_accessibility_t target) {
   if (!is_initialized) {
     return ESDM_ERROR;
@@ -131,10 +124,8 @@ esdm_status esdm_mkfs(int enforce_format, data_accessibility_t target) {
   return ret_final;
 }
 
-
 esdm_status esdm_finalize() {
   ESDM_DEBUG(__func__);
-
 
   // ESDM data data structures that require proper cleanup..
   // in particular this effects data and cache state which is not yet persistent
@@ -147,11 +138,9 @@ esdm_status esdm_finalize() {
   return ESDM_SUCCESS;
 }
 
-
 ///////////////////////////////////////////////////////////////////////////////
 // Public API: POSIX Legacy Compaitbility /////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////
-
 
 esdm_status esdm_stat(char *desc, char *result) {
   ESDM_DEBUG(__func__);
@@ -163,12 +152,10 @@ esdm_status esdm_stat(char *desc, char *result) {
   return ESDM_SUCCESS;
 }
 
-
 esdm_status esdm_create(char *name, int mode, esdm_container_t **container, esdm_dataset_t **dataset) {
   ESDM_DEBUG(__func__);
 
   esdm_init();
-
 
   int64_t bounds[1] = {0};
   esdm_dataspace_t *dataspace;
@@ -186,7 +173,6 @@ esdm_status esdm_create(char *name, int mode, esdm_container_t **container, esdm
   return ESDM_SUCCESS;
 }
 
-
 esdm_status esdm_open(char *name, int mode) {
   ESDM_DEBUG(__func__);
 
@@ -195,13 +181,11 @@ esdm_status esdm_open(char *name, int mode) {
   return ESDM_SUCCESS;
 }
 
-
 esdm_status esdm_write(esdm_dataset_t *dataset, void *buf, esdm_dataspace_t *subspace) {
   ESDM_DEBUG(__func__);
 
   return esdm_scheduler_process_blocking(&esdm, ESDM_OP_WRITE, dataset, buf, subspace);
 }
-
 
 esdm_status esdm_read(esdm_dataset_t *dataset, void *buf, esdm_dataspace_t *subspace) {
   ESDM_DEBUG("");
@@ -209,14 +193,11 @@ esdm_status esdm_read(esdm_dataset_t *dataset, void *buf, esdm_dataspace_t *subs
   return esdm_scheduler_process_blocking(&esdm, ESDM_OP_READ, dataset, buf, subspace);
 }
 
-
 esdm_status esdm_close(void *desc) {
   ESDM_DEBUG(__func__);
 
-
   return ESDM_SUCCESS;
 }
-
 
 esdm_status esdm_sync() {
   ESDM_DEBUG(__func__);

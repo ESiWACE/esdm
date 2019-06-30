@@ -45,7 +45,6 @@
     }                                                                                    \
   }
 
-
 /**
  * @brief  Error Handling
  *
@@ -84,7 +83,6 @@ void benchmark_init(benchmark_t *bm) {
   bm->ndims = 0;
 }
 
-
 void benchmark_destroy(benchmark_t *bm) {
   free(bm->processor);
   bm->processor = NULL;
@@ -96,19 +94,7 @@ void benchmark_destroy(benchmark_t *bm) {
   bm->ms = NULL;
 }
 
-
-void benchmark_setup(
-benchmark_t *bm,
-const procs_t procs,
-const size_t ndims,
-const size_t *dgeom,
-const size_t *bgeom,
-const size_t *cgeom,
-const char *testfn,
-const io_mode_t io_mode,
-const int par_access,
-const bool is_unlimited,
-const int use_fill_value) {
+void benchmark_setup(benchmark_t *bm, const procs_t procs, const size_t ndims, const size_t *dgeom, const size_t *bgeom, const size_t *cgeom, const char *testfn, const io_mode_t io_mode, const int par_access, const bool is_unlimited, const int use_fill_value) {
   assert(dgeom[DX] % procs.nn == 0);
   assert(dgeom[DY] % procs.ppn == 0);
 
@@ -181,7 +167,6 @@ const int use_fill_value) {
   }
 }
 
-
 int benchmark_run(benchmark_t *bm, DATATYPE *compare_block) {
   int verify_results = 1;
   int err = 0;
@@ -206,7 +191,6 @@ int benchmark_run(benchmark_t *bm, DATATYPE *compare_block) {
   timespec_t start_open, stop_open;
   MPI_Barrier(MPI_COMM_WORLD);
   start_timer(&start_open);
-
 
   switch (bm->io_mode) {
     case IO_MODE_WRITE:
@@ -270,7 +254,6 @@ int benchmark_run(benchmark_t *bm, DATATYPE *compare_block) {
   start_timer(&stop_open);
   /* END: OPEN BENCHMARK */
 
-
   /* IO BENCHMARK */
   DEBUG_MESSAGE("IO_BENCHMARK[%d]\n", bm->rank);
   timespec_t start_io, stop_io;
@@ -307,7 +290,6 @@ int benchmark_run(benchmark_t *bm, DATATYPE *compare_block) {
   stop_timer(&stop_io);
   /* END: IO BENCHMARK */
 
-
   /* CLOSE BENCHMARK */
   DEBUG_MESSAGE("CLOSE_BENCHMARK\n");
   timespec_t start_close, stop_close;
@@ -317,7 +299,6 @@ int benchmark_run(benchmark_t *bm, DATATYPE *compare_block) {
   MPI_Barrier(MPI_COMM_WORLD);
   stop_timer(&stop_close);
   /* END: OPEN BENCHMARK */
-
 
   /* REPORT */
   bm->duration.open = time_to_double(stop_open) - time_to_double(start_open);

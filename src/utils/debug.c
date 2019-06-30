@@ -21,13 +21,10 @@
  *
  */
 
+#include <esdm-internal.h>
+#include <glib.h>
 #include <stdarg.h>
 #include <stdio.h>
-
-#include <glib.h>
-
-#include <esdm-internal.h>
-
 
 void esdm_log(uint32_t loglevel, const char *format, ...) {
   uint32_t active_loglevel = 99;
@@ -40,7 +37,6 @@ void esdm_log(uint32_t loglevel, const char *format, ...) {
     va_end(args);
   }
 }
-
 
 static void print_hashtable_entry(gpointer key, gpointer value, gpointer user_data) {
   ESDM_DEBUG_FMT("GHashTable Entry: key=%p (s:%s), value=%p (s:%s), user_data=%p\n", key, key, value, value, user_data);

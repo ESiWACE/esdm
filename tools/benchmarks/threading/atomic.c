@@ -4,7 +4,6 @@
 #include <stdatomic.h>
 #include <stdio.h>
 
-
 #include "util/test_util.h"
 
 /*
@@ -70,7 +69,6 @@ void backend_thread(gpointer data_p, gpointer backend_id) {
   //pthread_spin_unlock(& status->spinlock);
   free(data);
 }
-
 
 void startIO(long work, io_request_status_t *status) {
   // for now each IO starts one fragment per backend

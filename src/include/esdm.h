@@ -5,18 +5,15 @@
 #ifndef ESDM_H
 #define ESDM_H
 
+#include <esdm-datatypes.h>
 #include <stddef.h>
 #include <sys/stat.h>
 #include <sys/types.h>
 #include <unistd.h>
 
-#include <esdm-datatypes.h>
-
-
 ///////////////////////////////////////////////////////////////////////////////
 // ESDM ///////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////
-
 
 // These functions must be used before calling init:
 esdm_status esdm_set_procs_per_node(int procs);
@@ -152,6 +149,7 @@ esdm_status esdm_read(esdm_dataset_t *dataset, void *buf, esdm_dataspace_t *subs
  */
 
 esdm_status esdm_container_t_create(const char *name, esdm_container_t **out_container);
+
 esdm_status esdm_container_t_retrieve(const char *name, esdm_container_t **out_container);
 
 /**
@@ -187,11 +185,15 @@ esdm_status esdm_container_t_destroy(esdm_container_t *container);
  */
 
 esdm_status esdm_dataset_create(esdm_container_t *container, const char *name, esdm_dataspace_t *dataspace, esdm_dataset_t **out_dataset);
+
 esdm_status esdm_dataset_name_dims(esdm_dataset_t *dataset, char **names);
+
 esdm_status esdm_dataset_get_name_dims(esdm_dataset_t *dataset, char const *const **out_names);
+
 esdm_status esdm_dataset_get_dataspace(esdm_dataset_t *dset, esdm_dataspace_t **out_dataspace);
 
 esdm_status esdm_dataset_iterator(esdm_container_t *container, esdm_dataset_iterator_t **out_iter);
+
 esdm_status esdm_dataset_retrieve(esdm_container_t *container, const char *name, esdm_dataset_t **out_dataset);
 
 /**
@@ -200,13 +202,14 @@ esdm_status esdm_dataset_retrieve(esdm_container_t *container, const char *name,
  */
 
 esdm_status esdm_dataset_commit(esdm_dataset_t *dataset);
+
 esdm_status esdm_dataset_destroy(esdm_dataset_t *dataset);
 /* This function adds the metadata to the ESDM */
+
 esdm_status esdm_dataset_link_attribute(esdm_dataset_t *dset, smd_attr_t *attr);
 
 /* This function returns the attributes */
 esdm_status esdm_dataset_get_attributes(esdm_dataset_t *dataset, smd_attr_t **out_metadata);
-
 
 // Dataspace
 
@@ -226,6 +229,7 @@ esdm_status esdm_dataspace_create(int64_t dims, int64_t *sizes, esdm_type_t type
  */
 
 esdm_status esdm_dataspace_deserialize(void *serialized_dataspace, esdm_dataspace_t **out_dataspace);
+
 esdm_status esdm_dataspace_subspace(esdm_dataspace_t *dataspace, int64_t dims, int64_t *size, int64_t *offset, esdm_dataspace_t **out_dataspace);
 
 /**
@@ -241,8 +245,11 @@ esdm_status esdm_dataspace_destroy(esdm_dataspace_t *dataspace);
  */
 
 esdm_status esdm_dataspace_serialize(esdm_dataspace_t *dataspace, void **out);
+
 uint64_t esdm_dataspace_element_count(esdm_dataspace_t *dataspace);
+
 uint64_t esdm_dataspace_size(esdm_dataspace_t *dataspace);
+
 void esdm_dataspace_string_descriptor(char *out_str, esdm_dataspace_t *dataspace);
 
 esdm_status esdm_dataspace_overlap_str(esdm_dataspace_t *parent, char delim, char *str_size, char *str_offset, esdm_dataspace_t **out_space);
@@ -268,6 +275,7 @@ esdm_status esdm_fragment_create(esdm_dataset_t *dataset, esdm_dataspace_t *subs
  */
 
 esdm_status esdm_fragment_deserialize(void *serialized_fragment, esdm_fragment_t **_out_fragment);
+
 esdm_status esdm_fragment_retrieve(esdm_fragment_t *fragment);
 
 /**
@@ -276,6 +284,7 @@ esdm_status esdm_fragment_retrieve(esdm_fragment_t *fragment);
  */
 
 esdm_status esdm_fragment_commit(esdm_fragment_t *fragment);
+
 esdm_status esdm_fragment_destroy(esdm_fragment_t *fragment);
 
 /**
@@ -297,8 +306,8 @@ esdm_status esdm_fragment_destroy(esdm_fragment_t *fragment);
 esdm_status esdm_fragment_serialize(esdm_fragment_t *fragment, void **out);
 
 void esdm_fragment_print(esdm_fragment_t *fragment);
-void esdm_dataspace_print(esdm_dataspace_t *dataspace);
 
+void esdm_dataspace_print(esdm_dataspace_t *dataspace);
 
 //size_t esdm_sizeof(esdm_type_t type);
 #define esdm_sizeof(type) (type->size)

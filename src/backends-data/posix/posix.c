@@ -19,12 +19,15 @@
  * @brief A data backend to provide POSIX compatibility.
  */
 
-
 #define _GNU_SOURCE /* See feature_test_macros(7) */
 
 #include <assert.h>
 #include <dirent.h>
+#include <errno.h>
+#include <esdm-debug.h>
+#include <esdm.h>
 #include <fcntl.h>
+#include <jansson.h>
 #include <stdarg.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -33,22 +36,13 @@
 #include <sys/types.h>
 #include <unistd.h>
 
-#include <errno.h>
-#include <jansson.h>
-
-#include <esdm-debug.h>
-#include <esdm.h>
-
 #include "posix.h"
-
-
 #define DEBUG_ENTER ESDM_DEBUG_COM_FMT("POSIX", "", "")
 #define DEBUG(fmt, ...) ESDM_DEBUG_COM_FMT("POSIX", fmt, __VA_ARGS__)
 
 ///////////////////////////////////////////////////////////////////////////////
 // Helper and utility /////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////
-
 
 static int mkfs(esdm_backend_t *backend, int enforce_format) {
   posix_backend_data_t *data = (posix_backend_data_t *)backend->data;
@@ -122,7 +116,6 @@ static int entry_create(const char *path) {
   return -1;
 }
 
-
 static int entry_retrieve(const char *path, void *buf) {
   int status;
   struct stat sb;
@@ -169,10 +162,8 @@ static int entry_retrieve(const char *path, void *buf) {
 	}
 	*/
 
-
   return 0;
 }
-
 
 static int entry_update(const char *path, void *buf, size_t len) {
   DEBUG_ENTER;
@@ -217,7 +208,6 @@ static int entry_update(const char *path, void *buf, size_t len) {
   return 0;
 }
 
-
 static int entry_destroy(const char *path) {
   DEBUG_ENTER;
 
@@ -243,11 +233,9 @@ static int entry_destroy(const char *path) {
   return 0;
 }
 
-
 ///////////////////////////////////////////////////////////////////////////////
 // Fragment Handlers //////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////
-
 
 static int fragment_retrieve(esdm_backend_t *backend, esdm_fragment_t *fragment, json_t *metadata) {
   DEBUG_ENTER;
@@ -277,7 +265,6 @@ static int fragment_retrieve(esdm_backend_t *backend, esdm_fragment_t *fragment,
   //DEBUG("buf=%s", fragment->buf);
   return 0;
 }
-
 
 static int fragment_update(esdm_backend_t *backend, esdm_fragment_t *fragment) {
   DEBUG_ENTER;
@@ -311,11 +298,9 @@ static int fragment_update(esdm_backend_t *backend, esdm_fragment_t *fragment) {
   return 0;
 }
 
-
 ///////////////////////////////////////////////////////////////////////////////
 // ESDM Callbacks /////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////
-
 
 static int posix_backend_performance_estimate(esdm_backend_t *backend, esdm_fragment_t *fragment, float *out_time) {
   DEBUG_ENTER;
@@ -326,7 +311,6 @@ static int posix_backend_performance_estimate(esdm_backend_t *backend, esdm_frag
   posix_backend_data_t *data = (posix_backend_data_t *)backend->data;
   return esdm_backend_t_perf_model_long_lat_perf_estimate(&data->perf_model, fragment, out_time);
 }
-
 
 int posix_finalize(esdm_backend_t *backend) {
   DEBUG_ENTER;

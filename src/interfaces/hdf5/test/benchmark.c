@@ -14,27 +14,20 @@
  * along with ESDM.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-
 /**
  * @file
  * @brief Performance test/benchmark when writing a ND dataset using the HDF5 Interface to ESDM
  */
 
+#include <assert.h>
+#include <esdm.h>
 #include <hdf5.h>
-#include <stdio.h>
-
-#include <assert.h>
-
-
-#include <assert.h>
+#include <mpi.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 
-#include <mpi.h>
-
 #include "util/test_util.h"
-#include <esdm.h>
 
 int esdm_mpi_get_tasks_per_node() {
   MPI_Comm shared_comm;
@@ -46,7 +39,6 @@ int esdm_mpi_get_tasks_per_node() {
 
   return count;
 }
-
 
 void esdm_mpi_distribute_config_file(char *config_filename) {
   int mpi_rank;
@@ -68,7 +60,6 @@ void esdm_mpi_distribute_config_file(char *config_filename) {
   esdm_load_config_str(config);
 }
 
-
 void esdm_mpi_init() {
   int mpi_size;
   MPI_Comm_size(MPI_COMM_WORLD, &mpi_size);
@@ -77,7 +68,6 @@ void esdm_mpi_init() {
   esdm_set_procs_per_node(pPerNode);
   esdm_set_total_procs(mpi_size);
 }
-
 
 int main(int argc, char *argv[]) {
   int provided;
@@ -148,7 +138,6 @@ int main(int argc, char *argv[]) {
   hsize_t h5_dim[] = {1, size / mpi_size + (tmp_rank < (size % mpi_size) ? 1 : 0), size};
   hsize_t h5_offset[] = {0, size / mpi_size * tmp_rank + (tmp_rank < (size % mpi_size) ? tmp_rank : size % mpi_size), 0};
 
-
   const long volume = dim[1] * dim[2] * sizeof(uint64_t);
   const long volume_all = timesteps * size * size * sizeof(uint64_t);
 
@@ -173,13 +162,10 @@ int main(int argc, char *argv[]) {
   esdm_container_t *container = NULL;
   esdm_dataset_t *dataset = NULL;
 
-
   esdm_mpi_init();
   esdm_mpi_distribute_config_file(config_file);
 
-
   char *filename = "file-test.h5";
-
 
   // HDF5 state, refs, ...
   hid_t file_id, group_id, dataset_id, dataspace_id, attribute_id;
@@ -201,13 +187,11 @@ int main(int argc, char *argv[]) {
   esdm_dataspace_t *dataspace = esdm_dataspace_create(3, bounds, SMD_DTYPE_UINT64);
   dataspace_id = H5Screate_simple(3, h5_bounds, NULL);
 
-
   container = esdm_container_t_create("mycontainer");
   dataset = esdm_dataset_create(container, "mydataset", dataspace, NULL);
 
   file_id = H5Fcreate("mycontainer_h5", H5F_ACC_TRUNC, H5P_DEFAULT, fprop);
   dataset_id = H5Dcreate2(file_id, "/mydataset_h5", H5T_NATIVE_UINT64, dataspace_id, H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
-
 
   esdm_container_t_commit(container);
   esdm_dataset_commit(dataset);
@@ -230,10 +214,8 @@ int main(int argc, char *argv[]) {
       dataspace_id = H5Dget_space(dataset_id);
       status = H5Sselect_hyperslab(dataspace_id, H5S_SELECT_SET, h5_offset, NULL, h5_dim, NULL);
 
-
       ret = esdm_write(dataset, buf_w, subspace);
       assert(ret == ESDM_SUCCESS);
-
 
       // Write the dataset.
       status = H5Dwrite(dataset_id, H5T_NATIVE_INT, H5S_ALL, H5S_ALL, H5P_DEFAULT, dset_data);
@@ -263,7 +245,6 @@ int main(int argc, char *argv[]) {
       esdm_dataspace_subspace(dataspace, 3, dim, offset, &subspace);
 
       status = H5Dread(dataset_id, H5T_NATIVE_INT, H5S_ALL, H5S_ALL, H5P_DEFAULT, dset_data);
-
 
       ret = esdm_read(dataset, buf_r, subspace);
       assert(ret == ESDM_SUCCESS);
@@ -298,12 +279,10 @@ int main(int argc, char *argv[]) {
     }
   }
 
-
   // cleanup HDF5
   status = H5Dclose(dataset_id);
   status = H5Sclose(dataspace_id);
   status = H5Fclose(file_id);
-
 
   // clean up
   free(buf_w);

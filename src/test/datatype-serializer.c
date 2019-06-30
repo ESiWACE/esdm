@@ -1,6 +1,5 @@
 #include <esdm-internal.h>
 #include <esdm.h>
-
 #include <string.h>
 
 int main() {
@@ -27,7 +26,6 @@ int main() {
     }
     c += dim[1];
   }
-
 
   esdm_status ret;
   esdm_dataspace_t *space;

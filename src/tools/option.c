@@ -173,7 +173,6 @@ void option_print_help(option_help *args, int is_plugin) {
   print_help_section(args, OPTION_OPTIONAL_ARGUMENT, "Optional arguments");
 }
 
-
 static int print_option_value(option_help *o) {
   int pos = 0;
   if (o->arg == OPTION_OPTIONAL_ARGUMENT || o->arg == OPTION_REQUIRED_ARGUMENT) {
@@ -220,7 +219,6 @@ static int print_option_value(option_help *o) {
   return pos;
 }
 
-
 static void print_current_option_section(option_help *args, option_value_type type) {
   option_help *o;
   for (o = args; o->shortVar != 0 || o->longVar != 0; o++) {
@@ -244,7 +242,6 @@ static void print_current_option_section(option_help *args, option_value_type ty
     }
   }
 }
-
 
 void option_print_current(option_help *args) {
   print_current_option_section(args, OPTION_REQUIRED_ARGUMENT);

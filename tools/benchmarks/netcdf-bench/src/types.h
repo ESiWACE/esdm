@@ -3,7 +3,7 @@
  *
  *       Filename:  types.h
  *
- *    Description:  
+ *    Description:
  *
  *        Version:  1.0
  *        Created:  08/15/2016 08:44:58 AM
@@ -16,13 +16,13 @@
  * =====================================================================================
  */
 
-
 #ifndef types_INC
 #define types_INC
 
+#include <stdlib.h>
+
 #include "constants.h"
 #include "timer.h"
-#include <stdlib.h>
 
 typedef struct duration_t {
   double open;
@@ -50,6 +50,5 @@ typedef struct measurement_t {
   size_t time_offset;
   double duration;
 } measurement_t;
-
 
 #endif /* ----- #ifndef types_INC  ----- */

@@ -14,7 +14,6 @@
  * along with ESDM.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-
 /**
  * @file
  * @brief This file implements ESDM types, and associated methods.
@@ -22,39 +21,32 @@
 
 #define _GNU_SOURCE /* See feature_test_macros(7) */
 
+#include <esdm-internal.h>
+#include <esdm.h>
 #include <inttypes.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-
-#include <esdm-internal.h>
-#include <esdm.h>
-
 
 #define DEBUG_ENTER ESDM_DEBUG_COM_FMT("DATATYPES", "", "")
 #define DEBUG(fmt, ...) ESDM_DEBUG_COM_FMT("DATATYPES", fmt, __VA_ARGS__)
 
 extern esdm_instance_t esdm;
 
-
 // Container //////////////////////////////////////////////////////////////////
-
 
 esdm_status esdm_container_t_create(const char *name, esdm_container_t **out_container) {
   ESDM_DEBUG(__func__);
   esdm_container_t *container = (esdm_container_t *)malloc(sizeof(esdm_container_t));
 
   container->name = strdup(name);
-
   container->metadata = NULL;
   container->status = ESDM_STATUS_DIRTY;
-
 
   *out_container = container;
 
   return ESDM_SUCCESS;
 }
-
 
 esdm_status esdm_container_t_retrieve(const char *name, esdm_container_t **out_container) {
   ESDM_DEBUG(__func__);
@@ -64,7 +56,6 @@ esdm_status esdm_container_t_retrieve(const char *name, esdm_container_t **out_c
   // TODO: retrieve associated data
 
   container->name = strdup(name);
-
   container->metadata = NULL;
   container->status = ESDM_STATUS_DIRTY;
 
@@ -72,7 +63,6 @@ esdm_status esdm_container_t_retrieve(const char *name, esdm_container_t **out_c
 
   return ESDM_SUCCESS;
 }
-
 
 esdm_status esdm_container_t_commit(esdm_container_t *container) {
   ESDM_DEBUG(__func__);
@@ -84,7 +74,6 @@ esdm_status esdm_container_t_commit(esdm_container_t *container) {
   return status;
 }
 
-
 esdm_status esdm_container_t_destroy(esdm_container_t *container) {
   ESDM_DEBUG(__func__);
   free(container);
@@ -92,9 +81,7 @@ esdm_status esdm_container_t_destroy(esdm_container_t *container) {
   return ESDM_SUCCESS;
 }
 
-
 // Fragment ///////////////////////////////////////////////////////////////////
-
 
 /**
  *	TODO: there should be a mode to auto-commit on creation?
@@ -132,7 +119,6 @@ esdm_status esdm_fragment_create(esdm_dataset_t *dataset, esdm_dataspace_t *subs
 
   return ESDM_SUCCESS;
 }
-
 
 esdm_status esdm_dataspace_overlap_str(esdm_dataspace_t *a, char delim_c, char *str_offset, char *str_size, esdm_dataspace_t **out_space) {
   //printf("str: %s %s\n", str_size, str_offset);
@@ -191,7 +177,6 @@ esdm_status esdm_dataspace_overlap_str(esdm_dataspace_t *a, char delim_c, char *
   return ESDM_SUCCESS;
 }
 
-
 esdm_status esdm_fragment_retrieve(esdm_fragment_t *fragment) {
   ESDM_DEBUG(__func__);
 
@@ -205,7 +190,6 @@ esdm_status esdm_fragment_retrieve(esdm_fragment_t *fragment) {
 
   return ESDM_SUCCESS;
 }
-
 
 void esdm_dataspace_string_descriptor(char *string, esdm_dataspace_t *dataspace) {
   ESDM_DEBUG(__func__);
@@ -231,7 +215,6 @@ void esdm_dataspace_string_descriptor(char *string, esdm_dataspace_t *dataspace)
   }
   DEBUG("Descriptor: %s\n", string);
 }
-
 
 esdm_status esdm_fragment_commit(esdm_fragment_t *f) {
   ESDM_DEBUG(__func__);
@@ -264,12 +247,10 @@ esdm_status esdm_fragment_commit(esdm_fragment_t *f) {
   return ESDM_SUCCESS;
 }
 
-
 esdm_status esdm_fragment_destroy(esdm_fragment_t *fragment) {
   ESDM_DEBUG(__func__);
   return ESDM_SUCCESS;
 }
-
 
 esdm_status esdm_fragment_serialize(esdm_fragment_t *fragment, void **out) {
   ESDM_DEBUG(__func__);
@@ -277,12 +258,10 @@ esdm_status esdm_fragment_serialize(esdm_fragment_t *fragment, void **out) {
   return ESDM_SUCCESS;
 }
 
-
 esdm_status esdm_fragment_deserialize(void *serialized_fragment, esdm_fragment_t **_out_fragment) {
   ESDM_DEBUG(__func__);
   return ESDM_SUCCESS;
 }
-
 
 // Dataset ////////////////////////////////////////////////////////////////////
 
@@ -300,7 +279,6 @@ esdm_status esdm_dataset_create(esdm_container_t *container, const char *name, e
 
   return ESDM_SUCCESS;
 }
-
 
 esdm_status esdm_dataset_retrieve(esdm_container_t *container, const char *name, esdm_dataset_t **out_dataset) {
   ESDM_DEBUG(__func__);
@@ -403,7 +381,6 @@ esdm_status esdm_dataset_update(esdm_dataset_t *dataset) {
   return ESDM_SUCCESS;
 }
 
-
 esdm_status esdm_dataset_destroy(esdm_dataset_t *dataset) {
   ESDM_DEBUG(__func__);
   //	free(dataset->name);
@@ -419,16 +396,13 @@ esdm_status esdm_dataset_destroy(esdm_dataset_t *dataset) {
   return ESDM_SUCCESS;
 }
 
-
 esdm_status esdm_dataset_get_attributes(esdm_dataset_t *dataset, smd_attr_t **out_metadata) {
   assert(dataset->metadata->attr != NULL);
   *out_metadata = dataset->metadata->attr;
   return ESDM_SUCCESS;
 }
 
-
 // Dataspace //////////////////////////////////////////////////////////////////
-
 
 esdm_status esdm_dataspace_create(int64_t dims, int64_t *sizes, esdm_type_t type, esdm_dataspace_t **out_dataspace) {
   ESDM_DEBUG(__func__);
@@ -449,7 +423,6 @@ esdm_status esdm_dataspace_create(int64_t dims, int64_t *sizes, esdm_type_t type
 
   return ESDM_SUCCESS;
 }
-
 
 uint8_t esdm_dataspace_overlap(esdm_dataspace_t *a, esdm_dataspace_t *b) {
   // TODO: allow comparison of spaces of different size? Alternative maybe to transform into comparable space, provided a mask or dimension index mapping
@@ -499,7 +472,6 @@ esdm_status esdm_dataspace_subspace(esdm_dataspace_t *dataspace, int64_t dims, i
   return ESDM_SUCCESS;
 }
 
-
 void esdm_dataspace_print(esdm_dataspace_t *d) {
   printf("DATASPACE(size(%ld", d->size[0]);
   for (int64_t i = 1; i < d->dims; i++) {
@@ -522,12 +494,10 @@ void esdm_fragment_print(esdm_fragment_t *f) {
   printf(")");
 }
 
-
 esdm_status esdm_dataspace_destroy(esdm_dataspace_t *dataspace) {
   ESDM_DEBUG(__func__);
   return ESDM_SUCCESS;
 }
-
 
 esdm_status esdm_dataspace_serialize(esdm_dataspace_t *dataspace, void **out) {
   ESDM_DEBUG(__func__);
@@ -535,12 +505,10 @@ esdm_status esdm_dataspace_serialize(esdm_dataspace_t *dataspace, void **out) {
   return ESDM_SUCCESS;
 }
 
-
 esdm_status esdm_dataspace_deserialize(void *serialized_dataspace, esdm_dataspace_t **out_dataspace) {
   ESDM_DEBUG(__func__);
   return ESDM_SUCCESS;
 }
-
 
 uint64_t esdm_dataspace_element_count(esdm_dataspace_t *subspace) {
   assert(subspace->size != NULL);
@@ -552,16 +520,13 @@ uint64_t esdm_dataspace_element_count(esdm_dataspace_t *subspace) {
   return size;
 }
 
-
 uint64_t esdm_dataspace_size(esdm_dataspace_t *dataspace) {
   uint64_t size = esdm_dataspace_element_count(dataspace);
   uint64_t bytes = size * esdm_sizeof(dataspace->type);
   return bytes;
 }
 
-
 // Metadata //////////////////////////////////////////////////////////////////
-
 
 esdm_status esdm_metadata_t_init_(esdm_metadata_t **output_metadata) {
   ESDM_DEBUG(__func__);
@@ -576,7 +541,6 @@ esdm_status esdm_metadata_t_init_(esdm_metadata_t **output_metadata) {
 
   return ESDM_SUCCESS;
 }
-
 
 esdm_status esdm_dataset_name_dims(esdm_dataset_t *d, char **names) {
   ESDM_DEBUG(__func__);
@@ -613,13 +577,11 @@ esdm_status esdm_dataset_get_name_dims(esdm_dataset_t *d, char const *const **ou
   return ESDM_SUCCESS;
 }
 
-
 esdm_status esdm_dataset_link_attribute(esdm_dataset_t *dset, smd_attr_t *attr) {
   ESDM_DEBUG(__func__);
   smd_link_ret_t ret = smd_attr_link(dset->metadata->attr, attr, 0);
   return ESDM_SUCCESS;
 }
-
 
 esdm_status esdm_dataset_iterator(esdm_container_t *container, esdm_dataset_iterator_t **iter) {
   ESDM_DEBUG(__func__);

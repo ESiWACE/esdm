@@ -88,7 +88,6 @@ typedef struct t_WosPolicy t_WosPolicy;
 typedef struct t_WosObjPtr t_WosObjPtr;
 typedef struct t_WosPutStream t_WosPutStream;
 typedef struct t_WosGetStream t_WosGetStream;
-
 typedef struct t_WosPutStreamPtr t_WosPutStreamPtr;
 typedef struct t_WosGetStreamPtr t_WosGetStreamPtr;
 typedef struct t_WosClusterImplPtr t_WosClusterImplPtr;

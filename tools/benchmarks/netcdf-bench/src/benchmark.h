@@ -56,19 +56,11 @@ typedef struct benchmark_t {
 } benchmark_t;
 
 void benchmark_init(benchmark_t *benchmark);
-void benchmark_setup(
-benchmark_t *bm,
-const procs_t procs,
-const size_t ndims,
-const size_t *dgeom,
-const size_t *bgeom,
-const size_t *cgeom,
-const char *testfn,
-const io_mode_t io_mode,
-const int par_access,
-const bool is_unlimited,
-const int use_fill_value);
+
+void benchmark_setup(benchmark_t *bm, const procs_t procs, const size_t ndims, const size_t *dgeom, const size_t *bgeom, const size_t *cgeom, const char *testfn, const io_mode_t io_mode, const int par_access, const bool is_unlimited, const int use_fill_value);
+
 int benchmark_run(benchmark_t *benchmark, DATATYPE *compare_block);
+
 void benchmark_destroy(benchmark_t *benchmark);
 
 void handle_error(const int status);

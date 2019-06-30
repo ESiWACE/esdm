@@ -62,5 +62,4 @@
 hid_t H5VL_memvol_init();
 int H5VL_memvol_finalize();
 
-
 #endif

@@ -16,9 +16,8 @@
 #ifndef ESDM_BACKENDS_PERF_MODEL_H
 #define ESDM_BACKENDS_PERF_MODEL_H
 
-#include <jansson.h>
-
 #include <esdm.h>
+#include <jansson.h>
 
 typedef struct {
   double latency_in_s;
