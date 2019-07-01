@@ -35,7 +35,7 @@ extern esdm_instance_t esdm;
 
 // Container //////////////////////////////////////////////////////////////////
 
-esdm_status esdm_container_t_create(const char *name, esdm_container_t **out_container) {
+esdm_status esdm_container_create(const char *name, esdm_container_t **out_container) {
   ESDM_DEBUG(__func__);
   esdm_container_t *container = (esdm_container_t *)malloc(sizeof(esdm_container_t));
 
@@ -48,7 +48,7 @@ esdm_status esdm_container_t_create(const char *name, esdm_container_t **out_con
   return ESDM_SUCCESS;
 }
 
-esdm_status esdm_container_t_retrieve(const char *name, esdm_container_t **out_container) {
+esdm_status esdm_container_retrieve(const char *name, esdm_container_t **out_container) {
   ESDM_DEBUG(__func__);
   esdm_container_t *container = (esdm_container_t *)malloc(sizeof(esdm_container_t));
 
@@ -64,7 +64,7 @@ esdm_status esdm_container_t_retrieve(const char *name, esdm_container_t **out_c
   return ESDM_SUCCESS;
 }
 
-esdm_status esdm_container_t_commit(esdm_container_t *container) {
+esdm_status esdm_container_commit(esdm_container_t *container) {
   ESDM_DEBUG(__func__);
   // md callback create/update container
   esdm_status status = esdm.modules->metadata_backend->callbacks.container_create(esdm.modules->metadata_backend, container);
@@ -74,7 +74,7 @@ esdm_status esdm_container_t_commit(esdm_container_t *container) {
   return status;
 }
 
-esdm_status esdm_container_t_destroy(esdm_container_t *container) {
+esdm_status esdm_container_destroy(esdm_container_t *container) {
   ESDM_DEBUG(__func__);
   free(container);
 

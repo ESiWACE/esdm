@@ -144,7 +144,7 @@ static void write_test() {
 
   // write the actual metadata
 
-  ret = esdm_container_t_create("mycontainer", &container);
+  ret = esdm_container_create("mycontainer", &container);
   ret = esdm_dataspace_create(dims, bounds, SMD_DTYPE_UINT64, &dataspace);
 
   // NetCDF consists of three types of things
@@ -191,14 +191,14 @@ static void write_test() {
   ret = esdm_dataset_commit(dataset);
   assert(ret == ESDM_SUCCESS);
 
-  ret = esdm_container_t_commit(container);
+  ret = esdm_container_commit(container);
   assert(ret == ESDM_SUCCESS);
 
   // remove everything from memory
   ret = esdm_dataset_destroy(dataset);
   assert(ret == ESDM_SUCCESS);
 
-  ret = esdm_container_t_destroy(container);
+  ret = esdm_container_destroy(container);
   assert(ret == ESDM_SUCCESS);
 }
 
@@ -210,7 +210,7 @@ void read_test() {
   esdm_container_t *container = NULL;
   esdm_dataset_t *dataset = NULL;
 
-  ret = esdm_container_t_retrieve("mycontainer", &container);
+  ret = esdm_container_retrieve("mycontainer", &container);
 
   // NetCDF consists of three types of things
   // 1) Dimensions
@@ -314,6 +314,6 @@ void read_test() {
   ret = esdm_dataset_destroy(dataset);
   assert(ret == ESDM_SUCCESS);
 
-  ret = esdm_container_t_destroy(container);
+  ret = esdm_container_destroy(container);
   assert(ret == ESDM_SUCCESS);
 }

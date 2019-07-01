@@ -148,9 +148,9 @@ esdm_status esdm_read(esdm_dataset_t *dataset, void *buf, esdm_dataspace_t *subs
  *
  */
 
-esdm_status esdm_container_t_create(const char *name, esdm_container_t **out_container);
+esdm_status esdm_container_create(const char *name, esdm_container_t **out_container);
 
-esdm_status esdm_container_t_retrieve(const char *name, esdm_container_t **out_container);
+esdm_status esdm_container_retrieve(const char *name, esdm_container_t **out_container);
 
 /**
  * Make container persistent to storage.
@@ -161,7 +161,7 @@ esdm_status esdm_container_t_retrieve(const char *name, esdm_container_t **out_c
  *
  */
 
-esdm_status esdm_container_t_commit(esdm_container_t *container);
+esdm_status esdm_container_commit(esdm_container_t *container);
 
 /**
  * Destroy a existing container.
@@ -170,7 +170,7 @@ esdm_status esdm_container_t_commit(esdm_container_t *container);
  *
  */
 
-esdm_status esdm_container_t_destroy(esdm_container_t *container);
+esdm_status esdm_container_destroy(esdm_container_t *container);
 
 // Dataset
 

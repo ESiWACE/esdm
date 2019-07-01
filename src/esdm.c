@@ -161,13 +161,13 @@ esdm_status esdm_create(char *name, int mode, esdm_container_t **container, esdm
 
   esdm_dataspace_create(1 /* 1D */, bounds, SMD_DTYPE_INT8, &dataspace);
 
-  esdm_container_t_create(name, container);
+  esdm_container_create(name, container);
   esdm_dataset_create(*container, "bytestream", dataspace, dataset);
 
   printf("Dataset 'bytestream' creation: %p\n", (void *)*dataset);
 
   esdm_dataset_commit(*dataset);
-  esdm_container_t_commit(*container);
+  esdm_container_commit(*container);
 
   return ESDM_SUCCESS;
 }

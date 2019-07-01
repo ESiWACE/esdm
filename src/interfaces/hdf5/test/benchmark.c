@@ -187,13 +187,13 @@ int main(int argc, char *argv[]) {
   esdm_dataspace_t *dataspace = esdm_dataspace_create(3, bounds, SMD_DTYPE_UINT64);
   dataspace_id = H5Screate_simple(3, h5_bounds, NULL);
 
-  container = esdm_container_t_create("mycontainer");
+  container = esdm_container_create("mycontainer");
   dataset = esdm_dataset_create(container, "mydataset", dataspace, NULL);
 
   file_id = H5Fcreate("mycontainer_h5", H5F_ACC_TRUNC, H5P_DEFAULT, fprop);
   dataset_id = H5Dcreate2(file_id, "/mydataset_h5", H5T_NATIVE_UINT64, dataspace_id, H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
 
-  esdm_container_t_commit(container);
+  esdm_container_commit(container);
   esdm_dataset_commit(dataset);
 
   // define subspace
