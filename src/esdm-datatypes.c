@@ -540,7 +540,7 @@ esdm_status esdm_metadata_t_init_(esdm_metadata_t **output_metadata) {
   md->buff_size = 10000;
   md->size = 0;
   md->json = ((char *)md) + sizeof(esdm_metadata_t);
-  md->attr = smd_attr_new("attr", SMD_DTYPE_EMPTY, NULL, 0);
+  md->attr = smd_attr_new("Variables", SMD_DTYPE_EMPTY, NULL, 0);
 
   return ESDM_SUCCESS;
 }
