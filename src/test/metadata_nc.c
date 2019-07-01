@@ -119,7 +119,7 @@ int main() {
   assert(ret == ESDM_SUCCESS);
 
   write_test();
-  // read_test();
+  read_test();
 
   ret = esdm_finalize();
   assert(ret == ESDM_SUCCESS);
@@ -244,11 +244,11 @@ void read_test() {
   assert(strcmp(type, type_e) == 0);
 
   // names of the dims
-  char const *const *names = NULL;
-  ret = esdm_dataset_get_name_dims(dataset, &names);
-  assert(names != NULL);
-  assert(strcmp(names[0], "longitude") == 0);
-  assert(strcmp(names[1], "latitude") == 0);
+  // char const *const *names = NULL;
+  // ret = esdm_dataset_get_name_dims(dataset, &names);
+  // assert(names != NULL);
+  // assert(strcmp(names[0], "longitude") == 0);
+  // assert(strcmp(names[1], "latitude") == 0);
 
   // get the attributes
   smd_attr_t *md = NULL;
@@ -256,18 +256,60 @@ void read_test() {
   assert(ret == ESDM_SUCCESS);
 
   char *txt;
-  smd_attr_t *a1;
-  a1 = smd_attr_get_child_by_name(md, "history");
-  assert(a1 != NULL);
-  assert(smd_attr_get_type(a1) == SMD_TYPE_STRING);
-  txt = (char *)smd_attr_get_value(a1);
-  assert(txt != NULL);
+  smd_attr_t *attr, *var1, *var2;
+  int *aux1; float *aux2;
 
-  a1 = smd_attr_get_child_by_name(md, "unit");
-  assert(a1 != NULL);
-  assert(smd_attr_get_type(a1) == SMD_TYPE_STRING);
-  txt = (char *)smd_attr_get_value(a1);
-  assert(strcmp(txt, "Celsius") == 0);
+  attr = smd_attr_get_child_by_name(md, "lat");
+
+  var1 = smd_attr_get_child_by_name(attr, "value");
+  assert(var1 != NULL);
+  assert(smd_attr_get_type(var1) == SMD_TYPE_UINT64);
+
+  aux1 = (int *) smd_attr_get_value(var1);
+  // assert(aux1 == 5);
+
+  var2 = smd_attr_get_child_by_name(attr, "units");
+  assert(var2 != NULL);
+  assert(smd_attr_get_type(var2) == SMD_TYPE_STRING);
+
+  txt = (char *)smd_attr_get_value(var2);
+
+  printf("\n\nVariable: Latitude\n");
+  printf("value = %d\n", aux1);
+  printf("units = %s\n\n", txt);
+
+  attr = smd_attr_get_child_by_name(md, "temp");
+
+  var1 = smd_attr_get_child_by_name(attr, "value");
+  assert(var1 != NULL);
+  assert(smd_attr_get_type(var1) == SMD_TYPE_FLOAT);
+
+  aux2 = (float *) smd_attr_get_value(var1);
+  // assert(aux1 == 5);
+
+  var2 = smd_attr_get_child_by_name(attr, "units");
+  assert(var2 != NULL);
+  assert(smd_attr_get_type(var2) == SMD_TYPE_STRING);
+
+  txt = (char *)smd_attr_get_value(var2);
+
+  printf("\n\nVariable: Time\n");
+  printf("value = %f\n", (double *) aux2);
+  printf("units = %s\n\n", txt);
+
+  // char *txt;
+  // smd_attr_t *a1;
+  // a1 = smd_attr_get_child_by_name(md, "history");
+  // assert(a1 != NULL);
+  // assert(smd_attr_get_type(a1) == SMD_TYPE_STRING);
+  // txt = (char *)smd_attr_get_value(a1);
+  // assert(txt != NULL);
+  //
+  // a1 = smd_attr_get_child_by_name(md, "unit");
+  // assert(a1 != NULL);
+  // assert(smd_attr_get_type(a1) == SMD_TYPE_STRING);
+  // txt = (char *)smd_attr_get_value(a1);
+  // assert(strcmp(txt, "Celsius") == 0);
 
   ret = esdm_dataset_destroy(dataset);
   assert(ret == ESDM_SUCCESS);
