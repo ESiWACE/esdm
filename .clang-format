@@ -25,7 +25,7 @@ Language: Cpp
 MaxEmptyLinesToKeep: 1
 NamespaceIndentation: All
 PointerAlignment: Right
-SortIncludes: true
+SortIncludes: false
 SortUsingDeclarations: true
 SpaceAfterCStyleCast: false
 SpaceAfterTemplateKeyword: true
