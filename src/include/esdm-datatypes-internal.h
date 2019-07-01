@@ -153,8 +153,8 @@ struct esdm_md_backend_callbacks_t {
   int (*container_update)(esdm_md_backend_t *, esdm_container_t *container);
   int (*container_destroy)(esdm_md_backend_t *, esdm_container_t *container);
 
-  int (*dataset_create)(esdm_md_backend_t *, esdm_dataset_t *dataset);
-  int (*dataset_retrieve)(esdm_md_backend_t *, esdm_dataset_t *dataset);
+  int (*dataset_commit)(esdm_md_backend_t *, esdm_dataset_t *dataset, char * json, int md_size);
+  int (*dataset_retrieve)(esdm_md_backend_t *, esdm_dataset_t *dataset, char ** out_json, int * out_size);
   int (*dataset_update)(esdm_md_backend_t *, esdm_dataset_t *dataset);
   int (*dataset_destroy)(esdm_md_backend_t *, esdm_dataset_t *dataset);
 

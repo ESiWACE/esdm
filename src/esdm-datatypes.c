@@ -282,26 +282,25 @@ esdm_status esdm_dataset_create(esdm_container_t *container, const char *name, e
 
 esdm_status esdm_dataset_retrieve(esdm_container_t *container, const char *name, esdm_dataset_t **out_dataset) {
   ESDM_DEBUG(__func__);
+	char * buff;
+  int size;
   esdm_dataset_t *d = (esdm_dataset_t *)malloc(sizeof(esdm_dataset_t));
-
   d->varnames = NULL;
   d->name = strdup(name);
   d->container = container;
+
   *out_dataset = NULL;
 
-  d->metadata = (esdm_metadata_t *)malloc(sizeof(esdm_metadata_t));
-  esdm_metadata_t *md = d->metadata;
+  esdm_status ret = esdm.modules->metadata_backend->callbacks.dataset_retrieve(esdm.modules->metadata_backend, d, & buff, & size);
+	if(ret != ESDM_SUCCESS){
+		free(d);
+		return ret;
+	}
+	char * js = buff;
+	d->metadata = (esdm_metadata_t *)malloc(sizeof(esdm_metadata_t));
 
-  md->size = 0;
-  md->buff_size = 0;
-
-  esdm.modules->metadata_backend->callbacks.dataset_retrieve(esdm.modules->metadata_backend, d);
-
-  /* parse the data */
-  char *js = md->json;
-  size_t size = md->size;
   // first strip the attributes
-  size_t parsed = smd_attr_create_from_json(js + 1, size, &md->attr);
+  size_t parsed = smd_attr_create_from_json(js + 1, size, & d->metadata->attr);
   js += 1 + parsed;
   js[0] = '{';
   // for the rest we use JANSSON
@@ -319,13 +318,15 @@ esdm_status esdm_dataset_retrieve(esdm_container_t *container, const char *name,
   elem = json_object_get(root, "size");
   size_t arrsize = json_array_size(elem);
   if (dims != arrsize) {
+		free(d);
+		free(js);
     return ESDM_ERROR;
   }
   int64_t sizes[dims];
   for (int i = 0; i < dims; i++) {
     sizes[i] = json_integer_value(json_array_get(elem, i));
   }
-  esdm_status ret = esdm_dataspace_create(dims, sizes, type, &d->dataspace);
+  ret = esdm_dataspace_create(dims, sizes, type, &d->dataspace);
   if (ret != ESDM_SUCCESS) {
     return ret;
   }
@@ -341,6 +342,7 @@ esdm_status esdm_dataset_retrieve(esdm_container_t *container, const char *name,
   esdm_dataset_name_dims(d, strs);
   *out_dataset = d;
 
+	free(buff);
   return ESDM_SUCCESS;
 }
 
@@ -348,10 +350,11 @@ esdm_status esdm_dataset_commit(esdm_dataset_t *d) {
   ESDM_DEBUG(__func__);
   // TODO
 
-  char *js = d->metadata->json;
-  const char *jso = d->metadata->json;
-  int len = 100000;
-  js += snprintf(js, len + jso - js, "{");
+	const int len = 100000;
+  char buff[len];
+	char * js = buff;
+  const char *jso = js;
+  js += sprintf(js, "{");
   js += smd_attr_ser_json(js, d->metadata->attr) - 1;
   js += snprintf(js, len + jso - js, ",\"typ\":\"");
   js += smd_type_ser(js, d->dataspace->type) - 1;
@@ -369,10 +372,10 @@ esdm_status esdm_dataset_commit(esdm_dataset_t *d) {
   }
   js += snprintf(js, len + jso - js, "}");
 
-  d->metadata->size = (js - jso);
+  int md_size = (js - jso);
 
   // md callback create/update container
-  esdm_status ret = esdm.modules->metadata_backend->callbacks.dataset_create(esdm.modules->metadata_backend, d);
+  esdm_status ret = esdm.modules->metadata_backend->callbacks.dataset_commit(esdm.modules->metadata_backend, d, buff, md_size);
   return ret;
 }
 

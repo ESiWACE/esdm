@@ -19,12 +19,11 @@
  * @brief Entry point for ESDM API Implementation
  */
 
-#include <esdm-internal.h>
-#include <esdm.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 
+#include <esdm-internal.h>
 // TODO: Decide on initialization mechanism.
 static int is_initialized = 0;
 

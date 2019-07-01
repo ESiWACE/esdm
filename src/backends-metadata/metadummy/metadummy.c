@@ -33,11 +33,8 @@
 #include <sys/types.h>
 #include <unistd.h>
 
-#include <jansson.h>
-
 #include "metadummy.h"
-#include <esdm-debug.h>
-#include <esdm.h>
+#include <esdm-internal.h>
 
 #define DEBUG_ENTER ESDM_DEBUG_COM_FMT("METADUMMY", "", "")
 #define DEBUG(fmt, ...) ESDM_DEBUG_COM_FMT("METADUMMY", fmt, __VA_ARGS__)
@@ -97,21 +94,21 @@ static int fsck() {
 // Internal Helpers  //////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////
 
-static int entry_create(const char *path, esdm_metadata_t *data) {
+static int entry_create(const char *path, char * const json, int size) {
   DEBUG_ENTER;
 
   // int status;
   // struct stat sb;
 
-  DEBUG("entry_create(%s - %s)\n", path, data != NULL ? data->json : NULL);
+  DEBUG("entry_create(%s - %s)\n", path, json);
 
   // ENOENT => allow to create
   // write to non existing file
   int fd = open(path, O_WRONLY | O_CREAT | O_TRUNC, S_IWUSR | S_IRUSR | S_IWGRP | S_IRGRP | S_IROTH);
   // everything ok? write and close
   if (fd != -1) {
-    if (data != NULL && data->json != NULL) {
-      int ret = write_check(fd, data->json, data->size);
+    if ( json != NULL) {
+      int ret = write_check(fd, json, size);
       assert(ret == 0);
     }
     close(fd);
@@ -245,7 +242,7 @@ static int container_create(esdm_md_backend_t *backend, esdm_container_t *contai
   }
 
   // create metadata entry
-  entry_create(path_metadata, NULL);
+  entry_create(path_metadata, NULL, 0);
 
   free(path_metadata);
   free(path_container);
@@ -323,7 +320,7 @@ static int container_destroy(esdm_md_backend_t *backend, esdm_container_t *conta
 // Dataset Helpers ////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////
 
-static int dataset_create(esdm_md_backend_t *backend, esdm_dataset_t *dataset) {
+static int dataset_commit(esdm_md_backend_t *backend, esdm_dataset_t *dataset, char * json, int md_size) {
   DEBUG_ENTER;
 
   char path_metadata[PATH_MAX];
@@ -344,14 +341,14 @@ static int dataset_create(esdm_md_backend_t *backend, esdm_dataset_t *dataset) {
   }
 
   // create metadata entry
-  entry_create(path_metadata, dataset->metadata);
+  entry_create(path_metadata, json, md_size);
 
   return 0;
 }
 
-static int dataset_retrieve(esdm_md_backend_t *backend, esdm_dataset_t *d) {
+static int dataset_retrieve(esdm_md_backend_t *backend, esdm_dataset_t *d, char ** out_json, int * out_size) {
   DEBUG_ENTER;
-
+  int ret;
   char path_metadata[PATH_MAX];
 
   metadummy_backend_options_t *options = (metadummy_backend_options_t *)backend->data;
@@ -359,20 +356,23 @@ static int dataset_retrieve(esdm_md_backend_t *backend, esdm_dataset_t *d) {
 
   sprintf(path_metadata, "%s/containers/%s/%s.md", tgt, d->container->name, d->name);
   struct stat statbuf;
-  int ret = stat(path_metadata, &statbuf);
+  ret = stat(path_metadata, &statbuf);
   if (ret != 0) return ESDM_ERROR;
   off_t len = statbuf.st_size + 1;
 
   int fd = open(path_metadata, O_RDONLY | S_IWUSR | S_IRUSR | S_IWGRP | S_IRGRP | S_IROTH);
   if (fd < 0) return ESDM_ERROR;
-  d->metadata->json = (char *)malloc(len);
-  d->metadata->size = len;
-  d->metadata->buff_size = len;
-
-  read_check(fd, d->metadata->json, len - 1);
+  char * json = (char *)malloc(len);
+  ret = read_check(fd, json, statbuf.st_size);
   close(fd);
-  d->metadata->json[statbuf.st_size] = 0;
-  return 0;
+  json[statbuf.st_size] = 0;
+  if (ret != 0){
+    return ESDM_ERROR;
+  }
+  *out_json = json;
+  *out_size = statbuf.st_size;
+
+  return ESDM_SUCCESS;
 }
 
 static int dataset_update(esdm_md_backend_t *backend, esdm_dataset_t *dataset) {
@@ -574,7 +574,7 @@ static int fragment_update(esdm_md_backend_t *backend, esdm_fragment_t *fragment
     if (ret != 0) return ESDM_ERROR;
   }
 
-  entry_create(path_fragment, fragment->metadata);
+  entry_create(path_fragment, fragment->metadata->json, fragment->metadata->size);
 
   return 0;
 }
@@ -613,20 +613,20 @@ metadummy_backend_performance_estimate, // performance_estimate
 lookup, // lookup
 
 // ESDM Data Model Specific
-container_create,   // container create
-container_retrieve, // container retrieve
-container_update,   // container update
-container_destroy,  // container destroy
+container_create,
+container_retrieve,
+container_update,
+container_destroy,
 
-dataset_create,   // dataset create
-dataset_retrieve, // dataset retrieve
-dataset_update,   // dataset update
-dataset_destroy,  // dataset destroy
+dataset_commit,
+dataset_retrieve,
+dataset_update,
+dataset_destroy,
 
-NULL,              // fragment create
-fragment_retrieve, // fragment retrieve
-fragment_update,   // fragment update
-NULL,              // fragment destroy,
+NULL,
+fragment_retrieve,
+fragment_update,
+NULL,
 mkfs,
 },
 };
