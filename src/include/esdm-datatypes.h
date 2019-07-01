@@ -11,8 +11,6 @@
 
 typedef smd_dtype_t *esdm_type_t;
 
-typedef int esdm_type;
-
 // ESDM Parameters and Status /////////////////////////////////////////////////
 //
 /**

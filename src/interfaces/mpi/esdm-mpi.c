@@ -41,3 +41,7 @@ void esdm_mpi_init() {
   esdm_set_procs_per_node(pPerNode);
   esdm_set_total_procs(mpi_size);
 }
+
+void esdm_mpi_finalize(){
+  
+}

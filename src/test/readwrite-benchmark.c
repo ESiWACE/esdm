@@ -129,13 +129,23 @@ int main(int argc, char *argv[]) {
   int64_t bounds[] = {timesteps, size, size};
   esdm_dataspace_t *dataspace;
 
-  esdm_dataspace_create(3, bounds, SMD_DTYPE_UINT64, &dataspace);
+  /*
+  if(rank == 0)
+    esdm_container_create("mycontainer", &container);
+    esdm_dataspace_create(3, bounds, SMD_DTYPE_UINT64, &dataspace);
+    esdm_dataset_create(container, "mydataset", dataspace, &dataset);
+    MPI_Bcast(container ID/metadata information);
+    MPI_Bcast(dataset ID/metadata information);
 
-  esdm_container_create("mycontainer", &container);
-  esdm_dataset_create(container, "mydataset", dataspace, &dataset);
-
-  esdm_container_commit(container);
-  esdm_dataset_commit(dataset);
+    esdm_container_commit(container);
+    esdm_dataset_commit(dataset);
+  }else{
+    // create dataspace and container information from memory received by the other proceses
+    MPI_Bcast(container ID/metadata information);
+    MPI_Bcast(dataset ID/metadata information);
+    create dataset
+  }
+  */
 
   // define subspace
 
@@ -211,11 +221,10 @@ int main(int argc, char *argv[]) {
     }
   }
 
-  ret = esdm_finalize();
-  // assert(ret != ESDM_SUCCESS);
+  // commit the changes to data to the metadata
 
-  // I don't know why it's not working!
-
+  esdm_mpi_finalize();
+  
   // clean up
   free(buf_w);
 

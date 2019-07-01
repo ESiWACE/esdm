@@ -130,13 +130,6 @@ esdm_fragment_t *esdm_layout_reconstruction(esdm_dataset_t *dataset, esdm_datasp
 
 esdm_status esdm_layout_recommendation(esdm_instance_t *esdm, esdm_fragment_t *in, esdm_fragment_t *out);
 
-/**
- *
- *
- * @return Status
- */
-
-esdm_status esdm_layout_stat(char *desc);
 
 /**
  * Queries backend for performance estimate for the given fragment.

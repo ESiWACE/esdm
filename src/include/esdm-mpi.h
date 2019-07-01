@@ -9,4 +9,6 @@ void esdm_mpi_distribute_config_file(char *config_filename);
 
 void esdm_mpi_init();
 
+void esdm_mpi_finalize();
+
 #endif

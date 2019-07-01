@@ -146,8 +146,6 @@ esdm_status esdm_stat(char *desc, char *result) {
 
   esdm_init();
 
-  esdm_layout_stat(desc);
-
   return ESDM_SUCCESS;
 }
 
