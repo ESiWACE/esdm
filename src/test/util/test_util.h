@@ -14,7 +14,6 @@
  * along with ESDM.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-
 #ifndef TEST_UTIL_H
 #define TEST_UTIL_H
 
@@ -28,8 +27,10 @@ typedef clock64_t timer;
 typedef struct timespec timer;
 #endif
 
-void start_timer(timer * t1);
+void start_timer(timer *t1);
+
 double stop_timer(timer t1);
+
 double timer_subtract(timer number, timer subtract);
 
 #endif

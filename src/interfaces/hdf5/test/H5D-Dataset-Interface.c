@@ -13,82 +13,68 @@
 // You should have received a copy of the GNU Lesser General Public License
 // along with h5-memvol.  If not, see <http://www.gnu.org/licenses/>.
 
-#include <stdio.h>
-#include <hdf5.h>
-
 #include <assert.h>
+#include <hdf5.h>
+#include <stdio.h>
 
+int main() {
+  char *filename = "file-test.h5";
 
+  hid_t fprop;
+  hid_t vol_id = H5VLregister_by_name("h5-esdm");
 
-int main()
-{
-	char* filename = "file-test.h5";
+  hid_t file_id, group_id, dataset_id, dataspace_id, attribute_id;
+  herr_t status;
 
-	hid_t fprop;
-	hid_t vol_id = H5VLregister_by_name("h5-esdm");
+  hsize_t dims[2];
 
-	hid_t file_id, group_id, dataset_id, dataspace_id, attribute_id;
-	herr_t status;
+  char plugin_name[1024];
 
-	hsize_t     dims[2];
+  // SET VOL PLUGIN /////////////////////////////////////////////////////////
+  fprop = H5Pcreate(H5P_FILE_ACCESS);
+  H5Pset_vol(fprop, vol_id, &fprop);
 
-	char plugin_name[1024];
+  // MOCK SETUP /////////////////////////////////////////////////////////////
+  /* Create a new file using default properties. */
+  file_id = H5Fcreate(filename, H5F_ACC_TRUNC, H5P_DEFAULT, fprop);
 
+  // check if VOL in use
+  H5VLget_plugin_name(file_id, plugin_name, 1024);
+  printf("VOL plugin in use: %s\n", plugin_name);
 
-	// SET VOL PLUGIN /////////////////////////////////////////////////////////
-	fprop = H5Pcreate(H5P_FILE_ACCESS);
-	H5Pset_vol(fprop, vol_id, &fprop);
+  /* Create the data space for the dataset. */
+  dims[0] = 4;
+  dims[1] = 6;
+  dataspace_id = H5Screate_simple(2, dims, NULL);
 
-	// MOCK SETUP /////////////////////////////////////////////////////////////
-	/* Create a new file using default properties. */
-	file_id = H5Fcreate(filename, H5F_ACC_TRUNC, H5P_DEFAULT, fprop);
+  // CREATE /////////////////////////////////////////////////////////////////
+  /* Create the dataset. */
+  dataset_id = H5Dcreate2(file_id, "/dset", H5T_STD_I32BE, dataspace_id, H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
 
-	// check if VOL in use
-	H5VLget_plugin_name(file_id, plugin_name, 1024);
-	printf ("VOL plugin in use: %s\n", plugin_name);
+  dataset_id = H5Dcreate2(file_id, "/dset2", H5T_STD_I32BE, dataspace_id, H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
 
+  dataset_id = H5Dcreate2(file_id, "/dset3", H5T_STD_I32BE, dataspace_id, H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
 
+  // CLOSE //////////////////////////////////////////////////////////////////
+  /* End access to the dataset and release resources used by it. */
+  status = H5Dclose(dataset_id);
 
-	/* Create the data space for the dataset. */
-	dims[0] = 4; 
-	dims[1] = 6; 
-	dataspace_id = H5Screate_simple(2, dims, NULL);
+  // OPEN ///////////////////////////////////////////////////////////////////
+  // READ ///////////////////////////////////////////////////////////////////
+  // WRITE //////////////////////////////////////////////////////////////////
+  // GET ////////////////////////////////////////////////////////////////////
+  // SPECIFIC ///////////////////////////////////////////////////////////////
+  // OPTIONAL ///////////////////////////////////////////////////////////////
 
-	// CREATE /////////////////////////////////////////////////////////////////
-	/* Create the dataset. */
-	dataset_id = H5Dcreate2(file_id, "/dset", H5T_STD_I32BE, dataspace_id, H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
-	
-	dataset_id = H5Dcreate2(file_id, "/dset2", H5T_STD_I32BE, dataspace_id, H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
+  // MOCK CLEANUP ///////////////////////////////////////////////////////////
+  /* Terminate access to the data space. */
+  status = H5Sclose(dataspace_id);
 
+  /* Close the file. */
+  status = H5Fclose(file_id);
 
-	dataset_id = H5Dcreate2(file_id, "/dset3", H5T_STD_I32BE, dataspace_id, H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
+  // Clean up ///////////////////////////////////////////////////////////////
+  //H5VLunregister(vol_id);
 
-
-	// CLOSE //////////////////////////////////////////////////////////////////
-	/* End access to the dataset and release resources used by it. */
-	status = H5Dclose(dataset_id);
-
-
-
-	// OPEN ///////////////////////////////////////////////////////////////////
-	// READ ///////////////////////////////////////////////////////////////////
-	// WRITE //////////////////////////////////////////////////////////////////
-	// GET ////////////////////////////////////////////////////////////////////
-	// SPECIFIC ///////////////////////////////////////////////////////////////
-	// OPTIONAL ///////////////////////////////////////////////////////////////
-
-
-
-	// MOCK CLEANUP ///////////////////////////////////////////////////////////
-	/* Terminate access to the data space. */ 
-	status = H5Sclose(dataspace_id);
-
-	/* Close the file. */
-	status = H5Fclose(file_id);
-
-
-	// Clean up ///////////////////////////////////////////////////////////////
-	//H5VLunregister(vol_id);
-
-	return 0;
+  return 0;
 }

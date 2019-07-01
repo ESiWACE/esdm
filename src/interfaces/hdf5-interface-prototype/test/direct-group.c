@@ -13,16 +13,14 @@
 // You should have received a copy of the GNU Lesser General Public License
 // along with h5-memvol.  If not, see <http://www.gnu.org/licenses/>.
 
+#include <memvol.h>
 #include <stdio.h>
 
-#include <memvol.h>
-
-int main(){
+int main() {
   hid_t fprop;
   hid_t fid;
   hid_t vol_id = H5VL_memvol_init();
   herr_t status;
-
   hid_t g1, g2;
   hid_t plist;
 
@@ -33,7 +31,7 @@ int main(){
 
   fid = H5Fcreate("test", H5F_ACC_TRUNC, H5P_DEFAULT, fprop);
   H5VLget_plugin_name(fid, name, 1024);
-  printf ("Using VOL %s\n", name);
+  printf("Using VOL %s\n", name);
 
   g1 = H5Gcreate2(fid, "g1", H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
   H5Gclose(g1);
@@ -48,28 +46,27 @@ int main(){
   //H5Gclose(g3);
 
   printf("Testing additional functions\n");
-  g1 = H5Gopen2(fid, "g1", H5P_DEFAULT );
+  g1 = H5Gopen2(fid, "g1", H5P_DEFAULT);
   plist = H5Gget_create_plist(g1);
   H5G_info_t group_info;
-  H5Gget_info(g1, & group_info );
+  H5Gget_info(g1, &group_info);
 
-  H5Gget_info_by_idx(fid, "g1",  H5_INDEX_CRT_ORDER,  H5_ITER_NATIVE, 0, & group_info, H5P_DEFAULT ) ;
-  H5Gget_info_by_idx(fid, "g1",  H5_INDEX_NAME,  H5_ITER_NATIVE, 0, & group_info, H5P_DEFAULT ) ;
-  H5Gget_info_by_name(fid, "g1", & group_info, H5P_DEFAULT);
+  H5Gget_info_by_idx(fid, "g1", H5_INDEX_CRT_ORDER, H5_ITER_NATIVE, 0, &group_info, H5P_DEFAULT);
+  H5Gget_info_by_idx(fid, "g1", H5_INDEX_NAME, H5_ITER_NATIVE, 0, &group_info, H5P_DEFAULT);
+  H5Gget_info_by_name(fid, "g1", &group_info, H5P_DEFAULT);
   H5Pclose(plist);
 
   status = H5Gclose(g1);
-  g1 = H5Gopen2(fid, "g2", H5P_DEFAULT );
+  g1 = H5Gopen2(fid, "g2", H5P_DEFAULT);
   H5Gclose(g1);
   //g1 = H5Gopen2(fid, "INVALID", H5P_DEFAULT );
   //H5Gclose(g1);
 
-  g1 =  H5Gcreate_anon( fid, H5P_DEFAULT, H5P_DEFAULT );
+  g1 = H5Gcreate_anon(fid, H5P_DEFAULT, H5P_DEFAULT);
   H5Gclose(g1);
 
   H5Fclose(fid);
   H5VL_memvol_finalize();
-
 
   printf("Status: %d\n", status);
 

@@ -14,13 +14,10 @@
  * along with ESDM.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-
 /**
  * @file
  * @brief View and list ESDM objects.
  */
 
-int main (int argc , char * argv[argc +1]) {
-
-
+int main(int argc, char *argv[argc + 1]) {
 }

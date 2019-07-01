@@ -13,12 +13,11 @@
 // You should have received a copy of the GNU Lesser General Public License
 // along with h5-memvol.  If not, see <http://www.gnu.org/licenses/>.
 
-#include <stdio.h>
 #include <assert.h>
-
 #include <hdf5.h>
+#include <stdio.h>
 
-int main(){
+int main() {
   hid_t fprop;
   hid_t fid;
   hid_t vol_id = H5VLregister_by_name("h5-memvol");
@@ -33,7 +32,7 @@ int main(){
   fid = H5Fcreate("test", H5F_ACC_TRUNC, H5P_DEFAULT, fprop);
 
   H5VLget_plugin_name(fid, name, 1024);
-  printf ("Using VOL %s\n", name);
+  printf("Using VOL %s\n", name);
   H5Fclose(fid);
   H5VLunregister(vol_id);
 

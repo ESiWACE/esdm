@@ -4,7 +4,10 @@
 #include <assert.h>
 #include <string.h>
 
+#include <assert.h>
 #include <smd.h>
+#include <stdio.h>
+#include <stdlib.h>
 
 int main(){
 	//Test  smd_attr_new

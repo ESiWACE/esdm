@@ -22,13 +22,12 @@
 
 // Internal functions used by this backend.
 typedef struct {
-	esdm_config_backend_t *config;
-	const char *target;
-	esdm_perf_model_lat_thp_t perf_model;
+  esdm_config_backend_t *config;
+  const char *target;
+  esdm_perf_model_lat_thp_t perf_model;
 } posix_backend_data_t;
 
-
-// static int mkfs(esdm_backend* backend, int enforce_format);
+// static int mkfs(esdm_backend_t* backend, int enforce_format);
 
 /**
  * Similar to the command line counterpart fsck for ESDM plugins is responsible
@@ -46,16 +45,16 @@ typedef struct {
 //
 // static int entry_destroy(const char *path);
 //
-// static int fragment_retrieve(esdm_backend* backend, esdm_fragment_t *fragment, json_t * metadata);
+// static int fragment_retrieve(esdm_backend_t* backend, esdm_fragment_t *fragment, json_t * metadata);
 //
-// static int fragment_update(esdm_backend* backend, esdm_fragment_t *fragment);
+// static int fragment_update(esdm_backend_t* backend, esdm_fragment_t *fragment);
 //
 // /**
 //  * Callback implementation when beeing queried for a performance estimate.
 //  *
 //  */
 //
-// static int posix_backend_performance_estimate(esdm_backend* backend, esdm_fragment_t *fragment, float * out_time);
+// static int posix_backend_performance_estimate(esdm_backend_t* backend, esdm_fragment_t *fragment, float * out_time);
 
 /**
 * Finalize callback implementation called on ESDM shutdown.
@@ -64,7 +63,7 @@ typedef struct {
 * This routine is also expected to clean up memory that is used by the backend.
 */
 
-int posix_finalize(esdm_backend* backend);
+int posix_finalize(esdm_backend_t *backend);
 
 /**
 * Initializes the POSIX plugin. In particular this involves:
@@ -75,13 +74,11 @@ int posix_finalize(esdm_backend* backend);
 *	* Connect with support services e.g. for technical metadata
 *	* Setup directory structures used by this POSIX specific backend
 *
-*	* Populate esdm_backend struct and callbacks required for registration
+*	* Populate esdm_backend_t struct and callbacks required for registration
 *
 * @return pointer to backend struct
 */
 
-
-esdm_backend* posix_backend_init(esdm_config_backend_t *config);
-
+esdm_backend_t *posix_backend_init(esdm_config_backend_t *config);
 
 #endif

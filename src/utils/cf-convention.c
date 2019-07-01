@@ -14,14 +14,10 @@
  * along with ESDM.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-
 /**
  * @file
  * @brief Notes and convenience helpers for ESDM to support CF Convention
  */
-
-
-
 
 /*
 d
