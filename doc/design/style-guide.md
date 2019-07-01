@@ -20,6 +20,13 @@ This document describes the style guide to use in the code.
 
 ## Example Code
 
+//First add standard libraries
+#include <stdio.h>
+#include <stdlib.h>
+
+// Add an empty line before adding any ESDM include file
+#include <esdm-internal.h>
+
 struct x_t{
   int a;
   int b;
