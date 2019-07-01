@@ -14,13 +14,9 @@ if(INTERFACE_NETCDF4)
 	SUBDIRS(netcdf)
 endif()
 
-#option(INTERFACE_GRIB "Compile interface for GRIB support?" ON)
-#if(INTERFACE_GRIB)
-#	message(STATUS "WITH_INTERFACE_GRIB")
-#	add_definitions(-DESDM_HAS_GRIB=1)
-#	SUBDIRS(grib)
+#option(INTERFACE_MPI "Compile interface for MPI support?" ON)
+#if(INTERFACE_MPI)
+#	message(STATUS "WITH_INTERFACE_MPI")
+#	add_definitions(-DINTERFACE_MPI=1)
+	SUBDIRS(mpi)
 #endif()
-
-
-
-
