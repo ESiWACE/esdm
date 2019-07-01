@@ -159,10 +159,6 @@ static void write_test() {
   ret = esdm_dataset_create(container, "myVariable", dataspace, &dataset);
   assert(ret == ESDM_SUCCESS);
 
-  // char *names[] = {"longitude", "latitude"};
-  // ret = esdm_dataset_name_vars(dataset, names);
-  // assert(ret == ESDM_SUCCESS);
-
   // 3) Attributes
 
   smd_attr_t *var1 = smd_attr_new("lat", SMD_DTYPE_EMPTY, NULL, 0);

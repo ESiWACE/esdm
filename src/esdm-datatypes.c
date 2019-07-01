@@ -586,6 +586,7 @@ esdm_status esdm_dataset_link_attribute(esdm_dataset_t *dset, smd_attr_t *attr) 
   return ESDM_SUCCESS;
 }
 
+
 esdm_status esdm_dataset_iterator(esdm_container_t *container, esdm_dataset_iterator_t **iter) {
   ESDM_DEBUG(__func__);
 
