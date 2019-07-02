@@ -7,10 +7,12 @@
 #ifndef ESDM_INTERNAL_H
 #define ESDM_INTERNAL_H
 
+#include <jansson.h>
+#include <glib.h>
+
 #include <esdm-datatypes-internal.h>
 #include <esdm-debug.h>
 #include <esdm.h>
-#include <jansson.h>
 
 // ESDM Core //////////////////////////////////////////////////////////////////
 
@@ -187,8 +189,6 @@ int read_check(int fd, char *buf, size_t len);
  */
 
 int write_check(int fd, char *buf, size_t len);
-
-void esdm_print_hashtable(GHashTable *tbl);
 
 esdm_status esdm_metadata_t_init_(esdm_metadata_t **output_metadata);
 

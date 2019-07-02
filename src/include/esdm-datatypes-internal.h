@@ -1,10 +1,10 @@
 #ifndef ESDM_DATATYPES_INTERNAL_H
 #define ESDM_DATATYPES_INTERNAL_H
 
-#include <esdm-datatypes.h>
-
-#include <glib.h>
 #include <jansson.h>
+#include <glib.h>
+
+#include <esdm-datatypes.h>
 
 struct esdm_container_t {
   char *name;
@@ -30,7 +30,6 @@ struct esdm_dataset_t {
   esdm_container_t *container;
   esdm_metadata_t *metadata;
   esdm_dataspace_t *dataspace;
-  GHashTable *fragments;
   esdm_status status;
 };
 
@@ -54,12 +53,6 @@ typedef struct {
 
 typedef struct esdm_fragment_index_t {
   char *json;
-  GHashTable *fragments;
-  /*
-	int (callback_insert)();
-	int (callback_remove)();
-	int (callback_lookup)();
-	*/
 } esdm_fragment_index_t;
 
 struct esdm_dataset_iterator_t {
@@ -276,7 +269,6 @@ typedef struct esdm_modules_t {
 
 typedef struct esdm_layout_t {
   int info;
-  GHashTable *containers;
 } esdm_layout_t;
 
 typedef struct esdm_scheduler_t {
@@ -288,8 +280,7 @@ typedef struct esdm_scheduler_t {
 
 typedef struct esdm_performance_t {
   int info;
-  GHashTable *cache;
-} esdm_performance_t;
+  } esdm_performance_t;
 
 typedef struct esdm_instance_t esdm_instance_t;
 
