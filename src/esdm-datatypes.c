@@ -267,7 +267,7 @@ esdm_status esdm_fragment_deserialize(void *serialized_fragment, esdm_fragment_t
 void esdm_dataset_init(esdm_container_t *container, const char *name, esdm_dataspace_t *dataspace, esdm_dataset_t **out_dataset){
   esdm_dataset_t *d = (esdm_dataset_t *)malloc(sizeof(esdm_dataset_t));
 
-  // dataset->varnames = NULL;
+  d->dims_dset_id = NULL;
   d->name = strdup(name);
   d->container = container;
   d->dataspace = dataspace;
@@ -284,16 +284,9 @@ esdm_status esdm_dataset_create(esdm_container_t *container, const char *name, e
   return ESDM_SUCCESS;
 }
 
-esdm_status esdm_dataset_retrieve(esdm_container_t *container, const char *name, esdm_dataset_t **out_dataset) {
-  ESDM_DEBUG(__func__);
-	char * buff;
-  int size;
-  esdm_dataset_t *d = (esdm_dataset_t *)malloc(sizeof(esdm_dataset_t));
-  d->dims_dset_id = NULL;
-  d->name = strdup(name);
-  d->container = container;
-
-  *out_dataset = NULL;
+esdm_status esdm_dataset_retrieve_md_load(esdm_dataset_t *dset, char ** out_md, int * out_size){
+	return esdm.modules->metadata_backend->callbacks.dataset_retrieve(esdm.modules->metadata_backend, dset, out_md, out_size);
+}
 
 esdm_status esdm_dataset_retrieve_md_parse(esdm_dataset_t *d, char * md, int size){
 	esdm_status ret;
@@ -341,7 +334,8 @@ esdm_status esdm_dataset_retrieve_md_parse(esdm_dataset_t *d, char * md, int siz
     strs[i] = (char *)json_string_value(json_array_get(elem, i));
   }
   esdm_dataset_name_dims(d, strs);
-  *out_dataset = d;
+	return ESDM_SUCCESS;
+}
 
 esdm_status esdm_dataset_retrieve(esdm_container_t *container, const char *name, esdm_dataset_t **out_dataset) {
   ESDM_DEBUG(__func__);
@@ -414,8 +408,8 @@ esdm_status esdm_dataset_destroy(esdm_dataset_t *dataset) {
   if (dataset->dims_dset_id == NULL) {
     free(dataset->dims_dset_id);
   }
-  //	free(dataset->container);
-  //	free(dataset->dataspace);
+  	free(dataset->container);
+  	free(dataset->dataspace);
   free(dataset);
   return ESDM_SUCCESS;
 }
@@ -561,7 +555,7 @@ esdm_status esdm_metadata_t_init_(esdm_metadata_t **output_metadata) {
   md->buff_size = 10000;
   md->size = 0;
   md->json = ((char *)md) + sizeof(esdm_metadata_t);
-  md->attr = smd_attr_new("attr", SMD_DTYPE_EMPTY, NULL, 0);
+  md->attr = smd_attr_new("Variables", SMD_DTYPE_EMPTY, NULL, 0);
 
   return ESDM_SUCCESS;
 }
@@ -589,14 +583,12 @@ esdm_status esdm_dataset_name_dims(esdm_dataset_t *d, char **names) {
     strcpy(posVar, names[i]);
     posVar += 1 + strlen(names[i]);
   }
-
   return ESDM_SUCCESS;
 }
 
 esdm_status esdm_dataset_get_name_dims(esdm_dataset_t *d, char const *const **out_names) {
   assert(d != NULL);
   assert(out_names != NULL);
-
   *out_names = (char const *const *)d->dims_dset_id;
   return ESDM_SUCCESS;
 }
