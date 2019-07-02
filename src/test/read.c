@@ -69,9 +69,6 @@ int main(int argc, char const *argv[]) {
   esdm_container_create("mycontainer", &container);
   esdm_dataset_create(container, "mydataset", dataspace, &dataset);
 
-  esdm_container_commit(container);
-  esdm_dataset_commit(dataset);
-
   // define subspace
   int64_t size[] = {10, 20};
   int64_t offset[] = {0, 0};

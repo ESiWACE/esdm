@@ -180,34 +180,14 @@ esdm_status esdm_scheduler_enqueue_read(esdm_instance_t *esdm, io_request_status
     esdm_fragment_t *f = read_frag[i];
     json_t *root = load_json(f->metadata->json);
     json_t *elem;
-    elem = json_object_get(root, "plugin");
-    //const char * plugin_type = json_string_value(elem);
-    elem = json_object_get(root, "id");
+    elem = json_object_get(root, "pid");
     const char *plugin_id = json_string_value(elem);
-    elem = json_object_get(root, "offset");
-    //const char * offset_str = json_string_value(elem);
-    elem = json_object_get(root, "size");
-    //const char * size_str = json_string_value(elem);
-
     if (!plugin_id) {
       printf("Backend ID needs to be given\n");
       exit(1);
     }
 
-    // find the backend for the fragment
-    esdm_backend_t *backend_to_use = NULL;
-    for (x = 0; x < esdm->modules->data_backend_count; x++) {
-      esdm_backend_t *b_tmp = esdm->modules->data_backends[x];
-      if (strcmp(b_tmp->config->id, plugin_id) == 0) {
-        DEBUG("Found plugin %s", plugin_id);
-        backend_to_use = b_tmp;
-        break;
-      }
-    }
-    if (backend_to_use == NULL) {
-      printf("Error no backend found for ID: %s\n", plugin_id);
-      exit(1);
-    }
+    esdm_backend_t *backend_to_use = esdmI_get_backend(plugin_id);
 
     uint64_t size = esdm_dataspace_size(f->dataspace);
     f->backend = backend_to_use;

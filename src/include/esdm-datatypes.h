@@ -35,9 +35,7 @@ typedef enum data_accessibility_t {
  */
 typedef enum esdm_status {
   ESDM_SUCCESS = 0,
-  ESDM_ERROR,
-  ESDM_STATUS_DIRTY,
-  ESDM_STATUS_PERSISTENT
+  ESDM_ERROR
 } esdm_status;
 
 /**

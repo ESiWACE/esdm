@@ -199,6 +199,8 @@ esdm_status esdm_dataset_retrieve_md_load(esdm_dataset_t *dset, char ** out_md, 
 esdm_status esdm_dataset_retrieve_md_parse(esdm_dataset_t *d, char * md, int size);
 
 
+esdm_backend_t * esdmI_get_backend(char const * plugin_id);
+
 int ea_compute_hash_str(const char * str);
 int ea_is_valid_name(const char *str);
 

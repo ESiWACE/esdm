@@ -6,15 +6,17 @@
 
 #include <esdm-datatypes.h>
 
+enum esdm_data_status_e {
+  ESDM_DATA_NOT_LOADED,
+  ESDM_DATA_DIRTY,
+  ESDM_DATA_PERSISTENT
+};
+
+typedef enum esdm_data_status_e esdm_data_status_e;
+
 struct esdm_container_t {
   char *name;
   esdm_status status;
-};
-
-struct esdm_json_t {
-  char *json;
-  int buff_size;
-  int size;
 };
 
 struct esdm_metadata_t {
@@ -51,6 +53,7 @@ struct esdm_fragment_t {
   size_t elements;
   size_t bytes;
   int in_place; // can we access the data in place?
+  esdm_data_status_e status;
 };
 
 

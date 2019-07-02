@@ -259,25 +259,15 @@ static int fragment_retrieve(esdm_backend_t *backend, esdm_fragment_t *fragment,
   DEBUG("path: %s", path);
   DEBUG("path_fragment: %s", path_fragment);
 
-  //entry_update()
-
   entry_retrieve(path_fragment, fragment->buf);
-  //DEBUG("buf=%s", fragment->buf);
   return 0;
 }
 
 
 static int fragment_metadata_create(esdm_backend_t *backend, esdm_fragment_t *fragment, int len, char * md, int * out_size){
   DEBUG_ENTER;
-  char path_fragment[PATH_MAX];
-  posix_backend_data_t *data = (posix_backend_data_t *)backend->data;
-  char fragment_name[PATH_MAX];
-  esdm_dataspace_string_descriptor(fragment_name, fragment->dataspace);
-
-  sprintf(path_fragment, "%s/containers/%s/%s/%s", data->target, fragment->dataset->container->name, fragment->dataset->name, fragment_name);
-
   int size = 0;
-  size = snprintf(md, len, "{\"path\" : \"%s\"}", path_fragment);
+  size = snprintf(md, len, "{}");
   *out_size = size;
 
   return 0;
