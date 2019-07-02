@@ -410,8 +410,6 @@ esdm_status esdm_dataset_destroy(esdm_dataset_t *dataset) {
   if (dataset->dims_dset_id == NULL) {
     free(dataset->dims_dset_id);
   }
-  	free(dataset->container);
-  	free(dataset->dataspace);
   free(dataset);
   return ESDM_SUCCESS;
 }
