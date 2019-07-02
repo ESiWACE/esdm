@@ -432,8 +432,9 @@ static int fragment_retrieve(esdm_md_backend_t *backend, esdm_fragment_t *fragme
 
 static esdm_fragment_t *create_fragment_from_metadata(int fd, esdm_dataset_t *dataset, esdm_dataspace_t *space) {
   struct stat sb;
+  int ret;
 
-  fstat(fd, &sb);
+  ret = fstat(fd, &sb);
   DEBUG("Fragment found size:%ld", sb.st_size);
 
   esdm_fragment_t *f;
@@ -441,7 +442,7 @@ static esdm_fragment_t *create_fragment_from_metadata(int fd, esdm_dataset_t *da
   f->metadata = malloc(sb.st_size + sizeof(esdm_metadata_t) + 1);
   f->metadata->json = (char *)(f->metadata) + sizeof(esdm_metadata_t);
   f->metadata->size = sb.st_size;
-  read_check(fd, f->metadata->json, sb.st_size);
+  ret = read_check(fd, f->metadata->json, sb.st_size);
   f->metadata->json[sb.st_size] = 0;
 
   uint64_t elements = esdm_dataspace_element_count(space);
@@ -452,7 +453,6 @@ static esdm_fragment_t *create_fragment_from_metadata(int fd, esdm_dataset_t *da
   f->buf = NULL;
   f->elements = elements;
   f->bytes = bytes;
-  f->status = ESDM_STATUS_PERSISTENT;
   f->in_place = 0;
 
   return f;

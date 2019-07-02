@@ -266,6 +266,23 @@ static int fragment_retrieve(esdm_backend_t *backend, esdm_fragment_t *fragment,
   return 0;
 }
 
+
+static int fragment_metadata_create(esdm_backend_t *backend, esdm_fragment_t *fragment, int len, char * md, int * out_size){
+  DEBUG_ENTER;
+  char path_fragment[PATH_MAX];
+  posix_backend_data_t *data = (posix_backend_data_t *)backend->data;
+  char fragment_name[PATH_MAX];
+  esdm_dataspace_string_descriptor(fragment_name, fragment->dataspace);
+
+  sprintf(path_fragment, "%s/containers/%s/%s/%s", data->target, fragment->dataset->container->name, fragment->dataset->name, fragment_name);
+
+  int size = 0;
+  size = snprintf(md, len, "{\"path\" : \"%s\"}", path_fragment);
+  *out_size = size;
+
+  return 0;
+}
+
 static int fragment_update(esdm_backend_t *backend, esdm_fragment_t *fragment) {
   DEBUG_ENTER;
 
@@ -291,9 +308,6 @@ static int fragment_update(esdm_backend_t *backend, esdm_fragment_t *fragment) {
   // create metadata entry
   mkdir_recursive(path);
   entry_create(path_fragment);
-
-  fragment->metadata->size += sprintf(&fragment->metadata->json[fragment->metadata->size], "{\"path\" : \"%s\"}", path_fragment);
-
   entry_update(path_fragment, fragment->buf, fragment->bytes);
   return 0;
 }
@@ -354,10 +368,11 @@ NULL, // dataset retrieve
 NULL, // dataset update
 NULL, // dataset delete
 
-NULL,              // fragment create
-fragment_retrieve, // fragment retrieve
-fragment_update,   // fragment update
-NULL,              // fragment delete
+NULL,
+fragment_retrieve,
+fragment_update,
+fragment_metadata_create,
+NULL,
 mkfs,
 },
 };

@@ -23,6 +23,15 @@ struct esdm_metadata_t {
   int size;
 };
 
+
+struct esdm_fragments_t {
+  esdm_fragment_t ** frag;
+  int count;
+  int buff_size;
+};
+
+typedef struct esdm_fragments_t esdm_fragments_t;
+
 struct esdm_dataset_t {
   char *name;
   char **dims_dset_id; // array of variable names != NULL if set
@@ -30,8 +39,7 @@ struct esdm_dataset_t {
   esdm_metadata_t *metadata;
   esdm_dataspace_t *dataspace;
   smd_attr_t *attr;
-  // fragment metadata here
-  esdm_status status;
+  esdm_fragments_t fragments;
 };
 
 struct esdm_fragment_t {
@@ -40,21 +48,11 @@ struct esdm_fragment_t {
   esdm_dataspace_t *dataspace;
   esdm_backend_t *backend;
   void *buf;
-  int in_place;
   size_t elements;
   size_t bytes;
-  esdm_status status;
+  int in_place; // can we access the data in place?
 };
 
-// multiple fragments
-typedef struct {
-  struct esdm_fragment_t *fragment;
-  int count;
-} esdm_fragments_t;
-
-typedef struct esdm_fragment_index_t {
-  char *json;
-} esdm_fragment_index_t;
 
 struct esdm_dataset_iterator_t {
   int x;
@@ -123,6 +121,7 @@ struct esdm_backend_t_callbacks_t {
   int (*fragment_create)(esdm_backend_t *, esdm_fragment_t *fragment);
   int (*fragment_retrieve)(esdm_backend_t *, esdm_fragment_t *fragment, json_t *metadata);
   int (*fragment_update)(esdm_backend_t *, esdm_fragment_t *fragment);
+  int (*fragment_metadata_create)(esdm_backend_t *, esdm_fragment_t *fragment, int len, char * md, int * out_size);
   int (*fragment_destroy)(esdm_backend_t *, esdm_fragment_t *fragment);
 
   int (*mkfs)(esdm_backend_t *, int enforce_format);

@@ -209,16 +209,7 @@ esdm_status esdm_scheduler_enqueue_read(esdm_instance_t *esdm, io_request_status
       exit(1);
     }
 
-    // esdm_fragment_print(read_frag[i]);
-    // printf("\n");
-
-    //for verification purposes, we could read back the metadata stored and compare it...
-    //esdm_dataspace_t * space = NULL;
-    //esdm_status ret = esdm_dataspace_overlap_str(parent_space, 'x', (char*)offset_str, (char*)size_str, & space);
-    //assert(ret == ESDM_SUCCESS);
-
     uint64_t size = esdm_dataspace_size(f->dataspace);
-    //printf("SIZE: %ld\n", size);
     f->backend = backend_to_use;
 
     io_work_t *task = (io_work_t *)malloc(sizeof(io_work_t));
