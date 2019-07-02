@@ -18,6 +18,8 @@
  * This test uses the ESDM high-level API to actually write a contiuous ND subset of a data set
  */
 
+#include <test/util/test_util.h>
+
 #include <assert.h>
 #include <esdm.h>
 #include <stdio.h>
@@ -54,6 +56,9 @@ int main(int argc, char const *argv[]) {
   int64_t bounds[] = {10, 20};
   esdm_dataspace_t *dataspace;
 
+  assert_crash(esdm_dataspace_create(0xc000000000000000ll, bounds, SMD_DTYPE_UINT64, &dataspace));
+  assert_crash(esdm_dataspace_create(2, NULL, SMD_DTYPE_UINT64, &dataspace));
+  assert_crash(esdm_dataspace_create(2, bounds, SMD_DTYPE_UINT64, NULL));
   esdm_dataspace_create(2, bounds, SMD_DTYPE_UINT64, &dataspace);
 
   esdm_container_create("mycontainer", &container);
