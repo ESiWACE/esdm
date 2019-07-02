@@ -18,7 +18,9 @@
 #define TEST_UTIL_H
 
 #include <stdint.h>
+#include <sys/wait.h>
 #include <time.h>
+#include <unistd.h>
 
 // timer functions
 #ifdef ESM
@@ -32,5 +34,20 @@ void start_timer(timer *t1);
 double stop_timer(timer t1);
 
 double timer_subtract(timer number, timer subtract);
+
+//A variant of assert() that allows us to check that the call actually *crashes* the program.
+//This is used to check for the presence of the appropriate assert() calls to check function contracts.
+#define assert_crash(call) do { \
+  pid_t child = fork(); \
+  if(child) { \
+    int status; \
+    pid_t result = waitpid(child, &status, 0); \
+    assert(result == child); \
+    assert(WIFSIGNALED(status)); \
+  } else { \
+    call; \
+    exit(0); \
+  } \
+} while(0)
 
 #endif
