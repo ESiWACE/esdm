@@ -218,7 +218,12 @@ esdm_status esdm_dataset_get_attributes(esdm_dataset_t *dataset, smd_attr_t **ou
  *
  *  - Allocate process local memory structures.
  *
- *	@return Pointer to new dateset.
+ * @param [in] dims Count of dimensions of the new dataspace.
+ * @param [in] sizes Array of the sizes of the different dimensions, the length of this array is dims.
+ * @param [in] type The datatype for each data point.
+ * @param [out] out_dataspace Pointer to the new dataspace.
+ *
+ * @return Status.
  *
  */
 

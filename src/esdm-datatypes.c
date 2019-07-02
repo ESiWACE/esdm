@@ -424,6 +424,10 @@ esdm_status esdm_dataset_get_attributes(esdm_dataset_t *dataset, smd_attr_t **ou
 
 esdm_status esdm_dataspace_create(int64_t dims, int64_t *sizes, esdm_type_t type, esdm_dataspace_t **out_dataspace) {
   ESDM_DEBUG(__func__);
+  assert(dims >= 0);
+  assert(!dims || sizes);
+  assert(out_dataspace);
+
   esdm_dataspace_t *dataspace = (esdm_dataspace_t *)malloc(sizeof(esdm_dataspace_t));
 
   dataspace->dims = dims;
