@@ -116,7 +116,6 @@ esdm_status esdm_mpi_dataset_create(MPI_Comm com, esdm_container_t *container, c
     check_hash_abort(com, hash, 1);
     esdm_dataset_init(container, name, dataspace, out_dataset);
   }
-
   return ret;
 }
 
