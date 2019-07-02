@@ -267,7 +267,7 @@ esdm_status esdm_fragment_deserialize(void *serialized_fragment, esdm_fragment_t
 void esdm_dataset_init(esdm_container_t *container, const char *name, esdm_dataspace_t *dataspace, esdm_dataset_t **out_dataset){
   esdm_dataset_t *d = (esdm_dataset_t *)malloc(sizeof(esdm_dataset_t));
 
-  // dataset->varnames = NULL;
+  d->dims_dset_id = NULL;
   d->name = strdup(name);
   d->container = container;
   d->dataspace = dataspace;
@@ -326,16 +326,16 @@ esdm_status esdm_dataset_retrieve_md_parse(esdm_dataset_t *d, char * md, int siz
   if (ret != ESDM_SUCCESS) {
     return ret;
   }
-  // elem = json_object_get(root, "varnames");
+  elem = json_object_get(root, "dims_dset_id");
   arrsize = json_array_size(elem);
   if (dims != arrsize) {
     return ESDM_ERROR;
   }
-  // char *strs[dims];
-  // for (int i = 0; i < dims; i++) {
-  //   strs[i] = (char *)json_string_value(json_array_get(elem, i));
-  // }
-  // esdm_dataset_name_dims(d, strs);
+  char *strs[dims];
+  for (int i = 0; i < dims; i++) {
+    strs[i] = (char *)json_string_value(json_array_get(elem, i));
+  }
+  esdm_dataset_name_dims(d, strs);
 	return ESDM_SUCCESS;
 }
 
@@ -380,13 +380,13 @@ esdm_status esdm_dataset_commit(esdm_dataset_t *d) {
     js += snprintf(js, len + jso - js, ",%" PRId64, d->dataspace->size[i]);
   }
   js += snprintf(js, len + jso - js, "]");
-  // if (d->varnames != NULL) {
-  //   js += snprintf(js, len + jso - js, ",\"varnames\":[\"%s\"", d->varnames[0]);
-  //   for (int i = 1; i < d->dataspace->dims; i++) {
-  //     js += snprintf(js, len + jso - js, ",\"%s\"", d->varnames[i]);
-  //   }
-  //   js += snprintf(js, len + jso - js, "]");
-  // }
+  if (d->dims_dset_id != NULL) {
+    js += snprintf(js, len + jso - js, ",\"dims_dset_id\":[\"%s\"", d->dims_dset_id[0]);
+    for (int i = 1; i < d->dataspace->dims; i++) {
+      js += snprintf(js, len + jso - js, ",\"%s\"", d->dims_dset_id[i]);
+    }
+    js += snprintf(js, len + jso - js, "]");
+  }
   js += snprintf(js, len + jso - js, "}");
 
   int md_size = (js - jso);
@@ -407,11 +407,11 @@ esdm_status esdm_dataset_destroy(esdm_dataset_t *dataset) {
   free(dataset->metadata);
   dataset->metadata = NULL;
 
-  // if (dataset->varnames == NULL) {
-  //   free(dataset->varnames);
-  // }
-  //	free(dataset->container);
-  //	free(dataset->dataspace);
+  if (dataset->dims_dset_id == NULL) {
+    free(dataset->dims_dset_id);
+  }
+  	free(dataset->container);
+  	free(dataset->dataspace);
   free(dataset);
   return ESDM_SUCCESS;
 }
@@ -561,7 +561,7 @@ esdm_status esdm_metadata_t_init_(esdm_metadata_t **output_metadata) {
   return ESDM_SUCCESS;
 }
 
-/* esdm_status esdm_dataset_name_dims(esdm_dataset_t *d, char **names) {
+esdm_status esdm_dataset_name_dims(esdm_dataset_t *d, char **names) {
   ESDM_DEBUG(__func__);
   assert(d != NULL);
   assert(names != NULL);
@@ -574,27 +574,25 @@ esdm_status esdm_metadata_t_init_(esdm_metadata_t **output_metadata) {
       return ESDM_ERROR;
     }
   }
-  if (d->varnames != NULL) {
-    free(d->varnames);
+  if (d->dims_dset_id != NULL) {
+    free(d->dims_dset_id);
   }
-  d->varnames = (char **)malloc(dims * sizeof(void *) + size);
-  char *posVar = (char *)d->varnames + dims * sizeof(void *);
+  d->dims_dset_id = (char **)malloc(dims * sizeof(void *) + size);
+  char *posVar = (char *)d->dims_dset_id + dims * sizeof(void *);
   for (int i = 0; i < dims; i++) {
-    d->varnames[i] = posVar;
+    d->dims_dset_id[i] = posVar;
     strcpy(posVar, names[i]);
     posVar += 1 + strlen(names[i]);
   }
-
   return ESDM_SUCCESS;
-} */
+}
 
-/* esdm_status esdm_dataset_get_name_dims(esdm_dataset_t *d, char const *const **out_names) {
+esdm_status esdm_dataset_get_name_dims(esdm_dataset_t *d, char const *const **out_names) {
   assert(d != NULL);
   assert(out_names != NULL);
-
-  *out_names = (char const *const *)d->varnames;
+  *out_names = (char const *const *)d->dims_dset_id;
   return ESDM_SUCCESS;
-}*/
+}
 
 esdm_status esdm_dataset_link_attribute(esdm_dataset_t *dset, smd_attr_t *attr) {
   ESDM_DEBUG(__func__);
