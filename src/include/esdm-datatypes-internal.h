@@ -21,7 +21,6 @@ struct esdm_metadata_t {
   char *json;
   int buff_size;
   int size;
-  smd_attr_t *attr;
 };
 
 struct esdm_dataset_t {
@@ -30,6 +29,8 @@ struct esdm_dataset_t {
   esdm_container_t *container;
   esdm_metadata_t *metadata;
   esdm_dataspace_t *dataspace;
+  smd_attr_t *attr;
+  // fragment metadata here
   esdm_status status;
 };
 

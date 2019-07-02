@@ -272,6 +272,8 @@ void esdm_dataset_init(esdm_container_t *container, const char *name, esdm_datas
   d->container = container;
   d->dataspace = dataspace;
 	esdm_metadata_t_init_(& d->metadata);
+	d->attr = smd_attr_new("Variables", SMD_DTYPE_EMPTY, NULL, 0);
+
   *out_dataset = d;
 }
 
@@ -294,7 +296,7 @@ esdm_status esdm_dataset_retrieve_md_parse(esdm_dataset_t *d, char * md, int siz
 	d->metadata = (esdm_metadata_t *)malloc(sizeof(esdm_metadata_t));
 
   // first strip the attributes
-  size_t parsed = smd_attr_create_from_json(js + 1, size, & d->metadata->attr);
+  size_t parsed = smd_attr_create_from_json(js + 1, size, & d->attr);
   js += 1 + parsed;
   js[0] = '{';
   // for the rest we use JANSSON
@@ -370,7 +372,7 @@ esdm_status esdm_dataset_commit(esdm_dataset_t *d) {
 	char * js = buff;
   const char *jso = js;
   js += sprintf(js, "{");
-  js += smd_attr_ser_json(js, d->metadata->attr) - 1;
+  js += smd_attr_ser_json(js, d->attr) - 1;
   js += snprintf(js, len + jso - js, ",\"typ\":\"");
   js += smd_type_ser(js, d->dataspace->type) - 1;
   js += snprintf(js, len + jso - js, "\",\"dims\":%" PRId64 ",\"size\":[%" PRId64, d->dataspace->dims, d->dataspace->size[0]);
@@ -415,8 +417,8 @@ esdm_status esdm_dataset_destroy(esdm_dataset_t *dataset) {
 }
 
 esdm_status esdm_dataset_get_attributes(esdm_dataset_t *dataset, smd_attr_t **out_metadata) {
-  assert(dataset->metadata->attr != NULL);
-  *out_metadata = dataset->metadata->attr;
+  assert(dataset->attr != NULL);
+  *out_metadata = dataset->attr;
   return ESDM_SUCCESS;
 }
 
@@ -555,7 +557,6 @@ esdm_status esdm_metadata_t_init_(esdm_metadata_t **output_metadata) {
   md->buff_size = 10000;
   md->size = 0;
   md->json = ((char *)md) + sizeof(esdm_metadata_t);
-  md->attr = smd_attr_new("Variables", SMD_DTYPE_EMPTY, NULL, 0);
 
   return ESDM_SUCCESS;
 }
@@ -597,7 +598,7 @@ esdm_status esdm_metadata_t_init_(esdm_metadata_t **output_metadata) {
 
 esdm_status esdm_dataset_link_attribute(esdm_dataset_t *dset, smd_attr_t *attr) {
   ESDM_DEBUG(__func__);
-  smd_link_ret_t ret = smd_attr_link(dset->metadata->attr, attr, 0);
+  smd_link_ret_t ret = smd_attr_link(dset->attr, attr, 0);
   return ESDM_SUCCESS;
 }
 
