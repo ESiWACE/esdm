@@ -8,8 +8,6 @@
 
 struct esdm_container_t {
   char *name;
-  esdm_metadata_t *metadata;
-  GHashTable *datasets;
   esdm_status status;
 };
 

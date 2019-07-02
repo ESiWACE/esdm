@@ -202,3 +202,12 @@ json_t *load_json(const char *str) {
   }
   return root;
 }
+
+
+int ea_compute_hash_str(const char * str){
+  int hash = 0;
+  for(; *str != 0; str++){
+    hash = hash<<3 + *str;
+  }
+  return hash;
+}

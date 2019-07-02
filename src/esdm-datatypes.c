@@ -40,7 +40,6 @@ esdm_status esdm_container_create(const char *name, esdm_container_t **out_conta
   esdm_container_t *container = (esdm_container_t *)malloc(sizeof(esdm_container_t));
 
   container->name = strdup(name);
-  container->metadata = NULL;
   container->status = ESDM_STATUS_DIRTY;
 
   *out_container = container;
@@ -56,7 +55,6 @@ esdm_status esdm_container_retrieve(const char *name, esdm_container_t **out_con
   // TODO: retrieve associated data
 
   container->name = strdup(name);
-  container->metadata = NULL;
   container->status = ESDM_STATUS_DIRTY;
 
   *out_container = container;
@@ -265,18 +263,24 @@ esdm_status esdm_fragment_deserialize(void *serialized_fragment, esdm_fragment_t
 
 // Dataset ////////////////////////////////////////////////////////////////////
 
+
+void esdm_dataset_init(esdm_container_t *container, const char *name, esdm_dataspace_t *dataspace, esdm_dataset_t **out_dataset){
+  esdm_dataset_t *d = (esdm_dataset_t *)malloc(sizeof(esdm_dataset_t));
+
+  // dataset->varnames = NULL;
+  d->name = strdup(name);
+  d->container = container;
+  d->dataspace = dataspace;
+	esdm_metadata_t_init_(& d->metadata);
+  *out_dataset = d;
+}
+
+
 esdm_status esdm_dataset_create(esdm_container_t *container, const char *name, esdm_dataspace_t *dataspace, esdm_dataset_t **out_dataset) {
   ESDM_DEBUG(__func__);
-  esdm_dataset_t *dataset = (esdm_dataset_t *)malloc(sizeof(esdm_dataset_t));
-
-  dataset->dims_dset_id = NULL;
-  dataset->name = strdup(name);
-  dataset->container = container;
-  esdm_metadata_t_init_(&dataset->metadata);
-  dataset->dataspace = dataspace;
-
-  *out_dataset = dataset;
-
+	esdm_dataset_t *d;
+	esdm_dataset_init(container, name, dataspace, &d);
+	*out_dataset = d;
   return ESDM_SUCCESS;
 }
 
@@ -291,12 +295,9 @@ esdm_status esdm_dataset_retrieve(esdm_container_t *container, const char *name,
 
   *out_dataset = NULL;
 
-  esdm_status ret = esdm.modules->metadata_backend->callbacks.dataset_retrieve(esdm.modules->metadata_backend, d, & buff, & size);
-	if(ret != ESDM_SUCCESS){
-		free(d);
-		return ret;
-	}
-	char * js = buff;
+esdm_status esdm_dataset_retrieve_md_parse(esdm_dataset_t *d, char * md, int size){
+	esdm_status ret;
+	char * js = md;
 	d->metadata = (esdm_metadata_t *)malloc(sizeof(esdm_metadata_t));
 
   // first strip the attributes
@@ -342,7 +343,27 @@ esdm_status esdm_dataset_retrieve(esdm_container_t *container, const char *name,
   esdm_dataset_name_dims(d, strs);
   *out_dataset = d;
 
+esdm_status esdm_dataset_retrieve(esdm_container_t *container, const char *name, esdm_dataset_t **out_dataset) {
+  ESDM_DEBUG(__func__);
+	char * buff;
+  int size;
+  esdm_dataset_t *d;
+	esdm_dataset_init(container, name, NULL, & d);
+
+  *out_dataset = NULL;
+
+  esdm_status ret = esdm_dataset_retrieve_md_load(d, & buff, & size);
+	if(ret != ESDM_SUCCESS){
+		free(d);
+		return ret;
+	}
+	ret = esdm_dataset_retrieve_md_parse(d, buff, size);
 	free(buff);
+	if(ret != ESDM_SUCCESS){
+		free(d);
+		return ret;
+	}
+  *out_dataset = d;
   return ESDM_SUCCESS;
 }
 
