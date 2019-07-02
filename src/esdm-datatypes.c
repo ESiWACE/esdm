@@ -265,13 +265,14 @@ esdm_status esdm_fragment_deserialize(void *serialized_fragment, esdm_fragment_t
 
 
 void esdm_dataset_init(esdm_container_t *container, const char *name, esdm_dataspace_t *dataspace, esdm_dataset_t **out_dataset){
-  esdm_dataset_t *dataset = (esdm_dataset_t *)malloc(sizeof(esdm_dataset_t));
+  esdm_dataset_t *d = (esdm_dataset_t *)malloc(sizeof(esdm_dataset_t));
 
   // dataset->varnames = NULL;
-  dataset->name = strdup(name);
-  dataset->container = container;
-  dataset->dataspace = dataspace;
-  *out_dataset = dataset;
+  d->name = strdup(name);
+  d->container = container;
+  d->dataspace = dataspace;
+	esdm_metadata_t_init_(& d->metadata);
+  *out_dataset = d;
 }
 
 
@@ -279,7 +280,6 @@ esdm_status esdm_dataset_create(esdm_container_t *container, const char *name, e
   ESDM_DEBUG(__func__);
 	esdm_dataset_t *d;
 	esdm_dataset_init(container, name, dataspace, &d);
-	esdm_metadata_t_init_(& d->metadata);
 	*out_dataset = d;
   return ESDM_SUCCESS;
 }
