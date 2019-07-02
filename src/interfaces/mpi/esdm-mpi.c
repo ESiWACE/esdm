@@ -1,6 +1,4 @@
-#include <esdm-mpi.h>
-#include <esdm-internal.h>
-
+#include <esdm-mpi-internal.h>
 
 int esdm_mpi_get_tasks_per_node() {
   MPI_Comm shared_comm;
@@ -43,5 +41,45 @@ void esdm_mpi_init() {
 }
 
 void esdm_mpi_finalize(){
-  
+  esdm_finalize();
+}
+
+
+
+esdm_status esdm_mpi_container_create(MPI_Comm com, const char *name, esdm_container_t **out_container){
+  esdm_status ret;
+  ret = esdm_container_create(name, out_container);
+  return ret;
+}
+
+esdm_status esdm_mpi_container_retrieve(MPI_Comm com, const char *name, esdm_container_t **out_container){
+  esdm_status ret;
+  ret = esdm_container_retrieve(name, out_container);
+  return ret;
+}
+
+esdm_status esdm_mpi_container_commit(MPI_Comm com, esdm_container_t *container){
+  esdm_status ret;
+  ret = esdm_container_commit(container);
+  return ret;
+}
+
+
+
+esdm_status esdm_mpi_dataset_create(MPI_Comm com, esdm_container_t *container, const char *name, esdm_dataspace_t *dataspace, esdm_dataset_t **out_dataset){
+  esdm_status ret;
+  ret = esdm_dataset_create(container, name, dataspace, out_dataset);
+  return ret;
+}
+
+esdm_status esdm_mpi_dataset_retrieve(MPI_Comm com, esdm_container_t *container, const char *name, esdm_dataset_t **out_dataset){
+  esdm_status ret;
+  ret = esdm_dataset_retrieve(container, name, out_dataset);
+  return ret;
+}
+
+esdm_status esdm_mpi_dataset_commit(MPI_Comm com, esdm_dataset_t *dataset){
+  esdm_status ret;
+  ret = esdm_dataset_commit(dataset);
+  return ret;
 }

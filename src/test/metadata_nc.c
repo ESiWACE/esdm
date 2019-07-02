@@ -285,7 +285,6 @@ void read_test() {
   assert(smd_attr_get_type(var1) == SMD_TYPE_FLOAT);
 
   aux2 = (float *) smd_attr_get_value(var1);
-  // assert(aux1 == 5);
 
   var2 = smd_attr_get_child_by_name(attr, "units");
   assert(var2 != NULL);

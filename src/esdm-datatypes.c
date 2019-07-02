@@ -40,7 +40,6 @@ esdm_status esdm_container_create(const char *name, esdm_container_t **out_conta
   esdm_container_t *container = (esdm_container_t *)malloc(sizeof(esdm_container_t));
 
   container->name = strdup(name);
-  container->metadata = NULL;
   container->status = ESDM_STATUS_DIRTY;
 
   *out_container = container;
@@ -56,7 +55,6 @@ esdm_status esdm_container_retrieve(const char *name, esdm_container_t **out_con
   // TODO: retrieve associated data
 
   container->name = strdup(name);
-  container->metadata = NULL;
   container->status = ESDM_STATUS_DIRTY;
 
   *out_container = container;
