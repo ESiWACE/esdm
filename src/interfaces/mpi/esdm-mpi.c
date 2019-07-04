@@ -79,7 +79,7 @@ esdm_status esdm_mpi_container_create(MPI_Comm com, const char *name, esdm_conta
   return ret;
 }
 
-esdm_status esdm_mpi_container_retrieve(MPI_Comm com, const char *name, esdm_container_t **out_container){
+esdm_status esdm_mpi_container_open(MPI_Comm com, const char *name, esdm_container_t **out_container){
   esdm_status ret;
   ret = esdm_container_open(name, out_container);
   return ret;
@@ -119,7 +119,7 @@ esdm_status esdm_mpi_dataset_create(MPI_Comm com, esdm_container_t *container, c
   return ret;
 }
 
-esdm_status esdm_mpi_dataset_retrieve(MPI_Comm com, esdm_container_t *container, const char *name, esdm_dataset_t **out_dataset){
+esdm_status esdm_mpi_dataset_open(MPI_Comm com, esdm_container_t *container, const char *name, esdm_dataset_t **out_dataset){
   esdm_status ret;
   int rank;
   ret = MPI_Comm_rank(com, & rank);
@@ -173,10 +173,59 @@ esdm_status esdm_mpi_dataset_commit(MPI_Comm com, esdm_dataset_t *d){
   int rank;
   ret = MPI_Comm_rank(com, & rank);
   if(rank != 0 && d->attr->childs != 0){
-    ESDM_ERROR("Only rank 0 can attach metadata to a dataset");
+    ESDM_ERROR("Only Rank 0 can attach metadata to a dataset");
     return ESDM_ERROR;
   }
 
-  ret = esdm_dataset_commit(d);
-  return ret;
+  // retrieve for all fragments the metadata and attach it to the metadata
+  if(rank == 0){
+    int total;
+    int prev = d->fragments.count;
+
+    ret = MPI_Reduce(& prev, & total, 1, MPI_INT, MPI_SUM, 0, com);
+    assert(ret == MPI_SUCCESS);
+    assert(total > 0);
+  	d->fragments.frag = (esdm_fragment_t **) realloc(d->fragments.frag, total * sizeof(void*));
+    d->fragments.count = total;
+
+    int size;
+    ret = MPI_Comm_size(com, & size);
+
+    for(int p = 1 ; p < size; p++){
+      int size = 100000;
+      char buff[size];
+      ret = MPI_Recv(buff, size, MPI_CHAR, p, 4711, com, MPI_STATUS_IGNORE);
+      assert(ret == MPI_SUCCESS);
+
+      json_t * elem = load_json(buff);
+      int json_frags = json_array_size(elem);
+
+    	for (int i = 0; i < json_frags; i++) {
+    		esdm_fragment_t * fragment;
+        json_t * frag_elem = json_array_get(elem, i);
+        ret = esdmI_create_fragment_from_metadata(d, frag_elem, & fragment);
+        if (ret != ESDM_SUCCESS){
+          MPI_Abort(com, 1);
+        }
+    		d->fragments.frag[prev] = fragment;
+        prev++;
+    	}
+    }
+    ret = esdm_dataset_commit(d);
+    return ret;
+  }else{
+    ret = MPI_Reduce(& d->fragments.count, NULL, 1, MPI_INT, MPI_SUM, 0,   com);
+    assert(ret == MPI_SUCCESS);
+
+    int size;
+    int len = 100000;
+    char buff[len];
+    esdmI_fragments_metadata_create(d, len, buff, & size);
+    buff[size] = 0;
+    assert(size < len);
+
+    ret = MPI_Send(buff, size + 1, MPI_CHAR, 0, 4711, com);
+    assert(ret == MPI_SUCCESS);
+    return ESDM_SUCCESS;
+  }
 }

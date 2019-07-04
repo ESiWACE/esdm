@@ -199,6 +199,9 @@ esdm_status esdm_dataset_open_md_parse(esdm_dataset_t *d, char * md, int size);
 
 esdm_status esdmI_dataset_lookup_fragments(esdm_dataset_t *dataset, esdm_dataspace_t *space, int *out_frag_count, esdm_fragment_t ***out_fragments);
 
+esdm_status esdmI_create_fragment_from_metadata(esdm_dataset_t *dset, json_t * json, esdm_fragment_t ** out);
+void esdmI_fragments_metadata_create(esdm_dataset_t *d, int len, char *md, int * out_size);
+
 esdm_backend_t * esdmI_get_backend(char const * plugin_id);
 
 int ea_compute_hash_str(const char * str);

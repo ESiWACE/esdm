@@ -184,16 +184,16 @@ esdm_status esdm_scheduler_enqueue_read(esdm_instance_t *esdm, io_request_status
     task->parent = status;
     task->op = ESDM_OP_READ;
     task->fragment = f;
-    if (f->in_place) {
-      DEBUG("inplace!", "");
-      task->callback = NULL;
-      f->buf = buf;
-    } else {
+    //if (f->in_place) { // DIRECT IO PATH FOR LATER
+    //  DEBUG("inplace!", "");
+    //  task->callback = NULL;
+    //  f->buf = buf;
+    //} else {
       f->buf = malloc(size);
       task->callback = read_copy_callback;
       task->data.mem_buf = buf;
       task->data.buf_space = buf_space;
-    }
+    //}
     if (backend_to_use->threads == 0) {
       backend_thread(task, backend_to_use);
     } else {
@@ -341,7 +341,7 @@ esdm_status esdm_scheduler_process_blocking(esdm_instance_t *esdm, io_operation_
     ret = esdm_scheduler_enqueue_write(esdm, &status, dataset, buf, subspace);
   } else if (op == ESDM_OP_READ) {
     ret = esdmI_dataset_lookup_fragments(dataset, subspace, & frag_count, &read_frag);
-    assert(ret == ESDM_SUCCESS);  
+    assert(ret == ESDM_SUCCESS);
     DEBUG("fragments to read: %d", frag_count);
     ret = esdm_scheduler_enqueue_read(esdm, &status, frag_count, read_frag, buf, subspace);
   } else {

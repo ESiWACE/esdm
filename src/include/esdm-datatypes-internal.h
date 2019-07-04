@@ -44,7 +44,6 @@ struct esdm_fragment_t {
   void *buf;
   size_t elements;
   size_t bytes;
-  int in_place; // can we access the data in place?
   esdm_data_status_e status;
 };
 

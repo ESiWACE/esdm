@@ -166,10 +166,10 @@ void esdm_dataspace_string_descriptor(char *string, esdm_dataspace_t *dataspace)
   DEBUG("Descriptor: %s\n", string);
 }
 
-esdm_status esdm_fragment_metadata_create(esdm_fragment_t *f, int len, char * md, int * out_size){
+esdm_status esdm_fragment_metadata_create(esdm_fragment_t *f, int len, char * js, int * out_size){
+  assert(f != NULL);
 	esdm_dataspace_t *d = f->dataspace;
 	int size = 0;
-	char * js = md;
 	int ret;
   size += sprintf(js, "{\"pid\":\"%s\",\"size\":[", f->backend->config->id);
   size += sprintf(js + size, "%ld", d->size[0]);
@@ -196,7 +196,6 @@ esdm_status esdm_fragment_commit(esdm_fragment_t *f) {
   ESDM_DEBUG(__func__);
 	//ret = esdm_fragment_metadata_create(f, len, buff, & size);
   assert(f && "fragment argument must not be NULL");
-
 
 	f->backend->callbacks.fragment_update(f->backend, f);
 	f->status = ESDM_DATA_PERSISTENT;
@@ -326,7 +325,7 @@ esdm_backend_t * esdmI_get_backend(char const * plugin_id){
 	return backend_to_use;
 }
 
-esdm_status esdm_create_fragment_from_metadata(esdm_dataset_t *dset, json_t * json, esdm_fragment_t ** out) {
+esdm_status esdmI_create_fragment_from_metadata(esdm_dataset_t *dset, json_t * json, esdm_fragment_t ** out) {
   int ret;
   esdm_fragment_t *f;
   f = malloc(sizeof(esdm_fragment_t));
@@ -335,6 +334,7 @@ esdm_status esdm_create_fragment_from_metadata(esdm_dataset_t *dset, json_t * js
   elem = json_object_get(json, "pid");
   const char *plugin_id = json_string_value(elem);
   f->backend = esdmI_get_backend(plugin_id);
+  assert(f->backend);
 
   elem = json_object_get(json, "offset");
   int cnt = json_array_size(elem);
@@ -358,7 +358,8 @@ esdm_status esdm_create_fragment_from_metadata(esdm_dataset_t *dset, json_t * js
   esdm_dataspace_t * space;
 
 	// TODO at this point deserialize module specific options
-  ret = esdm_dataspace_subspace(dset->dataspace, cnt, size, offset, &space);
+  ret = esdm_dataspace_subspace(dset->dataspace, cnt, size, offset, & space);
+  assert(ret == ESDM_SUCCESS);
 
   uint64_t elements = esdm_dataspace_element_count(space);
   int64_t bytes = elements * esdm_sizeof(space->type);
@@ -368,7 +369,7 @@ esdm_status esdm_create_fragment_from_metadata(esdm_dataset_t *dset, json_t * js
   f->buf = NULL;
   f->elements = elements;
   f->bytes = bytes;
-  f->in_place = 0;
+  //f->in_place = 0;
 	f->status = ESDM_DATA_NOT_LOADED;
 
   *out = f;
@@ -436,7 +437,7 @@ esdm_status esdm_dataset_open_md_parse(esdm_dataset_t *d, char * md, int size){
 	for (int i = 0; i < arrsize; i++) {
 		json_t * fjson = json_array_get(elem, i);
 		esdm_fragment_t * fragment;
-    ret = esdm_create_fragment_from_metadata(d, fjson, & fragment);
+    ret = esdmI_create_fragment_from_metadata(d, fjson, & fragment);
     if (ret != ESDM_SUCCESS){
       free(f->frag);
       return ret;
@@ -471,6 +472,24 @@ esdm_status esdm_dataset_open(esdm_container_t *container, const char *name, esd
   return ESDM_SUCCESS;
 }
 
+void esdmI_fragments_metadata_create(esdm_dataset_t *d, int len, char *js, int * out_size){
+  assert(len > 0);
+  int pos = 0;
+	pos += snprintf(js, len, "[");
+  *out_size = pos;
+	esdm_fragments_t * f = & d->fragments;
+	for(int i=0; i < f->count; i++){
+		int size = 0;
+		if(i != 0){
+			pos += snprintf(js + pos, len - pos, ",\n");
+		}
+		esdm_fragment_metadata_create(f->frag[i], len - pos, js + pos, & size);
+		pos += size;
+	}
+  pos += snprintf(js + pos, len - pos, "]");
+  *out_size = pos;
+}
+
 void esdm_dataset_metadata_create(esdm_dataset_t *d, int len, char * md, int * out_size){
 	char * js = md;
 	int pos = 0;
@@ -490,17 +509,11 @@ void esdm_dataset_metadata_create(esdm_dataset_t *d, int len, char * md, int * o
     }
     pos += snprintf(js + pos, len - pos, "]");
   }
-	pos += snprintf(js + pos, len - pos, ",\"fragments\":[\n");
-	esdm_fragments_t * f = & d->fragments;
-	for(int i=0; i < f->count; i++){
-		int size = 0;
-		if(i != 0){
-			pos += snprintf(js + pos, len - pos, ",\n");
-		}
-		esdm_fragment_metadata_create(f->frag[i], len - pos, js + pos, & size);
-		pos += size;
-	}
-  pos += snprintf(js + pos, len - pos, "]}");
+	pos += snprintf(js + pos, len - pos, ",\"fragments\":");
+  int size;
+  esdmI_fragments_metadata_create(d, len - pos, js + pos, & size);
+  pos += size;
+  pos += snprintf(js + pos, len - pos, "}");
 
   *out_size = pos;
 }
