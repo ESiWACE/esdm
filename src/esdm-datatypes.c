@@ -590,12 +590,42 @@ uint8_t esdm_dataspace_overlap(esdm_dataspace_t *a, esdm_dataspace_t *b) {
  */
 esdm_status esdm_dataspace_subspace(esdm_dataspace_t *dataspace, int64_t dims, int64_t *size, int64_t *offset, esdm_dataspace_t **out_dataspace) {
   ESDM_DEBUG(__func__);
+  assert(dataspace);
+  assert(!dims || size);
+  assert(!dims || offset);
+  assert(out_dataspace);
 
-  esdm_dataspace_t *subspace = NULL;
+  // check for any inconsistencies between the given subspace and the dataspace
+  esdm_status status = ESDM_SUCCESS;
+  if(dims != dataspace->dims) {
+    ESDM_LOG("Subspace dimension count does not match original space.");
+    status = ESDM_INVALID_ARGUMENT_ERROR;
+  }
+  if(status == ESDM_SUCCESS) {
+    for (int64_t i = 0; i < dims; i++) {
+      if(size[i] <= 0) {
+        ESDM_LOG_FMT(ESDM_LOGLEVEL_DEBUG, "invalid size argument to `%s()` detected: `size[%"PRId64"]` is not positive (%"PRId64")\n", __func__, i, size[i]);
+        status = ESDM_INVALID_ARGUMENT_ERROR;
+      }
+      if(offset[i] < 0) {
+        ESDM_LOG_FMT(ESDM_LOGLEVEL_DEBUG, "invalid offset argument to `%s()` detected: `offset[%"PRId64"]` is negative (%"PRId64")\n", __func__, i, offset[i]);
+        status = ESDM_INVALID_ARGUMENT_ERROR;
+      }
+      if(offset[i] < dataspace->offset[i]) {
+        ESDM_LOG_FMT(ESDM_LOGLEVEL_DEBUG, "invalid arguments to `%s()` detected: `offset[%"PRId64"] = %"PRId64"` is outside of the valid range for the dataspaces' dimension (offset %"PRId64", size %"PRId64")\n", __func__, i, offset[i], dataspace->offset[i], dataspace->size[i]);
+        status = ESDM_INVALID_ARGUMENT_ERROR;
+      }
+      if(offset[i] + size[i] > dataspace->offset[i] + dataspace->size[i]) {
+        ESDM_LOG_FMT(ESDM_LOGLEVEL_DEBUG, "invalid arguments to `%s()` detected: `offset[%"PRId64"] + size[%"PRId64"] = %"PRId64" + %"PRId64" = %"PRId64"` is outside of the valid range for the dataspaces' dimension (offset %"PRId64", size %"PRId64")\n", __func__, i, i, offset[i], size[i], offset[i] + size[i], dataspace->offset[i], dataspace->size[i]);
+        status = ESDM_INVALID_ARGUMENT_ERROR;
+      }
+    }
+  }
 
-  if (dims == dataspace->dims) {
+  // perform the actual operation
+  if(status == ESDM_SUCCESS) {
     // replicate original space
-    subspace = (esdm_dataspace_t *)malloc(sizeof(esdm_dataspace_t));
+    esdm_dataspace_t *subspace = (esdm_dataspace_t *)malloc(sizeof(esdm_dataspace_t));
     memcpy(subspace, dataspace, sizeof(esdm_dataspace_t));
 
     // populate subspace members
@@ -607,17 +637,10 @@ esdm_status esdm_dataspace_subspace(esdm_dataspace_t *dataspace, int64_t dims, i
     memcpy(subspace->size, size, sizeof(int64_t) * dims);
     memcpy(subspace->offset, offset, sizeof(int64_t) * dims);
 
-    for (int64_t i = 0; i < dims; i++) {
-      DEBUG("dim %d, size=%ld off=%ld", i, size[i], offset[i]);
-      assert(size[i] > 0);
-    }
-  } else {
-    ESDM_ERROR("Subspace dims do not match original space.");
+    *out_dataspace = subspace;
   }
 
-  *out_dataspace = subspace;
-
-  return ESDM_SUCCESS;
+  return status;
 }
 
 void esdm_dataspace_print(esdm_dataspace_t *d) {

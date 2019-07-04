@@ -88,6 +88,19 @@ int main(int argc, char const *argv[]) {
   int64_t offset[] = {0, 0};
   esdm_dataspace_t *subspace;
 
+  assert_crash(esdm_dataspace_subspace(NULL, 2, size, offset, &subspace));
+  assert_crash(esdm_dataspace_subspace(dataspace, 2, NULL, offset, &subspace));
+  assert_crash(esdm_dataspace_subspace(dataspace, 2, size, NULL, &subspace));
+  assert_crash(esdm_dataspace_subspace(dataspace, 2, size, offset, NULL));
+  assert(esdm_dataspace_subspace(dataspace, 1, size, offset, &subspace) == ESDM_INVALID_ARGUMENT_ERROR);
+  assert(esdm_dataspace_subspace(dataspace, 2, (int64_t[2]){-1, 1}, offset, &subspace) == ESDM_INVALID_ARGUMENT_ERROR);
+  assert(esdm_dataspace_subspace(dataspace, 2, (int64_t[2]){11, 1}, offset, &subspace) == ESDM_INVALID_ARGUMENT_ERROR);
+  assert(esdm_dataspace_subspace(dataspace, 2, (int64_t[2]){1, -1}, offset, &subspace) == ESDM_INVALID_ARGUMENT_ERROR);
+  assert(esdm_dataspace_subspace(dataspace, 2, (int64_t[2]){10, 21}, offset, &subspace) == ESDM_INVALID_ARGUMENT_ERROR);
+  assert(esdm_dataspace_subspace(dataspace, 2, size, (int64_t[2]){-1, 0}, &subspace) == ESDM_INVALID_ARGUMENT_ERROR);
+  assert(esdm_dataspace_subspace(dataspace, 2, size, (int64_t[2]){1, 0}, &subspace) == ESDM_INVALID_ARGUMENT_ERROR);
+  assert(esdm_dataspace_subspace(dataspace, 2, size, (int64_t[2]){0, -1}, &subspace) == ESDM_INVALID_ARGUMENT_ERROR);
+  assert(esdm_dataspace_subspace(dataspace, 2, size, (int64_t[2]){0, 1}, &subspace) == ESDM_INVALID_ARGUMENT_ERROR);
   status = esdm_dataspace_subspace(dataspace, 2, size, offset, &subspace);
   assert(status == ESDM_SUCCESS);
 

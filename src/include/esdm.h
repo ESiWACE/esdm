@@ -251,6 +251,19 @@ esdm_status esdm_dataspace_create(int64_t dims, int64_t *sizes, esdm_type_t type
 
 esdm_status esdm_dataspace_deserialize(void *serialized_dataspace, esdm_dataspace_t **out_dataspace);
 
+/**
+ * Define a dataspace that is a subset of the given dataspace.
+ *
+ * - Allocates process local memory structures.
+ *
+ * @param [in] dataspace an existing dataspace that encloses the subspace
+ * @param [in] dims length of the `size` and `offset` arguments, must be equal to the number of dimensions of the given `dataspace`
+ * @param [in] size size of the hypercube of data within the subspace
+ * @param [in] offset location of the first data point within the subspace
+ * @param [out] out_dataspace pointer to the new sub-dataspace
+ *
+ * @return `ESDM_SUCCESS` on success, `ESDM_INVALID_ARGUMENT_ERROR` if the provided `dims`, `size`, or `offset` arguments do not agree with the provided `dataspace`
+ */
 esdm_status esdm_dataspace_subspace(esdm_dataspace_t *dataspace, int64_t dims, int64_t *size, int64_t *offset, esdm_dataspace_t **out_dataspace);
 
 /**
