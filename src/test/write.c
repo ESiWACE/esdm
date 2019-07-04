@@ -61,6 +61,9 @@ int main(int argc, char const *argv[]) {
   assert_crash(esdm_dataspace_create(2, bounds, SMD_DTYPE_UINT64, NULL));
   esdm_dataspace_create(2, bounds, SMD_DTYPE_UINT64, &dataspace);
 
+  assert_crash(esdm_container_create(NULL, &container));
+  assert_crash(esdm_container_create("", &container));
+  assert_crash(esdm_container_create("mycontainer", NULL));
   esdm_container_create("mycontainer", &container);
   esdm_dataset_create(container, "mydataset", dataspace, &dataset);
 

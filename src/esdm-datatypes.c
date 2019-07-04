@@ -37,6 +37,10 @@ extern esdm_instance_t esdm;
 
 esdm_status esdm_container_create(const char *name, esdm_container_t **out_container) {
   ESDM_DEBUG(__func__);
+  assert(name);
+  assert(*name && "name must not be empty");
+  assert(out_container);
+
   esdm_container_t *container = (esdm_container_t *)malloc(sizeof(esdm_container_t));
 
   container->name = strdup(name);

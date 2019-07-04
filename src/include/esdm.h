@@ -142,9 +142,12 @@ esdm_status esdm_read(esdm_dataset_t *dataset, void *buf, esdm_dataspace_t *subs
  * Create a new container.
  *
  *  - Allocate process local memory structures.
- *	- Register with metadata service.
+ *  - Register with metadata service.
  *
- *	@return Pointer to new container.
+ * @param [in] name string to identify the container
+ * @param [out] out_container returns a pointer to the new container
+ *
+ * @return Status
  *
  */
 
