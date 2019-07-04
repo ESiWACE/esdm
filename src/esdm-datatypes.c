@@ -66,6 +66,8 @@ esdm_status esdm_container_retrieve(const char *name, esdm_container_t **out_con
 
 esdm_status esdm_container_commit(esdm_container_t *container) {
   ESDM_DEBUG(__func__);
+  assert(container);
+
   // md callback create/update container
   esdm_status status = esdm.modules->metadata_backend->callbacks.container_create(esdm.modules->metadata_backend, container);
 
@@ -257,6 +259,8 @@ void esdm_fragment_metadata_create(esdm_fragment_t *f, int len, char * md, int *
 
 esdm_status esdm_fragment_commit(esdm_fragment_t *f) {
   ESDM_DEBUG(__func__);
+  assert(f && "fragment argument must not be NULL");
+
   esdm_metadata_t *m = f->metadata;
   esdm_dataspace_t *d = f->dataspace;
 
@@ -499,20 +503,21 @@ void esdm_dataset_metadata_create(esdm_dataset_t *d, int len, char * md, int * o
   *out_size = pos;
 }
 
-esdm_status esdm_dataset_commit(esdm_dataset_t *d) {
+esdm_status esdm_dataset_commit(esdm_dataset_t *dataset) {
   ESDM_DEBUG(__func__);
+  assert(dataset);
   // TODO
 
-	const int len = 100000;
+  const int len = 100000;
   char buff[len];
-	int md_size;
-	esdm_dataset_metadata_create(d, len, buff, & md_size);
+  int md_size;
+  esdm_dataset_metadata_create(dataset, len, buff, & md_size);
 
-	// TODO commit each uncommited fragment
+  // TODO commit each uncommited fragment
 
 
   // md callback create/update container
-  esdm_status ret = esdm.modules->metadata_backend->callbacks.dataset_commit(esdm.modules->metadata_backend, d, buff, md_size);
+  esdm_status ret = esdm.modules->metadata_backend->callbacks.dataset_commit(esdm.modules->metadata_backend, dataset, buff, md_size);
 
   return ret;
 }

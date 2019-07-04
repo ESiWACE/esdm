@@ -75,8 +75,11 @@ int main(int argc, char const *argv[]) {
   status = esdm_dataset_create(container, "mydataset", dataspace, &dataset);
   assert(status == ESDM_SUCCESS);
 
+  assert_crash(esdm_container_commit(NULL));
   status = esdm_container_commit(container);
   assert(status == ESDM_SUCCESS);
+
+  assert_crash(esdm_dataset_commit(NULL));
   status = esdm_dataset_commit(dataset);
   assert(status == ESDM_SUCCESS);
 
