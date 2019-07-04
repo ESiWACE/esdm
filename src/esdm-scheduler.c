@@ -175,22 +175,10 @@ esdm_status esdm_scheduler_enqueue_read(esdm_instance_t *esdm, io_request_status
 
   status->pending_ops += frag_count;
 
-  int i, x;
-  for (i = 0; i < frag_count; i++) {
+  for (int i = 0; i < frag_count; i++) {
     esdm_fragment_t *f = read_frag[i];
-    json_t *root = load_json(f->metadata->json);
-    json_t *elem;
-    elem = json_object_get(root, "pid");
-    const char *plugin_id = json_string_value(elem);
-    if (!plugin_id) {
-      printf("Backend ID needs to be given\n");
-      exit(1);
-    }
-
-    esdm_backend_t *backend_to_use = esdmI_get_backend(plugin_id);
-
     uint64_t size = esdm_dataspace_size(f->dataspace);
-    f->backend = backend_to_use;
+    esdm_backend_t *backend_to_use = f->backend;
 
     io_work_t *task = (io_work_t *)malloc(sizeof(io_work_t));
     task->parent = status;
@@ -352,8 +340,8 @@ esdm_status esdm_scheduler_process_blocking(esdm_instance_t *esdm, io_operation_
   if (op == ESDM_OP_WRITE) {
     ret = esdm_scheduler_enqueue_write(esdm, &status, dataset, buf, subspace);
   } else if (op == ESDM_OP_READ) {
-    esdm_md_backend_t *md = esdm->modules->metadata_backend;
-    ret = md->callbacks.lookup(md, dataset, subspace, &frag_count, &read_frag);
+    ret = esdmI_dataset_lookup_fragments(dataset, subspace, & frag_count, &read_frag);
+    assert(ret == ESDM_SUCCESS);  
     DEBUG("fragments to read: %d", frag_count);
     ret = esdm_scheduler_enqueue_read(esdm, &status, frag_count, read_frag, buf, subspace);
   } else {

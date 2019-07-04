@@ -43,15 +43,6 @@ int main(int argc, char const *argv[]) {
   ret = esdm_init();
   assert(ret == ESDM_SUCCESS);
 
-  //ret = esdm_create("mytextfile", ESDM_CREATE, &container, &dataset);
-  //assert(ret == ESDM_SUCCESS);
-
-  //esdm_open("mycontainer/mydataset", ESDM_CREATE);
-
-  // POSIX pwrite/pread interfaces for comparison
-  //ssize_t pread(int fd, void *buf, size_t count, off_t offset);
-  //ssize_t pwrite(int fd, const void *buf, size_t count, off_t offset);
-
   // define dataspace
   int64_t bounds[] = {10, 20};
   esdm_dataspace_t *dataspace;
@@ -64,19 +55,20 @@ int main(int argc, char const *argv[]) {
   esdm_container_create("mycontainer", &container);
   esdm_dataset_create(container, "mydataset", dataspace, &dataset);
 
-  esdm_container_commit(container);
-  esdm_dataset_commit(dataset);
-
   // define subspace
   int64_t size[] = {10, 20};
   int64_t offset[] = {0, 0};
   esdm_dataspace_t *subspace;
 
-  esdm_dataspace_subspace(dataspace, 2, size, offset, &subspace);
+  ret = esdm_dataspace_subspace(dataspace, 2, size, offset, &subspace);
+  assert(ret == ESDM_SUCCESS);
 
   // Write the data to the dataset
   ret = esdm_write(dataset, buf_w, subspace);
   assert(ret == ESDM_SUCCESS);
+
+  esdm_container_commit(container);
+  esdm_dataset_commit(dataset);
 
   ret = esdm_finalize();
   assert(ret == ESDM_SUCCESS);

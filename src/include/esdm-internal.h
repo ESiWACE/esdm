@@ -190,14 +190,14 @@ int read_check(int fd, char *buf, size_t len);
 
 int write_check(int fd, char *buf, size_t len);
 
-esdm_status esdm_metadata_t_init_(esdm_metadata_t **output_metadata);
 
 
 json_t *load_json(const char *str);
 
-esdm_status esdm_dataset_retrieve_md_load(esdm_dataset_t *dset, char ** out_md, int * out_size);
-esdm_status esdm_dataset_retrieve_md_parse(esdm_dataset_t *d, char * md, int size);
+esdm_status esdm_dataset_open_md_load(esdm_dataset_t *dset, char ** out_md, int * out_size);
+esdm_status esdm_dataset_open_md_parse(esdm_dataset_t *d, char * md, int size);
 
+esdm_status esdmI_dataset_lookup_fragments(esdm_dataset_t *dataset, esdm_dataspace_t *space, int *out_frag_count, esdm_fragment_t ***out_fragments);
 
 esdm_backend_t * esdmI_get_backend(char const * plugin_id);
 

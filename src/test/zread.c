@@ -23,6 +23,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+
 int verify_data(uint64_t *a, uint64_t *b) {
   int mismatches = 0;
   int idx;
@@ -45,6 +46,7 @@ int main(int argc, char const *argv[]) {
   // prepare data
   uint64_t *buf_w = (uint64_t *)malloc(10 * 20 * sizeof(uint64_t));
   uint64_t *buf_r = (uint64_t *)malloc(10 * 20 * sizeof(uint64_t));
+  memset(buf_r, -1, 10 * 20 * sizeof(uint64_t));
 
   for (int x = 0; x < 10; x++) {
     for (int y = 0; y < 20; y++) {
@@ -60,24 +62,15 @@ int main(int argc, char const *argv[]) {
   ret = esdm_init();
   assert(ret == ESDM_SUCCESS);
 
-  // define dataspace
-  int64_t bounds[] = {10, 20};
-  esdm_dataspace_t *dataspace;
+  esdm_container_open("mycontainer", &container);
+  esdm_dataset_open(container, "mydataset", &dataset);
 
-  esdm_dataspace_create(2, bounds, SMD_DTYPE_UINT64, &dataspace);
-
-  esdm_container_create("mycontainer", &container);
-  esdm_dataset_create(container, "mydataset", dataspace, &dataset);
-
-  // define subspace
   int64_t size[] = {10, 20};
-  int64_t offset[] = {0, 0};
-  esdm_dataspace_t *subspace;
+  esdm_dataspace_t *space;
 
-  esdm_dataspace_subspace(dataspace, 2, size, offset, &subspace);
+  esdm_dataspace_create(2, size, SMD_DTYPE_UINT64, &space);
 
-  // Read the data to the dataset
-  ret = esdm_read(dataset, buf_r, subspace);
+  ret = esdm_read(dataset, buf_r, space);
   assert(ret == ESDM_SUCCESS);
 
   ret = esdm_finalize();

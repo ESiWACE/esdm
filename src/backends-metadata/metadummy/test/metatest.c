@@ -41,7 +41,6 @@ int main() {
     assert(ret == ESDM_SUCCESS);
     ret = esdm_fragment_create(dataset, s1, buff, &f1);
     assert(ret == ESDM_SUCCESS);
-    f1->metadata->size = sprintf(f1->metadata->json, "{}");
   }
   {
     int64_t offset[] = {25, 0};
@@ -68,34 +67,20 @@ int main() {
     assert(ret == ESDM_SUCCESS);
   }
 
-  ret = b->callbacks.fragment_update(b, f1);
-  assert(ret == ESDM_SUCCESS);
-  ret = b->callbacks.fragment_update(b, f2);
-  assert(ret == ESDM_SUCCESS);
-  ret = b->callbacks.fragment_update(b, f3);
-  assert(ret == ESDM_SUCCESS);
-  ret = b->callbacks.fragment_update(b, f4);
-  assert(ret == ESDM_SUCCESS);
+  //ret = b->callbacks.fragment_update(b, f1);
+  //assert(ret == ESDM_SUCCESS);
+  //ret = b->callbacks.fragment_update(b, f2);
+  //assert(ret == ESDM_SUCCESS);
+  //ret = b->callbacks.fragment_update(b, f3);
+  //assert(ret == ESDM_SUCCESS);
+  //ret = b->callbacks.fragment_update(b, f4);
+  //assert(ret == ESDM_SUCCESS);
 
-  //fragment_retrieve
-  esdm_dataspace_t *res;
-  int frag_count;
-  esdm_fragment_t **read_frag = NULL;
-
-  {
-    int64_t size[] = {30, 30};
-    int64_t offset[] = {10, 10};
-    esdm_dataspace_subspace(dataspace, 2, size, offset, &res);
-  }
-
-  ret = b->callbacks.lookup(b, dataset, res, &frag_count, &read_frag);
-  assert(ret == ESDM_SUCCESS);
-  printf("Found fragments: %d\n", frag_count);
-  assert(frag_count == 2);
-  for (int i = 0; i < frag_count; i++) {
-    esdm_fragment_print(read_frag[i]);
-    printf("\n");
-  }
+  //{
+  //  int64_t size[] = {30, 30};
+  //  int64_t offset[] = {10, 10};
+  //  esdm_dataspace_subspace(dataspace, 2, size, offset, &res);
+  //}
 
   b->callbacks.finalize(b);
 

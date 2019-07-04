@@ -697,7 +697,7 @@ static void *H5VL_esdm_dataset_open(void *obj, H5VL_loc_params_t loc_params, con
 
   H5VL_esdm_group_t *parent = (H5VL_esdm_group_t *)((H5VL_esdm_object_t *)obj)->object;
 
-  //esdm_dataset_t* esdm_dataset_retrieve(esdm_container_t *container, const char * name);
+  //esdm_dataset_t* esdm_dataset_open(esdm_container_t *container, const char * name);
 
   H5VL_esdm_object_t *child = g_hash_table_lookup(parent->childs_tbl, name);
   info("Group open: %p with %s child %p\n", obj, name, child);
@@ -1357,7 +1357,7 @@ static void *H5VL_esdm_file_open(const char *name, unsigned flags, hid_t fapl_id
   // ensure ESDM initialized for HDF5 API entry points (H5*open, H5*create)
   esdm_init();
 
-  //esdm_container_t* esdm_container_retrieve(const char * name);
+  //esdm_container_t* esdm_container_open(const char * name);
   //guchar * g_base64_decode (const gchar *text, gsize *out_len);
 
   object = g_hash_table_lookup(files_tbl, name);
@@ -1645,7 +1645,7 @@ static void *H5VL_esdm_group_open(void *obj, H5VL_loc_params_t loc_params, const
   H5VL_esdm_object_t *child = g_hash_table_lookup(parent->childs_tbl, name);
   info("%s: Found group=%p with name=%s in parent=%p\n", __func__, child->object, name, obj);
 
-  //esdm_container_t* esdm_container_retrieve(const char * name);
+  //esdm_container_t* esdm_container_open(const char * name);
 
   return (void *)child;
 }

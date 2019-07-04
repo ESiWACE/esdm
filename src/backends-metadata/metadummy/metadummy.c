@@ -150,15 +150,6 @@ static int entry_retrieve_tst(const char *path, esdm_dataset_t *dataset) {
   }
 
   DEBUG("Entry content: %s\n", (char *)buf);
-
-  // Save the metadata in the dataset structure
-
-  dataset->metadata = (esdm_metadata_t *)malloc(sizeof(esdm_metadata_t));
-  dataset->metadata->json = (char *)malloc(456 * sizeof(char)); // randon number
-  strcpy(dataset->metadata->json, buf);
-
-  printf("\njson: %s %s\n", dataset->metadata->json, buf);
-
   return 0;
 }
 
@@ -262,9 +253,6 @@ static int container_retrieve(esdm_md_backend_t *backend, esdm_container_t *cont
   asprintf(&path_metadata, "%s/containers/%s.md", tgt, container->name);
   asprintf(&path_container, "%s/containers/%s", tgt, container->name);
 
-  // create metadata entry
-  esdm_dataset_t *dataset = NULL;
-  entry_retrieve_tst(path_metadata, dataset); // conflict
 
   free(path_metadata);
   free(path_container);
@@ -387,197 +375,6 @@ static int dataset_destroy(esdm_md_backend_t *backend, esdm_dataset_t *dataset) 
   return 0;
 }
 
-///////////////////////////////////////////////////////////////////////////////
-// Fragment Helpers ///////////////////////////////////////////////////////////
-///////////////////////////////////////////////////////////////////////////////
-
-static int fragment_retrieve(esdm_md_backend_t *backend, esdm_fragment_t *fragment, json_t *metadata) {
-  // set data, options and tgt for convienience
-  metadummy_backend_options_t *options = (metadummy_backend_options_t *)backend->data;
-  const char *tgt = options->target;
-
-  // serialization of subspace for fragment
-  char fragment_name[PATH_MAX];
-  esdm_dataspace_string_descriptor(fragment_name, fragment->dataspace);
-
-  // determine path
-  char path[PATH_MAX];
-  sprintf(path, "%s/containers/%s/%s/", tgt, fragment->dataset->container->name, fragment->dataset->name);
-
-  // determine path to fragment
-  char path_fragment[PATH_MAX];
-  sprintf(path_fragment, "%s/containers/%s/%s/%s", tgt, fragment->dataset->container->name, fragment->dataset->name, fragment_name);
-
-  int status;
-  struct stat sb;
-
-  status = stat(path_fragment, &sb);
-  if (status == -1) {
-    perror("stat");
-    // does not exist
-    return -1;
-  }
-
-  int fd = open(path_fragment, O_RDONLY | S_IWUSR | S_IRUSR | S_IWGRP | S_IRGRP | S_IROTH);
-
-  // everything ok? write and close
-  if (fd != -1) {
-    // write some metadata
-    read_check(fd, fragment->metadata->json, sb.st_size);
-    close(fd);
-  }
-
-  return 0;
-}
-
-static esdm_fragment_t *create_fragment_from_metadata(int fd, esdm_dataset_t *dataset, esdm_dataspace_t *space) {
-  struct stat sb;
-  int ret;
-
-  ret = fstat(fd, &sb);
-  DEBUG("Fragment found size:%ld", sb.st_size);
-
-  esdm_fragment_t *f;
-  f = malloc(sizeof(esdm_fragment_t));
-  f->metadata = malloc(sb.st_size + sizeof(esdm_metadata_t) + 1);
-  f->metadata->json = (char *)(f->metadata) + sizeof(esdm_metadata_t);
-  f->metadata->size = sb.st_size;
-  ret = read_check(fd, f->metadata->json, sb.st_size);
-  f->metadata->json[sb.st_size] = 0;
-
-  uint64_t elements = esdm_dataspace_element_count(space);
-  int64_t bytes = elements * esdm_sizeof(space->type);
-
-  f->dataset = dataset;
-  f->dataspace = space;
-  f->buf = NULL;
-  f->elements = elements;
-  f->bytes = bytes;
-  f->in_place = 0;
-
-  return f;
-}
-
-/*
- * Assumptions: there are no fragments created while reading back data!
- */
-static int lookup(esdm_md_backend_t *backend, esdm_dataset_t *dataset, esdm_dataspace_t *space, int *out_frag_count, esdm_fragment_t ***out_fragments) {
-  DEBUG_ENTER;
-
-  // set data, options and tgt for convienience
-  metadummy_backend_options_t *options = (metadummy_backend_options_t *)backend->data;
-  const char *tgt = options->target;
-  // determine path
-  char path[PATH_MAX];
-  sprintf(path, "%s/containers/%s/%s/", tgt, dataset->container->name, dataset->name);
-
-  // optimization: check if we find a fragment that matches the requested domain exactly
-  {
-    char fragment_name[PATH_MAX];
-    esdm_dataspace_string_descriptor(fragment_name, space);
-    char path_full[PATH_MAX];
-    sprintf(path_full, "%s/%s", path, fragment_name);
-    int fd = open(path_full, O_RDONLY);
-    if (fd >= 0) {
-      // found a fragment
-      *out_frag_count = 1;
-      esdm_fragment_t **frag = (esdm_fragment_t **)malloc(sizeof(esdm_fragment_t *));
-      *out_fragments = frag;
-      frag[0] = create_fragment_from_metadata(fd, dataset, space);
-      frag[0]->in_place = 1;
-      close(fd);
-      return ESDM_SUCCESS;
-    }
-  }
-
-  DIR *dir = opendir(path);
-  if (dir == NULL) {
-    return ESDM_ERROR;
-  }
-
-  int frag_count = 0;
-  struct dirent *e = readdir(dir);
-  while (e != NULL) {
-    if (e->d_name[0] != '.') {
-      DEBUG("checking:%s", e->d_name);
-      if (esdm_dataspace_overlap_str(space, ',', e->d_name, NULL, NULL) == ESDM_SUCCESS) {
-        DEBUG("Overlaps!", "");
-        frag_count++;
-      }
-    }
-    e = readdir(dir);
-  }
-
-  // read fragments!
-  esdm_fragment_t **frag = (esdm_fragment_t **)malloc(sizeof(esdm_fragment_t *) * frag_count);
-  *out_fragments = frag;
-
-  rewinddir(dir);
-  int frag_no = 0;
-  int dirfd = open(path, O_RDONLY);
-  assert(dirfd >= 0);
-  e = readdir(dir);
-  while (e != NULL) {
-    if (e->d_name[0] != '.') {
-      esdm_dataspace_t *subspace;
-      if (esdm_dataspace_overlap_str(space, ',', e->d_name, NULL, &subspace) == ESDM_SUCCESS) {
-        assert(frag_no < frag_count);
-        int fd = openat(dirfd, e->d_name, O_RDONLY);
-        frag[frag_no] = create_fragment_from_metadata(fd, dataset, subspace);
-        close(fd);
-        frag_no++;
-      }
-    }
-    e = readdir(dir);
-  }
-
-  closedir(dir);
-  close(dirfd);
-
-  assert(frag_no == frag_count);
-
-  *out_frag_count = frag_count;
-
-  return ESDM_SUCCESS;
-}
-
-/*
- * How to: concurrent access by multiple processes
- */
-static int fragment_update(esdm_md_backend_t *backend, esdm_fragment_t *fragment) {
-  DEBUG_ENTER;
-
-  // set data, options and tgt for convienience
-  metadummy_backend_options_t *options = (metadummy_backend_options_t *)backend->data;
-  const char *tgt = options->target;
-
-  // serialization of subspace for fragment
-  char fragment_name[PATH_MAX];
-  esdm_dataspace_string_descriptor(fragment_name, fragment->dataspace);
-
-  // determine path
-  char path[PATH_MAX];
-  sprintf(path, "%s/containers/%s/%s/", tgt, fragment->dataset->container->name, fragment->dataset->name);
-
-  // determine path to fragment
-  char path_fragment[PATH_MAX];
-  sprintf(path_fragment, "%s/containers/%s/%s/%s", tgt, fragment->dataset->container->name, fragment->dataset->name, fragment_name);
-
-  DEBUG("path: %s\n", path);
-  DEBUG("path_fragment: %s\n", path_fragment);
-
-  // create metadata entry
-  struct stat sb;
-
-  if (stat(path, &sb) != 0) {
-    int ret = mkdir_recursive(path);
-    if (ret != 0) return ESDM_ERROR;
-  }
-
-  entry_create(path_fragment, fragment->metadata->json, fragment->metadata->size);
-
-  return 0;
-}
 
 ///////////////////////////////////////////////////////////////////////////////
 // ESDM Callbacks /////////////////////////////////////////////////////////////
@@ -609,10 +406,6 @@ static esdm_md_backend_t backend_template = {
 metadummy_finalize,                     // finalize
 metadummy_backend_performance_estimate, // performance_estimate
 
-// Metadata Callbacks
-lookup, // lookup
-
-// ESDM Data Model Specific
 container_create,
 container_retrieve,
 container_update,
@@ -623,10 +416,6 @@ dataset_retrieve,
 dataset_update,
 dataset_destroy,
 
-NULL,
-fragment_retrieve,
-fragment_update,
-NULL,
 mkfs,
 },
 };

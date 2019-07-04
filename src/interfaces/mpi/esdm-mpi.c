@@ -81,7 +81,7 @@ esdm_status esdm_mpi_container_create(MPI_Comm com, const char *name, esdm_conta
 
 esdm_status esdm_mpi_container_retrieve(MPI_Comm com, const char *name, esdm_container_t **out_container){
   esdm_status ret;
-  ret = esdm_container_retrieve(name, out_container);
+  ret = esdm_container_open(name, out_container);
   return ret;
 }
 
@@ -137,7 +137,7 @@ esdm_status esdm_mpi_dataset_retrieve(MPI_Comm com, esdm_container_t *container,
 
   if(rank == 0){
     check_hash_abort(com, hash, 0);
-    ret = esdm_dataset_retrieve_md_load(d, & buff, & size);
+    ret = esdm_dataset_open_md_load(d, & buff, & size);
   	if(ret != ESDM_SUCCESS){
   		free(d);
   		return ret;
@@ -158,7 +158,7 @@ esdm_status esdm_mpi_dataset_retrieve(MPI_Comm com, esdm_container_t *container,
     assert(ret == MPI_SUCCESS);
   }
 
-  ret = esdm_dataset_retrieve_md_parse(d, buff, size);
+  ret = esdm_dataset_open_md_parse(d, buff, size);
   free(buff);
   if(ret != ESDM_SUCCESS){
     free(d);

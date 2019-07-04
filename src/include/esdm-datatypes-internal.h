@@ -8,6 +8,7 @@
 
 enum esdm_data_status_e {
   ESDM_DATA_NOT_LOADED,
+  ESDM_DATA_LOADING,
   ESDM_DATA_DIRTY,
   ESDM_DATA_PERSISTENT
 };
@@ -18,13 +19,6 @@ struct esdm_container_t {
   char *name;
   esdm_status status;
 };
-
-struct esdm_metadata_t {
-  char *json;
-  int buff_size;
-  int size;
-};
-
 
 struct esdm_fragments_t {
   esdm_fragment_t ** frag;
@@ -38,14 +32,12 @@ struct esdm_dataset_t {
   char *name;
   char **dims_dset_id; // array of variable names != NULL if set
   esdm_container_t *container;
-  esdm_metadata_t *metadata;
   esdm_dataspace_t *dataspace;
   smd_attr_t *attr;
   esdm_fragments_t fragments;
 };
 
 struct esdm_fragment_t {
-  esdm_metadata_t *metadata; // only valid after written
   esdm_dataset_t *dataset;
   esdm_dataspace_t *dataspace;
   esdm_backend_t *backend;
@@ -136,10 +128,7 @@ struct esdm_md_backend_callbacks_t {
   int (*performance_estimate)(esdm_md_backend_t *, esdm_fragment_t *fragment, float *out_time);
 
   // Metadata Callbacks
-  /*
-	 * Retrieve a list (and metadata) of fragments that contain data for the given subpatch with the size and offset.
-	 */
-  int (*lookup)(esdm_md_backend_t *b, esdm_dataset_t *dataset, esdm_dataspace_t *space, int *out_frag_count, esdm_fragment_t ***out_fragments);
+  //int (*lookup)(esdm_md_backend_t *b, esdm_dataset_t *dataset, esdm_dataspace_t *space, int *out_frag_count, esdm_fragment_t ***out_fragments);
 
   // ESDM Data Model Specific
   int (*container_create)(esdm_md_backend_t *, esdm_container_t *container);
@@ -152,10 +141,10 @@ struct esdm_md_backend_callbacks_t {
   int (*dataset_update)(esdm_md_backend_t *, esdm_dataset_t *dataset);
   int (*dataset_destroy)(esdm_md_backend_t *, esdm_dataset_t *dataset);
 
-  int (*fragment_create)(esdm_md_backend_t *, esdm_fragment_t *fragment);
-  int (*fragment_retrieve)(esdm_md_backend_t *, esdm_fragment_t *fragment, json_t *metadata);
-  int (*fragment_update)(esdm_md_backend_t *, esdm_fragment_t *fragment);
-  int (*fragment_destroy)(esdm_md_backend_t *, esdm_fragment_t *fragment);
+  //int (*fragment_create)(esdm_md_backend_t *, esdm_fragment_t *fragment);
+  //int (*fragment_retrieve)(esdm_md_backend_t *, esdm_fragment_t *fragment, json_t *metadata);
+  //int (*fragment_update)(esdm_md_backend_t *, esdm_fragment_t *fragment);
+  //int (*fragment_destroy)(esdm_md_backend_t *, esdm_fragment_t *fragment);
 
   int (*mkfs)(esdm_md_backend_t *, int enforce_format);
 };

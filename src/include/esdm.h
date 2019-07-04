@@ -150,7 +150,7 @@ esdm_status esdm_read(esdm_dataset_t *dataset, void *buf, esdm_dataspace_t *subs
 
 esdm_status esdm_container_create(const char *name, esdm_container_t **out_container);
 
-esdm_status esdm_container_retrieve(const char *name, esdm_container_t **out_container);
+esdm_status esdm_container_open(const char *name, esdm_container_t **out_container);
 
 /**
  * Make container persistent to storage.
@@ -194,7 +194,7 @@ esdm_status esdm_dataset_get_dataspace(esdm_dataset_t *dset, esdm_dataspace_t **
 
 esdm_status esdm_dataset_iterator(esdm_container_t *container, esdm_dataset_iterator_t **out_iter);
 
-esdm_status esdm_dataset_retrieve(esdm_container_t *container, const char *name, esdm_dataset_t **out_dataset);
+esdm_status esdm_dataset_open(esdm_container_t *container, const char *name, esdm_dataset_t **out_dataset);
 
 /**
  * Make dataset persistent to storage.
@@ -256,8 +256,6 @@ uint64_t esdm_dataspace_element_count(esdm_dataspace_t *dataspace);
 uint64_t esdm_dataspace_size(esdm_dataspace_t *dataspace);
 
 void esdm_dataspace_string_descriptor(char *out_str, esdm_dataspace_t *dataspace);
-
-esdm_status esdm_dataspace_overlap_str(esdm_dataspace_t *parent, char delim, char *str_size, char *str_offset, esdm_dataspace_t **out_space);
 
 // Fragment
 

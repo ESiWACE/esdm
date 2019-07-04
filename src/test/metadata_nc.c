@@ -134,14 +134,14 @@ void read_test() {
   esdm_container_t *container = NULL;
   esdm_dataset_t *dataset = NULL;
 
-  ret = esdm_container_retrieve("mycontainer", &container);
+  ret = esdm_container_open("mycontainer", &container);
 
   // NetCDF consists of three types of things
   // 1) Dimensions
   // Dimensions are implicitly part of ESDM when defining the bounds of a dataspace, but they are unnamed
   // So we have to name them
 
-  //	esdm_dataset_t* esdm_dataset_retrieve(esdm_container_t *container, const char* name)
+  //	esdm_dataset_t* esdm_dataset_open(esdm_container_t *container, const char* name)
   //	static int dataset_retrieve(esdm_backend_t* backend, esdm_dataset_t *dataset)
 
   // TODO later:
@@ -149,7 +149,7 @@ void read_test() {
   // ret = esdm_dataset_iterator(container, & iter);
   // assert(ret == ESDM_SUCCESS);
 
-  ret = esdm_dataset_retrieve(container, "myVariable", &dataset);
+  ret = esdm_dataset_open(container, "myVariable", &dataset);
   assert(ret == ESDM_SUCCESS);
 
   // for NetCDF: dims and type
