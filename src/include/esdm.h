@@ -37,7 +37,7 @@ esdm_status esdm_init();
  *
  * @param [in] desc	Name or descriptor of object.
  *
- * @return Status
+ * @return status
  */
 
 esdm_status esdm_finalize();
@@ -53,7 +53,7 @@ esdm_status esdm_finalize();
  * If not called at the end of an application, ESDM can not guarantee all data
  * was written.
  *
- * @return Status
+ * @return status
  */
 
 esdm_status esdm_sync();
@@ -64,7 +64,7 @@ esdm_status esdm_sync();
  * @param [in]	desc	name or descriptor of object
  * @param [out]	result	where to write result of query
  *
- * @return Status
+ * @return status
  */
 
 esdm_status esdm_stat(char *desc, char *result);
@@ -79,7 +79,7 @@ esdm_status esdm_stat(char *desc, char *result);
  * @param [in] desc		string object identifier
  * @param [in] mode		mode flags for open/creation
  *
- * @return Status
+ * @return status
  */
 
 esdm_status esdm_open(char *desc, int mode);
@@ -91,7 +91,7 @@ esdm_status esdm_open(char *desc, int mode);
  * @param [in]	mode		mode flags for creation
  * @param [out] container	pointer to new container
  *
- * @return Status
+ * @return status
  */
 
 esdm_status esdm_create(char *desc, int mode, esdm_container_t **, esdm_dataset_t **);
@@ -101,7 +101,7 @@ esdm_status esdm_create(char *desc, int mode, esdm_container_t **, esdm_dataset_
  *
  * @param [in] desc		String Object Identifier
  *
- * @return Status
+ * @return status
  */
 
 esdm_status esdm_close(void *buf);
@@ -114,7 +114,7 @@ esdm_status esdm_close(void *buf);
  * @param [in] dims	The number of dims, needed for size and offset
  * @param [in] size	...
  *
- * @return Status
+ * @return status
  */
 
 esdm_status esdm_write(esdm_dataset_t *dataset, void *buf, esdm_dataspace_t *subspace);
@@ -127,7 +127,7 @@ esdm_status esdm_write(esdm_dataset_t *dataset, void *buf, esdm_dataspace_t *sub
  * @param [in] dims	The number of dims, needed for size and offset
  * @param [in] size	...
  *
- * @return Status
+ * @return status
  */
 
 esdm_status esdm_read(esdm_dataset_t *dataset, void *buf, esdm_dataspace_t *subspace);
@@ -144,10 +144,10 @@ esdm_status esdm_read(esdm_dataset_t *dataset, void *buf, esdm_dataspace_t *subs
  *  - Allocate process local memory structures.
  *  - Register with metadata service.
  *
- * @param [in] name string to identify the container
+ * @param [in] name string to identify the container, must not be empty
  * @param [out] out_container returns a pointer to the new container
  *
- * @return Status
+ * @return status
  *
  */
 
@@ -161,6 +161,10 @@ esdm_status esdm_container_retrieve(const char *name, esdm_container_t **out_con
  *
  * Calling container commit may trigger subsequent commits for datasets that
  * are part of the container.
+ *
+ * @param [in] container pointer to an existing container which is to be committed to storage
+ *
+ * @return status
  *
  */
 
@@ -183,9 +187,9 @@ esdm_status esdm_container_destroy(esdm_container_t *container);
  *  - Allocate process local memory structures.
  *	- Register with metadata service.
  *
- * @param [in] container a container to which the new dataset will be linked
- * @param [in] name identifier for the new dataset
- * @param [in] dataspace dimensions and size of the data to be stored within the dataset
+ * @param [in] container pointer to an existing container to which the new dataset will be linked
+ * @param [in] name identifier for the new dataset, must not be empty
+ * @param [in] dataspace pointer to an existing dataspace which defines the shape of the data that will be stored within the dataset
  * @param [out] out_dataset returns a pointer to the new dataset
  *
  * @return status
@@ -207,6 +211,10 @@ esdm_status esdm_dataset_retrieve(esdm_container_t *container, const char *name,
 /**
  * Make dataset persistent to storage.
  * Schedule for writing to backends.
+ *
+ * @param [in] dataset pointer to an existing dataset which is to be committed to storage
+ *
+ * @return status
  */
 
 esdm_status esdm_dataset_commit(esdm_dataset_t *dataset);
@@ -226,12 +234,12 @@ esdm_status esdm_dataset_get_attributes(esdm_dataset_t *dataset, smd_attr_t **ou
  *
  *  - Allocate process local memory structures.
  *
- * @param [in] dims Count of dimensions of the new dataspace.
- * @param [in] sizes Array of the sizes of the different dimensions, the length of this array is dims.
- * @param [in] type The datatype for each data point.
- * @param [out] out_dataspace Pointer to the new dataspace.
+ * @param [in] dims count of dimensions of the new dataspace
+ * @param [in] sizes array of the sizes of the different dimensions, the length of this array is dims. Must not be `NULL` unless `dims == 0`
+ * @param [in] type the datatype for each data point
+ * @param [out] out_dataspace pointer to the new dataspace
  *
- * @return Status.
+ * @return status
  *
  */
 
@@ -294,6 +302,10 @@ esdm_status esdm_fragment_retrieve(esdm_fragment_t *fragment);
 /**
  * Make fragment persistent to storage.
  * Schedule for writing to backends.
+ *
+ * @param [in] fragment pointer to an existing fragment which is to be committed to storage
+ *
+ * @return status
  */
 
 esdm_status esdm_fragment_commit(esdm_fragment_t *fragment);
@@ -331,7 +343,7 @@ void esdm_dataspace_print(esdm_dataspace_t *dataspace);
   * @param [in] enforce_format  force reformatting existing system (may result in data loss)
   * @param [in] target  target descriptor
   *
-  * @return Status
+  * @return status
   */
 
 /*
