@@ -65,6 +65,12 @@ int main(int argc, char const *argv[]) {
   assert_crash(esdm_container_create("", &container));
   assert_crash(esdm_container_create("mycontainer", NULL));
   esdm_container_create("mycontainer", &container);
+
+  assert_crash(esdm_dataset_create(NULL, "mydataset", dataspace, &dataset));
+  assert_crash(esdm_dataset_create(container, NULL, dataspace, &dataset));
+  assert_crash(esdm_dataset_create(container, "", dataspace, &dataset));
+  assert_crash(esdm_dataset_create(container, "mydataset", NULL, &dataset));
+  assert_crash(esdm_dataset_create(container, "mydataset", dataspace, NULL));
   esdm_dataset_create(container, "mydataset", dataspace, &dataset);
 
   esdm_container_commit(container);

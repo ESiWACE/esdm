@@ -308,9 +308,13 @@ void esdm_dataset_init(esdm_container_t *container, const char *name, esdm_datas
 
 esdm_status esdm_dataset_create(esdm_container_t *container, const char *name, esdm_dataspace_t *dataspace, esdm_dataset_t **out_dataset) {
   ESDM_DEBUG(__func__);
-	esdm_dataset_t *d;
-	esdm_dataset_init(container, name, dataspace, &d);
-	*out_dataset = d;
+  assert(container);
+  assert(name);
+  assert(*name && "name must not be empty");
+  assert(dataspace);
+  assert(out_dataset);
+
+  esdm_dataset_init(container, name, dataspace, out_dataset);
   return ESDM_SUCCESS;
 }
 

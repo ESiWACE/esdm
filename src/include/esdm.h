@@ -183,7 +183,12 @@ esdm_status esdm_container_destroy(esdm_container_t *container);
  *  - Allocate process local memory structures.
  *	- Register with metadata service.
  *
- *	@return Pointer to new dateset.
+ * @param [in] container a container to which the new dataset will be linked
+ * @param [in] name identifier for the new dataset
+ * @param [in] dataspace dimensions and size of the data to be stored within the dataset
+ * @param [out] out_dataset returns a pointer to the new dataset
+ *
+ * @return status
  *
  */
 
