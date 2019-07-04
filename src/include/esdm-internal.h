@@ -7,10 +7,12 @@
 #ifndef ESDM_INTERNAL_H
 #define ESDM_INTERNAL_H
 
+#include <jansson.h>
+#include <glib.h>
+
 #include <esdm-datatypes-internal.h>
 #include <esdm-debug.h>
 #include <esdm.h>
-#include <jansson.h>
 
 // ESDM Core //////////////////////////////////////////////////////////////////
 
@@ -188,8 +190,6 @@ int read_check(int fd, char *buf, size_t len);
 
 int write_check(int fd, char *buf, size_t len);
 
-void esdm_print_hashtable(GHashTable *tbl);
-
 esdm_status esdm_metadata_t_init_(esdm_metadata_t **output_metadata);
 
 
@@ -198,6 +198,8 @@ json_t *load_json(const char *str);
 esdm_status esdm_dataset_retrieve_md_load(esdm_dataset_t *dset, char ** out_md, int * out_size);
 esdm_status esdm_dataset_retrieve_md_parse(esdm_dataset_t *d, char * md, int size);
 
+
+esdm_backend_t * esdmI_get_backend(char const * plugin_id);
 
 int ea_compute_hash_str(const char * str);
 int ea_is_valid_name(const char *str);

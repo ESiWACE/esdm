@@ -1,28 +1,38 @@
 #ifndef ESDM_DATATYPES_INTERNAL_H
 #define ESDM_DATATYPES_INTERNAL_H
 
+#include <jansson.h>
+#include <glib.h>
+
 #include <esdm-datatypes.h>
 
-#include <glib.h>
-#include <jansson.h>
+enum esdm_data_status_e {
+  ESDM_DATA_NOT_LOADED,
+  ESDM_DATA_DIRTY,
+  ESDM_DATA_PERSISTENT
+};
+
+typedef enum esdm_data_status_e esdm_data_status_e;
 
 struct esdm_container_t {
   char *name;
   esdm_status status;
 };
 
-struct esdm_json_t {
+struct esdm_metadata_t {
   char *json;
   int buff_size;
   int size;
 };
 
-struct esdm_metadata_t {
-  char *json;
+
+struct esdm_fragments_t {
+  esdm_fragment_t ** frag;
+  int count;
   int buff_size;
-  int size;
-  smd_attr_t *attr;
 };
+
+typedef struct esdm_fragments_t esdm_fragments_t;
 
 struct esdm_dataset_t {
   char *name;
@@ -30,8 +40,8 @@ struct esdm_dataset_t {
   esdm_container_t *container;
   esdm_metadata_t *metadata;
   esdm_dataspace_t *dataspace;
-  GHashTable *fragments;
-  esdm_status status;
+  smd_attr_t *attr;
+  esdm_fragments_t fragments;
 };
 
 struct esdm_fragment_t {
@@ -40,27 +50,12 @@ struct esdm_fragment_t {
   esdm_dataspace_t *dataspace;
   esdm_backend_t *backend;
   void *buf;
-  int in_place;
   size_t elements;
   size_t bytes;
-  esdm_status status;
+  int in_place; // can we access the data in place?
+  esdm_data_status_e status;
 };
 
-// multiple fragments
-typedef struct {
-  struct esdm_fragment_t *fragment;
-  int count;
-} esdm_fragments_t;
-
-typedef struct esdm_fragment_index_t {
-  char *json;
-  GHashTable *fragments;
-  /*
-	int (callback_insert)();
-	int (callback_remove)();
-	int (callback_lookup)();
-	*/
-} esdm_fragment_index_t;
 
 struct esdm_dataset_iterator_t {
   int x;
@@ -129,6 +124,7 @@ struct esdm_backend_t_callbacks_t {
   int (*fragment_create)(esdm_backend_t *, esdm_fragment_t *fragment);
   int (*fragment_retrieve)(esdm_backend_t *, esdm_fragment_t *fragment, json_t *metadata);
   int (*fragment_update)(esdm_backend_t *, esdm_fragment_t *fragment);
+  int (*fragment_metadata_create)(esdm_backend_t *, esdm_fragment_t *fragment, int len, char * md, int * out_size);
   int (*fragment_destroy)(esdm_backend_t *, esdm_fragment_t *fragment);
 
   int (*mkfs)(esdm_backend_t *, int enforce_format);
@@ -276,7 +272,6 @@ typedef struct esdm_modules_t {
 
 typedef struct esdm_layout_t {
   int info;
-  GHashTable *containers;
 } esdm_layout_t;
 
 typedef struct esdm_scheduler_t {
@@ -288,8 +283,7 @@ typedef struct esdm_scheduler_t {
 
 typedef struct esdm_performance_t {
   int info;
-  GHashTable *cache;
-} esdm_performance_t;
+  } esdm_performance_t;
 
 typedef struct esdm_instance_t esdm_instance_t;
 

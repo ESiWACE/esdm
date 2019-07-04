@@ -259,10 +259,17 @@ static int fragment_retrieve(esdm_backend_t *backend, esdm_fragment_t *fragment,
   DEBUG("path: %s", path);
   DEBUG("path_fragment: %s", path_fragment);
 
-  //entry_update()
-
   entry_retrieve(path_fragment, fragment->buf);
-  //DEBUG("buf=%s", fragment->buf);
+  return 0;
+}
+
+
+static int fragment_metadata_create(esdm_backend_t *backend, esdm_fragment_t *fragment, int len, char * md, int * out_size){
+  DEBUG_ENTER;
+  int size = 0;
+  size = snprintf(md, len, "{}");
+  *out_size = size;
+
   return 0;
 }
 
@@ -291,9 +298,6 @@ static int fragment_update(esdm_backend_t *backend, esdm_fragment_t *fragment) {
   // create metadata entry
   mkdir_recursive(path);
   entry_create(path_fragment);
-
-  fragment->metadata->size += sprintf(&fragment->metadata->json[fragment->metadata->size], "{\"path\" : \"%s\"}", path_fragment);
-
   entry_update(path_fragment, fragment->buf, fragment->bytes);
   return 0;
 }
@@ -354,10 +358,11 @@ NULL, // dataset retrieve
 NULL, // dataset update
 NULL, // dataset delete
 
-NULL,              // fragment create
-fragment_retrieve, // fragment retrieve
-fragment_update,   // fragment update
-NULL,              // fragment delete
+NULL,
+fragment_retrieve,
+fragment_update,
+fragment_metadata_create,
+NULL,
 mkfs,
 },
 };

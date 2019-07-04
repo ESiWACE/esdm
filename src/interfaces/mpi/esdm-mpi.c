@@ -168,8 +168,15 @@ esdm_status esdm_mpi_dataset_retrieve(MPI_Comm com, esdm_container_t *container,
   return ESDM_SUCCESS;
 }
 
-esdm_status esdm_mpi_dataset_commit(MPI_Comm com, esdm_dataset_t *dataset){
+esdm_status esdm_mpi_dataset_commit(MPI_Comm com, esdm_dataset_t *d){
   esdm_status ret;
-  ret = esdm_dataset_commit(dataset);
+  int rank;
+  ret = MPI_Comm_rank(com, & rank);
+  if(rank != 0 && d->attr->childs != 0){
+    ESDM_ERROR("Only rank 0 can attach metadata to a dataset");
+    return ESDM_ERROR;
+  }
+
+  ret = esdm_dataset_commit(d);
   return ret;
 }
