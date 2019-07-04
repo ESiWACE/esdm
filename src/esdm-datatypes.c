@@ -37,6 +37,10 @@ extern esdm_instance_t esdm;
 
 esdm_status esdm_container_create(const char *name, esdm_container_t **out_container) {
   ESDM_DEBUG(__func__);
+  assert(name);
+  assert(*name && "name must not be empty");
+  assert(out_container);
+
   esdm_container_t *container = (esdm_container_t *)malloc(sizeof(esdm_container_t));
 
   container->name = strdup(name);
@@ -62,6 +66,8 @@ esdm_status esdm_container_open(const char *name, esdm_container_t **out_contain
 
 esdm_status esdm_container_commit(esdm_container_t *container) {
   ESDM_DEBUG(__func__);
+  assert(container);
+
   // md callback create/update container
   esdm_status status = esdm.modules->metadata_backend->callbacks.container_create(esdm.modules->metadata_backend, container);
 
@@ -189,6 +195,8 @@ esdm_status esdm_fragment_metadata_create(esdm_fragment_t *f, int len, char * md
 esdm_status esdm_fragment_commit(esdm_fragment_t *f) {
   ESDM_DEBUG(__func__);
 	//ret = esdm_fragment_metadata_create(f, len, buff, & size);
+  assert(f && "fragment argument must not be NULL");
+
 
 	f->backend->callbacks.fragment_update(f->backend, f);
 	f->status = ESDM_DATA_PERSISTENT;
@@ -285,9 +293,13 @@ void esdm_dataset_init(esdm_container_t *container, const char *name, esdm_datas
 
 esdm_status esdm_dataset_create(esdm_container_t *container, const char *name, esdm_dataspace_t *dataspace, esdm_dataset_t **out_dataset) {
   ESDM_DEBUG(__func__);
-	esdm_dataset_t *d;
-	esdm_dataset_init(container, name, dataspace, &d);
-	*out_dataset = d;
+  assert(container);
+  assert(name);
+  assert(*name && "name must not be empty");
+  assert(dataspace);
+  assert(out_dataset);
+
+  esdm_dataset_init(container, name, dataspace, out_dataset);
   return ESDM_SUCCESS;
 }
 
@@ -493,20 +505,21 @@ void esdm_dataset_metadata_create(esdm_dataset_t *d, int len, char * md, int * o
   *out_size = pos;
 }
 
-esdm_status esdm_dataset_commit(esdm_dataset_t *d) {
+esdm_status esdm_dataset_commit(esdm_dataset_t *dataset) {
   ESDM_DEBUG(__func__);
+  assert(dataset);
   // TODO
 
-	const int len = 100000;
+  const int len = 100000;
   char buff[len];
-	int md_size;
-	esdm_dataset_metadata_create(d, len, buff, & md_size);
+  int md_size;
+  esdm_dataset_metadata_create(dataset, len, buff, & md_size);
 
-	// TODO commit each uncommited fragment
+  // TODO commit each uncommited fragment
 
 
   // md callback create/update container
-  esdm_status ret = esdm.modules->metadata_backend->callbacks.dataset_commit(esdm.modules->metadata_backend, d, buff, md_size);
+  esdm_status ret = esdm.modules->metadata_backend->callbacks.dataset_commit(esdm.modules->metadata_backend, dataset, buff, md_size);
 
   return ret;
 }
@@ -593,15 +606,42 @@ uint8_t esdm_dataspace_overlap(esdm_dataspace_t *a, esdm_dataspace_t *b) {
  */
 esdm_status esdm_dataspace_subspace(esdm_dataspace_t *dataspace, int64_t dims, int64_t *size, int64_t *offset, esdm_dataspace_t **out_dataspace) {
   ESDM_DEBUG(__func__);
+  assert(dataspace);
+  assert(!dims || size);
+  assert(!dims || offset);
+  assert(out_dataspace);
 
-  assert(dataspace != NULL);
-  assert(offset != NULL);
+  // check for any inconsistencies between the given subspace and the dataspace
+  esdm_status status = ESDM_SUCCESS;
+  if(dims != dataspace->dims) {
+    ESDM_LOG("Subspace dimension count does not match original space.");
+    status = ESDM_INVALID_ARGUMENT_ERROR;
+  }
+  if(status == ESDM_SUCCESS) {
+    for (int64_t i = 0; i < dims; i++) {
+      if(size[i] <= 0) {
+        ESDM_LOG_FMT(ESDM_LOGLEVEL_DEBUG, "invalid size argument to `%s()` detected: `size[%"PRId64"]` is not positive (%"PRId64")\n", __func__, i, size[i]);
+        status = ESDM_INVALID_ARGUMENT_ERROR;
+      }
+      if(offset[i] < 0) {
+        ESDM_LOG_FMT(ESDM_LOGLEVEL_DEBUG, "invalid offset argument to `%s()` detected: `offset[%"PRId64"]` is negative (%"PRId64")\n", __func__, i, offset[i]);
+        status = ESDM_INVALID_ARGUMENT_ERROR;
+      }
+      if(offset[i] < dataspace->offset[i]) {
+        ESDM_LOG_FMT(ESDM_LOGLEVEL_DEBUG, "invalid arguments to `%s()` detected: `offset[%"PRId64"] = %"PRId64"` is outside of the valid range for the dataspaces' dimension (offset %"PRId64", size %"PRId64")\n", __func__, i, offset[i], dataspace->offset[i], dataspace->size[i]);
+        status = ESDM_INVALID_ARGUMENT_ERROR;
+      }
+      if(offset[i] + size[i] > dataspace->offset[i] + dataspace->size[i]) {
+        ESDM_LOG_FMT(ESDM_LOGLEVEL_DEBUG, "invalid arguments to `%s()` detected: `offset[%"PRId64"] + size[%"PRId64"] = %"PRId64" + %"PRId64" = %"PRId64"` is outside of the valid range for the dataspaces' dimension (offset %"PRId64", size %"PRId64")\n", __func__, i, i, offset[i], size[i], offset[i] + size[i], dataspace->offset[i], dataspace->size[i]);
+        status = ESDM_INVALID_ARGUMENT_ERROR;
+      }
+    }
+  }
 
-  esdm_dataspace_t *subspace = NULL;
-
-  if (dims == dataspace->dims) {
+  // perform the actual operation
+  if(status == ESDM_SUCCESS) {
     // replicate original space
-    subspace = (esdm_dataspace_t *)malloc(sizeof(esdm_dataspace_t));
+    esdm_dataspace_t *subspace = (esdm_dataspace_t *)malloc(sizeof(esdm_dataspace_t));
     memcpy(subspace, dataspace, sizeof(esdm_dataspace_t));
 
     // populate subspace members
@@ -615,17 +655,10 @@ esdm_status esdm_dataspace_subspace(esdm_dataspace_t *dataspace, int64_t dims, i
     memcpy(subspace->size, size, sizeof(int64_t) * dims);
     memcpy(subspace->offset, offset, sizeof(int64_t) * dims);
 
-    for (int64_t i = 0; i < dims; i++) {
-      DEBUG("dim %d, size=%ld off=%ld", i, size[i], offset[i]);
-      assert(size[i] > 0);
-    }
-  } else {
-    ESDM_ERROR("Subspace dims do not match original space.");
+    *out_dataspace = subspace;
   }
 
-  *out_dataspace = subspace;
-
-  return ESDM_SUCCESS;
+  return status;
 }
 
 void esdm_dataspace_print(esdm_dataspace_t *d) {
