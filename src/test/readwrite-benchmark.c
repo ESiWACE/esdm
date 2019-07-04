@@ -78,6 +78,11 @@ void runWrite(uint64_t * buf_w, int64_t * dim, int64_t * offset){
   if (mpi_rank == 0) {
     printf("Write: %.3fs %.3f MiB/s size:%.0f MiB\n", total_time, volume_all / total_time / 1024.0 / 1024, volume_all / 1024.0 / 1024);
   }
+
+  ret = esdm_dataset_destroy(dataset);
+  assert(ret == ESDM_SUCCESS);
+  ret = esdm_container_destroy(container);
+  assert(ret == ESDM_SUCCESS);
 }
 
 void runRead(uint64_t * buf_w, int64_t * dim, int64_t * offset){
@@ -104,6 +109,7 @@ void runRead(uint64_t * buf_w, int64_t * dim, int64_t * offset){
   for (int t = 0; t < timesteps; t++) {
     offset[0] = t;
     uint64_t *buf_r = (uint64_t *) malloc(volume);
+    buf_r[0] = -1241;
     assert(buf_r != NULL);
     esdm_dataspace_t *subspace;
     esdm_dataspace_subspace(dataspace, 3, dim, offset, &subspace);
@@ -139,6 +145,10 @@ void runRead(uint64_t * buf_w, int64_t * dim, int64_t * offset){
     }
     printf("Read: %.3fs %.3f MiB/s size:%.0f MiB\n", total_time, volume_all / total_time / 1024.0 / 1024, volume_all / 1024.0 / 1024);
   }
+  ret = esdm_dataset_destroy(dataset);
+  assert(ret == ESDM_SUCCESS);
+  ret = esdm_container_destroy(container);
+  assert(ret == ESDM_SUCCESS);
 }
 
 int main(int argc, char *argv[]) {

@@ -142,6 +142,7 @@ esdm_status esdm_mpi_dataset_open(MPI_Comm com, esdm_container_t *container, con
   		free(d);
   		return ret;
   	}
+    size = size + 1; // broadcast string terminator as well
     ret = MPI_Bcast(& size, 1, MPI_INT, 0, com);
     assert(ret == MPI_SUCCESS);
 
