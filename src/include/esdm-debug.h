@@ -7,8 +7,8 @@
 void esdm_log(uint32_t loglevel, const char *format, ...);
 
 #define ESDM_LOG(fmt) ESDM_LOG_FMT(ESDM_LOGLEVEL_DEBUG, "%s", fmt)
-#define ESDM_LOG_FMT(loglevel, fmt, ...) esdm_log(loglevel, "%-30s:%d (%s): " #fmt "\n", __FILE__, __LINE__, __func__, __VA_ARGS__)
-#define ESDM_LOG_COM_FMT(loglevel, component, fmt, ...) esdm_log(loglevel, "[%s] %-30s:%d (%s): " #fmt "\n", component, __FILE__, __LINE__, __func__, __VA_ARGS__)
+#define ESDM_LOG_FMT(loglevel, fmt, ...) esdm_log(loglevel, "%-30s:%d (%s): " fmt "\n", __FILE__, __LINE__, __func__, __VA_ARGS__)
+#define ESDM_LOG_COM_FMT(loglevel, component, fmt, ...) esdm_log(loglevel, "[%s] %-30s:%d (%s): " fmt "\n", component, __FILE__, __LINE__, __func__, __VA_ARGS__)
 
 #ifdef NDEBUG
 // remove debug messages in total
