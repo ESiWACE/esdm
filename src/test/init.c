@@ -25,6 +25,18 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+const char const* configString =
+  "{"
+    "\"esdm\": {"
+      "\"backends\": [],"
+      "\"metadata\": {"
+        "\"type\": \"metadummy\","
+        "\"name\": \"md\","
+        "\"target\": \"./_metadummy\""
+      "}"
+    "}"
+  "}";
+
 int main(int argc, char const *argv[]) {
   assert_crash(esdm_set_procs_per_node(-1));
   esdm_status status = esdm_set_procs_per_node(3);
@@ -36,9 +48,9 @@ int main(int argc, char const *argv[]) {
 
   assert_crash(esdm_load_config_str(NULL));
   assert(esdm_load_config_str("") != ESDM_SUCCESS);
-//  status = esdm_load_config_str("[]");
-//  assert(status == ESDM_SUCCESS);
-//  assert_crash(esdm_load_config_str("[]"));
+  status = esdm_load_config_str(configString);
+  assert(status == ESDM_SUCCESS);
+  assert_crash(esdm_load_config_str(configString));
 
   status = esdm_init();
   assert(status == ESDM_SUCCESS);
