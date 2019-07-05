@@ -110,21 +110,20 @@ esdm_status esdm_close(void *buf);
  * Write data with a given size and offset.
  *
  * @param [in] dataset TODO, currently a stub, we assume it has been identified/created before...., json description?
- * @param [in] buf the pointer to a contiguous memory region that shall be written
- * @param [in] out_subspace an existing dataspace that describes the shape and location of the hypercube that is to be written
+ * @param [in] buf the pointer to a contiguous memory region that shall be written to permanent storage
+ * @param [in] subspace an existing dataspace that describes the shape and location of the hypercube that is to be written
  *
  * @return status
  */
 
-esdm_status esdm_write(esdm_dataset_t *dataset, void *buf, esdm_dataspace_t *out_subspace);
+esdm_status esdm_write(esdm_dataset_t *dataset, void *buf, esdm_dataspace_t *subspace);
 
 /**
  * Reads a data fragment described by desc to the dataset dset.
  *
- * @param [out] buf	The pointer to a contiguous memory region that shall be written
- * @param [in] dset	TODO, currently a stub, we assume it has been identified/created before.... , json description?
- * @param [in] dims	The number of dims, needed for size and offset
- * @param [in] size	...
+ * @param [in] dataset TODO, currently a stub, we assume it has been identified/created before.... , json description?
+ * @param [out] buf a contiguous memory region that shall be filled with the data from permanent storage
+ * @param [in] subspace an existing dataspace that describes the shape and location of the hypercube that is to be read
  *
  * @return status
  */

@@ -77,8 +77,13 @@ int main(int argc, char const *argv[]) {
   int64_t size[] = {10, 20};
   esdm_dataspace_t *space;
 
-  esdm_dataspace_create(2, size, SMD_DTYPE_UINT64, &space);
+  //failing input tests are in write.c
+  status = esdm_dataspace_create(2, size, SMD_DTYPE_UINT64, &space);
+  assert(status == ESDM_SUCCESS);
 
+  assert_crash(esdm_read(NULL, buf_r, space));
+  assert_crash(esdm_read(dataset, NULL, space));
+  assert_crash(esdm_read(dataset, buf_r, NULL));
   status = esdm_read(dataset, buf_r, space);
   assert(status == ESDM_SUCCESS);
 

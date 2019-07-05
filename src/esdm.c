@@ -183,6 +183,9 @@ esdm_status esdm_write(esdm_dataset_t *dataset, void *buf, esdm_dataspace_t *out
 
 esdm_status esdm_read(esdm_dataset_t *dataset, void *buf, esdm_dataspace_t *subspace) {
   ESDM_DEBUG("");
+  assert(dataset);
+  assert(buf);
+  assert(subspace);
 
   return esdm_scheduler_process_blocking(&esdm, ESDM_OP_READ, dataset, buf, subspace);
 }
