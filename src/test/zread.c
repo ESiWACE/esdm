@@ -68,7 +68,11 @@ int main(int argc, char const *argv[]) {
   status = esdm_container_open("mycontainer", &container);
   assert(status == ESDM_SUCCESS);
 
-  esdm_dataset_open(container, "mydataset", &dataset);
+  assert_crash(esdm_dataset_open(NULL, "mydataset", &dataset));
+  assert_crash(esdm_dataset_open(container, "mydataset", NULL));
+  assert(esdm_dataset_open(container, "", &dataset) == ESDM_INVALID_ARGUMENT_ERROR);
+  status = esdm_dataset_open(container, "mydataset", &dataset);
+  assert(status == ESDM_SUCCESS);
 
   int64_t size[] = {10, 20};
   esdm_dataspace_t *space;

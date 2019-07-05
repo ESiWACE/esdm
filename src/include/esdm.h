@@ -221,6 +221,18 @@ esdm_status esdm_dataset_get_dataspace(esdm_dataset_t *dset, esdm_dataspace_t **
 
 esdm_status esdm_dataset_iterator(esdm_container_t *container, esdm_dataset_iterator_t **out_iter);
 
+/**
+ * Open a dataset.
+ *
+ *  - Allocate process local memory structures
+ *  - Retrieve metadata
+ *
+ * @param [in] container pointer to an open container that contains the dataset that is to be opened
+ * @param [in] name identifier of the dataset within the container, must not be empty
+ * @param [out] out_dataset returns a pointer to the opened dataset
+ *
+ * @return status
+ */
 esdm_status esdm_dataset_open(esdm_container_t *container, const char *name, esdm_dataset_t **out_dataset);
 
 /**
