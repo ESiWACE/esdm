@@ -51,12 +51,6 @@ esdm_status esdm_load_config_str(const char *str) {
   return ESDM_SUCCESS;
 }
 
-/*
-void esdm_atexit() {
-	esdm_finalize();
-}
-*/
-
 esdm_status esdm_dataset_get_dataspace(esdm_dataset_t *dset, esdm_dataspace_t **out_dataspace) {
   assert(dset != NULL);
   *out_dataspace = dset->dataspace;

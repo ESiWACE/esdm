@@ -54,6 +54,7 @@ typedef enum esdm_loglevel {
 // LOGICAL/DOMAIN DATATYPES ///////////////////////////////////////////////////
 
 typedef struct esdm_container_t esdm_container_t;
+typedef struct esdm_datasets_t esdm_datasets_t;
 typedef struct esdm_dataset_t esdm_dataset_t;
 typedef struct esdm_dataspace_t esdm_dataspace_t;
 typedef struct esdm_fragment_t esdm_fragment_t;

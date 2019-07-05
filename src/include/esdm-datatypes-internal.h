@@ -15,9 +15,18 @@ enum esdm_data_status_e {
 
 typedef enum esdm_data_status_e esdm_data_status_e;
 
+struct esdm_datasets_t {
+  esdm_dataset_t ** dset;
+  int count;
+  int buff_size;
+};
+
 struct esdm_container_t {
   char *name;
-  esdm_status status;
+  esdm_data_status_e status;
+
+  smd_attr_t *attr;
+  esdm_datasets_t dsets;
 };
 
 struct esdm_fragments_t {
@@ -30,6 +39,7 @@ typedef struct esdm_fragments_t esdm_fragments_t;
 
 struct esdm_dataset_t {
   char *name;
+  char *id;
   char **dims_dset_id; // array of variable names != NULL if set
   esdm_container_t *container;
   esdm_dataspace_t *dataspace;
@@ -131,10 +141,12 @@ struct esdm_md_backend_callbacks_t {
 
   // ESDM Data Model Specific
   int (*container_create)(esdm_md_backend_t *, esdm_container_t *container);
-  int (*container_retrieve)(esdm_md_backend_t *, esdm_container_t *container);
+  int (*container_commit)(esdm_md_backend_t *, esdm_container_t *container, char * json, int md_size);
+  int (*container_retrieve)(esdm_md_backend_t *, esdm_container_t *container, char ** out_json, int * out_size);
   int (*container_update)(esdm_md_backend_t *, esdm_container_t *container);
   int (*container_destroy)(esdm_md_backend_t *, esdm_container_t *container);
 
+  int (*dataset_create)(esdm_md_backend_t *, esdm_dataset_t *dataset);
   int (*dataset_commit)(esdm_md_backend_t *, esdm_dataset_t *dataset, char * json, int md_size);
   int (*dataset_retrieve)(esdm_md_backend_t *, esdm_dataset_t *dataset, char ** out_json, int * out_size);
   int (*dataset_update)(esdm_md_backend_t *, esdm_dataset_t *dataset);
