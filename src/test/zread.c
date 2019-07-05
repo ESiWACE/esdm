@@ -18,11 +18,12 @@
  * This test uses the ESDM high-level API to actually write a contiuous ND subset of a data set
  */
 
+#include <test/util/test_util.h>
+
 #include <assert.h>
 #include <esdm.h>
 #include <stdio.h>
 #include <stdlib.h>
-
 
 int verify_data(uint64_t *a, uint64_t *b) {
   int mismatches = 0;
@@ -55,26 +56,39 @@ int main(int argc, char const *argv[]) {
   }
 
   // Interaction with ESDM
-  esdm_status ret;
+  esdm_status status;
   esdm_container_t *container = NULL;
   esdm_dataset_t *dataset = NULL;
 
-  ret = esdm_init();
-  assert(ret == ESDM_SUCCESS);
+  status = esdm_init();
+  assert(status == ESDM_SUCCESS);
 
-  esdm_container_open("mycontainer", &container);
-  esdm_dataset_open(container, "mydataset", &dataset);
+  assert_crash(esdm_container_open("mycontainer", NULL));
+  assert(esdm_container_open("", &container) == ESDM_INVALID_ARGUMENT_ERROR);
+  status = esdm_container_open("mycontainer", &container);
+  assert(status == ESDM_SUCCESS);
+
+  assert_crash(esdm_dataset_open(NULL, "mydataset", &dataset));
+  assert_crash(esdm_dataset_open(container, "mydataset", NULL));
+  assert(esdm_dataset_open(container, "", &dataset) == ESDM_INVALID_ARGUMENT_ERROR);
+  status = esdm_dataset_open(container, "mydataset", &dataset);
+  assert(status == ESDM_SUCCESS);
 
   int64_t size[] = {10, 20};
   esdm_dataspace_t *space;
 
-  esdm_dataspace_create(2, size, SMD_DTYPE_UINT64, &space);
+  //failing input tests are in write.c
+  status = esdm_dataspace_create(2, size, SMD_DTYPE_UINT64, &space);
+  assert(status == ESDM_SUCCESS);
 
-  ret = esdm_read(dataset, buf_r, space);
-  assert(ret == ESDM_SUCCESS);
+  assert_crash(esdm_read(NULL, buf_r, space));
+  assert_crash(esdm_read(dataset, NULL, space));
+  assert_crash(esdm_read(dataset, buf_r, NULL));
+  status = esdm_read(dataset, buf_r, space);
+  assert(status == ESDM_SUCCESS);
 
-  ret = esdm_finalize();
-  assert(ret == ESDM_SUCCESS);
+  status = esdm_finalize();
+  assert(status == ESDM_SUCCESS);
 
   // verify data and fail test if mismatches are found
   int mismatches = verify_data(buf_w, buf_r);
