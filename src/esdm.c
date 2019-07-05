@@ -140,6 +140,11 @@ esdm_status esdm_mkfs(int format_flags, data_accessibility_t target) {
 esdm_status esdm_finalize() {
   ESDM_DEBUG(__func__);
 
+  //TODO: I think, we really, really should be calling esdm_sync() here.
+  //      Otherwise we get into the situation where people can seemingly terminate ESDM correctly, but loose data nevertheless.
+  //      I'm not yet experienced enough with ESDM to make this decision, but if we decide against calling esdm_sync() here,
+  //      I really want to see a comment explaining *why* here.
+
   // ESDM data data structures that require proper cleanup..
   // in particular this effects data and cache state which is not yet persistent
 

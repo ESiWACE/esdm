@@ -61,8 +61,6 @@ esdm_status esdm_init();
 /**
  * Display status information for objects stored in ESDM.
  *
- * @param [in] desc	Name or descriptor of object.
- *
  * @return status
  */
 
@@ -153,6 +151,12 @@ esdm_status esdm_container_get_attributes(esdm_container_t *container, smd_attr_
  * Either from memory or from persistent storage.
  *
  */
+ //FIXME: It must be clear whether this does indeed destroy from persistent storage.
+ //       Acceptable specifications would be:
+ //         * only from memory (like POSIX close())
+ //         * from memory *and* persistent storage
+ //         * only from persistent storage
+ //       As far as I can see, it's not supposed to have an effect on persistent storage, so `*_close` or `*_free` might be better names for this.
 
 esdm_status esdm_container_destroy(esdm_container_t *container);
 
