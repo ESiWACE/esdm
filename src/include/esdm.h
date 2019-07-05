@@ -179,6 +179,11 @@ esdm_status esdm_container_commit(esdm_container_t *container);
 
 esdm_status esdm_container_destroy(esdm_container_t *container);
 
+/*
+ * Check if the dataset with the given name exists
+ */
+int esdm_container_dataset_exists(esdm_container_t * c, char const * name);
+
 // Dataset
 
 /**
@@ -339,7 +344,6 @@ esdm_status esdm_fragment_destroy(esdm_fragment_t *fragment);
  *
  */
 
-esdm_status esdm_fragment_serialize(esdm_fragment_t *fragment, void **out);
 
 void esdm_fragment_print(esdm_fragment_t *fragment);
 

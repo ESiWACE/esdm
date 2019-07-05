@@ -32,6 +32,7 @@
 #include <sys/stat.h>
 #include <sys/types.h>
 #include <unistd.h>
+#include <time.h>
 
 #include "metadummy.h"
 #include <esdm-internal.h>
@@ -39,9 +40,35 @@
 #define DEBUG_ENTER ESDM_DEBUG_COM_FMT("METADUMMY", "", "")
 #define DEBUG(fmt, ...) ESDM_DEBUG_COM_FMT("METADUMMY", fmt, __VA_ARGS__)
 
+#define sprintfDatasetDir(path, d) (sprintf(path, "%s/datasets/%c%c", tgt, d->id[0], d->id[1]))
+#define sprintfDatasetMd(path, d) (sprintf(path, "%s/datasets/%c%c/%s.md", tgt, d->id[0], d->id[1], d->id + 2))
+
 ///////////////////////////////////////////////////////////////////////////////
 // Helper and utility /////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////
+
+static void generate_id(char *str, size_t length) {
+  time_t timer;
+  time(&timer);
+
+  assert(length > 4);
+  char charset[] = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789_";
+  uint64_t c = (uint64_t) timer;
+  int const count = (int)(sizeof(charset) -1);
+  int n = 0;
+  while(c > 0){
+      int key = c % count;
+      c /= count;
+      str[n] = charset[key];
+  }
+
+  for (; n < length; n++) {
+      int key = rand() % count;
+      str[n] = charset[key];
+  }
+
+  str[length] = '\0';
+}
 
 static int mkfs(esdm_md_backend_t *backend, int enforce_format) {
   DEBUG_ENTER;
@@ -214,8 +241,22 @@ static int entry_destroy(const char *path) {
 static int container_create(esdm_md_backend_t *backend, esdm_container_t *container) {
   DEBUG_ENTER;
 
-  char *path_metadata;
-  char *path_container;
+  char path_container[PATH_MAX];
+  struct stat sb;
+
+  metadummy_backend_options_t *options = (metadummy_backend_options_t *)backend->data;
+  const char *tgt = options->target;
+
+  sprintf(path_container, "%s/containers/%s", tgt, container->name);
+
+  return 0;
+}
+
+static int container_commit(esdm_md_backend_t *backend, esdm_container_t *container, char * json, int md_size) {
+  DEBUG_ENTER;
+
+  char path_metadata[PATH_MAX];
+  char path_container[PATH_MAX];
   struct stat sb;
 
   metadummy_backend_options_t *options = (metadummy_backend_options_t *)backend->data;
@@ -223,8 +264,8 @@ static int container_create(esdm_md_backend_t *backend, esdm_container_t *contai
 
   DEBUG("tgt: %p\n", tgt);
 
-  asprintf(&path_metadata, "%s/containers/%s.md", tgt, container->name);
-  asprintf(&path_container, "%s/containers/%s", tgt, container->name);
+  sprintf(path_metadata, "%s/containers/%s.md", tgt, container->name);
+  sprintf(path_container, "%s/containers/%s", tgt, container->name);
 
   // create directory for datsets
   if (stat(path_container, &sb) == -1) {
@@ -233,29 +274,38 @@ static int container_create(esdm_md_backend_t *backend, esdm_container_t *contai
   }
 
   // create metadata entry
-  entry_create(path_metadata, NULL, 0);
-
-  free(path_metadata);
-  free(path_container);
+  entry_create(path_metadata, json, md_size);
 
   return 0;
 }
 
-static int container_retrieve(esdm_md_backend_t *backend, esdm_container_t *container) {
+static int container_retrieve(esdm_md_backend_t *backend, esdm_container_t *container, char ** out_json, int * out_size) {
   DEBUG_ENTER;
-
-  char *path_metadata;
-  char *path_container;
+  int ret;
+  char path_metadata[PATH_MAX];
+  char path_container[PATH_MAX];
 
   metadummy_backend_options_t *options = (metadummy_backend_options_t *)backend->data;
   const char *tgt = options->target;
 
-  asprintf(&path_metadata, "%s/containers/%s.md", tgt, container->name);
-  asprintf(&path_container, "%s/containers/%s", tgt, container->name);
+  sprintf(path_metadata, "%s/containers/%s.md", tgt, container->name);
 
+  struct stat statbuf;
+  ret = stat(path_metadata, &statbuf);
+  if (ret != 0) return ESDM_ERROR;
+  off_t len = statbuf.st_size + 1;
 
-  free(path_metadata);
-  free(path_container);
+  int fd = open(path_metadata, O_RDONLY | S_IWUSR | S_IRUSR | S_IWGRP | S_IRGRP | S_IROTH);
+  if (fd < 0) return ESDM_ERROR;
+  char * json = (char *)malloc(len);
+  ret = read_check(fd, json, statbuf.st_size);
+  close(fd);
+  json[statbuf.st_size] = 0;
+  if (ret != 0){
+    return ESDM_ERROR;
+  }
+  *out_json = json;
+  *out_size = statbuf.st_size;
 
   return 0;
 }
@@ -263,20 +313,17 @@ static int container_retrieve(esdm_md_backend_t *backend, esdm_container_t *cont
 static int container_update(esdm_md_backend_t *backend, esdm_container_t *container) {
   DEBUG_ENTER;
 
-  char *path_metadata;
-  char *path_container;
+  char path_metadata[PATH_MAX];
+  char path_container[PATH_MAX];
 
   metadummy_backend_options_t *options = (metadummy_backend_options_t *)backend->data;
   const char *tgt = options->target;
 
-  asprintf(&path_metadata, "%s/containers/%s.md", tgt, container->name);
-  asprintf(&path_container, "%s/containers/%s", tgt, container->name);
+  sprintf(path_metadata, "%s/containers/%s.md", tgt, container->name);
+  sprintf(path_container, "%s/containers/%s", tgt, container->name);
 
   // create metadata entry
   entry_update(path_metadata, "abc", 3);
-
-  free(path_metadata);
-  free(path_container);
 
   return 0;
 }
@@ -308,6 +355,32 @@ static int container_destroy(esdm_md_backend_t *backend, esdm_container_t *conta
 // Dataset Helpers ////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////
 
+static int dataset_create(esdm_md_backend_t * backend, esdm_dataset_t *d){
+  DEBUG_ENTER;
+  char path_dataset[PATH_MAX];
+  assert(backend);
+  assert(d);
+
+  metadummy_backend_options_t *options = (metadummy_backend_options_t *)backend->data;
+  const char *tgt = options->target;
+  d->id = malloc(16);
+  assert(d->id);
+
+  while(1){
+    generate_id(d->id, 16);
+
+    // create directory for datsets
+    sprintfDatasetMd(path_dataset, d);
+    struct stat sb;
+    if (stat(path_dataset, &sb) == -1) {
+      sprintfDatasetDir(path_dataset, d);
+      int ret = mkdir_recursive(path_dataset);
+      if (ret != 0) return ESDM_ERROR;
+      return ESDM_SUCCESS;
+    }
+  }
+}
+
 static int dataset_commit(esdm_md_backend_t *backend, esdm_dataset_t *dataset, char * json, int md_size) {
   DEBUG_ENTER;
 
@@ -320,8 +393,8 @@ static int dataset_commit(esdm_md_backend_t *backend, esdm_dataset_t *dataset, c
 
   DEBUG("tgt: %p\n", tgt);
 
-  sprintf(path_metadata, "%s/containers/%s/%s.md", tgt, dataset->container->name, dataset->name);
-  sprintf(path_dataset, "%s/containers/%s/%s", tgt, dataset->container->name, dataset->name);
+  sprintfDatasetMd(path_metadata, dataset);
+  sprintfDatasetDir(path_dataset, dataset);
   // create directory for datsets
   if (stat(path_dataset, &sb) == -1) {
     int ret = mkdir_recursive(path_dataset);
@@ -342,7 +415,7 @@ static int dataset_retrieve(esdm_md_backend_t *backend, esdm_dataset_t *d, char 
   metadummy_backend_options_t *options = (metadummy_backend_options_t *)backend->data;
   const char *tgt = options->target;
 
-  sprintf(path_metadata, "%s/containers/%s/%s.md", tgt, d->container->name, d->name);
+  sprintfDatasetMd(path_metadata, d);
   struct stat statbuf;
   ret = stat(path_metadata, &statbuf);
   if (ret != 0) return ESDM_ERROR;
@@ -407,10 +480,12 @@ metadummy_finalize,                     // finalize
 metadummy_backend_performance_estimate, // performance_estimate
 
 container_create,
+container_commit,
 container_retrieve,
 container_update,
 container_destroy,
 
+dataset_create,
 dataset_commit,
 dataset_retrieve,
 dataset_update,

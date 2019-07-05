@@ -5,14 +5,17 @@
 #include <assert.h>
 #include <backends-metadata/metadummy/metadummy.h>
 
-int main() {
-  esdm_config_backend_t config = {
-  .type = "metadummy",
-  .id = "test1",
-  .target = "_metadummy",
-  };
+extern esdm_instance_t esdm;
 
-  esdm_md_backend_t *b = metadummy_backend_init(&config);
+int main() {
+  char const * cfg = "{\"esdm\": {\"backends\": [],"
+		"\"metadata\": {"
+			"\"type\": \"metadummy\","
+			"\"name\": \"md\","
+			"\"target\": \"./_metadummy\"}}}";
+  esdm_load_config_str(cfg);
+  esdm_init();
+  esdm_md_backend_t *b = esdm.modules->metadata_backend;
 
   char *buff = "test";
   esdm_dataspace_t *dataspace;
