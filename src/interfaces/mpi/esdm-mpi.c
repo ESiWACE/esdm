@@ -119,7 +119,7 @@ esdm_status esdm_mpi_dataset_create(MPI_Comm com, esdm_container_t *container, c
   return ret;
 }
 
-esdm_status esdm_mpi_dataset_open(MPI_Comm com, esdm_container_t *container, const char *name, esdm_dataset_t **out_dataset){
+esdm_status esdm_mpi_dataset_open(MPI_Comm com, esdm_container_t *c, const char *name, esdm_dataset_t **out_dataset){
   esdm_status ret;
   int rank;
   ret = MPI_Comm_rank(com, & rank);
@@ -128,12 +128,21 @@ esdm_status esdm_mpi_dataset_open(MPI_Comm com, esdm_container_t *container, con
   assert(ret == MPI_SUCCESS);
   // compute hash to ensure all have the same value
   int hash;
-  hash = ea_compute_hash_str(name) + ea_compute_hash_str(container->name);
+  hash = ea_compute_hash_str(name) + ea_compute_hash_str(c->name);
 
   char * buff;
   int size;
-  esdm_dataset_t *d;
-  esdm_dataset_init(container, name, NULL, & d);
+  esdm_dataset_t *d = NULL;
+  esdm_datasets_t * dsets = & c->dsets;
+  for(int i=0; i < dsets->count; i++ ){
+    if(strcmp(dsets->dset[i]->name, name) == 0){
+      d = dsets->dset[i];
+      break;
+    }
+  }
+  if(! d){
+    return ESDM_ERROR;
+  }
 
   if(rank == 0){
     check_hash_abort(com, hash, 0);
@@ -149,6 +158,7 @@ esdm_status esdm_mpi_dataset_open(MPI_Comm com, esdm_container_t *container, con
     ret = MPI_Bcast(buff, size, MPI_CHAR, 0, com);
     assert(ret == MPI_SUCCESS);
   }else{
+
     check_hash_abort(com, hash, 1);
     ret = MPI_Bcast(& size, 1, MPI_INT, 0, com);
     assert(ret == MPI_SUCCESS);
@@ -158,13 +168,13 @@ esdm_status esdm_mpi_dataset_open(MPI_Comm com, esdm_container_t *container, con
     ret = MPI_Bcast(buff, size, MPI_CHAR, 0, com);
     assert(ret == MPI_SUCCESS);
   }
-
   ret = esdm_dataset_open_md_parse(d, buff, size);
-  free(buff);
   if(ret != ESDM_SUCCESS){
     free(d);
     return ret;
   }
+
+  free(buff);
   *out_dataset = d;
   return ESDM_SUCCESS;
 }

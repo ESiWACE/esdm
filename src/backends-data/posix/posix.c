@@ -250,7 +250,7 @@ static int fragment_update(esdm_backend_t *backend, esdm_fragment_t *f) {
 
   // lazy assignment of ID
   if(f->id == NULL){
-    f->id = malloc(16);
+    f->id = malloc(17);
     assert(f->id);
     // ensure that the fragment with the ID doesn't exist, yet
     while(1){

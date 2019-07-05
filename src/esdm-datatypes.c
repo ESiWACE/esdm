@@ -253,6 +253,7 @@ esdm_status esdm_fragment_create(esdm_dataset_t *dataset, esdm_dataspace_t *subs
   int64_t bytes = elements * esdm_sizeof(subspace->type);
   DEBUG("Entries in subspace: %d x %d bytes = %d bytes \n", elements, esdm_sizeof(subspace->type), bytes);
 
+  fragment->id = NULL;
   fragment->dataset = dataset;
   fragment->dataspace = subspace;
   fragment->buf = buf; // zero copy?
@@ -415,6 +416,10 @@ esdm_status esdm_dataset_create(esdm_container_t *c, const char *name, esdm_data
 }
 
 esdm_status esdm_dataset_open_md_load(esdm_dataset_t *dset, char ** out_md, int * out_size){
+  assert(dset != NULL);
+  assert(out_md != NULL);
+  assert(out_size != NULL);
+  
 	return esdm.modules->metadata_backend->callbacks.dataset_retrieve(esdm.modules->metadata_backend, dset, out_md, out_size);
 }
 

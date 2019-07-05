@@ -215,7 +215,7 @@ int ea_compute_hash_str(const char * str){
 void ea_generate_id(char *str, size_t length){
   time_t timer;
   time(&timer);
-
+  
   assert(length > 4);
   char charset[] = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789_";
   uint64_t c = (uint64_t) timer;

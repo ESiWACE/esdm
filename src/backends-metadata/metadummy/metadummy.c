@@ -233,7 +233,6 @@ static int container_commit(esdm_md_backend_t *backend, esdm_container_t *contai
   DEBUG_ENTER;
 
   char path_metadata[PATH_MAX];
-  char path_container[PATH_MAX];
   struct stat sb;
 
   metadummy_backend_options_t *options = (metadummy_backend_options_t *)backend->data;
@@ -242,13 +241,6 @@ static int container_commit(esdm_md_backend_t *backend, esdm_container_t *contai
   DEBUG("tgt: %p\n", tgt);
 
   sprintf(path_metadata, "%s/containers/%s.md", tgt, container->name);
-  sprintf(path_container, "%s/containers/%s", tgt, container->name);
-
-  // create directory for datsets
-  if (stat(path_container, &sb) == -1) {
-    int ret = mkdir(path_container, 0700);
-    if (ret != 0) return ESDM_ERROR;
-  }
 
   // create metadata entry
   entry_create(path_metadata, json, md_size);
@@ -340,7 +332,7 @@ static int dataset_create(esdm_md_backend_t * backend, esdm_dataset_t *d){
 
   metadummy_backend_options_t *options = (metadummy_backend_options_t *)backend->data;
   const char *tgt = options->target;
-  d->id = malloc(16);
+  d->id = malloc(17);
   assert(d->id);
 
   while(1){
