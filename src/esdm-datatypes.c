@@ -277,37 +277,13 @@ esdm_status esdm_fragment_retrieve(esdm_fragment_t *fragment) {
   return ESDM_SUCCESS;
 }
 
-void esdm_dataspace_string_descriptor(char *string, esdm_dataspace_t *dataspace) {
-  ESDM_DEBUG(__func__);
-  int pos = 0;
-
-  int64_t dims = dataspace->dims;
-  int64_t *size = dataspace->size;
-  int64_t *offset = dataspace->offset;
-
-  // offset to string
-  int64_t i;
-  pos += sprintf(&string[pos], "%ld", offset[0]);
-  for (i = 1; i < dims; i++) {
-    DEBUG("dim %d, offset=%ld (%p)\n", i, offset[i], offset);
-    pos += sprintf(&string[pos], ",%ld", offset[i]);
-  }
-
-  // size to string
-  pos += sprintf(&string[pos], ",%ld", size[0]);
-  for (i = 1; i < dims; i++) {
-    DEBUG("dim %d, size=%ld (%p)\n", i, size[i], size);
-    pos += sprintf(&string[pos], ",%ld", size[i]);
-  }
-  DEBUG("Descriptor: %s\n", string);
-}
 
 esdm_status esdm_fragment_metadata_create(esdm_fragment_t *f, int len, char * js, int * out_size){
   assert(f != NULL);
 	esdm_dataspace_t *d = f->dataspace;
 	int size = 0;
 	int ret;
-  size += sprintf(js, "{\"pid\":\"%s\",\"size\":[", f->backend->config->id);
+  size += sprintf(js, "{\"id\":\"%s\",\"pid\":\"%s\",\"size\":[", f->id, f->backend->config->id);
   size += sprintf(js + size, "%ld", d->size[0]);
   for (int i = 1; i < d->dims; i++) {
     size += sprintf(js + size, ",%ld", d->size[i]);
@@ -471,6 +447,10 @@ esdm_status esdmI_create_fragment_from_metadata(esdm_dataset_t *dset, json_t * j
   const char *plugin_id = json_string_value(elem);
   f->backend = esdmI_get_backend(plugin_id);
   assert(f->backend);
+
+  elem = json_object_get(json, "id");
+  char const  * id = json_string_value(elem);
+  f->id = (char*)id;
 
   elem = json_object_get(json, "offset");
   int cnt = json_array_size(elem);

@@ -206,6 +206,9 @@ void esdmI_fragments_metadata_create(esdm_dataset_t *d, int len, char *md, int *
 
 esdm_backend_t * esdmI_get_backend(char const * plugin_id);
 
+
+void ea_generate_id(char *str, size_t length);
+
 int ea_compute_hash_str(const char * str);
 int ea_is_valid_name(const char *str);
 

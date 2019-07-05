@@ -48,6 +48,7 @@ struct esdm_dataset_t {
 };
 
 struct esdm_fragment_t {
+  char * id;
   esdm_dataset_t *dataset;
   esdm_dataspace_t *dataspace;
   esdm_backend_t *backend;
@@ -97,31 +98,6 @@ struct esdm_backend_t_callbacks_t {
   // General for ESDM
   int (*finalize)(esdm_backend_t *);
   int (*performance_estimate)(esdm_backend_t *, esdm_fragment_t *fragment, float *out_time);
-
-  // Data Callbacks (POSIX like)
-  int (*create)(esdm_backend_t *, char *name);
-  int (*open)(esdm_backend_t *);
-  int (*write)(esdm_backend_t *);
-  int (*read)(esdm_backend_t *);
-  int (*close)(esdm_backend_t *);
-
-  // Metadata Callbacks
-  /*
-	 * Retrieve a list (and metadata) of fragments that contain data for the given subpatch with the size and offset.
-	 */
-  int (*lookup)(esdm_backend_t *b, esdm_dataset_t *dataset, esdm_dataspace_t *space, int *out_frag_count, esdm_fragment_t ***out_fragments);
-
-  // ESDM Data Model Specific
-  int (*container_create)(esdm_backend_t *, esdm_container_t *container);
-  int (*container_retrieve)(esdm_backend_t *, esdm_container_t *container);
-  int (*container_update)(esdm_backend_t *, esdm_container_t *container);
-  int (*container_destroy)(esdm_backend_t *, esdm_container_t *container);
-
-  int (*dataset_create)(esdm_backend_t *, esdm_dataset_t *dataset);
-  int (*dataset_retrieve)(esdm_backend_t *, esdm_dataset_t *dataset);
-  int (*dataset_update)(esdm_backend_t *, esdm_dataset_t *dataset);
-  int (*dataset_destroy)(esdm_backend_t *, esdm_dataset_t *dataset);
-
   int (*fragment_create)(esdm_backend_t *, esdm_fragment_t *fragment);
   int (*fragment_retrieve)(esdm_backend_t *, esdm_fragment_t *fragment, json_t *metadata);
   int (*fragment_update)(esdm_backend_t *, esdm_fragment_t *fragment);

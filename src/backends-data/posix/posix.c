@@ -40,6 +40,9 @@
 #define DEBUG_ENTER ESDM_DEBUG_COM_FMT("POSIX", "", "")
 #define DEBUG(fmt, ...) ESDM_DEBUG_COM_FMT("POSIX", fmt, __VA_ARGS__)
 
+#define sprintfFragmentDir(path, f) (sprintf(path, "%s/%c%c/%s", tgt, f->dataset->id[0], f->dataset->id[1], f->dataset->id+2))
+#define sprintfFragmentPath(path, f) (sprintf(path, "%s/%c%c/%s/%s", tgt, f->dataset->id[0], f->dataset->id[1], f->dataset->id+2, f->id))
+
 ///////////////////////////////////////////////////////////////////////////////
 // Helper and utility /////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////
@@ -71,18 +74,11 @@ static int mkfs(esdm_backend_t *backend, int enforce_format) {
     return ESDM_ERROR;
   }
   printf("[mkfs] Creating %s\n", tgt);
-  char root[PATH_MAX];
-  char cont[PATH_MAX];
-  char sfra[PATH_MAX];
 
-  sprintf(root, "%s", tgt);
-  sprintf(cont, "%s/containers", tgt);
-  sprintf(sfra, "%s/shared-fragments", tgt);
-
-  mkdir(root, 0700);
-  mkdir(cont, 0700);
-  mkdir(sdat, 0700);
-  mkdir(sfra, 0700);
+  int ret = mkdir(tgt, 0700);
+  if(ret != 0){
+    return ESDM_ERROR;
+  }
   return ESDM_SUCCESS;
 }
 
@@ -93,28 +89,6 @@ static int fsck() {
 ///////////////////////////////////////////////////////////////////////////////
 // Internal Helpers ///////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////
-
-static int entry_create(const char *path) {
-  int status;
-  struct stat sb;
-
-  DEBUG("entry_create(%s)\n", path);
-
-  // ENOENT => allow to create
-
-  status = stat(path, &sb);
-  if (status == -1) {
-    // write to non existing file
-    int fd = open(path, O_WRONLY | O_CREAT, S_IWUSR | S_IRUSR | S_IWGRP | S_IRGRP | S_IROTH);
-    // everything ok? write and close
-    if (fd != -1) {
-      close(fd);
-      return 0;
-    }
-  }
-  // already exists
-  return -1;
-}
 
 static int entry_retrieve(const char *path, void *buf) {
   int status;
@@ -165,7 +139,7 @@ static int entry_retrieve(const char *path, void *buf) {
   return 0;
 }
 
-static int entry_update(const char *path, void *buf, size_t len) {
+static int entry_update(const char *path, void *buf, size_t len, int update_only) {
   DEBUG_ENTER;
 
   int status;
@@ -173,10 +147,12 @@ static int entry_update(const char *path, void *buf, size_t len) {
 
   DEBUG("entry_update(%s: %ld)\n", path, len);
 
-  status = stat(path, &sb);
-  if (status == -1) {
-    perror("stat");
-    return -1;
+  if(update_only){
+    status = stat(path, &sb);
+    if (status == -1) {
+      perror("stat");
+      return -1;
+    }
   }
 
   //print_stat(sb);
@@ -244,22 +220,12 @@ static int fragment_retrieve(esdm_backend_t *backend, esdm_fragment_t *fragment,
   posix_backend_data_t *data = (posix_backend_data_t *)backend->data;
   const char *tgt = data->target;
 
-  // serialization of subspace for fragment
-  char fragment_name[PATH_MAX];
-  esdm_dataspace_string_descriptor(fragment_name, fragment->dataspace);
-
-  // determine path
-  char path[PATH_MAX];
-  sprintf(path, "%s/containers/%s/%s/", tgt, fragment->dataset->container->name, fragment->dataset->name);
-
   // determine path to fragment
-  char path_fragment[PATH_MAX];
-  sprintf(path_fragment, "%s/containers/%s/%s/%s", tgt, fragment->dataset->container->name, fragment->dataset->name, fragment_name);
+  char path[PATH_MAX];
+  sprintfFragmentPath(path, fragment);
+  DEBUG("path_fragment: %s", path);
 
-  DEBUG("path: %s", path);
-  DEBUG("path_fragment: %s", path_fragment);
-
-  entry_retrieve(path_fragment, fragment->buf);
+  entry_retrieve(path, fragment->buf);
   return 0;
 }
 
@@ -273,32 +239,38 @@ static int fragment_metadata_create(esdm_backend_t *backend, esdm_fragment_t *fr
   return 0;
 }
 
-static int fragment_update(esdm_backend_t *backend, esdm_fragment_t *fragment) {
+static int fragment_update(esdm_backend_t *backend, esdm_fragment_t *f) {
   DEBUG_ENTER;
 
   // set data, options and tgt for convienience
   posix_backend_data_t *data = (posix_backend_data_t *)backend->data;
   const char *tgt = data->target;
 
-  // serialization of subspace for fragment
-  char fragment_name[PATH_MAX];
-  esdm_dataspace_string_descriptor(fragment_name, fragment->dataspace);
-
-  // determine path
   char path[PATH_MAX];
-  sprintf(path, "%s/containers/%s/%s/", tgt, fragment->dataset->container->name, fragment->dataset->name);
 
-  // determine path to fragment
-  char path_fragment[PATH_MAX];
-  sprintf(path_fragment, "%s/containers/%s/%s/%s", tgt, fragment->dataset->container->name, fragment->dataset->name, fragment_name);
+  // lazy assignment of ID
+  if(f->id == NULL){
+    f->id = malloc(16);
+    assert(f->id);
+    // ensure that the fragment with the ID doesn't exist, yet
+    while(1){
+      ea_generate_id(f->id, 16);
+      sprintfFragmentPath(path, f);
 
+      struct stat sb;
+      if (stat(path, &sb) == -1) {
+        sprintfFragmentDir(path, f);
+        int ret = mkdir_recursive(path);
+        if (ret != 0) return ESDM_ERROR;
+        break;
+      }
+    }
+  }
+  sprintfFragmentPath(path, f);
   DEBUG("path: %s\n", path);
-  DEBUG("path_fragment: %s\n", path_fragment);
 
-  // create metadata entry
-  mkdir_recursive(path);
-  entry_create(path_fragment);
-  entry_update(path_fragment, fragment->buf, fragment->bytes);
+  // create data
+  entry_update(path, f->buf, f->bytes, 0);
   return 0;
 }
 
@@ -337,27 +309,6 @@ static esdm_backend_t backend_template = {
 .callbacks = {
 NULL,                               // finalize
 posix_backend_performance_estimate, // performance_estimate
-
-NULL, // create
-NULL, // open
-NULL, // write
-NULL, // read
-NULL, // close
-
-// Metadata Callbacks
-NULL, // lookup
-
-// ESDM Data Model Specific
-NULL, // container create
-NULL, // container retrieve
-NULL, // container update
-NULL, // container delete
-
-NULL, // dataset create
-NULL, // dataset retrieve
-NULL, // dataset update
-NULL, // dataset delete
-
 NULL,
 fragment_retrieve,
 fragment_update,

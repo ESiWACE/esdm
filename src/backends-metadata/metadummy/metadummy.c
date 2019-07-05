@@ -47,29 +47,6 @@
 // Helper and utility /////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////
 
-static void generate_id(char *str, size_t length) {
-  time_t timer;
-  time(&timer);
-
-  assert(length > 4);
-  char charset[] = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789_";
-  uint64_t c = (uint64_t) timer;
-  int const count = (int)(sizeof(charset) -1);
-  int n = 0;
-  while(c > 0){
-      int key = c % count;
-      c /= count;
-      str[n] = charset[key];
-  }
-
-  for (; n < length; n++) {
-      int key = rand() % count;
-      str[n] = charset[key];
-  }
-
-  str[length] = '\0';
-}
-
 static int mkfs(esdm_md_backend_t *backend, int enforce_format) {
   DEBUG_ENTER;
 
@@ -367,7 +344,7 @@ static int dataset_create(esdm_md_backend_t * backend, esdm_dataset_t *d){
   assert(d->id);
 
   while(1){
-    generate_id(d->id, 16);
+    ea_generate_id(d->id, 16);
 
     // create directory for datsets
     sprintfDatasetMd(path_dataset, d);
