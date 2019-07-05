@@ -252,8 +252,7 @@ static int container_retrieve(esdm_md_backend_t *backend, esdm_container_t *cont
   DEBUG_ENTER;
   int ret;
   char path_metadata[PATH_MAX];
-  char path_container[PATH_MAX];
-
+  
   metadummy_backend_options_t *options = (metadummy_backend_options_t *)backend->data;
   const char *tgt = options->target;
 
@@ -345,7 +344,7 @@ static int dataset_create(esdm_md_backend_t * backend, esdm_dataset_t *d){
       sprintfDatasetDir(path_dataset, d);
       if (stat(path_dataset, &sb) == -1) {
         int ret = mkdir_recursive(path_dataset);
-        if (ret != 0) return ESDM_ERROR;
+        if (ret != 0 && errno != EEXIST) return ESDM_ERROR;
       }
       return ESDM_SUCCESS;
     }

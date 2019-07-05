@@ -204,6 +204,7 @@ esdm_status esdm_container_open_md_parse(esdm_container_t *c, char * md, int siz
 
 esdm_status esdmI_dataset_lookup_fragments(esdm_dataset_t *dataset, esdm_dataspace_t *space, int *out_frag_count, esdm_fragment_t ***out_fragments);
 
+void esdmI_container_register_dataset(esdm_container_t * c, esdm_dataset_t *dset);
 esdm_status esdmI_create_fragment_from_metadata(esdm_dataset_t *dset, json_t * json, esdm_fragment_t ** out);
 void esdmI_fragments_metadata_create(esdm_dataset_t *d, int len, char *md, int * out_size);
 

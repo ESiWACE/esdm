@@ -191,6 +191,7 @@ static int fragment_update(esdm_backend_t *backend, esdm_fragment_t *f) {
   char path[PATH_MAX];
   // lazy assignment of ID
   if(f->id == NULL){
+    printf("XX%s\n", f->id);
     f->id = malloc(17);
     assert(f->id);
     // ensure that the fragment with the ID doesn't exist, yet
@@ -203,7 +204,7 @@ static int fragment_update(esdm_backend_t *backend, esdm_fragment_t *f) {
         sprintfFragmentDir(path, f);
         if (stat(path, &sb) == -1) {
           int ret = mkdir_recursive(path);
-          if (ret != 0) return ESDM_ERROR;
+          if (ret != 0 && errno != EEXIST) return ESDM_ERROR;
         }
         break;
       }

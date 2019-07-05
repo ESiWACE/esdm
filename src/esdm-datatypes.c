@@ -270,10 +270,12 @@ esdm_status esdm_fragment_retrieve(esdm_fragment_t *fragment) {
   ESDM_DEBUG(__func__);
   // Call backend
   esdm_backend_t *backend = fragment->backend; // TODO: decision component, upon many
-  backend->callbacks.fragment_retrieve(backend, fragment, NULL); // TODO
-	fragment->status = ESDM_DATA_PERSISTENT;
+  int ret = backend->callbacks.fragment_retrieve(backend, fragment, NULL); // TODO
+  if(ret == ESDM_SUCCESS){
+    fragment->status = ESDM_DATA_PERSISTENT;
+  }
 
-  return ESDM_SUCCESS;
+  return ret;
 }
 
 
@@ -307,10 +309,12 @@ esdm_status esdm_fragment_commit(esdm_fragment_t *f) {
   ESDM_DEBUG(__func__);
   assert(f && "fragment argument must not be NULL");
 
-	f->backend->callbacks.fragment_update(f->backend, f);
-	f->status = ESDM_DATA_PERSISTENT;
+	int ret = f->backend->callbacks.fragment_update(f->backend, f);
+  if(ret == ESDM_SUCCESS) {
+    f->status = ESDM_DATA_PERSISTENT;
+  }
 
-  return ESDM_SUCCESS;
+  return ret;
 }
 
 int esdmI_fragment_overlaps(esdm_dataspace_t * da, esdm_fragment_t * f){
