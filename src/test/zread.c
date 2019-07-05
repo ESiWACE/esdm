@@ -18,11 +18,12 @@
  * This test uses the ESDM high-level API to actually write a contiuous ND subset of a data set
  */
 
+#include <test/util/test_util.h>
+
 #include <assert.h>
 #include <esdm.h>
 #include <stdio.h>
 #include <stdlib.h>
-
 
 int verify_data(uint64_t *a, uint64_t *b) {
   int mismatches = 0;
@@ -55,14 +56,18 @@ int main(int argc, char const *argv[]) {
   }
 
   // Interaction with ESDM
-  esdm_status ret;
+  esdm_status status;
   esdm_container_t *container = NULL;
   esdm_dataset_t *dataset = NULL;
 
-  ret = esdm_init();
-  assert(ret == ESDM_SUCCESS);
+  status = esdm_init();
+  assert(status == ESDM_SUCCESS);
 
-  esdm_container_open("mycontainer", &container);
+  assert_crash(esdm_container_open("mycontainer", NULL));
+  assert(esdm_container_open("", &container) == ESDM_INVALID_ARGUMENT_ERROR);
+  status = esdm_container_open("mycontainer", &container);
+  assert(status == ESDM_SUCCESS);
+
   esdm_dataset_open(container, "mydataset", &dataset);
 
   int64_t size[] = {10, 20};
@@ -70,11 +75,11 @@ int main(int argc, char const *argv[]) {
 
   esdm_dataspace_create(2, size, SMD_DTYPE_UINT64, &space);
 
-  ret = esdm_read(dataset, buf_r, space);
-  assert(ret == ESDM_SUCCESS);
+  status = esdm_read(dataset, buf_r, space);
+  assert(status == ESDM_SUCCESS);
 
-  ret = esdm_finalize();
-  assert(ret == ESDM_SUCCESS);
+  status = esdm_finalize();
+  assert(status == ESDM_SUCCESS);
 
   // verify data and fail test if mismatches are found
   int mismatches = verify_data(buf_w, buf_r);

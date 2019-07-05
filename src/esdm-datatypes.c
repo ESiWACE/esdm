@@ -52,6 +52,13 @@ esdm_status esdm_container_create(const char *name, esdm_container_t **out_conta
 
 esdm_status esdm_container_open(const char *name, esdm_container_t **out_container) {
   ESDM_DEBUG(__func__);
+  assert(out_container);
+  assert(name);
+  if(!*name) {
+    ESDM_LOG_FMT(ESDM_LOGLEVEL_WARNING, "%s() called with an empty name argument\n", __func__);
+    return ESDM_INVALID_ARGUMENT_ERROR;
+  }
+
   esdm_container_t *container = (esdm_container_t *)malloc(sizeof(esdm_container_t));
 
   // TODO: retrieve from MD

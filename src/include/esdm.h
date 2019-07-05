@@ -152,6 +152,17 @@ esdm_status esdm_read(esdm_dataset_t *dataset, void *buf, esdm_dataspace_t *subs
 
 esdm_status esdm_container_create(const char *name, esdm_container_t **out_container);
 
+/**
+ * Open an existing container.
+ *
+ *  - Allocate process local memory structures.
+ *  - Register with metadata service.
+ *
+ * @param [in] name string to identify the container, must not be empty
+ * @param [out] out_container returns a pointer to the container
+ *
+ * @return status
+ */
 esdm_status esdm_container_open(const char *name, esdm_container_t **out_container);
 
 /**
