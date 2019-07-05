@@ -90,53 +90,21 @@ static int fsck() {
 // Internal Helpers ///////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////
 
-static int entry_retrieve(const char *path, void *buf) {
+static int entry_retrieve(const char *path, void *buf, uint64_t size) {
   int status;
   struct stat sb;
 
   DEBUG("entry_retrieve(%s)\n", path);
 
-  status = stat(path, &sb);
-  if (status == -1) {
-    perror("stat");
-    // does not exist
-    return -1;
-  }
-
   // write to non existing file
   int fd = open(path, O_RDONLY | S_IWUSR | S_IRUSR | S_IWGRP | S_IRGRP | S_IROTH);
   // everything ok? read and close
-  if (fd != -1) {
-    size_t len = sb.st_size;
-    char *bbuf = (char *)buf;
-    while (len > 0) {
-      ssize_t ret = read(fd, bbuf, len);
-      if (ret != -1) {
-        bbuf += ret;
-        len -= ret;
-      } else {
-        if (errno == EINTR) {
-          continue;
-        } else {
-          ESDM_ERROR_COM_FMT("POSIX", "read %s", strerror(errno));
-          return 1;
-        }
-      }
-    }
-    close(fd);
+  if (fd < 0) {
+    return ESDM_ERROR;
   }
-
-  //printf("Entry content: %s\n", (char *) *buf);
-
-  /*
-	uint64_t *buf64 = (uint64_t*) buf;
-	for (int i = 0; i < sb.st_size/sizeof(uint64_t); i++)
-	{
-		printf("idx %d: %d\n", i, buf64[i]);
-	}
-	*/
-
-  return 0;
+  int ret = read_check(fd, buf, size);
+  close(fd);
+  return ret;
 }
 
 static int entry_update(const char *path, void *buf, size_t len, int update_only) {
@@ -213,7 +181,7 @@ static int entry_destroy(const char *path) {
 // Fragment Handlers //////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////
 
-static int fragment_retrieve(esdm_backend_t *backend, esdm_fragment_t *fragment, json_t *metadata) {
+static int fragment_retrieve(esdm_backend_t *backend, esdm_fragment_t *f, json_t *metadata) {
   DEBUG_ENTER;
 
   // set data, options and tgt for convienience
@@ -222,11 +190,11 @@ static int fragment_retrieve(esdm_backend_t *backend, esdm_fragment_t *fragment,
 
   // determine path to fragment
   char path[PATH_MAX];
-  sprintfFragmentPath(path, fragment);
+  sprintfFragmentPath(path, f);
   DEBUG("path_fragment: %s", path);
 
-  entry_retrieve(path, fragment->buf);
-  return 0;
+  int ret = entry_retrieve(path, f->buf, f->bytes);
+  return ret;
 }
 
 
@@ -266,6 +234,7 @@ static int fragment_update(esdm_backend_t *backend, esdm_fragment_t *f) {
       }
     }
   }
+  printf("XX %s\n", f->id);
   sprintfFragmentPath(path, f);
   DEBUG("path: %s\n", path);
 

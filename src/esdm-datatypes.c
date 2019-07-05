@@ -140,8 +140,6 @@ esdm_status esdm_container_open_md_load(esdm_container_t *c, char ** out_md, int
 esdm_status esdm_container_open(char const *name, esdm_container_t **out_container) {
   ESDM_DEBUG(__func__);
 
-  // TODO: retrieve from MD
-  // TODO: retrieve associated data
   esdmI_container_init(name, out_container);
   esdm_container_t *c = *out_container;
 
@@ -419,7 +417,7 @@ esdm_status esdm_dataset_open_md_load(esdm_dataset_t *dset, char ** out_md, int 
   assert(dset != NULL);
   assert(out_md != NULL);
   assert(out_size != NULL);
-  
+
 	return esdm.modules->metadata_backend->callbacks.dataset_retrieve(esdm.modules->metadata_backend, dset, out_md, out_size);
 }
 
@@ -455,7 +453,7 @@ esdm_status esdmI_create_fragment_from_metadata(esdm_dataset_t *dset, json_t * j
 
   elem = json_object_get(json, "id");
   char const  * id = json_string_value(elem);
-  f->id = (char*)id;
+  f->id = strdup(id);
 
   elem = json_object_get(json, "offset");
   int cnt = json_array_size(elem);
@@ -517,8 +515,7 @@ esdm_status esdm_dataset_open_md_parse(esdm_dataset_t *d, char * md, int size){
     return ESDM_ERROR;
   }
   elem = json_object_get(root, "id");
-  str = (char *)json_string_value(elem);
-  d->id = str;
+  d->id = strdup(json_string_value(elem));
   elem = json_object_get(root, "dims");
   int dims = json_integer_value(elem);
   elem = json_object_get(root, "size");
