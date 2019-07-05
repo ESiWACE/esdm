@@ -16,8 +16,34 @@
 ///////////////////////////////////////////////////////////////////////////////
 
 // These functions must be used before calling init:
+/**
+ * Set the number of processes to use per node.
+ * Must not be called after `init()`.
+ *
+ * @param [in] procs the number of processes to use per node
+ *
+ * @return status
+ */
 esdm_status esdm_set_procs_per_node(int procs);
+
+/**
+ * Set the total number of processes to use.
+ * Must not be called after `init()`.
+ *
+ * @param [in] procs the number of processes to use
+ *
+ * @return status
+ */
 esdm_status esdm_set_total_procs(int procs);
+
+/**
+ * Set the configuration to use.
+ * Must not be called after `init()`, and must not be called twice.
+ *
+ * @param [in] str a string containing configuration data in JSON format
+ *
+ * @return status
+ */
 esdm_status esdm_load_config_str(const char *str);
 
 /**

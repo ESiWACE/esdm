@@ -35,18 +35,25 @@ esdm_instance_t esdm = {
 
 esdm_status esdm_set_procs_per_node(int procs) {
   assert(procs > 0);
+  assert(!is_initialized);
+
   esdm.procs_per_node = procs;
   return ESDM_SUCCESS;
 }
 
 esdm_status esdm_set_total_procs(int procs) {
   assert(procs > 0);
+  assert(!is_initialized);
+
   esdm.total_procs = procs;
   return ESDM_SUCCESS;
 }
 
 esdm_status esdm_load_config_str(const char *str) {
   assert(str != NULL);
+  assert(!is_initialized);
+  assert(!esdm.config);
+
   esdm.config = esdm_config_init_from_str(str);
   return ESDM_SUCCESS;
 }
