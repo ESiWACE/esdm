@@ -47,52 +47,6 @@
 // Helper and utility /////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////
 
-static int mkfs(esdm_md_backend_t *backend, int enforce_format) {
-  DEBUG_ENTER;
-
-  struct stat sb;
-
-  // use target directory from backend configuration
-  metadummy_backend_options_t *options = (metadummy_backend_options_t *)backend->data;
-
-  // Enforce min target length?
-  const char *tgt = options->target;
-  if (strlen(tgt) < 6) {
-    printf("[mkfs] error, the target name is to short (< 6 characters)!\n");
-    return ESDM_ERROR;
-  }
-
-  char containers[PATH_MAX];
-  sprintf(containers, "%s/containers", tgt);
-  if (enforce_format) {
-    printf("[mkfs] Removing %s\n", tgt);
-    if (stat(containers, &sb) != 0) {
-      printf("[mkfs] error, this directory seems not to be created by ESDM!\n");
-    } else {
-      posix_recursive_remove(tgt);
-    }
-    if (enforce_format == 2) return ESDM_SUCCESS;
-  }
-
-  if (stat(tgt, &sb) == 0) {
-    return ESDM_ERROR;
-  }
-  printf("[mkfs] Creating %s\n", tgt);
-
-  int ret = mkdir(tgt, 0700);
-  if (ret != 0) return ESDM_ERROR;
-
-  ret = mkdir(containers, 0700);
-  if (ret != 0) return ESDM_ERROR;
-
-  return ESDM_SUCCESS;
-}
-
-static int fsck() {
-  DEBUG_ENTER;
-
-  return 0;
-}
 
 ///////////////////////////////////////////////////////////////////////////////
 // Internal Helpers  //////////////////////////////////////////////////////////
@@ -136,6 +90,87 @@ static int entry_update(const char *path, void *buf, size_t len) {
     write_check(fd, buf, len);
     close(fd);
   }
+
+  return 0;
+}
+
+
+static int mkfs(esdm_md_backend_t *backend, int format_flags) {
+  DEBUG_ENTER;
+  // use target directory from backend configuration
+  metadummy_backend_options_t *options = (metadummy_backend_options_t *)backend->data;
+
+  // Enforce min target length?
+  const char *tgt = options->target;
+  if (strlen(tgt) < 6) {
+    printf("[mkfs] error, the target name is to short (< 6 characters)!\n");
+    return ESDM_ERROR;
+  }
+
+  struct stat sb;
+  char path[PATH_MAX];
+  int const ignore_err = format_flags & ESDM_FORMAT_IGNORE_ERRORS;
+
+  if (format_flags & ESDM_FORMAT_DELETE) {
+    printf("[mkfs] Removing %s\n", tgt);
+
+    sprintf(path, "%s/README-ESDM.TXT", tgt);
+    if (stat(path, &sb) == 0) {
+      posix_recursive_remove(tgt);
+    }else if(! ignore_err){
+      printf("[mkfs] Error %s is not an ESDM directory\n", tgt);
+      return ESDM_ERROR;
+    }
+  }
+
+  if(! (format_flags & ESDM_FORMAT_CREATE)){
+    return ESDM_SUCCESS;
+  }
+  if (stat(tgt, &sb) == 0) {
+    if(! ignore_err){
+      printf("[mkfs] Error %s exists already\n", tgt);
+      return ESDM_ERROR;
+    }
+    printf("[mkfs] WARNING %s exists already\n", tgt);
+  }
+
+  printf("[mkfs] Creating %s\n", tgt);
+
+  int ret = mkdir(tgt, 0700);
+  if (ret != 0) {
+    if(ignore_err){
+      printf("[mkfs] WARNING couldn't create dir %s\n", tgt);
+    }else{
+      return ESDM_ERROR;
+    }
+  }
+
+  sprintf(path, "%s/containers", tgt);
+  ret = mkdir(path, 0700);
+  if (ret != 0) {
+    if(ignore_err){
+      printf("[mkfs] WARNING couldn't create dir %s\n", tgt);
+    }else{
+      return ESDM_ERROR;
+    }
+  }
+
+  sprintf(path, "%s/README-ESDM.TXT", tgt);
+  char str[] = "This directory belongs to ESDM and contains various files that are needed to make ESDM work. Do not delete it until you know what you are doing.";
+  ret = entry_create(path, str, strlen(str));
+  if (ret != 0) {
+    if(ignore_err){
+      printf("[mkfs] WARNING couldn't write %s\n", tgt);
+    }else{
+      return ESDM_ERROR;
+    }
+  }
+
+  return ESDM_SUCCESS;
+}
+
+static int fsck() {
+  DEBUG_ENTER;
 
   return 0;
 }

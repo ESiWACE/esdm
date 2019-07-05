@@ -104,7 +104,7 @@ struct esdm_backend_t_callbacks_t {
   int (*fragment_metadata_create)(esdm_backend_t *, esdm_fragment_t *fragment, int len, char * md, int * out_size);
   int (*fragment_destroy)(esdm_backend_t *, esdm_fragment_t *fragment);
 
-  int (*mkfs)(esdm_backend_t *, int enforce_format);
+  int (*mkfs)(esdm_backend_t *, int format_flags);
 };
 
 struct esdm_md_backend_callbacks_t {
@@ -128,12 +128,7 @@ struct esdm_md_backend_callbacks_t {
   int (*dataset_update)(esdm_md_backend_t *, esdm_dataset_t *dataset);
   int (*dataset_destroy)(esdm_md_backend_t *, esdm_dataset_t *dataset);
 
-  //int (*fragment_create)(esdm_md_backend_t *, esdm_fragment_t *fragment);
-  //int (*fragment_retrieve)(esdm_md_backend_t *, esdm_fragment_t *fragment, json_t *metadata);
-  //int (*fragment_update)(esdm_md_backend_t *, esdm_fragment_t *fragment);
-  //int (*fragment_destroy)(esdm_md_backend_t *, esdm_fragment_t *fragment);
-
-  int (*mkfs)(esdm_md_backend_t *, int enforce_format);
+  int (*mkfs)(esdm_md_backend_t *, int format_flags);
 };
 
 /**

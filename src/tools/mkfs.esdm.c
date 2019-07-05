@@ -28,8 +28,9 @@
 typedef struct {
   char *config_file;
   int verbosity;
-  int enforce_format;
-  int remove_data;
+  int ignore_errors;
+  int create_data;
+  int delete_data;
   int format_local;
   int format_global;
 } tool_options_t;
@@ -39,8 +40,9 @@ static int rank;
 static tool_options_t o = {
 .config_file = "esdm.conf",
 .verbosity = 0,
-.enforce_format = 0,
-.remove_data = 0,
+.ignore_errors = 0,
+.create_data = 0,
+.delete_data = 0,
 .format_local = 0,
 .format_global = 0};
 
@@ -50,8 +52,9 @@ void parse_args(int argc, char **argv) {
   {'l', "local", "Formatting local storage systems", OPTION_FLAG, 'd', &o.format_local},
   {'c', "config", "The configuration file", OPTION_OPTIONAL_ARGUMENT, 's', &o.config_file},
   {'v', NULL, "Increase verbosity", OPTION_FLAG, 'd', &o.verbosity},
-  {0, "remove-only", "WARNING: remove existing data", OPTION_FLAG, 'd', &o.remove_data},
-  {0, "force-format", "WARNING: enforce the formatting", OPTION_FLAG, 'd', &o.enforce_format},
+  {0, "create", "WARNING: create data repository", OPTION_FLAG, 'd', &o.create_data},
+  {0, "remove", "WARNING: remove existing data", OPTION_FLAG, 'd', &o.delete_data},
+  {0, "ignore-errors", "WARNING: ignore errors that appear during create/delete", OPTION_FLAG, 'd', &o.ignore_errors},
   {0, "verbosity", "Set verbosity", OPTION_OPTIONAL_ARGUMENT, 'd', &o.verbosity},
   LAST_OPTION};
 
@@ -77,16 +80,25 @@ int main(int argc, char **argv) {
 
   esdm_status ret;
   ret = esdm_init();
+  int flags = (o.create_data ? ESDM_FORMAT_CREATE : 0) |
+              (o.delete_data ? ESDM_FORMAT_DELETE : 0) |
+              (o.ignore_errors ? ESDM_FORMAT_IGNORE_ERRORS : 0);
+  if(flags == 0){
+    printf("MKFS: Nothing to do. Use --create and/or --remove\n");
+    exit(1);
+  }
   if (o.format_global) {
-    ret = esdm_mkfs(o.remove_data ? 2 : o.enforce_format, ESDM_ACCESSIBILITY_GLOBAL);
+    ret = esdm_mkfs(flags, ESDM_ACCESSIBILITY_GLOBAL);
     if (ret != ESDM_SUCCESS) {
       printf("Error during mkfs -g!\n");
+      exit(1);
     }
   }
   if (o.format_local) {
-    ret = esdm_mkfs(o.remove_data ? 2 : o.enforce_format, ESDM_ACCESSIBILITY_NODELOCAL);
+    ret = esdm_mkfs(flags, ESDM_ACCESSIBILITY_NODELOCAL);
     if (ret != ESDM_SUCCESS) {
       printf("Error during mkfs -l!\n");
+      exit(1);
     }
   }
   ret = esdm_finalize();

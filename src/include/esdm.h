@@ -360,11 +360,13 @@ void esdm_dataspace_print(esdm_dataspace_t *dataspace);
   * @return status
   */
 
-/*
-   * enforce_format = 1 => recreate structure deleting old stuff
-   * enforce_format = 2 => delete only
-   */
+enum esdm_format_flags{
+  ESDM_FORMAT_DELETE = 1,
+  ESDM_FORMAT_CREATE = 2,
+  ESDM_FORMAT_IGNORE_ERRORS = 4,
+  ESDM_FORMAT_PURGE_RECREATE = 7
+};
 
-esdm_status esdm_mkfs(int enforce_format, data_accessibility_t target);
+esdm_status esdm_mkfs(int format_flags, data_accessibility_t target);
 
 #endif
