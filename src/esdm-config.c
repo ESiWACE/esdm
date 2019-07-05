@@ -34,9 +34,12 @@
 #define DEBUG(fmt, ...) ESDM_DEBUG_COM_FMT("CONFIG", fmt, __VA_ARGS__)
 
 esdm_config_t *esdm_config_init_from_str(const char *config_str) {
+  void* json = load_json(config_str); // parse text into JSON structure
+  if(!json) return NULL;
+
   esdm_config_t *config = NULL;
   config = (esdm_config_t *)malloc(sizeof(esdm_config_t));
-  config->json = load_json(config_str); // parse text into JSON structure
+  config->json = json;
 
   return config;
 }

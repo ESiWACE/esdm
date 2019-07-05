@@ -55,7 +55,7 @@ esdm_status esdm_load_config_str(const char *str) {
   assert(!esdm.config);
 
   esdm.config = esdm_config_init_from_str(str);
-  return ESDM_SUCCESS;
+  return esdm.config ? ESDM_SUCCESS : ESDM_ERROR;
 }
 
 esdm_status esdm_dataset_get_dataspace(esdm_dataset_t *dset, esdm_dataspace_t **out_dataspace) {
