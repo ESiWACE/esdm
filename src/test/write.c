@@ -41,6 +41,10 @@ int main(int argc, char const *argv[]) {
 
   esdm_status status = esdm_init();
   assert(status == ESDM_SUCCESS);
+  status = esdm_mkfs(ESDM_FORMAT_PURGE_RECREATE, ESDM_ACCESSIBILITY_GLOBAL);
+  assert(status == ESDM_SUCCESS);
+  status = esdm_mkfs(ESDM_FORMAT_PURGE_RECREATE, ESDM_ACCESSIBILITY_NODELOCAL);
+  assert(status == ESDM_SUCCESS);
 
   // define dataspace
   int64_t bounds[] = {10, 20};

@@ -100,14 +100,14 @@ esdm_status esdm_init() {
   return ESDM_SUCCESS;
 }
 
-esdm_status esdm_mkfs(int enforce_format, data_accessibility_t target) {
+esdm_status esdm_mkfs(int format_flags, data_accessibility_t target) {
   if (!is_initialized) {
     return ESDM_ERROR;
   }
   int ret;
   int ret_final = ESDM_SUCCESS;
   if (esdm.modules->metadata_backend->config->data_accessibility == target) {
-    ret = esdm.modules->metadata_backend->callbacks.mkfs(esdm.modules->metadata_backend, enforce_format);
+    ret = esdm.modules->metadata_backend->callbacks.mkfs(esdm.modules->metadata_backend, format_flags);
     if (ret != ESDM_SUCCESS) {
       ret_final = ret;
     }
@@ -115,7 +115,7 @@ esdm_status esdm_mkfs(int enforce_format, data_accessibility_t target) {
 
   for (int i = 0; i < esdm.modules->data_backend_count; i++) {
     if (esdm.modules->data_backends[i]->config->data_accessibility == target) {
-      ret = esdm.modules->data_backends[i]->callbacks.mkfs(esdm.modules->data_backends[i], enforce_format);
+      ret = esdm.modules->data_backends[i]->callbacks.mkfs(esdm.modules->data_backends[i], format_flags);
       if (ret != ESDM_SUCCESS) {
         ret_final = ret;
       }

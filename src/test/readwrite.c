@@ -65,14 +65,10 @@ int main(int argc, char const *argv[]) {
   ret = esdm_init();
   assert(ret == ESDM_SUCCESS);
 
-  //ret = esdm_create("mytextfile", ESDM_CREATE, &container, &dataset);
-  //assert(ret == ESDM_SUCCESS);
-
-  //esdm_open("mycontainer/mydataset", ESDM_CREATE);
-
-  // POSIX pwrite/pread interfaces for comparison
-  //ssize_t pread(int fd, void *buf, size_t count, off_t offset);
-  //ssize_t pwrite(int fd, const void *buf, size_t count, off_t offset);
+  ret = esdm_mkfs(ESDM_FORMAT_PURGE_RECREATE, ESDM_ACCESSIBILITY_GLOBAL);
+  assert(ret == ESDM_SUCCESS);
+  ret = esdm_mkfs(ESDM_FORMAT_PURGE_RECREATE, ESDM_ACCESSIBILITY_NODELOCAL);
+  assert(ret == ESDM_SUCCESS);
 
   // define dataspace
   int64_t bounds[] = {HEIGHT, WIDTH};
@@ -96,6 +92,7 @@ int main(int argc, char const *argv[]) {
   esdm_dataspace_subspace(dataspace, 2, size, offset, &subspace);
 
   // Write the data to the dataset
+
   ret = esdm_write(dataset, buf_w, subspace);
   assert(ret == ESDM_SUCCESS);
 

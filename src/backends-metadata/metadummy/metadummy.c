@@ -47,52 +47,6 @@
 // Helper and utility /////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////
 
-static int mkfs(esdm_md_backend_t *backend, int enforce_format) {
-  DEBUG_ENTER;
-
-  struct stat sb;
-
-  // use target directory from backend configuration
-  metadummy_backend_options_t *options = (metadummy_backend_options_t *)backend->data;
-
-  // Enforce min target length?
-  const char *tgt = options->target;
-  if (strlen(tgt) < 6) {
-    printf("[mkfs] error, the target name is to short (< 6 characters)!\n");
-    return ESDM_ERROR;
-  }
-
-  char containers[PATH_MAX];
-  sprintf(containers, "%s/containers", tgt);
-  if (enforce_format) {
-    printf("[mkfs] Removing %s\n", tgt);
-    if (stat(containers, &sb) != 0) {
-      printf("[mkfs] error, this directory seems not to be created by ESDM!\n");
-    } else {
-      posix_recursive_remove(tgt);
-    }
-    if (enforce_format == 2) return ESDM_SUCCESS;
-  }
-
-  if (stat(tgt, &sb) == 0) {
-    return ESDM_ERROR;
-  }
-  printf("[mkfs] Creating %s\n", tgt);
-
-  int ret = mkdir(tgt, 0700);
-  if (ret != 0) return ESDM_ERROR;
-
-  ret = mkdir(containers, 0700);
-  if (ret != 0) return ESDM_ERROR;
-
-  return ESDM_SUCCESS;
-}
-
-static int fsck() {
-  DEBUG_ENTER;
-
-  return 0;
-}
 
 ///////////////////////////////////////////////////////////////////////////////
 // Internal Helpers  //////////////////////////////////////////////////////////
@@ -110,71 +64,25 @@ static int entry_create(const char *path, char * const json, int size) {
   // write to non existing file
   int fd = open(path, O_WRONLY | O_CREAT | O_TRUNC, S_IWUSR | S_IRUSR | S_IWGRP | S_IRGRP | S_IROTH);
   // everything ok? write and close
-  if (fd != -1) {
-    if ( json != NULL) {
-      int ret = write_check(fd, json, size);
-      assert(ret == 0);
-    }
+  if (fd < 0) {
+    return 1;
+  }
+  if ( json != NULL) {
+    int ret = write_check(fd, json, size);
     close(fd);
-    return 0;
+    return ret;
   }
-
-  return 1;
-}
-
-static int entry_retrieve_tst(const char *path, esdm_dataset_t *dataset) {
-  DEBUG_ENTER;
-
-  int status;
-  struct stat sb;
-  char *buf;
-
-  DEBUG("entry_retrieve_tst(%s)\n", path);
-
-  status = stat(path, &sb);
-  if (status == -1) {
-    perror("stat");
-    // does not exist
-    return -1;
-  }
-
-  //print_stat(sb);
-
-  // write to non existing file
-  int fd = open(path, O_RDONLY | S_IWUSR | S_IRUSR | S_IWGRP | S_IRGRP | S_IROTH);
-
-  // everything ok? write and close
-  if (fd != -1) {
-    // write some metadata
-    buf = (char *)malloc(sb.st_size + 1);
-    buf[sb.st_size] = 0;
-
-    read_check(fd, buf, sb.st_size);
-    close(fd);
-  }
-
-  DEBUG("Entry content: %s\n", (char *)buf);
-  return 0;
+  close(fd);
+  return ESDM_SUCCESS;
 }
 
 static int entry_update(const char *path, void *buf, size_t len) {
   DEBUG_ENTER;
 
-  int status;
-  struct stat sb;
-
   DEBUG("entry_update(%s)\n", path);
 
-  status = stat(path, &sb);
-  if (status == -1) {
-    perror("stat");
-    return -1;
-  }
-
-  //print_stat(sb);
-
   // write to non existing file
-  int fd = open(path, O_WRONLY | O_CREAT, S_IWUSR | S_IRUSR | S_IWGRP | S_IRGRP | S_IROTH);
+  int fd = open(path, O_WRONLY | O_CREAT | O_TRUNC);
 
   // everything ok? write and close
   if (fd != -1) {
@@ -186,27 +94,83 @@ static int entry_update(const char *path, void *buf, size_t len) {
   return 0;
 }
 
-static int entry_destroy(const char *path) {
+
+static int mkfs(esdm_md_backend_t *backend, int format_flags) {
   DEBUG_ENTER;
+  // use target directory from backend configuration
+  metadummy_backend_options_t *options = (metadummy_backend_options_t *)backend->data;
 
-  int status;
+  // Enforce min target length?
+  const char *tgt = options->target;
+  if (strlen(tgt) < 6) {
+    printf("[mkfs] error, the target name is to short (< 6 characters)!\n");
+    return ESDM_ERROR;
+  }
+
   struct stat sb;
+  char path[PATH_MAX];
+  int const ignore_err = format_flags & ESDM_FORMAT_IGNORE_ERRORS;
 
-  DEBUG("entry_destroy(%s)\n", path);
+  if (format_flags & ESDM_FORMAT_DELETE) {
+    printf("[mkfs] Removing %s\n", tgt);
 
-  status = stat(path, &sb);
-  if (status == -1) {
-    perror("stat");
-    return -1;
+    sprintf(path, "%s/README-ESDM.TXT", tgt);
+    if (stat(path, &sb) == 0) {
+      posix_recursive_remove(tgt);
+    }else if(! ignore_err){
+      printf("[mkfs] Error %s is not an ESDM directory\n", tgt);
+      return ESDM_ERROR;
+    }
   }
 
-  print_stat(sb);
-
-  status = unlink(path);
-  if (status == -1) {
-    perror("unlink");
-    return -1;
+  if(! (format_flags & ESDM_FORMAT_CREATE)){
+    return ESDM_SUCCESS;
   }
+  if (stat(tgt, &sb) == 0) {
+    if(! ignore_err){
+      printf("[mkfs] Error %s exists already\n", tgt);
+      return ESDM_ERROR;
+    }
+    printf("[mkfs] WARNING %s exists already\n", tgt);
+  }
+
+  printf("[mkfs] Creating %s\n", tgt);
+
+  int ret = mkdir(tgt, 0700);
+  if (ret != 0) {
+    if(ignore_err){
+      printf("[mkfs] WARNING couldn't create dir %s\n", tgt);
+    }else{
+      return ESDM_ERROR;
+    }
+  }
+
+  sprintf(path, "%s/containers", tgt);
+  ret = mkdir(path, 0700);
+  if (ret != 0) {
+    if(ignore_err){
+      printf("[mkfs] WARNING couldn't create dir %s\n", tgt);
+    }else{
+      return ESDM_ERROR;
+    }
+  }
+
+  sprintf(path, "%s/README-ESDM.TXT", tgt);
+  char str[] = "This directory belongs to ESDM and contains various files that are needed to make ESDM work. Do not delete it until you know what you are doing.";
+  ret = entry_create(path, str, strlen(str));
+  if (ret != 0) {
+    if(ignore_err){
+      printf("[mkfs] WARNING couldn't write %s\n", tgt);
+    }else{
+      return ESDM_ERROR;
+    }
+  }
+
+  return ESDM_SUCCESS;
+}
+
+static int fsck() {
+  DEBUG_ENTER;
 
   return 0;
 }
@@ -218,15 +182,19 @@ static int entry_destroy(const char *path) {
 static int container_create(esdm_md_backend_t *backend, esdm_container_t *container) {
   DEBUG_ENTER;
 
-  char path_container[PATH_MAX];
-  struct stat sb;
+  char path[PATH_MAX];
 
   metadummy_backend_options_t *options = (metadummy_backend_options_t *)backend->data;
   const char *tgt = options->target;
 
-  sprintf(path_container, "%s/containers/%s", tgt, container->name);
+  sprintf(path, "%s/containers/%s.md", tgt, container->name);
+  int fd = open(path, O_WRONLY | O_CREAT | O_EXCL, S_IWUSR | S_IRUSR | S_IWGRP | S_IRGRP | S_IROTH);
+  if(fd < 0){
+    return ESDM_ERROR;
+  }
+  close(fd);
 
-  return 0;
+  return ESDM_SUCCESS;
 }
 
 static int container_commit(esdm_md_backend_t *backend, esdm_container_t *container, char * json, int md_size) {
@@ -243,16 +211,15 @@ static int container_commit(esdm_md_backend_t *backend, esdm_container_t *contai
   sprintf(path_metadata, "%s/containers/%s.md", tgt, container->name);
 
   // create metadata entry
-  entry_create(path_metadata, json, md_size);
-
-  return 0;
+  esdm_status ret = entry_create(path_metadata, json, md_size);
+  return ret;
 }
 
 static int container_retrieve(esdm_md_backend_t *backend, esdm_container_t *container, char ** out_json, int * out_size) {
   DEBUG_ENTER;
   int ret;
   char path_metadata[PATH_MAX];
-  
+
   metadummy_backend_options_t *options = (metadummy_backend_options_t *)backend->data;
   const char *tgt = options->target;
 
@@ -274,47 +241,6 @@ static int container_retrieve(esdm_md_backend_t *backend, esdm_container_t *cont
   }
   *out_json = json;
   *out_size = statbuf.st_size;
-
-  return 0;
-}
-
-static int container_update(esdm_md_backend_t *backend, esdm_container_t *container) {
-  DEBUG_ENTER;
-
-  char path_metadata[PATH_MAX];
-  char path_container[PATH_MAX];
-
-  metadummy_backend_options_t *options = (metadummy_backend_options_t *)backend->data;
-  const char *tgt = options->target;
-
-  sprintf(path_metadata, "%s/containers/%s.md", tgt, container->name);
-  sprintf(path_container, "%s/containers/%s", tgt, container->name);
-
-  // create metadata entry
-  entry_update(path_metadata, "abc", 3);
-
-  return 0;
-}
-
-static int container_destroy(esdm_md_backend_t *backend, esdm_container_t *container) {
-  DEBUG_ENTER;
-
-  char *path_metadata;
-  char *path_container;
-
-  metadummy_backend_options_t *options = (metadummy_backend_options_t *)backend->data;
-  const char *tgt = options->target;
-
-  asprintf(&path_metadata, "%s/containers/%s.md", tgt, container->name);
-  asprintf(&path_container, "%s/containers/%s", tgt, container->name);
-
-  // create metadata entry
-  entry_destroy(path_metadata);
-
-  // TODO: also remove existing datasets?
-
-  free(path_metadata);
-  free(path_container);
 
   return 0;
 }
@@ -372,9 +298,8 @@ static int dataset_commit(esdm_md_backend_t *backend, esdm_dataset_t *dataset, c
   }
 
   // create metadata entry
-  entry_create(path_metadata, json, md_size);
-
-  return 0;
+  esdm_status ret = entry_create(path_metadata, json, md_size);
+  return ret;
 }
 
 static int dataset_retrieve(esdm_md_backend_t *backend, esdm_dataset_t *d, char ** out_json, int * out_size) {
@@ -404,18 +329,6 @@ static int dataset_retrieve(esdm_md_backend_t *backend, esdm_dataset_t *d, char 
   *out_size = statbuf.st_size;
 
   return ESDM_SUCCESS;
-}
-
-static int dataset_update(esdm_md_backend_t *backend, esdm_dataset_t *dataset) {
-  DEBUG_ENTER;
-
-  return 0;
-}
-
-static int dataset_destroy(esdm_md_backend_t *backend, esdm_dataset_t *dataset) {
-  DEBUG_ENTER;
-
-  return 0;
 }
 
 
@@ -452,14 +365,14 @@ metadummy_backend_performance_estimate, // performance_estimate
 container_create,
 container_commit,
 container_retrieve,
-container_update,
-container_destroy,
+NULL,
+NULL,
 
 dataset_create,
 dataset_commit,
 dataset_retrieve,
-dataset_update,
-dataset_destroy,
+NULL,
+NULL,
 
 mkfs,
 },

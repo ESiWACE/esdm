@@ -238,6 +238,12 @@ int main(int argc, char *argv[]) {
   assert(ret == ESDM_SUCCESS);
 
   if (run_write) {
+    if(mpi_rank == 0){
+      ret = esdm_mkfs(ESDM_FORMAT_PURGE_RECREATE, ESDM_ACCESSIBILITY_GLOBAL);
+      assert(ret == ESDM_SUCCESS);
+    }
+    ret = esdm_mkfs(ESDM_FORMAT_PURGE_RECREATE, ESDM_ACCESSIBILITY_NODELOCAL);
+    assert(ret == ESDM_SUCCESS);
     runWrite(buf_w, dim, offset);
   }
 
