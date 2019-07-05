@@ -305,7 +305,6 @@ esdm_status esdm_fragment_metadata_create(esdm_fragment_t *f, int len, char * js
 
 esdm_status esdm_fragment_commit(esdm_fragment_t *f) {
   ESDM_DEBUG(__func__);
-	//ret = esdm_fragment_metadata_create(f, len, buff, & size);
   assert(f && "fragment argument must not be NULL");
 
 	f->backend->callbacks.fragment_update(f->backend, f);

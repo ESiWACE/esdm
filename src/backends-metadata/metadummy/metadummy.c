@@ -343,8 +343,10 @@ static int dataset_create(esdm_md_backend_t * backend, esdm_dataset_t *d){
     struct stat sb;
     if (stat(path_dataset, &sb) == -1) {
       sprintfDatasetDir(path_dataset, d);
-      int ret = mkdir_recursive(path_dataset);
-      if (ret != 0) return ESDM_ERROR;
+      if (stat(path_dataset, &sb) == -1) {
+        int ret = mkdir_recursive(path_dataset);
+        if (ret != 0) return ESDM_ERROR;
+      }
       return ESDM_SUCCESS;
     }
   }

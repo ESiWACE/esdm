@@ -108,48 +108,22 @@ static int entry_retrieve(const char *path, void *buf, uint64_t size) {
 }
 
 static int entry_update(const char *path, void *buf, size_t len, int update_only) {
-  DEBUG_ENTER;
-
-  int status;
-  struct stat sb;
-
   DEBUG("entry_update(%s: %ld)\n", path, len);
+  int flags = O_CREAT;
 
   if(update_only){
-    status = stat(path, &sb);
-    if (status == -1) {
-      perror("stat");
-      return -1;
-    }
+    flags = 0;
   }
-
-  //print_stat(sb);
 
   // write to non existing file
-  int fd = open(path, O_WRONLY | O_CREAT, S_IWUSR | S_IRUSR | S_IWGRP | S_IRGRP | S_IROTH);
-
-  // everything ok? write and close
-  if (fd != -1) {
-    // write some metadata
-    while (len > 0) {
-      ssize_t ret = write(fd, buf, len);
-      if (ret != -1) {
-        buf = (void *)((char *)buf + ret);
-        len -= ret;
-      } else {
-        if (errno == EINTR) {
-          continue;
-        } else {
-          ESDM_ERROR_COM_FMT("POSIX", "write %s", strerror(errno));
-          return 1;
-        }
-      }
-    }
-
-    close(fd);
+  int fd = open(path, O_WRONLY | flags, S_IWUSR | S_IRUSR | S_IWGRP | S_IRGRP | S_IROTH);
+  if(fd < 0){
+    return ESDM_ERROR;
   }
+  int ret = write_check(fd, buf, len);
+  close(fd);
 
-  return 0;
+  return ret;
 }
 
 static int entry_destroy(const char *path) {
@@ -215,7 +189,6 @@ static int fragment_update(esdm_backend_t *backend, esdm_fragment_t *f) {
   const char *tgt = data->target;
 
   char path[PATH_MAX];
-
   // lazy assignment of ID
   if(f->id == NULL){
     f->id = malloc(17);
@@ -228,19 +201,21 @@ static int fragment_update(esdm_backend_t *backend, esdm_fragment_t *f) {
       struct stat sb;
       if (stat(path, &sb) == -1) {
         sprintfFragmentDir(path, f);
-        int ret = mkdir_recursive(path);
-        if (ret != 0) return ESDM_ERROR;
+        if (stat(path, &sb) == -1) {
+          int ret = mkdir_recursive(path);
+          if (ret != 0) return ESDM_ERROR;
+        }
         break;
       }
     }
   }
-  printf("XX %s\n", f->id);
+
   sprintfFragmentPath(path, f);
   DEBUG("path: %s\n", path);
 
   // create data
-  entry_update(path, f->buf, f->bytes, 0);
-  return 0;
+  int ret = entry_update(path, f->buf, f->bytes, 0);
+  return ret;
 }
 
 ///////////////////////////////////////////////////////////////////////////////
