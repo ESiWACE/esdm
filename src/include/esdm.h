@@ -336,7 +336,6 @@ uint64_t esdm_dataspace_element_count(esdm_dataspace_t *dataspace);
 
 uint64_t esdm_dataspace_size(esdm_dataspace_t *dataspace);
 
-void esdm_dataspace_string_descriptor(char *out_str, esdm_dataspace_t *dataspace);
 
 // Fragment
 

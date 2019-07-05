@@ -47,29 +47,6 @@
 // Helper and utility /////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////
 
-static void generate_id(char *str, size_t length) {
-  time_t timer;
-  time(&timer);
-
-  assert(length > 4);
-  char charset[] = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789_";
-  uint64_t c = (uint64_t) timer;
-  int const count = (int)(sizeof(charset) -1);
-  int n = 0;
-  while(c > 0){
-      int key = c % count;
-      c /= count;
-      str[n] = charset[key];
-  }
-
-  for (; n < length; n++) {
-      int key = rand() % count;
-      str[n] = charset[key];
-  }
-
-  str[length] = '\0';
-}
-
 static int mkfs(esdm_md_backend_t *backend, int enforce_format) {
   DEBUG_ENTER;
 
@@ -256,7 +233,6 @@ static int container_commit(esdm_md_backend_t *backend, esdm_container_t *contai
   DEBUG_ENTER;
 
   char path_metadata[PATH_MAX];
-  char path_container[PATH_MAX];
   struct stat sb;
 
   metadummy_backend_options_t *options = (metadummy_backend_options_t *)backend->data;
@@ -265,13 +241,6 @@ static int container_commit(esdm_md_backend_t *backend, esdm_container_t *contai
   DEBUG("tgt: %p\n", tgt);
 
   sprintf(path_metadata, "%s/containers/%s.md", tgt, container->name);
-  sprintf(path_container, "%s/containers/%s", tgt, container->name);
-
-  // create directory for datsets
-  if (stat(path_container, &sb) == -1) {
-    int ret = mkdir(path_container, 0700);
-    if (ret != 0) return ESDM_ERROR;
-  }
 
   // create metadata entry
   entry_create(path_metadata, json, md_size);
@@ -283,8 +252,7 @@ static int container_retrieve(esdm_md_backend_t *backend, esdm_container_t *cont
   DEBUG_ENTER;
   int ret;
   char path_metadata[PATH_MAX];
-  char path_container[PATH_MAX];
-
+  
   metadummy_backend_options_t *options = (metadummy_backend_options_t *)backend->data;
   const char *tgt = options->target;
 
@@ -363,19 +331,21 @@ static int dataset_create(esdm_md_backend_t * backend, esdm_dataset_t *d){
 
   metadummy_backend_options_t *options = (metadummy_backend_options_t *)backend->data;
   const char *tgt = options->target;
-  d->id = malloc(16);
+  d->id = malloc(17);
   assert(d->id);
 
   while(1){
-    generate_id(d->id, 16);
+    ea_generate_id(d->id, 16);
 
     // create directory for datsets
     sprintfDatasetMd(path_dataset, d);
     struct stat sb;
     if (stat(path_dataset, &sb) == -1) {
       sprintfDatasetDir(path_dataset, d);
-      int ret = mkdir_recursive(path_dataset);
-      if (ret != 0) return ESDM_ERROR;
+      if (stat(path_dataset, &sb) == -1) {
+        int ret = mkdir_recursive(path_dataset);
+        if (ret != 0 && errno != EEXIST) return ESDM_ERROR;
+      }
       return ESDM_SUCCESS;
     }
   }

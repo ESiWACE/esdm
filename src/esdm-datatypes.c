@@ -146,8 +146,6 @@ esdm_status esdm_container_open(char const *name, esdm_container_t **out_contain
     return ESDM_INVALID_ARGUMENT_ERROR;
   }
 
-  // TODO: retrieve from MD
-  // TODO: retrieve associated data
   esdmI_container_init(name, out_container);
   esdm_container_t *c = *out_container;
 
@@ -259,6 +257,7 @@ esdm_status esdm_fragment_create(esdm_dataset_t *dataset, esdm_dataspace_t *subs
   int64_t bytes = elements * esdm_sizeof(subspace->type);
   DEBUG("Entries in subspace: %d x %d bytes = %d bytes \n", elements, esdm_sizeof(subspace->type), bytes);
 
+  fragment->id = NULL;
   fragment->dataset = dataset;
   fragment->dataspace = subspace;
   fragment->buf = buf; // zero copy?
@@ -277,43 +276,21 @@ esdm_status esdm_fragment_retrieve(esdm_fragment_t *fragment) {
   ESDM_DEBUG(__func__);
   // Call backend
   esdm_backend_t *backend = fragment->backend; // TODO: decision component, upon many
-  backend->callbacks.fragment_retrieve(backend, fragment, NULL); // TODO
-	fragment->status = ESDM_DATA_PERSISTENT;
-
-  return ESDM_SUCCESS;
-}
-
-void esdm_dataspace_string_descriptor(char *string, esdm_dataspace_t *dataspace) {
-  ESDM_DEBUG(__func__);
-  int pos = 0;
-
-  int64_t dims = dataspace->dims;
-  int64_t *size = dataspace->size;
-  int64_t *offset = dataspace->offset;
-
-  // offset to string
-  int64_t i;
-  pos += sprintf(&string[pos], "%ld", offset[0]);
-  for (i = 1; i < dims; i++) {
-    DEBUG("dim %d, offset=%ld (%p)\n", i, offset[i], offset);
-    pos += sprintf(&string[pos], ",%ld", offset[i]);
+  int ret = backend->callbacks.fragment_retrieve(backend, fragment, NULL); // TODO
+  if(ret == ESDM_SUCCESS){
+    fragment->status = ESDM_DATA_PERSISTENT;
   }
 
-  // size to string
-  pos += sprintf(&string[pos], ",%ld", size[0]);
-  for (i = 1; i < dims; i++) {
-    DEBUG("dim %d, size=%ld (%p)\n", i, size[i], size);
-    pos += sprintf(&string[pos], ",%ld", size[i]);
-  }
-  DEBUG("Descriptor: %s\n", string);
+  return ret;
 }
+
 
 esdm_status esdm_fragment_metadata_create(esdm_fragment_t *f, int len, char * js, int * out_size){
   assert(f != NULL);
 	esdm_dataspace_t *d = f->dataspace;
 	int size = 0;
 	int ret;
-  size += sprintf(js, "{\"pid\":\"%s\",\"size\":[", f->backend->config->id);
+  size += sprintf(js, "{\"id\":\"%s\",\"pid\":\"%s\",\"size\":[", f->id, f->backend->config->id);
   size += sprintf(js + size, "%ld", d->size[0]);
   for (int i = 1; i < d->dims; i++) {
     size += sprintf(js + size, ",%ld", d->size[i]);
@@ -336,13 +313,14 @@ esdm_status esdm_fragment_metadata_create(esdm_fragment_t *f, int len, char * js
 
 esdm_status esdm_fragment_commit(esdm_fragment_t *f) {
   ESDM_DEBUG(__func__);
-	//ret = esdm_fragment_metadata_create(f, len, buff, & size);
   assert(f && "fragment argument must not be NULL");
 
-	f->backend->callbacks.fragment_update(f->backend, f);
-	f->status = ESDM_DATA_PERSISTENT;
+	int ret = f->backend->callbacks.fragment_update(f->backend, f);
+  if(ret == ESDM_SUCCESS) {
+    f->status = ESDM_DATA_PERSISTENT;
+  }
 
-  return ESDM_SUCCESS;
+  return ret;
 }
 
 int esdmI_fragment_overlaps(esdm_dataspace_t * da, esdm_fragment_t * f){
@@ -445,6 +423,10 @@ esdm_status esdm_dataset_create(esdm_container_t *c, const char *name, esdm_data
 }
 
 esdm_status esdm_dataset_open_md_load(esdm_dataset_t *dset, char ** out_md, int * out_size){
+  assert(dset != NULL);
+  assert(out_md != NULL);
+  assert(out_size != NULL);
+
 	return esdm.modules->metadata_backend->callbacks.dataset_retrieve(esdm.modules->metadata_backend, dset, out_md, out_size);
 }
 
@@ -477,6 +459,10 @@ esdm_status esdmI_create_fragment_from_metadata(esdm_dataset_t *dset, json_t * j
   const char *plugin_id = json_string_value(elem);
   f->backend = esdmI_get_backend(plugin_id);
   assert(f->backend);
+
+  elem = json_object_get(json, "id");
+  char const  * id = json_string_value(elem);
+  f->id = strdup(id);
 
   elem = json_object_get(json, "offset");
   int cnt = json_array_size(elem);
@@ -538,8 +524,7 @@ esdm_status esdm_dataset_open_md_parse(esdm_dataset_t *d, char * md, int size){
     return ESDM_ERROR;
   }
   elem = json_object_get(root, "id");
-  str = (char *)json_string_value(elem);
-  d->id = str;
+  d->id = strdup(json_string_value(elem));
   elem = json_object_get(root, "dims");
   int dims = json_integer_value(elem);
   elem = json_object_get(root, "size");
