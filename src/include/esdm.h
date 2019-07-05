@@ -170,6 +170,12 @@ esdm_status esdm_container_open(const char *name, esdm_container_t **out_contain
 
 esdm_status esdm_container_commit(esdm_container_t *container);
 
+
+esdm_status esdm_container_link_attribute(esdm_container_t *container, smd_attr_t *attr);
+
+/* This function returns the attributes */
+esdm_status esdm_container_get_attributes(esdm_container_t *container, smd_attr_t **out_metadata);
+
 /**
  * Destroy a existing container.
  *
