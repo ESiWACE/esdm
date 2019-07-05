@@ -122,90 +122,19 @@ static int entry_create(const char *path, char * const json, int size) {
   return ESDM_SUCCESS;
 }
 
-static int entry_retrieve_tst(const char *path, esdm_dataset_t *dataset) {
-  DEBUG_ENTER;
-
-  int status;
-  struct stat sb;
-  char *buf;
-
-  DEBUG("entry_retrieve_tst(%s)\n", path);
-
-  status = stat(path, &sb);
-  if (status == -1) {
-    perror("stat");
-    // does not exist
-    return -1;
-  }
-
-  //print_stat(sb);
-
-  // write to non existing file
-  int fd = open(path, O_RDONLY | S_IWUSR | S_IRUSR | S_IWGRP | S_IRGRP | S_IROTH);
-
-  // everything ok? write and close
-  if (fd != -1) {
-    // write some metadata
-    buf = (char *)malloc(sb.st_size + 1);
-    buf[sb.st_size] = 0;
-
-    read_check(fd, buf, sb.st_size);
-    close(fd);
-  }
-
-  DEBUG("Entry content: %s\n", (char *)buf);
-  return 0;
-}
-
 static int entry_update(const char *path, void *buf, size_t len) {
   DEBUG_ENTER;
 
-  int status;
-  struct stat sb;
-
   DEBUG("entry_update(%s)\n", path);
 
-  status = stat(path, &sb);
-  if (status == -1) {
-    perror("stat");
-    return -1;
-  }
-
-  //print_stat(sb);
-
   // write to non existing file
-  int fd = open(path, O_WRONLY | O_CREAT, S_IWUSR | S_IRUSR | S_IWGRP | S_IRGRP | S_IROTH);
+  int fd = open(path, O_WRONLY | O_CREAT | O_TRUNC);
 
   // everything ok? write and close
   if (fd != -1) {
     // write some metadata
     write_check(fd, buf, len);
     close(fd);
-  }
-
-  return 0;
-}
-
-static int entry_destroy(const char *path) {
-  DEBUG_ENTER;
-
-  int status;
-  struct stat sb;
-
-  DEBUG("entry_destroy(%s)\n", path);
-
-  status = stat(path, &sb);
-  if (status == -1) {
-    perror("stat");
-    return -1;
-  }
-
-  print_stat(sb);
-
-  status = unlink(path);
-  if (status == -1) {
-    perror("unlink");
-    return -1;
   }
 
   return 0;
@@ -223,10 +152,14 @@ static int container_create(esdm_md_backend_t *backend, esdm_container_t *contai
   metadummy_backend_options_t *options = (metadummy_backend_options_t *)backend->data;
   const char *tgt = options->target;
 
-  struct stat sb;
   sprintf(path, "%s/containers/%s.md", tgt, container->name);
+  int fd = open(path, O_WRONLY | O_CREAT | O_EXCL, S_IWUSR | S_IRUSR | S_IWGRP | S_IRGRP | S_IROTH);
+  if(fd < 0){
+    return ESDM_ERROR;
+  }
+  close(fd);
 
-  return 0;
+  return ESDM_SUCCESS;
 }
 
 static int container_commit(esdm_md_backend_t *backend, esdm_container_t *container, char * json, int md_size) {
@@ -273,47 +206,6 @@ static int container_retrieve(esdm_md_backend_t *backend, esdm_container_t *cont
   }
   *out_json = json;
   *out_size = statbuf.st_size;
-
-  return 0;
-}
-
-static int container_update(esdm_md_backend_t *backend, esdm_container_t *container) {
-  DEBUG_ENTER;
-
-  char path_metadata[PATH_MAX];
-  char path_container[PATH_MAX];
-
-  metadummy_backend_options_t *options = (metadummy_backend_options_t *)backend->data;
-  const char *tgt = options->target;
-
-  sprintf(path_metadata, "%s/containers/%s.md", tgt, container->name);
-  sprintf(path_container, "%s/containers/%s", tgt, container->name);
-
-  // create metadata entry
-  entry_update(path_metadata, "abc", 3);
-
-  return 0;
-}
-
-static int container_destroy(esdm_md_backend_t *backend, esdm_container_t *container) {
-  DEBUG_ENTER;
-
-  char *path_metadata;
-  char *path_container;
-
-  metadummy_backend_options_t *options = (metadummy_backend_options_t *)backend->data;
-  const char *tgt = options->target;
-
-  asprintf(&path_metadata, "%s/containers/%s.md", tgt, container->name);
-  asprintf(&path_container, "%s/containers/%s", tgt, container->name);
-
-  // create metadata entry
-  entry_destroy(path_metadata);
-
-  // TODO: also remove existing datasets?
-
-  free(path_metadata);
-  free(path_container);
 
   return 0;
 }
@@ -404,18 +296,6 @@ static int dataset_retrieve(esdm_md_backend_t *backend, esdm_dataset_t *d, char 
   return ESDM_SUCCESS;
 }
 
-static int dataset_update(esdm_md_backend_t *backend, esdm_dataset_t *dataset) {
-  DEBUG_ENTER;
-
-  return 0;
-}
-
-static int dataset_destroy(esdm_md_backend_t *backend, esdm_dataset_t *dataset) {
-  DEBUG_ENTER;
-
-  return 0;
-}
-
 
 ///////////////////////////////////////////////////////////////////////////////
 // ESDM Callbacks /////////////////////////////////////////////////////////////
@@ -450,14 +330,14 @@ metadummy_backend_performance_estimate, // performance_estimate
 container_create,
 container_commit,
 container_retrieve,
-container_update,
-container_destroy,
+NULL,
+NULL,
 
 dataset_create,
 dataset_commit,
 dataset_retrieve,
-dataset_update,
-dataset_destroy,
+NULL,
+NULL,
 
 mkfs,
 },
