@@ -110,16 +110,16 @@ static int entry_create(const char *path, char * const json, int size) {
   // write to non existing file
   int fd = open(path, O_WRONLY | O_CREAT | O_TRUNC, S_IWUSR | S_IRUSR | S_IWGRP | S_IRGRP | S_IROTH);
   // everything ok? write and close
-  if (fd != -1) {
-    if ( json != NULL) {
-      int ret = write_check(fd, json, size);
-      assert(ret == 0);
-    }
-    close(fd);
-    return 0;
+  if (fd < 0) {
+    return 1;
   }
-
-  return 1;
+  if ( json != NULL) {
+    int ret = write_check(fd, json, size);
+    close(fd);
+    return ret;
+  }
+  close(fd);
+  return ESDM_SUCCESS;
 }
 
 static int entry_retrieve_tst(const char *path, esdm_dataset_t *dataset) {
@@ -218,13 +218,13 @@ static int entry_destroy(const char *path) {
 static int container_create(esdm_md_backend_t *backend, esdm_container_t *container) {
   DEBUG_ENTER;
 
-  char path_container[PATH_MAX];
-  struct stat sb;
+  char path[PATH_MAX];
 
   metadummy_backend_options_t *options = (metadummy_backend_options_t *)backend->data;
   const char *tgt = options->target;
 
-  sprintf(path_container, "%s/containers/%s", tgt, container->name);
+  struct stat sb;
+  sprintf(path, "%s/containers/%s.md", tgt, container->name);
 
   return 0;
 }
@@ -243,16 +243,15 @@ static int container_commit(esdm_md_backend_t *backend, esdm_container_t *contai
   sprintf(path_metadata, "%s/containers/%s.md", tgt, container->name);
 
   // create metadata entry
-  entry_create(path_metadata, json, md_size);
-
-  return 0;
+  esdm_status ret = entry_create(path_metadata, json, md_size);
+  return ret;
 }
 
 static int container_retrieve(esdm_md_backend_t *backend, esdm_container_t *container, char ** out_json, int * out_size) {
   DEBUG_ENTER;
   int ret;
   char path_metadata[PATH_MAX];
-  
+
   metadummy_backend_options_t *options = (metadummy_backend_options_t *)backend->data;
   const char *tgt = options->target;
 
@@ -372,9 +371,8 @@ static int dataset_commit(esdm_md_backend_t *backend, esdm_dataset_t *dataset, c
   }
 
   // create metadata entry
-  entry_create(path_metadata, json, md_size);
-
-  return 0;
+  esdm_status ret = entry_create(path_metadata, json, md_size);
+  return ret;
 }
 
 static int dataset_retrieve(esdm_md_backend_t *backend, esdm_dataset_t *d, char ** out_json, int * out_size) {
