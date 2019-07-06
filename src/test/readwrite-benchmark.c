@@ -55,7 +55,7 @@ void runWrite(uint64_t * buf_w, int64_t * dim, int64_t * offset){
   assert(ret == ESDM_SUCCESS);
 
   timer t;
-  double time;
+  double time, md_sync_start;
 
   MPI_Barrier(MPI_COMM_WORLD);
   start_timer(&t);
@@ -70,6 +70,8 @@ void runWrite(uint64_t * buf_w, int64_t * dim, int64_t * offset){
     ret = esdm_write(dataset, buf_w, subspace);
     assert(ret == ESDM_SUCCESS);
   }
+  MPI_Barrier(MPI_COMM_WORLD);
+  md_sync_start = stop_timer(t);
 
   // commit the changes to data to the metadata
   ret = esdm_mpi_dataset_commit(MPI_COMM_WORLD, dataset);
@@ -81,8 +83,10 @@ void runWrite(uint64_t * buf_w, int64_t * dim, int64_t * offset){
   time = stop_timer(t);
   double total_time;
   MPI_Reduce((void *)&time, &total_time, 1, MPI_DOUBLE, MPI_MAX, 0, MPI_COMM_WORLD);
+
+  double md_sync_time = total_time - md_sync_start;
   if (mpi_rank == 0) {
-    printf("Write: %.3fs %.3f MiB/s size:%.0f MiB\n", total_time, volume_all / total_time / 1024.0 / 1024, volume_all / 1024.0 / 1024);
+    printf("Write: %.3fs %.3f MiB/s size:%.0f MiB MDsyncTime: %.3fs\n", total_time, volume_all / total_time / 1024.0 / 1024, volume_all / 1024.0 / 1024, md_sync_time);
   }
 
   ret = esdm_dataset_destroy(dataset);

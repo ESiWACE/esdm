@@ -282,6 +282,7 @@ esdm_status esdm_mpi_dataset_commit(MPI_Comm com, esdm_dataset_t *d){
     int max_len = 10000000;
     char * buff = malloc(max_len);
     for(int p = 1 ; p < size; p++){
+      int size = max_len;
       ret = MPI_Recv(buff, size, MPI_CHAR, p, 4711, com, MPI_STATUS_IGNORE);
       assert(ret == MPI_SUCCESS);
 
