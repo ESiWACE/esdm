@@ -35,9 +35,11 @@
 
 esdm_config_t *esdm_config_init_from_str(const char *config_str) {
   void* json = load_json(config_str); // parse text into JSON structure
-  if(!json) return NULL;
+  if(! json) {
+    ESDM_ERROR_FMT("CONFIG invalid JSON config:\"%s\"", config_str);
+  }
 
-  esdm_config_t *config = NULL;
+  esdm_config_t *config;
   config = (esdm_config_t *)malloc(sizeof(esdm_config_t));
   config->json = json;
 
@@ -90,19 +92,43 @@ esdm_config_backend_t *esdm_config_get_metadata_coordinator(esdm_instance_t *esd
 
   json_t *esdm_e, *md_e, *type_e, *elem;
   esdm_e = json_object_get(root, "esdm");
+  if(! esdm_e){
+    ESDM_ERROR("Configuration: esdm tag not set");
+  }
+
+
   md_e = json_object_get(esdm_e, "metadata");
+  if(! md_e){
+    ESDM_ERROR("Configuration: metadata not set");
+  }
+
   type_e = json_object_get(md_e, "type");
-  DEBUG("json_path_get (metadata backend) => %p -> %s\n", type_e, json_string_value(type_e));
+  if(! type_e){
+    ESDM_ERROR("Configuration: type not set");
+  }
 
   esdm_config_backend_t *config_backend = (esdm_config_backend_t *)malloc(sizeof(esdm_config_backend_t));
+  assert(config_backend);
   config_backend->type = json_string_value(type_e);
   config_backend->esdm = root;
   config_backend->backend = md_e;
+  if(! md_e){
+    ESDM_ERROR("Configuration: metadata object not loaded");
+  }
+
 
   elem = json_object_get(config_backend->backend, "id");
+  if(! elem){
+    ESDM_ERROR("Configuration: ID not set");
+  }
   config_backend->id = json_string_value(elem);
+  assert(config_backend->id != NULL);
   elem = json_object_get(config_backend->backend, "target");
+  if(! elem){
+    ESDM_ERROR("Configuration: target not set");
+  }
   config_backend->target = json_string_value(elem);
+  assert(config_backend->target != NULL);
 
   elem = json_object_get(config_backend->backend, "accessibility");
   if (elem != NULL) {
@@ -114,8 +140,9 @@ esdm_config_backend_t *esdm_config_get_metadata_coordinator(esdm_instance_t *esd
     } else {
       ESDM_ERROR("Unknown accessibility!");
     }
-  } else
+  } else {
     config_backend->data_accessibility = ESDM_ACCESSIBILITY_GLOBAL;
+  }
   return config_backend;
 }
 
@@ -126,33 +153,44 @@ esdm_config_backends_t *esdm_config_get_backends(esdm_instance_t *esdm) {
 
   json_t *esdm_e;
   esdm_e = json_object_get(root, "esdm");
+  if(! esdm_e){
+    ESDM_ERROR("Configuration: esdm tag not set");
+  }
 
   // fetch configured backends
-  json_t *element = json_object_get(esdm_e, "backends");
-
+  json_t *elem = json_object_get(esdm_e, "backends");
+  if(! elem){
+    ESDM_ERROR("Configuration: backends not set");
+  }
   esdm_config_backends_t *config_backends = (esdm_config_backends_t *)malloc(sizeof(esdm_config_backends_t));
 
-  if (element) {
-    if (json_typeof(element) == JSON_ARRAY) {
+  if (elem) {
+    if (json_typeof(elem) == JSON_ARRAY) {
       // Element is array, therefor may contain valid backend configurations
-      size_t size = json_array_size(element);
+      size_t size = json_array_size(elem);
 
       esdm_config_backend_t *backends;
       backends = (esdm_config_backend_t *)malloc(sizeof(esdm_config_backend_t) * size);
 
-      //printf("JSON Array of %ld element%s:\n", size, json_plural(size));
+      //printf("JSON Array of %ld elem%s:\n", size, json_plural(size));
 
       size_t i, j;
       for (i = 0; i < size; i++) {
-        //print_json_aux(json_array_get(element, i), 0);
+        //print_json_aux(json_array_get(elem, i), 0);
 
-        json_t *backend = json_array_get(element, i);
+        json_t *backend = json_array_get(elem, i);
         json_t *elem = NULL;
 
         elem = json_object_get(backend, "type");
+        if(! elem){
+          ESDM_ERROR("Configuration: type not set");
+        }
         backends[i].type = json_string_value(elem);
 
         elem = json_object_get(backend, "id");
+        if(! elem){
+          ESDM_ERROR("Configuration: id not set");
+        }
         backends[i].id = json_string_value(elem);
         for (j = 0; j < i; j++) {
           if (strcmp(backends[i].id, backends[j].id) == 0) {
@@ -162,6 +200,9 @@ esdm_config_backends_t *esdm_config_get_backends(esdm_instance_t *esdm) {
         }
 
         elem = json_object_get(backend, "target");
+        if(! elem){
+          ESDM_ERROR("Configuration: target not set");
+        }
         backends[i].target = json_string_value(elem);
         backends[i].performance_model = json_object_get(backend, "performance-model");
         DEBUG("type=%s id = %s target=%s\n", backends[i].type,

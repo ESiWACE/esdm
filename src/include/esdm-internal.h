@@ -208,6 +208,20 @@ void esdmI_container_register_dataset(esdm_container_t * c, esdm_dataset_t *dset
 esdm_status esdmI_create_fragment_from_metadata(esdm_dataset_t *dset, json_t * json, esdm_fragment_t ** out);
 esdm_status esdmI_fragments_metadata_create(esdm_dataset_t *d, int len, char *md, int * out_size);
 
+/**
+ * Create a new fragment.
+ *
+ *  - Allocate process local memory structures.
+ *
+ *
+ *	A fragment is part of a dataset.
+ *
+ *	@return Pointer to new fragment.
+ *
+ */
+
+esdm_status esdmI_fragment_create(esdm_dataset_t *dataset, esdm_dataspace_t *subspace, void *buf, esdm_fragment_t **out_fragment);
+
 esdm_backend_t * esdmI_get_backend(char const * plugin_id);
 
 

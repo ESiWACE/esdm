@@ -266,6 +266,7 @@ esdm_status esdm_scheduler_enqueue_write(esdm_instance_t *esdm, io_request_statu
 
   for (int i = 0; i < esdm->modules->data_backend_count; i++) {
     esdm_backend_t *b = esdm->modules->data_backends[i];
+    assert(b);
     // how many of these fit into our buffer
     uint64_t backend_y_per_buffer = b->config->max_fragment_size / one_y_size;
     if (backend_y_per_buffer == 0) {
@@ -273,6 +274,7 @@ esdm_status esdm_scheduler_enqueue_write(esdm_instance_t *esdm, io_request_statu
     }
 
     uint64_t y_total_access = per_backend[i];
+    esdm_status ret;
     while (y_total_access > 0) {
       uint64_t y_to_access = y_total_access > backend_y_per_buffer ? backend_y_per_buffer : y_total_access;
       y_total_access -= y_to_access;
@@ -283,11 +285,12 @@ esdm_status esdm_scheduler_enqueue_write(esdm_instance_t *esdm, io_request_statu
       io_work_t *task = (io_work_t *)malloc(sizeof(io_work_t));
       esdm_dataspace_t *subspace;
 
-      esdm_dataspace_subspace(space, space->dims, dim, offset, &subspace);
-
+      ret = esdm_dataspace_subspace(space, space->dims, dim, offset, &subspace);
+      assert(ret == ESDM_SUCCESS);
       task->parent = status;
       task->op = ESDM_OP_WRITE;
-      esdm_fragment_create(dataset, subspace, (char *)buf + offset_y * one_y_size, &task->fragment);
+      ret = esdmI_fragment_create(dataset, subspace, (char *)buf + offset_y * one_y_size, &task->fragment);
+      assert(ret == ESDM_SUCCESS);
       task->fragment->backend = b;
       task->callback = NULL;
       if (b->threads == 0) {

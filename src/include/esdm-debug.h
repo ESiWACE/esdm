@@ -25,17 +25,17 @@ void esdm_log(uint32_t loglevel, const char *format, ...);
 //If you only want to log an error, use the ESDM_LOG*() macros instead.
 #define ESDM_ERROR(fmt) \
   do { \
-    ESDM_LOG_FMT(ESDM_LOGLEVEL_DEBUG, "%s", fmt); \
+    ESDM_LOG_FMT(ESDM_LOGLEVEL_CRITICAL, "%s", fmt); \
     exit(1); \
   } while (0)
 #define ESDM_ERROR_FMT(fmt, ...)                         \
   do {                                                   \
-    ESDM_LOG_FMT(ESDM_LOGLEVEL_DEBUG, fmt, __VA_ARGS__); \
+    ESDM_LOG_FMT(ESDM_LOGLEVEL_CRITICAL, fmt, __VA_ARGS__); \
     exit(1);                                             \
   } while (0)
 #define ESDM_ERROR_COM_FMT(component, fmt, ...)                         \
   do {                                                                  \
-    ESDM_LOG_COM_FMT(ESDM_LOGLEVEL_DEBUG, component, fmt, __VA_ARGS__); \
+    ESDM_LOG_COM_FMT(ESDM_LOGLEVEL_CRITICAL, component, fmt, __VA_ARGS__); \
     exit(1);                                                            \
   } while (0)
 

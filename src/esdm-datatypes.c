@@ -249,7 +249,8 @@ void esdm_dataset_register_fragment(esdm_dataset_t *dset, esdm_fragment_t *frag)
  *	How does this integrate with the scheduler? On auto-commit this merely beeing pushed to sched for dispatch?
  */
 
-esdm_status esdm_fragment_create(esdm_dataset_t *dataset, esdm_dataspace_t *subspace, void *buf, esdm_fragment_t **out_fragment) {
+esdm_status esdmI_fragment_create(esdm_dataset_t *dataset, esdm_dataspace_t *subspace, void *buf, esdm_fragment_t **out_fragment) {
+  assert(dataset);
   ESDM_DEBUG(__func__);
   esdm_fragment_t *fragment = (esdm_fragment_t *)malloc(sizeof(esdm_fragment_t));
 
@@ -270,6 +271,7 @@ esdm_status esdm_fragment_create(esdm_dataset_t *dataset, esdm_dataspace_t *subs
   fragment->elements = elements;
   fragment->bytes = bytes;
 	fragment->status = ESDM_DATA_NOT_LOADED;
+  fragment->backend = NULL;
 
 	esdm_dataset_register_fragment(dataset, fragment);
 

@@ -282,20 +282,6 @@ uint64_t esdm_dataspace_size(esdm_dataspace_t *dataspace);
 // Fragment
 
 /**
- * Create a new fragment.
- *
- *  - Allocate process local memory structures.
- *
- *
- *	A fragment is part of a dataset.
- *
- *	@return Pointer to new fragment.
- *
- */
-
-esdm_status esdm_fragment_create(esdm_dataset_t *dataset, esdm_dataspace_t *subspace, void *buf, esdm_fragment_t **out_fragment);
-
-/**
  * Reinstantiate fragment from serialization.
  */
 
