@@ -225,6 +225,7 @@ void ea_generate_id(char *str, size_t length){
       int key = c % count;
       c /= count;
       str[n] = charset[key];
+      n++; // Remove this line to make file creation "deterministic"
   }
 
   for (; n < length; n++) {
