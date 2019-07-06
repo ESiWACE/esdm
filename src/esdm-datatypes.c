@@ -518,7 +518,6 @@ esdm_status esdmI_create_fragment_from_metadata(esdm_dataset_t *dset, json_t * j
   f->buf = NULL;
   f->elements = elements;
   f->bytes = bytes;
-  //f->in_place = 0;
 	f->status = ESDM_DATA_NOT_LOADED;
 
   *out = f;

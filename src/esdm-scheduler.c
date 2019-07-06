@@ -179,6 +179,56 @@ static void read_copy_callback(io_work_t *work) {
   free(f->buf);
 }
 
+int esdmI_scheduler_try_direct_io(esdm_fragment_t *f, void * buf, esdm_dataspace_t * da){
+  esdm_dataspace_t * df = f->dataspace;
+  int d;
+  uint64_t size = 1;
+  for (d = da->dims - 1; d >= 0; d--) {
+    int s1 = da->size[d];
+    int s2 = df->size[d];
+    // if it is out of bounds: abort
+    if (s1 != s2) break;
+    size *= s1;
+  }
+  // if it is a perfect match, the offsets must match, too
+  if(d == -1){
+    for (d = da->dims - 1; d >= 0; d--) {
+      int o1 = da->offset[d];
+      int o2 = df->offset[d];
+      if (o1 != o2) break;
+    }
+    if( d == -1){
+      // patches overlap perfectly => DIRECT IO
+      f->buf = buf;
+      return 1;
+    }
+    // partial overlap but same size
+    return 0;
+  }
+  // verify that the dataspace is bigger than the fragment patch
+  if(df->size[d] > da->size[d]){
+    return 0;
+  }
+  // compute offset from patch to the buffer
+  // check that all size/offsets are the same left from the current pos
+  int pos = d;
+  for (d = d - 1; d >= 0; d--) {
+    int s1 = da->size[d];
+    int s2 = df->size[d];
+    int o1 = da->offset[d];
+    int o2 = df->offset[d];
+    if (s1 != s2) return 0;
+    if (o1 != o2) return 0;
+  }
+  // thus, the fragment is a real subset of the patch to access => DIRECT IO
+  // finalize the computation of the identical dimensions
+  size *= esdm_sizeof(df->type);
+  char * newBuf = (char*) buf;
+  newBuf += (df->offset[pos] - da->offset[pos]) * size;
+  f->buf = newBuf;
+  return 1;
+}
+
 esdm_status esdm_scheduler_enqueue_read(esdm_instance_t *esdm, io_request_status_t *status, int frag_count, esdm_fragment_t **read_frag, void *buf, esdm_dataspace_t *buf_space) {
   GError *error;
 
@@ -193,16 +243,14 @@ esdm_status esdm_scheduler_enqueue_read(esdm_instance_t *esdm, io_request_status
     task->parent = status;
     task->op = ESDM_OP_READ;
     task->fragment = f;
-    //if (f->in_place) { // DIRECT IO PATH FOR LATER
-    //  DEBUG("inplace!", "");
-    //  task->callback = NULL;
-    //  f->buf = buf;
-    //} else {
+    if (esdmI_scheduler_try_direct_io(f, buf, buf_space)) {
+      task->callback = NULL;
+    } else {
       f->buf = malloc(size);
       task->callback = read_copy_callback;
       task->data.mem_buf = buf;
       task->data.buf_space = buf_space;
-    //}
+    }
     if (backend_to_use->threads == 0) {
       backend_thread(task, backend_to_use);
     } else {

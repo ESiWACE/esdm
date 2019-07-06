@@ -55,6 +55,7 @@ struct esdm_fragment_t {
   void *buf;
   size_t elements;
   size_t bytes;
+  //int direct_io;
   esdm_data_status_e status;
 };
 
