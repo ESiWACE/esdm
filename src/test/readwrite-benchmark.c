@@ -112,7 +112,7 @@ void runRead(uint64_t * buf_w, int64_t * dim, int64_t * offset){
   timer t;
   double time;
 
-  int mismatches = 0;
+  int64_t mismatches = 0;
   MPI_Barrier(MPI_COMM_WORLD);
   start_timer(&t);
   // Read the data to the dataset
@@ -131,9 +131,10 @@ void runRead(uint64_t * buf_w, int64_t * dim, int64_t * offset){
     buf_w[0] = t;
     for (int y = 0; y < dim[1]; y++) {
       for (int x = 0; x < dim[2]; x++) {
-        long idx = y * size + x;
+        uint64_t idx = y * size + x;
         if (buf_r[idx] != buf_w[idx]) {
           mismatches++;
+          printf("Read %"PRId64" expected %"PRId64"\n", buf_r[idx], buf_w[idx]);
         }
       }
     }
@@ -142,14 +143,14 @@ void runRead(uint64_t * buf_w, int64_t * dim, int64_t * offset){
   MPI_Barrier(MPI_COMM_WORLD);
   time = stop_timer(t);
 
-  int mismatches_sum = 0;
-  MPI_Reduce(&mismatches, &mismatches_sum, 1, MPI_INT, MPI_SUM, 0, MPI_COMM_WORLD);
+  int64_t mismatches_sum = 0;
+  MPI_Reduce(&mismatches, &mismatches_sum, 1, MPI_LONG_LONG, MPI_SUM, 0, MPI_COMM_WORLD);
   double total_time;
   MPI_Reduce((void *)&time, &total_time, 1, MPI_DOUBLE, MPI_MAX, 0, MPI_COMM_WORLD);
   if (mpi_rank == 0) {
     if (mismatches_sum > 0) {
       printf("FAILED\n");
-      printf("Mismatches: %d\n", mismatches_sum);
+      printf("Mismatches: %"PRId64" of %"PRId64"\n", mismatches_sum, (int64_t)timesteps * size * size);
     } else {
       printf("OK\n");
     }
@@ -234,7 +235,7 @@ int main(int argc, char *argv[]) {
   long x, y;
   for (y = 0; y < dim[1]; y++) {
     for (x = 0; x < dim[2]; x++) {
-      long idx = y * size + x;
+      uint64_t idx = y * size + x;
       buf_w[idx] = (y+offset[1]) * size + x + offset[2] + 1 + mpi_rank;
     }
   }

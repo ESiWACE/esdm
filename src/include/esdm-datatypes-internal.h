@@ -167,6 +167,7 @@ typedef struct io_request_status_t {
   int pending_ops;
   GMutex mutex;
   GCond done_condition;
+  int return_code;
 } io_request_status_t;
 
 typedef struct {

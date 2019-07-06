@@ -9,6 +9,7 @@
 
 #include <jansson.h>
 #include <glib.h>
+#include <inttypes.h>
 
 #include <esdm-datatypes-internal.h>
 #include <esdm-debug.h>

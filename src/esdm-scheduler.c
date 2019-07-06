@@ -116,6 +116,9 @@ static void backend_thread(io_work_t *work, esdm_backend_t *backend) {
 
   g_mutex_lock(&status->mutex);
   status->pending_ops--;
+  if (ret != ESDM_SUCCESS){
+    status->return_code = ret;
+  }
   assert(status->pending_ops >= 0);
   if (status->pending_ops == 0) {
     g_cond_signal(&status->done_condition);
@@ -311,6 +314,7 @@ esdm_status esdm_scheduler_status_init(io_request_status_t *status) {
   g_mutex_init(&status->mutex);
   g_cond_init(&status->done_condition);
   status->pending_ops = 0;
+  status->return_code = ESDM_SUCCESS;
   return ESDM_SUCCESS;
 }
 
@@ -358,5 +362,7 @@ esdm_status esdm_scheduler_process_blocking(esdm_instance_t *esdm, io_operation_
   ret = esdm_scheduler_status_finalize(&status);
   assert(ret == ESDM_SUCCESS);
 
-  return ESDM_SUCCESS;
+  free(read_frag);
+
+  return status.return_code;
 }
