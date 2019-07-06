@@ -183,11 +183,15 @@ int esdmI_scheduler_try_direct_io(esdm_fragment_t *f, void * buf, esdm_dataspace
   esdm_dataspace_t * df = f->dataspace;
   int d;
   uint64_t size = 1;
+  int pos = -1;
   for (d = da->dims - 1; d >= 0; d--) {
     int s1 = da->size[d];
     int s2 = df->size[d];
     // if it is out of bounds: abort
-    if (s1 != s2) break;
+    if (s1 != s2){
+      pos = d;
+      break;
+    }
     size *= s1;
   }
   // if it is a perfect match, the offsets must match, too
@@ -206,13 +210,12 @@ int esdmI_scheduler_try_direct_io(esdm_fragment_t *f, void * buf, esdm_dataspace
     return 0;
   }
   // verify that the dataspace is bigger than the fragment patch
-  if(df->size[d] > da->size[d]){
+  if(df->size[pos] > da->size[pos]){
     return 0;
   }
   // compute offset from patch to the buffer
   // check that all size/offsets are the same left from the current pos
-  int pos = d;
-  for (d = d - 1; d >= 0; d--) {
+  for (d = pos - 1; d >= 0; d--) {
     int s1 = da->size[d];
     int s2 = df->size[d];
     int o1 = da->offset[d];
