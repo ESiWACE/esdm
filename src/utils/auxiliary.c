@@ -49,7 +49,7 @@ int mkdir_recursive(const char *path) {
   size_t len;
 
   // copy provided path, as we modify it
-  snprintf(tmp, sizeof(tmp), "%s", path);
+  snprintf(tmp, PATH_MAX, "%s", path);
 
   // check if last char of string is a /
   len = strlen(tmp);
@@ -99,32 +99,27 @@ void posix_recursive_remove(const char *path) {
 // file I/O handling //////////////////////////////////////////////////////////
 
 int read_file(char *filepath, char **buf) {
-  if (*buf != NULL) {
-    printf("read_file(): Potential memory leak. Overwriting existing pointer with value != NULL.");
-    exit(1);
+  assert(buf);
+
+  int fd = open(filepath, O_RDONLY);
+  if (fd < 0) {
+    ESDM_ERROR_COM_FMT("POSIX", "cannot open %s %s", filepath, strerror(errno));
+    return 1;
   }
 
-  FILE *fp = fopen(filepath, "rb");
-
-  if (fp == NULL) {
-    printf("Could not open or find: %s\n", filepath);
-    exit(1);
-  }
-
-  fseek(fp, 0, SEEK_END);
-  long fsize = ftell(fp);
-  fseek(fp, 0, SEEK_SET); //same as rewind(f);
+  off_t fsize = lseek(fd, 0, SEEK_END);
+  lseek(fd, 0, SEEK_SET);
 
   char *string = malloc(fsize + 1);
-  fread(string, fsize, 1, fp);
-  fclose(fp);
+  int ret = read_check(fd, string, fsize);
+  close(fd);
 
   string[fsize] = 0;
 
   *buf = string;
 
   ESDM_DEBUG_COM_FMT("AUX", "read_file(): %s\n", string);
-  return 0;
+  return ret;
 }
 
 int write_check(int fd, char *buf, size_t len) {
