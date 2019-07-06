@@ -148,6 +148,11 @@ static void read_copy_callback(io_work_t *work) {
   int split_dim = 0;
   for (int i = 0; i < fs->dims; i++) {
     if (fs->size[i] != 1) {
+      // check if the split dimension is left
+      if(i > 0 && fs->offset[i-1] != bs->offset[i-1]){
+        split_dim = i - 1;
+        break;
+      }
       split_dim = i;
       break;
     }
@@ -164,7 +169,6 @@ static void read_copy_callback(io_work_t *work) {
   uint64_t offset_f = 0;
 
   size *= mn;
-
   DEBUG("SIZE: %ld %ld %ld", size, offset_mem, offset_f);
 
   // first dimension can be different:
