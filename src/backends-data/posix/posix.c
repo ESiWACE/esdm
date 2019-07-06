@@ -58,7 +58,7 @@ static int entry_retrieve(const char *path, void *buf, uint64_t size) {
   DEBUG("entry_retrieve(%s)\n", path);
 
   // write to non existing file
-  int fd = open(path, O_RDONLY | S_IWUSR | S_IRUSR | S_IWGRP | S_IRGRP | S_IROTH);
+  int fd = open(path, O_RDONLY);
   // everything ok? read and close
   if (fd < 0) {
     return ESDM_ERROR;
