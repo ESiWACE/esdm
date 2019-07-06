@@ -20,25 +20,27 @@ int main(){
 	int32_t  value2[3] = {1, 2, 3};
 	smd_dtype_t * array_type = smd_type_array(SMD_DTYPE_INT32,3);
 	smd_attr_t * attr2 = smd_attr_new("test2", array_type, value2, 2);
-	int32_t * attr2_value = (int32_t*)smd_attr_get_value(attr2);  
+	int32_t * attr2_value = (int32_t*)smd_attr_get_value(attr2);
 	for(int i = 0;i < 3;i++){
-		assert(value2[i] == attr2_value[i]); 
+		assert(value2[i] == attr2_value[i]);
 	}
-	//test 2darray 
-	int32_t value2d [2][3] = {{1,2,3},{4,5,6}};
-	smd_dtype_t * array2d_type = smd_type_array(array_type,2);
-	smd_attr_t * attr2d = smd_attr_new("test2d",array2d_type,value2d,200);
-	int32_t * attr2d_value = (int32_t *)smd_attr_get_value(attr2d) ;  
-	for(int i = 0;i < 6;i++){
-		assert((*value2d)[i] == attr2d_value[i]); 
+	//test 2darray
+	int32_t value2d [3][3] = {{1,2,3},{4,5,6},{0,0,0}};
+	smd_dtype_t * array2d_type = smd_type_array(array_type, 3);
+	smd_attr_t * attr2d = smd_attr_new("test2d", array2d_type, value2d, 200);
+	int32_t * attr2d_value = (int32_t *)smd_attr_get_value(attr2d);
+	for(int i = 0; i < 6;i++){
+    printf("i = %d\n", i);
+    printf("%d==%d\n", (*value2d)[i], attr2d_value[i]);
+		assert((*value2d)[i] == attr2d_value[i]);
 	}
 	printf("Pass\n");
 
 	//test get type
 	printf("Test get type:\n");
-	assert(smd_attr_get_type(attr) == SMD_TYPE_INT32); 
-	assert(smd_attr_get_type(attr1) == SMD_TYPE_STRING); 
-	assert(smd_attr_get_type(attr2) == SMD_TYPE_ARRAY); 
+	assert(smd_attr_get_type(attr) == SMD_TYPE_INT32);
+	assert(smd_attr_get_type(attr1) == SMD_TYPE_STRING);
+	assert(smd_attr_get_type(attr2) == SMD_TYPE_ARRAY);
 
 	printf("Pass\n");
 
@@ -55,15 +57,15 @@ int main(){
 	assert(strcmp((char *)value_copy1,test)==0);
 
 
-	//for array	
+	//for array
 	int32_t * value_copy2 = (int32_t *)malloc(sizeof(int32_t) * 3);
 	smd_attr_copy_value(attr2,value_copy2);
 	for(int i = 0;i < 3;i++){
-		assert(value2[i] == attr2_value[i]); 
+		assert(value2[i] == attr2_value[i]);
 	}
 	free(value_copy2);
 	printf("Pass\n");
-	
+
 
 	//test get name
 	printf("Test smd_attr_get_name:\n");
@@ -72,7 +74,7 @@ int main(){
 	char * value4 = "Test 4";
 	smd_attr_t * attr4 = smd_attr_new("test3", SMD_DTYPE_STRING, value4, 4);
 	smd_attr_t * attr5 = smd_attr_new("test5", SMD_DTYPE_EMPTY, NULL, 5);
-	
+
 	assert(strcmp(smd_attr_get_name(attr), "test1") == 0);
 	assert(strcmp(smd_attr_get_name(attr3), "test3") == 0);
 	assert(strcmp(smd_attr_get_name(attr4), "test3") == 0);
@@ -103,7 +105,7 @@ int main(){
 	assert(link_ret == SMD_ATTR_LINKED);
 	attr_count = smd_attr_count(attr);
 	assert(attr_count == 2);
-	
+
 
 
 	//Relinking existing attributed will free the attribute but still link.
@@ -112,7 +114,7 @@ int main(){
 
 	printf("Pass\n");
 
-	
+
 	//Test find pos
 	//Check find position and is attr3 is replaced
 	printf("Test smd_find_position_by_id:\n");

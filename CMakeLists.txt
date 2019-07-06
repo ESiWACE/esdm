@@ -28,9 +28,6 @@ set(DEPS_DIR "${CMAKE_SOURCE_DIR}/deps")
 #set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/lib")
 #set(CMAKE_LIBRARY_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/lib")
 
-
-
-
 #
 # BUILD SETTINGS
 # _____________________________________________________________________________
@@ -38,14 +35,14 @@ set(DEPS_DIR "${CMAKE_SOURCE_DIR}/deps")
 set (CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -std=gnu11 -pedantic -Wall -Wdouble-promotion -Wfloat-equal -flto -fdata-sections -ffunction-sections -Wl,--gc-sections -Wl,--allow-shlib-undefined -Wl,--retain-symbols-file=${CMAKE_SOURCE_DIR}/dev/symbols.txt -pedantic-errors")
  # -fvisibility=hidden -fvisibility-inlines-hidden
 
-set (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -pedantic -Wall -Wextra -Wdouble-promotion -Wfloat-equal -flto -fdata-sections -ffunction-sections -Wl,--gc-sections -Wl,--allow-shlib-undefined -pedantic-errors")
+#set (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -pedantic -Wall -Wextra -Wdouble-promotion -Wfloat-equal -flto -fdata-sections -ffunction-sections -Wl,--gc-sections -Wl,--allow-shlib-undefined -pedantic-errors")
 
 #-fvisibility=hidden -fvisibility-inlines-hidden
-set (CMAKE_CXX_FLAGS_DEBUG "${CMAKE_C_FLAGS_DEBUG} -O0 -g3")
-set (CMAKE_CXX_FLAGS_RELEASE "${CMAKE_C_FLAGS_RELEASE} -O3")
+#set (CMAKE_CXX_FLAGS_DEBUG "${CMAKE_C_FLAGS_DEBUG} -O0 -g3")
+#set (CMAKE_CXX_FLAGS_RELEASE "${CMAKE_C_FLAGS_RELEASE} -O3")
 
-set (CMAKE_C_FLAGS_DEBUG "${CMAKE_C_FLAGS_DEBUG} -O0 -g3")
-set (CMAKE_C_FLAGS_RELEASE "${CMAKE_C_FLAGS_RELEASE} -O3")
+set (CMAKE_C_FLAGS_DEBUG "-O0 -g3")
+set (CMAKE_C_FLAGS_RELEASE "-DDEBUG_OFF -O3")
 
 
 #
@@ -87,15 +84,9 @@ add_feature_info(plantuml plantuml  "PlantUML for documentation" URL http://de.p
 
 
 
-
-
-
 #
 # OTHER
 # _____________________________________________________________________________
-
-
-
 
 
 

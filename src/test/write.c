@@ -100,9 +100,13 @@ int main(int argc, char const *argv[]) {
   assert(status == ESDM_SUCCESS);
 
   // Write the data to the dataset
+  printf("Write 0\n");
   assert_crash(esdm_write(NULL, buf_w, subspace));
+  printf("Write 1\n");
   assert_crash(esdm_write(dataset, NULL, subspace));
+  printf("Write 2\n");
   assert_crash(esdm_write(dataset, buf_w, NULL));
+  printf("Write 3\n");
   status = esdm_write(dataset, buf_w, subspace);
   assert(status == ESDM_SUCCESS);
 
