@@ -83,10 +83,10 @@ static int entry_update(const char *path, void *buf, size_t len, int update_only
   if(fd < 0){
     return ESDM_ERROR;
   }
-  printf("%s fd: %d\n", path, fd);
+  //printf("%s fd: %d\n", path, fd);
   int ret = write_check(fd, buf, len);
   close(fd);
-  printf("END %lld\n", len);
+  //printf("END %lld\n", len);
 
   return ret;
 }

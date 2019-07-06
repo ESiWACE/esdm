@@ -39,9 +39,9 @@ int main(int argc, char const *argv[]) {
   esdm_container_t *container = NULL;
   esdm_dataset_t *dataset = NULL;
 
-  esdm_status status = esdm_init();
-  assert(status == ESDM_SUCCESS);
-  int ret = esdm_mkfs(ESDM_FORMAT_PURGE_RECREATE, ESDM_ACCESSIBILITY_GLOBAL);
+  esdm_status ret = esdm_init();
+  assert(ret == ESDM_SUCCESS);
+  ret = esdm_mkfs(ESDM_FORMAT_PURGE_RECREATE, ESDM_ACCESSIBILITY_GLOBAL);
   assert(ret == ESDM_SUCCESS);
   ret = esdm_mkfs(ESDM_FORMAT_PURGE_RECREATE, ESDM_ACCESSIBILITY_NODELOCAL);
   assert(ret == ESDM_SUCCESS);
@@ -50,38 +50,40 @@ int main(int argc, char const *argv[]) {
   int64_t bounds[] = {10, 20};
   esdm_dataspace_t *dataspace;
 
-  status = esdm_dataspace_create(2, bounds, SMD_DTYPE_UINT64, &dataspace);
-  assert(status == ESDM_SUCCESS);
+  ret = esdm_dataspace_create(2, bounds, SMD_DTYPE_UINT64, &dataspace);
+  assert(ret == ESDM_SUCCESS);
 
-  status = esdm_container_create("mycontainer", &container);
-  assert(status == ESDM_SUCCESS);
+  ret = esdm_container_create("mycontainer", &container);
+  assert(ret == ESDM_SUCCESS);
 
-  status = esdm_dataset_create(container, "mydataset", dataspace, &dataset);
-  assert(status == ESDM_SUCCESS);
+  ret = esdm_dataset_create(container, "mydataset", dataspace, &dataset);
+  assert(ret == ESDM_SUCCESS);
 
-  status = esdm_container_commit(container);
-  assert(status == ESDM_SUCCESS);
+  ret = esdm_container_commit(container);
+  assert(ret == ESDM_SUCCESS);
 
-  status = esdm_dataset_commit(dataset);
-  assert(status == ESDM_SUCCESS);
+  ret = esdm_dataset_commit(dataset);
+  assert(ret == ESDM_SUCCESS);
 
   // define subspace
   int64_t size[] = {10, 20};
   int64_t offset[] = {0, 0};
   esdm_dataspace_t *subspace;
 
-  status = esdm_dataspace_subspace(dataspace, 2, size, offset, &subspace);
-  assert(status == ESDM_SUCCESS);
+  ret = esdm_dataspace_subspace(dataspace, 2, size, offset, &subspace);
+  assert(ret == ESDM_SUCCESS);
 
   // Write the data to the dataset
-  status = esdm_write(dataset, buf_w, subspace);
-  assert(status == ESDM_SUCCESS);
+  ret = esdm_write(dataset, buf_w, subspace);
+  assert(ret == ESDM_SUCCESS);
 
-  esdm_container_commit(container);
-  esdm_dataset_commit(dataset);
+  ret = esdm_container_commit(container);
+  assert(ret == ESDM_SUCCESS);
+  ret = esdm_dataset_commit(dataset);
+  assert(ret == ESDM_SUCCESS);
 
-  status = esdm_finalize();
-  assert(status == ESDM_SUCCESS);
+  ret = esdm_finalize();
+  assert(ret == ESDM_SUCCESS);
 
   // clean up
   free(buf_w);

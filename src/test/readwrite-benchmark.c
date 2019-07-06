@@ -47,9 +47,12 @@ void runWrite(uint64_t * buf_w, int64_t * dim, int64_t * offset){
   int64_t bounds[] = {timesteps, size, size};
   esdm_dataspace_t *dataspace;
 
-  esdm_mpi_container_create(MPI_COMM_WORLD, "mycontainer", &container);
-  esdm_dataspace_create(3, bounds, SMD_DTYPE_UINT64, &dataspace);
-  esdm_mpi_dataset_create(MPI_COMM_WORLD, container, "mydataset", dataspace, &dataset);
+  ret = esdm_mpi_container_create(MPI_COMM_WORLD, "mycontainer", &container);
+  assert(ret == ESDM_SUCCESS);
+  ret = esdm_dataspace_create(3, bounds, SMD_DTYPE_UINT64, &dataspace);
+  assert(ret == ESDM_SUCCESS);
+  ret = esdm_mpi_dataset_create(MPI_COMM_WORLD, container, "mydataset", dataspace, &dataset);
+  assert(ret == ESDM_SUCCESS);
 
   timer t;
   double time;
@@ -61,15 +64,18 @@ void runWrite(uint64_t * buf_w, int64_t * dim, int64_t * offset){
     offset[0] = t;
     esdm_dataspace_t *subspace;
 
-    esdm_dataspace_subspace(dataspace, 3, dim, offset, &subspace);
+    ret = esdm_dataspace_subspace(dataspace, 3, dim, offset, &subspace);
+    assert(ret == ESDM_SUCCESS);
     buf_w[0] = t;
     ret = esdm_write(dataset, buf_w, subspace);
     assert(ret == ESDM_SUCCESS);
   }
 
   // commit the changes to data to the metadata
-  esdm_mpi_container_commit(MPI_COMM_WORLD, container);
-  esdm_mpi_dataset_commit(MPI_COMM_WORLD, dataset);
+  ret = esdm_mpi_dataset_commit(MPI_COMM_WORLD, dataset);
+  assert(ret == ESDM_SUCCESS);
+  ret = esdm_mpi_container_commit(MPI_COMM_WORLD, container);
+  assert(ret == ESDM_SUCCESS);
 
   MPI_Barrier(MPI_COMM_WORLD);
   time = stop_timer(t);

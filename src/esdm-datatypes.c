@@ -168,7 +168,7 @@ esdm_status esdm_container_open(char const *name, esdm_container_t **out_contain
 }
 
 
-void esdmI_datasets_reference_metadata_create(esdm_container_t *c, int len, char *js, int * out_size){
+esdm_status esdmI_datasets_reference_metadata_create(esdm_container_t *c, int len, char *js, int * out_size){
   assert(len > 0);
   int pos = 0;
 	pos += snprintf(js, len, "[");
@@ -183,21 +183,27 @@ void esdmI_datasets_reference_metadata_create(esdm_container_t *c, int len, char
 	}
   pos += snprintf(js + pos, len - pos, "]");
   *out_size = pos;
+
+  return ESDM_SUCCESS;
 }
 
 
 
-void esdmI_container_metadata_create(esdm_container_t *c, int len, char * js, int * out_size){
+esdm_status esdmI_container_metadata_create(esdm_container_t *c, int len, char * js, int * out_size){
 	int pos = 0;
   pos += sprintf(js, "{");
   pos += smd_attr_ser_json(js + pos, c->attr) - 1;
 	pos += snprintf(js + pos, len - pos, ",\"dsets\":");
   int size;
-  esdmI_datasets_reference_metadata_create(c, len - pos, js + pos, & size);
+  esdm_status ret = esdmI_datasets_reference_metadata_create(c, len - pos, js + pos, & size);
+  if(ret != ESDM_SUCCESS){
+    return ret;
+  }
   pos += size;
   pos += snprintf(js + pos, len - pos, "}");
 
   *out_size = pos;
+  return ESDM_SUCCESS;
 }
 
 esdm_status esdm_container_commit(esdm_container_t *c) {
@@ -207,13 +213,13 @@ esdm_status esdm_container_commit(esdm_container_t *c) {
   const int len = 100000;
   char buff[len];
   int md_size;
-  esdmI_container_metadata_create(c, len, buff, & md_size);
+  esdm_status ret = esdmI_container_metadata_create(c, len, buff, & md_size);
 
-  esdm_status status = esdm.modules->metadata_backend->callbacks.container_commit(esdm.modules->metadata_backend, c, buff, md_size);
+  ret = esdm.modules->metadata_backend->callbacks.container_commit(esdm.modules->metadata_backend, c, buff, md_size);
 
   // Also commit uncommited datasets of this container?
 
-  return status;
+  return ret;
 }
 
 esdm_status esdm_container_destroy(esdm_container_t *container) {
@@ -290,7 +296,11 @@ esdm_status esdm_fragment_metadata_create(esdm_fragment_t *f, int len, char * js
 	esdm_dataspace_t *d = f->dataspace;
 	int size = 0;
 	int ret;
-  size += sprintf(js, "{\"id\":\"%s\",\"pid\":\"%s\",\"size\":[", f->id, f->backend->config->id);
+  char const * pid = f->backend->config->id;
+  if(f->id == NULL || pid == NULL){
+    return ESDM_ERROR;
+  }
+  size += sprintf(js, "{\"id\":\"%s\",\"pid\":\"%s\",\"size\":[", f->id, pid);
   size += sprintf(js + size, "%ld", d->size[0]);
   for (int i = 1; i < d->dims; i++) {
     size += sprintf(js + size, ",%ld", d->size[i]);
@@ -617,8 +627,9 @@ esdm_status esdm_dataset_open(esdm_container_t *c, const char *name, esdm_datase
   return ESDM_SUCCESS;
 }
 
-void esdmI_fragments_metadata_create(esdm_dataset_t *d, int len, char *js, int * out_size){
+esdm_status esdmI_fragments_metadata_create(esdm_dataset_t *d, int len, char *js, int * out_size){
   assert(len > 0);
+  esdm_status ret;
   int pos = 0;
 	pos += snprintf(js, len, "[");
   *out_size = pos;
@@ -628,14 +639,18 @@ void esdmI_fragments_metadata_create(esdm_dataset_t *d, int len, char *js, int *
 		if(i != 0){
 			pos += snprintf(js + pos, len - pos, ",\n");
 		}
-		esdm_fragment_metadata_create(f->frag[i], len - pos, js + pos, & size);
+		ret = esdm_fragment_metadata_create(f->frag[i], len - pos, js + pos, & size);
+    if (ret != ESDM_SUCCESS){
+      return ret;
+    }
 		pos += size;
 	}
   pos += snprintf(js + pos, len - pos, "]");
   *out_size = pos;
+  return ESDM_SUCCESS;
 }
 
-void esdmI_dataset_metadata_create(esdm_dataset_t *d, int len, char * md, int * out_size){
+esdm_status esdmI_dataset_metadata_create(esdm_dataset_t *d, int len, char * md, int * out_size){
 	char * js = md;
 	int pos = 0;
   pos += sprintf(js, "{");
@@ -657,11 +672,15 @@ void esdmI_dataset_metadata_create(esdm_dataset_t *d, int len, char * md, int * 
   }
 	pos += snprintf(js + pos, len - pos, ",\"fragments\":");
   int size;
-  esdmI_fragments_metadata_create(d, len - pos, js + pos, & size);
+  int ret = esdmI_fragments_metadata_create(d, len - pos, js + pos, & size);
+  if(ret != ESDM_SUCCESS){
+    return ret;
+  }
   pos += size;
   pos += snprintf(js + pos, len - pos, "}");
 
   *out_size = pos;
+  return ESDM_SUCCESS;
 }
 
 esdm_status esdm_dataset_commit(esdm_dataset_t *dataset) {
@@ -671,12 +690,14 @@ esdm_status esdm_dataset_commit(esdm_dataset_t *dataset) {
   const int len = 100000;
   char buff[len];
   int md_size;
-  esdmI_dataset_metadata_create(dataset, len, buff, & md_size);
-
+  esdm_status ret = esdmI_dataset_metadata_create(dataset, len, buff, & md_size);
+  if(ret != ESDM_SUCCESS){
+    return ret;
+  }
   // TODO commit each uncommited fragment
 
   // md callback create/update container
-  esdm_status ret = esdm.modules->metadata_backend->callbacks.dataset_commit(esdm.modules->metadata_backend, dataset, buff, md_size);
+  ret = esdm.modules->metadata_backend->callbacks.dataset_commit(esdm.modules->metadata_backend, dataset, buff, md_size);
 
   return ret;
 }

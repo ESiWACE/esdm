@@ -13,6 +13,9 @@ set(VERSION_MINOR "1")
 set(VERSION_PATCH "0")
 set(VERSION ${VERSION_MAJOR}.${VERSION_MINOR}.${VERSION_PATCH})
 
+include(CTest)
+include(FeatureSummary)
+include(CheckCSourceCompiles)
 
 #
 # USEFUL PROJECT VARIABLES
@@ -32,26 +35,18 @@ set(DEPS_DIR "${CMAKE_SOURCE_DIR}/deps")
 # BUILD SETTINGS
 # _____________________________________________________________________________
 
+
+set(CMAKE_C_FLAGS_DEBUG "-O0 -g3" CACHE STRING "C Debug Compiler Flags" FORCE)
+set(CMAKE_C_FLAGS_RELEASE "-DDEBUG_OFF -O3" CACHE STRING "C Release Compiler Flags" FORCE)
+
 set (CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -std=gnu11 -pedantic -Wall -Wdouble-promotion -Wfloat-equal -flto -fdata-sections -ffunction-sections -Wl,--gc-sections -Wl,--allow-shlib-undefined -Wl,--retain-symbols-file=${CMAKE_SOURCE_DIR}/dev/symbols.txt -pedantic-errors")
- # -fvisibility=hidden -fvisibility-inlines-hidden
-
-#set (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -pedantic -Wall -Wextra -Wdouble-promotion -Wfloat-equal -flto -fdata-sections -ffunction-sections -Wl,--gc-sections -Wl,--allow-shlib-undefined -pedantic-errors")
-
 #-fvisibility=hidden -fvisibility-inlines-hidden
-#set (CMAKE_CXX_FLAGS_DEBUG "${CMAKE_C_FLAGS_DEBUG} -O0 -g3")
-#set (CMAKE_CXX_FLAGS_RELEASE "${CMAKE_C_FLAGS_RELEASE} -O3")
-
-set (CMAKE_C_FLAGS_DEBUG "-O0 -g3")
-set (CMAKE_C_FLAGS_RELEASE "-DDEBUG_OFF -O3")
 
 
 #
 # CNAKE MODULES & DEPENDENCIES
 # _____________________________________________________________________________
 
-include(CTest)
-include(FeatureSummary)
-include(CheckCSourceCompiles)
 
 find_package(PkgConfig REQUIRED)
 

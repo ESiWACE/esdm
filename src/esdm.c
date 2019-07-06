@@ -138,47 +138,6 @@ esdm_status esdm_finalize() {
   return ESDM_SUCCESS;
 }
 
-///////////////////////////////////////////////////////////////////////////////
-// Public API: POSIX Legacy Compaitbility /////////////////////////////////////
-///////////////////////////////////////////////////////////////////////////////
-
-esdm_status esdm_stat(char *desc, char *result) {
-  ESDM_DEBUG(__func__);
-
-  esdm_init();
-
-  return ESDM_SUCCESS;
-}
-
-esdm_status esdm_create(char *name, int mode, esdm_container_t **container, esdm_dataset_t **dataset) {
-  ESDM_DEBUG(__func__);
-
-  esdm_init();
-
-  int64_t bounds[1] = {0};
-  esdm_dataspace_t *dataspace;
-
-  esdm_dataspace_create(1 /* 1D */, bounds, SMD_DTYPE_INT8, &dataspace);
-
-  esdm_container_create(name, container);
-  esdm_dataset_create(*container, "bytestream", dataspace, dataset);
-
-  printf("Dataset 'bytestream' creation: %p\n", (void *)*dataset);
-
-  esdm_dataset_commit(*dataset);
-  esdm_container_commit(*container);
-
-  return ESDM_SUCCESS;
-}
-
-esdm_status esdm_open(char *name, int mode) {
-  ESDM_DEBUG(__func__);
-
-  esdm_init();
-
-  return ESDM_SUCCESS;
-}
-
 esdm_status esdm_write(esdm_dataset_t *dataset, void *buf, esdm_dataspace_t *out_subspace) {
   ESDM_DEBUG(__func__);
   assert(dataset);
@@ -197,11 +156,6 @@ esdm_status esdm_read(esdm_dataset_t *dataset, void *buf, esdm_dataspace_t *subs
   return esdm_scheduler_process_blocking(&esdm, ESDM_OP_READ, dataset, buf, subspace);
 }
 
-esdm_status esdm_close(void *desc) {
-  ESDM_DEBUG(__func__);
-
-  return ESDM_SUCCESS;
-}
 
 esdm_status esdm_sync() {
   ESDM_DEBUG(__func__);
