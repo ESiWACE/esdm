@@ -92,7 +92,7 @@ esdm_status esdmI_create_dataset_from_metadata(esdm_container_t *c, json_t * jso
 
   esdm_dataset_t *d;
 	esdm_dataset_init(c, name, NULL, & d);
-  d->id = (char*) id;
+  d->id = strdup((char*) id);
   *out = d;
 
   return ESDM_SUCCESS;
@@ -733,6 +733,8 @@ esdm_status esdm_dataset_destroy(esdm_dataset_t *dset) {
     }
   }
   free(dset->fragments.frag);
+
+  smd_attr_destroy(dset->attr); // unref TODO
 
   // free dataset only if all fragments can be destroyed/are not longer in use
   if (ret != ESDM_SUCCESS){
