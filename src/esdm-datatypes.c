@@ -641,6 +641,7 @@ esdm_status esdmI_fragments_metadata_create(esdm_dataset_t *d, int len, char *js
 		if(i != 0){
 			pos += snprintf(js + pos, len - pos, ",\n");
 		}
+    printf("XX%d %lld\n", i, pos);
 		ret = esdm_fragment_metadata_create(f->frag[i], len - pos, js + pos, & size);
     if (ret != ESDM_SUCCESS){
       return ret;
@@ -689,8 +690,8 @@ esdm_status esdm_dataset_commit(esdm_dataset_t *dataset) {
   ESDM_DEBUG(__func__);
   assert(dataset);
 
-  const int len = 100000;
-  char buff[len];
+  int len = 10000000;
+  char * buff = malloc(len);
   int md_size;
   esdm_status ret = esdmI_dataset_metadata_create(dataset, len, buff, & md_size);
   if(ret != ESDM_SUCCESS){
@@ -700,6 +701,7 @@ esdm_status esdm_dataset_commit(esdm_dataset_t *dataset) {
 
   // md callback create/update container
   ret = esdm.modules->metadata_backend->callbacks.dataset_commit(esdm.modules->metadata_backend, dataset, buff, md_size);
+  free(buff);
 
   return ret;
 }
