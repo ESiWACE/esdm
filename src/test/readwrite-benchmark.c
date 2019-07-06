@@ -134,7 +134,7 @@ void runRead(uint64_t * buf_w, int64_t * dim, int64_t * offset){
         uint64_t idx = y * size + x;
         if (buf_r[idx] != buf_w[idx]) {
           mismatches++;
-          printf("Read %"PRId64" expected %"PRId64"\n", buf_r[idx], buf_w[idx]);
+          //printf("Read %"PRId64" expected %"PRId64"\n", buf_r[idx], buf_w[idx]);
         }
       }
     }
@@ -236,7 +236,7 @@ int main(int argc, char *argv[]) {
   for (y = 0; y < dim[1]; y++) {
     for (x = 0; x < dim[2]; x++) {
       uint64_t idx = y * size + x;
-      buf_w[idx] = (y+offset[1]) * size + x + offset[2] + 1 + mpi_rank;
+      buf_w[idx] = (y+offset[1]) * size + x + offset[2] + 1;
     }
   }
 
