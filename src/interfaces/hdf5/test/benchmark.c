@@ -47,7 +47,8 @@ void esdm_mpi_distribute_config_file(char *config_filename) {
   char *config = NULL;
   if (mpi_rank == 0) {
     int len;
-    read_file(config_filename, &config);
+    int ret = read_file(config_filename, &config);
+    assert(ret == 0);
     len = strlen(config) + 1;
     MPI_Bcast(&len, 1, MPI_INT, 0, MPI_COMM_WORLD);
     MPI_Bcast(config, len, MPI_CHAR, 0, MPI_COMM_WORLD);
@@ -58,6 +59,7 @@ void esdm_mpi_distribute_config_file(char *config_filename) {
     MPI_Bcast(config, len, MPI_CHAR, 0, MPI_COMM_WORLD);
   }
   esdm_load_config_str(config);
+  free(config);
 }
 
 void esdm_mpi_init() {

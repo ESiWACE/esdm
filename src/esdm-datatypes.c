@@ -130,6 +130,8 @@ esdm_status esdm_container_open_md_parse(esdm_container_t *c, char * md, int siz
 		d->dset[i] = dset;
 	}
 
+  json_decref(root);
+
 	return ESDM_SUCCESS;
 }
 
@@ -384,6 +386,13 @@ esdm_status esdmI_dataset_lookup_fragments(esdm_dataset_t *dset, esdm_dataspace_
 esdm_status esdm_fragment_destroy(esdm_fragment_t *frag) {
   ESDM_DEBUG(__func__);
 
+  if(frag->id){
+    free(frag->id);
+  }
+  if(frag->dataspace){
+    esdm_dataspace_destroy(frag->dataspace);
+  }
+
   if(frag->status == ESDM_DATA_PERSISTENT || frag->status == ESDM_DATA_NOT_LOADED){
     free(frag);
   }else{
@@ -542,8 +551,7 @@ esdm_status esdm_dataset_open_md_parse(esdm_dataset_t *d, char * md, int size){
   elem = json_object_get(root, "size");
   size_t arrsize = json_array_size(elem);
   if (dims != arrsize) {
-		free(d);
-		free(js);
+    json_decref(root);
     return ESDM_ERROR;
   }
   int64_t sizes[dims];
@@ -552,6 +560,7 @@ esdm_status esdm_dataset_open_md_parse(esdm_dataset_t *d, char * md, int size){
   }
   ret = esdm_dataspace_create(dims, sizes, type, &d->dataspace);
   if (ret != ESDM_SUCCESS) {
+    json_decref(root);
     return ret;
   }
   elem = json_object_get(root, "dims_dset_id");
@@ -568,6 +577,7 @@ esdm_status esdm_dataset_open_md_parse(esdm_dataset_t *d, char * md, int size){
 	}
 	elem = json_object_get(root, "fragments");
 	if(! elem) {
+    json_decref(root);
 		return ESDM_ERROR;
 	}
 	arrsize = json_array_size(elem);
@@ -586,6 +596,7 @@ esdm_status esdm_dataset_open_md_parse(esdm_dataset_t *d, char * md, int size){
     }
 		f->frag[i] = fragment;
 	}
+  json_decref(root);
 
 	return ESDM_SUCCESS;
 }
@@ -721,6 +732,7 @@ esdm_status esdm_dataset_destroy(esdm_dataset_t *dset) {
       ret = ESDM_ERROR;
     }
   }
+  free(dset->fragments.frag);
 
   // free dataset only if all fragments can be destroyed/are not longer in use
   if (ret != ESDM_SUCCESS){
@@ -874,8 +886,12 @@ void esdm_fragment_print(esdm_fragment_t *f) {
   printf(")");
 }
 
-esdm_status esdm_dataspace_destroy(esdm_dataspace_t *dataspace) {
+esdm_status esdm_dataspace_destroy(esdm_dataspace_t *d) {
   ESDM_DEBUG(__func__);
+  assert(d);
+  free(d->offset);
+  free(d->size);
+  free(d);
   return ESDM_SUCCESS;
 }
 

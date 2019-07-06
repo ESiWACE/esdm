@@ -125,6 +125,8 @@ static void backend_thread(io_work_t *work, esdm_backend_t *backend) {
   }
   g_mutex_unlock(&status->mutex);
   //esdm_dataspace_destroy(work->fragment->dataspace);
+
+  work->fragment->status = ESDM_DATA_NOT_LOADED;
   free(work);
 }
 
