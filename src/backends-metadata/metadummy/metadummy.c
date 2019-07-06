@@ -230,7 +230,7 @@ static int container_retrieve(esdm_md_backend_t *backend, esdm_container_t *cont
   if (ret != 0) return ESDM_ERROR;
   off_t len = statbuf.st_size + 1;
 
-  int fd = open(path_metadata, O_RDONLY | S_IWUSR | S_IRUSR | S_IWGRP | S_IRGRP | S_IROTH);
+  int fd = open(path_metadata, O_RDONLY);
   if (fd < 0) return ESDM_ERROR;
   char * json = (char *)malloc(len);
   ret = read_check(fd, json, statbuf.st_size);
@@ -316,7 +316,7 @@ static int dataset_retrieve(esdm_md_backend_t *backend, esdm_dataset_t *d, char 
   if (ret != 0) return ESDM_ERROR;
   off_t len = statbuf.st_size + 1;
 
-  int fd = open(path_metadata, O_RDONLY | S_IWUSR | S_IRUSR | S_IWGRP | S_IRGRP | S_IROTH);
+  int fd = open(path_metadata, O_RDONLY);
   if (fd < 0) return ESDM_ERROR;
   char * json = (char *)malloc(len);
   ret = read_check(fd, json, statbuf.st_size);
