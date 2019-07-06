@@ -279,10 +279,9 @@ esdm_status esdm_mpi_dataset_commit(MPI_Comm com, esdm_dataset_t *d){
 
     int size;
     ret = MPI_Comm_size(com, & size);
-
+    int max_len = 10000000;
+    char * buff = malloc(max_len);
     for(int p = 1 ; p < size; p++){
-      int size = 100000;
-      char buff[size];
       ret = MPI_Recv(buff, size, MPI_CHAR, p, 4711, com, MPI_STATUS_IGNORE);
       assert(ret == MPI_SUCCESS);
 
@@ -300,6 +299,7 @@ esdm_status esdm_mpi_dataset_commit(MPI_Comm com, esdm_dataset_t *d){
         prev++;
     	}
     }
+    free(buff);
     ret = esdm_dataset_commit(d);
 
     MPI_Bcast(& ret, 1, MPI_INT, 0, com);
@@ -309,16 +309,18 @@ esdm_status esdm_mpi_dataset_commit(MPI_Comm com, esdm_dataset_t *d){
     assert(ret == MPI_SUCCESS);
 
     int size;
-    int len = 100000;
-    char buff[len];
+    int len = 10000000;
+    char * buff = malloc(len);
     esdmI_fragments_metadata_create(d, len, buff, & size);
     buff[size] = 0;
     assert(size < len);
 
     ret = MPI_Send(buff, size + 1, MPI_CHAR, 0, 4711, com);
     assert(ret == MPI_SUCCESS);
+    free(buff);
 
     MPI_Bcast(& ret, 1, MPI_INT, 0, com);
+
     return ret;
   }
 }
