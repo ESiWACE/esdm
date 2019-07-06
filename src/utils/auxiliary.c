@@ -73,7 +73,7 @@ int mkdir_recursive(const char *path) {
 }
 
 void posix_recursive_remove(const char *path) {
-  printf("removing %s", path);
+  printf("ESDM removing %s\n", path);
   struct stat sb = {0};
   int ret = stat(path, &sb);
   if (ret == 0) {
@@ -215,7 +215,7 @@ int ea_compute_hash_str(const char * str){
 void ea_generate_id(char *str, size_t length){
   time_t timer;
   time(&timer);
-  
+
   assert(length > 4);
   char charset[] = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789_";
   uint64_t c = (uint64_t) timer;
