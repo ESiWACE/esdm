@@ -111,6 +111,15 @@ static void write_test() {
   ret = esdm_dataset_link_attribute(dataset, attr2);
   assert(ret == ESDM_SUCCESS);
 
+  // esdm_status esdm_container_link_attribute(esdm_container_t *container, smd_attr_t *attr)
+  //
+  // esdm_status esdm_container_get_attributes(esdm_container_t *container, smd_attr_t **out_metadata);
+
+  float a = 5;
+  smd_attr_t *attr3 = smd_attr_new("variables", SMD_DTYPE_FLOAT, &a, 0);
+  ret = esdm_container_link_attribute(container, attr3);
+  assert(ret == ESDM_SUCCESS);
+
   // this step shall write out the metadata and make it persistent
   ret = esdm_dataset_commit(dataset);
   assert(ret == ESDM_SUCCESS);
@@ -135,6 +144,20 @@ void read_test() {
   esdm_dataset_t *dataset = NULL;
 
   ret = esdm_container_open("mycontainer", &container);
+
+  smd_attr_t *out_metadata;
+  ret = esdm_container_get_attributes(container, &out_metadata);
+  assert(ret == ESDM_SUCCESS);
+
+  float a;
+
+  smd_attr_t *a3;
+  a3 = smd_attr_get_child_by_name(out_metadata, "variables");
+  assert(a3 != NULL);
+
+  assert(smd_attr_get_type(a3) == SMD_TYPE_FLOAT);
+  smd_attr_copy_value(a3, & a);
+  printf("\n\na=%f\n\n", (double) a);
 
   // NetCDF consists of three types of things
   // 1) Dimensions

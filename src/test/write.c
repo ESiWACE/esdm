@@ -100,11 +100,19 @@ int main(int argc, char const *argv[]) {
   assert(status == ESDM_SUCCESS);
 
   // Write the data to the dataset
+  assert_crash(esdm_write(NULL, buf_w, subspace));
+  assert_crash(esdm_write(dataset, NULL, subspace));
+  assert_crash(esdm_write(dataset, buf_w, NULL));
   status = esdm_write(dataset, buf_w, subspace);
   assert(status == ESDM_SUCCESS);
 
-  esdm_container_commit(container);
-  esdm_dataset_commit(dataset);
+  assert_crash(esdm_container_commit(NULL));
+  status = esdm_container_commit(container);
+  assert(status == ESDM_SUCCESS);
+
+  assert_crash(esdm_dataset_commit(NULL));
+  status = esdm_dataset_commit(dataset);
+  assert(status == ESDM_SUCCESS);
 
   status = esdm_finalize();
   assert(status == ESDM_SUCCESS);

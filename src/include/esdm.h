@@ -16,8 +16,34 @@
 ///////////////////////////////////////////////////////////////////////////////
 
 // These functions must be used before calling init:
+/**
+ * Set the number of processes to use per node.
+ * Must not be called after `init()`.
+ *
+ * @param [in] procs the number of processes to use per node
+ *
+ * @return status
+ */
 esdm_status esdm_set_procs_per_node(int procs);
+
+/**
+ * Set the total number of processes to use.
+ * Must not be called after `init()`.
+ *
+ * @param [in] procs the number of processes to use
+ *
+ * @return status
+ */
 esdm_status esdm_set_total_procs(int procs);
+
+/**
+ * Set the configuration to use.
+ * Must not be called after `init()`, and must not be called twice.
+ *
+ * @param [in] str a string containing configuration data in JSON format
+ *
+ * @return status
+ */
 esdm_status esdm_load_config_str(const char *str);
 
 /**
@@ -107,12 +133,11 @@ esdm_status esdm_create(char *desc, int mode, esdm_container_t **, esdm_dataset_
 esdm_status esdm_close(void *buf);
 
 /**
- * Write data  of size starting from offset.
+ * Write data with a given size and offset.
  *
- * @param [in] buf	The pointer to a contiguous memory region that shall be written
- * @param [in] dset	TODO, currently a stub, we assume it has been identified/created before...., json description?
- * @param [in] dims	The number of dims, needed for size and offset
- * @param [in] size	...
+ * @param [in] dataset TODO, currently a stub, we assume it has been identified/created before...., json description?
+ * @param [in] buf the pointer to a contiguous memory region that shall be written to permanent storage
+ * @param [in] subspace an existing dataspace that describes the shape and location of the hypercube that is to be written
  *
  * @return status
  */
@@ -122,10 +147,9 @@ esdm_status esdm_write(esdm_dataset_t *dataset, void *buf, esdm_dataspace_t *sub
 /**
  * Reads a data fragment described by desc to the dataset dset.
  *
- * @param [out] buf	The pointer to a contiguous memory region that shall be written
- * @param [in] dset	TODO, currently a stub, we assume it has been identified/created before.... , json description?
- * @param [in] dims	The number of dims, needed for size and offset
- * @param [in] size	...
+ * @param [in] dataset TODO, currently a stub, we assume it has been identified/created before.... , json description?
+ * @param [out] buf a contiguous memory region that shall be filled with the data from permanent storage
+ * @param [in] subspace an existing dataspace that describes the shape and location of the hypercube that is to be read
  *
  * @return status
  */
@@ -153,6 +177,17 @@ esdm_status esdm_read(esdm_dataset_t *dataset, void *buf, esdm_dataspace_t *subs
 
 esdm_status esdm_container_create(const char *name, esdm_container_t **out_container);
 
+/**
+ * Open an existing container.
+ *
+ *  - Allocate process local memory structures.
+ *  - Register with metadata service.
+ *
+ * @param [in] name string to identify the container, must not be empty
+ * @param [out] out_container returns a pointer to the container
+ *
+ * @return status
+ */
 esdm_status esdm_container_open(const char *name, esdm_container_t **out_container);
 
 /**
@@ -169,6 +204,12 @@ esdm_status esdm_container_open(const char *name, esdm_container_t **out_contain
  */
 
 esdm_status esdm_container_commit(esdm_container_t *container);
+
+
+esdm_status esdm_container_link_attribute(esdm_container_t *container, smd_attr_t *attr);
+
+/* This function returns the attributes */
+esdm_status esdm_container_get_attributes(esdm_container_t *container, smd_attr_t **out_metadata);
 
 /**
  * Destroy a existing container.
@@ -211,6 +252,18 @@ esdm_status esdm_dataset_get_dataspace(esdm_dataset_t *dset, esdm_dataspace_t **
 
 esdm_status esdm_dataset_iterator(esdm_container_t *container, esdm_dataset_iterator_t **out_iter);
 
+/**
+ * Open a dataset.
+ *
+ *  - Allocate process local memory structures
+ *  - Retrieve metadata
+ *
+ * @param [in] container pointer to an open container that contains the dataset that is to be opened
+ * @param [in] name identifier of the dataset within the container, must not be empty
+ * @param [out] out_dataset returns a pointer to the opened dataset
+ *
+ * @return status
+ */
 esdm_status esdm_dataset_open(esdm_container_t *container, const char *name, esdm_dataset_t **out_dataset);
 
 /**

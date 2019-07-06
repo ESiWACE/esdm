@@ -139,6 +139,12 @@ esdm_status esdm_container_open_md_load(esdm_container_t *c, char ** out_md, int
 
 esdm_status esdm_container_open(char const *name, esdm_container_t **out_container) {
   ESDM_DEBUG(__func__);
+  assert(out_container);
+  assert(name);
+  if(!*name) {
+    ESDM_LOG_FMT(ESDM_LOGLEVEL_WARNING, "%s() called with an empty name argument\n", __func__);
+    return ESDM_INVALID_ARGUMENT_ERROR;
+  }
 
   esdmI_container_init(name, out_container);
   esdm_container_t *c = *out_container;
@@ -574,6 +580,14 @@ esdm_status esdm_dataset_open_md_parse(esdm_dataset_t *d, char * md, int size){
 
 esdm_status esdm_dataset_open(esdm_container_t *c, const char *name, esdm_dataset_t **out_dataset) {
   ESDM_DEBUG(__func__);
+  assert(c);
+  assert(name);
+  assert(out_dataset);
+  if(!*name) {
+    ESDM_LOG_FMT(ESDM_LOGLEVEL_WARNING, "%s() called with an empty name argument\n", __func__);
+    return ESDM_INVALID_ARGUMENT_ERROR;
+  }
+
 	char * buff;
   int size;
   esdm_dataset_t *d = NULL;
@@ -696,6 +710,19 @@ esdm_status esdm_dataset_destroy(esdm_dataset_t *dset) {
   }
 
   free(dset);
+  return ESDM_SUCCESS;
+}
+
+
+esdm_status esdm_container_link_attribute(esdm_container_t *c, smd_attr_t *attr) {
+  ESDM_DEBUG(__func__);
+  smd_link_ret_t ret = smd_attr_link(c->attr, attr, 0);
+  return ESDM_SUCCESS;
+}
+
+esdm_status esdm_container_get_attributes(esdm_container_t *c, smd_attr_t **out_metadata) {
+  assert(c->attr != NULL);
+  *out_metadata = c->attr;
   return ESDM_SUCCESS;
 }
 
