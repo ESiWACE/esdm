@@ -641,7 +641,6 @@ esdm_status esdmI_fragments_metadata_create(esdm_dataset_t *d, int len, char *js
 		if(i != 0){
 			pos += snprintf(js + pos, len - pos, ",\n");
 		}
-    printf("XX%d %lld\n", i, pos);
 		ret = esdm_fragment_metadata_create(f->frag[i], len - pos, js + pos, & size);
     if (ret != ESDM_SUCCESS){
       return ret;
