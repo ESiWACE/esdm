@@ -21,7 +21,7 @@
 
 #define _GNU_SOURCE /* See feature_test_macros(7) */
 
- 
+
 #include <dirent.h>
 #include <errno.h>
 #include <esdm-debug.h>
@@ -40,6 +40,11 @@
 #define DEBUG_ENTER ESDM_DEBUG_COM_FMT("POSIX", "", "")
 #define DEBUG(fmt, ...) ESDM_DEBUG_COM_FMT("POSIX", fmt, __VA_ARGS__)
 
+#define WARN_ENTER ESDM_WARN_COM_FMT("POSIX", "", "")
+#define WARN(fmt, ...) ESDM_WARN_COM_FMT("POSIX", fmt, __VA_ARGS__)
+#define WARNS(fmt) ESDM_WARN_COM_FMT("POSIX", "%s", fmt)
+
+
 #define sprintfFragmentDir(path, f) (sprintf(path, "%s/%c%c/%s", tgt, f->dataset->id[0], f->dataset->id[1], f->dataset->id+2))
 #define sprintfFragmentPath(path, f) (sprintf(path, "%s/%c%c/%s/%s", tgt, f->dataset->id[0], f->dataset->id[1], f->dataset->id+2, f->id))
 
@@ -55,12 +60,13 @@ static int entry_retrieve(const char *path, void *buf, uint64_t size) {
   int status;
   struct stat sb;
 
-  DEBUG("entry_retrieve(%s)\n", path);
+  DEBUG("entry_retrieve(%s)", path);
 
   // write to non existing file
   int fd = open(path, O_RDONLY);
   // everything ok? read and close
   if (fd < 0) {
+    WARN("error on opening file \"%s\": %s", path, strerror(errno));
     return ESDM_ERROR;
   }
   int ret = read_check(fd, buf, size);
@@ -81,6 +87,7 @@ static int entry_update(const char *path, void *buf, size_t len, int update_only
   // write to non existing file
   int fd = open(path, O_WRONLY | flags, S_IWUSR | S_IRUSR | S_IWGRP | S_IRGRP | S_IROTH);
   if(fd < 0){
+    WARN("error on opening file: %s", strerror(errno));
     return ESDM_ERROR;
   }
   //printf("%s fd: %d\n", path, fd);
@@ -124,6 +131,7 @@ static int mkfs(esdm_backend_t *backend, int format_flags) {
 
   const char *tgt = data->target;
   if (strlen(tgt) < 6) {
+    WARNS("safety, tgt directory shall be longer than 6 chars");
     return ESDM_ERROR;
   }
   char path[PATH_MAX];
@@ -235,7 +243,10 @@ static int fragment_update(esdm_backend_t *backend, esdm_fragment_t *f) {
         sprintfFragmentDir(path, f);
         if (stat(path, &sb) == -1) {
           int ret = mkdir_recursive(path);
-          if (ret != 0 && errno != EEXIST) return ESDM_ERROR;
+          if (ret != 0 && errno != EEXIST) {
+            WARN("error on creating directory: %s", strerror(errno));
+            return ESDM_ERROR;
+          }
         }
         break;
       }

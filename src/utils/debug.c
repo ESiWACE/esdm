@@ -44,7 +44,7 @@ void esdmI_log_dump(){
   }
   log_on_exit = 0;
 
-  printf("ESDM has not been shutdown correctly. Stacktrace:\n");
+  printf("\nESDM has not been shutdown correctly. Stacktrace:\n");
 
   size = backtrace (array, 15);
   strings = backtrace_symbols(array, size);
@@ -60,6 +60,7 @@ void esdmI_log_dump(){
   if(logpointer != logbuffer){
     printf("%s", logbuffer);
   }
+  printf("\n");
 }
 
 void esdm_loglevel(esdm_loglevel_e loglevel){
@@ -77,24 +78,23 @@ void esdm_log(uint32_t loglevel, const char *format, ...) {
     va_start(args, format);
     vprintf(format, args);
     va_end(args);
-  }else{
-    int len = 4096 - (int)(logpointer - logbuffer);
-    va_list args;
+  }
+  int len = 4096 - (int)(logpointer - logbuffer);
+  va_list args;
+  va_start(args, format);
+  int count = vsnprintf(logpointer, len, format, args);
+  va_end(args);
+  if(count > len){
+    *logpointer = 0;
+    logpointer = logbuffer;
+    len = 4096 - (int)(logpointer - logbuffer);
     va_start(args, format);
     int count = vsnprintf(logpointer, len, format, args);
     va_end(args);
     if(count > len){
-      *logpointer = 0;
-      logpointer = logbuffer;
-      len = 4096 - (int)(logpointer - logbuffer);
-      va_start(args, format);
-      int count = vsnprintf(logpointer, len, format, args);
-      va_end(args);
-      if(count > len){
-        printf("ESDM logging error, logmessage is too big\n");
-        return;
-      }
+      printf("ESDM logging error, logmessage is too big\n");
+      return;
     }
-    logpointer += count;
   }
+  logpointer += count;
 }
