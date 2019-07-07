@@ -25,13 +25,15 @@
 #include <stdarg.h>
 #include <stdio.h>
 #include <execinfo.h>
+#include <pthread.h>
 
 #include <esdm-internal.h>
 
 static esdm_loglevel_e global_loglevel = ESDM_LOGLEVEL_INFO;
 static char logbuffer[4097];
-static char * logpointer = logbuffer;
+static char * logpointer = 0;
 static int log_on_exit = 1;
+static pthread_spinlock_t log_lock;
 
 void esdmI_log_dump(){
   void *array[15];
@@ -54,6 +56,10 @@ void esdmI_log_dump(){
   }
 
   free (strings);
+
+  if(! logpointer){
+    return;
+  }
 
   printf("\nLast messages (circular ring buffer)\n[...]");
   printf("%s\n", logpointer + 1);
@@ -79,6 +85,15 @@ void esdm_log(uint32_t loglevel, const char *format, ...) {
     vprintf(format, args);
     va_end(args);
   }
+  int ret;
+  if(! logpointer){
+    logpointer = logbuffer;
+    ret = pthread_spin_init(& log_lock, PTHREAD_PROCESS_PRIVATE);
+    assert(ret == 0);
+  }
+
+  ret = pthread_spin_lock(& log_lock);
+  assert(ret == 0);
   int len = 4096 - (int)(logpointer - logbuffer);
   va_list args;
   va_start(args, format);
@@ -97,4 +112,6 @@ void esdm_log(uint32_t loglevel, const char *format, ...) {
     }
   }
   logpointer += count;
+  ret = pthread_spin_unlock(& log_lock);
+  assert(ret == 0);
 }

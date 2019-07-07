@@ -43,7 +43,7 @@ void esdm_mpi_distribute_config_file(char *config_filename) {
     MPI_Bcast(&len, 1, MPI_INT, 0, MPI_COMM_WORLD);
     MPI_Bcast(config, len, MPI_CHAR, 0, MPI_COMM_WORLD);
   } else {
-    int len;
+    int len = 0;
     MPI_Bcast(&len, 1, MPI_INT, 0, MPI_COMM_WORLD);
     config = (char *)malloc(len);
     MPI_Bcast(config, len, MPI_CHAR, 0, MPI_COMM_WORLD);
