@@ -107,6 +107,7 @@ void esdm_log(uint32_t loglevel, const char *format, ...) {
     int count = vsnprintf(logpointer, len, format, args);
     va_end(args);
     if(count > len){
+      ret = pthread_spin_unlock(& log_lock);
       printf("ESDM logging error, logmessage is too big\n");
       return;
     }
