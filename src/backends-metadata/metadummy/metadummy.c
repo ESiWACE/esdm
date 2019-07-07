@@ -21,7 +21,7 @@
 
 #define _GNU_SOURCE /* See feature_test_macros(7) */
 
- 
+
 #include <dirent.h>
 #include <errno.h>
 #include <fcntl.h>
@@ -261,6 +261,7 @@ static int dataset_create(esdm_md_backend_t * backend, esdm_dataset_t *d){
   eassert(d->id);
 
   while(1){
+    // TODO fix race condition with the file creation here
     ea_generate_id(d->id, 16);
 
     // create directory for datsets

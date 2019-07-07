@@ -74,10 +74,10 @@ static int entry_retrieve(const char *path, void *buf, uint64_t size) {
   return ret;
 }
 
+
 static int entry_update(const char *path, void *buf, size_t len, int update_only) {
   DEBUG("entry_update(%s: %ld)\n", path, len);
   int flags;
-
   if(update_only){
     flags = O_TRUNC;
   }else{
@@ -90,10 +90,8 @@ static int entry_update(const char *path, void *buf, size_t len, int update_only
     WARN("error on opening file: %s", strerror(errno));
     return ESDM_ERROR;
   }
-  //printf("%s fd: %d\n", path, fd);
   int ret = write_check(fd, buf, len);
   close(fd);
-  //printf("END %lld\n", len);
 
   return ret;
 }
@@ -230,35 +228,41 @@ static int fragment_update(esdm_backend_t *backend, esdm_fragment_t *f) {
 
   char path[PATH_MAX];
   // lazy assignment of ID
-  if(f->id == NULL){
-    f->id = malloc(17);
-    eassert(f->id);
-    // ensure that the fragment with the ID doesn't exist, yet
-    while(1){
-      ea_generate_id(f->id, 16);
-      sprintfFragmentPath(path, f);
-
-      struct stat sb;
-      if (stat(path, &sb) == -1) {
-        sprintfFragmentDir(path, f);
-        if (stat(path, &sb) == -1) {
-          int ret = mkdir_recursive(path);
-          if (ret != 0 && errno != EEXIST) {
-            WARN("error on creating directory: %s", strerror(errno));
-            return ESDM_ERROR;
-          }
-        }
-        break;
+  if(f->id != NULL){
+    sprintfFragmentPath(path, f);
+    DEBUG("path: %s\n", path);
+    // create data
+    int ret = entry_update(path, f->buf, f->bytes, 1);
+    return ret;
+  }
+  int ret;
+  f->id = malloc(21);
+  eassert(f->id);
+  // ensure that the fragment with the ID doesn't exist, yet
+  while(1){
+    ea_generate_id(f->id, 20);
+    struct stat sb;
+    sprintfFragmentDir(path, f);
+    if (stat(path, &sb) == -1) {
+      int ret = mkdir_recursive(path);
+      if (ret != 0 && errno != EEXIST) {
+        WARN("error on creating directory \"%s\": %s", path, strerror(errno));
+        return ESDM_ERROR;
       }
     }
+    sprintfFragmentPath(path, f);
+    int fd = open(path, O_WRONLY | O_CREAT | O_EXCL, S_IWUSR | S_IRUSR | S_IWGRP | S_IRGRP | S_IROTH);
+    if(fd < 0){
+      if(errno == EEXIST){
+        continue;
+      }
+      WARN("error on creating file \"%s\": %s", path, strerror(errno));
+      return ESDM_ERROR;
+    }
+    ret = write_check(fd, f->buf, f->bytes);
+    close(fd);
+    return ret;
   }
-
-  sprintfFragmentPath(path, f);
-  DEBUG("path: %s\n", path);
-
-  // create data
-  int ret = entry_update(path, f->buf, f->bytes, 0);
-  return ret;
 }
 
 ///////////////////////////////////////////////////////////////////////////////
