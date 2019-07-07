@@ -69,17 +69,15 @@ esdm_status esdm_init() {
   ESDM_DEBUG("Init");
 
   if (!is_initialized) {
+    if(atexit(esdmI_log_dump) != 0){
+      ESDM_ERROR("Could not register log reporter");
+    }
     char * str = getenv("ESDM_LOGLEVEL");
     if(str){
       int loglevel = atoi(str);
       ESDM_DEBUG_COM_FMT("ESDM", "Setting debuglevel to %d", loglevel);
       esdm_loglevel(loglevel);
     }
-
-
-    ESDM_DEBUG("Initializing ESDM");
-
-    //int status = atexit(esdm_atexit);
 
     // find configuration
     if (!esdm.config){
@@ -143,6 +141,8 @@ esdm_status esdm_finalize() {
   esdm_performance_finalize(&esdm);
   esdm_layout_finalize(&esdm);
   esdm_modules_finalize(&esdm);
+
+  esdm_log_on_exit(0);
 
   return ESDM_SUCCESS;
 }

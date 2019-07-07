@@ -225,6 +225,7 @@ esdm_status esdmI_fragment_create(esdm_dataset_t *dataset, esdm_dataspace_t *sub
 
 esdm_backend_t * esdmI_get_backend(char const * plugin_id);
 
+void esdmI_log_dump();
 
 void ea_generate_id(char *str, size_t length);
 
