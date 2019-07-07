@@ -72,7 +72,13 @@ esdm_status esdm_init() {
     if(atexit(esdmI_log_dump) != 0){
       ESDM_ERROR("Could not register log reporter");
     }
-    char * str = getenv("ESDM_LOGLEVEL");
+    char * str = getenv("ESDM_LOGLEVEL_BUFFER");
+    if(str){
+      int loglevel = atoi(str);
+      ESDM_DEBUG_COM_FMT("ESDM", "Setting buffer debuglevel to %d", loglevel);
+      esdm_loglevel_buffer(loglevel);
+    }
+    str = getenv("ESDM_LOGLEVEL");
     if(str){
       int loglevel = atoi(str);
       ESDM_DEBUG_COM_FMT("ESDM", "Setting debuglevel to %d", loglevel);

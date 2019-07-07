@@ -2,7 +2,7 @@
 * This test uses the generic patterns to verify the high-level interface works as intended
 */
 
- 
+
 #include <backends-metadata/metadummy/metadummy.h>
 
 extern esdm_instance_t esdm;
@@ -11,7 +11,7 @@ int main() {
   char const * cfg = "{\"esdm\": {\"backends\": [],"
 		"\"metadata\": {"
 			"\"type\": \"metadummy\","
-			"\"name\": \"md\","
+			"\"id\": \"md\","
 			"\"target\": \"./_metadummy\"}}}";
   esdm_load_config_str(cfg);
   esdm_init();
@@ -91,6 +91,8 @@ int main() {
   esdm_dataset_destroy(dataset);
 
   esdm_container_destroy(container);
+
+  esdm_finalize();
 
   return 0;
 }

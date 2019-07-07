@@ -34,6 +34,7 @@ static char logbuffer[4097];
 static char * logpointer = 0;
 static int log_on_exit = 1;
 static pthread_spinlock_t log_lock;
+static esdm_loglevel_e buffer_loglevel = 0;
 
 void esdmI_log_dump(){
   void *array[15];
@@ -69,6 +70,17 @@ void esdmI_log_dump(){
   printf("\n");
 }
 
+void esdm_loglevel_buffer(esdm_loglevel_e lvl){
+  if(lvl > 0){
+    int ret;
+    logpointer = logbuffer;
+    ret = pthread_spin_init(& log_lock, PTHREAD_PROCESS_PRIVATE);
+    assert(ret == 0);
+  }else{
+    logpointer = 0;
+  }
+}
+
 void esdm_loglevel(esdm_loglevel_e loglevel){
   global_loglevel = loglevel;
 }
@@ -85,12 +97,10 @@ void esdm_log(uint32_t loglevel, const char *format, ...) {
     vprintf(format, args);
     va_end(args);
   }
-  int ret;
-  if(! logpointer){
-    logpointer = logbuffer;
-    ret = pthread_spin_init(& log_lock, PTHREAD_PROCESS_PRIVATE);
-    assert(ret == 0);
+  if(loglevel > buffer_loglevel){
+    return;
   }
+  int ret;
 
   ret = pthread_spin_lock(& log_lock);
   assert(ret == 0);
