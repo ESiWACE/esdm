@@ -344,4 +344,6 @@ enum esdm_format_flags{
 
 esdm_status esdm_mkfs(int format_flags, data_accessibility_t target);
 
+void esdm_loglevel(esdm_loglevel_e loglevel);
+
 #endif

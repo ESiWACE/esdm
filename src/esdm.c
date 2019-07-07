@@ -69,13 +69,22 @@ esdm_status esdm_init() {
   ESDM_DEBUG("Init");
 
   if (!is_initialized) {
+    char * str = getenv("ESDM_LOGLEVEL");
+    if(str){
+      int loglevel = atoi(str);
+      ESDM_DEBUG_COM_FMT("ESDM", "Setting debuglevel to %d", loglevel);
+      esdm_loglevel(loglevel);
+    }
+
+
     ESDM_DEBUG("Initializing ESDM");
 
     //int status = atexit(esdm_atexit);
 
     // find configuration
-    if (!esdm.config)
+    if (!esdm.config){
       esdm_config_init(&esdm);
+    }
 
     // optional modules (e.g. data and metadata backends)
     esdm_modules_init(&esdm);

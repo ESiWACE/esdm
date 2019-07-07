@@ -73,7 +73,7 @@ int mkdir_recursive(const char *path) {
 }
 
 void posix_recursive_remove(const char *path) {
-  printf("ESDM removing %s\n", path);
+  ESDM_INFO_COM_FMT("AUX", "removing %s", path);
   struct stat sb = {0};
   int ret = stat(path, &sb);
   if (ret == 0) {

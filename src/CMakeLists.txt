@@ -20,8 +20,6 @@ include_directories(${JANSSON_INCLUDE_DIRS})
 find_package(MPI REQUIRED) # TODO this is optional
 
 
-
-
 # Threading support
 set(THREADS_PREFER_PTHREAD_FLAG ON)
 find_package(Threads REQUIRED)
