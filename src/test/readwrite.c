@@ -18,10 +18,12 @@
  * This test uses the ESDM high-level API to actually write a contiuous ND subset of a data set
  */
 
-#include <assert.h>
+
 #include <esdm.h>
 #include <stdio.h>
 #include <stdlib.h>
+
+#include <esdm-internal.h>
 
 #define HEIGHT 10
 #define WIDTH 4096
@@ -63,28 +65,28 @@ int main(int argc, char const *argv[]) {
   esdm_dataset_t *dataset = NULL;
 
   ret = esdm_init();
-  assert(ret == ESDM_SUCCESS);
+  eassert(ret == ESDM_SUCCESS);
 
   ret = esdm_mkfs(ESDM_FORMAT_PURGE_RECREATE, ESDM_ACCESSIBILITY_GLOBAL);
-  assert(ret == ESDM_SUCCESS);
+  eassert(ret == ESDM_SUCCESS);
   ret = esdm_mkfs(ESDM_FORMAT_PURGE_RECREATE, ESDM_ACCESSIBILITY_NODELOCAL);
-  assert(ret == ESDM_SUCCESS);
+  eassert(ret == ESDM_SUCCESS);
 
   // define dataspace
   int64_t bounds[] = {HEIGHT, WIDTH};
   esdm_dataspace_t *dataspace;
 
   ret = esdm_dataspace_create(2, bounds, SMD_DTYPE_UINT64, &dataspace);
-  assert(ret == ESDM_SUCCESS);
+  eassert(ret == ESDM_SUCCESS);
   ret = esdm_container_create("mycontainer", &container);
-  assert(ret == ESDM_SUCCESS);
+  eassert(ret == ESDM_SUCCESS);
 
   ret = esdm_dataset_create(container, "mydataset", dataspace, &dataset);
-  assert(ret == ESDM_SUCCESS);
+  eassert(ret == ESDM_SUCCESS);
   ret = esdm_dataset_commit(dataset);
-  assert(ret == ESDM_SUCCESS);
+  eassert(ret == ESDM_SUCCESS);
   ret = esdm_container_commit(container);
-  assert(ret == ESDM_SUCCESS);
+  eassert(ret == ESDM_SUCCESS);
 
   // define subspace
   int64_t size[] = {HEIGHT, WIDTH};
@@ -92,22 +94,22 @@ int main(int argc, char const *argv[]) {
   esdm_dataspace_t *subspace;
 
   ret = esdm_dataspace_subspace(dataspace, 2, size, offset, &subspace);
-  assert(ret == ESDM_SUCCESS);
+  eassert(ret == ESDM_SUCCESS);
 
   // Write the data to the dataset
 
   ret = esdm_write(dataset, buf_w, subspace);
-  assert(ret == ESDM_SUCCESS);
+  eassert(ret == ESDM_SUCCESS);
 
   // Read the data to the dataset
   ret = esdm_read(dataset, buf_r, subspace);
-  assert(ret == ESDM_SUCCESS);
+  eassert(ret == ESDM_SUCCESS);
 
   // TODO: write subset
   // TODO: read subset -> subspace reconstruction
 
   ret = esdm_finalize();
-  assert(ret == ESDM_SUCCESS);
+  eassert(ret == ESDM_SUCCESS);
 
   // verify data and fail test if mismatches are found
   int mismatches = verify_data(buf_w, buf_r);
@@ -117,7 +119,7 @@ int main(int argc, char const *argv[]) {
   } else {
     printf("OK\n");
   }
-  assert(mismatches == 0);
+  eassert(mismatches == 0);
 
   // clean up
   free(buf_w);

@@ -92,7 +92,7 @@ static void backend_thread(io_work_t *work, esdm_backend_t *backend) {
 
   DEBUG("Backend thread operates on %s via %s", backend->name, backend->config->target);
 
-  assert(backend == work->fragment->backend);
+  eassert(backend == work->fragment->backend);
 
   esdm_status ret;
   switch (work->op) {
@@ -119,7 +119,7 @@ static void backend_thread(io_work_t *work, esdm_backend_t *backend) {
   if (ret != ESDM_SUCCESS){
     status->return_code = ret;
   }
-  assert(status->pending_ops >= 0);
+  eassert(status->pending_ops >= 0);
   if (status->pending_ops == 0) {
     g_cond_signal(&status->done_condition);
   }
@@ -142,7 +142,7 @@ static void read_copy_callback(io_work_t *work) {
   esdm_dataspace_t *fs = f->dataspace;
   //esdm_fragment_print(f);
   //printf("\n");
-  assert(bs->type == fs->type);
+  eassert(bs->type == fs->type);
 
   //calculate where to copy the fetched data to
   uint64_t size = esdm_sizeof(bs->type);
@@ -326,7 +326,7 @@ esdm_status esdm_scheduler_enqueue_write(esdm_instance_t *esdm, io_request_statu
 
   for (int i = 0; i < esdm->modules->data_backend_count; i++) {
     esdm_backend_t *b = esdm->modules->data_backends[i];
-    assert(b);
+    eassert(b);
     // how many of these fit into our buffer
     uint64_t backend_y_per_buffer = b->config->max_fragment_size / one_y_size;
     if (backend_y_per_buffer == 0) {
@@ -346,11 +346,11 @@ esdm_status esdm_scheduler_enqueue_write(esdm_instance_t *esdm, io_request_statu
       esdm_dataspace_t *subspace;
 
       ret = esdm_dataspace_subspace(space, space->dims, dim, offset, &subspace);
-      assert(ret == ESDM_SUCCESS);
+      eassert(ret == ESDM_SUCCESS);
       task->parent = status;
       task->op = ESDM_OP_WRITE;
       ret = esdmI_fragment_create(dataset, subspace, (char *)buf + offset_y * one_y_size, &task->fragment);
-      assert(ret == ESDM_SUCCESS);
+      eassert(ret == ESDM_SUCCESS);
       task->fragment->backend = b;
       task->callback = NULL;
       if (b->threads == 0) {
@@ -396,7 +396,7 @@ esdm_status esdm_scheduler_process_blocking(esdm_instance_t *esdm, io_operation_
   io_request_status_t status;
 
   esdm_status ret = esdm_scheduler_status_init(&status);
-  assert(ret == ESDM_SUCCESS);
+  eassert(ret == ESDM_SUCCESS);
 
   esdm_fragment_t **read_frag = NULL;
   int frag_count;
@@ -405,19 +405,19 @@ esdm_status esdm_scheduler_process_blocking(esdm_instance_t *esdm, io_operation_
     ret = esdm_scheduler_enqueue_write(esdm, &status, dataset, buf, subspace);
   } else if (op == ESDM_OP_READ) {
     ret = esdmI_dataset_lookup_fragments(dataset, subspace, & frag_count, &read_frag);
-    assert(ret == ESDM_SUCCESS);
+    eassert(ret == ESDM_SUCCESS);
     DEBUG("fragments to read: %d", frag_count);
     ret = esdm_scheduler_enqueue_read(esdm, &status, frag_count, read_frag, buf, subspace);
   } else {
-    assert(0 && "Unknown operation");
+    eassert(0 && "Unknown operation");
   }
-  assert(ret == ESDM_SUCCESS);
+  eassert(ret == ESDM_SUCCESS);
 
   ret = esdm_scheduler_wait(&status);
-  assert(ret == ESDM_SUCCESS);
+  eassert(ret == ESDM_SUCCESS);
 
   ret = esdm_scheduler_status_finalize(&status);
-  assert(ret == ESDM_SUCCESS);
+  eassert(ret == ESDM_SUCCESS);
 
   free(read_frag);
 

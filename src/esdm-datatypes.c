@@ -37,9 +37,9 @@ extern esdm_instance_t esdm;
 
 esdm_status esdm_container_create(const char *name, esdm_container_t **out_container) {
   ESDM_DEBUG(__func__);
-  assert(name);
-  assert(*name && "name must not be empty");
-  assert(out_container);
+  eassert(name);
+  eassert(*name && "name must not be empty");
+  eassert(out_container);
 
   esdmI_container_init(name, out_container);
 
@@ -49,8 +49,8 @@ esdm_status esdm_container_create(const char *name, esdm_container_t **out_conta
 }
 
 int esdm_container_dataset_exists(esdm_container_t * c, char const * name){
-  assert(c != NULL);
-  assert(name != NULL);
+  eassert(c != NULL);
+  eassert(name != NULL);
   esdm_datasets_t * d = & c->dsets;
   for(int i=0; i < d->count; d++){
     if (strcmp(name, d->dset[i]->name) == 0){
@@ -62,13 +62,13 @@ int esdm_container_dataset_exists(esdm_container_t * c, char const * name){
 
 void esdmI_container_register_dataset(esdm_container_t * c, esdm_dataset_t *dset){
 	ESDM_DEBUG(__func__);
-  assert(c != NULL);
-  assert(dset != NULL);
+  eassert(c != NULL);
+  eassert(dset != NULL);
 	esdm_datasets_t * d = & c->dsets;
 	if (d->buff_size == d->count){
 		d->buff_size = d->buff_size * 2 + 5;
 		d->dset = (esdm_dataset_t**) realloc(d->dset, sizeof(void*) * d->buff_size);
-		assert(d->dset != NULL);
+		eassert(d->dset != NULL);
 	}
 	d->dset[d->count] = dset;
 	d->count++;
@@ -141,8 +141,8 @@ esdm_status esdm_container_open_md_load(esdm_container_t *c, char ** out_md, int
 
 esdm_status esdm_container_open(char const *name, esdm_container_t **out_container) {
   ESDM_DEBUG(__func__);
-  assert(out_container);
-  assert(name);
+  eassert(out_container);
+  eassert(name);
   if(!*name) {
     ESDM_LOG_FMT(ESDM_LOGLEVEL_WARNING, "%s() called with an empty name argument\n", __func__);
     return ESDM_INVALID_ARGUMENT_ERROR;
@@ -171,7 +171,7 @@ esdm_status esdm_container_open(char const *name, esdm_container_t **out_contain
 
 
 esdm_status esdmI_datasets_reference_metadata_create(esdm_container_t *c, int len, char *js, int * out_size){
-  assert(len > 0);
+  eassert(len > 0);
   int pos = 0;
 	pos += snprintf(js, len, "[");
   *out_size = pos;
@@ -210,7 +210,7 @@ esdm_status esdmI_container_metadata_create(esdm_container_t *c, int len, char *
 
 esdm_status esdm_container_commit(esdm_container_t *c) {
   ESDM_DEBUG(__func__);
-  assert(c);
+  eassert(c);
 
   const int len = 100000;
   char buff[len];
@@ -237,7 +237,7 @@ void esdm_dataset_register_fragment(esdm_dataset_t *dset, esdm_fragment_t *frag)
 	if (f->buff_size == f->count){
 		f->buff_size = f->buff_size * 2 + 5;
 		f->frag = (esdm_fragment_t**) realloc(f->frag, sizeof(void*) * f->buff_size);
-		assert(f->frag != NULL);
+		eassert(f->frag != NULL);
 	}
 	f->frag[f->count] = frag;
 	f->count++;
@@ -252,14 +252,14 @@ void esdm_dataset_register_fragment(esdm_dataset_t *dset, esdm_fragment_t *frag)
  */
 
 esdm_status esdmI_fragment_create(esdm_dataset_t *dataset, esdm_dataspace_t *subspace, void *buf, esdm_fragment_t **out_fragment) {
-  assert(dataset);
+  eassert(dataset);
   ESDM_DEBUG(__func__);
   esdm_fragment_t *fragment = (esdm_fragment_t *)malloc(sizeof(esdm_fragment_t));
 
   int64_t i;
   for (i = 0; i < subspace->dims; i++) {
     DEBUG("dim %d, size=%d (%p)\n", i, subspace->size[i], subspace->size);
-    assert(subspace->size[i] > 0);
+    eassert(subspace->size[i] > 0);
   }
 
   uint64_t elements = esdm_dataspace_element_count(subspace);
@@ -296,7 +296,7 @@ esdm_status esdm_fragment_retrieve(esdm_fragment_t *fragment) {
 
 
 esdm_status esdm_fragment_metadata_create(esdm_fragment_t *f, int len, char * js, int * out_size){
-  assert(f != NULL);
+  eassert(f != NULL);
 	esdm_dataspace_t *d = f->dataspace;
 	int size = 0;
 	int ret;
@@ -327,7 +327,7 @@ esdm_status esdm_fragment_metadata_create(esdm_fragment_t *f, int len, char * js
 
 esdm_status esdm_fragment_commit(esdm_fragment_t *f) {
   ESDM_DEBUG(__func__);
-  assert(f && "fragment argument must not be NULL");
+  eassert(f && "fragment argument must not be NULL");
 
 	int ret = f->backend->callbacks.fragment_update(f->backend, f);
   if(ret == ESDM_SUCCESS) {
@@ -424,11 +424,11 @@ void esdm_dataset_init(esdm_container_t *c, const char *name, esdm_dataspace_t *
 
 esdm_status esdm_dataset_create(esdm_container_t *c, const char *name, esdm_dataspace_t *dspace, esdm_dataset_t **out_dataset) {
   ESDM_DEBUG(__func__);
-  assert(c);
-  assert(name);
-  assert(*name && "name must not be empty");
-  assert(dspace);
-  assert(out_dataset);
+  eassert(c);
+  eassert(name);
+  eassert(*name && "name must not be empty");
+  eassert(dspace);
+  eassert(out_dataset);
   int ret;
   ret = esdm_container_dataset_exists(c, name);
   if( ret ){
@@ -436,7 +436,7 @@ esdm_status esdm_dataset_create(esdm_container_t *c, const char *name, esdm_data
   }
   esdm_dataset_init(c, name, dspace, out_dataset);
   esdm_status status = esdm.modules->metadata_backend->callbacks.dataset_create(esdm.modules->metadata_backend, *out_dataset);
-  assert(status == ESDM_SUCCESS);
+  eassert(status == ESDM_SUCCESS);
 
   esdmI_container_register_dataset(c, *out_dataset);
 
@@ -444,15 +444,15 @@ esdm_status esdm_dataset_create(esdm_container_t *c, const char *name, esdm_data
 }
 
 esdm_status esdm_dataset_open_md_load(esdm_dataset_t *dset, char ** out_md, int * out_size){
-  assert(dset != NULL);
-  assert(out_md != NULL);
-  assert(out_size != NULL);
+  eassert(dset != NULL);
+  eassert(out_md != NULL);
+  eassert(out_size != NULL);
 
 	return esdm.modules->metadata_backend->callbacks.dataset_retrieve(esdm.modules->metadata_backend, dset, out_md, out_size);
 }
 
 esdm_backend_t * esdmI_get_backend(char const * plugin_id){
-    assert(plugin_id);
+    eassert(plugin_id);
 
     // find the backend for the fragment
     esdm_backend_t *backend_to_use = NULL;
@@ -479,7 +479,7 @@ esdm_status esdmI_create_fragment_from_metadata(esdm_dataset_t *dset, json_t * j
   elem = json_object_get(json, "pid");
   const char *plugin_id = json_string_value(elem);
   f->backend = esdmI_get_backend(plugin_id);
-  assert(f->backend);
+  eassert(f->backend);
 
   elem = json_object_get(json, "id");
   char const  * id = json_string_value(elem);
@@ -508,7 +508,7 @@ esdm_status esdmI_create_fragment_from_metadata(esdm_dataset_t *dset, json_t * j
 
 	// TODO at this point deserialize module specific options
   ret = esdm_dataspace_subspace(dset->dataspace, cnt, size, offset, & space);
-  assert(ret == ESDM_SUCCESS);
+  eassert(ret == ESDM_SUCCESS);
 
   uint64_t elements = esdm_dataspace_element_count(space);
   int64_t bytes = elements * esdm_sizeof(space->type);
@@ -602,9 +602,9 @@ esdm_status esdm_dataset_open_md_parse(esdm_dataset_t *d, char * md, int size){
 
 esdm_status esdm_dataset_open(esdm_container_t *c, const char *name, esdm_dataset_t **out_dataset) {
   ESDM_DEBUG(__func__);
-  assert(c);
-  assert(name);
-  assert(out_dataset);
+  eassert(c);
+  eassert(name);
+  eassert(out_dataset);
   if(!*name) {
     ESDM_LOG_FMT(ESDM_LOGLEVEL_WARNING, "%s() called with an empty name argument\n", __func__);
     return ESDM_INVALID_ARGUMENT_ERROR;
@@ -640,7 +640,7 @@ esdm_status esdm_dataset_open(esdm_container_t *c, const char *name, esdm_datase
 }
 
 esdm_status esdmI_fragments_metadata_create(esdm_dataset_t *d, int len, char *js, int * out_size){
-  assert(len > 0);
+  eassert(len > 0);
   esdm_status ret;
   int pos = 0;
 	pos += snprintf(js, len, "[");
@@ -697,7 +697,7 @@ esdm_status esdmI_dataset_metadata_create(esdm_dataset_t *d, int len, char * md,
 
 esdm_status esdm_dataset_commit(esdm_dataset_t *dataset) {
   ESDM_DEBUG(__func__);
-  assert(dataset);
+  eassert(dataset);
 
   int len = 10000000;
   char * buff = malloc(len);
@@ -758,13 +758,13 @@ esdm_status esdm_container_link_attribute(esdm_container_t *c, smd_attr_t *attr)
 }
 
 esdm_status esdm_container_get_attributes(esdm_container_t *c, smd_attr_t **out_metadata) {
-  assert(c->attr != NULL);
+  eassert(c->attr != NULL);
   *out_metadata = c->attr;
   return ESDM_SUCCESS;
 }
 
 esdm_status esdm_dataset_get_attributes(esdm_dataset_t *dataset, smd_attr_t **out_metadata) {
-  assert(dataset->attr != NULL);
+  eassert(dataset->attr != NULL);
   *out_metadata = dataset->attr;
   return ESDM_SUCCESS;
 }
@@ -773,9 +773,9 @@ esdm_status esdm_dataset_get_attributes(esdm_dataset_t *dataset, smd_attr_t **ou
 
 esdm_status esdm_dataspace_create(int64_t dims, int64_t *sizes, esdm_type_t type, esdm_dataspace_t **out_dataspace) {
   ESDM_DEBUG(__func__);
-  assert(dims >= 0);
-  assert(!dims || sizes);
-  assert(out_dataspace);
+  eassert(dims >= 0);
+  eassert(!dims || sizes);
+  eassert(out_dataspace);
 
   esdm_dataspace_t *dataspace = (esdm_dataspace_t *)malloc(sizeof(esdm_dataspace_t));
 
@@ -813,10 +813,10 @@ uint8_t esdm_dataspace_overlap(esdm_dataspace_t *a, esdm_dataspace_t *b) {
  */
 esdm_status esdm_dataspace_subspace(esdm_dataspace_t *dataspace, int64_t dims, int64_t *size, int64_t *offset, esdm_dataspace_t **out_dataspace) {
   ESDM_DEBUG(__func__);
-  assert(dataspace);
-  assert(!dims || size);
-  assert(!dims || offset);
-  assert(out_dataspace);
+  eassert(dataspace);
+  eassert(!dims || size);
+  eassert(!dims || offset);
+  eassert(out_dataspace);
 
   // check for any inconsistencies between the given subspace and the dataspace
   esdm_status status = ESDM_SUCCESS;
@@ -889,7 +889,7 @@ void esdm_fragment_print(esdm_fragment_t *f) {
 
 esdm_status esdm_dataspace_destroy(esdm_dataspace_t *d) {
   ESDM_DEBUG(__func__);
-  assert(d);
+  eassert(d);
   free(d->offset);
   free(d->size);
   free(d);
@@ -908,7 +908,7 @@ esdm_status esdm_dataspace_deserialize(void *serialized_dataspace, esdm_dataspac
 }
 
 uint64_t esdm_dataspace_element_count(esdm_dataspace_t *subspace) {
-  assert(subspace->size != NULL);
+  eassert(subspace->size != NULL);
   // calculate subspace element count
   uint64_t size = subspace->size[0];
   for (int i = 1; i < subspace->dims; i++) {
@@ -927,8 +927,8 @@ uint64_t esdm_dataspace_size(esdm_dataspace_t *dataspace) {
 
 esdm_status esdm_dataset_name_dims(esdm_dataset_t *d, char **names) {
   ESDM_DEBUG(__func__);
-  assert(d != NULL);
-  assert(names != NULL);
+  eassert(d != NULL);
+  eassert(names != NULL);
   int dims = d->dataspace->dims;
   int size = 0;
   // compute size and check that varname is conform
@@ -952,8 +952,8 @@ esdm_status esdm_dataset_name_dims(esdm_dataset_t *d, char **names) {
 }
 
 esdm_status esdm_dataset_get_name_dims(esdm_dataset_t *d, char const *const **out_names) {
-  assert(d != NULL);
-  assert(out_names != NULL);
+  eassert(d != NULL);
+  eassert(out_names != NULL);
   *out_names = (char const *const *)d->dims_dset_id;
   return ESDM_SUCCESS;
 }

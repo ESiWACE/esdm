@@ -388,7 +388,7 @@ int DBA_create(SQA_t *attr, H5VL_loc_params_t loc_params, hid_t acpl_id, hid_t a
 
   hid_t type_id;
   H5Pget(acpl_id, "attr_type_id", &type_id);
-  assert(-1 != type_id);
+  eassert(-1 != type_id);
   size_t type_size;
   H5Tencode(type_id, NULL, &type_size);
   char *type_buf = (char *)malloc(type_size);
@@ -396,7 +396,7 @@ int DBA_create(SQA_t *attr, H5VL_loc_params_t loc_params, hid_t acpl_id, hid_t a
 
   hid_t space_id;
   H5Pget(acpl_id, "attr_space_id", &space_id);
-  assert(-1 != space_id);
+  eassert(-1 != space_id);
   size_t space_size;
   H5Sencode(space_id, NULL, &space_size);
   unsigned char *space_buf = (unsigned char *)malloc(space_size);
@@ -405,19 +405,19 @@ int DBA_create(SQA_t *attr, H5VL_loc_params_t loc_params, hid_t acpl_id, hid_t a
   size_t acpl_size;
   H5Pencode(acpl_id, NULL, &acpl_size);
   char *acpl_buf = (char *)malloc(acpl_size);
-  assert(NULL != acpl_buf);
+  eassert(NULL != acpl_buf);
   H5Pencode(acpl_id, acpl_buf, &acpl_size);
 
   //	size_t aapl_size;
   //	H5Pencode(aapl_id, NULL, &aapl_size);
   //	char* aapl_buf = (char*) malloc(aapl_size);
-  //	assert(NULL != aapl_buf);
+  //	eassert(NULL != aapl_buf);
   //	H5Pencode(aapl_id, aapl_buf, &aapl_size);
   //
   //	size_t dxpl_size;
   //	H5Pencode(dxpl_id, NULL, &dxpl_size);
   //	char* dxpl_buf = (char*) malloc(dxpl_size);
-  //	assert(NULL != dxpl_buf);
+  //	eassert(NULL != dxpl_buf);
   //	H5Pencode(dxpl_id, dxpl_buf, &dxpl_size);
 
   rc = sqlite3_prepare(db, sql2, strlen(sql2), &res, &pzTest);
@@ -576,7 +576,7 @@ int DBA_get_acpl(SQA_t *attr, hid_t *acpl_id) {
     const void *data = sqlite3_column_blob(res, 0);
     memcpy(acpl_buf, data, data_size);
     *acpl_id = H5Pdecode(acpl_buf);
-    assert(-1 != *acpl_id);
+    eassert(-1 != *acpl_id);
   }
 
   sqlite3_finalize(res);
@@ -616,7 +616,7 @@ int DBA_get_type(SQA_t *attr, hid_t *type_id) {
     const void *data = sqlite3_column_blob(res, 0);
     memcpy(type_buf, data, data_size);
     *type_id = H5Tdecode(type_buf);
-    assert(-1 != *type_id);
+    eassert(-1 != *type_id);
   }
 
   sqlite3_finalize(res);
@@ -656,7 +656,7 @@ int DBA_get_space(SQA_t *attr, hid_t *space_id) {
     const void *data = sqlite3_column_blob(res, 0);
     memcpy(space_buf, data, data_size);
     *space_id = H5Sdecode(space_buf);
-    assert(-1 != *space_id);
+    eassert(-1 != *space_id);
   }
 
   sqlite3_finalize(res);
@@ -793,7 +793,7 @@ int DBG_open(SQO_t *parent, H5VL_loc_params_t loc_params, const char *group_name
     DEBUGMSG("Couldn't read info.");
     ret = -1;
   }
-  assert(data_size == sizeof(group->object.info));
+  eassert(data_size == sizeof(group->object.info));
   const void *data = sqlite3_column_blob(res, 0);
   memcpy(&group->object.info, data, data_size);
 
@@ -861,7 +861,7 @@ int DBD_create(SQD_t *dset, H5VL_loc_params_t loc_params, hid_t dcpl_id, hid_t d
   if (-1 == (err = H5Pget(dcpl_id, "dataset_type_id", &type_id))) {
     ERRORMSG("Couldn't get type from dcpl.");
   }
-  assert(-1 != type_id);
+  eassert(-1 != type_id);
   size_t type_size;
   H5Tencode(type_id, NULL, &type_size);
   char *type_buf = (char *)malloc(type_size);
@@ -871,7 +871,7 @@ int DBD_create(SQD_t *dset, H5VL_loc_params_t loc_params, hid_t dcpl_id, hid_t d
   if (-1 == (err = H5Pget(dcpl_id, "dataset_space_id", &space_id))) {
     ERRORMSG("Couldn't get type from dcpl.");
   }
-  assert(-1 != space_id);
+  eassert(-1 != space_id);
   size_t space_size;
   H5Sencode(space_id, NULL, &space_size);
   unsigned char *space_buf = (unsigned char *)malloc(space_size);
@@ -880,13 +880,13 @@ int DBD_create(SQD_t *dset, H5VL_loc_params_t loc_params, hid_t dcpl_id, hid_t d
   size_t dcpl_size;
   H5Pencode(dcpl_id, NULL, &dcpl_size);
   char *dcpl_buf = (char *)malloc(dcpl_size);
-  assert(NULL != dcpl_buf);
+  eassert(NULL != dcpl_buf);
   H5Pencode(dcpl_id, dcpl_buf, &dcpl_size);
 
   size_t dapl_size;
   H5Pencode(dapl_id, NULL, &dapl_size);
   char *dapl_buf = (char *)malloc(dapl_size);
-  assert(NULL != dapl_buf);
+  eassert(NULL != dapl_buf);
   H5Pencode(dapl_id, dapl_buf, &dapl_size);
 
   sqlite3_bind_text(res, 1, dset->object.location, strlen(dset->object.location), 0);
@@ -947,7 +947,7 @@ int DBD_open(SQO_t *parent, H5VL_loc_params_t loc_params, const char *name, SQD_
   if (0 == data_size) {
     ERRORMSG("Couldn't read info.");
   }
-  assert(data_size == sizeof(dset->object.info));
+  eassert(data_size == sizeof(dset->object.info));
   const void *data = sqlite3_column_blob(res, 2);
   memcpy(&dset->object.info, data, data_size);
 
@@ -1070,7 +1070,7 @@ int DBD_get_type(SQD_t *dset, hid_t *type_id) {
     const void *data = sqlite3_column_blob(res, 0);
     memcpy(type_buf, data, data_size);
     *type_id = H5Tdecode(type_buf);
-    assert(-1 != *type_id);
+    eassert(-1 != *type_id);
   }
 
   sqlite3_finalize(res);
@@ -1109,7 +1109,7 @@ int DBD_get_space(SQD_t *dset, hid_t *space_id) {
     const void *data = sqlite3_column_blob(res, 0);
     memcpy(space_buf, data, data_size);
     *space_id = H5Sdecode(space_buf);
-    assert(-1 != *space_id);
+    eassert(-1 != *space_id);
   }
 
   sqlite3_finalize(res);

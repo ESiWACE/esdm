@@ -21,7 +21,6 @@
  *
  */
 
-#include <assert.h>
 #include <errno.h>
 #include <esdm-internal.h>
 #include <fcntl.h>
@@ -37,7 +36,7 @@
 
 int ea_is_valid_name(const char *str) {
   // TODO allow names with a-a, A-Z,0-9,_-
-  assert(str != NULL);
+  eassert(str != NULL);
   return 1;
 }
 
@@ -99,7 +98,7 @@ void posix_recursive_remove(const char *path) {
 // file I/O handling //////////////////////////////////////////////////////////
 
 int read_file(char *filepath, char **buf) {
-  assert(buf);
+  eassert(buf);
 
   int fd = open(filepath, O_RDONLY);
   if (fd < 0) {
@@ -212,7 +211,7 @@ void ea_generate_id(char *str, size_t length){
   time_t timer;
   time(&timer);
 
-  assert(length > 4);
+  eassert(length > 4);
   char charset[] = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789_";
   uint64_t c = (uint64_t) timer;
   int const count = (int)(sizeof(charset) -1);

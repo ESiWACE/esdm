@@ -26,7 +26,7 @@
 #pragma GCC diagnostic ignored "-Wformat"
 #pragma GCC diagnostic ignored "-Wformat-extra-args"
 
-#include <assert.h>
+ 
 #include <glib.h>
 #include <hdf5.h>
 #include <jansson.h>
@@ -148,7 +148,7 @@ herr_t H5VL_esdm_init(hid_t vipl_id) {
   vol_id = H5VLregister(&H5VL_esdm);
   H5VLinitialize(vol_id, H5P_DEFAULT);
 
-  assert(H5VLget_plugin_id(VOL_PLUGIN_NAME) != -1);
+  eassert(H5VLget_plugin_id(VOL_PLUGIN_NAME) != -1);
 
   esdm_init();
 
@@ -158,7 +158,7 @@ herr_t H5VL_esdm_init(hid_t vipl_id) {
 int H5VL_esdm_term() {
   info("H5VL_esdm_term()");
 
-  assert(vol_id != -1);
+  eassert(vol_id != -1);
 
   H5VLclose(vol_id);
   vol_id = -1;

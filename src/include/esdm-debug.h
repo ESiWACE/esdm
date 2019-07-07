@@ -4,6 +4,15 @@
 #include <assert.h>
 #include <stdint.h>
 
+#define eassert(bool)\
+  do { \
+    if(! (bool)){\
+      esdmI_log_dump(); \
+      assert(bool);\
+      exit(2); \
+    }\
+  } while (0)
+
 void esdm_log(uint32_t loglevel, const char *format, ...);
 
 #define ESDM_LOG(fmt) ESDM_LOG_FMT(ESDM_LOGLEVEL_DEBUG, "%s", fmt)

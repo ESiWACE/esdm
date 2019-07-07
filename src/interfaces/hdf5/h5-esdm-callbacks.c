@@ -317,7 +317,7 @@ static herr_t H5VL_esdm_attribute_read(void *attr, hid_t mem_type_id, void *buf,
   herr_t ret_value = SUCCEED;
 
   //	TRACEMSG("");
-  //	assert(NULL != buf);
+  //	eassert(NULL != buf);
   //	SQA_t *attr = (SQA_t *)obj;
   //	DBA_read(attr, buf);
   //	return 1;
@@ -730,7 +730,7 @@ static herr_t H5VL_esdm_dataset_write(void *dset, hid_t mem_type_id, hid_t mem_s
   H5Sget_simple_extent_dims(mem_space_id, dims, max_dims);
 
   size_t block_size = H5Tget_size(mem_type_id);
-  assert(block_size != 0);
+  eassert(block_size != 0);
   for (size_t i = 0; i < ndims; ++i) {
     block_size *= dims[i];
   }
@@ -749,7 +749,7 @@ static herr_t H5VL_esdm_dataset_write(void *dset, hid_t mem_type_id, hid_t mem_s
   //const void * data =  /* set pointer to data*/;
   //memcpy(space_buf, data, data_size);
   //*space_id = H5Sdecode(space_buf);
-  //assert(-1 != *space_id);
+  //eassert(-1 != *space_id);
 
   hsize_t ddims[ndims];
   hsize_t dmaxdims[ndims];
@@ -1333,7 +1333,7 @@ static void *H5VL_esdm_file_create(const char *name, unsigned flags, hid_t fcpl_
     file->mode_flags = H5F_ACC_RDWR;
 
   } else {
-    assert(0 && "Modeflags are invalid");
+    eassert(0 && "Modeflags are invalid");
   }
 
   // attach to file struct
@@ -1411,7 +1411,7 @@ static herr_t H5VL_esdm_file_get(void *file, H5VL_file_get_t get_type, hid_t dxp
       unsigned types = va_arg(arguments, unsigned);
       ssize_t *ret = va_arg(arguments, ssize_t *);
       size_t obj_count = 0; /* Number of opened objects */
-      assert(0 && "TODO");
+      eassert(0 && "TODO");
       /* Set the return value */
       *ret = (ssize_t)obj_count;
       break;
@@ -1424,7 +1424,7 @@ static herr_t H5VL_esdm_file_get(void *file, H5VL_file_get_t get_type, hid_t dxp
       ssize_t *ret = va_arg(arguments, ssize_t *);
       size_t obj_count = 0; /* Number of opened objects */
 
-      assert(0 && "TODO");
+      eassert(0 && "TODO");
 
       /* Set the return value */
       *ret = (ssize_t)obj_count;
@@ -1458,7 +1458,7 @@ static herr_t H5VL_esdm_file_get(void *file, H5VL_file_get_t get_type, hid_t dxp
       H5I_type_t type = va_arg(arguments, H5I_type_t);
       void **ret = va_arg(arguments, void **);
       void *tmp;
-      assert(0 && "TODO");
+      eassert(0 && "TODO");
 
       switch (type) {
         case H5I_FILE:
@@ -1483,14 +1483,14 @@ static herr_t H5VL_esdm_file_get(void *file, H5VL_file_get_t get_type, hid_t dxp
           break;
 
         default:
-          assert(0 && "Invalid type");
+          eassert(0 && "Invalid type");
       }
 
       *ret = (void *)tmp;
       break;
     }
     default:
-      assert(0);
+      eassert(0);
   } /* end switch */
 
   return ret_value;
@@ -1580,7 +1580,7 @@ static herr_t H5VL_esdm_file_close(void *file, hid_t dxpl_id, void **req) {
 static void H5VL_esdm_group_init(H5VL_esdm_group_t *group) {
   group->childs_tbl = g_hash_table_new(g_str_hash, g_str_equal);
   group->childs_ord_by_index_arr = g_array_new(0, 0, sizeof(void *));
-  assert(group->childs_tbl != NULL);
+  eassert(group->childs_tbl != NULL);
 }
 
 static void *H5VL_esdm_group_create(void *obj, H5VL_loc_params_t loc_params, const char *name, hid_t gcpl_id, hid_t gapl_id, hid_t dxpl_id, void **req) {
@@ -1695,7 +1695,7 @@ static herr_t H5VL_esdm_group_get(void *obj, H5VL_group_get_t get_type, hid_t dx
         relevant_group = (H5VL_esdm_group_t *)((H5VL_esdm_object_t *)relevant_group)->object;
 
       } else if (loc_params.type == H5VL_OBJECT_BY_IDX) {
-        assert(loc_params.loc_data.loc_by_idx.order == H5_ITER_INC || loc_params.loc_data.loc_by_idx.order == H5_ITER_NATIVE);
+        eassert(loc_params.loc_data.loc_by_idx.order == H5_ITER_INC || loc_params.loc_data.loc_by_idx.order == H5_ITER_NATIVE);
         if (loc_params.loc_data.loc_by_idx.idx_type == H5_INDEX_NAME) {
           // TODO, for now return the index position.
           relevant_group = g_array_index(group->childs_ord_by_index_arr, H5VL_esdm_group_t *, loc_params.loc_data.loc_by_idx.n);
@@ -1706,7 +1706,7 @@ static herr_t H5VL_esdm_group_get(void *obj, H5VL_group_get_t get_type, hid_t dx
           relevant_group = (H5VL_esdm_group_t *)((H5VL_esdm_object_t *)relevant_group)->object;
 
         } else {
-          assert(0);
+          eassert(0);
         }
       }
 

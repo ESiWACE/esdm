@@ -34,34 +34,34 @@ esdm_instance_t esdm = {
 };
 
 esdm_status esdm_set_procs_per_node(int procs) {
-  assert(procs > 0);
-  assert(!is_initialized);
+  eassert(procs > 0);
+  eassert(!is_initialized);
 
   esdm.procs_per_node = procs;
   return ESDM_SUCCESS;
 }
 
 esdm_status esdm_set_total_procs(int procs) {
-  assert(procs > 0);
-  assert(!is_initialized);
+  eassert(procs > 0);
+  eassert(!is_initialized);
 
   esdm.total_procs = procs;
   return ESDM_SUCCESS;
 }
 
 esdm_status esdm_load_config_str(const char *str) {
-  assert(str != NULL);
-  assert(!is_initialized);
-  assert(!esdm.config);
+  eassert(str != NULL);
+  eassert(!is_initialized);
+  eassert(!esdm.config);
 
   esdm.config = esdm_config_init_from_str(str);
   return esdm.config ? ESDM_SUCCESS : ESDM_ERROR;
 }
 
 esdm_status esdm_dataset_get_dataspace(esdm_dataset_t *dset, esdm_dataspace_t **out_dataspace) {
-  assert(dset != NULL);
+  eassert(dset != NULL);
   *out_dataspace = dset->dataspace;
-  assert(*out_dataspace != NULL);
+  eassert(*out_dataspace != NULL);
   return ESDM_SUCCESS;
 }
 
@@ -149,18 +149,18 @@ esdm_status esdm_finalize() {
 
 esdm_status esdm_write(esdm_dataset_t *dataset, void *buf, esdm_dataspace_t *out_subspace) {
   ESDM_DEBUG(__func__);
-  assert(dataset);
-  assert(buf);
-  assert(out_subspace);
+  eassert(dataset);
+  eassert(buf);
+  eassert(out_subspace);
 
   return esdm_scheduler_process_blocking(&esdm, ESDM_OP_WRITE, dataset, buf, out_subspace);
 }
 
 esdm_status esdm_read(esdm_dataset_t *dataset, void *buf, esdm_dataspace_t *subspace) {
   ESDM_DEBUG("");
-  assert(dataset);
-  assert(buf);
-  assert(subspace);
+  eassert(dataset);
+  eassert(buf);
+  eassert(subspace);
 
   return esdm_scheduler_process_blocking(&esdm, ESDM_OP_READ, dataset, buf, subspace);
 }

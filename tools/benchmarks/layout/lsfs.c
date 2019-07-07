@@ -24,7 +24,7 @@
  * ./lsfs test.out 100 $((1024*1024*1)) 10 16
  */
 
-#include <assert.h>
+ 
 #include <fcntl.h>
 #include <mpi.h>
 #include <stdint.h>
@@ -56,12 +56,12 @@ void stdWrite() {
   size_t startPos = 0;
   for (int i = 0; i < timesteps; i++) {
     ret = pwrite(fd, buffer, blocksize, startPos);
-    assert(ret == blocksize);
+    eassert(ret == blocksize);
 
     for (int i = 0; i < iterationsSmall; i++) {
       size_t pos = rand() % (blocksize - smalldatasize) + startPos;
       ret = pwrite(fd, buffer, smalldatasize, pos);
-      assert(ret == smalldatasize);
+      eassert(ret == smalldatasize);
     }
 
     startPos += blocksize;
@@ -87,7 +87,7 @@ void stdRead1DVar() {
 
   for (int i = 0; i < timesteps; i++) {
     ret = pread(fd, buffer, smalldatasize, startPos);
-    assert(ret == smalldatasize);
+    eassert(ret == smalldatasize);
 
     startPos += blocksize;
   }
@@ -111,7 +111,7 @@ void stdReadAll() {
   size_t startPos = 0;
   for (int i = 0; i < timesteps; i++) {
     ret = pread(fd, buffer, blocksize, startPos);
-    assert(ret == blocksize);
+    eassert(ret == blocksize);
 
     startPos += blocksize;
   }
@@ -135,7 +135,7 @@ void lfsWrite() {
   size_t startPos = 0;
   for (int i = 0; i < timesteps; i++) {
     ret = pwrite(fd, buffer, blocksize, startPos);
-    assert(ret == blocksize);
+    eassert(ret == blocksize);
     fwrite(&startPos, sizeof(startPos), 1, lfs);
     fwrite(&blocksize, sizeof(blocksize), 1, lfs);
 
@@ -146,7 +146,7 @@ void lfsWrite() {
       fwrite(&pos, sizeof(startPos), 1, lfs);
       fwrite(&smalldatasize, sizeof(blocksize), 1, lfs);
 
-      assert(ret == smalldatasize);
+      eassert(ret == smalldatasize);
     }
 
     startPos += blocksize;
@@ -204,7 +204,7 @@ lfs_index *lfsReadIndex() {
   size_t data = 0;
   struct stat stats;
   ret = stat(lfsfilename, &stats);
-  assert(ret == 0);
+  eassert(ret == 0);
 
   int record_count = stats.st_size / sizeof(lfs_record_on_disk);
 
@@ -215,7 +215,7 @@ lfs_index *lfsReadIndex() {
   for (int i = 0; i < record_count; i++) {
     ret = fread(&records[i], sizeof(lfs_record_on_disk), 1, lfs);
     records[i].file_position = file_position;
-    assert(ret == 1);
+    eassert(ret == 1);
     data++;
     file_position += records[i].size;
   }
@@ -334,7 +334,7 @@ void lfsReadAll(lfs_index *index) {
   size_t startPos = 0;
   for (int i = 0; i < timesteps; i++) {
     ret = lfs_pread(fd, buffer, blocksize, startPos, index);
-    assert(ret == blocksize);
+    eassert(ret == blocksize);
 
     startPos += blocksize;
   }
@@ -359,7 +359,7 @@ void lfsRead1DVar(lfs_index *index) {
 
   for (int i = 0; i < timesteps; i++) {
     ret = lfs_pread(fd, buffer, smalldatasize, startPos, index);
-    assert(ret == smalldatasize);
+    eassert(ret == smalldatasize);
 
     startPos += blocksize;
   }
@@ -389,7 +389,7 @@ int main(int argc, char **argv) {
 
   sprintf(lfsfilename, "%s.log", filename);
 
-  assert(smalldatasize < blocksize);
+  eassert(smalldatasize < blocksize);
 
   buffer = malloc(blocksize);
   memset(buffer, 1, blocksize);

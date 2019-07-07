@@ -21,7 +21,7 @@
 
 #define _GNU_SOURCE /* See feature_test_macros(7) */
 
-#include <assert.h>
+ 
 #include <dirent.h>
 #include <errno.h>
 #include <esdm-debug.h>
@@ -224,7 +224,7 @@ static int fragment_update(esdm_backend_t *backend, esdm_fragment_t *f) {
   // lazy assignment of ID
   if(f->id == NULL){
     f->id = malloc(17);
-    assert(f->id);
+    eassert(f->id);
     // ensure that the fragment with the ID doesn't exist, yet
     while(1){
       ea_generate_id(f->id, 16);

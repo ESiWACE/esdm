@@ -42,6 +42,7 @@ void esdmI_log_dump(){
   if(! log_on_exit){
     return;
   }
+  log_on_exit = 0;
 
   printf("ESDM has not been shutdown correctly. Stacktrace:\n");
 

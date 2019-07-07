@@ -20,8 +20,7 @@
 
 #include <test/util/test_util.h>
 
-#include <assert.h>
-#include <esdm.h>
+#include <esdm-internal.h>
 #include <stdio.h>
 #include <stdlib.h>
 
@@ -40,86 +39,86 @@ int main(int argc, char const *argv[]) {
   esdm_dataset_t *dataset = NULL;
 
   esdm_status status = esdm_init();
-  assert(status == ESDM_SUCCESS);
+  eassert(status == ESDM_SUCCESS);
   status = esdm_mkfs(ESDM_FORMAT_PURGE_RECREATE, ESDM_ACCESSIBILITY_GLOBAL);
-  assert(status == ESDM_SUCCESS);
+  eassert(status == ESDM_SUCCESS);
   status = esdm_mkfs(ESDM_FORMAT_PURGE_RECREATE, ESDM_ACCESSIBILITY_NODELOCAL);
-  assert(status == ESDM_SUCCESS);
+  eassert(status == ESDM_SUCCESS);
 
   // define dataspace
   int64_t bounds[] = {10, 20};
   esdm_dataspace_t *dataspace;
 
-  assert_crash(esdm_dataspace_create(0xc000000000000000ll, bounds, SMD_DTYPE_UINT64, &dataspace));
-  assert_crash(esdm_dataspace_create(2, NULL, SMD_DTYPE_UINT64, &dataspace));
-  assert_crash(esdm_dataspace_create(2, bounds, SMD_DTYPE_UINT64, NULL));
+  eassert_crash(esdm_dataspace_create(0xc000000000000000ll, bounds, SMD_DTYPE_UINT64, &dataspace));
+  eassert_crash(esdm_dataspace_create(2, NULL, SMD_DTYPE_UINT64, &dataspace));
+  eassert_crash(esdm_dataspace_create(2, bounds, SMD_DTYPE_UINT64, NULL));
   status = esdm_dataspace_create(2, bounds, SMD_DTYPE_UINT64, &dataspace);
-  assert(status == ESDM_SUCCESS);
+  eassert(status == ESDM_SUCCESS);
 
-  assert_crash(esdm_container_create(NULL, &container));
-  assert_crash(esdm_container_create("", &container));
-  assert_crash(esdm_container_create("mycontainer", NULL));
+  eassert_crash(esdm_container_create(NULL, &container));
+  eassert_crash(esdm_container_create("", &container));
+  eassert_crash(esdm_container_create("mycontainer", NULL));
   status = esdm_container_create("mycontainer", &container);
-  assert(status == ESDM_SUCCESS);
+  eassert(status == ESDM_SUCCESS);
 
-  assert_crash(esdm_dataset_create(NULL, "mydataset", dataspace, &dataset));
-  assert_crash(esdm_dataset_create(container, NULL, dataspace, &dataset));
-  assert_crash(esdm_dataset_create(container, "", dataspace, &dataset));
-  assert_crash(esdm_dataset_create(container, "mydataset", NULL, &dataset));
-  assert_crash(esdm_dataset_create(container, "mydataset", dataspace, NULL));
+  eassert_crash(esdm_dataset_create(NULL, "mydataset", dataspace, &dataset));
+  eassert_crash(esdm_dataset_create(container, NULL, dataspace, &dataset));
+  eassert_crash(esdm_dataset_create(container, "", dataspace, &dataset));
+  eassert_crash(esdm_dataset_create(container, "mydataset", NULL, &dataset));
+  eassert_crash(esdm_dataset_create(container, "mydataset", dataspace, NULL));
   status = esdm_dataset_create(container, "mydataset", dataspace, &dataset);
-  assert(status == ESDM_SUCCESS);
+  eassert(status == ESDM_SUCCESS);
 
-  assert_crash(esdm_container_commit(NULL));
+  eassert_crash(esdm_container_commit(NULL));
   status = esdm_container_commit(container);
-  assert(status == ESDM_SUCCESS);
+  eassert(status == ESDM_SUCCESS);
 
-  assert_crash(esdm_dataset_commit(NULL));
+  eassert_crash(esdm_dataset_commit(NULL));
   status = esdm_dataset_commit(dataset);
-  assert(status == ESDM_SUCCESS);
+  eassert(status == ESDM_SUCCESS);
 
   // define subspace
   int64_t size[] = {10, 20};
   int64_t offset[] = {0, 0};
   esdm_dataspace_t *subspace;
 
-  assert_crash(esdm_dataspace_subspace(NULL, 2, size, offset, &subspace));
-  assert_crash(esdm_dataspace_subspace(dataspace, 2, NULL, offset, &subspace));
-  assert_crash(esdm_dataspace_subspace(dataspace, 2, size, NULL, &subspace));
-  assert_crash(esdm_dataspace_subspace(dataspace, 2, size, offset, NULL));
-  assert(esdm_dataspace_subspace(dataspace, 1, size, offset, &subspace) == ESDM_INVALID_ARGUMENT_ERROR);
-  assert(esdm_dataspace_subspace(dataspace, 2, (int64_t[2]){-1, 1}, offset, &subspace) == ESDM_INVALID_ARGUMENT_ERROR);
-  assert(esdm_dataspace_subspace(dataspace, 2, (int64_t[2]){11, 1}, offset, &subspace) == ESDM_INVALID_ARGUMENT_ERROR);
-  assert(esdm_dataspace_subspace(dataspace, 2, (int64_t[2]){1, -1}, offset, &subspace) == ESDM_INVALID_ARGUMENT_ERROR);
-  assert(esdm_dataspace_subspace(dataspace, 2, (int64_t[2]){10, 21}, offset, &subspace) == ESDM_INVALID_ARGUMENT_ERROR);
-  assert(esdm_dataspace_subspace(dataspace, 2, size, (int64_t[2]){-1, 0}, &subspace) == ESDM_INVALID_ARGUMENT_ERROR);
-  assert(esdm_dataspace_subspace(dataspace, 2, size, (int64_t[2]){1, 0}, &subspace) == ESDM_INVALID_ARGUMENT_ERROR);
-  assert(esdm_dataspace_subspace(dataspace, 2, size, (int64_t[2]){0, -1}, &subspace) == ESDM_INVALID_ARGUMENT_ERROR);
-  assert(esdm_dataspace_subspace(dataspace, 2, size, (int64_t[2]){0, 1}, &subspace) == ESDM_INVALID_ARGUMENT_ERROR);
+  eassert_crash(esdm_dataspace_subspace(NULL, 2, size, offset, &subspace));
+  eassert_crash(esdm_dataspace_subspace(dataspace, 2, NULL, offset, &subspace));
+  eassert_crash(esdm_dataspace_subspace(dataspace, 2, size, NULL, &subspace));
+  eassert_crash(esdm_dataspace_subspace(dataspace, 2, size, offset, NULL));
+  eassert(esdm_dataspace_subspace(dataspace, 1, size, offset, &subspace) == ESDM_INVALID_ARGUMENT_ERROR);
+  eassert(esdm_dataspace_subspace(dataspace, 2, (int64_t[2]){-1, 1}, offset, &subspace) == ESDM_INVALID_ARGUMENT_ERROR);
+  eassert(esdm_dataspace_subspace(dataspace, 2, (int64_t[2]){11, 1}, offset, &subspace) == ESDM_INVALID_ARGUMENT_ERROR);
+  eassert(esdm_dataspace_subspace(dataspace, 2, (int64_t[2]){1, -1}, offset, &subspace) == ESDM_INVALID_ARGUMENT_ERROR);
+  eassert(esdm_dataspace_subspace(dataspace, 2, (int64_t[2]){10, 21}, offset, &subspace) == ESDM_INVALID_ARGUMENT_ERROR);
+  eassert(esdm_dataspace_subspace(dataspace, 2, size, (int64_t[2]){-1, 0}, &subspace) == ESDM_INVALID_ARGUMENT_ERROR);
+  eassert(esdm_dataspace_subspace(dataspace, 2, size, (int64_t[2]){1, 0}, &subspace) == ESDM_INVALID_ARGUMENT_ERROR);
+  eassert(esdm_dataspace_subspace(dataspace, 2, size, (int64_t[2]){0, -1}, &subspace) == ESDM_INVALID_ARGUMENT_ERROR);
+  eassert(esdm_dataspace_subspace(dataspace, 2, size, (int64_t[2]){0, 1}, &subspace) == ESDM_INVALID_ARGUMENT_ERROR);
   status = esdm_dataspace_subspace(dataspace, 2, size, offset, &subspace);
-  assert(status == ESDM_SUCCESS);
+  eassert(status == ESDM_SUCCESS);
 
   // Write the data to the dataset
   printf("Write 0\n");
-  assert_crash(esdm_write(NULL, buf_w, subspace));
+  eassert_crash(esdm_write(NULL, buf_w, subspace));
   printf("Write 1\n");
-  assert_crash(esdm_write(dataset, NULL, subspace));
+  eassert_crash(esdm_write(dataset, NULL, subspace));
   printf("Write 2\n");
-  assert_crash(esdm_write(dataset, buf_w, NULL));
+  eassert_crash(esdm_write(dataset, buf_w, NULL));
   printf("Write 3\n");
   status = esdm_write(dataset, buf_w, subspace);
-  assert(status == ESDM_SUCCESS);
+  eassert(status == ESDM_SUCCESS);
 
-  assert_crash(esdm_container_commit(NULL));
+  eassert_crash(esdm_container_commit(NULL));
   status = esdm_container_commit(container);
-  assert(status == ESDM_SUCCESS);
+  eassert(status == ESDM_SUCCESS);
 
-  assert_crash(esdm_dataset_commit(NULL));
+  eassert_crash(esdm_dataset_commit(NULL));
   status = esdm_dataset_commit(dataset);
-  assert(status == ESDM_SUCCESS);
+  eassert(status == ESDM_SUCCESS);
 
   status = esdm_finalize();
-  assert(status == ESDM_SUCCESS);
+  eassert(status == ESDM_SUCCESS);
 
   // clean up
   free(buf_w);

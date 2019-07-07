@@ -19,7 +19,7 @@
  * @brief Test for HDF5 file interface on top of ESDM.
  */
 
-#include <assert.h>
+ 
 #include <hdf5.h>
 #include <stdio.h>
 
@@ -47,7 +47,7 @@ int main() {
   // check if VOL in use
   H5VLget_plugin_name(file_id, plugin_name, 1024);
   printf("VOL plugin in use: %s\n", plugin_name);
-  // TODO: assert
+  // TODO: eassert
 
   // OPEN ///////////////////////////////////////////////////////////////////
   hid_t file_id2;
@@ -56,7 +56,7 @@ int main() {
   // check if VOL in use
   H5VLget_plugin_name(file_id, plugin_name, 1024);
   printf("VOL plugin in use: %s\n", plugin_name);
-  // TODO: assert
+  // TODO: eassert
 
   // CLOSE //////////////////////////////////////////////////////////////////
   status = H5Fclose(file_id);

@@ -18,7 +18,7 @@
  * This test uses the ESDM high-level API to actually write a contiuous ND subset of a data set
  */
 
-#include <assert.h>
+ 
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -48,11 +48,11 @@ void runWrite(uint64_t * buf_w, int64_t * dim, int64_t * offset){
   esdm_dataspace_t *dataspace;
 
   ret = esdm_mpi_container_create(MPI_COMM_WORLD, "mycontainer", &container);
-  assert(ret == ESDM_SUCCESS);
+  eassert(ret == ESDM_SUCCESS);
   ret = esdm_dataspace_create(3, bounds, SMD_DTYPE_UINT64, &dataspace);
-  assert(ret == ESDM_SUCCESS);
+  eassert(ret == ESDM_SUCCESS);
   ret = esdm_mpi_dataset_create(MPI_COMM_WORLD, container, "mydataset", dataspace, &dataset);
-  assert(ret == ESDM_SUCCESS);
+  eassert(ret == ESDM_SUCCESS);
 
   timer t;
   double time, md_sync_start;
@@ -65,19 +65,19 @@ void runWrite(uint64_t * buf_w, int64_t * dim, int64_t * offset){
     esdm_dataspace_t *subspace;
 
     ret = esdm_dataspace_subspace(dataspace, 3, dim, offset, &subspace);
-    assert(ret == ESDM_SUCCESS);
+    eassert(ret == ESDM_SUCCESS);
     buf_w[0] = t;
     ret = esdm_write(dataset, buf_w, subspace);
-    assert(ret == ESDM_SUCCESS);
+    eassert(ret == ESDM_SUCCESS);
   }
   MPI_Barrier(MPI_COMM_WORLD);
   md_sync_start = stop_timer(t);
 
   // commit the changes to data to the metadata
   ret = esdm_mpi_dataset_commit(MPI_COMM_WORLD, dataset);
-  assert(ret == ESDM_SUCCESS);
+  eassert(ret == ESDM_SUCCESS);
   ret = esdm_mpi_container_commit(MPI_COMM_WORLD, container);
-  assert(ret == ESDM_SUCCESS);
+  eassert(ret == ESDM_SUCCESS);
 
   MPI_Barrier(MPI_COMM_WORLD);
   time = stop_timer(t);
@@ -90,9 +90,9 @@ void runWrite(uint64_t * buf_w, int64_t * dim, int64_t * offset){
   }
 
   ret = esdm_dataset_destroy(dataset);
-  assert(ret == ESDM_SUCCESS);
+  eassert(ret == ESDM_SUCCESS);
   ret = esdm_container_destroy(container);
-  assert(ret == ESDM_SUCCESS);
+  eassert(ret == ESDM_SUCCESS);
 }
 
 void runRead(uint64_t * buf_w, int64_t * dim, int64_t * offset){
@@ -103,11 +103,11 @@ void runRead(uint64_t * buf_w, int64_t * dim, int64_t * offset){
   esdm_dataspace_t *dataspace;
 
   ret = esdm_mpi_container_open(MPI_COMM_WORLD, "mycontainer", &container);
-  assert(ret == ESDM_SUCCESS);
+  eassert(ret == ESDM_SUCCESS);
   ret = esdm_mpi_dataset_open(MPI_COMM_WORLD, container, "mydataset", &dataset);
-  assert(ret == ESDM_SUCCESS);
+  eassert(ret == ESDM_SUCCESS);
   ret = esdm_dataset_get_dataspace(dataset, & dataspace);
-  assert(ret == ESDM_SUCCESS);
+  eassert(ret == ESDM_SUCCESS);
 
   timer t;
   double time;
@@ -120,12 +120,12 @@ void runRead(uint64_t * buf_w, int64_t * dim, int64_t * offset){
     offset[0] = t;
     uint64_t *buf_r = (uint64_t *) malloc(volume);
     buf_r[0] = -1241;
-    assert(buf_r != NULL);
+    eassert(buf_r != NULL);
     esdm_dataspace_t *subspace;
     esdm_dataspace_subspace(dataspace, 3, dim, offset, &subspace);
 
     ret = esdm_read(dataset, buf_r, subspace);
-    assert(ret == ESDM_SUCCESS);
+    eassert(ret == ESDM_SUCCESS);
 
     // verify data and fail test if mismatches are found
     buf_w[0] = t;
@@ -157,9 +157,9 @@ void runRead(uint64_t * buf_w, int64_t * dim, int64_t * offset){
     printf("Read: %.3fs %.3f MiB/s size:%.0f MiB\n", total_time, volume_all / total_time / 1024.0 / 1024, volume_all / 1024.0 / 1024);
   }
   ret = esdm_dataset_destroy(dataset);
-  assert(ret == ESDM_SUCCESS);
+  eassert(ret == ESDM_SUCCESS);
   ret = esdm_container_destroy(container);
-  assert(ret == ESDM_SUCCESS);
+  eassert(ret == ESDM_SUCCESS);
 }
 
 int main(int argc, char *argv[]) {
@@ -231,7 +231,7 @@ int main(int argc, char *argv[]) {
 
   // prepare data
   uint64_t *buf_w = (uint64_t *)malloc(volume);
-  assert(buf_w != NULL);
+  eassert(buf_w != NULL);
   long x, y;
   for (y = 0; y < dim[1]; y++) {
     for (x = 0; x < dim[2]; x++) {
@@ -246,15 +246,15 @@ int main(int argc, char *argv[]) {
   esdm_mpi_distribute_config_file(config_file);
 
   ret = esdm_init();
-  assert(ret == ESDM_SUCCESS);
+  eassert(ret == ESDM_SUCCESS);
 
   if (run_write) {
     if(mpi_rank == 0){
       ret = esdm_mkfs(ESDM_FORMAT_PURGE_RECREATE, ESDM_ACCESSIBILITY_GLOBAL);
-      assert(ret == ESDM_SUCCESS);
+      eassert(ret == ESDM_SUCCESS);
     }
     ret = esdm_mkfs(ESDM_FORMAT_PURGE_RECREATE, ESDM_ACCESSIBILITY_NODELOCAL);
-    assert(ret == ESDM_SUCCESS);
+    eassert(ret == ESDM_SUCCESS);
     runWrite(buf_w, dim, offset);
   }
 

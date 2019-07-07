@@ -13,7 +13,7 @@
 // You should have received a copy of the GNU Lesser General Public License
 // along with h5-memvol.  If not, see <http://www.gnu.org/licenses/>.
 
-#include <assert.h>
+ 
 #include <glib.h>
 #include <stdlib.h>
 
@@ -164,13 +164,13 @@ hid_t H5VL_memvol_init() {
   vol_id = H5VLregister(&H5VL_memvol);
   H5VLinitialize(vol_id, H5P_DEFAULT);
 
-  assert(H5VLget_plugin_id(MEMVOL_NAME) != -1);
+  eassert(H5VLget_plugin_id(MEMVOL_NAME) != -1);
 
   return vol_id;
 }
 
 int H5VL_memvol_finalize() {
-  assert(vol_id != -1);
+  eassert(vol_id != -1);
 
   H5VLclose(vol_id);
   vol_id = -1;

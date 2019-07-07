@@ -1,4 +1,4 @@
-#include <assert.h>
+
 #include <limits.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -6,6 +6,7 @@
 #include <unistd.h>
 
 #include <tools/option.h>
+#include <esdm-debug.h>
 
 /*
 * Takes a string of the form 64, 8m, 128k, 4g, etc. and converts to bytes.
@@ -52,7 +53,7 @@ int64_t string_to_bytes(char *size_str) {
 static int print_value(option_help *o) {
   int pos = 0;
   if (o->arg == OPTION_OPTIONAL_ARGUMENT || o->arg == OPTION_REQUIRED_ARGUMENT) {
-    assert(o->variable != NULL);
+    eassert(o->variable != NULL);
 
     switch (o->type) {
       case ('p'): {
@@ -176,7 +177,7 @@ void option_print_help(option_help *args, int is_plugin) {
 static int print_option_value(option_help *o) {
   int pos = 0;
   if (o->arg == OPTION_OPTIONAL_ARGUMENT || o->arg == OPTION_REQUIRED_ARGUMENT) {
-    assert(o->variable != NULL);
+    eassert(o->variable != NULL);
 
     switch (o->type) {
       case ('F'): {
@@ -288,7 +289,7 @@ int option_parse(int argc, char **argv, option_help *args, int *printhelp) {
         // now process the option.
         switch (o->arg) {
           case (OPTION_FLAG): {
-            assert(o->type == 'd');
+            eassert(o->type == 'd');
             (*(int *)o->variable)++;
             break;
           }

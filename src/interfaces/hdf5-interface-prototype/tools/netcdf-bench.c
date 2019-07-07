@@ -13,7 +13,7 @@
 // You should have received a copy of the GNU Lesser General Public License
 // along with h5-memvol.  If not, see <http://www.gnu.org/licenses/>.
 
-#include <assert.h>
+ 
 #include <mpi.h>
 #include <netcdf.h>
 #include <stdlib.h>
@@ -37,23 +37,23 @@ int main(int argc, char **argv) {
 
   //ret = nc_create_par(file, NC_MPIIO, MPI_COMM_WORLD, MPI_INFO_NULL, & ncid);
   ret = nc_create(file, NC_NETCDF4 | NC_H5VOL_MEMVOL, &ncid);
-  assert(ret == NC_NOERR);
+  eassert(ret == NC_NOERR);
 
   ret = nc_def_dim(ncid, "lat", 100, &dimids[0]);
-  assert(ret == NC_NOERR);
+  eassert(ret == NC_NOERR);
 
   ret = nc_def_dim(ncid, "lon", 100, &dimids[1]);
-  assert(ret == NC_NOERR);
+  eassert(ret == NC_NOERR);
   ret = nc_def_dim(ncid, "time", NC_UNLIMITED, &dimids[2]);
-  assert(ret == NC_NOERR);
+  eassert(ret == NC_NOERR);
 
   ret = nc_def_var(ncid, "var1", NC_INT, dimsize, dimids, &var);
-  assert(ret == NC_NOERR);
+  eassert(ret == NC_NOERR);
   ret = nc_enddef(ncid);
-  assert(ret == NC_NOERR);
+  eassert(ret == NC_NOERR);
 
   //ret = nc_var_par_access(ncid, var, NC_INDEPENDENT);
-  //assert(ret == NC_NOERR);
+  //eassert(ret == NC_NOERR);
 
   int *data = (int *)malloc(sizeof(int) * 100 * 100);
   for (int i = 0; i < 100; i++) {
@@ -68,7 +68,7 @@ int main(int argc, char **argv) {
   for (int i = 0; i < 100; i++) {
     size_t startp[] = {0, 0, i};
     ret = nc_put_vara_int(ncid, var, startp, countp, data);
-    assert(ret == NC_NOERR);
+    eassert(ret == NC_NOERR);
   }
 
   // reading data back
@@ -76,7 +76,7 @@ int main(int argc, char **argv) {
   for (int i = 0; i < 100; i++) {
     size_t startp[] = {0, 0, i};
     ret = nc_get_vara_int(ncid, var, startp, countp, data);
-    assert(ret == NC_NOERR);
+    eassert(ret == NC_NOERR);
   }
 
   free(data);

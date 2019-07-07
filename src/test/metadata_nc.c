@@ -21,7 +21,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-#include <esdm-datatypes-internal.h>
+#include <esdm-internal.h>
 #include <esdm.h>
 
 typedef struct {
@@ -94,22 +94,22 @@ static void write_test() {
 
   // 2) Variables
   ret = esdm_dataset_create(container, "myVariable", dataspace, &dataset);
-  assert(ret == ESDM_SUCCESS);
+  eassert(ret == ESDM_SUCCESS);
 
   char *names[] = {"longitude", "latitude"};
   ret = esdm_dataset_name_dims(dataset, names);
-  assert(ret == ESDM_SUCCESS);
+  eassert(ret == ESDM_SUCCESS);
 
   // 3) Attributes
   char *str = {"This is some history"};
   smd_attr_t *attr1 = smd_attr_new("history", SMD_DTYPE_STRING, str, 0);
   ret = esdm_dataset_link_attribute(dataset, attr1);
-  assert(ret == ESDM_SUCCESS);
+  eassert(ret == ESDM_SUCCESS);
 
   char *unit = {"Celsius"};
   smd_attr_t *attr2 = smd_attr_new("unit", SMD_DTYPE_STRING, unit, 1);
   ret = esdm_dataset_link_attribute(dataset, attr2);
-  assert(ret == ESDM_SUCCESS);
+  eassert(ret == ESDM_SUCCESS);
 
   // esdm_status esdm_container_link_attribute(esdm_container_t *container, smd_attr_t *attr)
   //
@@ -118,21 +118,21 @@ static void write_test() {
   float a = 5;
   smd_attr_t *attr3 = smd_attr_new("variables", SMD_DTYPE_FLOAT, &a, 0);
   ret = esdm_container_link_attribute(container, attr3);
-  assert(ret == ESDM_SUCCESS);
+  eassert(ret == ESDM_SUCCESS);
 
   // this step shall write out the metadata and make it persistent
   ret = esdm_dataset_commit(dataset);
-  assert(ret == ESDM_SUCCESS);
+  eassert(ret == ESDM_SUCCESS);
 
   ret = esdm_container_commit(container);
-  assert(ret == ESDM_SUCCESS);
+  eassert(ret == ESDM_SUCCESS);
 
   // remove everything from memory
   ret = esdm_dataset_destroy(dataset);
-  assert(ret == ESDM_SUCCESS);
+  eassert(ret == ESDM_SUCCESS);
 
   ret = esdm_container_destroy(container);
-  assert(ret == ESDM_SUCCESS);
+  eassert(ret == ESDM_SUCCESS);
 }
 
 void read_test() {
@@ -147,15 +147,15 @@ void read_test() {
 
   smd_attr_t *out_metadata;
   ret = esdm_container_get_attributes(container, &out_metadata);
-  assert(ret == ESDM_SUCCESS);
+  eassert(ret == ESDM_SUCCESS);
 
   float a;
 
   smd_attr_t *a3;
   a3 = smd_attr_get_child_by_name(out_metadata, "variables");
-  assert(a3 != NULL);
+  eassert(a3 != NULL);
 
-  assert(smd_attr_get_type(a3) == SMD_TYPE_FLOAT);
+  eassert(smd_attr_get_type(a3) == SMD_TYPE_FLOAT);
   smd_attr_copy_value(a3, & a);
   printf("\n\na=%f\n\n", (double) a);
 
@@ -170,70 +170,70 @@ void read_test() {
   // TODO later:
   // esdm_dataset_iterator_t * iter;
   // ret = esdm_dataset_iterator(container, & iter);
-  // assert(ret == ESDM_SUCCESS);
+  // eassert(ret == ESDM_SUCCESS);
 
   ret = esdm_dataset_open(container, "myVariable", &dataset);
-  assert(ret == ESDM_SUCCESS);
+  eassert(ret == ESDM_SUCCESS);
 
   // for NetCDF: dims and type
   esdm_dataspace_t *dspace;
   ret = esdm_dataset_get_dataspace(dataset, &dspace);
-  assert(ret == ESDM_SUCCESS);
-  assert(dspace != NULL);
+  eassert(ret == ESDM_SUCCESS);
+  eassert(dspace != NULL);
   esdm_dataspace_print(dspace);
-  assert(dspace->type != NULL);
-  assert(dspace->dims == 2);
+  eassert(dspace->type != NULL);
+  eassert(dspace->dims == 2);
 
   char type[100];
   char type_e[100];
   smd_type_ser(type, dspace->type);
   smd_type_ser(type_e, SMD_DTYPE_UINT64);
-  assert(strcmp(type, type_e) == 0);
+  eassert(strcmp(type, type_e) == 0);
 
   // names of the dims
   char const *const *names = NULL;
   ret = esdm_dataset_get_name_dims(dataset, &names);
-  assert(names != NULL);
-  assert(strcmp(names[0], "longitude") == 0);
-  assert(strcmp(names[1], "latitude") == 0);
+  eassert(names != NULL);
+  eassert(strcmp(names[0], "longitude") == 0);
+  eassert(strcmp(names[1], "latitude") == 0);
 
   // get the attributes
   smd_attr_t *md = NULL;
   ret = esdm_dataset_get_attributes(dataset, &md);
-  assert(ret == ESDM_SUCCESS);
+  eassert(ret == ESDM_SUCCESS);
 
   char *txt;
   smd_attr_t *a1;
   a1 = smd_attr_get_child_by_name(md, "history");
-  assert(a1 != NULL);
-  assert(smd_attr_get_type(a1) == SMD_TYPE_STRING);
+  eassert(a1 != NULL);
+  eassert(smd_attr_get_type(a1) == SMD_TYPE_STRING);
   txt = (char *)smd_attr_get_value(a1);
-  assert(txt != NULL);
+  eassert(txt != NULL);
 
   a1 = smd_attr_get_child_by_name(md, "unit");
-  assert(a1 != NULL);
-  assert(smd_attr_get_type(a1) == SMD_TYPE_STRING);
+  eassert(a1 != NULL);
+  eassert(smd_attr_get_type(a1) == SMD_TYPE_STRING);
   txt = (char *)smd_attr_get_value(a1);
-  assert(strcmp(txt, "Celsius") == 0);
+  eassert(strcmp(txt, "Celsius") == 0);
 
   ret = esdm_dataset_destroy(dataset);
-  assert(ret == ESDM_SUCCESS);
+  eassert(ret == ESDM_SUCCESS);
 
   ret = esdm_container_destroy(container);
-  assert(ret == ESDM_SUCCESS);
+  eassert(ret == ESDM_SUCCESS);
 }
 
 int main() {
   esdm_status ret;
 
   ret = esdm_init();
-  assert(ret == ESDM_SUCCESS);
+  eassert(ret == ESDM_SUCCESS);
 
   write_test();
   read_test();
 
   ret = esdm_finalize();
-  assert(ret == ESDM_SUCCESS);
+  eassert(ret == ESDM_SUCCESS);
 
   printf("OK\n");
 

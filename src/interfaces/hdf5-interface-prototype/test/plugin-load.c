@@ -13,7 +13,7 @@
 // You should have received a copy of the GNU Lesser General Public License
 // along with h5-memvol.  If not, see <http://www.gnu.org/licenses/>.
 
-#include <assert.h>
+ 
 #include <hdf5.h>
 #include <stdio.h>
 
@@ -22,7 +22,7 @@ int main() {
   hid_t fid;
   hid_t vol_id = H5VLregister_by_name("h5-memvol");
 
-  assert(vol_id != 0);
+  eassert(vol_id != 0);
 
   char name[1024];
 

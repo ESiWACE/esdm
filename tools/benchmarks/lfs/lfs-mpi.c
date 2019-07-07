@@ -1,4 +1,4 @@
-#include <assert.h>
+ 
 #include <fcntl.h>
 #include <lfs-mpi-internal.h>
 #include <lfs-mpi.h>
@@ -30,7 +30,7 @@ int lfs_mpi_open(lfs_mpi_file_p *fd_p, char *df, int flags, mode_t mode, MPI_Com
   // TODO work for read-only, write/read workflows, too.
   ret = access(fd->filename, F_OK);
 
-  assert(((flags & O_TRUNC) && (flags & O_WRONLY || flags & O_RDWR)) || (flags & O_RDWR) || (flags == O_RDONLY));
+  eassert(((flags & O_TRUNC) && (flags & O_WRONLY || flags & O_RDWR)) || (flags & O_RDWR) || (flags == O_RDONLY));
   //if (flags & O_WRONLY)
 
   fd->log_file = fopen(lfsfilename, "a+"); // XXX: I had to change it to a+ from w. because for readying I want to read it and with w I couldn't! is it has to be w then I'll open it in r for the read as temp variable and close it when reading ends.
@@ -39,7 +39,7 @@ int lfs_mpi_open(lfs_mpi_file_p *fd_p, char *df, int flags, mode_t mode, MPI_Com
   fd->proc_rank = rank;
   fd->current_epoch = 0;
   ret = MPI_Comm_dup(com, &fd->com);
-  assert(ret == MPI_SUCCESS);
+  eassert(ret == MPI_SUCCESS);
   free(lfsfilename);
 
   if (flags & O_TRUNC && rank == 0) {
@@ -134,7 +134,7 @@ int read_record(struct lfs_record **rec, FILE *fd, int depth) {
   for (int i = 0; i < record_count; i++) {
     ret = fread(&records[i], sizeof(lfs_record_on_disk), 1, fd);
     records[i].pos = file_position;
-    assert(ret == 1);
+    eassert(ret == 1);
     file_position += records[i].size;
     //              printf("this is record in read_rec_func: (%zu, %zu, %zu)\n", records[i].addr, records[i].size, records[i].pos);
   } // end of FOR
@@ -367,12 +367,12 @@ size_t lfs_mpi_read(lfs_mpi_file_p fd, char *buf, size_t count, off_t offset) {
         temp_log_file = fopen(lfsfilename2, "r");
         if (temp_log_file == NULL) {
           printf("Error: %s\n", strerror(errno));
-          assert(0);
+          eassert(0);
         }
         temp_data_file = open(filename2, O_RDONLY);
         if (temp_data_file < 0) {
           printf("Error: %s\n", strerror(errno));
-          assert(0);
+          eassert(0);
         }
         // now the file is open, so we start reading the query stack (previously missing stack) from the file.
         // first we need to get the records log with the epoch depth of i for the selected file.

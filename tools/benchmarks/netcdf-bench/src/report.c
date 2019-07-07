@@ -16,7 +16,7 @@
  * =====================================================================================
  */
 
-#include <assert.h>
+ 
 #include <errno.h>
 #include <mpi.h>
 #include <netcdf.h>
@@ -105,7 +105,7 @@ void report_destroy(report_t *report) {
 }
 
 static void table_write_entry(table_t *table, const size_t nrows, const size_t ncols, const size_t pos, const char *name, const char *type, const char *quantity, const char *unit, const char *value) {
-  assert(pos < ncols);
+  eassert(pos < ncols);
   table_t tab = *table;
 
   size_t nlen = strlen(name);
@@ -140,9 +140,9 @@ static void table_destroy(table_t *table, const size_t nrows, const size_t ncols
 }
 
 static void append_string(char **buf, size_t *buf_size, const char *vb) {
-  assert(NULL != buf);
-  assert(NULL != vb);
-  assert(buf_size > 0);
+  eassert(NULL != buf);
+  eassert(NULL != vb);
+  eassert(buf_size > 0);
 
   const size_t vb_len = strlen(vb);
   const size_t buf_len = strlen(*buf);
@@ -193,7 +193,7 @@ static double avg(const double *elems, const size_t size) {
 }
 
 static double min(const double *elems, const size_t size) {
-  assert(size > 0);
+  eassert(size > 0);
   double min = elems[0];
   for (size_t i = 0; i < size; ++i) {
     if (elems[i] < min) {
@@ -204,7 +204,7 @@ static double min(const double *elems, const size_t size) {
 }
 
 static double max(const double *elems, const size_t size) {
-  assert(size > 0);
+  eassert(size > 0);
   double max = elems[0];
   for (size_t i = 0; i < size; ++i) {
     if (elems[i] > max) {
