@@ -24,6 +24,7 @@
 #include <esdm-internal.h>
 #include <esdm.h>
 #include <inttypes.h>
+#include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -48,16 +49,16 @@ esdm_status esdm_container_create(const char *name, esdm_container_t **out_conta
   return ret;
 }
 
-int esdm_container_dataset_exists(esdm_container_t * c, char const * name){
+bool esdm_container_dataset_exists(esdm_container_t * c, char const * name){
   eassert(c != NULL);
   eassert(name != NULL);
   esdm_datasets_t * d = & c->dsets;
   for(int i=0; i < d->count; d++){
     if (strcmp(name, d->dset[i]->name) == 0){
-      return 1;
+      return true;
     }
   }
-  return 0;
+  return false;
 }
 
 void esdmI_container_register_dataset(esdm_container_t * c, esdm_dataset_t *dset){
@@ -431,9 +432,8 @@ esdm_status esdm_dataset_create(esdm_container_t *c, const char *name, esdm_data
   eassert(*name && "name must not be empty");
   eassert(dspace);
   eassert(out_dataset);
-  int ret;
-  ret = esdm_container_dataset_exists(c, name);
-  if( ret ){
+
+  if(esdm_container_dataset_exists(c, name)){
     return ESDM_ERROR;
   }
   esdm_dataset_init(c, name, dspace, out_dataset);
