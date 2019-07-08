@@ -1,3 +1,5 @@
+#include <test/util/test_util.h>
+
 #include <esdm-internal.h>
 #include <esdm.h>
 #include <string.h>
@@ -68,6 +70,7 @@ int main() {
     eassert(ret == ESDM_SUCCESS);
   }
 
+  eassert_crash(esdm_dataspace_destroy(NULL));
   ret = esdm_dataspace_destroy(space);
   eassert(ret == ESDM_SUCCESS);
 

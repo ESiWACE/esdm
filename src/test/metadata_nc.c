@@ -23,6 +23,7 @@
 
 #include <esdm-internal.h>
 #include <esdm.h>
+#include <test/util/test_util.h>
 
 typedef struct {
   float longitude;
@@ -128,9 +129,11 @@ static void write_test() {
   eassert(ret == ESDM_SUCCESS);
 
   // remove everything from memory
+  eassert_crash(esdm_dataset_destroy(NULL));
   ret = esdm_dataset_destroy(dataset);
   eassert(ret == ESDM_SUCCESS);
 
+  eassert_crash(esdm_container_destroy(NULL));
   ret = esdm_container_destroy(container);
   eassert(ret == ESDM_SUCCESS);
 }

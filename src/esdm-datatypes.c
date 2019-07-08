@@ -226,6 +226,7 @@ esdm_status esdm_container_commit(esdm_container_t *c) {
 
 esdm_status esdm_container_destroy(esdm_container_t *container) {
   ESDM_DEBUG(__func__);
+  eassert(container);
   free(container);
 
   return ESDM_SUCCESS;
@@ -385,6 +386,7 @@ esdm_status esdmI_dataset_lookup_fragments(esdm_dataset_t *dset, esdm_dataspace_
 
 esdm_status esdm_fragment_destroy(esdm_fragment_t *frag) {
   ESDM_DEBUG(__func__);
+  eassert(frag);
 
   if(frag->id){
     free(frag->id);
@@ -722,6 +724,8 @@ esdm_status esdm_dataset_update(esdm_dataset_t *dataset) {
 
 esdm_status esdm_dataset_destroy(esdm_dataset_t *dset) {
   ESDM_DEBUG(__func__);
+  eassert(dset);
+
   esdm_status ret = ESDM_SUCCESS;
 	for (int i = 0; i < dset->fragments.count; i++) {
     esdm_status r = esdm_fragment_destroy(dset->fragments.frag[i]);

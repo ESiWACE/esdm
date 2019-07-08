@@ -150,6 +150,7 @@ esdm_status esdm_container_get_attributes(esdm_container_t *container, smd_attr_
  *
  * Either from memory or from persistent storage.
  *
+ * @param [in] container an existing container object to free
  */
  //FIXME: It must be clear whether this does indeed destroy from persistent storage.
  //       Acceptable specifications would be:
@@ -217,7 +218,15 @@ esdm_status esdm_dataset_open(esdm_container_t *container, const char *name, esd
 
 esdm_status esdm_dataset_commit(esdm_dataset_t *dataset);
 
+/**
+ * Free RAM used by a dataset object.
+ *
+ * @param [in] dataset an existing dataset object to free
+ *
+ * @return status
+ */
 esdm_status esdm_dataset_destroy(esdm_dataset_t *dataset);
+
 /* This function adds the metadata to the ESDM */
 
 esdm_status esdm_dataset_link_attribute(esdm_dataset_t *dset, smd_attr_t *attr);
@@ -265,9 +274,12 @@ esdm_status esdm_dataspace_deserialize(void *serialized_dataspace, esdm_dataspac
 esdm_status esdm_dataspace_subspace(esdm_dataspace_t *dataspace, int64_t dims, int64_t *size, int64_t *offset, esdm_dataspace_t **out_dataspace);
 
 /**
- * Destroy dataspace in memory.
+ * Free RAM used by a dataspace object.
+ *
+ * @param [in] dataspace an existing dataspace object to free
+ *
+ * @return status
  */
-
 esdm_status esdm_dataspace_destroy(esdm_dataspace_t *dataspace);
 
 /**
@@ -304,6 +316,13 @@ esdm_status esdm_fragment_retrieve(esdm_fragment_t *fragment);
 
 esdm_status esdm_fragment_commit(esdm_fragment_t *fragment);
 
+/**
+ * Free RAM used by a fragment object.
+ *
+ * @param [in] fragment an existing fragment object to free
+ *
+ * @return status
+ */
 esdm_status esdm_fragment_destroy(esdm_fragment_t *fragment);
 
 /**
