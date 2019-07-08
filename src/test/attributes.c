@@ -33,8 +33,8 @@ int main(){
 	int32_t * attr2d_value = (int32_t *)smd_attr_get_value(attr2d);
 	for(int i = 0; i < 6;i++){
     printf("i = %d\n", i);
-    printf("%d==%d\n", (*value2d)[i], attr2d_value[i]);
-		eassert((*value2d)[i] == attr2d_value[i]);
+    printf("%d==%d\n", value2d[i/3][i%3], attr2d_value[i]);
+		eassert(value2d[i/3][i%3] == attr2d_value[i]);
 	}
 	printf("Pass\n");
 
