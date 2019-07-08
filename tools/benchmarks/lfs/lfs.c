@@ -1,4 +1,4 @@
-#include <assert.h>
+ 
 #include <fcntl.h>
 #include <lfs-internal.h>
 #include <stdint.h>
@@ -70,7 +70,7 @@ lfs_record *read_record(int fd) {
   fseek(lfsfiles[fd].log_file, 0, SEEK_END);
   fileLen = ftell(lfsfiles[fd].log_file);
   fseek(lfsfiles[fd].log_file, 0, SEEK_SET);
-  //assert(ret == 0);
+  //eassert(ret == 0);
   int record_count = fileLen / sizeof(lfs_record_on_disk);
   //printf("this is size %d\n",record_count);
   lfs_record *records = (lfs_record *)malloc(sizeof(lfs_record) * record_count);
@@ -81,7 +81,7 @@ lfs_record *read_record(int fd) {
   for (int i = 0; i < record_count; i++) {
     ret = fread(&records[i], sizeof(lfs_record_on_disk), 1, lfsfiles[fd].log_file);
     records[i].pos = file_position;
-    assert(ret == 1);
+    eassert(ret == 1);
     file_position += records[i].size;
   }
   //fclose(lfs);

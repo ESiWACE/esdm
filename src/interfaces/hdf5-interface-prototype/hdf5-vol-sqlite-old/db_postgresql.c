@@ -22,7 +22,7 @@
 static void
 exit_nicely(PGconn *conn) {
   //    PQfinish(conn);
-  assert(false);
+  eassert(false);
   exit(1);
 }
 
@@ -181,7 +181,7 @@ static void attr_open_database(char *path, size_t *data_size, PGconn *conn) {
     exit_nicely(conn);
   }
 
-  assert(1 == PQntuples(res));
+  eassert(1 == PQntuples(res));
   for (int i = 0; i < PQntuples(res); i++) {
     size_t type_size;
     char *data_size_buf = PQunescapeBytea(PQgetvalue(res, i, 0), &type_size);
@@ -221,8 +221,8 @@ static void attr_get_database(const char *path, /*OUT*/ hid_t *type_id, /*OUT*/ 
     exit_nicely(conn);
   }
 
-  assert(1 == PQntuples(res));
-  assert(2 == PQnfields(res));
+  eassert(1 == PQntuples(res));
+  eassert(2 == PQnfields(res));
 
   for (int i = 0; i < PQntuples(res); i++) {
     size_t type_size;
@@ -232,7 +232,7 @@ static void attr_get_database(const char *path, /*OUT*/ hid_t *type_id, /*OUT*/ 
     char *space_buf = PQunescapeBytea(PQgetvalue(res, i, 1), &space_size);
 
     *type_id = H5Tdecode(type_buf);
-    assert(-1 != H5Tget_class(*type_id));
+    eassert(-1 != H5Tget_class(*type_id));
     *space_id = H5Sdecode(space_buf);
   }
   PQclear(res);
@@ -310,7 +310,7 @@ void attr_read_database(const char *location, /*OUT*/ void *buf, PGconn *conn) {
     exit_nicely(conn);
   }
 
-  assert(1 == PQntuples(res));
+  eassert(1 == PQntuples(res));
   for (int i = 0; i < PQntuples(res); i++) {
     size_t data_size;
     char *data_size_buf = PQunescapeBytea(PQgetvalue(res, i, 0), &data_size);
@@ -459,7 +459,7 @@ void attr_read_database(const char *location, /*OUT*/ void *buf, PGconn *conn) {
       exit_nicely(conn);
     }
 
-    assert(1 == PQntuples(res));
+    eassert(1 == PQntuples(res));
     for (int i = 0; i < PQntuples(res); i++) {
       size_t field_size;
       char *source_buf = PQunescapeBytea(PQgetvalue(res, i, 0), &field_size);
@@ -506,8 +506,8 @@ void attr_read_database(const char *location, /*OUT*/ void *buf, PGconn *conn) {
     //
     //	PQprint(stdout, res, &options);
 
-    assert(1 == PQntuples(res));
-    assert(2 == PQnfields(res));
+    eassert(1 == PQntuples(res));
+    eassert(2 == PQnfields(res));
 
     for (int i = 0; i < PQntuples(res); i++) {
       //		int type_pq_size = PQgetlength(res, i, 0);
@@ -520,7 +520,7 @@ void attr_read_database(const char *location, /*OUT*/ void *buf, PGconn *conn) {
       char *space_buf = PQunescapeBytea(PQgetvalue(res, i, 1), &space_size);
 
       *type_id = H5Tdecode(type_buf);
-      assert(-1 != H5Tget_class(*type_id));
+      eassert(-1 != H5Tget_class(*type_id));
       *space_id = H5Sdecode(space_buf);
     }
 

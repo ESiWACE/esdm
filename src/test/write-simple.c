@@ -20,7 +20,7 @@
 
 #include <test/util/test_util.h>
 
-#include <assert.h>
+ 
 #include <esdm.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -40,30 +40,30 @@ int main(int argc, char const *argv[]) {
   esdm_dataset_t *dataset = NULL;
 
   esdm_status ret = esdm_init();
-  assert(ret == ESDM_SUCCESS);
+  eassert(ret == ESDM_SUCCESS);
   ret = esdm_mkfs(ESDM_FORMAT_PURGE_RECREATE, ESDM_ACCESSIBILITY_GLOBAL);
-  assert(ret == ESDM_SUCCESS);
+  eassert(ret == ESDM_SUCCESS);
   ret = esdm_mkfs(ESDM_FORMAT_PURGE_RECREATE, ESDM_ACCESSIBILITY_NODELOCAL);
-  assert(ret == ESDM_SUCCESS);
+  eassert(ret == ESDM_SUCCESS);
 
   // define dataspace
   int64_t bounds[] = {10, 20};
   esdm_dataspace_t *dataspace;
 
   ret = esdm_dataspace_create(2, bounds, SMD_DTYPE_UINT64, &dataspace);
-  assert(ret == ESDM_SUCCESS);
+  eassert(ret == ESDM_SUCCESS);
 
   ret = esdm_container_create("mycontainer", &container);
-  assert(ret == ESDM_SUCCESS);
+  eassert(ret == ESDM_SUCCESS);
 
   ret = esdm_dataset_create(container, "mydataset", dataspace, &dataset);
-  assert(ret == ESDM_SUCCESS);
+  eassert(ret == ESDM_SUCCESS);
 
   ret = esdm_container_commit(container);
-  assert(ret == ESDM_SUCCESS);
+  eassert(ret == ESDM_SUCCESS);
 
   ret = esdm_dataset_commit(dataset);
-  assert(ret == ESDM_SUCCESS);
+  eassert(ret == ESDM_SUCCESS);
 
   // define subspace
   int64_t size[] = {10, 20};
@@ -71,19 +71,19 @@ int main(int argc, char const *argv[]) {
   esdm_dataspace_t *subspace;
 
   ret = esdm_dataspace_subspace(dataspace, 2, size, offset, &subspace);
-  assert(ret == ESDM_SUCCESS);
+  eassert(ret == ESDM_SUCCESS);
 
   // Write the data to the dataset
   ret = esdm_write(dataset, buf_w, subspace);
-  assert(ret == ESDM_SUCCESS);
+  eassert(ret == ESDM_SUCCESS);
 
   ret = esdm_container_commit(container);
-  assert(ret == ESDM_SUCCESS);
+  eassert(ret == ESDM_SUCCESS);
   ret = esdm_dataset_commit(dataset);
-  assert(ret == ESDM_SUCCESS);
+  eassert(ret == ESDM_SUCCESS);
 
   ret = esdm_finalize();
-  assert(ret == ESDM_SUCCESS);
+  eassert(ret == ESDM_SUCCESS);
 
   // clean up
   free(buf_w);

@@ -1,4 +1,4 @@
-#include <assert.h>
+ 
 #include <glib.h>
 #include <stdio.h>
 
@@ -50,7 +50,7 @@ void backend_thread(gpointer data_p, gpointer backend_id) {
   g_mutex_lock(&status->mutex);
   status->pending_ops--;
   //printf("%d\n", status->pending_ops);
-  assert(status->pending_ops >= 0);
+  eassert(status->pending_ops >= 0);
   if (status->pending_ops == 0) {
     g_cond_signal(&status->done_condition);
   }

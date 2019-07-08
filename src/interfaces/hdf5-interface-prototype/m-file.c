@@ -186,7 +186,7 @@ static void *memvol_file_create(const char *name, unsigned flags, hid_t fcpl_id,
     file->mode_flags = H5F_ACC_RDWR;
 
   } else {
-    assert(0 && "Modeflags are invalid");
+    eassert(0 && "Modeflags are invalid");
   }
 
   // attach to file struct
@@ -254,7 +254,7 @@ static herr_t memvol_file_get(void *file, H5VL_file_get_t get_type, hid_t dxpl_i
       unsigned types = va_arg(arguments, unsigned);
       ssize_t *ret = va_arg(arguments, ssize_t *);
       size_t obj_count = 0; /* Number of opened objects */
-      assert(0 && "TODO");
+      eassert(0 && "TODO");
       /* Set the return value */
       *ret = (ssize_t)obj_count;
       break;
@@ -267,7 +267,7 @@ static herr_t memvol_file_get(void *file, H5VL_file_get_t get_type, hid_t dxpl_i
       ssize_t *ret = va_arg(arguments, ssize_t *);
       size_t obj_count = 0; /* Number of opened objects */
 
-      assert(0 && "TODO");
+      eassert(0 && "TODO");
 
       /* Set the return value */
       *ret = (ssize_t)obj_count;
@@ -301,7 +301,7 @@ static herr_t memvol_file_get(void *file, H5VL_file_get_t get_type, hid_t dxpl_i
       H5I_type_t type = va_arg(arguments, H5I_type_t);
       void **ret = va_arg(arguments, void **);
       void *tmp;
-      assert(0 && "TODO");
+      eassert(0 && "TODO");
 
       switch (type) {
         case H5I_FILE:
@@ -316,14 +316,14 @@ static herr_t memvol_file_get(void *file, H5VL_file_get_t get_type, hid_t dxpl_i
         case H5I_ATTR:
           break;
         default:
-          assert(0 && "Invalid type");
+          eassert(0 && "Invalid type");
       }
 
       *ret = (void *)tmp;
       break;
     }
     default:
-      assert(0);
+      eassert(0);
   } /* end switch */
 
   return ret_value;

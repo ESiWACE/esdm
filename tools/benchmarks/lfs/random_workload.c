@@ -1,4 +1,4 @@
-#include <assert.h>
+ 
 #include <fcntl.h>
 #include <stdint.h>
 #include <stdio.h>
@@ -39,7 +39,7 @@ int main(int argc, char *argv[]) {
   long long file_size = (long long)atoll(argv[3]);
   int iterations = atoi(argv[4]);
 
-  //      assert(block_size < (2^30));
+  //      eassert(block_size < (2^30));
 
   ///---- setting files name ----///
 

@@ -75,10 +75,9 @@ int main(int argc, char **argv) {
   }
 
   char *config = NULL;
-  read_file(o.config_file, &config);
+  int ret = read_file(o.config_file, &config);
   esdm_load_config_str(config);
 
-  esdm_status ret;
   ret = esdm_init();
   int flags = (o.create_data ? ESDM_FORMAT_CREATE : 0) |
               (o.delete_data ? ESDM_FORMAT_DELETE : 0) |

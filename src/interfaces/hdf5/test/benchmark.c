@@ -19,7 +19,7 @@
  * @brief Performance test/benchmark when writing a ND dataset using the HDF5 Interface to ESDM
  */
 
-#include <assert.h>
+ 
 #include <esdm.h>
 #include <hdf5.h>
 #include <mpi.h>
@@ -47,7 +47,8 @@ void esdm_mpi_distribute_config_file(char *config_filename) {
   char *config = NULL;
   if (mpi_rank == 0) {
     int len;
-    read_file(config_filename, &config);
+    int ret = read_file(config_filename, &config);
+    eassert(ret == 0);
     len = strlen(config) + 1;
     MPI_Bcast(&len, 1, MPI_INT, 0, MPI_COMM_WORLD);
     MPI_Bcast(config, len, MPI_CHAR, 0, MPI_COMM_WORLD);
@@ -58,6 +59,7 @@ void esdm_mpi_distribute_config_file(char *config_filename) {
     MPI_Bcast(config, len, MPI_CHAR, 0, MPI_COMM_WORLD);
   }
   esdm_load_config_str(config);
+  free(config);
 }
 
 void esdm_mpi_init() {
@@ -148,7 +150,7 @@ int main(int argc, char *argv[]) {
 
   // prepare data
   uint64_t *buf_w = (uint64_t *)malloc(volume);
-  assert(buf_w != NULL);
+  eassert(buf_w != NULL);
   long x, y;
   for (y = offset[1]; y < dim[1]; y++) {
     for (x = offset[2]; x < dim[2]; x++) {
@@ -215,7 +217,7 @@ int main(int argc, char *argv[]) {
       status = H5Sselect_hyperslab(dataspace_id, H5S_SELECT_SET, h5_offset, NULL, h5_dim, NULL);
 
       ret = esdm_write(dataset, buf_w, subspace);
-      assert(ret == ESDM_SUCCESS);
+      eassert(ret == ESDM_SUCCESS);
 
       // Write the dataset.
       status = H5Dwrite(dataset_id, H5T_NATIVE_INT, H5S_ALL, H5S_ALL, H5P_DEFAULT, dset_data);
@@ -238,7 +240,7 @@ int main(int argc, char *argv[]) {
     for (int t = 0; t < timesteps; t++) {
       offset[0] = t;
       uint64_t *buf_r = (uint64_t *)malloc(volume);
-      assert(buf_r != NULL);
+      eassert(buf_r != NULL);
 
       esdm_dataspace_t *subspace;
 
@@ -247,7 +249,7 @@ int main(int argc, char *argv[]) {
       status = H5Dread(dataset_id, H5T_NATIVE_INT, H5S_ALL, H5S_ALL, H5P_DEFAULT, dset_data);
 
       ret = esdm_read(dataset, buf_r, subspace);
-      assert(ret == ESDM_SUCCESS);
+      eassert(ret == ESDM_SUCCESS);
       // verify data and fail test if mismatches are found
       long idx;
       for (y = offset[1]; y < dim[1]; y++) {

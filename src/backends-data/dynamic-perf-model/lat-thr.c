@@ -115,21 +115,21 @@ int esdm_backend_t_parse_dynamic_perf_model_lat_thp(json_t *str, esdm_dynamic_pe
   elem = json_object_get(str, "latency");
   if (elem != NULL) {
     data->latency = json_real_value(elem);
-    assert(data->latency >= 0.0);
+    eassert(data->latency >= 0.0);
   } else
     data->latency = 0.0;
 
   elem = json_object_get(str, "throughput");
   if (elem != NULL) {
     data->throughput = json_real_value(elem) * 1024 * 1024;
-    assert(data->throughput > 0.0);
+    eassert(data->throughput > 0.0);
   } else
     data->throughput = 0.0;
 
   elem = json_object_get(str, "size");
   if (elem != NULL) {
     data->size = json_integer_value(elem);
-    assert(data->size > 0);
+    eassert(data->size > 0);
   } else
     data->size = 0;
 
@@ -138,15 +138,15 @@ int esdm_backend_t_parse_dynamic_perf_model_lat_thp(json_t *str, esdm_dynamic_pe
   elem = json_object_get(str, "period");
   if (elem != NULL) {
     data->period = json_real_value(elem);
-    assert(data->period > 0.0);
+    eassert(data->period > 0.0);
   } else
     data->period = 0.0;
 
   elem = json_object_get(str, "alpha");
   if (elem != NULL) {
     data->alpha = json_real_value(elem);
-    assert(data->alpha >= 0.0);
-    assert(data->alpha < 1.0);
+    eassert(data->alpha >= 0.0);
+    eassert(data->alpha < 1.0);
   } else
     data->alpha = 0.0;
 

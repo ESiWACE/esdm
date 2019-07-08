@@ -21,7 +21,7 @@
 
 #define _GNU_SOURCE /* See feature_test_macros(7) */
 
-#include <assert.h>
+ 
 #include <bson.h>
 #include <esdm.h>
 #include <fcntl.h>
@@ -555,17 +555,17 @@ static void mongodb_test() {
 
   // create entry and test
   ret = entry_create(abc);
-  assert(ret == 0);
+  eassert(ret == 0);
 
   ret = entry_retrieve(abc);
-  assert(ret == 0);
+  eassert(ret == 0);
 
   // double create
   ret = entry_create(def);
-  assert(ret == 0);
+  eassert(ret == 0);
 
   ret = entry_create(def);
-  assert(ret == -1);
+  eassert(ret == -1);
 
   // perform update and test
   ret = entry_update(abc, "huhuhuhuh", 5);
@@ -574,12 +574,12 @@ static void mongodb_test() {
   // delete entry and expect retrieve to fail
   ret = entry_destroy(abc);
   ret = entry_retrieve(abc);
-  assert(ret == -1);
+  eassert(ret == -1);
 
   // clean up
   ret = entry_destroy(def);
-  assert(ret == 0);
+  eassert(ret == 0);
 
   ret = entry_destroy(def);
-  assert(ret == -1);
+  eassert(ret == -1);
 }

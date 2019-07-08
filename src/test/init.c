@@ -20,12 +20,12 @@
 
 #include <test/util/test_util.h>
 
-#include <assert.h>
+
 #include <esdm.h>
 #include <stdio.h>
 #include <stdlib.h>
 
-const char const* configString =
+char const* configString =
   "{"
     "\"esdm\": {"
       "\"backends\": [],"
@@ -38,27 +38,27 @@ const char const* configString =
   "}";
 
 int main(int argc, char const *argv[]) {
-  assert_crash(esdm_set_procs_per_node(-1));
+  eassert_crash(esdm_set_procs_per_node(-1));
   esdm_status status = esdm_set_procs_per_node(3);
-  assert(status == ESDM_SUCCESS);
+  eassert(status == ESDM_SUCCESS);
 
-  assert_crash(esdm_set_total_procs(-1));
+  eassert_crash(esdm_set_total_procs(-1));
   status = esdm_set_total_procs(6);
-  assert(status == ESDM_SUCCESS);
+  eassert(status == ESDM_SUCCESS);
 
-  assert_crash(esdm_load_config_str(NULL));
-  assert_bailout(esdm_load_config_str(""));
+  eassert_crash(esdm_load_config_str(NULL));
+  eassert_bailout(esdm_load_config_str(""));
   status = esdm_load_config_str(configString);
-  assert(status == ESDM_SUCCESS);
-  assert_crash(esdm_load_config_str(configString));
+  eassert(status == ESDM_SUCCESS);
+  eassert_crash(esdm_load_config_str(configString));
 
   status = esdm_init();
-  assert(status == ESDM_SUCCESS);
+  eassert(status == ESDM_SUCCESS);
 
-  assert_crash(esdm_set_procs_per_node(3));
-  assert_crash(esdm_set_total_procs(6));
-  assert_crash(esdm_load_config_str("[]"));
+  eassert_crash(esdm_set_procs_per_node(3));
+  eassert_crash(esdm_set_total_procs(6));
+  eassert_crash(esdm_load_config_str("[]"));
 
   status = esdm_finalize();
-  assert(status == ESDM_SUCCESS);
+  eassert(status == ESDM_SUCCESS);
 }

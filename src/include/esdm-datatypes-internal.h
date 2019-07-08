@@ -55,6 +55,7 @@ struct esdm_fragment_t {
   void *buf;
   size_t elements;
   size_t bytes;
+  //int direct_io;
   esdm_data_status_e status;
 };
 
@@ -167,6 +168,7 @@ typedef struct io_request_status_t {
   int pending_ops;
   GMutex mutex;
   GCond done_condition;
+  int return_code;
 } io_request_status_t;
 
 typedef struct {

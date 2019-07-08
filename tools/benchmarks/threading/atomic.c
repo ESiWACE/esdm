@@ -1,4 +1,4 @@
-#include <assert.h>
+ 
 #include <glib.h>
 #include <pthread.h>
 #include <stdatomic.h>
@@ -56,7 +56,7 @@ void backend_thread(gpointer data_p, gpointer backend_id) {
   //pthread_spin_lock(& status->spinlock);
   size_t pending = atomic_fetch_sub(&status->pending_ops, 1);
   //printf("%d\n", status->pending_ops);
-  assert(status->pending_ops >= 0);
+  eassert(status->pending_ops >= 0);
   if (status->pending_ops == 0) {
     // mutex is very costly, therefore, wrap it behind atomics
     g_mutex_lock(&status->mutex);

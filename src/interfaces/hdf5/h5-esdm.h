@@ -1,7 +1,7 @@
 #ifndef H5_ESDM_H
 #define H5_ESDM_H
 
-#include <assert.h>
+ 
 #include <glib.h>
 #include <glib/gi18n.h>
 #include <stdlib.h>

@@ -21,7 +21,7 @@
 
 #define _GNU_SOURCE /* See feature_test_macros(7) */
 
-#include <assert.h>
+
 #include <dirent.h>
 #include <errno.h>
 #include <esdm-debug.h>
@@ -40,6 +40,11 @@
 #define DEBUG_ENTER ESDM_DEBUG_COM_FMT("POSIX", "", "")
 #define DEBUG(fmt, ...) ESDM_DEBUG_COM_FMT("POSIX", fmt, __VA_ARGS__)
 
+#define WARN_ENTER ESDM_WARN_COM_FMT("POSIX", "", "")
+#define WARN(fmt, ...) ESDM_WARN_COM_FMT("POSIX", fmt, __VA_ARGS__)
+#define WARNS(fmt) ESDM_WARN_COM_FMT("POSIX", "%s", fmt)
+
+
 #define sprintfFragmentDir(path, f) (sprintf(path, "%s/%c%c/%s", tgt, f->dataset->id[0], f->dataset->id[1], f->dataset->id+2))
 #define sprintfFragmentPath(path, f) (sprintf(path, "%s/%c%c/%s/%s", tgt, f->dataset->id[0], f->dataset->id[1], f->dataset->id+2, f->id))
 
@@ -55,12 +60,13 @@ static int entry_retrieve(const char *path, void *buf, uint64_t size) {
   int status;
   struct stat sb;
 
-  DEBUG("entry_retrieve(%s)\n", path);
+  DEBUG("entry_retrieve(%s)", path);
 
   // write to non existing file
   int fd = open(path, O_RDONLY);
   // everything ok? read and close
   if (fd < 0) {
+    WARN("error on opening file \"%s\": %s", path, strerror(errno));
     return ESDM_ERROR;
   }
   int ret = read_check(fd, buf, size);
@@ -68,10 +74,10 @@ static int entry_retrieve(const char *path, void *buf, uint64_t size) {
   return ret;
 }
 
+
 static int entry_update(const char *path, void *buf, size_t len, int update_only) {
   DEBUG("entry_update(%s: %ld)\n", path, len);
   int flags;
-
   if(update_only){
     flags = O_TRUNC;
   }else{
@@ -81,12 +87,11 @@ static int entry_update(const char *path, void *buf, size_t len, int update_only
   // write to non existing file
   int fd = open(path, O_WRONLY | flags, S_IWUSR | S_IRUSR | S_IWGRP | S_IRGRP | S_IROTH);
   if(fd < 0){
+    WARN("error on opening file: %s", strerror(errno));
     return ESDM_ERROR;
   }
-  //printf("%s fd: %d\n", path, fd);
   int ret = write_check(fd, buf, len);
   close(fd);
-  //printf("END %lld\n", len);
 
   return ret;
 }
@@ -124,6 +129,7 @@ static int mkfs(esdm_backend_t *backend, int format_flags) {
 
   const char *tgt = data->target;
   if (strlen(tgt) < 6) {
+    WARNS("safety, tgt directory shall be longer than 6 chars");
     return ESDM_ERROR;
   }
   char path[PATH_MAX];
@@ -222,32 +228,41 @@ static int fragment_update(esdm_backend_t *backend, esdm_fragment_t *f) {
 
   char path[PATH_MAX];
   // lazy assignment of ID
-  if(f->id == NULL){
-    f->id = malloc(17);
-    assert(f->id);
-    // ensure that the fragment with the ID doesn't exist, yet
-    while(1){
-      ea_generate_id(f->id, 16);
-      sprintfFragmentPath(path, f);
-
-      struct stat sb;
-      if (stat(path, &sb) == -1) {
-        sprintfFragmentDir(path, f);
-        if (stat(path, &sb) == -1) {
-          int ret = mkdir_recursive(path);
-          if (ret != 0 && errno != EEXIST) return ESDM_ERROR;
-        }
-        break;
+  if(f->id != NULL){
+    sprintfFragmentPath(path, f);
+    DEBUG("path: %s\n", path);
+    // create data
+    int ret = entry_update(path, f->buf, f->bytes, 1);
+    return ret;
+  }
+  int ret;
+  f->id = malloc(21);
+  eassert(f->id);
+  // ensure that the fragment with the ID doesn't exist, yet
+  while(1){
+    ea_generate_id(f->id, 20);
+    struct stat sb;
+    sprintfFragmentDir(path, f);
+    if (stat(path, &sb) == -1) {
+      int ret = mkdir_recursive(path);
+      if (ret != 0 && errno != EEXIST) {
+        WARN("error on creating directory \"%s\": %s", path, strerror(errno));
+        return ESDM_ERROR;
       }
     }
+    sprintfFragmentPath(path, f);
+    int fd = open(path, O_WRONLY | O_CREAT | O_EXCL, S_IWUSR | S_IRUSR | S_IWGRP | S_IRGRP | S_IROTH);
+    if(fd < 0){
+      if(errno == EEXIST){
+        continue;
+      }
+      WARN("error on creating file \"%s\": %s", path, strerror(errno));
+      return ESDM_ERROR;
+    }
+    ret = write_check(fd, f->buf, f->bytes);
+    close(fd);
+    return ret;
   }
-
-  sprintfFragmentPath(path, f);
-  DEBUG("path: %s\n", path);
-
-  // create data
-  int ret = entry_update(path, f->buf, f->bytes, 0);
-  return ret;
 }
 
 ///////////////////////////////////////////////////////////////////////////////

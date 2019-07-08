@@ -31,7 +31,7 @@ int main() {
   esdm_dataspace_t *space;
 
   esdm_dataspace_create(2, dim, SMD_DTYPE_FLOAT, &space);
-  assert(space != NULL);
+  eassert(space != NULL);
 
   // walk through all offsets
   for (int o = 0; o < dim[0] / dim2[0]; o++) {
@@ -41,7 +41,7 @@ int main() {
     esdm_dataspace_t *subspace;
 
     esdm_dataspace_subspace(space, 2, dim2, offset, &subspace);
-    assert(subspace != NULL);
+    eassert(subspace != NULL);
 
     uint64_t size = esdm_dataspace_size(subspace);
     printf("Offset: %d,%d -- size: %lu\n", (int)offset[0], (int)offset[1], size);
@@ -65,11 +65,11 @@ int main() {
       printf("\n");
     }
     ret = esdm_dataspace_destroy(subspace);
-    assert(ret == ESDM_SUCCESS);
+    eassert(ret == ESDM_SUCCESS);
   }
 
   ret = esdm_dataspace_destroy(space);
-  assert(ret == ESDM_SUCCESS);
+  eassert(ret == ESDM_SUCCESS);
 
   free(p);
   free(data);

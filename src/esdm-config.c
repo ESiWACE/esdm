@@ -50,8 +50,8 @@ esdm_config_t *esdm_config_init(esdm_instance_t *esdm) {
   ESDM_DEBUG(__func__);
 
   char *config_str = esdm_config_gather(0, NULL);
-
   esdm->config = esdm_config_init_from_str(config_str);
+  free(config_str);
   return esdm->config;
 }
 
@@ -81,7 +81,7 @@ char *esdm_config_gather() {
   ESDM_DEBUG(__func__);
 
   char *config_json = NULL;
-  read_file("_esdm.conf", &config_json);
+  read_file("_esdm.conf", & config_json);
   return config_json;
 }
 
@@ -108,7 +108,7 @@ esdm_config_backend_t *esdm_config_get_metadata_coordinator(esdm_instance_t *esd
   }
 
   esdm_config_backend_t *config_backend = (esdm_config_backend_t *)malloc(sizeof(esdm_config_backend_t));
-  assert(config_backend);
+  eassert(config_backend);
   config_backend->type = json_string_value(type_e);
   config_backend->esdm = root;
   config_backend->backend = md_e;
@@ -122,13 +122,13 @@ esdm_config_backend_t *esdm_config_get_metadata_coordinator(esdm_instance_t *esd
     ESDM_ERROR("Configuration: ID not set");
   }
   config_backend->id = json_string_value(elem);
-  assert(config_backend->id != NULL);
+  eassert(config_backend->id != NULL);
   elem = json_object_get(config_backend->backend, "target");
   if(! elem){
     ESDM_ERROR("Configuration: target not set");
   }
   config_backend->target = json_string_value(elem);
-  assert(config_backend->target != NULL);
+  eassert(config_backend->target != NULL);
 
   elem = json_object_get(config_backend->backend, "accessibility");
   if (elem != NULL) {

@@ -22,7 +22,7 @@
  * @brief A data backend to provide Clovis compatibility.
  */
 
-#include <assert.h>
+ 
 #include <errno.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -368,9 +368,9 @@ int rdwr_op) {
   uint64_t clovis_block_size;
   int rc;
 
-  assert((start & BLOCKMASK) == 0);
-  assert(((start + count) & BLOCKMASK) == 0);
-  assert(rdwr_op == M0_CLOVIS_OC_READ || rdwr_op == M0_CLOVIS_OC_WRITE);
+  eassert((start & BLOCKMASK) == 0);
+  eassert(((start + count) & BLOCKMASK) == 0);
+  eassert(rdwr_op == M0_CLOVIS_OC_READ || rdwr_op == M0_CLOVIS_OC_WRITE);
 
   /*
      * read the extended region and copy the data from new buffers.
@@ -446,8 +446,8 @@ uint64_t start,
 uint64_t count,
 void *data) {
   int rc;
-  assert((start & BLOCKMASK) == 0);
-  assert(((start + count) & BLOCKMASK) == 0);
+  eassert((start & BLOCKMASK) == 0);
+  eassert(((start + count) & BLOCKMASK) == 0);
   rc = esdm_backend_t_clovis_rdwr(eb, obj_handle, start, count,
   data, M0_CLOVIS_OC_WRITE);
   return rc;
@@ -459,8 +459,8 @@ uint64_t start,
 uint64_t count,
 void *data) {
   int rc;
-  assert((start & BLOCKMASK) == 0);
-  assert(((start + count) & BLOCKMASK) == 0);
+  eassert((start & BLOCKMASK) == 0);
+  eassert(((start + count) & BLOCKMASK) == 0);
   rc = esdm_backend_t_clovis_rdwr(eb, obj_handle, start, count,
   data, M0_CLOVIS_OC_READ);
   return rc;

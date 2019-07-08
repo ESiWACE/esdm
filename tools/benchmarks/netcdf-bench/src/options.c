@@ -1,6 +1,6 @@
 // Author: Julian Kunkel
 
-#include <assert.h>
+ 
 #include <mpi.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -12,7 +12,7 @@
 static int print_value(option_help *o) {
   int pos = 0;
   if (o->arg == OPTION_OPTIONAL_ARGUMENT || o->arg == OPTION_REQUIRED_ARGUMENT) {
-    assert(o->variable != NULL);
+    eassert(o->variable != NULL);
 
     switch (o->type) {
       case ('F'): {
@@ -156,7 +156,7 @@ void parseOptions(int argc, char **argv, option_help *args) {
         // now process the option.
         switch (o->arg) {
           case (OPTION_FLAG): {
-            assert(o->type == 'd');
+            eassert(o->type == 'd');
             (*(int *)o->variable)++;
             break;
           }

@@ -16,7 +16,7 @@
 #ifndef H5_MEMVOL_INTERNAL_HEADER__
 #define H5_MEMVOL_INTERNAL_HEADER__
 
-#include <assert.h>
+ 
 #include <stdlib.h>
 #include <string.h>
 

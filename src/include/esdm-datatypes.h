@@ -42,14 +42,14 @@ typedef enum esdm_status {
 /**
  * ESDM provides logging helpers, the available loglevels are defined here.
  */
-typedef enum esdm_loglevel {
-  ESDM_LOGLEVEL_CRITICAL,
+enum esdm_loglevel {
+  ESDM_LOGLEVEL_NOTSET,
   ESDM_LOGLEVEL_ERROR,
   ESDM_LOGLEVEL_WARNING,
   ESDM_LOGLEVEL_INFO,
-  ESDM_LOGLEVEL_DEBUG,
-  ESDM_LOGLEVEL_NOTSET
-} esdm_loglevel;
+  ESDM_LOGLEVEL_DEBUG
+};
+typedef enum esdm_loglevel esdm_loglevel_e;
 
 // LOGICAL/DOMAIN DATATYPES ///////////////////////////////////////////////////
 

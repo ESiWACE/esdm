@@ -16,7 +16,7 @@
  * =====================================================================================
  */
 
-#include <assert.h>
+ 
 #include <mpi.h>
 #include <netcdf.h>
 #include <netcdf_par.h>
@@ -95,8 +95,8 @@ void benchmark_destroy(benchmark_t *bm) {
 }
 
 void benchmark_setup(benchmark_t *bm, const procs_t procs, const size_t ndims, const size_t *dgeom, const size_t *bgeom, const size_t *cgeom, const char *testfn, const io_mode_t io_mode, const int par_access, const bool is_unlimited, const int use_fill_value) {
-  assert(dgeom[DX] % procs.nn == 0);
-  assert(dgeom[DY] % procs.ppn == 0);
+  eassert(dgeom[DX] % procs.nn == 0);
+  eassert(dgeom[DY] % procs.ppn == 0);
 
   bm->use_fill_value = use_fill_value;
   bm->par_access = par_access;

@@ -21,7 +21,6 @@
  *
  */
 
-#include <assert.h>
 #include <errno.h>
 #include <esdm-internal.h>
 #include <fcntl.h>
@@ -37,7 +36,7 @@
 
 int ea_is_valid_name(const char *str) {
   // TODO allow names with a-a, A-Z,0-9,_-
-  assert(str != NULL);
+  eassert(str != NULL);
   return 1;
 }
 
@@ -49,7 +48,7 @@ int mkdir_recursive(const char *path) {
   size_t len;
 
   // copy provided path, as we modify it
-  snprintf(tmp, sizeof(tmp), "%s", path);
+  snprintf(tmp, PATH_MAX, "%s", path);
 
   // check if last char of string is a /
   len = strlen(tmp);
@@ -73,7 +72,7 @@ int mkdir_recursive(const char *path) {
 }
 
 void posix_recursive_remove(const char *path) {
-  printf("ESDM removing %s\n", path);
+  ESDM_INFO_COM_FMT("AUX", "removing %s", path);
   struct stat sb = {0};
   int ret = stat(path, &sb);
   if (ret == 0) {
@@ -99,32 +98,27 @@ void posix_recursive_remove(const char *path) {
 // file I/O handling //////////////////////////////////////////////////////////
 
 int read_file(char *filepath, char **buf) {
-  if (*buf != NULL) {
-    printf("read_file(): Potential memory leak. Overwriting existing pointer with value != NULL.");
-    exit(1);
+  eassert(buf);
+
+  int fd = open(filepath, O_RDONLY);
+  if (fd < 0) {
+    ESDM_ERROR_COM_FMT("POSIX", "cannot open %s %s", filepath, strerror(errno));
+    return 1;
   }
 
-  FILE *fp = fopen(filepath, "rb");
-
-  if (fp == NULL) {
-    printf("Could not open or find: %s\n", filepath);
-    exit(1);
-  }
-
-  fseek(fp, 0, SEEK_END);
-  long fsize = ftell(fp);
-  fseek(fp, 0, SEEK_SET); //same as rewind(f);
+  off_t fsize = lseek(fd, 0, SEEK_END);
+  lseek(fd, 0, SEEK_SET);
 
   char *string = malloc(fsize + 1);
-  fread(string, fsize, 1, fp);
-  fclose(fp);
+  int ret = read_check(fd, string, fsize);
+  close(fd);
 
   string[fsize] = 0;
 
   *buf = string;
 
   ESDM_DEBUG_COM_FMT("AUX", "read_file(): %s\n", string);
-  return 0;
+  return ret;
 }
 
 int write_check(int fd, char *buf, size_t len) {
@@ -193,6 +187,7 @@ void print_stat(struct stat sb) {
   printf("\n");
 }
 
+// use json_decref() to free it
 json_t *load_json(const char *str) {
   json_error_t error;
   json_t *root = json_loads(str, 0, &error);
@@ -216,7 +211,7 @@ void ea_generate_id(char *str, size_t length){
   time_t timer;
   time(&timer);
 
-  assert(length > 4);
+  eassert(length > 4);
   char charset[] = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789_";
   uint64_t c = (uint64_t) timer;
   int const count = (int)(sizeof(charset) -1);

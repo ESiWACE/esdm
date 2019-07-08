@@ -8,14 +8,14 @@ static void check_hash_abort(MPI_Comm com, int hash, int rank){
   if(rank == 0){
     int rcvd[2];
     ret = MPI_Reduce(vals, rcvd, 2, MPI_INT, MPI_MIN, 0, com);
-    assert(ret == MPI_SUCCESS);
+    eassert(ret == MPI_SUCCESS);
 
     if(rcvd[0] != hash || rcvd[1] != -hash){
       MPI_Abort(com, 0);
     }
   }else{
     ret = MPI_Reduce(vals, NULL, 2, MPI_INT, MPI_MIN, 0, com);
-    assert(ret == MPI_SUCCESS);
+    eassert(ret == MPI_SUCCESS);
   }
 }
 
@@ -37,17 +37,19 @@ void esdm_mpi_distribute_config_file(char *config_filename) {
   char *config = NULL;
   if (mpi_rank == 0) {
     int len;
-    read_file(config_filename, &config);
+    int ret = read_file(config_filename, &config);
+    eassert(ret == 0);
     len = strlen(config) + 1;
     MPI_Bcast(&len, 1, MPI_INT, 0, MPI_COMM_WORLD);
     MPI_Bcast(config, len, MPI_CHAR, 0, MPI_COMM_WORLD);
   } else {
-    int len;
+    int len = 0;
     MPI_Bcast(&len, 1, MPI_INT, 0, MPI_COMM_WORLD);
     config = (char *)malloc(len);
     MPI_Bcast(config, len, MPI_CHAR, 0, MPI_COMM_WORLD);
   }
   esdm_load_config_str(config);
+  free(config);
 }
 
 void esdm_mpi_init() {
@@ -79,10 +81,10 @@ esdm_status esdm_mpi_container_create(MPI_Comm com, const char *name, esdm_conta
   if(rank == 0){
     ret = esdm_container_create(name, out_container);
     int ret2 = MPI_Bcast(& ret, 1, MPI_INT, 0, com);
-    assert(ret2 == MPI_SUCCESS);
+    eassert(ret2 == MPI_SUCCESS);
   }else{
     int ret2 = MPI_Bcast(& ret, 1, MPI_INT, 0, com);
-    assert(ret2 == MPI_SUCCESS);
+    eassert(ret2 == MPI_SUCCESS);
     if(ret == MPI_SUCCESS){
       esdmI_container_init(name, out_container);
     }
@@ -107,17 +109,17 @@ esdm_status esdm_mpi_container_open(MPI_Comm com, const char *name, esdm_contain
 
     size = size + 1; // broadcast string terminator as well
     ret = MPI_Bcast(& size, 1, MPI_INT, 0, com);
-    assert(ret == MPI_SUCCESS);
+    eassert(ret == MPI_SUCCESS);
     if(size > 0){
       ret = MPI_Bcast(buff, size, MPI_CHAR, 0, com);
-      assert(ret == MPI_SUCCESS);
+      eassert(ret == MPI_SUCCESS);
     }else{
   		esdm_container_destroy(c);
   		return ESDM_ERROR;
     }
   }else{
     ret = MPI_Bcast(& size, 1, MPI_INT, 0, com);
-    assert(ret == MPI_SUCCESS);
+    eassert(ret == MPI_SUCCESS);
 
     if(size == 0){
       esdm_container_destroy(c);
@@ -126,7 +128,7 @@ esdm_status esdm_mpi_container_open(MPI_Comm com, const char *name, esdm_contain
     buff = (char*) malloc(size);
 
     ret = MPI_Bcast(buff, size, MPI_CHAR, 0, com);
-    assert(ret == MPI_SUCCESS);
+    eassert(ret == MPI_SUCCESS);
   }
 	ret = esdm_container_open_md_parse(c, buff, size);
 	free(buff);
@@ -150,14 +152,14 @@ esdm_status esdm_mpi_container_commit(MPI_Comm com, esdm_container_t *c){
 }
 
 esdm_status esdm_mpi_dataset_create(MPI_Comm com, esdm_container_t *c, const char *name, esdm_dataspace_t *dataspace, esdm_dataset_t **out_dataset){
-  assert(name != NULL);
-  assert(c != NULL);
-  assert(dataspace != NULL);
+  eassert(name != NULL);
+  eassert(c != NULL);
+  eassert(dataspace != NULL);
 
   esdm_status ret;
   int rank;
   ret = MPI_Comm_rank(com, & rank);
-  assert(ret == MPI_SUCCESS);
+  eassert(ret == MPI_SUCCESS);
   // compute hash to ensure that all arguments are the same
   int hash;
   hash = (ea_compute_hash_str(name)<<3) + dataspace->dims + ea_compute_hash_str(c->name);
@@ -173,14 +175,14 @@ esdm_status esdm_mpi_dataset_create(MPI_Comm com, esdm_container_t *c, const cha
       id = (*out_dataset)->id;
     }
     int ret2 = MPI_Bcast(id, strlen(id)+1, MPI_CHAR, 0, com);
-    assert(ret2 == MPI_SUCCESS);
+    eassert(ret2 == MPI_SUCCESS);
     return ret;
   }else{
     check_hash_abort(com, hash, 1);
 
     char id[20];
     ret = MPI_Bcast(id, 17, MPI_CHAR, 0, com);
-    assert(ret == MPI_SUCCESS);
+    eassert(ret == MPI_SUCCESS);
     if(strlen(id) == 0){
       return ESDM_ERROR;
     }
@@ -199,7 +201,7 @@ esdm_status esdm_mpi_dataset_open(MPI_Comm com, esdm_container_t *c, const char 
   ret = MPI_Comm_rank(com, & rank);
   *out_dataset = NULL;
 
-  assert(ret == MPI_SUCCESS);
+  eassert(ret == MPI_SUCCESS);
   // compute hash to ensure all have the same value
   int hash;
   hash = ea_compute_hash_str(name) + ea_compute_hash_str(c->name);
@@ -226,18 +228,18 @@ esdm_status esdm_mpi_dataset_open(MPI_Comm com, esdm_container_t *c, const char 
   	}
     size = size + 1; // broadcast string terminator as well
     ret = MPI_Bcast(& size, 1, MPI_INT, 0, com);
-    assert(ret == MPI_SUCCESS);
+    eassert(ret == MPI_SUCCESS);
 
     if(size > 0){
       ret = MPI_Bcast(buff, size, MPI_CHAR, 0, com);
-      assert(ret == MPI_SUCCESS);
+      eassert(ret == MPI_SUCCESS);
     }else{
   		return ret;
     }
   }else{
     check_hash_abort(com, hash, 1);
     ret = MPI_Bcast(& size, 1, MPI_INT, 0, com);
-    assert(ret == MPI_SUCCESS);
+    eassert(ret == MPI_SUCCESS);
     if (size == 0){
       return ESDM_ERROR;
     }
@@ -245,7 +247,7 @@ esdm_status esdm_mpi_dataset_open(MPI_Comm com, esdm_container_t *c, const char 
     buff = (char*) malloc(size);
 
     ret = MPI_Bcast(buff, size, MPI_CHAR, 0, com);
-    assert(ret == MPI_SUCCESS);
+    eassert(ret == MPI_SUCCESS);
   }
   ret = esdm_dataset_open_md_parse(d, buff, size);
   if(ret != ESDM_SUCCESS){
@@ -272,19 +274,19 @@ esdm_status esdm_mpi_dataset_commit(MPI_Comm com, esdm_dataset_t *d){
     int prev = d->fragments.count;
 
     ret = MPI_Reduce(& prev, & total, 1, MPI_INT, MPI_SUM, 0, com);
-    assert(ret == MPI_SUCCESS);
-    assert(total > 0);
+    eassert(ret == MPI_SUCCESS);
+    eassert(total > 0);
   	d->fragments.frag = (esdm_fragment_t **) realloc(d->fragments.frag, total * sizeof(void*));
     d->fragments.count = total;
 
     int size;
     ret = MPI_Comm_size(com, & size);
-
+    int max_len = 10000000;
+    char * buff = malloc(max_len);
     for(int p = 1 ; p < size; p++){
-      int size = 100000;
-      char buff[size];
+      int size = max_len;
       ret = MPI_Recv(buff, size, MPI_CHAR, p, 4711, com, MPI_STATUS_IGNORE);
-      assert(ret == MPI_SUCCESS);
+      eassert(ret == MPI_SUCCESS);
 
       json_t * elem = load_json(buff);
       int json_frags = json_array_size(elem);
@@ -299,26 +301,30 @@ esdm_status esdm_mpi_dataset_commit(MPI_Comm com, esdm_dataset_t *d){
     		d->fragments.frag[prev] = fragment;
         prev++;
     	}
+      json_decref(elem);
     }
+    free(buff);
     ret = esdm_dataset_commit(d);
 
     MPI_Bcast(& ret, 1, MPI_INT, 0, com);
     return ret;
   }else{
     ret = MPI_Reduce(& d->fragments.count, NULL, 1, MPI_INT, MPI_SUM, 0,   com);
-    assert(ret == MPI_SUCCESS);
+    eassert(ret == MPI_SUCCESS);
 
     int size;
-    int len = 100000;
-    char buff[len];
+    int len = 10000000;
+    char * buff = malloc(len);
     esdmI_fragments_metadata_create(d, len, buff, & size);
     buff[size] = 0;
-    assert(size < len);
+    eassert(size < len);
 
     ret = MPI_Send(buff, size + 1, MPI_CHAR, 0, 4711, com);
-    assert(ret == MPI_SUCCESS);
+    eassert(ret == MPI_SUCCESS);
+    free(buff);
 
     MPI_Bcast(& ret, 1, MPI_INT, 0, com);
+
     return ret;
   }
 }

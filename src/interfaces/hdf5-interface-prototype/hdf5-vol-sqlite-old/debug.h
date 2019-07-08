@@ -19,7 +19,7 @@
 #ifndef debug_INC
 #define debug_INC
 
-#include <assert.h>
+ 
 #include <mpi.h>
 #include <stdbool.h>
 #include <stdio.h>
@@ -62,7 +62,7 @@
     printf("[ERROR] (%d) %s:%d - ", debug_mpi_rank, __PRETTY_FUNCTION__, __LINE__); \
     printf(__VA_ARGS__);                                                            \
     printf("\n");                                                                   \
-    assert(false);                                                                  \
+    eassert(false);                                                                  \
     exit(1);                                                                        \
   }
 

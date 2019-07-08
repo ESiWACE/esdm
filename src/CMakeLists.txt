@@ -15,11 +15,10 @@ set_package_properties(JANSSON PROPERTIES
 )
 include_directories(${JANSSON_INCLUDE_DIRS})
 
+find_package (Threads)
 
 # Optional
 find_package(MPI REQUIRED) # TODO this is optional
-
-
 
 
 # Threading support
@@ -93,7 +92,7 @@ include_directories(${CMAKE_BINARY_DIR} ${ESDM_INCLUDE_DIRS} ${GLIB_INCLUDE_DIRS
 
 # ESDM Utils and Database Library
 add_library(esdmutils SHARED esdm.c esdm-attributes.c esdm-datatypes.c  esdm-layout.c  esdm-performancemodel.c esdm-config.c  utils/debug.c utils/auxiliary.c)
-target_link_libraries(esdmutils ${GLIB_LDFLAGS} ${JANSSON_LDFLAGS} smd)
+target_link_libraries(esdmutils ${GLIB_LDFLAGS} ${JANSSON_LDFLAGS} smd ${CMAKE_THREAD_LIBS_INIT})
 install(TARGETS esdmutils LIBRARY DESTINATION lib)
 
 

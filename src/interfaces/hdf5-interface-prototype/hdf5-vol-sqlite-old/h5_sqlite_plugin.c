@@ -3,7 +3,7 @@
 
 // Author: Eugen Betke
 
-#include <assert.h>
+ 
 #include <errno.h>
 #include <fcntl.h>
 #include <hdf5.h>
@@ -263,7 +263,7 @@ static herr_t H5VL_extlog_fapl_free(void *info) {
 static herr_t H5VL_log_init(hid_t vipl_id) {
   TRACEMSG("");
   native_plugin_id = H5VLget_plugin_id("native");
-  assert(native_plugin_id > 0);
+  eassert(native_plugin_id > 0);
   printf("------- LOG INIT\n");
   return 0;
 }
@@ -440,7 +440,7 @@ H5VL_extlog_attr_open(void *obj, H5VL_loc_params_t loc_params, const char *attr_
 static herr_t
 H5VL_extlog_attr_read(void *obj, hid_t dtype_id, void *buf, hid_t dxpl_id, void **req) {
   TRACEMSG("");
-  assert(NULL != buf);
+  eassert(NULL != buf);
   SQA_t *attr = (SQA_t *)obj;
   DBA_read(attr, buf);
   return 1;
@@ -505,7 +505,7 @@ H5VL_extlog_attr_get(void *obj, H5VL_attr_get_t get_type, hid_t dxpl_id, void **
     case H5VL_ATTR_GET_SPACE: {
       hid_t *ret_id = va_arg(arguments, hid_t *);
       DBA_get_space(obj, ret_id);
-      assert(-1 != *ret_id);
+      eassert(-1 != *ret_id);
     } break;
     case H5VL_ATTR_GET_STORAGE_SIZE:
       ERRORMSG("Not implemented");
@@ -513,7 +513,7 @@ H5VL_extlog_attr_get(void *obj, H5VL_attr_get_t get_type, hid_t dxpl_id, void **
     case H5VL_ATTR_GET_TYPE: {
       hid_t *ret_id = va_arg(arguments, hid_t *);
       DBA_get_type(obj, ret_id);
-      assert(-1 != *ret_id);
+      eassert(-1 != *ret_id);
     } break;
     default:
       ERRORMSG("Not supported");
@@ -548,7 +548,7 @@ static htri_t SQA_exists_by_self(void *obj, H5VL_loc_params_t loc_params, const 
 static herr_t SQA_iterate(SQO_t *obj, H5VL_loc_params_t loc_params, H5_index_t idx_type, H5_iter_order_t order, hsize_t *idx, H5A_operator2_t op, void *op_data, hid_t dxpl_id) {
   SQO_t *obj2 = NULL;
   hid_t vol_id = H5VLget_plugin_id("extlog");
-  assert(-1 != vol_id);
+  eassert(-1 != vol_id);
   hid_t loc_id = -1;
 
   switch (loc_params.obj_type) {
@@ -582,7 +582,7 @@ static herr_t SQA_iterate(SQO_t *obj, H5VL_loc_params_t loc_params, H5_index_t i
   obj2->info.btime = ++counter_g;
 
   loc_id = H5VLobject_register(obj2, loc_params.obj_type, vol_id);
-  assert(-1 != loc_id);
+  eassert(-1 != loc_id);
 
   switch (idx_type) {
     case H5_INDEX_NAME: //An alpha-numeric index by attribute name
@@ -1100,7 +1100,7 @@ static herr_t H5VL_extlog_type_close(void *dt, hid_t dxpl_id, void **req) {
 //	static void *
 //H5VL_extlog_object_open(void *obj, H5VL_loc_params_t loc_params, H5I_type_t *opened_type, hid_t dxpl_id, void **req)
 //{
-//	assert(false);
+//	eassert(false);
 //	return NULL;
 //}
 //
@@ -1297,7 +1297,7 @@ static ssize_t SQD_read64(SQO_t *sqo, void *buf, size_t count, off64_t offset) {
   ssize_t bytes_read_total = 0;
   ssize_t bytes_read = 0;
   ssize_t block_size = count;
-  assert(0 <= sqo->root->fd);
+  eassert(0 <= sqo->root->fd);
 
   while (bytes_read_total != block_size) {
     size_t bytes_left = block_size - bytes_read_total;
@@ -1316,7 +1316,7 @@ static ssize_t SQD_pwrite64(SQO_t *sqo, const void *buf, size_t count, off64_t o
   ssize_t bytes_written_total = 0;
   ssize_t bytes_written = 0;
   ssize_t block_size = count;
-  assert(0 <= sqo->root->fd);
+  eassert(0 <= sqo->root->fd);
 
   while (bytes_written_total != block_size) {
     size_t bytes_left = block_size - bytes_written_total;
@@ -1343,7 +1343,7 @@ hid_t file_space_id, hid_t plist_id, void *buf, void **req) {
   H5Sget_simple_extent_dims(mem_space_id, dims, max_dims);
 
   size_t block_size = H5Tget_size(mem_type_id);
-  assert(block_size != 0);
+  eassert(block_size != 0);
   for (size_t i = 0; i < ndims; ++i) {
     block_size *= dims[i];
   }
@@ -1406,7 +1406,7 @@ static herr_t H5VL_extlog_dataset_write(void *dset, hid_t mem_type_id, hid_t mem
   H5Sget_simple_extent_dims(mem_space_id, dims, max_dims);
 
   size_t block_size = H5Tget_size(mem_type_id);
-  assert(block_size != 0);
+  eassert(block_size != 0);
   for (size_t i = 0; i < ndims; ++i) {
     block_size *= dims[i];
   }
@@ -1505,9 +1505,9 @@ static herr_t H5VL_extlog_link_specific(void *obj, H5VL_loc_params_t loc_params,
   obj2->name = strdup(obj1->name);
 
   hid_t vol_id = H5VLget_plugin_id("extlog");
-  assert(-1 != vol_id);
+  eassert(-1 != vol_id);
   hid_t group_id = H5VLobject_register(obj2, loc_params.obj_type, vol_id);
-  assert(-1 != group_id);
+  eassert(-1 != group_id);
 
   switch (specific_type) {
     case H5VL_LINK_DELETE:
@@ -1602,7 +1602,7 @@ static void *H5VL_extlog_object_open(void *obj, H5VL_loc_params_t loc_params, H5
     default:
       ERRORMSG("Not implemented");
   }
-  assert(NULL != ret_obj);
+  eassert(NULL != ret_obj);
   return ret_obj;
 }
 

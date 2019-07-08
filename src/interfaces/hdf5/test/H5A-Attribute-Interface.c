@@ -19,7 +19,7 @@
  * @brief Test for HDF5 attribute interface on top of ESDM.
  */
 
-#include <assert.h>
+ 
 #include <hdf5.h>
 #include <stdio.h>
 

@@ -38,7 +38,7 @@
 static void memvol_group_init(memvol_group_t *group) {
   group->childs_tbl = g_hash_table_new(g_str_hash, g_str_equal);
   group->childs_ord_by_index_arr = g_array_new(0, 0, sizeof(void *));
-  assert(group->childs_tbl != NULL);
+  eassert(group->childs_tbl != NULL);
 }
 
 static void *memvol_group_create(void *obj, H5VL_loc_params_t loc_params, const char *name, hid_t gcpl_id, hid_t gapl_id, hid_t dxpl_id, void **req) {
@@ -132,7 +132,7 @@ static herr_t memvol_group_get(void *obj, H5VL_group_get_t get_type, hid_t dxpl_
         relevant_group = (memvol_group_t *)((memvol_object_t *)relevant_group)->object;
 
       } else if (loc_params.type == H5VL_OBJECT_BY_IDX) {
-        assert(loc_params.loc_data.loc_by_idx.order == H5_ITER_INC || loc_params.loc_data.loc_by_idx.order == H5_ITER_NATIVE);
+        eassert(loc_params.loc_data.loc_by_idx.order == H5_ITER_INC || loc_params.loc_data.loc_by_idx.order == H5_ITER_NATIVE);
         if (loc_params.loc_data.loc_by_idx.idx_type == H5_INDEX_NAME) {
           // TODO, for now return the index position.
           relevant_group = g_array_index(group->childs_ord_by_index_arr, memvol_group_t *, loc_params.loc_data.loc_by_idx.n);
@@ -143,7 +143,7 @@ static herr_t memvol_group_get(void *obj, H5VL_group_get_t get_type, hid_t dxpl_
           relevant_group = (memvol_group_t *)((memvol_object_t *)relevant_group)->object;
 
         } else {
-          assert(0);
+          eassert(0);
         }
       }
 

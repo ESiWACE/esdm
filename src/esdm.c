@@ -34,34 +34,34 @@ esdm_instance_t esdm = {
 };
 
 esdm_status esdm_set_procs_per_node(int procs) {
-  assert(procs > 0);
-  assert(!is_initialized);
+  eassert(procs > 0);
+  eassert(!is_initialized);
 
   esdm.procs_per_node = procs;
   return ESDM_SUCCESS;
 }
 
 esdm_status esdm_set_total_procs(int procs) {
-  assert(procs > 0);
-  assert(!is_initialized);
+  eassert(procs > 0);
+  eassert(!is_initialized);
 
   esdm.total_procs = procs;
   return ESDM_SUCCESS;
 }
 
 esdm_status esdm_load_config_str(const char *str) {
-  assert(str != NULL);
-  assert(!is_initialized);
-  assert(!esdm.config);
+  eassert(str != NULL);
+  eassert(!is_initialized);
+  eassert(!esdm.config);
 
   esdm.config = esdm_config_init_from_str(str);
   return esdm.config ? ESDM_SUCCESS : ESDM_ERROR;
 }
 
 esdm_status esdm_dataset_get_dataspace(esdm_dataset_t *dset, esdm_dataspace_t **out_dataspace) {
-  assert(dset != NULL);
+  eassert(dset != NULL);
   *out_dataspace = dset->dataspace;
-  assert(*out_dataspace != NULL);
+  eassert(*out_dataspace != NULL);
   return ESDM_SUCCESS;
 }
 
@@ -69,13 +69,26 @@ esdm_status esdm_init() {
   ESDM_DEBUG("Init");
 
   if (!is_initialized) {
-    ESDM_DEBUG("Initializing ESDM");
-
-    //int status = atexit(esdm_atexit);
+    if(atexit(esdmI_log_dump) != 0){
+      ESDM_ERROR("Could not register log reporter");
+    }
+    char * str = getenv("ESDM_LOGLEVEL_BUFFER");
+    if(str){
+      int loglevel = atoi(str);
+      ESDM_DEBUG_COM_FMT("ESDM", "Setting buffer debuglevel to %d", loglevel);
+      esdm_loglevel_buffer(loglevel);
+    }
+    str = getenv("ESDM_LOGLEVEL");
+    if(str){
+      int loglevel = atoi(str);
+      ESDM_DEBUG_COM_FMT("ESDM", "Setting debuglevel to %d", loglevel);
+      esdm_loglevel(loglevel);
+    }
 
     // find configuration
-    if (!esdm.config)
+    if (!esdm.config){
       esdm_config_init(&esdm);
+    }
 
     // optional modules (e.g. data and metadata backends)
     esdm_modules_init(&esdm);
@@ -135,23 +148,25 @@ esdm_status esdm_finalize() {
   esdm_layout_finalize(&esdm);
   esdm_modules_finalize(&esdm);
 
+  esdm_log_on_exit(0);
+
   return ESDM_SUCCESS;
 }
 
 esdm_status esdm_write(esdm_dataset_t *dataset, void *buf, esdm_dataspace_t *out_subspace) {
   ESDM_DEBUG(__func__);
-  assert(dataset);
-  assert(buf);
-  assert(out_subspace);
+  eassert(dataset);
+  eassert(buf);
+  eassert(out_subspace);
 
   return esdm_scheduler_process_blocking(&esdm, ESDM_OP_WRITE, dataset, buf, out_subspace);
 }
 
 esdm_status esdm_read(esdm_dataset_t *dataset, void *buf, esdm_dataspace_t *subspace) {
   ESDM_DEBUG("");
-  assert(dataset);
-  assert(buf);
-  assert(subspace);
+  eassert(dataset);
+  eassert(buf);
+  eassert(subspace);
 
   return esdm_scheduler_process_blocking(&esdm, ESDM_OP_READ, dataset, buf, subspace);
 }
