@@ -88,5 +88,7 @@ int main(int argc, char const *argv[]) {
   // clean up
   free(buf_w);
 
+  printf("\nOK\n");
+
   return 0;
 }

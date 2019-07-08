@@ -61,4 +61,6 @@ int main(int argc, char const *argv[]) {
 
   status = esdm_finalize();
   eassert(status == ESDM_SUCCESS);
+
+  printf("\nOK\n");
 }
