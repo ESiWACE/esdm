@@ -31,7 +31,7 @@ const char const* configString =
       "\"backends\": [],"
       "\"metadata\": {"
         "\"type\": \"metadummy\","
-        "\"name\": \"md\","
+        "\"id\": \"md\","
         "\"target\": \"./_metadummy\""
       "}"
     "}"
@@ -47,7 +47,7 @@ int main(int argc, char const *argv[]) {
   assert(status == ESDM_SUCCESS);
 
   assert_crash(esdm_load_config_str(NULL));
-  assert(esdm_load_config_str("") != ESDM_SUCCESS);
+  assert_bailout(esdm_load_config_str(""));
   status = esdm_load_config_str(configString);
   assert(status == ESDM_SUCCESS);
   assert_crash(esdm_load_config_str(configString));
