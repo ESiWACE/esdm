@@ -87,7 +87,26 @@ void dataspace_copy_data(dataspace* sourceSpace, int64_t *sourceData, dataspace*
     if(overlapX0 > overlapX1) return; //overlap is empty => nothing to do
   }
 
-  //TODO: determine how much data we can move with memcpy() at a time
+  //determine how much data we can move with memcpy() at a time
+  int64_t dataPointerOffset = 0, memcpySize = 1;  //both are counts of fundamental elements, not bytes
+  bool memcpyDims[dimensions];
+  memset(memcpyDims, 0, sizeof(memcpyDims));
+  while(true) {
+    //search for a dimension with a stride that matches our current memcpySize
+    int64_t curDim;
+    for(curDim = dimensions; curDim--; ) {
+      if(sourceSpace->stride[curDim] == destSpace->stride[curDim]) {
+        if(abs_int64(sourceSpace->stride[curDim]) == memcpySize) break;
+      }
+    }
+    if(curDim >= 0) {
+      //found a fitting dimension, update our parameters
+      memcpyDims[curDim] = true;  //remember not to loop over this dimension when copying the data
+      if(sourceSpace->stride[curDim] < 0) dataPointerOffset += memcpySize*(overlapSize[curDim] - 1); //When the stride is negative, the first byte belongs to the last slice of this dimension, not the first one. Remember that.
+      memcpySize *= overlapSize[curDim];
+      if(overlapSize[curDim] != sourceSpace->size[curDim] || overlapSize[curDim] != destSpace->size[curDim]) break; //cannot fuse other dimensions in a memcpy() call if this dimensions does not have a perfect match between the dataspaces
+    } else break; //didn't find another suitable dimension for fusing memcpy() calls
+  }
 
   //copy the data
   int64_t curPoint[dimensions];
@@ -101,13 +120,15 @@ void dataspace_copy_data(dataspace* sourceSpace, int64_t *sourceData, dataspace*
     }
 
     //move the data
-    copyData(&destData[destIndex], &sourceData[sourceIndex], sizeof(*destData));
+    copyData(&destData[destIndex - dataPointerOffset], &sourceData[sourceIndex - dataPointerOffset], memcpySize*sizeof(*destData));
 
     //advance to the next point
     int64_t curDim;
     for(curDim = dimensions; curDim--; ) {
-      if(++(curPoint[curDim]) < overlapOffset[curDim] + overlapSize[curDim]) break;
-      curPoint[curDim] = overlapOffset[curDim];
+      if(!memcpyDims[curDim]) {
+        if(++(curPoint[curDim]) < overlapOffset[curDim] + overlapSize[curDim]) break;
+        curPoint[curDim] = overlapOffset[curDim];
+      }
     }
     if(curDim < 0) break;
   }
@@ -140,20 +161,20 @@ int main() {
     0x60d, 0x61d, 0x62d
   }, *firstSourceByte = &sourceData[3];
 
-  dataspace* destSpace = dataspace_create(3, (int64_t[3]){5, 0, -6}, (uint64_t[3]){3, 3, 3}, (int64_t[3]){-3, 1, 9});
+  dataspace* destSpace = dataspace_create(3, (int64_t[3]){5, 0, -6}, (uint64_t[3]){3, 3, 3}, (int64_t[3]){-3, 1, -9});
   int64_t destData[27] = {0}, expectedData[27] = {
-    0x70a, 0x71a, 0x72a,
-    0x60a, 0x61a, 0x62a,
+    0x70c, 0x71c, 0x72c,
+    0x60c, 0x61c, 0x62c,
     0x000, 0x000, 0x000,
 
     0x70b, 0x71b, 0x72b,
     0x60b, 0x61b, 0x62b,
     0x000, 0x000, 0x000,
 
-    0x70c, 0x71c, 0x72c,
-    0x60c, 0x61c, 0x62c,
+    0x70a, 0x71a, 0x72a,
+    0x60a, 0x61a, 0x62a,
     0x000, 0x000, 0x000,
-  }, *firstDestByte = &destData[6];
+  }, *firstDestByte = &destData[6 + 2*9];
 
   dataspace_copy_data(sourceSpace, firstSourceByte, destSpace, firstDestByte);
 
