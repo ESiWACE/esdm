@@ -267,6 +267,8 @@ int main(int argc, char *argv[]) {
   // clean up
   free(buf_w);
 
+  if(!mpi_rank) printf("\nOK\n");
+
   MPI_Finalize();
 
   return 0;

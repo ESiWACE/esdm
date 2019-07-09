@@ -78,5 +78,7 @@ int main() {
   free(data);
   free(data_out);
 
+  printf("\nOK\n");
+
   return 0;
 }

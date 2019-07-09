@@ -6,6 +6,7 @@
 #define ESDM_H
 
 #include <esdm-datatypes.h>
+#include <stdbool.h>
 #include <stddef.h>
 #include <sys/stat.h>
 #include <sys/types.h>
@@ -162,9 +163,14 @@ esdm_status esdm_container_get_attributes(esdm_container_t *container, smd_attr_
 esdm_status esdm_container_destroy(esdm_container_t *container);
 
 /*
- * Check if the dataset with the given name exists
+ * Check if the dataset with the given name exists.
+ *
+ * @param [in] container an existing container to query
+ * @param [in] name the identifier to check, must not be NULL
+ *
+ * @return true if the identifier already exists within the container
  */
-int esdm_container_dataset_exists(esdm_container_t * c, char const * name);
+bool esdm_container_dataset_exists(esdm_container_t * container, char const * name);
 
 // Dataset
 

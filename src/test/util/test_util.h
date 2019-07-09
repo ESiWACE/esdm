@@ -39,18 +39,25 @@ double timer_subtract(timer number, timer subtract);
 //A variant of eassert() that allows us to check that the call actually *crashes* the program.
 //This is used to check for the presence of the appropriate eassert() calls to check function contracts.
 //Checks for abnormal termination by some signal.
-#define eassert_crash(call) do { \
-  pid_t child = fork(); \
-  if(child) { \
-    int status; \
-    pid_t result = waitpid(child, &status, 0); \
-    eassert(result == child); \
-    eassert(WIFSIGNALED(status)); \
-  } else { \
-    call; \
-    exit(0); \
-  } \
-} while(0)
+#ifdef NDEBUG
+  //Must compile out `eassert_crash()` if `assert()` is compiled out as it is supposed to check for a crash produced by some other `assert()`.
+  //If that other `assert()` were compiled out in a production built while the checking `eassert_crash()` is left in,
+  //the result would be a production-built-only failure.
+  #define eassert_crash(call)
+#else
+  #define eassert_crash(call) do { \
+    pid_t child = fork(); \
+    if(child) { \
+      int status; \
+      pid_t result = waitpid(child, &status, 0); \
+      eassert(result == child); \
+      eassert(WIFSIGNALED(status)); \
+    } else { \
+      call; \
+      exit(0); \
+    } \
+  } while(0)
+#endif
 
 //A variant of eassert() that allows us to check that the call triggers a fatal error bailout.
 //This is used to check for the presence of the appropriate exit() or ERROR_ESDM*() calls to check function contracts.
