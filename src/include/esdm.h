@@ -147,18 +147,12 @@ esdm_status esdm_container_link_attribute(esdm_container_t *container, smd_attr_
 esdm_status esdm_container_get_attributes(esdm_container_t *container, smd_attr_t **out_metadata);
 
 /**
- * Destroy a existing container.
+ * Destruct and free a container object.
  *
- * Either from memory or from persistent storage.
+ * @param [in] container an existing container object that is no longer needed
  *
- * @param [in] container an existing container object to free
+ * "_destroy" sounds too destructive, this will be renamed to esdm_container_close().
  */
- //FIXME: It must be clear whether this does indeed destroy from persistent storage.
- //       Acceptable specifications would be:
- //         * only from memory (like POSIX close())
- //         * from memory *and* persistent storage
- //         * only from persistent storage
- //       As far as I can see, it's not supposed to have an effect on persistent storage, so `*_close` or `*_free` might be better names for this.
 
 esdm_status esdm_container_destroy(esdm_container_t *container);
 
@@ -225,11 +219,13 @@ esdm_status esdm_dataset_open(esdm_container_t *container, const char *name, esd
 esdm_status esdm_dataset_commit(esdm_dataset_t *dataset);
 
 /**
- * Free RAM used by a dataset object.
+ * Destruct and free a dataset object.
  *
- * @param [in] dataset an existing dataset object to free
+ * @param [in] dataset an existing dataset object that is no longer needed
  *
  * @return status
+ *
+ * "_destroy" sounds too destructive, this will be renamed to esdm_dataset_close().
  */
 esdm_status esdm_dataset_destroy(esdm_dataset_t *dataset);
 
@@ -280,11 +276,13 @@ esdm_status esdm_dataspace_deserialize(void *serialized_dataspace, esdm_dataspac
 esdm_status esdm_dataspace_subspace(esdm_dataspace_t *dataspace, int64_t dims, int64_t *size, int64_t *offset, esdm_dataspace_t **out_dataspace);
 
 /**
- * Free RAM used by a dataspace object.
+ * Destruct and free a dataspace object.
  *
- * @param [in] dataspace an existing dataspace object to free
+ * @param [in] dataspace an existing dataspace object that is no longer needed
  *
  * @return status
+ *
+ * "_destroy" sounds too destructive, this will be renamed to esdm_dataspace_close().
  */
 esdm_status esdm_dataspace_destroy(esdm_dataspace_t *dataspace);
 
@@ -323,11 +321,13 @@ esdm_status esdm_fragment_retrieve(esdm_fragment_t *fragment);
 esdm_status esdm_fragment_commit(esdm_fragment_t *fragment);
 
 /**
- * Free RAM used by a fragment object.
+ * Destruct and free a fragment object.
  *
- * @param [in] fragment an existing fragment object to free
+ * @param [in] fragment an existing fragment object that is no longer needed
  *
  * @return status
+ *
+ * "_destroy" sounds too destructive, this will be renamed to esdm_fragment_close().
  */
 esdm_status esdm_fragment_destroy(esdm_fragment_t *fragment);
 
