@@ -8,6 +8,7 @@
 extern esdm_instance_t esdm;
 
 int main() {
+  esdm_status ret;
   char const * cfg = "{\"esdm\": {\"backends\": [],"
 		"\"metadata\": {"
 			"\"type\": \"metadummy\","
@@ -17,14 +18,17 @@ int main() {
   esdm_init();
   esdm_md_backend_t *b = esdm.modules->metadata_backend;
 
+  ret = esdm_mkfs(ESDM_FORMAT_PURGE_RECREATE, ESDM_ACCESSIBILITY_GLOBAL);
+  eassert(ret == ESDM_SUCCESS);
+  ret = esdm_mkfs(ESDM_FORMAT_PURGE_RECREATE, ESDM_ACCESSIBILITY_NODELOCAL);
+  eassert(ret == ESDM_SUCCESS);
+
   char *buff = "test";
   esdm_dataspace_t *dataspace;
   {
     int64_t size[] = {50, 100};
     esdm_dataspace_create(2, size, SMD_DTYPE_UINT64, &dataspace);
   }
-
-  esdm_status ret;
   esdm_container_t *container;
 
   ret = esdm_container_create("testContainer", &container);

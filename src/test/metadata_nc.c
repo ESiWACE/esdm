@@ -94,11 +94,11 @@ static void write_test() {
   // Dimensions are implicitly part of ESDM when defining the bounds of a dataspace, but they are unnamed
   // So we have to name them
 
-  ret = esdm_dataset_create(container, "var2", dataspace, &dataset);
+  ret = esdm_dataset_create(container, "var2", dataspace, &dataset2);
   eassert(ret == ESDM_SUCCESS);
 
   // 2) Variables
-  ret = esdm_dataset_create(container, "myVariable", dataspace, &dataset2);
+  ret = esdm_dataset_create(container, "myVariable", dataspace, &dataset);
   eassert(ret == ESDM_SUCCESS);
 
   char *names[] = {"longitude", "latitude"};
@@ -205,6 +205,7 @@ void read_test() {
   char const *const *names = NULL;
   ret = esdm_dataset_get_name_dims(dataset, &names);
   eassert(names != NULL);
+
   eassert(strcmp(names[0], "longitude") == 0);
   eassert(strcmp(names[1], "latitude") == 0);
 
