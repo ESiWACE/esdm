@@ -35,6 +35,11 @@
 #  pragma message("Building ESDM with support for generic POSIX backend.")
 #endif
 
+#ifdef ESDM_HAS_KDSA
+#  include "backends-data/kdsa/kdsa.h"
+#  pragma message("Building ESDM with Kove XPD KDSA support.")
+#endif
+
 #ifdef ESDM_HAS_CLOVIS
 #  include "backends-data/Clovis/clovis.h"
 #  pragma message("Building ESDM with Clovis support.")
@@ -102,6 +107,11 @@ esdm_modules_t *esdm_modules_init(esdm_instance_t *esdm) {
     if (strncmp(b->type, "POSIX", 5) == 0) {
       backend = posix_backend_init(b);
     }
+#ifdef ESDM_HAS_KDSA
+    else if (strncasecmp(b->type, "KDSA", 6) == 0) {
+      backend = kdsa_backend_init(b);
+    }
+#endif
 #ifdef ESDM_HAS_CLOVIS
     else if (strncasecmp(b->type, "CLOVIS", 6) == 0) {
       backend = clovis_backend_init(b);

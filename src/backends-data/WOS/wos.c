@@ -882,7 +882,7 @@ static esdm_backend_t backend_template = {
 // NOTE: This serves as a template for the posix plugin and is memcopied!    //
 ///////////////////////////////////////////////////////////////////////////////
 .name = "WOS",
-.type = SMD_DTYPE_DATA,
+.type = ESDM_MODULE_DATA,
 .version = "0.0.1",
 .data = NULL,
 .callbacks = {

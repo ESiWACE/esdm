@@ -76,9 +76,8 @@ struct esdm_dataset_iterator_t {
  *
  */
 typedef enum esdm_module_type_t {
-  SMD_DTYPE_DATA,
-  SMD_DTYPE_METADATA,
-  SMD_DTYPE_HYBRID
+  ESDM_MODULE_DATA,
+  ESDM_MODULE_METADATA
 } esdm_module_type_t;
 
 // Callbacks

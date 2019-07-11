@@ -742,7 +742,7 @@ static int esdm_backend_t_clovis_mkfs(esdm_backend_t *backend, int enforce_forma
 esdm_backend_t_clovis_t esdm_backend_t_clovis = {
 .ebm_base = {
 .name = "CLOVIS",
-.type = SMD_DTYPE_DATA,
+.type = ESDM_MODULE_DATA,
 .version = "0.0.1",
 .data = NULL,
 .blocksize = BLOCKSIZE,

@@ -459,7 +459,7 @@ static esdm_backend_t backend_template = {
 // WARNING: This serves as a template for the mongodb plugin and is memcpied!  //
 ///////////////////////////////////////////////////////////////////////////////
 .name = "mongodb",
-.type = SMD_DTYPE_METADATA,
+.type = ESDM_MODULE_METADATA,
 .version = "0.0.1",
 .data = NULL,
 .callbacks = {
