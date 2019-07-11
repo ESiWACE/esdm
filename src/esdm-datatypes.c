@@ -626,11 +626,10 @@ esdm_status esdm_dataset_open(esdm_container_t *c, const char *name, esdm_datase
       break;
     }
   }
-  if(!d){
+  if(! d){
     return ESDM_ERROR;
   }
 
-  // Checkpoint
   // esdm_status ret = esdm_dataset_open_md_load(d, & buff, & size);
 	// if(ret != ESDM_SUCCESS){
 	// 	esdm_dataset_destroy(d);
@@ -642,7 +641,8 @@ esdm_status esdm_dataset_open(esdm_container_t *c, const char *name, esdm_datase
 	// 	esdm_dataset_destroy(d);
 	// 	return ret;
 	// }
-  // *out_dataset = d;
+
+  *out_dataset = d;
   return ESDM_SUCCESS;
 }
 
