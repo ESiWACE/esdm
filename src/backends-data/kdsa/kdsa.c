@@ -37,6 +37,8 @@
 
 #include "esdm-kdsa.h"
 
+#define XPD_FLAGS (KDSA_FLAGS_HANDLE_IO_NOSPIN|KDSA_FLAGS_HANDLE_USE_EVENT)
+
 #define DEBUG_ENTER ESDM_DEBUG_COM_FMT("KDSA", "", "")
 #define DEBUG(fmt, ...) ESDM_DEBUG_COM_FMT("KDSA", fmt, __VA_ARGS__)
 
@@ -44,9 +46,23 @@
 #define WARN(fmt, ...) ESDM_WARN_COM_FMT("KDSA", fmt, __VA_ARGS__)
 #define WARNS(fmt) ESDM_WARN_COM_FMT("KDSA", "%s", fmt)
 
+#define ERROR(fmt, ...) ESDM_ERROR_COM_FMT("KDSA", fmt, __VA_ARGS__)
+#define ERRORS(fmt) ESDM_ERROR_COM_FMT("KDSA", "%s", fmt)
+
 
 #define sprintfFragmentDir(path, f) (sprintf(path, "%s/%c%c/%s", tgt, f->dataset->id[0], f->dataset->id[1], f->dataset->id+2))
 #define sprintfFragmentPath(path, f) (sprintf(path, "%s/%c%c/%s/%s", tgt, f->dataset->id[0], f->dataset->id[1], f->dataset->id+2, f->id))
+
+typedef kdsa_vol_handle_t handle_t;
+
+// Internal functions used by this backend.
+typedef struct {
+  esdm_config_backend_t *config;
+  handle_t handle;
+  esdm_perf_model_lat_thp_t perf_model;
+} kdsa_backend_data_t;
+
+
 
 ///////////////////////////////////////////////////////////////////////////////
 // Helper and utility /////////////////////////////////////////////////////////
@@ -56,16 +72,18 @@
 static int mkfs(esdm_backend_t *backend, int format_flags) {
   kdsa_backend_data_t *data = (kdsa_backend_data_t *)backend->data;
 
-  DEBUG("mkfs: backend->(void*)data->target = %s\n", data->target);
+  DEBUG("mkfs: backend->(void*)data->config->target = %s\n", data->config->target);
 
-  const char *tgt = data->target;
+  const char *tgt = data->config->target;
   if (strlen(tgt) < 6) {
-    WARNS("safety, tgt directory shall be longer than 6 chars");
+    WARNS("safety, tgt connection string shall be longer than 6 chars");
     return ESDM_ERROR;
   }
   char path[PATH_MAX];
   struct stat sb = {0};
   int const ignore_err = format_flags & ESDM_FORMAT_IGNORE_ERRORS;
+
+  // kdsa_memset
 
   if (format_flags & ESDM_FORMAT_DELETE) {
     printf("[mkfs] Removing %s\n", tgt);
@@ -130,18 +148,15 @@ static int fragment_retrieve(esdm_backend_t *backend, esdm_fragment_t *f, json_t
 
   // set data, options and tgt for convienience
   kdsa_backend_data_t *data = (kdsa_backend_data_t *)backend->data;
-  const char *tgt = data->target;
   int ret = 0;
 
   return ret;
 }
 
 
-static int fragment_metadata_create(esdm_backend_t *backend, esdm_fragment_t *fragment, int len, char * md, int * out_size){
+static int fragment_metadata_create(esdm_backend_t *backend, esdm_fragment_t *fragment, smd_string_stream_t* stream){
   DEBUG_ENTER;
-  int size = 0;
-  size = snprintf(md, len, "{}");
-  *out_size = size;
+  smd_string_stream_printf(stream, "{}");
 
   return 0;
 }
@@ -151,14 +166,11 @@ static int fragment_update(esdm_backend_t *backend, esdm_fragment_t *f) {
 
   // set data, options and tgt for convienience
   kdsa_backend_data_t *data = (kdsa_backend_data_t *)backend->data;
-  const char *tgt = data->target;
   int ret = ESDM_SUCCESS;
 
   char path[PATH_MAX];
   // lazy assignment of ID
   if(f->id != NULL){
-    sprintfFragmentPath(path, f);
-    DEBUG("path: %s\n", path);
     // create data
     //int ret = entry_update(path, f->buf, f->bytes, 1);
     return ret;
@@ -188,7 +200,12 @@ static int kdsa_backend_performance_estimate(esdm_backend_t *backend, esdm_fragm
 
 int kdsa_finalize(esdm_backend_t *backend) {
   DEBUG_ENTER;
-
+  kdsa_backend_data_t *b = (kdsa_backend_data_t *)backend->data;
+  int ret = kdsa_disconnect(b->handle);
+  if(ret < 0)
+  {
+    WARN("Failed to disconnect from XPD: %s (%d)\n", strerror(errno), errno);
+  }
   return 0;
 }
 
@@ -206,7 +223,7 @@ static esdm_backend_t backend_template = {
 .version = "0.0.1",
 .data = NULL,
 .callbacks = {
-  NULL,                               // finalize
+  kdsa_finalize,
   kdsa_backend_performance_estimate, // performance_estimate
   NULL,
   fragment_retrieve,
@@ -242,9 +259,14 @@ esdm_backend_t *kdsa_backend_init(esdm_config_backend_t *config) {
   data->config = config;
   json_t *elem;
   elem = json_object_get(config->backend, "target");
-  data->target = json_string_value(elem);
+  data->config->target = strdup(json_string_value(elem));
+  DEBUG("Backend config: target=%s\n", data->config->target);
 
-  DEBUG("Backend config: target=%s\n", data->target);
+  int status = kdsa_connect((char*) data->config->target, XPD_FLAGS, & data->handle);
+  if(status < 0)
+  {
+    ERROR("Failed to connect to XPD: %s (%d)\n", strerror(errno), errno);
+  }
 
   return backend;
 }

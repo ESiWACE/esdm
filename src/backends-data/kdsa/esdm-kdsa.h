@@ -13,22 +13,26 @@
  * You should have received a copy of the GNU Lesser General Public License
  * along with ESDM.  If not, see <http://www.gnu.org/licenses/>.
  */
-#ifndef ESDM_BACKENDS_POSIX_H
-#define ESDM_BACKENDS_POSIX_H
+#ifndef ESDM_BACKENDS_KDSA_H
+#define ESDM_BACKENDS_KDSA_H
 
 #include <esdm-internal.h>
 
 #include <backends-data/generic-perf-model/lat-thr.h>
 
-// Internal functions used by this backend.
-typedef struct {
-  esdm_config_backend_t *config;
-  const char *target;
-  esdm_perf_model_lat_thp_t perf_model;
-} kdsa_backend_data_t;
+/*
+A module specification in the configuration file:
+{
 
-
-int posix_finalize(esdm_backend_t *backend);
+        "type": "KDSA",
+        "id": "p1",
+        "target": "This is the XPD connection string",
+        "max-threads-per-node" : 0,
+        "max-fragment-size" : 1048,
+        "accessibility" : "global"
+}
+As the KDSA plugin works asynchronously, no threads are needed inside ESDM.
+ */
 
 esdm_backend_t *kdsa_backend_init(esdm_config_backend_t *config);
 

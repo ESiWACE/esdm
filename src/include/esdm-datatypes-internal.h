@@ -113,9 +113,6 @@ struct esdm_md_backend_callbacks_t {
   int (*finalize)(esdm_md_backend_t *);
   int (*performance_estimate)(esdm_md_backend_t *, esdm_fragment_t *fragment, float *out_time);
 
-  // Metadata Callbacks
-  //int (*lookup)(esdm_md_backend_t *b, esdm_dataset_t *dataset, esdm_dataspace_t *space, int *out_frag_count, esdm_fragment_t ***out_fragments);
-
   // ESDM Data Model Specific
   int (*container_create)(esdm_md_backend_t *, esdm_container_t *container);
   int (*container_commit)(esdm_md_backend_t *, esdm_container_t *container, char * json, int md_size);
