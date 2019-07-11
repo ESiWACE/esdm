@@ -80,6 +80,7 @@ static void write_test() {
   esdm_dataspace_t *dataspace = NULL;
   esdm_container_t *container = NULL;
   esdm_dataset_t *dataset = NULL;
+  esdm_dataset_t *dataset2 = NULL;
 
   // define dataspace
   int64_t bounds[] = {10, 20};
@@ -92,6 +93,9 @@ static void write_test() {
   // 1) Dimensions
   // Dimensions are implicitly part of ESDM when defining the bounds of a dataspace, but they are unnamed
   // So we have to name them
+
+  ret = esdm_dataset_create(container, "var2", dataspace, &dataset2);
+  eassert(ret == ESDM_SUCCESS);
 
   // 2) Variables
   ret = esdm_dataset_create(container, "myVariable", dataspace, &dataset);
@@ -124,6 +128,10 @@ static void write_test() {
   // this step shall write out the metadata and make it persistent
   ret = esdm_dataset_commit(dataset);
   eassert(ret == ESDM_SUCCESS);
+
+  ret = esdm_dataset_commit(dataset2);
+  eassert(ret == ESDM_SUCCESS);
+
 
   ret = esdm_container_commit(container);
   eassert(ret == ESDM_SUCCESS);
@@ -197,6 +205,7 @@ void read_test() {
   char const *const *names = NULL;
   ret = esdm_dataset_get_name_dims(dataset, &names);
   eassert(names != NULL);
+
   eassert(strcmp(names[0], "longitude") == 0);
   eassert(strcmp(names[1], "latitude") == 0);
 
