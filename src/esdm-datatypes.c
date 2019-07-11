@@ -53,7 +53,7 @@ bool esdm_container_dataset_exists(esdm_container_t * c, char const * name){
   eassert(c != NULL);
   eassert(name != NULL);
   esdm_datasets_t * d = & c->dsets;
-  for(int i=0; i < d->count; d++){
+  for(int i=0; i < d->count; i++){
     if (strcmp(name, d->dset[i]->name) == 0){
       return true;
     }
@@ -220,7 +220,11 @@ esdm_status esdm_container_commit(esdm_container_t *c) {
 
   ret = esdm.modules->metadata_backend->callbacks.container_commit(esdm.modules->metadata_backend, c, buff, md_size);
 
-  // Also commit uncommited datasets of this container?
+  // Also commit uncommited datasets of this container
+  esdm_datasets_t * dsets = & c->dsets;
+  for(int i = 0; i < dsets->count; i++){
+    esdm_dataset_commit(dsets->dset[i]);
+  }
 
   return ret;
 }
@@ -700,6 +704,8 @@ esdm_status esdmI_dataset_metadata_create(esdm_dataset_t *d, int len, char * md,
 esdm_status esdm_dataset_commit(esdm_dataset_t *dataset) {
   ESDM_DEBUG(__func__);
   eassert(dataset);
+
+  // TODO only do work if dirty
 
   int len = 10000000;
   char * buff = malloc(len);
