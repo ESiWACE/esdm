@@ -24,6 +24,7 @@
 #include <esdm-internal.h>
 #include <esdm.h>
 #include <inttypes.h>
+#include <smd.h>
 #include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -297,33 +298,40 @@ esdm_status esdm_fragment_retrieve(esdm_fragment_t *fragment) {
 }
 
 
-esdm_status esdm_fragment_metadata_create(esdm_fragment_t *f, int len, char * js, int * out_size){
+esdm_status esdm_fragment_metadata_create(esdm_fragment_t *f, int len, char * js, size_t * out_size){
   eassert(f != NULL);
 	esdm_dataspace_t *d = f->dataspace;
-	int size = 0;
+
+  smd_string_stream_t* stream = smd_string_stream_create();
 	int ret;
   char const * pid = f->backend->config->id;
   if(f->id == NULL || pid == NULL){
     return ESDM_ERROR;
   }
-  size += sprintf(js, "{\"id\":\"%s\",\"pid\":\"%s\",\"size\":[", f->id, pid);
-  size += sprintf(js + size, "%ld", d->size[0]);
+  smd_string_stream_printf(stream, "{\"id\":\"%s\",\"pid\":\"%s\",\"size\":[", f->id, pid);
+  smd_string_stream_printf(stream, "%ld", d->size[0]);
   for (int i = 1; i < d->dims; i++) {
-    size += sprintf(js + size, ",%ld", d->size[i]);
+    smd_string_stream_printf(stream, ",%ld", d->size[i]);
   }
 
-  size += sprintf(js + size, "],\"offset\":[");
-  size += sprintf(js + size, "%ld", d->offset[0]);
+  smd_string_stream_printf(stream, "],\"offset\":[");
+  smd_string_stream_printf(stream, "%ld", d->offset[0]);
   for (int i = 1; i < d->dims; i++) {
-    size += sprintf(js + size, ",%ld", d->offset[i]);
+    smd_string_stream_printf(stream, ",%ld", d->offset[i]);
   }
-  size += sprintf(js + size, "],\"data\":");
+  smd_string_stream_printf(stream, "],\"data\":");
 	int count;
-  ret = f->backend->callbacks.fragment_metadata_create(f->backend, f, len - size, js + size, & count);
-	size += count;
-  size += sprintf(js + size, "}");
-	*out_size = size;
+  ret = f->backend->callbacks.fragment_metadata_create(f->backend, f, stream);
+  smd_string_stream_printf(stream, "}");
 
+  char* fragmentMetadata = smd_string_stream_close(stream, out_size);
+  ret = snprintf(js, len, "%s", fragmentMetadata);
+  free(fragmentMetadata);
+
+  if(ret != *out_size) {
+    *out_size = ret;
+    return ESDM_ERROR;
+  }
   return ESDM_SUCCESS;
 }
 
@@ -649,7 +657,7 @@ esdm_status esdmI_fragments_metadata_create(esdm_dataset_t *d, int len, char *js
   *out_size = pos;
 	esdm_fragments_t * f = & d->fragments;
 	for(int i=0; i < f->count; i++){
-		int size = 0;
+		size_t size = 0;
 		if(i != 0){
 			pos += snprintf(js + pos, len - pos, ",\n");
 		}

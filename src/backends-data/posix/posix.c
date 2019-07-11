@@ -210,11 +210,9 @@ static int fragment_retrieve(esdm_backend_t *backend, esdm_fragment_t *f, json_t
 }
 
 
-static int fragment_metadata_create(esdm_backend_t *backend, esdm_fragment_t *fragment, int len, char * md, int * out_size){
+static int fragment_metadata_create(esdm_backend_t *backend, esdm_fragment_t *fragment, smd_string_stream_t* stream){
   DEBUG_ENTER;
-  int size = 0;
-  size = snprintf(md, len, "{}");
-  *out_size = size;
+  smd_string_stream_printf(stream, "{}");
 
   return 0;
 }

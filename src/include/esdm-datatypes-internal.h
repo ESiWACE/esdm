@@ -5,6 +5,7 @@
 #include <glib.h>
 
 #include <esdm-datatypes.h>
+#include <smd-datatype.h>
 
 enum esdm_data_status_e {
   ESDM_DATA_NOT_LOADED,
@@ -102,7 +103,7 @@ struct esdm_backend_t_callbacks_t {
   int (*fragment_create)(esdm_backend_t *, esdm_fragment_t *fragment);
   int (*fragment_retrieve)(esdm_backend_t *, esdm_fragment_t *fragment, json_t *metadata);
   int (*fragment_update)(esdm_backend_t *, esdm_fragment_t *fragment);
-  int (*fragment_metadata_create)(esdm_backend_t *, esdm_fragment_t *fragment, int len, char * md, int * out_size);
+  int (*fragment_metadata_create)(esdm_backend_t *, esdm_fragment_t *fragment, smd_string_stream_t* stream);
   int (*fragment_destroy)(esdm_backend_t *, esdm_fragment_t *fragment);
 
   int (*mkfs)(esdm_backend_t *, int format_flags);
