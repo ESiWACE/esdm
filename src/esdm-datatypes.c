@@ -626,22 +626,23 @@ esdm_status esdm_dataset_open(esdm_container_t *c, const char *name, esdm_datase
       break;
     }
   }
-  if(! d){
+  if(!d){
     return ESDM_ERROR;
   }
 
-  esdm_status ret = esdm_dataset_open_md_load(d, & buff, & size);
-	if(ret != ESDM_SUCCESS){
-		esdm_dataset_destroy(d);
-		return ret;
-	}
-	ret = esdm_dataset_open_md_parse(d, buff, size);
-	free(buff);
-	if(ret != ESDM_SUCCESS){
-		esdm_dataset_destroy(d);
-		return ret;
-	}
-  *out_dataset = d;
+  // Checkpoint
+  // esdm_status ret = esdm_dataset_open_md_load(d, & buff, & size);
+	// if(ret != ESDM_SUCCESS){
+	// 	esdm_dataset_destroy(d);
+	// 	return ret;
+	// }
+	// ret = esdm_dataset_open_md_parse(d, buff, size);
+	// free(buff);
+	// if(ret != ESDM_SUCCESS){
+	// 	esdm_dataset_destroy(d);
+	// 	return ret;
+	// }
+  // *out_dataset = d;
   return ESDM_SUCCESS;
 }
 
