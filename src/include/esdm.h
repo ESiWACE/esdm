@@ -166,6 +166,17 @@ esdm_status esdm_container_destroy(esdm_container_t *container);
  */
 bool esdm_container_dataset_exists(esdm_container_t * container, char const * name);
 
+/*
+ * Return the number of datasets in the container.
+ *
+ * @param [in] container an existing container to query
+ *
+ * @return the number of datasets
+ */
+int esdm_container_dataset_count(esdm_container_t * container);
+
+esdm_dataset_t * esdm_container_dataset_from_array(esdm_container_t * container, int dset_number);
+
 // Dataset
 
 /**
