@@ -137,12 +137,12 @@ static void write_test() {
   eassert(ret == ESDM_SUCCESS);
 
   // remove everything from memory
-  eassert_crash(esdm_dataset_destroy(NULL));
-  ret = esdm_dataset_destroy(dataset);
+  eassert_crash(esdmI_dataset_destroy(NULL));
+  ret = esdmI_dataset_destroy(dataset);
   eassert(ret == ESDM_SUCCESS);
 
-  eassert_crash(esdm_container_destroy(NULL));
-  ret = esdm_container_destroy(container);
+  eassert_crash(esdmI_container_destroy(NULL));
+  ret = esdmI_container_destroy(container);
   eassert(ret == ESDM_SUCCESS);
 }
 
@@ -228,10 +228,10 @@ void read_test() {
   txt = (char *)smd_attr_get_value(a1);
   eassert(strcmp(txt, "Celsius") == 0);
 
-  ret = esdm_dataset_destroy(dataset);
+  ret = esdmI_dataset_destroy(dataset);
   eassert(ret == ESDM_SUCCESS);
 
-  ret = esdm_container_destroy(container);
+  ret = esdmI_container_destroy(container);
   eassert(ret == ESDM_SUCCESS);
 }
 

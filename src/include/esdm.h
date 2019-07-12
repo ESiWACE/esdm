@@ -147,14 +147,12 @@ esdm_status esdm_container_link_attribute(esdm_container_t *container, smd_attr_
 esdm_status esdm_container_get_attributes(esdm_container_t *container, smd_attr_t **out_metadata);
 
 /**
- * Destruct and free a container object.
+ * Close a container object. If it isn't in use any more free it.
  *
  * @param [in] container an existing container object that is no longer needed
- *
- * "_destroy" sounds too destructive, this will be renamed to esdm_container_close().
  */
 
-esdm_status esdm_container_destroy(esdm_container_t *container);
+esdm_status esdm_container_close(esdm_container_t *container);
 
 /*
  * Check if the dataset with the given name exists.
@@ -237,16 +235,15 @@ esdm_status esdm_dataset_open(esdm_container_t *container, const char *name, esd
 
 esdm_status esdm_dataset_commit(esdm_dataset_t *dataset);
 
+
 /**
- * Destruct and free a dataset object.
+ * Close a dataset object, if it isn't used anymore, it's metadata will be unloaded
  *
  * @param [in] dataset an existing dataset object that is no longer needed
  *
  * @return status
- *
- * "_destroy" sounds too destructive, this will be renamed to esdm_dataset_close().
  */
-esdm_status esdm_dataset_destroy(esdm_dataset_t *dataset);
+esdm_status esdm_dataset_close(esdm_dataset_t *dataset);
 
 /* This function adds the metadata to the ESDM */
 

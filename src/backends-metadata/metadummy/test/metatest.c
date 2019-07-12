@@ -92,9 +92,9 @@ int main() {
   b->callbacks.finalize(b);
 
   esdm_dataspace_destroy(dataspace);
-  esdm_dataset_destroy(dataset);
+  esdmI_dataset_destroy(dataset);
 
-  esdm_container_destroy(container);
+  esdmI_container_destroy(container);
 
   esdm_finalize();
 

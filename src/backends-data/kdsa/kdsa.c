@@ -84,6 +84,7 @@ static int mkfs(esdm_backend_t *backend, int format_flags) {
   int const ignore_err = format_flags & ESDM_FORMAT_IGNORE_ERRORS;
 
   // kdsa_memset
+  // kdsa_get_volume_size()
 
   if (format_flags & ESDM_FORMAT_DELETE) {
     printf("[mkfs] Removing %s\n", tgt);

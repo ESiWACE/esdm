@@ -24,10 +24,11 @@ struct esdm_datasets_t {
 
 struct esdm_container_t {
   char *name;
-  esdm_data_status_e status;
-
   smd_attr_t *attr;
   esdm_datasets_t dsets;
+
+  int refcount;
+  esdm_data_status_e status;
 };
 
 struct esdm_fragments_t {
@@ -46,6 +47,8 @@ struct esdm_dataset_t {
   esdm_dataspace_t *dataspace;
   smd_attr_t *attr;
   esdm_fragments_t fragments;
+  int refcount;
+  esdm_data_status_e status;
 };
 
 struct esdm_fragment_t {

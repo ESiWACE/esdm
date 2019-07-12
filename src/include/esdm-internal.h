@@ -232,4 +232,27 @@ void ea_generate_id(char *str, size_t length);
 int ea_compute_hash_str(const char * str);
 int ea_is_valid_name(const char *str);
 
+
+/**
+ * Destruct and free a dataset object.
+ *
+ * @param [in] dataset an existing dataset object that is no longer needed
+ *
+ * @return status
+ *
+ * "_destroy" sounds too destructive, this will be renamed to esdm_dataset_close().
+ */
+esdm_status esdmI_dataset_destroy(esdm_dataset_t *dataset);
+
+
+/**
+ * Destruct and free a container object.
+ *
+ * @param [in] container an existing container object that is no longer needed
+ *
+ * "_destroy" sounds too destructive, this will be renamed to esdm_container_close().
+ */
+
+esdm_status esdmI_container_destroy(esdm_container_t *container);
+
 #endif

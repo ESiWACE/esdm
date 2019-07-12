@@ -89,9 +89,9 @@ void runWrite(uint64_t * buf_w, int64_t * dim, int64_t * offset){
     printf("Write: %.3fs %.3f MiB/s size:%.0f MiB MDsyncTime: %.3fs\n", total_time, volume_all / total_time / 1024.0 / 1024, volume_all / 1024.0 / 1024, md_sync_time);
   }
 
-  ret = esdm_dataset_destroy(dataset);
+  ret = esdmI_dataset_destroy(dataset);
   eassert(ret == ESDM_SUCCESS);
-  ret = esdm_container_destroy(container);
+  ret = esdmI_container_destroy(container);
   eassert(ret == ESDM_SUCCESS);
 }
 
@@ -156,9 +156,9 @@ void runRead(uint64_t * buf_w, int64_t * dim, int64_t * offset){
     }
     printf("Read: %.3fs %.3f MiB/s size:%.0f MiB\n", total_time, volume_all / total_time / 1024.0 / 1024, volume_all / 1024.0 / 1024);
   }
-  ret = esdm_dataset_destroy(dataset);
+  ret = esdmI_dataset_destroy(dataset);
   eassert(ret == ESDM_SUCCESS);
-  ret = esdm_container_destroy(container);
+  ret = esdmI_container_destroy(container);
   eassert(ret == ESDM_SUCCESS);
 }
 

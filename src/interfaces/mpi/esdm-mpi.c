@@ -114,7 +114,7 @@ esdm_status esdm_mpi_container_open(MPI_Comm com, const char *name, esdm_contain
       ret = MPI_Bcast(buff, size, MPI_CHAR, 0, com);
       eassert(ret == MPI_SUCCESS);
     }else{
-  		esdm_container_destroy(c);
+  		esdmI_container_destroy(c);
   		return ESDM_ERROR;
     }
   }else{
@@ -122,7 +122,7 @@ esdm_status esdm_mpi_container_open(MPI_Comm com, const char *name, esdm_contain
     eassert(ret == MPI_SUCCESS);
 
     if(size == 0){
-      esdm_container_destroy(c);
+      esdmI_container_destroy(c);
       return ESDM_ERROR;
     }
     buff = (char*) malloc(size);
@@ -133,7 +133,7 @@ esdm_status esdm_mpi_container_open(MPI_Comm com, const char *name, esdm_contain
 	ret = esdm_container_open_md_parse(c, buff, size);
 	free(buff);
 	if(ret != ESDM_SUCCESS){
-		esdm_container_destroy(c);
+		esdmI_container_destroy(c);
 		return ret;
 	}
   return ret;
@@ -219,6 +219,11 @@ esdm_status esdm_mpi_dataset_open(MPI_Comm com, esdm_container_t *c, const char 
   if(! d){
     return ESDM_ERROR;
   }
+  if(d->status != ESDM_DATA_NOT_LOADED){
+    *out_dataset = d;
+    d->refcount++;
+    return ESDM_SUCCESS;
+  }
 
   if(rank == 0){
     check_hash_abort(com, hash, 0);
@@ -256,6 +261,7 @@ esdm_status esdm_mpi_dataset_open(MPI_Comm com, esdm_container_t *c, const char 
 
   free(buff);
   *out_dataset = d;
+  d->refcount++;
   return ESDM_SUCCESS;
 }
 
