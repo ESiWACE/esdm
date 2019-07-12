@@ -1078,3 +1078,7 @@ esdm_status esdm_dataset_iterator(esdm_container_t *container, esdm_dataset_iter
 
   return ESDM_SUCCESS;
 }
+
+char const * esdm_dataset_name(esdm_dataset_t *d){
+  return d->name;
+}

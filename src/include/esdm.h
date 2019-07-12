@@ -204,6 +204,11 @@ esdm_status esdm_dataset_create(esdm_container_t *container, const char *name, e
 
 esdm_status esdm_dataset_name_dims(esdm_dataset_t *dataset, char **names);
 
+/*
+ Returns the name of the dataset, do not free or temper with it, the name is still owned by the dataset
+ */
+char const * esdm_dataset_name(esdm_dataset_t *dataset);
+
 esdm_status esdm_dataset_get_name_dims(esdm_dataset_t *dataset, char const *const **out_names);
 
 esdm_status esdm_dataset_get_dataspace(esdm_dataset_t *dset, esdm_dataspace_t **out_dataspace);
