@@ -62,6 +62,20 @@ bool esdm_container_dataset_exists(esdm_container_t * c, char const * name){
   return false;
 }
 
+int esdm_container_dataset_count(esdm_container_t * c){
+  eassert(c != NULL);
+  return c->dsets.count;
+}
+
+esdm_dataset_t * esdm_container_dataset_from_array(esdm_container_t * c, int i){
+    eassert(c != NULL);
+    eassert(i >= 0);
+    if(i >= c->dsets.count){
+      return NULL;
+    }
+    return c->dsets.dset[i];
+}
+
 void esdmI_container_register_dataset(esdm_container_t * c, esdm_dataset_t *dset){
 	ESDM_DEBUG(__func__);
   eassert(c != NULL);
