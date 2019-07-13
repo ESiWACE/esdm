@@ -739,6 +739,9 @@ esdm_status esdmI_fragments_metadata_create(esdm_dataset_t *d, int len, char *js
 esdm_status esdmI_dataset_metadata_create(esdm_dataset_t *d, int len, char * md, int * out_size){
 	char * js = md;
 	int pos = 0;
+  eassert(d->dataspace != NULL);
+  eassert(d->dataspace->size != NULL);
+
   pos += sprintf(js, "{");
   pos += smd_attr_ser_json(js + pos, d->attr) - 1;
   pos += snprintf(js + pos, len - pos, ",\"id\":\"%s\"", d->id);
@@ -882,7 +885,7 @@ esdm_status esdm_dataset_get_attributes(esdm_dataset_t *dataset, smd_attr_t **ou
 
 esdm_status esdm_dataspace_create(int64_t dims, int64_t *sizes, esdm_type_t type, esdm_dataspace_t **out_dataspace) {
   ESDM_DEBUG(__func__);
-  eassert(dims >= 0);
+  eassert(dims > 0);
   eassert(!dims || sizes);
   eassert(out_dataspace);
 
