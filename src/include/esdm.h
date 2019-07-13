@@ -110,7 +110,7 @@ esdm_status esdm_read(esdm_dataset_t *dataset, void *buf, esdm_dataspace_t *subs
  *
  */
 
-esdm_status esdm_container_create(const char *name, esdm_container_t **out_container);
+esdm_status esdm_container_create(const char *name, int allow_overwrite, esdm_container_t **out_container);
 
 /**
  * Open an existing container.

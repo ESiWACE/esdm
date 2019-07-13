@@ -78,7 +78,7 @@ int main(int argc, char const *argv[]) {
 
   ret = esdm_dataspace_create(2, bounds, SMD_DTYPE_UINT64, &dataspace);
   eassert(ret == ESDM_SUCCESS);
-  ret = esdm_container_create("mycontainer", &container);
+  ret = esdm_container_create("mycontainer", 1, &container);
   eassert(ret == ESDM_SUCCESS);
 
   ret = esdm_dataset_create(container, "mydataset", dataspace, &dataset);

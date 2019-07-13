@@ -55,10 +55,10 @@ int main(int argc, char const *argv[]) {
   status = esdm_dataspace_create(2, bounds, SMD_DTYPE_UINT64, &dataspace);
   eassert(status == ESDM_SUCCESS);
 
-  eassert_crash(esdm_container_create(NULL, &container));
-  eassert_crash(esdm_container_create("", &container));
-  eassert_crash(esdm_container_create("mycontainer", NULL));
-  status = esdm_container_create("mycontainer", &container);
+  eassert_crash(esdm_container_create(NULL, 1, &container));
+  eassert_crash(esdm_container_create("", 1, &container));
+  eassert_crash(esdm_container_create("mycontainer", 1, NULL));
+  status = esdm_container_create("mycontainer", 1, &container);
   eassert(status == ESDM_SUCCESS);
 
   eassert_crash(esdm_dataset_create(NULL, "mydataset", dataspace, &dataset));

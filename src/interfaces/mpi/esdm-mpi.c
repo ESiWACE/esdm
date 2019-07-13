@@ -73,13 +73,13 @@ void esdm_mpi_finalize(){
 
 
 
-esdm_status esdm_mpi_container_create(MPI_Comm com, const char *name, esdm_container_t **out_container){
+esdm_status esdm_mpi_container_create(MPI_Comm com, const char *name, int allow_overwrite, esdm_container_t **out_container){
   esdm_status ret;
   int rank;
   ret = MPI_Comm_rank(com, & rank);
   if(ret != MPI_SUCCESS) return ESDM_ERROR;
   if(rank == 0){
-    ret = esdm_container_create(name, out_container);
+    ret = esdm_container_create(name, allow_overwrite, out_container);
     int ret2 = MPI_Bcast(& ret, 1, MPI_INT, 0, com);
     eassert(ret2 == MPI_SUCCESS);
   }else{

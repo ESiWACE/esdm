@@ -31,7 +31,7 @@ int main() {
   }
   esdm_container_t *container;
 
-  ret = esdm_container_create("testContainer", &container);
+  ret = esdm_container_create("testContainer", 1, &container);
   eassert(ret == ESDM_SUCCESS);
   esdm_dataset_t *dataset;
 
@@ -92,9 +92,7 @@ int main() {
   b->callbacks.finalize(b);
 
   esdm_dataspace_destroy(dataspace);
-  esdmI_dataset_destroy(dataset);
-
-  esdmI_container_destroy(container);
+  esdm_container_close(container);
 
   esdm_finalize();
 

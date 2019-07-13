@@ -179,7 +179,7 @@ static int fsck() {
 // Container Helpers //////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////
 
-static int container_create(esdm_md_backend_t *backend, esdm_container_t *container) {
+static int container_create(esdm_md_backend_t *backend, esdm_container_t *container, int allow_overwrite) {
   DEBUG_ENTER;
 
   char path[PATH_MAX];
@@ -190,6 +190,16 @@ static int container_create(esdm_md_backend_t *backend, esdm_container_t *contai
   sprintf(path, "%s/containers/%s.md", tgt, container->name);
   int fd = open(path, O_WRONLY | O_CREAT | O_EXCL, S_IWUSR | S_IRUSR | S_IWGRP | S_IRGRP | S_IROTH);
   if(fd < 0){
+    if( allow_overwrite && errno == EEXIST ){
+      fd = open(path, O_WRONLY | O_CREAT | O_TRUNC, S_IWUSR | S_IRUSR | S_IWGRP | S_IRGRP | S_IROTH);
+      // TODO cleanup the old content of the container
+      if(fd < 0){
+        return ESDM_ERROR;
+      }
+      close(fd);
+      return ESDM_SUCCESS;
+    }
+
     return ESDM_ERROR;
   }
   close(fd);
