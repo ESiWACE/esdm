@@ -239,6 +239,11 @@ int main() {
   ret = esdm_init();
   eassert(ret == ESDM_SUCCESS);
 
+  ret = esdm_mkfs(ESDM_FORMAT_PURGE_RECREATE, ESDM_ACCESSIBILITY_GLOBAL);
+  eassert(ret == ESDM_SUCCESS);
+  ret = esdm_mkfs(ESDM_FORMAT_PURGE_RECREATE, ESDM_ACCESSIBILITY_NODELOCAL);
+  eassert(ret == ESDM_SUCCESS);
+
   write_test();
   read_test();
 
