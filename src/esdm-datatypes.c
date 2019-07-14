@@ -695,36 +695,14 @@ esdm_status esdm_dataset_open_md_parse(esdm_dataset_t *d, char * md, int size){
 	return ESDM_SUCCESS;
 }
 
-esdm_status esdm_dataset_open(esdm_container_t *c, const char *name, esdm_dataset_t **out_dataset) {
-  ESDM_DEBUG(__func__);
-  eassert(c);
-  eassert(name);
-  eassert(out_dataset);
-  if(!*name) {
-    ESDM_LOG_FMT(ESDM_LOGLEVEL_WARNING, "%s() called with an empty name argument\n", __func__);
-    return ESDM_INVALID_ARGUMENT_ERROR;
-  }
-
-	char * buff;
-  int size;
-  esdm_dataset_t *d = NULL;
-  esdm_datasets_t * dsets = & c->dsets;
-  for(int i=0; i < dsets->count; i++ ){
-    if(strcmp(dsets->dset[i]->name, name) == 0){
-      d = dsets->dset[i];
-      break;
-    }
-  }
-  if(! d){
-    return ESDM_ERROR;
-  }
-
+esdm_status esdm_dataset_ref(esdm_dataset_t * d){
   if(d->status != ESDM_DATA_NOT_LOADED){
-    *out_dataset = d;
     d->refcount++;
     return ESDM_SUCCESS;
   }
 
+	char * buff;
+  int size;
   esdm_status ret = esdm_dataset_open_md_load(d, & buff, & size);
 	if(ret != ESDM_SUCCESS){
 		return ret;
@@ -736,8 +714,47 @@ esdm_status esdm_dataset_open(esdm_container_t *c, const char *name, esdm_datase
 	}
 
   d->refcount++;
+  return ESDM_SUCCESS;
+}
+
+esdm_status esdm_dataset_by_name(esdm_container_t *c, const char *name, esdm_dataset_t **out_dataset){
+  ESDM_DEBUG(__func__);
+  eassert(c);
+  eassert(name);
+  eassert(out_dataset);
+  if(!*name) {
+    ESDM_LOG_FMT(ESDM_LOGLEVEL_WARNING, "%s() called with an empty name argument\n", __func__);
+    return ESDM_INVALID_ARGUMENT_ERROR;
+  }
+
+  esdm_dataset_t *d = NULL;
+  esdm_datasets_t * dsets = & c->dsets;
+  for(int i=0; i < dsets->count; i++ ){
+    if(strcmp(dsets->dset[i]->name, name) == 0){
+      d = dsets->dset[i];
+      break;
+    }
+  }
+  if(! d){
+    return ESDM_ERROR;
+  }
   *out_dataset = d;
   return ESDM_SUCCESS;
+}
+
+esdm_status esdm_dataset_open(esdm_container_t *c, const char *name, esdm_dataset_t **out_dataset) {
+  esdm_status ret;
+  esdm_dataset_t *d = NULL;
+  ret = esdm_dataset_by_name(c, name, &d);
+  if (ret != ESDM_SUCCESS){
+    return ret;
+  }
+
+  ret = esdm_dataset_ref(d);
+  if (ret == ESDM_SUCCESS){
+    *out_dataset = d;
+  }
+  return ret;
 }
 
 esdm_status esdmI_fragments_metadata_create(esdm_dataset_t *d, int len, char *js, int * out_size){

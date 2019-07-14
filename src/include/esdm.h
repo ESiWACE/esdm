@@ -229,6 +229,18 @@ esdm_status esdm_dataset_iterator(esdm_container_t *container, esdm_dataset_iter
  */
 esdm_status esdm_dataset_open(esdm_container_t *container, const char *name, esdm_dataset_t **out_dataset);
 
+/*
+ Similar to esdm_dataset_open but returns the dataset without opening it
+ */
+esdm_status esdm_dataset_by_name(esdm_container_t *container, const char *name, esdm_dataset_t **out_dataset);
+
+/*
+ * Obtain a reference to the dataset, if it was not yet open, it will be openend and metadata will be fetched.
+ * To return the dataset, call dataset_close()
+ */
+esdm_status esdm_dataset_ref(esdm_dataset_t *dataset);
+
+
 /**
  * Make dataset persistent to storage.
  * Schedule for writing to backends.
