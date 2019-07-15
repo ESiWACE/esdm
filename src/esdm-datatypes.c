@@ -611,7 +611,7 @@ esdm_status esdmI_create_fragment_from_metadata(esdm_dataset_t *dset, json_t * j
   esdm_dataspace_t * space;
 
   elem = json_object_get(json, "stride");
-  bool haveStride = !!elem;
+  bool haveStride = (elem != NULL);
   int64_t stride[dims];
   if(haveStride) {
     int cnt = json_array_size(elem);
@@ -628,7 +628,7 @@ esdm_status esdmI_create_fragment_from_metadata(esdm_dataset_t *dset, json_t * j
   eassert(ret == ESDM_SUCCESS);
 
   if(haveStride) {
-    esdm_dataspace_set_stride(space, dims, stride);
+    esdm_dataspace_set_stride(space, stride);
   }
 
   uint64_t elements = esdm_dataspace_element_count(space);
@@ -642,6 +642,18 @@ esdm_status esdmI_create_fragment_from_metadata(esdm_dataset_t *dset, json_t * j
 	f->status = ESDM_DATA_NOT_LOADED;
 
   *out = f;
+  return ESDM_SUCCESS;
+}
+
+esdm_status esdm_dataspace_set_stride(esdm_dataspace_t* space, int64_t* stride){
+  eassert(space);
+  int dims = space->dims;
+
+  if(! space->stride){
+    space->stride = malloc(dims * sizeof(int64_t));
+  }
+  memcpy(space->stride, stride, dims * sizeof(int64_t));
+
   return ESDM_SUCCESS;
 }
 
@@ -1087,7 +1099,9 @@ esdm_status esdm_dataspace_destroy(esdm_dataspace_t *d) {
   eassert(d);
   free(d->offset);
   free(d->size);
-  free(d->stride);
+  if(d->stride){
+    free(d->stride);
+  }
   free(d);
   return ESDM_SUCCESS;
 }
