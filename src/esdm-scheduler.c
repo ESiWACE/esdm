@@ -132,54 +132,97 @@ static void backend_thread(io_work_t *work, esdm_backend_t *backend) {
   free(work);
 }
 
-//FIXME: Make this stride aware!
+static int64_t min_int64(int64_t a, int64_t b) {
+  return a < b ? a : b;
+}
+
+static int64_t max_int64(int64_t a, int64_t b) {
+  return a > b ? a : b;
+}
+
+static int64_t abs_int64(int64_t a) {
+  return a > 0 ? a : -a;
+}
+
+static void dataspace_copy_data(esdm_dataspace_t* sourceSpace, char *sourceData, esdm_dataspace_t* destSpace, char *destData) {
+  eassert(sourceSpace->dims == destSpace->dims);
+  eassert(sourceSpace->type == destSpace->type);
+
+  uint64_t dimensions = sourceSpace->dims;
+
+  //determine the hypercube that contains the overlap between the two hypercubes
+  //(the intersection of two hypercubes is also a hypercube)
+  int64_t overlapOffset[dimensions];
+  uint64_t overlapSize[dimensions];
+  for(int64_t i = 0; i < dimensions; i++) {
+    int64_t sourceX0 = sourceSpace->offset[i];
+    int64_t sourceX1 = sourceX0 + sourceSpace->size[i];
+    int64_t destX0 = destSpace->offset[i];
+    int64_t destX1 = destX0 + destSpace->size[i];
+    int64_t overlapX0 = max_int64(sourceX0, destX0);
+    int64_t overlapX1 = min_int64(sourceX1, destX1);
+    overlapOffset[i] = overlapX0;
+    overlapSize[i] = overlapX1 - overlapX0;
+    if(overlapX0 > overlapX1) return; //overlap is empty => nothing to do
+  }
+
+  //determine how much data we can move with memcpy() at a time
+  int64_t dataPointerOffset = 0, memcpySize = 1;  //both are counts of fundamental elements, not bytes
+  bool memcpyDims[dimensions];
+  memset(memcpyDims, 0, sizeof(memcpyDims));
+  while(true) {
+    //search for a dimension with a stride that matches our current memcpySize
+    int64_t curDim;
+    for(curDim = dimensions; curDim--; ) {
+      if(sourceSpace->stride[curDim] == destSpace->stride[curDim]) {
+        if(abs_int64(sourceSpace->stride[curDim]) == memcpySize) break;
+      }
+    }
+    if(curDim >= 0) {
+      //found a fitting dimension, update our parameters
+      memcpyDims[curDim] = true;  //remember not to loop over this dimension when copying the data
+      if(sourceSpace->stride[curDim] < 0) dataPointerOffset += memcpySize*(overlapSize[curDim] - 1); //When the stride is negative, the first byte belongs to the last slice of this dimension, not the first one. Remember that.
+      memcpySize *= overlapSize[curDim];
+      if(overlapSize[curDim] != sourceSpace->size[curDim] || overlapSize[curDim] != destSpace->size[curDim]) break; //cannot fuse other dimensions in a memcpy() call if this dimensions does not have a perfect match between the dataspaces
+    } else break; //didn't find another suitable dimension for fusing memcpy() calls
+  }
+
+  //copy the data
+  int64_t curPoint[dimensions];
+  memcpy(curPoint, overlapOffset, sizeof(curPoint));
+  uint64_t elementSize = esdm_sizeof(sourceSpace->type);
+  while(true) {
+    //compute the parameters for the memcpy() at hand
+    int64_t sourceIndex = 0, destIndex = 0;
+    for(int64_t i = 0; i < dimensions; i++) {
+      sourceIndex += (curPoint[i] - sourceSpace->offset[i])*sourceSpace->stride[i];
+      destIndex += (curPoint[i] - destSpace->offset[i])*destSpace->stride[i];
+    }
+
+    //move the data
+    memcpy(&destData[(destIndex - dataPointerOffset)*elementSize],
+           &sourceData[(sourceIndex - dataPointerOffset)*elementSize],
+           memcpySize*elementSize);
+
+    //advance to the next point
+    int64_t curDim;
+    for(curDim = dimensions; curDim--; ) {
+      if(!memcpyDims[curDim]) {
+        if(++(curPoint[curDim]) < overlapOffset[curDim] + overlapSize[curDim]) break;
+        curPoint[curDim] = overlapOffset[curDim];
+      }
+    }
+    if(curDim < 0) break;
+  }
+}
+
+//FIXME: This has zero test coverage currently.
 static void read_copy_callback(io_work_t *work) {
   if (work->return_code != ESDM_SUCCESS) {
     DEBUG("Error reading from fragment ", work->fragment);
     return;
   }
-  char *b = (char *)work->data.mem_buf;
-  esdm_dataspace_t *bs = work->data.buf_space;
-
-  esdm_fragment_t *f = work->fragment;
-  esdm_dataspace_t *fs = f->dataspace;
-  //esdm_fragment_print(f);
-  //printf("\n");
-  eassert(bs->type == fs->type);
-
-  //calculate where to copy the fetched data to
-  uint64_t size = esdm_sizeof(bs->type);
-  // choose the dimension to split
-  int split_dim = 0;
-  for (int i = 0; i < fs->dims; i++) {
-    if (fs->size[i] != 1) {
-      // check if the split dimension is left
-      if(i > 0 && fs->offset[i-1] != bs->offset[i-1]){
-        split_dim = i - 1;
-        break;
-      }
-      split_dim = i;
-      break;
-    }
-  }
-
-  //TODO proper serialization
-  for (int d = 0; d < fs->dims; d++) {
-    if (d != split_dim) {
-      size *= fs->size[d];
-    }
-  }
-  uint64_t mn = bs->size[split_dim] > fs->size[split_dim] ? fs->size[split_dim] : bs->size[split_dim];
-  uint64_t offset_mem = (fs->offset[split_dim] - bs->offset[split_dim]) * size;
-  uint64_t offset_f = 0;
-
-  size *= mn;
-  DEBUG("SIZE: %ld %ld %ld", size, offset_mem, offset_f);
-
-  // first dimension can be different:
-  memcpy(b + offset_mem, ((char *)f->buf) + offset_f, size);
-
-  free(f->buf);
+  dataspace_copy_data(work->fragment->dataspace, work->fragment->buf, work->data.buf_space, work->data.mem_buf);
 }
 
 //FIXME: Make this stride aware!
@@ -262,7 +305,7 @@ esdm_status esdm_scheduler_enqueue_read(esdm_instance_t *esdm, io_request_status
     if (esdmI_scheduler_try_direct_io(f, buf, buf_space)) {
       task->callback = NULL;
     } else {
-      f->buf = malloc(size);
+      f->buf = malloc(size);  //FIXME: This cannot be right: We are supposed to be reading data *out* of that buffer!
       task->callback = read_copy_callback;
       task->data.mem_buf = buf;
       task->data.buf_space = buf_space;
