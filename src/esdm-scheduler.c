@@ -130,6 +130,7 @@ static void backend_thread(io_work_t *work, esdm_backend_t *backend) {
   free(work);
 }
 
+//FIXME: Make this stride aware!
 static void read_copy_callback(io_work_t *work) {
   if (work->return_code != ESDM_SUCCESS) {
     DEBUG("Error reading from fragment ", work->fragment);
@@ -179,6 +180,7 @@ static void read_copy_callback(io_work_t *work) {
   free(f->buf);
 }
 
+//FIXME: Make this stride aware!
 int esdmI_scheduler_try_direct_io(esdm_fragment_t *f, void * buf, esdm_dataspace_t * da){
   esdm_dataspace_t * df = f->dataspace;
   int d;
@@ -215,6 +217,11 @@ int esdmI_scheduler_try_direct_io(esdm_fragment_t *f, void * buf, esdm_dataspace
   }
   // compute offset from patch to the buffer
   // check that all size/offsets are the same left from the current pos
+  //FIXME: I think, this is a bug:
+  //       If the fragment has dimensions (100, 1, 100) and the dataspace has dimensions (100, 100, 100), `pos` will be set to 1 at this point.
+  //       The following loop will succeed because the first dimension has the same size.
+  //       However, the data point (1, 0, 0) will be located at offset 100 in the fragment serialization, but at offset 10000 in the dataspace serialization.
+  //       Thus, it cannot be written with a single I/O call, and this function should not return true.
   for (d = pos - 1; d >= 0; d--) {
     int s1 = da->size[d];
     int s2 = df->size[d];
@@ -246,6 +253,10 @@ esdm_status esdm_scheduler_enqueue_read(esdm_instance_t *esdm, io_request_status
     task->parent = status;
     task->op = ESDM_OP_READ;
     task->fragment = f;
+    //FIXME: I think, this is a bug:
+    //       `read_copy_callback()` is written to copy data *out* of the fragment's buffer (makes sense to me),
+    //       but `esdmI_scheduler_try_direct_io()` is written to assign the fragment's buffer *to `buf`*.
+    //       Which appears to be the opposite direction of operation.
     if (esdmI_scheduler_try_direct_io(f, buf, buf_space)) {
       task->callback = NULL;
     } else {
@@ -264,6 +275,7 @@ esdm_status esdm_scheduler_enqueue_read(esdm_instance_t *esdm, io_request_status
   return ESDM_SUCCESS;
 }
 
+//FIXME: Make this stride aware!
 esdm_status esdm_scheduler_enqueue_write(esdm_instance_t *esdm, io_request_status_t *status, esdm_dataset_t *dataset, void *buf, esdm_dataspace_t *space) {
   GError *error;
   //Gather I/O recommendations

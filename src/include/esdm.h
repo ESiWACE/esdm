@@ -276,6 +276,36 @@ esdm_status esdm_dataspace_deserialize(void *serialized_dataspace, esdm_dataspac
 esdm_status esdm_dataspace_subspace(esdm_dataspace_t *dataspace, int64_t dims, int64_t *size, int64_t *offset, esdm_dataspace_t **out_dataspace);
 
 /**
+ * Specify a non-standard serialization order for a dataspace.
+ *
+ * This can be used to handle FORTRAN arrays, for example, or do some crazy stuff like inverted dimensions, or to skip over holes.
+ * *Use carefully, or don't use at all. You have been warned.*
+ *
+ * @param [inout] dataspace the dataspace that is to be modified
+ * @param [in] dims number of entries in the `stride` argument, must match the dimension count of the dataspace
+ * @param [in] stride array with `dims` entries, each entry gives the number of elements to skip over when increasing the respective coordinate by one.
+ *
+ * @return status
+ *
+ * Examples:
+ *
+ * A C array `int array[7][11]` does not need a stride, the stride is implicitly assumed to be `(11, 1)`.
+ *
+ * To handle a FORTRAN array `INTEGER :: array(7, 11)`, use the following call:
+ *     esdm_dataspace_set_stride(dataspace, 2, (int64_t[2]){1, 7});
+ *
+ * To use only a 3x5 part of an existing C array `int array[7][11]`, starting at (1, 2), use these calls:
+ *     esdm_dataspace_t* subspace;
+ *     esdm_dataspace_subspace(parent, 2, (int64_t[2]){3, 5}, (int64_t[2]){1, 2}, &subspace);
+ *     esdm_dataspace_set_stride(subspace, 2, (int64_t[2]){11, 1});
+ * After this, the 2D coordinates will be mapped to the buffer offsets like this:
+ *     (1,2)=0,  (1,3)=1,  (1,4)=2,  (1,5)=3,  (1,6)=4,
+ *     (2,2)=11, (2,3)=12, (2,4)=13, (2,5)=14, (2,6)=15,
+ *     (3,2)=22, (3,3)=23, (3,4)=24, (3,5)=25, (3,6)=26,
+ */
+esdm_status esdm_dataspace_set_stride(esdm_dataspace_t* dataspace, int64_t dims, int64_t* stride);
+
+/**
  * Destruct and free a dataspace object.
  *
  * @param [in] dataspace an existing dataspace object that is no longer needed

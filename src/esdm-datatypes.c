@@ -323,6 +323,13 @@ esdm_status esdm_fragment_metadata_create(esdm_fragment_t *f, int len, char * js
   for (int i = 1; i < d->dims; i++) {
     smd_string_stream_printf(stream, ",%ld", d->offset[i]);
   }
+  if(d->stride) {
+    smd_string_stream_printf(stream, "],\"stride\":[");
+    smd_string_stream_printf(stream, "%ld", d->stride[0]);
+    for (int i = 1; i < d->dims; i++) {
+      smd_string_stream_printf(stream, ",%ld", d->stride[i]);
+    }
+  }
   smd_string_stream_printf(stream, "],\"data\":");
 	int count;
   ret = f->backend->callbacks.fragment_metadata_create(f->backend, f, stream);
@@ -351,6 +358,7 @@ esdm_status esdm_fragment_commit(esdm_fragment_t *f) {
   return ret;
 }
 
+//TODO: This should be a call-through to esdm_dataspace_overlap().
 int esdmI_fragment_overlaps(esdm_dataspace_t * da, esdm_fragment_t * f){
   esdm_dataspace_t * db = f->dataspace;
   if(da->dims != db->dims) {
@@ -485,6 +493,9 @@ esdm_backend_t * esdmI_get_backend(char const * plugin_id){
 }
 
 esdm_status esdmI_create_fragment_from_metadata(esdm_dataset_t *dset, json_t * json, esdm_fragment_t ** out) {
+  int64_t dims = dset->dataspace->dims;
+  assert(dims > 0);
+
   int ret;
   esdm_fragment_t *f;
   f = malloc(sizeof(esdm_fragment_t));
@@ -501,17 +512,17 @@ esdm_status esdmI_create_fragment_from_metadata(esdm_dataset_t *dset, json_t * j
 
   elem = json_object_get(json, "offset");
   int cnt = json_array_size(elem);
-  if(cnt <= 0 || cnt != dset->dataspace->dims){
+  if(cnt != dims){
     return ESDM_ERROR;
   }
-  int64_t offset[cnt];
-  for(int i=0; i < cnt; i++){
+  int64_t offset[dims];
+  for(int i=0; i < dims; i++){
     offset[i] = json_integer_value(json_array_get(elem, i));
   }
 
   elem = json_object_get(json, "size");
   int cnt2 = json_array_size(elem);
-  if(cnt2 != cnt || cnt2 <= 0){
+  if(cnt2 != dims){
     return ESDM_ERROR;
   }
   int64_t size[cnt2];
@@ -520,9 +531,26 @@ esdm_status esdmI_create_fragment_from_metadata(esdm_dataset_t *dset, json_t * j
   }
   esdm_dataspace_t * space;
 
+  elem = json_object_get(json, "stride");
+  bool haveStride = !!elem;
+  int64_t stride[dims];
+  if(haveStride) {
+    int cnt = json_array_size(elem);
+    if(cnt != dims){
+      return ESDM_ERROR;
+    }
+    for(int i=0; i < dims; i++){
+      offset[i] = json_integer_value(json_array_get(elem, i));
+    }
+  }
+
 	// TODO at this point deserialize module specific options
-  ret = esdm_dataspace_subspace(dset->dataspace, cnt, size, offset, & space);
+  ret = esdm_dataspace_subspace(dset->dataspace, dims, size, offset, & space);
   eassert(ret == ESDM_SUCCESS);
+
+  if(haveStride) {
+    esdm_dataspace_set_stride(space, dims, stride);
+  }
 
   uint64_t elements = esdm_dataspace_element_count(space);
   int64_t bytes = elements * esdm_sizeof(space->type);
@@ -803,6 +831,7 @@ esdm_status esdm_dataspace_create(int64_t dims, int64_t *sizes, esdm_type_t type
   dataspace->type = type;
   dataspace->offset = (int64_t *)malloc(sizeof(int64_t) * dims);
   dataspace->subspace_of = NULL;
+  dataspace->stride = NULL;
 
   memcpy(dataspace->size, sizes, sizeof(int64_t) * dims);
   memset(dataspace->offset, 0, sizeof(int64_t) * dims);
@@ -874,6 +903,7 @@ esdm_status esdm_dataspace_subspace(esdm_dataspace_t *dataspace, int64_t dims, i
     subspace->size = (int64_t *)malloc(sizeof(int64_t) * dims);
     subspace->offset = (int64_t *)malloc(sizeof(int64_t) * dims);
     subspace->subspace_of = dataspace;
+    subspace->stride = NULL;
     subspace->type = dataspace->type;
     smd_type_ref(subspace->type);
 
@@ -897,6 +927,15 @@ void esdm_dataspace_print(esdm_dataspace_t *d) {
   for (int64_t i = 1; i < d->dims; i++) {
     printf("x%ld", d->offset[i]);
   }
+  if(d->stride) {
+    printf("),stride(");
+    printf("%ld", d->stride[0]);
+    for (int64_t i = 1; i < d->dims; i++) {
+      printf(", %ld", d->stride[i]);
+    }
+  } else {
+    printf("),stride(contiguous C order");
+  }
   printf("))");
 }
 
@@ -911,6 +950,7 @@ esdm_status esdm_dataspace_destroy(esdm_dataspace_t *d) {
   eassert(d);
   free(d->offset);
   free(d->size);
+  free(d->stride);
   free(d);
   return ESDM_SUCCESS;
 }

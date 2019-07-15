@@ -73,6 +73,7 @@ struct esdm_dataspace_t {
   int64_t *size;
   esdm_dataspace_t *subspace_of;
   int64_t *offset;
+  int64_t *stride;  //may be NULL, in this case contiguous storage in C order is assumed
 };
 
 #endif
