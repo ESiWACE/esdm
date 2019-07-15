@@ -110,7 +110,7 @@ esdm_status esdm_read(esdm_dataset_t *dataset, void *buf, esdm_dataspace_t *subs
  *
  */
 
-esdm_status esdm_container_create(const char *name, esdm_container_t **out_container);
+esdm_status esdm_container_create(const char *name, int allow_overwrite, esdm_container_t **out_container);
 
 /**
  * Open an existing container.
@@ -147,14 +147,12 @@ esdm_status esdm_container_link_attribute(esdm_container_t *container, smd_attr_
 esdm_status esdm_container_get_attributes(esdm_container_t *container, smd_attr_t **out_metadata);
 
 /**
- * Destruct and free a container object.
+ * Close a container object. If it isn't in use any more free it.
  *
  * @param [in] container an existing container object that is no longer needed
- *
- * "_destroy" sounds too destructive, this will be renamed to esdm_container_close().
  */
 
-esdm_status esdm_container_destroy(esdm_container_t *container);
+esdm_status esdm_container_close(esdm_container_t *container);
 
 /*
  * Check if the dataset with the given name exists.
@@ -165,6 +163,25 @@ esdm_status esdm_container_destroy(esdm_container_t *container);
  * @return true if the identifier already exists within the container
  */
 bool esdm_container_dataset_exists(esdm_container_t * container, char const * name);
+
+/*
+ * Return the number of datasets in the container.
+ *
+ * @param [in] container an existing container to query
+ *
+ * @return the number of datasets
+ */
+int esdm_container_dataset_count(esdm_container_t * container);
+
+/*
+ * Return the n-th dataset in the container array.
+ *
+ * @param [in] container an existing container to query
+ * @param [in] dset_number the number (it shall exists according to esdm_container_dataset_count())
+ *
+ * @return the dataset or NULL, if dset_number >= count
+ */
+esdm_dataset_t * esdm_container_dataset_from_array(esdm_container_t * container, int dset_number);
 
 // Dataset
 
@@ -187,6 +204,11 @@ esdm_status esdm_dataset_create(esdm_container_t *container, const char *name, e
 
 esdm_status esdm_dataset_name_dims(esdm_dataset_t *dataset, char **names);
 
+/*
+ Returns the name of the dataset, do not free or temper with it, the name is still owned by the dataset
+ */
+char const * esdm_dataset_name(esdm_dataset_t *dataset);
+
 esdm_status esdm_dataset_get_name_dims(esdm_dataset_t *dataset, char const *const **out_names);
 
 esdm_status esdm_dataset_get_dataspace(esdm_dataset_t *dset, esdm_dataspace_t **out_dataspace);
@@ -207,6 +229,18 @@ esdm_status esdm_dataset_iterator(esdm_container_t *container, esdm_dataset_iter
  */
 esdm_status esdm_dataset_open(esdm_container_t *container, const char *name, esdm_dataset_t **out_dataset);
 
+/*
+ Similar to esdm_dataset_open but returns the dataset without opening it
+ */
+esdm_status esdm_dataset_by_name(esdm_container_t *container, const char *name, esdm_dataset_t **out_dataset);
+
+/*
+ * Obtain a reference to the dataset, if it was not yet open, it will be openend and metadata will be fetched.
+ * To return the dataset, call dataset_close()
+ */
+esdm_status esdm_dataset_ref(esdm_dataset_t *dataset);
+
+
 /**
  * Make dataset persistent to storage.
  * Schedule for writing to backends.
@@ -218,16 +252,15 @@ esdm_status esdm_dataset_open(esdm_container_t *container, const char *name, esd
 
 esdm_status esdm_dataset_commit(esdm_dataset_t *dataset);
 
+
 /**
- * Destruct and free a dataset object.
+ * Close a dataset object, if it isn't used anymore, it's metadata will be unloaded
  *
  * @param [in] dataset an existing dataset object that is no longer needed
  *
  * @return status
- *
- * "_destroy" sounds too destructive, this will be renamed to esdm_dataset_close().
  */
-esdm_status esdm_dataset_destroy(esdm_dataset_t *dataset);
+esdm_status esdm_dataset_close(esdm_dataset_t *dataset);
 
 /* This function adds the metadata to the ESDM */
 

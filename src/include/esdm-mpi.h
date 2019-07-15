@@ -14,7 +14,7 @@ void esdm_mpi_init();
 void esdm_mpi_finalize();
 
 
-esdm_status esdm_mpi_container_create(MPI_Comm com, const char *name, esdm_container_t **out_container);
+esdm_status esdm_mpi_container_create(MPI_Comm com, const char *name, int allow_overwrite, esdm_container_t **out_container);
 esdm_status esdm_mpi_container_open(MPI_Comm com, const char *name, esdm_container_t **out_container);
 
 /* assumes that com is the same used for create/retrieve */

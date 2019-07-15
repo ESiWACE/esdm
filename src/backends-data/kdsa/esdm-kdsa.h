@@ -32,7 +32,14 @@ A module specification in the configuration file:
         "accessibility" : "global"
 }
 As the KDSA plugin works asynchronously, no threads are needed inside ESDM.
- */
+
+
+Key design questions:
+ * How to keep track of free space for fragments using a block bitmap?
+ * How to update the block bitmap concurrently?
+   * Compare and swap function
+ * How to utilize the asynchronous interface from the XPD
+*/
 
 esdm_backend_t *kdsa_backend_init(esdm_config_backend_t *config);
 

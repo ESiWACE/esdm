@@ -24,10 +24,11 @@ struct esdm_datasets_t {
 
 struct esdm_container_t {
   char *name;
-  esdm_data_status_e status;
-
   smd_attr_t *attr;
   esdm_datasets_t dsets;
+
+  int refcount;
+  esdm_data_status_e status;
 };
 
 struct esdm_fragments_t {
@@ -46,6 +47,8 @@ struct esdm_dataset_t {
   esdm_dataspace_t *dataspace;
   smd_attr_t *attr;
   esdm_fragments_t fragments;
+  int refcount;
+  esdm_data_status_e status;
 };
 
 struct esdm_fragment_t {
@@ -114,7 +117,7 @@ struct esdm_md_backend_callbacks_t {
   int (*performance_estimate)(esdm_md_backend_t *, esdm_fragment_t *fragment, float *out_time);
 
   // ESDM Data Model Specific
-  int (*container_create)(esdm_md_backend_t *, esdm_container_t *container);
+  int (*container_create)(esdm_md_backend_t *, esdm_container_t *container, int allow_overwrite);
   int (*container_commit)(esdm_md_backend_t *, esdm_container_t *container, char * json, int md_size);
   int (*container_retrieve)(esdm_md_backend_t *, esdm_container_t *container, char ** out_json, int * out_size);
   int (*container_update)(esdm_md_backend_t *, esdm_container_t *container);

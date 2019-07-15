@@ -18,7 +18,7 @@
  * This test uses the ESDM high-level API to actually write a contiuous ND subset of a data set
  */
 
- 
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -47,7 +47,7 @@ void runWrite(uint64_t * buf_w, int64_t * dim, int64_t * offset){
   int64_t bounds[] = {timesteps, size, size};
   esdm_dataspace_t *dataspace;
 
-  ret = esdm_mpi_container_create(MPI_COMM_WORLD, "mycontainer", &container);
+  ret = esdm_mpi_container_create(MPI_COMM_WORLD, "mycontainer", 1, &container);
   eassert(ret == ESDM_SUCCESS);
   ret = esdm_dataspace_create(3, bounds, SMD_DTYPE_UINT64, &dataspace);
   eassert(ret == ESDM_SUCCESS);
@@ -89,9 +89,9 @@ void runWrite(uint64_t * buf_w, int64_t * dim, int64_t * offset){
     printf("Write: %.3fs %.3f MiB/s size:%.0f MiB MDsyncTime: %.3fs\n", total_time, volume_all / total_time / 1024.0 / 1024, volume_all / 1024.0 / 1024, md_sync_time);
   }
 
-  ret = esdm_dataset_destroy(dataset);
+  ret = esdm_dataset_close(dataset);
   eassert(ret == ESDM_SUCCESS);
-  ret = esdm_container_destroy(container);
+  ret = esdm_container_close(container);
   eassert(ret == ESDM_SUCCESS);
 }
 
@@ -156,9 +156,9 @@ void runRead(uint64_t * buf_w, int64_t * dim, int64_t * offset){
     }
     printf("Read: %.3fs %.3f MiB/s size:%.0f MiB\n", total_time, volume_all / total_time / 1024.0 / 1024, volume_all / 1024.0 / 1024);
   }
-  ret = esdm_dataset_destroy(dataset);
+  ret = esdm_dataset_close(dataset);
   eassert(ret == ESDM_SUCCESS);
-  ret = esdm_container_destroy(container);
+  ret = esdm_container_close(container);
   eassert(ret == ESDM_SUCCESS);
 }
 

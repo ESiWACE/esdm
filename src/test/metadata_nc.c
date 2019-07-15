@@ -86,7 +86,8 @@ static void write_test() {
   int64_t bounds[] = {10, 20};
   // write the actual metadata
 
-  ret = esdm_container_create("mycontainer", &container);
+  ret = esdm_container_create("mycontainer", 1, &container);
+  eassert(ret == ESDM_SUCCESS);
   ret = esdm_dataspace_create(2, bounds, SMD_DTYPE_UINT64, &dataspace);
 
   // NetCDF consists of three types of things
@@ -132,17 +133,19 @@ static void write_test() {
   ret = esdm_dataset_commit(dataset2);
   eassert(ret == ESDM_SUCCESS);
 
-
   ret = esdm_container_commit(container);
   eassert(ret == ESDM_SUCCESS);
 
   // remove everything from memory
-  eassert_crash(esdm_dataset_destroy(NULL));
-  ret = esdm_dataset_destroy(dataset);
+  eassert_crash(esdm_dataset_close(NULL));
+  ret = esdm_dataset_close(dataset);
   eassert(ret == ESDM_SUCCESS);
 
-  eassert_crash(esdm_container_destroy(NULL));
-  ret = esdm_container_destroy(container);
+  ret = esdm_dataset_close(dataset2);
+  eassert(ret == ESDM_SUCCESS);
+
+  eassert_crash(esdm_container_close(NULL));
+  ret = esdm_container_close(container);
   eassert(ret == ESDM_SUCCESS);
 }
 
@@ -177,11 +180,6 @@ void read_test() {
 
   //	esdm_dataset_t* esdm_dataset_open(esdm_container_t *container, const char* name)
   //	static int dataset_retrieve(esdm_backend_t* backend, esdm_dataset_t *dataset)
-
-  // TODO later:
-  // esdm_dataset_iterator_t * iter;
-  // ret = esdm_dataset_iterator(container, & iter);
-  // eassert(ret == ESDM_SUCCESS);
 
   ret = esdm_dataset_open(container, "myVariable", &dataset);
   eassert(ret == ESDM_SUCCESS);
@@ -228,10 +226,10 @@ void read_test() {
   txt = (char *)smd_attr_get_value(a1);
   eassert(strcmp(txt, "Celsius") == 0);
 
-  ret = esdm_dataset_destroy(dataset);
+  ret = esdm_dataset_close(dataset);
   eassert(ret == ESDM_SUCCESS);
 
-  ret = esdm_container_destroy(container);
+  ret = esdm_container_close(container);
   eassert(ret == ESDM_SUCCESS);
 }
 
@@ -239,6 +237,11 @@ int main() {
   esdm_status ret;
 
   ret = esdm_init();
+  eassert(ret == ESDM_SUCCESS);
+
+  ret = esdm_mkfs(ESDM_FORMAT_PURGE_RECREATE, ESDM_ACCESSIBILITY_GLOBAL);
+  eassert(ret == ESDM_SUCCESS);
+  ret = esdm_mkfs(ESDM_FORMAT_PURGE_RECREATE, ESDM_ACCESSIBILITY_NODELOCAL);
   eassert(ret == ESDM_SUCCESS);
 
   write_test();

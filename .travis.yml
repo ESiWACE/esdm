@@ -5,7 +5,6 @@ install:
 
 before_script:
   - which mpicc
-  - locate mpicc
   - ./configure --with-cc=mpicc && cd build && make -j 2 
 
 script:

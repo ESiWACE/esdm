@@ -72,10 +72,12 @@ esdm_scheduler_t *esdm_scheduler_init(esdm_instance_t *esdm) {
 esdm_status esdm_scheduler_finalize(esdm_instance_t *esdm) {
   ESDM_DEBUG(__func__);
 
-  for (int i = 0; i < esdm->modules->data_backend_count; i++) {
-    esdm_backend_t *b = esdm->modules->data_backends[i];
-    if (b->threadPool) {
-      g_thread_pool_free(b->threadPool, 0, 1);
+  if(esdm->modules){
+    for (int i = 0; i < esdm->modules->data_backend_count; i++) {
+      esdm_backend_t *b = esdm->modules->data_backends[i];
+      if (b->threadPool) {
+        g_thread_pool_free(b->threadPool, 0, 1);
+      }
     }
   }
 
