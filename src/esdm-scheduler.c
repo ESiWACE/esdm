@@ -144,10 +144,13 @@ static int64_t abs_int64(int64_t a) {
   return a > 0 ? a : -a;
 }
 
-static void dataspace_copy_data(esdm_dataspace_t* sourceSpace, char *sourceData, esdm_dataspace_t* destSpace, char *destData) {
+//TODO: write a benchmark to test the speed of this function
+esdm_status esdm_dataspace_copy_data(esdm_dataspace_t* sourceSpace, void *voidPtrSource, esdm_dataspace_t* destSpace, void *voidPtrDest) {
   eassert(sourceSpace->dims == destSpace->dims);
   eassert(sourceSpace->type == destSpace->type);
 
+  char* sourceData = voidPtrSource;
+  char* destData = voidPtrDest;
   uint64_t dimensions = sourceSpace->dims;
 
   //determine the hypercube that contains the overlap between the two hypercubes
@@ -163,7 +166,7 @@ static void dataspace_copy_data(esdm_dataspace_t* sourceSpace, char *sourceData,
     int64_t overlapX1 = min_int64(sourceX1, destX1);
     overlapOffset[i] = overlapX0;
     overlapSize[i] = overlapX1 - overlapX0;
-    if(overlapX0 > overlapX1) return; //overlap is empty => nothing to do
+    if(overlapX0 > overlapX1) return ESDM_SUCCESS; //overlap is empty => nothing to do
   }
 
   //determine how much data we can move with memcpy() at a time
@@ -214,6 +217,8 @@ static void dataspace_copy_data(esdm_dataspace_t* sourceSpace, char *sourceData,
     }
     if(curDim < 0) break;
   }
+
+  return ESDM_SUCCESS;
 }
 
 //FIXME: This has zero test coverage currently.
@@ -222,7 +227,7 @@ static void read_copy_callback(io_work_t *work) {
     DEBUG("Error reading from fragment ", work->fragment);
     return;
   }
-  dataspace_copy_data(work->fragment->dataspace, work->fragment->buf, work->data.buf_space, work->data.mem_buf);
+  esdm_dataspace_copy_data(work->fragment->dataspace, work->fragment->buf, work->data.buf_space, work->data.mem_buf);
 }
 
 //FIXME: Make this stride aware!

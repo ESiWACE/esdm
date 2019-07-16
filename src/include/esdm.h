@@ -342,8 +342,32 @@ esdm_status esdm_dataspace_subspace(esdm_dataspace_t *dataspace, int64_t dims, i
  *     (2,2)=11, (2,3)=12, (2,4)=13, (2,5)=14, (2,6)=15,
  *     (3,2)=22, (3,3)=23, (3,4)=24, (3,5)=25, (3,6)=26,
  */
-//FIXME: Implement this.
 esdm_status esdm_dataspace_set_stride(esdm_dataspace_t* dataspace, int64_t* stride);
+
+/**
+ * Copy data from one buffer to another, possibly partially, possibly rearranging the data as prescribed by the given dataspaces.
+ *
+ * This function copies all the data that is contained within the intersection of the two dataspaces from the source buffer to the destination buffer.
+ * The order and layout of the data elements in each buffer is described by the associated dataspace, allowing this function to be used to
+ *
+ *   * pack non-contiguous (= strided) data into a contiguous buffer
+ *   * unpack a contiguous buffer into a larger, non-contiguous (= strided) dataspace
+ *   * transpose data (for example from FORTRAN order to C order and vice versa)
+ *   * reverse the order of the data in one or more dimensions (rather esoteric use!)
+ *
+ * In all cases, only the intersection of the two hypercubes described by the two dataspaces is copied:
+ * If the source space is larger, only the overlapping part will be read,
+ * and if the destination space is larger, only the overlapping part will be written to.
+ * If the two dataspaces don't intersect, nothing will be done.
+ *
+ * @param [in] sourceSpace dataspace that describes the layout of the `sourceData` buffer
+ * @param [in] sourceData pointer to the first source data element, the logical coordinate of this data element is the offset of the source dataspace
+ * @param [in] destSpace dataspace that describes the layout of the `destData` buffer
+ * @param [out] destData pointer to the first destination data element, the logical coordinate of this data element is the offset of the destination dataspace
+ *
+ * @return status
+ */
+esdm_status esdm_dataspace_copy_data(esdm_dataspace_t* sourceSpace, void *sourceData, esdm_dataspace_t* destSpace, void *destData);
 
 /**
  * Destruct and free a dataspace object.
