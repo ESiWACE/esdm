@@ -250,7 +250,7 @@ int esdmI_scheduler_try_direct_io(esdm_fragment_t *f, void * buf, esdm_dataspace
     }
     if( d == -1){
       // patches overlap perfectly => DIRECT IO
-      f->buf = buf;
+      f->buf = buf; //by assigning the user buffer to the fragment's buffer pointer, we make the background I/O process fill the user buffer directly in zero-copy fashion
       return 1;
     }
     // partial overlap but same size
@@ -298,14 +298,10 @@ esdm_status esdm_scheduler_enqueue_read(esdm_instance_t *esdm, io_request_status
     task->parent = status;
     task->op = ESDM_OP_READ;
     task->fragment = f;
-    //FIXME: I think, this is a bug:
-    //       `read_copy_callback()` is written to copy data *out* of the fragment's buffer (makes sense to me),
-    //       but `esdmI_scheduler_try_direct_io()` is written to assign the fragment's buffer *to `buf`*.
-    //       Which appears to be the opposite direction of operation.
     if (esdmI_scheduler_try_direct_io(f, buf, buf_space)) {
       task->callback = NULL;
     } else {
-      f->buf = malloc(size);  //FIXME: This cannot be right: We are supposed to be reading data *out* of that buffer!
+      f->buf = malloc(size);  //This buffer will be filled by some background I/O process, read_copy_callback() will only be invoked *after* that has happened.
       task->callback = read_copy_callback;
       task->data.mem_buf = buf;
       task->data.buf_space = buf_space;

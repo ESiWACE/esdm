@@ -237,6 +237,9 @@ esdm_status esdm_dataset_by_name(esdm_container_t *container, const char *name, 
 /*
  * Obtain a reference to the dataset, if it was not yet open, it will be openend and metadata will be fetched.
  * To return the dataset, call dataset_close()
+ *
+ * This function is *not thread-safe*.
+ * Only a single master thread must be used to call into ESDM.
  */
 esdm_status esdm_dataset_ref(esdm_dataset_t *dataset);
 
@@ -255,6 +258,9 @@ esdm_status esdm_dataset_commit(esdm_dataset_t *dataset);
 
 /**
  * Close a dataset object, if it isn't used anymore, it's metadata will be unloaded
+ *
+ * This function is *not thread-safe*.
+ * Only a single master thread must be used to call into ESDM.
  *
  * @param [in] dataset an existing dataset object that is no longer needed
  *
@@ -336,6 +342,7 @@ esdm_status esdm_dataspace_subspace(esdm_dataspace_t *dataspace, int64_t dims, i
  *     (2,2)=11, (2,3)=12, (2,4)=13, (2,5)=14, (2,6)=15,
  *     (3,2)=22, (3,3)=23, (3,4)=24, (3,5)=25, (3,6)=26,
  */
+//FIXME: Implement this.
 esdm_status esdm_dataspace_set_stride(esdm_dataspace_t* dataspace, int64_t dims, int64_t* stride);
 
 /**
