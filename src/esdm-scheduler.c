@@ -144,6 +144,13 @@ static int64_t abs_int64(int64_t a) {
   return a > 0 ? a : -a;
 }
 
+static void setDefaultStride(int64_t dimensions, int64_t* size, int64_t* stride) {
+  int64_t curSize = 1;
+  for(int64_t i = dimensions; i--; curSize *= size[i]) {
+    stride[i] = curSize;
+  }
+}
+
 //TODO: write a benchmark to test the speed of this function
 esdm_status esdm_dataspace_copy_data(esdm_dataspace_t* sourceSpace, void *voidPtrSource, esdm_dataspace_t* destSpace, void *voidPtrDest) {
   eassert(sourceSpace->dims == destSpace->dims);
@@ -169,6 +176,17 @@ esdm_status esdm_dataspace_copy_data(esdm_dataspace_t* sourceSpace, void *voidPt
     if(overlapX0 > overlapX1) return ESDM_SUCCESS; //overlap is empty => nothing to do
   }
 
+  //in case the stride fields are set to NULL, determine the effective strides
+  int64_t* sourceStride = sourceSpace->stride;
+  int64_t* destStride = destSpace->stride;
+  int64_t sourceStrideBuf[dimensions], destStrideBuf[dimensions];
+  if(!sourceStride) {
+    setDefaultStride(dimensions, sourceSpace->size, sourceStride = sourceStrideBuf);
+  }
+  if(!destStride) {
+    setDefaultStride(dimensions, destSpace->size, destStride = destStrideBuf);
+  }
+
   //determine how much data we can move with memcpy() at a time
   int64_t dataPointerOffset = 0, memcpySize = 1;  //both are counts of fundamental elements, not bytes
   bool memcpyDims[dimensions];
@@ -177,14 +195,14 @@ esdm_status esdm_dataspace_copy_data(esdm_dataspace_t* sourceSpace, void *voidPt
     //search for a dimension with a stride that matches our current memcpySize
     int64_t curDim;
     for(curDim = dimensions; curDim--; ) {
-      if(sourceSpace->stride[curDim] == destSpace->stride[curDim]) {
-        if(abs_int64(sourceSpace->stride[curDim]) == memcpySize) break;
+      if(sourceStride[curDim] == destStride[curDim]) {
+        if(abs_int64(sourceStride[curDim]) == memcpySize) break;
       }
     }
     if(curDim >= 0) {
       //found a fitting dimension, update our parameters
       memcpyDims[curDim] = true;  //remember not to loop over this dimension when copying the data
-      if(sourceSpace->stride[curDim] < 0) dataPointerOffset += memcpySize*(overlapSize[curDim] - 1); //When the stride is negative, the first byte belongs to the last slice of this dimension, not the first one. Remember that.
+      if(sourceStride[curDim] < 0) dataPointerOffset += memcpySize*(overlapSize[curDim] - 1); //When the stride is negative, the first byte belongs to the last slice of this dimension, not the first one. Remember that.
       memcpySize *= overlapSize[curDim];
       if(overlapSize[curDim] != sourceSpace->size[curDim] || overlapSize[curDim] != destSpace->size[curDim]) break; //cannot fuse other dimensions in a memcpy() call if this dimensions does not have a perfect match between the dataspaces
     } else break; //didn't find another suitable dimension for fusing memcpy() calls
@@ -198,8 +216,8 @@ esdm_status esdm_dataspace_copy_data(esdm_dataspace_t* sourceSpace, void *voidPt
     //compute the parameters for the memcpy() at hand
     int64_t sourceIndex = 0, destIndex = 0;
     for(int64_t i = 0; i < dimensions; i++) {
-      sourceIndex += (curPoint[i] - sourceSpace->offset[i])*sourceSpace->stride[i];
-      destIndex += (curPoint[i] - destSpace->offset[i])*destSpace->stride[i];
+      sourceIndex += (curPoint[i] - sourceSpace->offset[i])*sourceStride[i];
+      destIndex += (curPoint[i] - destSpace->offset[i])*destStride[i];
     }
 
     //move the data
