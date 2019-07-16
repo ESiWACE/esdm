@@ -151,7 +151,13 @@ static void setDefaultStride(int64_t dimensions, int64_t* size, int64_t* stride)
   }
 }
 
-//TODO: write a benchmark to test the speed of this function
+//XXX: Performance considerations for this function:
+//
+//       * Calling memcpy() for every element may be quite inefficient.
+//         So we might consider writing specialized kernels for the most common SMD datatypes which would be used whenever we are forced to copy individual elements.
+//
+//       * Matrix transpositions via strides are quite inefficient due to bad cache usage.
+//         We may consider some kind of cache blocking in that case.
 esdm_status esdm_dataspace_copy_data(esdm_dataspace_t* sourceSpace, void *voidPtrSource, esdm_dataspace_t* destSpace, void *voidPtrDest) {
   eassert(sourceSpace->dims == destSpace->dims);
   eassert(sourceSpace->type == destSpace->type);
