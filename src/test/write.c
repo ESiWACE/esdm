@@ -58,6 +58,10 @@ int main(int argc, char const *argv[]) {
   eassert_crash(esdm_container_create(NULL, 1, &container));
   eassert_crash(esdm_container_create("", 1, &container));
   eassert_crash(esdm_container_create("mycontainer", 1, NULL));
+  status = esdm_container_create("/po/test", 1, &container);
+  eassert(status == ESDM_ERROR);
+  status = esdm_container_create("po/test/", 1, &container);
+  eassert(status == ESDM_ERROR);
   status = esdm_container_create("mycontainer", 1, &container);
   eassert(status == ESDM_SUCCESS);
 
@@ -66,6 +70,21 @@ int main(int argc, char const *argv[]) {
   eassert_crash(esdm_dataset_create(container, "", dataspace, &dataset));
   eassert_crash(esdm_dataset_create(container, "mydataset", NULL, &dataset));
   eassert_crash(esdm_dataset_create(container, "mydataset", dataspace, NULL));
+  status = esdm_dataset_create(container, "/mydataset", dataspace, &dataset);
+  eassert(status == ESDM_ERROR);
+  status = esdm_dataset_create(container, "öüö&asas", dataspace, &dataset);
+  eassert(status == ESDM_ERROR);
+  status = esdm_dataset_create(container, "test/", dataspace, &dataset);
+  eassert(status == ESDM_ERROR);
+  status = esdm_dataset_create(container, "test//test", dataspace, &dataset);
+  eassert(status == ESDM_ERROR);
+  status = esdm_dataset_create(container, "/test/test", dataspace, &dataset);
+  eassert(status == ESDM_ERROR);
+  status = esdm_dataset_create(container, "test/test", dataspace, &dataset);
+  eassert(status == ESDM_SUCCESS);
+  status = esdm_dataset_close(dataset);
+  eassert(status == ESDM_SUCCESS);
+
   status = esdm_dataset_create(container, "mydataset", dataspace, &dataset);
   eassert(status == ESDM_SUCCESS);
 

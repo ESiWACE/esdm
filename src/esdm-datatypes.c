@@ -517,7 +517,6 @@ void esdm_dataset_init(esdm_container_t *c, const char *name, esdm_dataspace_t *
   *out_dataset = d;
 }
 
-
 esdm_status esdm_dataset_create(esdm_container_t *c, const char *name, esdm_dataspace_t *dspace, esdm_dataset_t **out_dataset) {
   ESDM_DEBUG(__func__);
   eassert(c);
@@ -525,6 +524,11 @@ esdm_status esdm_dataset_create(esdm_container_t *c, const char *name, esdm_data
   eassert(*name && "name must not be empty");
   eassert(dspace);
   eassert(out_dataset);
+
+
+  if(! ea_is_valid_dataset_name(name)){
+    return ESDM_ERROR;
+  }
 
   if(esdm_container_dataset_exists(c, name)){
     return ESDM_ERROR;
@@ -1144,7 +1148,7 @@ esdm_status esdm_dataset_name_dims(esdm_dataset_t *d, char **names) {
   // compute size and check that varname is conform
   for (int i = 0; i < dims; i++) {
     size += strlen(names[i]) + 1;
-    if (!ea_is_valid_name(names[i])) {
+    if (!ea_is_valid_dataset_name(names[i])) {
       return ESDM_ERROR;
     }
   }

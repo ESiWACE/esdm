@@ -230,7 +230,7 @@ void esdmI_log_dump();
 void ea_generate_id(char *str, size_t length);
 
 int ea_compute_hash_str(const char * str);
-int ea_is_valid_name(const char *str);
+bool ea_is_valid_dataset_name(const char *str);
 
 
 /**

@@ -34,9 +34,37 @@
 #include <sys/types.h>
 #include <unistd.h>
 
-int ea_is_valid_name(const char *str) {
+bool ea_is_valid_dataset_name(char const*str) {
   // TODO allow names with a-a, A-Z,0-9,_-
   eassert(str != NULL);
+  char last = 0;
+  if(*str == 0){
+    return 0;
+  }
+  for(char const * p = str; p[0] != 0 ; p++){
+    char c = *p;
+    if ((c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') || (c >= '0' && c <= '9') || c=='_' || c=='-'){
+      last = c;
+      continue;
+    }
+    if (c=='/'){
+      if(last == 0){
+        // cannot start the name with "/"
+        return 0;
+      }
+      if(last == '/'){
+        // cannot have two consecutive "/"
+        return 0;
+      }
+      last = c;
+      continue;
+    }
+    return 0;
+  }
+  if(last == '/'){
+    // cannot end with "/"
+    return 0;
+  }
   return 1;
 }
 
