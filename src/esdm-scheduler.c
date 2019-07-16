@@ -252,6 +252,8 @@ static void read_copy_callback(io_work_t *work) {
     return;
   }
   esdm_dataspace_copy_data(work->fragment->dataspace, work->fragment->buf, work->data.buf_space, work->data.mem_buf);
+  free(work->fragment->buf);  //TODO: Decide whether to cache the data.
+  work->fragment->buf = NULL;
 }
 
 //FIXME: Make this stride aware!
