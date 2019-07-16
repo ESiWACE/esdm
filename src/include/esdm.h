@@ -336,14 +336,14 @@ esdm_status esdm_dataspace_subspace(esdm_dataspace_t *dataspace, int64_t dims, i
  * To use only a 3x5 part of an existing C array `int array[7][11]`, starting at (1, 2), use these calls:
  *     esdm_dataspace_t* subspace;
  *     esdm_dataspace_subspace(parent, 2, (int64_t[2]){3, 5}, (int64_t[2]){1, 2}, &subspace);
- *     esdm_dataspace_set_stride(subspace, 2, (int64_t[2]){11, 1});
+ *     esdm_dataspace_set_stride(subspace, (int64_t[2]){11, 1});
  * After this, the 2D coordinates will be mapped to the buffer offsets like this:
  *     (1,2)=0,  (1,3)=1,  (1,4)=2,  (1,5)=3,  (1,6)=4,
  *     (2,2)=11, (2,3)=12, (2,4)=13, (2,5)=14, (2,6)=15,
  *     (3,2)=22, (3,3)=23, (3,4)=24, (3,5)=25, (3,6)=26,
  */
 //FIXME: Implement this.
-esdm_status esdm_dataspace_set_stride(esdm_dataspace_t* dataspace, int64_t dims, int64_t* stride);
+esdm_status esdm_dataspace_set_stride(esdm_dataspace_t* dataspace, int64_t* stride);
 
 /**
  * Destruct and free a dataspace object.
