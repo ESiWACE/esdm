@@ -180,11 +180,9 @@ esdm_status esdm_dataset_set_fill_value(esdm_dataset_t *d, void * value){
   eassert(d);
   eassert(value);
   if(d->fill_value){
-    // TODO fill more complex types
-    free(d->fill_value);
+    smd_attr_destroy(d->fill_value);
   }
-  d->fill_value = malloc(d->dataspace->type->size);
-  smd_copy_value(d->dataspace->type, d->fill_value, value);
+  d->fill_value = smd_attr_new("fill-value", d->dataspace->type, value, 10);
   return ESDM_SUCCESS;
 }
 
@@ -194,6 +192,6 @@ esdm_status esdm_dataset_get_fill_value(esdm_dataset_t *d, void * value){
   if(! d->fill_value){
     return ESDM_ERROR;
   }
-  smd_copy_value(d->dataspace->type, value, d->fill_value);
+  smd_attr_copy_value(d->fill_value, value);
   return ESDM_SUCCESS;
 }

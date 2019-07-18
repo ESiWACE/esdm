@@ -648,6 +648,10 @@ esdm_status esdm_dataset_open_md_parse(esdm_dataset_t *d, char * md, int size){
   // first strip the attributes
   size_t parsed = smd_attr_create_from_json(js + 1, size, & d->attr);
   js += 1 + parsed;
+  if(strncmp(js + 1, "\"fill-value\"", 12) == 0){
+    parsed = smd_attr_create_from_json(js + 1, size, & d->fill_value);
+    js += 1 + parsed;
+  }
   js[0] = '{';
   // for the rest we use JANSSON
   json_t *root = load_json(js);
@@ -677,6 +681,10 @@ esdm_status esdm_dataset_open_md_parse(esdm_dataset_t *d, char * md, int size){
   if (ret != ESDM_SUCCESS) {
     json_decref(root);
     return ret;
+  }
+  elem = json_object_get(root, "fill-value");
+  if (elem){
+
   }
   elem = json_object_get(root, "dims_dset_id");
 	if (elem){
@@ -799,6 +807,10 @@ void esdmI_dataset_metadata_create(esdm_dataset_t *d, smd_string_stream_t*s){
 
   smd_string_stream_printf(s, "{");
   smd_attr_ser_json(s, d->attr);
+  if(d->fill_value){
+    smd_string_stream_printf(s, ",");
+    smd_attr_ser_json(s, d->fill_value);
+  }
   smd_string_stream_printf(s, ",\"id\":\"%s\"", d->id);
   smd_string_stream_printf(s, ",\"typ\":\"");
   smd_type_ser(s, d->dataspace->type);
@@ -807,9 +819,6 @@ void esdmI_dataset_metadata_create(esdm_dataset_t *d, smd_string_stream_t*s){
     smd_string_stream_printf(s, ",%" PRId64, d->dataspace->size[i]);
   }
   smd_string_stream_printf(s, "]");
-  if(d->fill_value){
-
-  }
   if (d->dims_dset_id != NULL) {
     smd_string_stream_printf(s, ",\"dims_dset_id\":[");
     if(d->dataspace->dims > 0){
@@ -909,7 +918,7 @@ esdm_status esdmI_dataset_destroy(esdm_dataset_t *dset) {
   }
 
   if(dset->fill_value){
-    free(dset->fill_value);
+    smd_attr_destroy(dset->fill_value);
   }
   free(dset);
   return ESDM_SUCCESS;
