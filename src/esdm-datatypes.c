@@ -440,14 +440,16 @@ esdm_status esdmI_dataset_lookup_fragments(esdm_dataset_t *dset, esdm_dataspace_
       frags[found] = f;
       found++;
     }
+    // TODO smartly select only good fragments
   }
-  // check if we covered the whole subspace area
-
-  if(dset->fill_value){
+  // Check if we covered the whole subspace area
+  // TODO
+  /*if(dset->fill_value){
+    fill the rest of the requested data with the fill values
   }else{
     // it is an error to partially read data
-    //return ESDM_ERROR;
-  }
+    return ESDM_ERROR;
+  }*/
 
   *out_fragments = frags;
   *out_frag_count = found;
