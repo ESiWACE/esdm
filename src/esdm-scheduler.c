@@ -151,19 +151,50 @@ static void setDefaultStride(int64_t dimensions, int64_t* size, int64_t* stride)
   }
 }
 
-//XXX: Performance considerations for this function:
-//
-//       * Calling memcpy() for every element may be quite inefficient.
-//         So we might consider writing specialized kernels for the most common SMD datatypes which would be used whenever we are forced to copy individual elements.
-//
-//       * Matrix transpositions via strides are quite inefficient due to bad cache usage.
-//         We may consider some kind of cache blocking in that case.
-esdm_status esdm_dataspace_copy_data(esdm_dataspace_t* sourceSpace, void *voidPtrSource, esdm_dataspace_t* destSpace, void *voidPtrDest) {
+/**
+ * Generate some, hopefully dimensionally reduced, instructions to perform `memcpy()` calls.
+ * This is a helper function that is used to implement both `esdm_dataspace_copy_data()`
+ * and support `esdmI_scheduler_try_direct_io()` by determining how many `memcpy()` calls would actually be needed to perform the copy.
+ *
+ * @param [in] sourceSpace the data space for the source buffer
+ * @param [in] destSpace the data space for the destination buffer
+ * @param [out] instructionDims returns the number of dimensions over which we need to iterate, may be zero (single `memcpy()` call), or -1 (nothing to copy)
+ * @param [out] sourceOffset the offset of the first data chunk to read
+ * @param [out] destOffset the offset of the first data chunk to write
+ * @param [out] chunkSize number of bytes to copy with each `memcpy()` call
+ * @param [out] size[instructionDims] the count of slices for each of the remaining dimensions
+ * @param [out] relativeSourceStride[instructionDims] relative strides for the source buffer
+ * @param [out] relativeDestStride[instructionDims] relative strides for the destination buffer
+ *
+ * The relative strides are defined as follows:
+ * If the next dimension has a size of n, the relative stride is the offset in bytes between the slice at (..., 0, n, ...) and (..., 1, 0, ...).
+ * That is, after the next dimension has been incremented to the one-past-the-end element, the relative stride is simply added to get the first element of the next slice.
+ *
+ * Or, viewing it the other way round, we go from the normal stride to the relative stride by
+ * a) converting to byte offsets, and b) by subtracting the size of each dimension from the previous stride.
+ * I.e. if the normal stride is (100, 10, 1) and the size is (10, 10, 10), the relative stride is (0, 0, 1), assuming an element size of 1.
+ * Likewise, if the normal stride is (1000, 42, 3) and the size is (10, 10, 10), the relative stride is (580, 12, 1).
+ * If the elements were of size 8, the relative stride would be (4640, 96, 8).
+ * The point of using this relative stride is, that we can remove all state from the inner loop except for two simple `char` pointers.
+ */
+static void esdmI_dataspace_copy_instructions(
+    esdm_dataspace_t* sourceSpace,
+    esdm_dataspace_t* destSpace,
+    int64_t* out_instructionDims,
+    int64_t* out_chunkSize,
+    int64_t* out_sourceOffset,
+    int64_t* out_destOffset,
+    int64_t* out_size,  //actually an array of size `*out_instructionDims`, may be NULL
+    int64_t* out_relSourceStride,  //actually an array of size `*out_instructionDims`, may be NULL
+    int64_t* out_relDestStride  //actually an array of size `*out_instructionDims`, may be NULL
+) {
   eassert(sourceSpace->dims == destSpace->dims);
   eassert(sourceSpace->type == destSpace->type);
+  eassert(out_instructionDims);
+  eassert(out_chunkSize);
+  eassert(out_sourceOffset);
+  eassert(out_destOffset);
 
-  char* sourceData = voidPtrSource;
-  char* destData = voidPtrDest;
   uint64_t dimensions = sourceSpace->dims;
 
   //determine the hypercube that contains the overlap between the two hypercubes
@@ -179,7 +210,10 @@ esdm_status esdm_dataspace_copy_data(esdm_dataspace_t* sourceSpace, void *voidPt
     int64_t overlapX1 = min_int64(sourceX1, destX1);
     overlapOffset[i] = overlapX0;
     overlapSize[i] = overlapX1 - overlapX0;
-    if(overlapX0 > overlapX1) return ESDM_SUCCESS; //overlap is empty => nothing to do
+    if(overlapX0 > overlapX1) {
+      *out_instructionDims = -1; //overlap is empty => nothing to do
+      return;
+    }
   }
 
   //in case the stride fields are set to NULL, determine the effective strides
@@ -214,32 +248,86 @@ esdm_status esdm_dataspace_copy_data(esdm_dataspace_t* sourceSpace, void *voidPt
     } else break; //didn't find another suitable dimension for fusing memcpy() calls
   }
 
-  //copy the data
-  int64_t curPoint[dimensions];
-  memcpy(curPoint, overlapOffset, sizeof(curPoint));
-  uint64_t elementSize = esdm_sizeof(sourceSpace->type);
-  while(true) {
-    //compute the parameters for the memcpy() at hand
-    int64_t sourceIndex = 0, destIndex = 0;
-    for(int64_t i = 0; i < dimensions; i++) {
-      sourceIndex += (curPoint[i] - sourceSpace->offset[i])*sourceStride[i];
-      destIndex += (curPoint[i] - destSpace->offset[i])*destStride[i];
-    }
-
-    //move the data
-    memcpy(&destData[(destIndex - dataPointerOffset)*elementSize],
-           &sourceData[(sourceIndex - dataPointerOffset)*elementSize],
-           memcpySize*elementSize);
-
-    //advance to the next point
-    int64_t curDim;
-    for(curDim = dimensions; curDim--; ) {
-      if(!memcpyDims[curDim]) {
-        if(++(curPoint[curDim]) < overlapOffset[curDim] + overlapSize[curDim]) break;
-        curPoint[curDim] = overlapOffset[curDim];
+  //determine the order of the remaining dimensions
+  bool selectedDims[dimensions];
+  memcpy(selectedDims, memcpyDims, sizeof(selectedDims));
+  int64_t memcpyDim2LogicalDim[dimensions];
+  for(*out_instructionDims = 0; ; (*out_instructionDims)++) {
+    int64_t bestDim = -1;
+    int64_t jumpFactor = 0;
+    for(int64_t dim = 0; dim < dimensions; dim++) {
+      if(!selectedDims[dim]) {
+        int64_t curJumpFactor = min_int64(abs_int64(sourceStride[dim]), abs_int64(destStride[dim]));
+        if(bestDim < 0 || jumpFactor < curJumpFactor) {
+          bestDim = dim;
+          jumpFactor = curJumpFactor;
+        }
       }
     }
-    if(curDim < 0) break;
+    if(bestDim >= 0) {
+      selectedDims[bestDim] = true;
+      memcpyDim2LogicalDim[*out_instructionDims] = bestDim;
+    } else {
+      break;
+    }
+  }
+
+  //create the instruction data
+  int64_t trashSize[dimensions], trashRelSourceStride[dimensions], trashRelDestStride[dimensions];
+  if(!out_size) out_size = trashSize;
+  if(!out_relSourceStride) out_relSourceStride = trashRelSourceStride;
+  if(!out_relDestStride) out_relDestStride = trashRelDestStride;
+  uint64_t elementSize = esdm_sizeof(sourceSpace->type);
+  for(int64_t memcpyDim = 0; memcpyDim < *out_instructionDims; memcpyDim++) {
+    int64_t logicalDim = memcpyDim2LogicalDim[memcpyDim];
+    out_size[memcpyDim] = overlapSize[logicalDim];
+    out_relSourceStride[memcpyDim] = sourceStride[logicalDim]*elementSize;
+    out_relDestStride[memcpyDim] = destStride[logicalDim]*elementSize;
+    if(memcpyDim) {
+      //make the previous stride relative to this stride
+      out_relSourceStride[memcpyDim-1] -= out_size[memcpyDim]*out_relSourceStride[memcpyDim];
+      out_relDestStride[memcpyDim-1] -= out_size[memcpyDim]*out_relDestStride[memcpyDim];
+    }
+  }
+  *out_chunkSize = memcpySize*elementSize;
+  int64_t sourceIndex = 0, destIndex = 0;
+  for(int64_t i = 0; i < dimensions; i++) {
+    sourceIndex += (overlapOffset[i] - sourceSpace->offset[i])*sourceStride[i];
+    destIndex += (overlapOffset[i] - destSpace->offset[i])*destStride[i];
+  }
+  *out_sourceOffset = (sourceIndex - dataPointerOffset)*elementSize;
+  *out_destOffset = (destIndex - dataPointerOffset)*elementSize;
+}
+
+esdm_status esdm_dataspace_copy_data(esdm_dataspace_t* sourceSpace, void *voidPtrSource, esdm_dataspace_t* destSpace, void *voidPtrDest) {
+  eassert(sourceSpace->dims == destSpace->dims);
+  eassert(sourceSpace->type == destSpace->type);
+
+  char* sourceData = voidPtrSource;
+  char* destData = voidPtrDest;
+  uint64_t dimensions = sourceSpace->dims;
+
+  //get the instructions on how to copy the data
+  int64_t instructionDims, chunkSize, sourceOffset, destOffset, size[dimensions], relSourceStride[dimensions], relDestStride[dimensions];
+  esdmI_dataspace_copy_instructions(sourceSpace, destSpace, &instructionDims, &chunkSize, &sourceOffset, &destOffset, size, relSourceStride, relDestStride);
+
+  //execute the instructions
+  if(instructionDims < 0) return ESDM_SUCCESS;  //nothing to do
+  sourceData += sourceOffset;
+  destData += destOffset;
+  int64_t counters[instructionDims];
+  memset(counters, 0, sizeof(counters));
+  while(true) {
+    memcpy(destData, sourceData, chunkSize);
+
+    int64_t i;
+    for(i = instructionDims; i--; ) {
+      sourceData += relSourceStride[i];
+      destData += relDestStride[i];
+      if(++(counters[i]) < size[i]) break;
+      counters[i] = 0;
+    }
+    if(i == -1) break;
   }
 
   return ESDM_SUCCESS;
