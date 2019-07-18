@@ -949,22 +949,26 @@ esdm_status esdm_dataset_get_attributes(esdm_dataset_t *dataset, smd_attr_t **ou
 
 esdm_status esdm_dataspace_create(int64_t dims, int64_t *sizes, esdm_type_t type, esdm_dataspace_t **out_dataspace) {
   ESDM_DEBUG(__func__);
-  eassert(dims > 0);
-  eassert(!dims || sizes);
+  eassert(dims >= 0);
+  eassert(sizes);
   eassert(out_dataspace);
 
   esdm_dataspace_t *dataspace = (esdm_dataspace_t *)malloc(sizeof(esdm_dataspace_t));
 
   dataspace->dims = dims;
-  dataspace->size = (int64_t *)malloc(sizeof(int64_t) * dims);
+  if(dims != 0){
+    dataspace->size = (int64_t *)malloc(sizeof(int64_t) * dims);
+    dataspace->offset = (int64_t *)malloc(sizeof(int64_t) * dims);
+
+    memcpy(dataspace->size, sizes, sizeof(int64_t) * dims);
+    memset(dataspace->offset, 0, sizeof(int64_t) * dims);
+  }else{
+    dataspace->size = NULL;
+    dataspace->offset = NULL;
+  }
   dataspace->type = type;
-  dataspace->offset = (int64_t *)malloc(sizeof(int64_t) * dims);
   dataspace->subspace_of = NULL;
   dataspace->stride = NULL;
-
-  memcpy(dataspace->size, sizes, sizeof(int64_t) * dims);
-  memset(dataspace->offset, 0, sizeof(int64_t) * dims);
-
   DEBUG("New dataspace: dims=%d\n", dataspace->dims);
 
   *out_dataspace = dataspace;
