@@ -195,3 +195,11 @@ esdm_status esdm_dataset_get_fill_value(esdm_dataset_t *d, void * value){
   smd_attr_copy_value(d->fill_value, value);
   return ESDM_SUCCESS;
 }
+
+esdm_status esdm_dataset_change_name(esdm_dataset_t *d, char const * new_name){
+  eassert(d);
+  eassert(new_name);
+  d->name = strdup(new_name);
+  d->status = ESDM_DATA_DIRTY;
+  return ESDM_SUCCESS;
+}

@@ -323,6 +323,23 @@ void esdmI_dataset_register_fragment(esdm_dataset_t *dset, esdm_fragment_t *frag
 	f->count++;
 }
 
+
+int64_t esdm_dataspace_get_dims(esdm_dataspace_t * d){
+  eassert(d);
+  return d->dims;
+}
+
+int64_t const * esdm_dataspace_get_size(esdm_dataspace_t * d){
+  eassert(d);
+  return d->size;
+}
+
+int64_t const * esdm_dataspace_get_offset(esdm_dataspace_t * d){
+  eassert(d);
+  return d->offset;
+}
+
+
 // Fragment ///////////////////////////////////////////////////////////////////
 
 /**
@@ -1207,4 +1224,14 @@ int64_t const * esdm_dataset_get_actual_size(esdm_dataset_t *dset){
     return dset->actual_size;
   }
   return dset->dataspace->size;
+}
+
+smd_dtype_t const * esdm_dataset_get_type(esdm_dataset_t * d){
+  eassert(d);
+  return d->dataspace->type;
+}
+
+smd_dtype_t const * esdm_dataspace_get_type(esdm_dataspace_t * d){
+  eassert(d);
+  return d->type;
 }
