@@ -193,10 +193,15 @@ void read_test() {
   eassert(dspace->type != NULL);
   eassert(dspace->dims == 2);
 
-  char type[100];
-  char type_e[100];
-  smd_type_ser(type, dspace->type);
-  smd_type_ser(type_e, SMD_DTYPE_UINT64);
+  size_t count;
+
+  smd_string_stream_t * s = smd_string_stream_create();
+  smd_type_ser(s, dspace->type);
+  char * type = smd_string_stream_close(s, & count);
+
+  s = smd_string_stream_create();
+  smd_type_ser(s, SMD_DTYPE_UINT64);
+  char * type_e = smd_string_stream_close(s, & count);
   eassert(strcmp(type, type_e) == 0);
 
   // names of the dims

@@ -36,6 +36,11 @@ double stop_timer(timer t1);
 
 double timer_subtract(timer number, timer subtract);
 
+// generate test patterns
+void etest_gen_buffer(int dims, int64_t bounds[], uint64_t ** out_buff);
+int etest_verify_buffer(int dims, int64_t bounds[], uint64_t * buff);
+void etest_memset_buffer(int dims, int64_t bounds[], uint64_t * buff);
+
 //A variant of eassert() that allows us to check that the call actually *crashes* the program.
 //This is used to check for the presence of the appropriate eassert() calls to check function contracts.
 //Checks for abnormal termination by some signal.
@@ -75,5 +80,7 @@ double timer_subtract(timer number, timer subtract);
     exit(0); \
   } \
 } while(0)
+
+
 
 #endif

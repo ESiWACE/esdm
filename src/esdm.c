@@ -171,8 +171,27 @@ esdm_status esdm_read(esdm_dataset_t *dataset, void *buf, esdm_dataspace_t *subs
   return esdm_scheduler_process_blocking(&esdm, ESDM_OP_READ, dataset, buf, subspace);
 }
 
-
 esdm_status esdm_sync() {
   ESDM_DEBUG(__func__);
+  return ESDM_SUCCESS;
+}
+
+esdm_status esdm_dataset_set_fill_value(esdm_dataset_t *d, void * value){
+  eassert(d);
+  eassert(value);
+  if(d->fill_value){
+    smd_attr_destroy(d->fill_value);
+  }
+  d->fill_value = smd_attr_new("fill-value", d->dataspace->type, value, 10);
+  return ESDM_SUCCESS;
+}
+
+esdm_status esdm_dataset_get_fill_value(esdm_dataset_t *d, void * value){
+  eassert(d);
+  eassert(value);
+  if(! d->fill_value){
+    return ESDM_ERROR;
+  }
+  smd_attr_copy_value(d->fill_value, value);
   return ESDM_SUCCESS;
 }

@@ -75,4 +75,56 @@ double stop_timer(timer t1) {
   return time_to_double(time_diff(end, t1));
 }
 
+
+void etest_gen_buffer(int dims, int64_t bounds[], uint64_t ** out_buff){
+  // prepare data
+  int64_t cnt = 1;
+  for(int d=0; d < dims; d++){
+    cnt *= bounds[d];
+  }
+
+  uint64_t *buf_w = (uint64_t *)malloc(cnt * sizeof(uint64_t));
+  assert(buf_w);
+  *out_buff = buf_w;
+
+  for(int64_t i=0; i < cnt; i++){
+    buf_w[i] = i + 1;
+  }
+}
+
+void etest_memset_buffer(int dims, int64_t bounds[], uint64_t * buff){
+  // prepare data
+  int64_t cnt = 1;
+  for(int d=0; d < dims; d++){
+    cnt *= bounds[d];
+  }
+
+  memset(buff, 0, cnt * sizeof(uint64_t));
+}
+
+
+int etest_verify_buffer(int dims, int64_t bounds[], uint64_t * buff){
+  // prepare data
+  int64_t cnt = 1;
+  for(int d=0; d < dims; d++){
+    cnt *= bounds[d];
+  }
+  int64_t errors = 0;
+  for(int64_t i=0; i < cnt; i++){
+    if(buff[i] != i + 1){
+      errors++;
+    }
+  }
+  if(errors != 0){
+    printf("Mismatches: %ld\n", errors);
+    if (errors > 0) {
+      printf("FAILED\n");
+    } else {
+      printf("OK\n");
+    }
+    return 1;
+  }
+  return 0;
+}
+
 #endif

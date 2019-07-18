@@ -205,6 +205,17 @@ esdm_status esdm_dataset_create(esdm_container_t *container, const char *name, e
 esdm_status esdm_dataset_name_dims(esdm_dataset_t *dataset, char **names);
 
 /*
+ The value to be used if data hasn't been written to a datapoint, it must be of the same type as the dataset type.
+ If the fill value was already set, overwrite it.
+ */
+esdm_status esdm_dataset_set_fill_value(esdm_dataset_t *dataset, void * value);
+
+/*
+ Copy the fill value into value
+ */
+esdm_status esdm_dataset_get_fill_value(esdm_dataset_t *dataset, void * value);
+
+/*
  Returns the name of the dataset, do not free or temper with it, the name is still owned by the dataset
  */
 char const * esdm_dataset_name(esdm_dataset_t *dataset);

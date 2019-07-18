@@ -318,12 +318,10 @@ esdm_status esdm_mpi_dataset_commit(MPI_Comm com, esdm_dataset_t *d){
     ret = MPI_Reduce(& d->fragments.count, NULL, 1, MPI_INT, MPI_SUM, 0,   com);
     eassert(ret == MPI_SUCCESS);
 
-    int size;
-    int len = 10000000;
-    char * buff = malloc(len);
-    esdmI_fragments_metadata_create(d, len, buff, & size);
-    buff[size] = 0;
-    eassert(size < len);
+    size_t size;
+    smd_string_stream_t * s = smd_string_stream_create();
+    esdmI_fragments_metadata_create(d, s);
+    char * buff = smd_string_stream_close(s, & size);
 
     ret = MPI_Send(buff, size + 1, MPI_CHAR, 0, 4711, com);
     eassert(ret == MPI_SUCCESS);
