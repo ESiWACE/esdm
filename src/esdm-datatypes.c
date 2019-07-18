@@ -200,6 +200,22 @@ esdm_status esdm_container_open(char const *name, esdm_container_t **out_contain
   return ESDM_SUCCESS;
 }
 
+static void esdmI_dataset_update_actual_size(esdm_dataset_t *d, esdm_fragment_t *frag){
+  eassert(d);
+  eassert(frag);
+  if(! d->actual_size){
+    return;
+  }
+  // update the actual dimension size
+  for (int i = 0; i < d->dataspace->dims; i++) {
+    if(d->dataspace->size[i] == 0){
+      int64_t fend = frag->dataspace->size[i] + frag->dataspace->offset[i];
+      if(fend > d->actual_size[i]){
+        d->actual_size[i] = fend;
+      }
+    }
+  }
+}
 
 void esdmI_datasets_reference_metadata_create(esdm_container_t *c, smd_string_stream_t * s){
   smd_string_stream_printf(s, "[");
@@ -295,7 +311,7 @@ esdm_status esdmI_container_destroy(esdm_container_t *c) {
   return ret;
 }
 
-void esdm_dataset_register_fragment(esdm_dataset_t *dset, esdm_fragment_t *frag){
+void esdmI_dataset_register_fragment(esdm_dataset_t *dset, esdm_fragment_t *frag){
 	ESDM_DEBUG(__func__);
 	esdm_fragments_t * f = & dset->fragments;
 	if (f->buff_size == f->count){
@@ -315,33 +331,35 @@ void esdm_dataset_register_fragment(esdm_dataset_t *dset, esdm_fragment_t *frag)
  *	How does this integrate with the scheduler? On auto-commit this merely beeing pushed to sched for dispatch?
  */
 
-esdm_status esdmI_fragment_create(esdm_dataset_t *dataset, esdm_dataspace_t *subspace, void *buf, esdm_fragment_t **out_fragment) {
-  eassert(dataset);
+esdm_status esdmI_fragment_create(esdm_dataset_t *d, esdm_dataspace_t *sspace, void *buf, esdm_fragment_t **out_fragment) {
+  eassert(d);
   ESDM_DEBUG(__func__);
-  esdm_fragment_t *fragment = (esdm_fragment_t *)malloc(sizeof(esdm_fragment_t));
+  esdm_fragment_t *f = (esdm_fragment_t *)malloc(sizeof(esdm_fragment_t));
 
   int64_t i;
-  for (i = 0; i < subspace->dims; i++) {
-    DEBUG("dim %d, size=%d (%p)\n", i, subspace->size[i], subspace->size);
-    eassert(subspace->size[i] > 0);
+  for (i = 0; i < sspace->dims; i++) {
+    DEBUG("dim %d, size=%d (%p)\n", i, sspace->size[i], sspace->size);
+    eassert(sspace->size[i] > 0);
+    eassert(d->dataspace->size[i] == 0 || sspace->size[i] + sspace->offset[i] <= d->dataspace->size[i]);
   }
 
-  uint64_t elements = esdm_dataspace_element_count(subspace);
-  int64_t bytes = elements * esdm_sizeof(subspace->type);
-  DEBUG("Entries in subspace: %d x %d bytes = %d bytes \n", elements, esdm_sizeof(subspace->type), bytes);
+  uint64_t elements = esdm_dataspace_element_count(sspace);
+  int64_t bytes = elements * esdm_sizeof(sspace->type);
+  DEBUG("Entries in sspace: %d x %d bytes = %d bytes \n", elements, esdm_sizeof(sspace->type), bytes);
 
-  fragment->id = NULL;
-  fragment->dataset = dataset;
-  fragment->dataspace = subspace;
-  fragment->buf = buf; // zero copy?
-  fragment->elements = elements;
-  fragment->bytes = bytes;
-	fragment->status = ESDM_DATA_NOT_LOADED;
-  fragment->backend = NULL;
+  f->id = NULL;
+  f->dataset = d;
+  f->dataspace = sspace;
+  f->buf = buf; // zero copy?
+  f->elements = elements;
+  f->bytes = bytes;
+	f->status = ESDM_DATA_NOT_LOADED;
+  f->backend = NULL;
 
-	esdm_dataset_register_fragment(dataset, fragment);
+	esdmI_dataset_register_fragment(d, f);
+  esdmI_dataset_update_actual_size(d, f);
 
-  *out_fragment = fragment;
+  *out_fragment = f;
 
   return ESDM_SUCCESS;
 }
@@ -482,7 +500,7 @@ esdm_status esdm_fragment_destroy(esdm_fragment_t *frag) {
 // Dataset ////////////////////////////////////////////////////////////////////
 
 
-void esdm_dataset_init(esdm_container_t *c, const char *name, esdm_dataspace_t *dataspace, esdm_dataset_t **out_dataset){
+void esdm_dataset_init(esdm_container_t *c, const char *name, esdm_dataspace_t *dspace, esdm_dataset_t **out_dataset){
   esdm_dataset_t *d = (esdm_dataset_t *)malloc(sizeof(esdm_dataset_t));
 
   d->dims_dset_id = NULL;
@@ -491,7 +509,18 @@ void esdm_dataset_init(esdm_container_t *c, const char *name, esdm_dataspace_t *
   d->fill_value = NULL;
   d->refcount = 0;
   d->container = c;
-  d->dataspace = dataspace;
+  d->dataspace = dspace;
+  d->actual_size = NULL;
+  if(dspace){
+    // check for unlimited dims
+    for(int i=0; i < dspace->dims; i++){
+      if(dspace->size[i] == 0){
+        d->actual_size = malloc(sizeof(*d->actual_size) * dspace->dims);
+        memcpy(d->actual_size, dspace->size, sizeof(*d->actual_size) * dspace->dims);
+        break;
+      }
+    }
+  }
   d->status = ESDM_DATA_DIRTY;
   memset(& d->fragments, 0, sizeof(d->fragments));
 	d->attr = smd_attr_new("Variables", SMD_DTYPE_EMPTY, NULL, 0);
@@ -642,7 +671,6 @@ esdm_status esdm_dataspace_set_stride(esdm_dataspace_t* space, int64_t* stride){
   return ESDM_SUCCESS;
 }
 
-
 esdm_status esdm_dataset_open_md_parse(esdm_dataset_t *d, char * md, int size){
 	esdm_status ret;
 	char * js = md;
@@ -676,17 +704,21 @@ esdm_status esdm_dataset_open_md_parse(esdm_dataset_t *d, char * md, int size){
     return ESDM_ERROR;
   }
   int64_t sizes[dims];
+  bool has_ulim_dim = FALSE; // if true, then we must reconstruct the domain!
   for (int i = 0; i < dims; i++) {
     sizes[i] = json_integer_value(json_array_get(elem, i));
+    if(sizes[i] == 0){
+      has_ulim_dim = TRUE;
+    }
   }
   ret = esdm_dataspace_create(dims, sizes, type, &d->dataspace);
   if (ret != ESDM_SUCCESS) {
     json_decref(root);
     return ret;
   }
-  elem = json_object_get(root, "fill-value");
-  if (elem){
-
+  if(has_ulim_dim){
+    d->actual_size = malloc(sizeof(*d->actual_size) * dims);
+    memcpy(d->actual_size, sizes, sizeof(*d->actual_size) * dims);
   }
   elem = json_object_get(root, "dims_dset_id");
 	if (elem){
@@ -713,13 +745,14 @@ esdm_status esdm_dataset_open_md_parse(esdm_dataset_t *d, char * md, int size){
 
 	for (int i = 0; i < arrsize; i++) {
 		json_t * fjson = json_array_get(elem, i);
-		esdm_fragment_t * fragment;
-    ret = esdmI_create_fragment_from_metadata(d, fjson, & fragment);
+		esdm_fragment_t * frag;
+    ret = esdmI_create_fragment_from_metadata(d, fjson, & frag);
     if (ret != ESDM_SUCCESS){
       free(f->frag);
       return ret;
     }
-		f->frag[i] = fragment;
+		f->frag[i] = frag;
+    esdmI_dataset_update_actual_size(d, frag);
 	}
   json_decref(root);
 
@@ -915,8 +948,11 @@ esdm_status esdmI_dataset_destroy(esdm_dataset_t *dset) {
   }
   free(dset->name);
 
-  if (dset->dims_dset_id == NULL) {
+  if (dset->dims_dset_id) {
     free(dset->dims_dset_id);
+  }
+  if(dset->actual_size){
+    free(dset->actual_size);
   }
 
   if(dset->fill_value){
@@ -988,9 +1024,7 @@ uint8_t esdm_dataspace_overlap(esdm_dataspace_t *a, esdm_dataspace_t *b) {
 }
 
 /**
- * this could also be the fragment???
- *
- *
+ * TODO: remove dims parameter for good
  */
 esdm_status esdm_dataspace_subspace(esdm_dataspace_t *dataspace, int64_t dims, int64_t *size, int64_t *offset, esdm_dataspace_t **out_dataspace) {
   ESDM_DEBUG(__func__);
@@ -1019,7 +1053,7 @@ esdm_status esdm_dataspace_subspace(esdm_dataspace_t *dataspace, int64_t dims, i
         ESDM_LOG_FMT(ESDM_LOGLEVEL_DEBUG, "invalid arguments to `%s()` detected: `offset[%"PRId64"] = %"PRId64"` is outside of the valid range for the dataspaces' dimension (offset %"PRId64", size %"PRId64")\n", __func__, i, offset[i], dataspace->offset[i], dataspace->size[i]);
         status = ESDM_INVALID_ARGUMENT_ERROR;
       }
-      if(offset[i] + size[i] > dataspace->offset[i] + dataspace->size[i]) {
+      if(dataspace->size[i] != 0 && (offset[i] + size[i] > dataspace->offset[i] + dataspace->size[i])) {
         ESDM_LOG_FMT(ESDM_LOGLEVEL_DEBUG, "invalid arguments to `%s()` detected: `offset[%"PRId64"] + size[%"PRId64"] = %"PRId64" + %"PRId64" = %"PRId64"` is outside of the valid range for the dataspaces' dimension (offset %"PRId64", size %"PRId64")\n", __func__, i, i, offset[i], size[i], offset[i] + size[i], dataspace->offset[i], dataspace->size[i]);
         status = ESDM_INVALID_ARGUMENT_ERROR;
       }
@@ -1166,4 +1200,11 @@ esdm_status esdm_dataset_iterator(esdm_container_t *container, esdm_dataset_iter
 
 char const * esdm_dataset_name(esdm_dataset_t *d){
   return d->name;
+}
+
+int64_t const * esdm_dataset_get_actual_size(esdm_dataset_t *dset){
+  if(dset->actual_size){
+    return dset->actual_size;
+  }
+  return dset->dataspace->size;
 }

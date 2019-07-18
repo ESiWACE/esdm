@@ -224,6 +224,13 @@ esdm_status esdm_dataset_get_name_dims(esdm_dataset_t *dataset, char const *cons
 
 esdm_status esdm_dataset_get_dataspace(esdm_dataset_t *dset, esdm_dataspace_t **out_dataspace);
 
+/*
+ This function returns the actual size for ulim
+ Return a pointer to the internal size (having the same dimensions)
+ */
+int64_t const * esdm_dataset_get_actual_size(esdm_dataset_t *dset);
+
+
 esdm_status esdm_dataset_iterator(esdm_container_t *container, esdm_dataset_iterator_t **out_iter);
 
 /**

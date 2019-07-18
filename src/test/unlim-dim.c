@@ -25,7 +25,7 @@
 #include <esdm.h>
 
 
-void test(int dims, int64_t bounds_dset[], int64_t bounds_data[], int64_t offset_data[]){
+void test(char const * str, int dims, int64_t bounds_dset[], int64_t bounds_data[], int64_t offset_data[]){
   esdm_container_t *container = NULL;
   esdm_dataset_t *dataset = NULL;
   esdm_status ret;
@@ -35,6 +35,7 @@ void test(int dims, int64_t bounds_dset[], int64_t bounds_data[], int64_t offset
   ret = esdm_mkfs(ESDM_FORMAT_PURGE_RECREATE, ESDM_ACCESSIBILITY_NODELOCAL);
   eassert(ret == ESDM_SUCCESS);
 
+  printf("\nRunning test: %s\n", str);
   esdm_dataspace_t *dataspace;
 
   ret = esdm_container_create("mycontainer", 1, &container);
@@ -56,6 +57,9 @@ void test(int dims, int64_t bounds_dset[], int64_t bounds_data[], int64_t offset
   etest_gen_buffer(dims, bounds_data, & buf_w);
   ret = esdm_write(dataset, buf_w, subspace);
   eassert(ret == ESDM_SUCCESS);
+  ret = esdm_container_commit(container);
+  eassert(ret == ESDM_SUCCESS);
+
   etest_memset_buffer(dims, bounds_data, buf_w);
 
   ret = esdm_read(dataset, buf_w, subspace);
@@ -64,9 +68,37 @@ void test(int dims, int64_t bounds_dset[], int64_t bounds_data[], int64_t offset
   ret = etest_verify_buffer(dims, bounds_data, buf_w);
   eassert(ret == 0);
 
-  ret = esdm_dataset_commit(dataset);
+  int64_t const * size = esdm_dataset_get_actual_size(dataset);
+  for(int i=0; i < dims; i++){
+    printf("%ld\n", size[i]);
+    if(bounds_dset[i] == 0){
+      eassert(size[i] == bounds_data[i] + offset_data[i]);
+    }else{
+      eassert(size[i] == bounds_dset[i]);
+    }
+  }
+
+  ret = esdm_dataset_close(dataset);
   eassert(ret == ESDM_SUCCESS);
-  ret = esdm_container_commit(container);
+  ret = esdm_container_close(container);
+  eassert(ret == ESDM_SUCCESS);
+
+  ret = esdm_container_open("mycontainer", &container);
+  eassert(ret == ESDM_SUCCESS);
+  ret = esdm_dataset_open(container, "mydataset", &dataset);
+  eassert(ret == ESDM_SUCCESS);
+  size = esdm_dataset_get_actual_size(dataset);
+  for(int i=0; i < dims; i++){
+    printf("%ld\n", size[i]);
+    if(bounds_dset[i] == 0){
+      eassert(size[i] == bounds_data[i] + offset_data[i]);
+    }else{
+      eassert(size[i] == bounds_dset[i]);
+    }
+  }
+  ret = esdm_dataset_close(dataset);
+  eassert(ret == ESDM_SUCCESS);
+  ret = esdm_container_close(container);
   eassert(ret == ESDM_SUCCESS);
 
   // clean up
@@ -77,7 +109,10 @@ int main(int argc, char const *argv[]) {
   esdm_status ret = esdm_init();
   eassert(ret == ESDM_SUCCESS);
 
-  test(2, (int64_t[]){20, 20}, (int64_t[]){10,10}, (int64_t[]){10,10});
+  test("3", 1, (int64_t[]){0}, (int64_t[]){4}, (int64_t[]){0});
+  test("2", 2, (int64_t[]){20, 20}, (int64_t[]){10,10}, (int64_t[]){10,10});
+  test("4", 1, (int64_t[]){0}, (int64_t[]){3}, (int64_t[]){5});
+  test("5", 2, (int64_t[]){0,20}, (int64_t[]){3,20}, (int64_t[]){5,0});
 
   ret = esdm_finalize();
   eassert(ret == ESDM_SUCCESS);

@@ -47,6 +47,7 @@ struct esdm_dataset_t {
   esdm_dataspace_t *dataspace;
   smd_attr_t *fill_value; // use for read of not-written data, if set
   smd_attr_t *attr;
+  int64_t *actual_size; // used for unlimited dimensions
   esdm_fragments_t fragments;
   int refcount;
   esdm_data_status_e status;
