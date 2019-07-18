@@ -95,6 +95,8 @@ void esdmI_container_register_dataset(esdm_container_t * c, esdm_dataset_t *dset
 	}
 	d->dset[d->count] = dset;
 	d->count++;
+
+  dset->refcount++;
 }
 
 void esdmI_container_init(char const * name, esdm_container_t **out_container){
@@ -199,53 +201,37 @@ esdm_status esdm_container_open(char const *name, esdm_container_t **out_contain
 }
 
 
-esdm_status esdmI_datasets_reference_metadata_create(esdm_container_t *c, int len, char *js, int * out_size){
-  eassert(len > 0);
-  int pos = 0;
-	pos += snprintf(js, len, "[");
-  *out_size = pos;
+void esdmI_datasets_reference_metadata_create(esdm_container_t *c, smd_string_stream_t * s){
+  smd_string_stream_printf(s, "[");
 	esdm_datasets_t * d = & c->dsets;
 	for(int i=0; i < d->count; i++){
 		if(i != 0){
-			pos += snprintf(js + pos, len - pos, ",\n");
+			smd_string_stream_printf(s, ",\n");
 		}
-    pos += sprintf(js + pos, "{\"name\":\"%s\",\"id\":\"%s\"}", d->dset[i]->name, d->dset[i]->id);
+    smd_string_stream_printf(s, "{\"name\":\"%s\",\"id\":\"%s\"}", d->dset[i]->name, d->dset[i]->id);
 	}
-  pos += snprintf(js + pos, len - pos, "]");
-  *out_size = pos;
-
-  return ESDM_SUCCESS;
+  smd_string_stream_printf(s, "]");
 }
 
+void esdmI_container_metadata_create(esdm_container_t *c, smd_string_stream_t * s){
 
-
-esdm_status esdmI_container_metadata_create(esdm_container_t *c, int len, char * js, int * out_size){
-	int pos = 0;
-  pos += sprintf(js, "{");
-  pos += smd_attr_ser_json(js + pos, c->attr) - 1;
-	pos += snprintf(js + pos, len - pos, ",\"dsets\":");
-  int size;
-  esdm_status ret = esdmI_datasets_reference_metadata_create(c, len - pos, js + pos, & size);
-  if(ret != ESDM_SUCCESS){
-    return ret;
-  }
-  pos += size;
-  pos += snprintf(js + pos, len - pos, "}");
-
-  *out_size = pos;
-  return ESDM_SUCCESS;
+  smd_string_stream_printf(s, "{");
+  smd_attr_ser_json(s, c->attr);
+	smd_string_stream_printf(s, ",\"dsets\":");
+  esdmI_datasets_reference_metadata_create(c, s);
+  smd_string_stream_printf(s, "}");
 }
 
 esdm_status esdm_container_commit(esdm_container_t *c) {
   ESDM_DEBUG(__func__);
   eassert(c);
 
-  const int len = 100000;
-  char buff[len];
-  int md_size;
-  esdm_status ret = esdmI_container_metadata_create(c, len, buff, & md_size);
+  size_t md_size;
+  smd_string_stream_t * s = smd_string_stream_create();
+  esdmI_container_metadata_create(c, s);
+  char * buff = smd_string_stream_close(s, & md_size);
 
-  ret = esdm.modules->metadata_backend->callbacks.container_commit(esdm.modules->metadata_backend, c, buff, md_size);
+  esdm_status ret =  esdm.modules->metadata_backend->callbacks.container_commit(esdm.modules->metadata_backend, c, buff, md_size);
 
   // Also commit uncommited datasets of this container
   esdm_datasets_t * dsets = & c->dsets;
@@ -279,7 +265,6 @@ esdm_status esdm_container_close(esdm_container_t *c) {
   }
   if(ret == ESDM_SUCCESS){
     esdmI_container_destroy(c);
-    c->status = ESDM_DATA_NOT_LOADED;
   }
 
   return ret;
@@ -305,7 +290,6 @@ esdm_status esdmI_container_destroy(esdm_container_t *c) {
   if(ret == ESDM_SUCCESS){
     free(c->name);
     free(c);
-    c->status = ESDM_DATA_NOT_LOADED;
   }
 
   return ret;
@@ -375,16 +359,13 @@ esdm_status esdm_fragment_retrieve(esdm_fragment_t *fragment) {
 }
 
 
-esdm_status esdm_fragment_metadata_create(esdm_fragment_t *f, int len, char * js, size_t * out_size){
+void esdm_fragment_metadata_create(esdm_fragment_t *f, smd_string_stream_t * stream){
   eassert(f != NULL);
 	esdm_dataspace_t *d = f->dataspace;
-
-  smd_string_stream_t* stream = smd_string_stream_create();
-	int ret;
   char const * pid = f->backend->config->id;
-  if(f->id == NULL || pid == NULL){
-    return ESDM_ERROR;
-  }
+  eassert(f->id != NULL);
+  eassert(pid != NULL);
+
   smd_string_stream_printf(stream, "{\"id\":\"%s\",\"pid\":\"%s\",\"size\":[", f->id, pid);
   smd_string_stream_printf(stream, "%ld", d->size[0]);
   for (int i = 1; i < d->dims; i++) {
@@ -404,18 +385,8 @@ esdm_status esdm_fragment_metadata_create(esdm_fragment_t *f, int len, char * js
     }
   }
   smd_string_stream_printf(stream, "],\"data\":");
-  ret = f->backend->callbacks.fragment_metadata_create(f->backend, f, stream);
+  f->backend->callbacks.fragment_metadata_create(f->backend, f, stream);
   smd_string_stream_printf(stream, "}");
-
-  char* fragmentMetadata = smd_string_stream_close(stream, out_size);
-  ret = snprintf(js, len, "%s", fragmentMetadata);
-  free(fragmentMetadata);
-
-  if(ret != *out_size) {
-    *out_size = ret;
-    return ESDM_ERROR;
-  }
-  return ESDM_SUCCESS;
 }
 
 esdm_status esdm_fragment_commit(esdm_fragment_t *f) {
@@ -470,6 +441,13 @@ esdm_status esdmI_dataset_lookup_fragments(esdm_dataset_t *dset, esdm_dataspace_
       found++;
     }
   }
+  // check if we covered the whole subspace area
+
+  if(dset->fill_value){
+  }else{
+    // it is an error to partially read data
+    //return ESDM_ERROR;
+  }
 
   *out_fragments = frags;
   *out_frag_count = found;
@@ -508,6 +486,8 @@ void esdm_dataset_init(esdm_container_t *c, const char *name, esdm_dataspace_t *
   d->dims_dset_id = NULL;
   d->name = strdup(name);
   d->id = NULL; // to be filled by the metadata backend
+  d->fill_value = NULL;
+  d->refcount = 0;
   d->container = c;
   d->dataspace = dataspace;
   d->status = ESDM_DATA_DIRTY;
@@ -540,7 +520,6 @@ esdm_status esdm_dataset_create(esdm_container_t *c, const char *name, esdm_data
     esdmI_dataset_destroy(dset);
     return status;
   }
-  dset->refcount = 1;
 
   esdmI_container_register_dataset(c, dset);
   *out_dataset = dset;
@@ -801,63 +780,49 @@ esdm_status esdm_dataset_open(esdm_container_t *c, const char *name, esdm_datase
   return ret;
 }
 
-esdm_status esdmI_fragments_metadata_create(esdm_dataset_t *d, int len, char *js, int * out_size){
-  eassert(len > 0);
-  esdm_status ret;
-  int pos = 0;
-	pos += snprintf(js, len, "[");
-  *out_size = pos;
+void esdmI_fragments_metadata_create(esdm_dataset_t *d, smd_string_stream_t * s){
+  smd_string_stream_printf(s, "[");
+
 	esdm_fragments_t * f = & d->fragments;
 	for(int i=0; i < f->count; i++){
-		size_t size = 0;
 		if(i != 0){
-			pos += snprintf(js + pos, len - pos, ",\n");
+			smd_string_stream_printf(s, ",\n");
 		}
-		ret = esdm_fragment_metadata_create(f->frag[i], len - pos, js + pos, & size);
-    if (ret != ESDM_SUCCESS){
-      return ret;
-    }
-		pos += size;
+		esdm_fragment_metadata_create(f->frag[i], s);
 	}
-  pos += snprintf(js + pos, len - pos, "]");
-  *out_size = pos;
-  return ESDM_SUCCESS;
+  smd_string_stream_printf(s, "]");
 }
 
-esdm_status esdmI_dataset_metadata_create(esdm_dataset_t *d, int len, char * md, int * out_size){
-	char * js = md;
-	int pos = 0;
+void esdmI_dataset_metadata_create(esdm_dataset_t *d, smd_string_stream_t*s){
   eassert(d->dataspace != NULL);
   eassert(d->dataspace->size != NULL);
 
-  pos += sprintf(js, "{");
-  pos += smd_attr_ser_json(js + pos, d->attr) - 1;
-  pos += snprintf(js + pos, len - pos, ",\"id\":\"%s\"", d->id);
-  pos += snprintf(js + pos, len - pos, ",\"typ\":\"");
-  pos += smd_type_ser(js + pos, d->dataspace->type) - 1;
-  pos += snprintf(js + pos, len - pos, "\",\"dims\":%" PRId64 ",\"size\":[%" PRId64, d->dataspace->dims, d->dataspace->size[0]);
+  smd_string_stream_printf(s, "{");
+  smd_attr_ser_json(s, d->attr);
+  smd_string_stream_printf(s, ",\"id\":\"%s\"", d->id);
+  smd_string_stream_printf(s, ",\"typ\":\"");
+  smd_type_ser(s, d->dataspace->type);
+  smd_string_stream_printf(s,"\",\"dims\":%" PRId64 ",\"size\":[%" PRId64, d->dataspace->dims, d->dataspace->size[0]);
   for (int i = 1; i < d->dataspace->dims; i++) {
-    pos += snprintf(js + pos, len - pos, ",%" PRId64, d->dataspace->size[i]);
+    smd_string_stream_printf(s, ",%" PRId64, d->dataspace->size[i]);
   }
-  pos += snprintf(js + pos, len - pos, "]");
-  if (d->dims_dset_id != NULL) {
-    pos += snprintf(js + pos, len - pos, ",\"dims_dset_id\":[\"%s\"", d->dims_dset_id[0]);
-    for (int i = 1; i < d->dataspace->dims; i++) {
-      pos += snprintf(js + pos, len - pos, ",\"%s\"", d->dims_dset_id[i]);
-    }
-    pos += snprintf(js + pos, len - pos, "]");
-  }
-	pos += snprintf(js + pos, len - pos, ",\"fragments\":");
-  int size;
-  int ret = esdmI_fragments_metadata_create(d, len - pos, js + pos, & size);
-  if(ret != ESDM_SUCCESS){
-    return ret;
-  }
-  pos += size;
-  pos += snprintf(js + pos, len - pos, "}");
+  smd_string_stream_printf(s, "]");
+  if(d->fill_value){
 
-  *out_size = pos;
-  return ESDM_SUCCESS;
+  }
+  if (d->dims_dset_id != NULL) {
+    smd_string_stream_printf(s, ",\"dims_dset_id\":[");
+    if(d->dataspace->dims > 0){
+      smd_string_stream_printf(s, "\"%s\"", d->dims_dset_id[0]);
+      for (int i = 1; i < d->dataspace->dims; i++) {
+        smd_string_stream_printf(s, ",\"%s\"", d->dims_dset_id[i]);
+      }
+    }
+    smd_string_stream_printf(s, "]");
+  }
+	smd_string_stream_printf(s, ",\"fragments\":");
+  esdmI_fragments_metadata_create(d, s);
+  smd_string_stream_printf(s, "}");
 }
 
 esdm_status esdm_dataset_commit(esdm_dataset_t *dataset) {
@@ -866,17 +831,14 @@ esdm_status esdm_dataset_commit(esdm_dataset_t *dataset) {
 
   // TODO only do work if dirty
 
-  int len = 10000000;
-  char * buff = malloc(len);
-  int md_size;
-  esdm_status ret = esdmI_dataset_metadata_create(dataset, len, buff, & md_size);
-  if(ret != ESDM_SUCCESS){
-    return ret;
-  }
+  size_t md_size;
+  smd_string_stream_t* stream = smd_string_stream_create();
+  esdmI_dataset_metadata_create(dataset, stream);
+  char* buff = smd_string_stream_close(stream, & md_size);
   // TODO commit each uncommited fragment
 
   // md callback create/update container
-  ret = esdm.modules->metadata_backend->callbacks.dataset_commit(esdm.modules->metadata_backend, dataset, buff, md_size);
+  esdm_status ret = esdm.modules->metadata_backend->callbacks.dataset_commit(esdm.modules->metadata_backend, dataset, buff, md_size);
   free(buff);
 
   return ret;
@@ -946,6 +908,9 @@ esdm_status esdmI_dataset_destroy(esdm_dataset_t *dset) {
     free(dset->dims_dset_id);
   }
 
+  if(dset->fill_value){
+    free(dset->fill_value);
+  }
   free(dset);
   return ESDM_SUCCESS;
 }

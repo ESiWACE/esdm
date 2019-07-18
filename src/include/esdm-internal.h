@@ -207,7 +207,7 @@ esdm_status esdmI_dataset_lookup_fragments(esdm_dataset_t *dataset, esdm_dataspa
 
 void esdmI_container_register_dataset(esdm_container_t * c, esdm_dataset_t *dset);
 esdm_status esdmI_create_fragment_from_metadata(esdm_dataset_t *dset, json_t * json, esdm_fragment_t ** out);
-esdm_status esdmI_fragments_metadata_create(esdm_dataset_t *d, int len, char *md, int * out_size);
+void esdmI_fragments_metadata_create(esdm_dataset_t *d, smd_string_stream_t * s);
 
 /**
  * Create a new fragment.

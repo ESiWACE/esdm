@@ -45,6 +45,7 @@ struct esdm_dataset_t {
   char **dims_dset_id; // array of variable names != NULL if set
   esdm_container_t *container;
   esdm_dataspace_t *dataspace;
+  void * fill_value; // use for read of not-written data, if set
   smd_attr_t *attr;
   esdm_fragments_t fragments;
   int refcount;
