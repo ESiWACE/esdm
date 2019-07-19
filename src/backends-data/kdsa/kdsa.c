@@ -53,15 +53,78 @@
 #define sprintfFragmentDir(path, f) (sprintf(path, "%s/%c%c/%s", tgt, f->dataset->id[0], f->dataset->id[1], f->dataset->id+2))
 #define sprintfFragmentPath(path, f) (sprintf(path, "%s/%c%c/%s/%s", tgt, f->dataset->id[0], f->dataset->id[1], f->dataset->id+2, f->id))
 
+#define ESDM_MAGIC 69083068077013010ull
+
 typedef kdsa_vol_handle_t handle_t;
+
+/*
+ Physical data layout
+ HEADER
+  ESDM_MAGIC (64 bit)
+  blocksize (64 bit) => blocksize in byte; each block will host one fragment
+  blockcount (64 bit) => the number of blocks
+  start of data blocks => uint64_t to the location of the first data block
+ Block map (used blocks in 64 bits each)
+  for each block: 0 == unused, 1 == used
+  => The block bitmap must be updated consistently by all processes/nodes.
+  TODO: could use blocks for large and small data: buddy system?
+ Data blocks
+  Block0: Data
+  Block1: Data
+  ...
+  BlockN: Data
+  Where the number is the block ID.
+
+  A fragment is mapped as B blocks where B-1 blocks are fully filled
+
+ Algorithms:
+   * format: overwrite header and block map using kdsa_memset() then write new header
+     * compute size for block map based on volume size
+   * initialize:
+     * compute size for block map based on volume size
+     * allocate block map
+     * load header and block map data into memory, register block map region
+     * consistency check => MAGIC + start of data blocks correct?
+   * write:
+     * find free blocks asynchronously (this could actually be done in the background as well)
+       Assume the block bitmap is valid.
+       Check how many blocks are free.
+          If fragment size + free space would exceed 90%, retrieve current block map. Change block search to sequential.
+       Repeat until all necessary blocks are found:
+          Chose a random 64-bit block offset, if there are one or multiple free blocks out of 64 available blocks inside (thus, value is not 2^64-1), reserve the  necessary blocks. If sequential mode, continue search from here. If cannot find a free block after turnaround => write error.
+          execute kdsa_async_compare_and_swap() for each
+       Check for return.
+         if one or multiple blocks value was updated concurrently, we update the value in our block bitmap.
+         start IOs asynchronously for blocks that are reserved and we can already start
+       Update believed free blocks
+       Write asynchronously all blocks out
+   * read strategies:
+     complete: load the full fragment
+     sparse: identify all needed locations, depending on sparsity either run complete strategy OR read all regions directly asynchronously to target memory location
+   * store in JSON metadata the block IDs that were used (may use delta compression upon write of MD). This could theoretically be stored as the ID of the fragment allowing to infer from ID directly the blocks it is stored in!
+      => the actual size of the fragment is stored as part of the metadata anyway
+ */
+
+typedef struct{
+  uint64_t magic;
+  uint64_t blocksize;
+  uint64_t blockcount;
+  uint64_t offset_to_data;
+} kdsa_persistent_header_t;
+
+
 
 // Internal functions used by this backend.
 typedef struct {
   esdm_config_backend_t *config;
   handle_t handle;
+  kdsa_size_t size;
   esdm_perf_model_lat_thp_t perf_model;
-} kdsa_backend_data_t;
 
+  kdsa_persistent_header_t h;
+  uint64_t * block_map;
+  uint64_t free_blocks_estimate;
+} kdsa_backend_data_t;
 
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -84,7 +147,6 @@ static int mkfs(esdm_backend_t *backend, int format_flags) {
   int const ignore_err = format_flags & ESDM_FORMAT_IGNORE_ERRORS;
 
   // kdsa_memset
-  // kdsa_get_volume_size()
 
   if (format_flags & ESDM_FORMAT_DELETE) {
     printf("[mkfs] Removing %s\n", tgt);
@@ -169,7 +231,6 @@ static int fragment_update(esdm_backend_t *backend, esdm_fragment_t *f) {
   kdsa_backend_data_t *data = (kdsa_backend_data_t *)backend->data;
   int ret = ESDM_SUCCESS;
 
-  char path[PATH_MAX];
   // lazy assignment of ID
   if(f->id != NULL){
     // create data
@@ -264,10 +325,12 @@ esdm_backend_t *kdsa_backend_init(esdm_config_backend_t *config) {
   DEBUG("Backend config: target=%s\n", data->config->target);
 
   int status = kdsa_connect((char*) data->config->target, XPD_FLAGS, & data->handle);
-  if(status < 0)
-  {
+  if(status < 0){
     ERROR("Failed to connect to XPD: %s (%d)\n", strerror(errno), errno);
   }
-
+  status = kdsa_get_volume_size(data->handle, & data->size);
+  if(status < 0){
+    ERROR("Failed to retrieve volume size %s (%d)\n", strerror(errno), errno);
+  }
   return backend;
 }
