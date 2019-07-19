@@ -235,7 +235,7 @@ static void esdmI_dataspace_copy_instructions(
     //search for a dimension with a stride that matches our current memcpySize
     int64_t curDim;
     for(curDim = dimensions; curDim--; ) {
-      if(sourceStride[curDim] == destStride[curDim]) {
+      if(!memcpyDims[curDim] && sourceStride[curDim] == destStride[curDim]) {
         if(abs_int64(sourceStride[curDim]) == memcpySize) break;
       }
     }
