@@ -344,7 +344,7 @@ static void read_copy_callback(io_work_t *work) {
   work->fragment->buf = NULL;
 }
 
-int esdmI_scheduler_try_direct_io(esdm_fragment_t *f, void * buf, esdm_dataspace_t * da){
+bool esdmI_scheduler_try_direct_io(esdm_fragment_t *f, void * buf, esdm_dataspace_t * da){
   eassert(f->dataspace->dims == da->dims);
   eassert(f->dataspace->type == da->type);
 
@@ -352,8 +352,8 @@ int esdmI_scheduler_try_direct_io(esdm_fragment_t *f, void * buf, esdm_dataspace
 
   int64_t instructionDims, chunkSize, sourceOffset, destOffset;
   esdmI_dataspace_copy_instructions(f->dataspace, da, &instructionDims, &chunkSize, &sourceOffset, &destOffset, NULL, NULL, NULL);
-  if(instructionDims < 0) return 1; //no overlap, nothing to do, we did it successfully
-  if(instructionDims > 0) return 0; //copy cannot be reduced to a single memcpy() call, so direct I/O is impossible
+  if(instructionDims < 0) return true; //no overlap, nothing to do, we did it successfully
+  if(instructionDims > 0) return false; //copy cannot be reduced to a single memcpy() call, so direct I/O is impossible
 
   //Ok, only a single memcpy() would be needed to move the data.
   //Determine whether the entire fragment's data would be needed.
@@ -362,9 +362,11 @@ int esdmI_scheduler_try_direct_io(esdm_fragment_t *f, void * buf, esdm_dataspace
     //Setup it's data buffers' pointer so that the backend will directly fill the correct part of the users' buffer.
     eassert(sourceOffset == 0 && "we have determined that we need the entire fragments data, so there should be no cut-off at the beginning");
     f->buf = (char*)buf + destOffset;
-    return 1;
+    return true;
   } else {
-    return 0;
+    //The fragments data is only used partially.
+    //Thus, direct I/O is impossible as it would overwrite data next to the needed portion.
+    return false;
   }
 }
 
