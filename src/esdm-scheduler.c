@@ -344,63 +344,28 @@ static void read_copy_callback(io_work_t *work) {
   work->fragment->buf = NULL;
 }
 
-//FIXME: Make this stride aware!
 int esdmI_scheduler_try_direct_io(esdm_fragment_t *f, void * buf, esdm_dataspace_t * da){
-  esdm_dataspace_t * df = f->dataspace;
-  int d;
-  uint64_t size = 1;
-  int pos = -1;
-  for (d = da->dims - 1; d >= 0; d--) {
-    int s1 = da->size[d];
-    int s2 = df->size[d];
-    // if it is out of bounds: abort
-    if (s1 != s2){
-      pos = d;
-      break;
-    }
-    size *= s1;
-  }
-  // if it is a perfect match, the offsets must match, too
-  if(d == -1){
-    for (d = da->dims - 1; d >= 0; d--) {
-      int o1 = da->offset[d];
-      int o2 = df->offset[d];
-      if (o1 != o2) break;
-    }
-    if( d == -1){
-      // patches overlap perfectly => DIRECT IO
-      f->buf = buf; //by assigning the user buffer to the fragment's buffer pointer, we make the background I/O process fill the user buffer directly in zero-copy fashion
-      return 1;
-    }
-    // partial overlap but same size
+  eassert(f->dataspace->dims == da->dims);
+  eassert(f->dataspace->type == da->type);
+
+  uint64_t dimensions = f->dataspace->dims;
+
+  int64_t instructionDims, chunkSize, sourceOffset, destOffset;
+  esdmI_dataspace_copy_instructions(f->dataspace, da, &instructionDims, &chunkSize, &sourceOffset, &destOffset, NULL, NULL, NULL);
+  if(instructionDims < 0) return 1; //no overlap, nothing to do, we did it successfully
+  if(instructionDims > 0) return 0; //copy cannot be reduced to a single memcpy() call, so direct I/O is impossible
+
+  //Ok, only a single memcpy() would be needed to move the data.
+  //Determine whether the entire fragment's data would be needed.
+  if(esdm_dataspace_size(f->dataspace) == chunkSize) {
+    //The entire fragment's data is used in one piece.
+    //Setup it's data buffers' pointer so that the backend will directly fill the correct part of the users' buffer.
+    eassert(sourceOffset == 0 && "we have determined that we need the entire fragments data, so there should be no cut-off at the beginning");
+    f->buf = (char*)buf + destOffset;
+    return 1;
+  } else {
     return 0;
   }
-  // verify that the dataspace is bigger than the fragment patch
-  if(df->size[pos] > da->size[pos]){
-    return 0;
-  }
-  // compute offset from patch to the buffer
-  // check that all size/offsets are the same left from the current pos
-  //FIXME: I think, this is a bug:
-  //       If the fragment has dimensions (100, 1, 100) and the dataspace has dimensions (100, 100, 100), `pos` will be set to 1 at this point.
-  //       The following loop will succeed because the first dimension has the same size.
-  //       However, the data point (1, 0, 0) will be located at offset 100 in the fragment serialization, but at offset 10000 in the dataspace serialization.
-  //       Thus, it cannot be written with a single I/O call, and this function should not return true.
-  for (d = pos - 1; d >= 0; d--) {
-    int s1 = da->size[d];
-    int s2 = df->size[d];
-    int o1 = da->offset[d];
-    int o2 = df->offset[d];
-    if (s1 != s2) return 0;
-    if (o1 != o2) return 0;
-  }
-  // thus, the fragment is a real subset of the patch to access => DIRECT IO
-  // finalize the computation of the identical dimensions
-  size *= esdm_sizeof(df->type);
-  char * newBuf = (char*) buf;
-  newBuf += (df->offset[pos] - da->offset[pos]) * size;
-  f->buf = newBuf;
-  return 1;
 }
 
 esdm_status esdm_scheduler_enqueue_read(esdm_instance_t *esdm, io_request_status_t *status, int frag_count, esdm_fragment_t **read_frag, void *buf, esdm_dataspace_t *buf_space) {
