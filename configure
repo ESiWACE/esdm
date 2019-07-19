@@ -12,7 +12,6 @@ function help(){
 	echo "specify them in the traditional way and get the equivalent cmake command."
 	echo "Use the following options to change default paths."
 	echo "--prefix=<dir>           : installation prefix"
-	echo "--with-hdf5=<dir>        : path to the HDF5 installation directory"
 	echo
 	echo "Optional:"
 	echo "--build-dir=<dir>        : directory in which to build"
@@ -23,10 +22,10 @@ function help(){
 	echo "--with-cxx=<file>        : path to the C++ compiler"
 	echo "--with-mpicc=<file>      : path to the MPI C compiler"
 	echo "--with-mpicxx=<file>     : path to the MPI C++ compiler"
+  echo "--with-kdsa-include=<dir>: path to kdsa.h"
+  echo "--with-kdsa-lib=<dir>    : path to libkdsa.so"
 	echo "--with-boost=<file>      : path to boost library used for WOS"
 	echo "--enable-wos=<file>      : path to WOS library"
-	echo "--enable-hdf5            : Build including HDF5 frontend"
-	echo "--enable-netcdf4            : Build including HDF5 frontend"
 	echo
 }
 
@@ -44,7 +43,7 @@ function reconfigure(){
 	exit $?
 }
 
-set -- `getopt -u -l "help,version,debug,reconfigure,prefix:,with-cc:,with-cxx:,enable-hdf5,enable-netcdf4,with-mpicc:,with-mpicxx:,verbose,build-dir:,enable-wos:,with-boost:" -o "h" -- "$@"`
+set -- `getopt -u -l "help,version,debug,reconfigure,prefix:,with-cc:,with-cxx:,enable-hdf5,enable-netcdf4,with-mpicc:,with-mpicxx:,verbose,build-dir:,enable-wos:,with-boost:,with-kdsa-lib:,with-kdsa-include:" -o "h" -- "$@"`
 test $# -lt 1  && exit 1
 while test $# -gt 0
 do
@@ -56,6 +55,8 @@ do
 		--version) cmake --version; exit;;
 		--prefix) prefix="$2"; shift;;
 		--debug) debug="YES"; ;;
+    --with-kdsa-include) kdsa_include="$2"; shift;;
+    --with-kdsa-lib) kdsa_lib="$2"; shift;;
 		--with-cc) ccbin="$2"; shift;;
 		--with-cxx) cxxbin="$2"; shift;;
 		--with-mpicc) mpicc="$2"; shift;;
@@ -105,7 +106,12 @@ if test -n "$netcdf4"; then
 	CMAKEFLAGS="$CMAKEFLAGS -DINTERFACE_NETCDF4=ON"
 fi
 
-
+if test -n "$kdsa_lib"; then
+	CMAKEFLAGS="$CMAKEFLAGS -DBACKEND_KDSA=ON -DKDSA_LIB_DIR:FILEPATH=$kdsa_lib"
+fi
+if test -n "$kdsa_include"; then
+	CMAKEFLAGS="$CMAKEFLAGS -DKDSA_INCLUDE_DIR:FILEPATH=$kdsa_include"
+fi
 if test -n "$mpicc"; then
 	CMAKEFLAGS="$CMAKEFLAGS -DMPI_C_COMPILER:FILEPATH=$mpicc"
 fi
