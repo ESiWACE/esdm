@@ -293,9 +293,9 @@ esdm_status esdm_container_delete_attribute(esdm_container_t *c, smd_attr_t *att
   if (name != NULL){
     int pos = smd_find_position_by_name(attr, name);
     if (pos != -1){
-      smd_attr_unlink_pos(attr, pos);
       smd_attr_t * chld = smd_attr_get_child(attr, pos);
       smd_attr_destroy(chld);
+      smd_attr_unlink_pos(attr, pos);
       return ESDM_SUCCESS;
     }
     return(ESDM_ERROR);
@@ -1016,9 +1016,9 @@ esdm_status esdm_dataset_delete_attribute(esdm_dataset_t *dataset, smd_attr_t *a
   if (name != NULL){
     int pos = smd_find_position_by_name(attr, name);
     if (pos != -1){
-      smd_attr_unlink_pos(attr, pos);
       smd_attr_t * chld = smd_attr_get_child(attr, pos);
       smd_attr_destroy(chld);
+      smd_attr_unlink_pos(attr, pos);
       return ESDM_SUCCESS;
     }
     return(ESDM_ERROR);
