@@ -291,17 +291,16 @@ esdm_status esdm_container_delete_attribute(esdm_container_t *c, smd_attr_t *att
 
   esdm_status status = esdm_container_get_attributes(c, &attr);
   if (name != NULL){
-    smd_attr_t *new = smd_attr_get_child_by_name(attr, name);
-    if (new != NULL){
-      int pos = smd_find_position_by_name(attr, name);
+    int pos = smd_find_position_by_name(attr, name);
+    if (pos != -1){
       smd_attr_unlink_pos(attr, pos);
-      smd_attr_destroy(new);
+      smd_attr_t * chld = smd_attr_get_child(attr, pos);
+      smd_attr_destroy(chld);
       return ESDM_SUCCESS;
     }
-    else return(ESDM_ERROR);
+    return(ESDM_ERROR);
   }
-  else return(ESDM_ERROR);
-
+  return(ESDM_ERROR);
 }
 
 esdm_status esdm_container_link_attribute(esdm_container_t *c, smd_attr_t *attr) {
@@ -1015,15 +1014,16 @@ esdm_status esdm_dataset_delete_attribute(esdm_dataset_t *dataset, smd_attr_t *a
 
   esdm_status status = esdm_dataset_get_attributes(dataset, &attr);
   if (name != NULL){
-    smd_attr_t *new = smd_attr_get_child_by_name(attr, name);
-    if (new != NULL){
-      smd_attr_destroy(new);
+    int pos = smd_find_position_by_name(attr, name);
+    if (pos != -1){
+      smd_attr_unlink_pos(attr, pos);
+      smd_attr_t * chld = smd_attr_get_child(attr, pos);
+      smd_attr_destroy(chld);
       return ESDM_SUCCESS;
     }
-    else return(ESDM_ERROR);
+    return(ESDM_ERROR);
   }
-  else return(ESDM_ERROR);
-
+  return(ESDM_ERROR);
 }
 
 esdm_status esdm_dataset_get_attributes(esdm_dataset_t *dataset, smd_attr_t **out_metadata) {
