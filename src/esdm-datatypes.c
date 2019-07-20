@@ -305,7 +305,8 @@ esdm_status esdm_container_delete_attribute(esdm_container_t *c, smd_attr_t *att
 
 esdm_status esdm_container_link_attribute(esdm_container_t *c, smd_attr_t *attr) {
   ESDM_DEBUG(__func__);
-  smd_link_ret_t ret = smd_attr_link(c->attr, attr, 0);
+  // smd_link_ret_t ret = smd_attr_link(c->attr, attr, 0);
+  smd_link_ret_t ret = smd_attr_link(c->attr, attr, 1);
   return ret == SMD_ATTR_EEXIST ? ESDM_ERROR : ESDM_SUCCESS; // I don't get it
 }
 
@@ -1240,7 +1241,8 @@ esdm_status esdm_dataset_get_name_dims(esdm_dataset_t *d, char const *const **ou
 
 esdm_status esdm_dataset_link_attribute(esdm_dataset_t *dset, smd_attr_t *attr) {
   ESDM_DEBUG(__func__);
-  smd_link_ret_t ret = smd_attr_link(dset->attr, attr, 0);
+  // smd_link_ret_t ret = smd_attr_link(dset->attr, attr, 0);
+  smd_link_ret_t ret = smd_attr_link(dset->attr, attr, 1);
   return ret == SMD_ATTR_EEXIST ? ESDM_ERROR : ESDM_SUCCESS;
 }
 
