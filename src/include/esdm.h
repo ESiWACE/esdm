@@ -140,6 +140,7 @@ esdm_status esdm_container_open(const char *name, esdm_container_t **out_contain
 
 esdm_status esdm_container_commit(esdm_container_t *container);
 
+esdm_status esdm_container_delete_attribute(esdm_container_t *c, smd_attr_t *attr, const char *name);
 
 esdm_status esdm_container_link_attribute(esdm_container_t *container, smd_attr_t *attr);
 
@@ -292,6 +293,8 @@ esdm_status esdm_dataset_commit(esdm_dataset_t *dataset);
  * @return status
  */
 esdm_status esdm_dataset_close(esdm_dataset_t *dataset);
+
+esdm_status esdm_dataset_delete_attribute(esdm_dataset_t *dataset, smd_attr_t *attr, const char *name);
 
 /* This function adds the metadata to the ESDM */
 

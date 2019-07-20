@@ -286,6 +286,35 @@ esdm_status esdm_container_close(esdm_container_t *c) {
   return ret;
 }
 
+esdm_status esdm_container_delete_attribute(esdm_container_t *c, smd_attr_t *attr, const char *name) {
+  ESDM_DEBUG(__func__);
+
+  esdm_status status = esdm_container_get_attributes(c, &attr);
+  if (name != NULL){
+    smd_attr_t *new = smd_attr_get_child_by_name(attr, name);
+    if (new != NULL){
+      int pos = smd_find_position_by_name(attr, name);
+      smd_attr_unlink_pos(attr, pos);
+      smd_attr_destroy(new);
+      return ESDM_SUCCESS;
+    }
+    else return(ESDM_ERROR);
+  }
+  else return(ESDM_ERROR);
+
+}
+
+esdm_status esdm_container_link_attribute(esdm_container_t *c, smd_attr_t *attr) {
+  ESDM_DEBUG(__func__);
+  smd_link_ret_t ret = smd_attr_link(c->attr, attr, 0);
+  return ret == SMD_ATTR_EEXIST ? ESDM_ERROR : ESDM_SUCCESS; // I don't get it
+}
+
+esdm_status esdm_container_get_attributes(esdm_container_t *c, smd_attr_t **out_metadata) {
+  eassert(c->attr != NULL);
+  *out_metadata = c->attr;
+  return ESDM_SUCCESS;
+}
 
 esdm_status esdmI_container_destroy(esdm_container_t *c) {
   ESDM_DEBUG(__func__);
@@ -979,20 +1008,26 @@ esdm_status esdmI_dataset_destroy(esdm_dataset_t *dset) {
   return ESDM_SUCCESS;
 }
 
+// not tested yet
 
-esdm_status esdm_container_link_attribute(esdm_container_t *c, smd_attr_t *attr) {
+esdm_status esdm_dataset_delete_attribute(esdm_dataset_t *dataset, smd_attr_t *attr, const char *name){
   ESDM_DEBUG(__func__);
-  smd_link_ret_t ret = smd_attr_link(c->attr, attr, 0);
-  return ret == SMD_ATTR_EEXIST ? ESDM_ERROR : ESDM_SUCCESS;
-}
 
-esdm_status esdm_container_get_attributes(esdm_container_t *c, smd_attr_t **out_metadata) {
-  eassert(c->attr != NULL);
-  *out_metadata = c->attr;
-  return ESDM_SUCCESS;
+  esdm_status status = esdm_dataset_get_attributes(dataset, &attr);
+  if (name != NULL){
+    smd_attr_t *new = smd_attr_get_child_by_name(attr, name);
+    if (new != NULL){
+      smd_attr_destroy(new);
+      return ESDM_SUCCESS;
+    }
+    else return(ESDM_ERROR);
+  }
+  else return(ESDM_ERROR);
+
 }
 
 esdm_status esdm_dataset_get_attributes(esdm_dataset_t *dataset, smd_attr_t **out_metadata) {
+  ESDM_DEBUG(__func__);
   eassert(dataset->attr != NULL);
   *out_metadata = dataset->attr;
   return ESDM_SUCCESS;
