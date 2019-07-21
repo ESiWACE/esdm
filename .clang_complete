@@ -1,3 +1,4 @@
  -Isrc/include/
  -Iusr/include/glib-2.0/
  -Ideps/smd/include/
+ -Ibuild/

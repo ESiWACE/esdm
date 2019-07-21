@@ -29,6 +29,7 @@
 #include <sys/stat.h>
 #include <sys/types.h>
 #include <unistd.h>
+#include <pthread.h>
 
 #include <esdm-internal.h>
 
@@ -49,6 +50,8 @@
 #define ERROR(fmt, ...) ESDM_ERROR_COM_FMT("KDSA", fmt, __VA_ARGS__)
 #define ERRORS(fmt) ESDM_ERROR_COM_FMT("KDSA", "%s", fmt)
 
+#define WARN_STRERR(fmt, ...) WARN(fmt ": %s", __VA_ARGS__, strerror(errno));
+#define WARN_CHECK_RET(ret, fmt, ...) if(ret != 0){ WARN(fmt ": %s", __VA_ARGS__, strerror(errno)); }
 
 #define sprintfFragmentDir(path, f) (sprintf(path, "%s/%c%c/%s", tgt, f->dataset->id[0], f->dataset->id[1], f->dataset->id+2))
 #define sprintfFragmentPath(path, f) (sprintf(path, "%s/%c%c/%s/%s", tgt, f->dataset->id[0], f->dataset->id[1], f->dataset->id+2, f->id))
@@ -122,19 +125,60 @@ typedef struct {
   esdm_perf_model_lat_thp_t perf_model;
 
   kdsa_persistent_header_t h;
+
+  pthread_spinlock_t block_lock; // lock for updating the block map
   uint64_t * block_map;
   uint64_t free_blocks_estimate;
 } kdsa_backend_data_t;
+
+typedef struct{
+  uint64_t offset; // KDSA offset
+} kdsa_fragment_metadata_t;
 
 
 ///////////////////////////////////////////////////////////////////////////////
 // Helper and utility /////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////
 
+static uint64_t calc_block_map_size(uint64_t blocks){
+  return (blocks+63) / 64;
+}
+
+static uint64_t calc_block_count(uint64_t blocksize, uint64_t volume_size){
+  if(volume_size <= sizeof(kdsa_persistent_header_t)){
+    return 0;
+  }
+  // size = header + blocks/64 + blocks * blocksize
+  // => blocks = (size - hdr) / (1/64 + blocksize)
+  // multiply with 64 for integer division, round down (automatically)
+  uint64_t blocks = 64 * (volume_size - sizeof(kdsa_persistent_header_t)) / (1 + 64*blocksize);
+  return blocks;
+}
+
+static int load_block_bitmap(kdsa_backend_data_t *data){
+  uint64_t blockmap_size = calc_block_map_size(data->h.blockcount);
+  int ret = kdsa_read_unregistered(data->handle, sizeof(kdsa_persistent_header_t), & data->block_map, blockmap_size* sizeof(uint64_t));
+  if(ret != 0){
+    WARN_STRERR("%s", "Could not update block bitmap");
+    data->free_blocks_estimate = 0;
+    return -1;
+  }
+  uint64_t freeb = 0;
+  for(uint64_t i = 0; i < blockmap_size; i++){
+    uint64_t val = ~ data->block_map[i];
+    for(int b = 0; b < 64; b++){
+      if( val & 1 ) freeb++;
+      val = val >> 1;
+    }
+  }
+  data->free_blocks_estimate = freeb;
+
+  return 0;
+}
 
 static int mkfs(esdm_backend_t *backend, int format_flags) {
   kdsa_backend_data_t *data = (kdsa_backend_data_t *)backend->data;
-
+  int ret;
   DEBUG("mkfs: backend->(void*)data->config->target = %s\n", data->config->target);
 
   const char *tgt = data->config->target;
@@ -142,19 +186,20 @@ static int mkfs(esdm_backend_t *backend, int format_flags) {
     WARNS("safety, tgt connection string shall be longer than 6 chars");
     return ESDM_ERROR;
   }
-  char path[PATH_MAX];
-  struct stat sb = {0};
   int const ignore_err = format_flags & ESDM_FORMAT_IGNORE_ERRORS;
 
-  // kdsa_memset
+  uint64_t magic;
 
   if (format_flags & ESDM_FORMAT_DELETE) {
-    printf("[mkfs] Removing %s\n", tgt);
-
-    sprintf(path, "%s/README-ESDM.TXT", tgt);
-    if (stat(path, &sb) == 0) {
+    printf("[mkfs] Cleaning %s\n", tgt);
+    ret = kdsa_read_unregistered(data->handle, 0, & magic, sizeof(magic));
+    WARN_CHECK_RET(ret, "[mkfs] Error could not read magic from volume %s", tgt);
+    if(magic == ESDM_MAGIC){
+      magic = 0;
+      ret = kdsa_write_unregistered(data->handle, 0, & magic, sizeof(magic));
+      WARN_CHECK_RET(ret, "[mkfs] Error could not remove magic from volume %s", tgt);
     }else if(! ignore_err){
-      printf("[mkfs] Error %s is not an ESDM directory\n", tgt);
+      printf("[mkfs] Error %s is not an ESDM KDSA volume\n", tgt);
       return ESDM_ERROR;
     }
   }
@@ -162,34 +207,50 @@ static int mkfs(esdm_backend_t *backend, int format_flags) {
   if(! (format_flags & ESDM_FORMAT_CREATE)){
     return ESDM_SUCCESS;
   }
-  if (stat(tgt, &sb) == 0) {
+  ret = kdsa_read_unregistered(data->handle, 0, & magic, sizeof(magic));
+  WARN_CHECK_RET(ret, "[mkfs] Error could not check magic on volume %s", tgt);
+  if(magic == ESDM_MAGIC){
     if(! ignore_err){
-      printf("[mkfs] Error %s exists already\n", tgt);
+      printf("[mkfs] Error volume %s appears to be an ESDM volume already\n", tgt);
       return ESDM_ERROR;
     }
-    printf("[mkfs] WARNING %s exists already\n", tgt);
+    printf("[mkfs] WARNING volume %s appears to be an ESDM volume already but will reformat\n", tgt);
   }
 
-  printf("[mkfs] Creating %s\n", tgt);
+  uint64_t blocks = calc_block_count(data->h.blocksize, data->size);
+  uint64_t blockmap_size = calc_block_map_size(blocks);
+  // fill data structure
+  data->h = (kdsa_persistent_header_t){
+    .magic = ESDM_MAGIC,
+    .blocksize = 0,
+    .blockcount = blocks,
+    .offset_to_data = sizeof(kdsa_persistent_header_t) + blockmap_size
+  };
 
-  int ret = 0;
-  // TODO
+  ret = kdsa_write_unregistered(data->handle, 0, & data->h, sizeof(kdsa_persistent_header_t));
+  printf("[mkfs] Formatting %s\n", tgt);
   if (ret != 0) {
-    if(ignore_err){
-      printf("[mkfs] WARNING couldn't create dir %s\n", tgt);
-    }else{
+    WARN_CHECK_RET(ret, "[mkfs] WARNING could not format volume %s", tgt);
+    if(! ignore_err){
       return ESDM_ERROR;
     }
   }
 
-  sprintf(path, "%s/README-ESDM.TXT", tgt);
-  char str[] = "This directory belongs to ESDM and contains various files that are needed to make ESDM work. Do not delete it until you know what you are doing.";
-  //ret = write_data(path, str, strlen(str), 0);
+  data->block_map = malloc(blockmap_size* sizeof(uint64_t));
+  memset(data->block_map, 0, blockmap_size* sizeof(uint64_t));
+  data->free_blocks_estimate = blocks;
 
+  // set the occupied bits of the last uint to address the situation when blocks % 64 != 0
+  uint64_t val = 0;
+  for(int b = 0; b < blocks % 64; b++){
+    val = (val>>1) | (1llu<<63); // always occupy the remaining largest block
+  }
+  data->block_map[blockmap_size-1] = val;
+
+  ret = kdsa_write_unregistered(data->handle, sizeof(kdsa_persistent_header_t), & data->block_map, blockmap_size* sizeof(uint64_t));
   if (ret != 0) {
-    if(ignore_err){
-      printf("[mkfs] WARNING couldn't write %s\n", tgt);
-    }else{
+    WARN_CHECK_RET(ret, "[mkfs] WARNING could not format volume %s", tgt);
+    if(! ignore_err){
       return ESDM_ERROR;
     }
   }
@@ -212,10 +273,16 @@ static int fragment_retrieve(esdm_backend_t *backend, esdm_fragment_t *f, json_t
   // set data, options and tgt for convienience
   kdsa_backend_data_t *data = (kdsa_backend_data_t *)backend->data;
   int ret = 0;
+  kdsa_fragment_metadata_t * fragmd = (kdsa_fragment_metadata_t*) f->backend_md;
 
-  return ret;
+  ret = kdsa_read_unregistered(data->handle, fragmd->offset, f->buf, f->bytes);
+  if(ret != 0){
+    WARN_STRERR("Error could not read data from volume %s", data->config->target);
+    return ESDM_ERROR;
+  }
+
+  return ESDM_SUCCESS;
 }
-
 
 static int fragment_metadata_create(esdm_backend_t *backend, esdm_fragment_t *fragment, smd_string_stream_t* stream){
   DEBUG_ENTER;
@@ -224,24 +291,90 @@ static int fragment_metadata_create(esdm_backend_t *backend, esdm_fragment_t *fr
   return 0;
 }
 
+
+static uint64_t try_to_use_block(kdsa_backend_data_t* data, uint64_t bitmap_pos){
+  int ret = 0;
+  uint64_t expected = data->block_map[bitmap_pos];
+  if(expected == UINT64_MAX){
+    return 0;
+  }
+  uint64_t val = ~expected;
+  uint64_t offset = 0;
+  for(int b = 0; b < 64; b++){
+    if( val & 1 ){
+      uint64_t swap = expected | 1<<b;
+      ret = kdsa_compare_and_swap(data->handle, bitmap_pos*sizeof(uint64_t) + sizeof(kdsa_persistent_header_t), expected, swap, & data->block_map[bitmap_pos]);
+      if (ret == 0){
+        // found a block!
+        return (b + 64*bitmap_pos) * data->h.blocksize + data->h.offset_to_data;
+      }
+    }
+    val = val >> 1;
+  }
+  return 0;
+}
+
+static uint64_t find_offset_to_store_fragment(kdsa_backend_data_t* data){
+  int ret = 0;
+  ret = pthread_spin_lock(& data->block_lock);
+  if(data->free_blocks_estimate*100 / data->h.blockcount > 98){
+    ret = load_block_bitmap(data);
+    if( ret != 0 || data->free_blocks_estimate == 0){
+      // could not load or no more space available
+      ret = pthread_spin_unlock(& data->block_lock);
+      return 0;
+    }
+  }
+  // try 30 times to find a free block
+  uint64_t offset;
+  uint64_t blockmap_size = calc_block_map_size(data->h.blockcount);
+  for(int i = 0; i < 30; i++){
+    uint64_t bitmap_pos = rand() % blockmap_size;
+    offset = try_to_use_block(data, bitmap_pos);
+    if(offset != 0){
+      break;
+    }
+  }
+  if(offset == 0){
+    // try sequential strategy starting at one block
+    uint64_t bitmap_pos = rand() % blockmap_size;
+    for(int i = 0; i < blockmap_size; i++){
+      offset = try_to_use_block(data, (i + bitmap_pos) % blockmap_size);
+      if(offset != 0){
+        break;
+      }
+    }
+  }
+  ret = pthread_spin_unlock(& data->block_lock);
+  return offset;
+}
+
+
 static int fragment_update(esdm_backend_t *backend, esdm_fragment_t *f) {
   DEBUG_ENTER;
 
   // set data, options and tgt for convienience
   kdsa_backend_data_t *data = (kdsa_backend_data_t *)backend->data;
   int ret = ESDM_SUCCESS;
+  kdsa_fragment_metadata_t * fragmd = (kdsa_fragment_metadata_t*) f->backend_md;
 
   // lazy assignment of ID
-  if(f->id != NULL){
-    // create data
-    //int ret = entry_update(path, f->buf, f->bytes, 1);
+  if(! fragmd){
+    uint64_t offset = find_offset_to_store_fragment(data);
+    if(offset == 0){
+      return ESDM_ERROR;
+    }
+    kdsa_fragment_metadata_t * md = malloc(sizeof(kdsa_fragment_metadata_t));
+    f->backend_md = md;
+    eassert(f->backend_md);
+    md->offset = offset;
+
+    f->id = malloc(21);
+    eassert(f->id);
+    ea_generate_id(f->id, 20);
+
     return ret;
   }
-  f->id = malloc(21);
-  eassert(f->id);
-  // ensure that the fragment with the ID doesn't exist, yet
-  //while(1){
-  ea_generate_id(f->id, 20);
 
   return ret;
 }
@@ -307,10 +440,12 @@ esdm_backend_t *kdsa_backend_init(esdm_config_backend_t *config) {
 
   esdm_backend_t *backend = (esdm_backend_t *)malloc(sizeof(esdm_backend_t));
   memcpy(backend, &backend_template, sizeof(esdm_backend_t));
-
+  int ret;
   // allocate memory for backend instance
   backend->data = malloc(sizeof(kdsa_backend_data_t));
   kdsa_backend_data_t *data = (kdsa_backend_data_t *)backend->data;
+  ret = pthread_spin_init(& data->block_lock, PTHREAD_PROCESS_PRIVATE);
+  eassert(ret == 0);
 
   if (data && config->performance_model)
     esdm_backend_t_parse_perf_model_lat_thp(config->performance_model, &data->perf_model);
@@ -321,16 +456,51 @@ esdm_backend_t *kdsa_backend_init(esdm_config_backend_t *config) {
   data->config = config;
   json_t *elem;
   elem = json_object_get(config->backend, "target");
-  data->config->target = strdup(json_string_value(elem));
-  DEBUG("Backend config: target=%s\n", data->config->target);
+  char * tgt = (char*) strdup(json_string_value(elem));
+  data->config->target = tgt;
 
-  int status = kdsa_connect((char*) data->config->target, XPD_FLAGS, & data->handle);
-  if(status < 0){
+  uint64_t blocksize = config->max_fragment_size;
+  if(blocksize < 0){
+    blocksize = 0;
+    ERROR("Blocksize is not valid on volume %s", tgt);
+  }
+  DEBUG("Backend config: target=%s\n", tgt);
+
+  ret = kdsa_connect(tgt, XPD_FLAGS, & data->handle);
+  if(ret < 0){
     ERROR("Failed to connect to XPD: %s (%d)\n", strerror(errno), errno);
   }
-  status = kdsa_get_volume_size(data->handle, & data->size);
-  if(status < 0){
+  ret = kdsa_get_volume_size(data->handle, & data->size);
+  if(ret < 0){
     ERROR("Failed to retrieve volume size %s (%d)\n", strerror(errno), errno);
   }
+
+  ret = kdsa_read_unregistered(data->handle, 0, & data->h, sizeof(kdsa_persistent_header_t));
+  if(ret != 0){
+    WARN_STRERR("Error could not read header from volume %s", data->config->target);
+    return NULL;
+  }
+  if(data->h.magic != ESDM_MAGIC){
+    WARN("It appears the volume is no ESDM volume, will disable write for now on %s", tgt);
+    if(blocksize == 0){
+      ERROR("Blocksize is not set, cannot proceed as no KDSA volume is found on %s", tgt);
+      return NULL;
+    }
+    data->h.blocksize = blocksize;
+    data->h.blockcount = 0;
+    data->h.offset_to_data = 0;
+    data->block_map = NULL;
+  }else if(data->h.blockcount != calc_block_count(data->h.blocksize, data->size)){
+    ERROR("Blockcount in header does not match the block count determined when retrieving the volume size, it appears the volume size has been changed on %s. The max_fragment_size expected was: %lu", tgt, data->h.blocksize);
+    return NULL;
+  }else{
+    data->block_map = malloc(calc_block_map_size(data->h.blockcount)* sizeof(uint64_t));
+    ret = load_block_bitmap(data);
+    if( ret != 0 ){
+      ERROR("Could not read block bitmap from %s", tgt);
+      return NULL;
+    }
+  }
+
   return backend;
 }
