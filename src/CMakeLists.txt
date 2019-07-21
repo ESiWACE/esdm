@@ -98,19 +98,19 @@ install(TARGETS esdmutils LIBRARY DESTINATION lib)
 
 # ESDM Middleware Library
 add_library(esdm SHARED esdm.c  esdm-scheduler.c  esdm-modules.c)
-target_link_libraries(esdm ${GLIB_LDFLAGS} ${JANSSON_LDFLAGS} esdmutils esdmposix esdmmetadummy)
+target_link_libraries(esdm ${GLIB_LDFLAGS} ${JANSSON_LDFLAGS} esdmutils esdmposix esdm-mdposix)
 if(BACKEND_MONGODB)
     target_link_libraries(esdm esdmmongodb)
 endif()
 
 if(BACKEND_CLOVIS)
     add_definitions(-DESDM_HAS_CLOVIS=1)
-    target_link_libraries(esdm ${GLIB_LDFLAGS} ${JANSSON_LDFLAGS} esdmutils esdmclovis esdmmetadummy)
+    target_link_libraries(esdm esdmclovis)
 endif()
 
 if(BACKEND_WOS)
     add_definitions(-DESDM_HAS_WOS=1)
-    target_link_libraries(esdm ${GLIB_LDFLAGS} ${JANSSON_LDFLAGS} esdmutils esdmwos esdmmetadummy)
+    target_link_libraries(esdm esdmwos)
 endif()
 
 

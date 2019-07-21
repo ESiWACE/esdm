@@ -3,7 +3,7 @@
 */
 
 
-#include <backends-metadata/metadummy/metadummy.h>
+#include <backends-metadata/posix/md-posix.h>
 
 extern esdm_instance_t esdm;
 

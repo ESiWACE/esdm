@@ -34,7 +34,7 @@
 #include <unistd.h>
 #include <time.h>
 
-#include "metadummy.h"
+#include "md-posix.h"
 #include <esdm-internal.h>
 
 #define DEBUG_ENTER ESDM_DEBUG_COM_FMT("METADUMMY", "", "")

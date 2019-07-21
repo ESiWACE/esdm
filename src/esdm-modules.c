@@ -51,10 +51,10 @@
 #endif
 
 // TODO: remove define on
-#define ESDM_HAS_METADUMMY
-#ifdef ESDM_HAS_METADUMMY
-#  include "backends-metadata/metadummy/metadummy.h"
-#  pragma message("Building ESDM with support generic 'metadummy' backend.")
+#define ESDM_HAS_MD_POSIX
+#ifdef ESDM_HAS_MD_POSIX
+#  include "backends-metadata/posix/md-posix.h"
+#  pragma message("Building ESDM with support generic 'MD-POSIX' backend.")
 #endif
 
 #define ESDM_HAS_MONDODB

@@ -1,5 +1,4 @@
-SUBDIRS(metadummy)
-
+SUBDIRS(posix)
 
 # Metadata Backends
 option(BACKEND_MONGODB "Compile metadata backend for MongoDB support?" OFF)

@@ -18,8 +18,8 @@ void load(IndexH idx)
   Index_InsertData(idx, 1, min, max, 2, 0, 0);
   }
   {
-  double min[] = {0.4, 0.75};
-  double max[] = {0.45, 0.9};
+  double min[] = {-0.4, 0.75};
+  double max[] = {0.25, 0.9};
   Index_InsertData(idx, 2, min, max, 2, 0, 0);
   }
 }
