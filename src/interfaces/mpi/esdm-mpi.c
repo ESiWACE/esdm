@@ -292,7 +292,7 @@ esdm_status esdm_mpi_dataset_commit(MPI_Comm com, esdm_dataset_t *d){
     for(int p = 1 ; p < size; p++){
       int size = max_len;
       MPI_Status mstatus;
-      ret = MPI_Recv(buff, size, MPI_CHAR, p, 4711, com, & mstatus);
+      ret = MPI_Recv(buff, size, MPI_CHAR, MPI_ANY_SOURCE, 4711, com, & mstatus);
       eassert(ret == MPI_SUCCESS);
       int recvd_bytes = 0;
       ret = MPI_Get_count(& mstatus, MPI_CHAR, & recvd_bytes);
