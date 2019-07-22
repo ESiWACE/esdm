@@ -253,8 +253,15 @@ int main(int argc, char *argv[]) {
       ret = esdm_mkfs(ESDM_FORMAT_PURGE_RECREATE, ESDM_ACCESSIBILITY_GLOBAL);
       eassert(ret == ESDM_SUCCESS);
     }
-    ret = esdm_mkfs(ESDM_FORMAT_PURGE_RECREATE, ESDM_ACCESSIBILITY_NODELOCAL);
-    eassert(ret == ESDM_SUCCESS);
+    MPI_Comm localcomm;
+    MPI_Comm_split_type(MPI_COMM_WORLD, MPI_COMM_TYPE_SHARED, 0, MPI_INFO_NULL, &localcomm);
+    int localrank;
+    MPI_Comm_rank(localcomm, &localrank);
+    if(localrank == 0){
+      ret = esdm_mkfs(ESDM_FORMAT_PURGE_RECREATE, ESDM_ACCESSIBILITY_NODELOCAL);
+      eassert(ret == ESDM_SUCCESS);
+    }
+    MPI_Barrier(MPI_COMM_WORLD);
     runWrite(buf_w, dim, offset);
   }
 
