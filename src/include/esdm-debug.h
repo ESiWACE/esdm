@@ -4,6 +4,8 @@
 #include <assert.h>
 #include <stdint.h>
 
+void esdmI_log_dump();
+
 //While this macro evaluates `expression` twice, that's perfectly ok:
 //  * An assert with a side effect is erroneous anyways, as it can be compiled out, and thus should have no impact on execution, whatsoever.
 //  * The assert prints its stringified argument when it fails, so we need to pass on the tokens for the assert to print.
