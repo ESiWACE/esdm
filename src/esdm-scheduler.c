@@ -402,7 +402,8 @@ esdm_status esdm_scheduler_enqueue_read(esdm_instance_t *esdm, io_request_status
   return ESDM_SUCCESS;
 }
 
-//FIXME: Make this stride aware!
+//TODO Factor out the code to determine the split dimension, and make that new function also return the correct effective stride for the split dimension.
+//     Refactor the rest of the function to allow splitting any dimension(s).
 esdm_status esdm_scheduler_enqueue_write(esdm_instance_t *esdm, io_request_status_t *status, esdm_dataset_t *dataset, void *buf, esdm_dataspace_t *space) {
   GError *error;
   //Gather I/O recommendations
@@ -443,6 +444,8 @@ esdm_status esdm_scheduler_enqueue_write(esdm_instance_t *esdm, io_request_statu
       // how many of these fit into our buffer
       uint64_t backend_y_per_buffer = b->config->max_fragment_size / one_y_size;
       if (backend_y_per_buffer == 0) {
+        //XXX This looks like it's simply disregarding max_fragment_size.
+        //    If any other code assumes that max_fragment_size is actually honored, we'll get undefined behavior.
         backend_y_per_buffer = 1;
       }
       if (backend_y_per_buffer >= y_count) {
@@ -463,18 +466,23 @@ esdm_status esdm_scheduler_enqueue_write(esdm_instance_t *esdm, io_request_statu
   memcpy(offset, space->offset, space->dims * sizeof(int64_t));
   memcpy(dim, space->size, space->dims * sizeof(int64_t));
 
+  int64_t y_stride = space->stride ? space->stride[split_dim] : one_y_size;
   for (int i = 0; i < esdm->modules->data_backend_count; i++) {
     esdm_backend_t *b = esdm->modules->data_backends[i];
     eassert(b);
     // how many of these fit into our buffer
     uint64_t backend_y_per_buffer = b->config->max_fragment_size / one_y_size;
     if (backend_y_per_buffer == 0) {
+      //XXX This looks like it's simply disregarding max_fragment_size.
+      //    If any other code assumes that max_fragment_size is actually honored, we'll get undefined behavior.
       backend_y_per_buffer = 1;
     }
 
     uint64_t y_total_access = per_backend[i];
     esdm_status ret;
     while (y_total_access > 0) {
+      //XXX This is only correct because we use the first dimension with more than one slice as the split dimension.
+      //    If that were not the case, we would need to calculate the effective stride for the split dimension in the non-strided case.
       uint64_t y_to_access = y_total_access > backend_y_per_buffer ? backend_y_per_buffer : y_total_access;
       y_total_access -= y_to_access;
 
@@ -486,9 +494,14 @@ esdm_status esdm_scheduler_enqueue_write(esdm_instance_t *esdm, io_request_statu
 
       ret = esdm_dataspace_subspace(space, space->dims, dim, offset, &subspace);
       eassert(ret == ESDM_SUCCESS);
+      if(space->stride) {
+        //the buffer that we use the subspace for is in the layout of `space`, so we need to copy the layout information to `subspace`
+        ret = esdm_dataspace_set_stride(subspace, space->stride);
+        eassert(ret == ESDM_SUCCESS);
+      }
       task->parent = status;
       task->op = ESDM_OP_WRITE;
-      ret = esdmI_fragment_create(dataset, subspace, (char *)buf + offset_y * one_y_size, &task->fragment);
+      ret = esdmI_fragment_create(dataset, subspace, (char *)buf + offset_y * y_stride, &task->fragment);
       eassert(ret == ESDM_SUCCESS);
       task->fragment->backend = b;
       task->callback = NULL;
