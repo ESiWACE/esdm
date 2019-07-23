@@ -1273,6 +1273,11 @@ smd_dtype_t const * esdm_dataspace_get_type(esdm_dataspace_t * d){
   return d->type;
 }
 
+//Generate symbols for the inline functions.
+esdm_range_t esdmI_range_intersection(esdm_range_t a, esdm_range_t b);
+bool esdmI_range_isEmpty(esdm_range_t range);
+int64_t esdmI_range_size(esdm_range_t range);
+
 esdm_hypercube_t* esdmI_hypercube_make(int64_t dimensions, int64_t* offset, int64_t* size) {
   eassert(offset);
   eassert(size);
