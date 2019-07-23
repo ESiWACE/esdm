@@ -53,18 +53,20 @@ typedef enum esdm_loglevel esdm_loglevel_e;
 
 // LOGICAL/DOMAIN DATATYPES ///////////////////////////////////////////////////
 
+typedef struct esdm_attr_group_t esdm_attr_group_t;
+typedef struct esdm_attr_t esdm_attr_t;
+typedef struct esdm_backend_t esdm_backend_t;
+typedef struct esdm_backend_t_callbacks_t esdm_backend_t_callbacks_t;
+typedef struct esdm_config_backend_t esdm_config_backend_t;
 typedef struct esdm_container_t esdm_container_t;
-typedef struct esdm_datasets_t esdm_datasets_t;
+typedef struct esdm_dataset_iterator_t esdm_dataset_iterator_t;
 typedef struct esdm_dataset_t esdm_dataset_t;
+typedef struct esdm_datasets_t esdm_datasets_t;
 typedef struct esdm_dataspace_t esdm_dataspace_t;
 typedef struct esdm_fragment_t esdm_fragment_t;
-typedef struct esdm_backend_t esdm_backend_t;
-typedef struct esdm_md_backend_t esdm_md_backend_t;
-typedef struct esdm_config_backend_t esdm_config_backend_t;
-typedef struct esdm_backend_t_callbacks_t esdm_backend_t_callbacks_t;
+typedef struct esdm_hypercube_t esdm_hypercube_t;
 typedef struct esdm_md_backend_callbacks_t esdm_md_backend_callbacks_t;
-typedef struct esdm_attr_t esdm_attr_t;
-typedef struct esdm_attr_group_t esdm_attr_group_t;
-typedef struct esdm_dataset_iterator_t esdm_dataset_iterator_t;
+typedef struct esdm_md_backend_t esdm_md_backend_t;
+typedef struct esdm_range_t esdm_range_t;
 
 #endif

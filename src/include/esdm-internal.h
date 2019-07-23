@@ -254,4 +254,55 @@ esdm_status esdmI_dataset_destroy(esdm_dataset_t *dataset);
 
 esdm_status esdmI_container_destroy(esdm_container_t *container);
 
+//the resulting range may be empty
+inline esdm_range_t esdmI_range_intersection(esdm_range_t a, esdm_range_t b) {
+  return (esdm_range_t){
+    .start = a.start > b.start ? a.start : b.start,
+    .end = a.end < b.end ? a.end : b.end
+  };
+}
+
+inline bool esdmI_range_isEmpty(esdm_range_t range) { return range.start >= range.end; }
+
+inline int64_t esdmI_range_size(esdm_range_t range) { return esdmI_range_isEmpty(range) ? 0 : range.end - range.start; }
+
+esdm_hypercube_t* esdmI_hypercube_make(int64_t dimensions, int64_t* offset, int64_t* size);
+
+esdm_hypercube_t* esdmI_hypercube_makeCopy(esdm_hypercube_t* original);
+
+//returns NULL if the intersection is empty
+esdm_hypercube_t* esdmI_hypercube_makeIntersection(esdm_hypercube_t* a, esdm_hypercube_t* b);
+
+bool esdmI_hypercube_doesIntersect(esdm_hypercube_t* a, esdm_hypercube_t* b);
+
+/**
+ * Add a hypercube pointer to a set of hypercube pointers.
+ * May reallocate `*inout_set`, and will update `*inout_setSize` and `*inout_setBufferSize` accordingly.
+ *
+ * @param [inout] inout_setSize number of hypercubes in the set which is to be reduced
+ * @param [inout] inout_setBufferSize number of hypercubes that can be stored in the set without reallocating the buffer
+ * @param [inout] inout_set adress of a pointer to an array of `esdm_hypercube_t` pointers
+ * @param [in] cube pointer to the hypercube that should be subtracted
+ */
+void esdmI_hypercube_set_add(int64_t* inout_setSize, int64_t* inout_setBufferSize, esdm_hypercube_t*** inout_set, esdm_hypercube_t* cube);
+
+
+/**
+ * This function takes a set of hypercubes and subtracts the contents of another hypercube from it.
+ * This operation may remove hypercubes from the set (when they are fully contained in the subtracted hypercube),
+ * reduce the size of hypercubes (when their interior intersects with a single surface of the subtracted hypercube),
+ * or split hypercubes into several smaller hypercubes (when their interior intersects with more than one surface of the subtracted hypercube).
+ * The only guarantee is, that the resulting set will contain `<= 2 * dimensions * *inout_setSize` hypercubes, hopefully significantly less.
+ *
+ * May reallocate `*inout_set`, and will update `*inout_setSize` and `*inout_setBufferSize` accordingly.
+ *
+ * @param [in] cube pointer to the hypercube that should be subtracted
+ * @param [inout] inout_setSize number of hypercubes in the set which is to be reduced
+ * @param [inout] inout_setBufferSize number of hypercubes that can be stored in the set without reallocating the buffer
+ * @param [inout] inout_set adress of a pointer to an array of `esdm_hypercube_t` pointers
+ */
+void esdmI_hypercube_subtractFromSet(int64_t* inout_setSize, int64_t* inout_setBufferSize, esdm_hypercube_t*** inout_set, esdm_hypercube_t* subtrahend);
+
+void esdmI_hypercube_destroy(esdm_hypercube_t* cube);
+
 #endif
