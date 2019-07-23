@@ -123,7 +123,7 @@ esdm_status esdm_container_create(const char *name, int allow_overwrite, esdm_co
  *
  * @return status
  */
-esdm_status esdm_container_open(const char *name, esdm_container_t **out_container);
+esdm_status esdm_container_open(const char *name, int esdm_mode_flags, esdm_container_t **out_container);
 
 /**
  * Make container persistent to storage.
@@ -142,7 +142,7 @@ esdm_status esdm_container_commit(esdm_container_t *container);
 
 esdm_status esdm_container_delete_attribute(esdm_container_t *c, smd_attr_t *attr, const char *name);
 
-esdm_status esdm_container_link_attribute(esdm_container_t *container, smd_attr_t *attr);
+esdm_status esdm_container_link_attribute(esdm_container_t *container, int overwrite, smd_attr_t *attr);
 
 /* This function returns the attributes */
 esdm_status esdm_container_get_attributes(esdm_container_t *container, smd_attr_t **out_metadata);
@@ -173,6 +173,8 @@ bool esdm_container_dataset_exists(esdm_container_t * container, char const * na
  * @return the number of datasets
  */
 int esdm_container_dataset_count(esdm_container_t * container);
+
+esdm_status esdm_dataset_rename(esdm_dataset_t *dataset, const char *name);
 
 /*
  * Return the n-th dataset in the container array.
@@ -253,12 +255,12 @@ esdm_status esdm_dataset_iterator(esdm_container_t *container, esdm_dataset_iter
  *
  * @return status
  */
-esdm_status esdm_dataset_open(esdm_container_t *container, const char *name, esdm_dataset_t **out_dataset);
+esdm_status esdm_dataset_open(esdm_container_t *container, const char *name, int esdm_mode_flags, esdm_dataset_t **out_dataset);
 
 /*
  Similar to esdm_dataset_open but returns the dataset without opening it
  */
-esdm_status esdm_dataset_by_name(esdm_container_t *container, const char *name, esdm_dataset_t **out_dataset);
+esdm_status esdm_dataset_by_name(esdm_container_t *container, const char *name, int esdm_mode_flags, esdm_dataset_t **out_dataset);
 
 /*
  * Obtain a reference to the dataset, if it was not yet open, it will be openend and metadata will be fetched.
@@ -298,7 +300,7 @@ esdm_status esdm_dataset_delete_attribute(esdm_dataset_t *dataset, smd_attr_t *a
 
 /* This function adds the metadata to the ESDM */
 
-esdm_status esdm_dataset_link_attribute(esdm_dataset_t *dset, smd_attr_t *attr);
+esdm_status esdm_dataset_link_attribute(esdm_dataset_t *dset, int overwrite, smd_attr_t *attr);
 
 /* This function returns the attributes */
 esdm_status esdm_dataset_get_attributes(esdm_dataset_t *dataset, smd_attr_t **out_metadata);

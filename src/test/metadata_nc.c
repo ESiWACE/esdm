@@ -109,12 +109,12 @@ static void write_test() {
   // 3) Attributes
   char *str = {"This is some history"};
   smd_attr_t *attr1 = smd_attr_new("history", SMD_DTYPE_STRING, str, 0);
-  ret = esdm_dataset_link_attribute(dataset, attr1);
+  ret = esdm_dataset_link_attribute(dataset, 0, attr1);
   eassert(ret == ESDM_SUCCESS);
 
   char *unit = {"Celsius"};
   smd_attr_t *attr2 = smd_attr_new("unit", SMD_DTYPE_STRING, unit, 1);
-  ret = esdm_dataset_link_attribute(dataset, attr2);
+  ret = esdm_dataset_link_attribute(dataset, 0, attr2);
   eassert(ret == ESDM_SUCCESS);
 
   // esdm_status esdm_container_link_attribute(esdm_container_t *container, smd_attr_t *attr)
@@ -123,7 +123,7 @@ static void write_test() {
 
   float a = 5;
   smd_attr_t *attr3 = smd_attr_new("variables", SMD_DTYPE_FLOAT, &a, 0);
-  ret = esdm_container_link_attribute(container, attr3);
+  ret = esdm_container_link_attribute(container, 0, attr3);
   eassert(ret == ESDM_SUCCESS);
 
   // this step shall write out the metadata and make it persistent
@@ -157,7 +157,7 @@ void read_test() {
   esdm_container_t *container = NULL;
   esdm_dataset_t *dataset = NULL;
 
-  ret = esdm_container_open("mycontainer", &container);
+  ret = esdm_container_open("mycontainer", ESDM_MODE_FLAG_READ, &container);
 
   smd_attr_t *out_metadata;
   ret = esdm_container_get_attributes(container, &out_metadata);
@@ -181,7 +181,7 @@ void read_test() {
   //	esdm_dataset_t* esdm_dataset_open(esdm_container_t *container, const char* name)
   //	static int dataset_retrieve(esdm_backend_t* backend, esdm_dataset_t *dataset)
 
-  ret = esdm_dataset_open(container, "myVariable", &dataset);
+  ret = esdm_dataset_open(container, "myVariable", ESDM_MODE_FLAG_READ, &dataset);
   eassert(ret == ESDM_SUCCESS);
 
   // for NetCDF: dims and type

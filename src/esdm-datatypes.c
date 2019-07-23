@@ -45,6 +45,7 @@ esdm_status esdm_container_create(const char *name, int allow_overwrite, esdm_co
 
   esdm_container_t * c;
   esdmI_container_init(name, & c);
+  c->mode_flags = ESDM_MODE_FLAG_WRITE;
 
   int ret = esdm.modules->metadata_backend->callbacks.container_create(esdm.modules->metadata_backend, c, allow_overwrite);
 
@@ -170,7 +171,7 @@ esdm_status esdm_container_open_md_load(esdm_container_t *c, char ** out_md, int
 	return esdm.modules->metadata_backend->callbacks.container_retrieve(esdm.modules->metadata_backend, c, out_md, out_size);
 }
 
-esdm_status esdm_container_open(char const *name, esdm_container_t **out_container) {
+esdm_status esdm_container_open(char const *name, int esdm_mode_flags, esdm_container_t **out_container) {
   ESDM_DEBUG(__func__);
   eassert(out_container);
   eassert(name);
@@ -181,6 +182,7 @@ esdm_status esdm_container_open(char const *name, esdm_container_t **out_contain
 
   esdmI_container_init(name, out_container);
   esdm_container_t *c = *out_container;
+  c->mode_flags = esdm_mode_flags;
 
   char * buff;
   int size;
@@ -290,7 +292,7 @@ esdm_status esdm_container_delete_attribute(esdm_container_t *c, smd_attr_t *att
   ESDM_DEBUG(__func__);
 
   esdm_status status = esdm_container_get_attributes(c, &attr);
-  if (name != NULL){
+  if (name != NULL && status == ESDM_SUCCESS){
     int pos = smd_find_position_by_name(attr, name);
     if (pos != -1){
       smd_attr_t * chld = smd_attr_get_child(attr, pos);
@@ -303,10 +305,9 @@ esdm_status esdm_container_delete_attribute(esdm_container_t *c, smd_attr_t *att
   return(ESDM_ERROR);
 }
 
-esdm_status esdm_container_link_attribute(esdm_container_t *c, smd_attr_t *attr) {
+esdm_status esdm_container_link_attribute(esdm_container_t *c, int overwrite, smd_attr_t *attr) {
   ESDM_DEBUG(__func__);
-  // smd_link_ret_t ret = smd_attr_link(c->attr, attr, 0);
-  smd_link_ret_t ret = smd_attr_link(c->attr, attr, 1);
+  smd_link_ret_t ret = smd_attr_link(c->attr, attr, overwrite);
   return ret == SMD_ATTR_EEXIST ? ESDM_ERROR : ESDM_SUCCESS; // I don't get it
 }
 
@@ -394,6 +395,7 @@ esdm_status esdmI_fragment_create(esdm_dataset_t *d, esdm_dataspace_t *sspace, v
   DEBUG("Entries in sspace: %d x %d bytes = %d bytes \n", elements, esdm_sizeof(sspace->type), bytes);
 
   f->id = NULL;
+  f->backend_md  = NULL;
   f->dataset = d;
   f->dataspace = sspace;
   f->buf = buf; // zero copy?
@@ -528,6 +530,9 @@ esdm_status esdm_fragment_destroy(esdm_fragment_t *frag) {
   if(frag->id){
     free(frag->id);
   }
+  if(frag->backend_md){
+    free(frag->backend_md);
+  }
   if(frag->dataspace){
     esdm_dataspace_destroy(frag->dataspace);
   }
@@ -592,6 +597,8 @@ esdm_status esdm_dataset_create(esdm_container_t *c, const char *name, esdm_data
   }
   esdm_dataset_t *dset;
   esdm_dataset_init(c, name, dspace, & dset);
+  dset->mode_flags = ESDM_MODE_FLAG_WRITE;
+  
   esdm_status status = esdm.modules->metadata_backend->callbacks.dataset_create(esdm.modules->metadata_backend, dset);
   if(status != ESDM_SUCCESS){
     esdmI_dataset_destroy(dset);
@@ -644,6 +651,8 @@ esdm_status esdmI_create_fragment_from_metadata(esdm_dataset_t *dset, json_t * j
   const char *plugin_id = json_string_value(elem);
   f->backend = esdmI_get_backend(plugin_id);
   eassert(f->backend);
+
+  f->backend_md = NULL;
 
   elem = json_object_get(json, "id");
   char const  * id = json_string_value(elem);
@@ -829,7 +838,7 @@ esdm_status esdm_dataset_ref(esdm_dataset_t * d){
   return ESDM_SUCCESS;
 }
 
-esdm_status esdm_dataset_by_name(esdm_container_t *c, const char *name, esdm_dataset_t **out_dataset){
+esdm_status esdm_dataset_by_name(esdm_container_t *c, const char *name, int esdm_mode_flags, esdm_dataset_t **out_dataset){
   ESDM_DEBUG(__func__);
   eassert(c);
   eassert(name);
@@ -850,14 +859,15 @@ esdm_status esdm_dataset_by_name(esdm_container_t *c, const char *name, esdm_dat
   if(! d){
     return ESDM_ERROR;
   }
+  d->mode_flags = esdm_mode_flags;
   *out_dataset = d;
   return ESDM_SUCCESS;
 }
 
-esdm_status esdm_dataset_open(esdm_container_t *c, const char *name, esdm_dataset_t **out_dataset) {
+esdm_status esdm_dataset_open(esdm_container_t *c, const char *name, int esdm_mode_flags, esdm_dataset_t **out_dataset) {
   esdm_status ret;
   esdm_dataset_t *d = NULL;
-  ret = esdm_dataset_by_name(c, name, &d);
+  ret = esdm_dataset_by_name(c, name, esdm_mode_flags, &d);
   if (ret != ESDM_SUCCESS){
     return ret;
   }
@@ -1013,8 +1023,10 @@ esdm_status esdmI_dataset_destroy(esdm_dataset_t *dset) {
 esdm_status esdm_dataset_delete_attribute(esdm_dataset_t *dataset, smd_attr_t *attr, const char *name){
   ESDM_DEBUG(__func__);
 
+  eassert(name);
+
   esdm_status status = esdm_dataset_get_attributes(dataset, &attr);
-  if (name != NULL){
+  if (status == ESDM_SUCCESS){
     int pos = smd_find_position_by_name(attr, name);
     if (pos != -1){
       smd_attr_t * chld = smd_attr_get_child(attr, pos);
@@ -1031,6 +1043,24 @@ esdm_status esdm_dataset_get_attributes(esdm_dataset_t *dataset, smd_attr_t **ou
   ESDM_DEBUG(__func__);
   eassert(dataset->attr != NULL);
   *out_metadata = dataset->attr;
+  return ESDM_SUCCESS;
+}
+
+esdm_status esdm_dataset_rename(esdm_dataset_t *d, const char *name) {
+  ESDM_DEBUG(__func__);
+  eassert(name != NULL);
+  eassert(d != NULL);
+
+  int count = esdm_container_dataset_count(d->container);
+  for(int i=0; i<count; i++){
+    esdm_dataset_t *dset;
+    dset = esdm_container_dataset_from_array(d->container, i);
+    if (strcmp(dset->name, name) == 0){
+      return ESDM_ERROR;
+    }
+  }
+
+  d->name = strdup(name);
   return ESDM_SUCCESS;
 }
 
@@ -1239,10 +1269,9 @@ esdm_status esdm_dataset_get_name_dims(esdm_dataset_t *d, char const *const **ou
   return ESDM_SUCCESS;
 }
 
-esdm_status esdm_dataset_link_attribute(esdm_dataset_t *dset, smd_attr_t *attr) {
+esdm_status esdm_dataset_link_attribute(esdm_dataset_t *dset, int overwrite, smd_attr_t *attr) {
   ESDM_DEBUG(__func__);
-  // smd_link_ret_t ret = smd_attr_link(dset->attr, attr, 0);
-  smd_link_ret_t ret = smd_attr_link(dset->attr, attr, 1);
+  smd_link_ret_t ret = smd_attr_link(dset->attr, attr, overwrite);
   return ret == SMD_ATTR_EEXIST ? ESDM_ERROR : ESDM_SUCCESS;
 }
 

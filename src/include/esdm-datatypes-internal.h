@@ -29,6 +29,7 @@ struct esdm_container_t {
 
   int refcount;
   esdm_data_status_e status;
+  int mode_flags; // set via esdm_mode_flags_e
 };
 
 struct esdm_fragments_t {
@@ -51,6 +52,7 @@ struct esdm_dataset_t {
   esdm_fragments_t fragments;
   int refcount;
   esdm_data_status_e status;
+  int mode_flags; // set via esdm_mode_flags_e
 };
 
 struct esdm_fragment_t {
