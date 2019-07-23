@@ -45,7 +45,8 @@ int main() {
     i = { .start = -3, .end = 3 },
     j = { .start = -3, .end = 4 },
     k = { .start = 3, .end = 3 },
-    l = { .start = 3, .end = 4 };
+    l = { .start = 3, .end = 4 },
+    m = { .start = 3, .end = 2 };
 
   checkRange(esdmI_range_intersection(a, b), -3, -5);
   checkRange(esdmI_range_intersection(a, c), -3, -4);
@@ -58,4 +59,33 @@ int main() {
   checkRange(esdmI_range_intersection(a, j), -3, 3);
   checkRange(esdmI_range_intersection(a, k), 3, 3);
   checkRange(esdmI_range_intersection(a, l), 3, 3);
+  checkRange(esdmI_range_intersection(a, m), 3, 2);
+
+  eassert(!esdmI_range_isEmpty(a));
+  eassert( esdmI_range_isEmpty(b));
+  eassert(!esdmI_range_isEmpty(c));
+  eassert(!esdmI_range_isEmpty(d));
+  eassert(!esdmI_range_isEmpty(e));
+  eassert(!esdmI_range_isEmpty(f));
+  eassert( esdmI_range_isEmpty(g));
+  eassert(!esdmI_range_isEmpty(h));
+  eassert(!esdmI_range_isEmpty(i));
+  eassert(!esdmI_range_isEmpty(j));
+  eassert( esdmI_range_isEmpty(k));
+  eassert(!esdmI_range_isEmpty(l));
+  eassert( esdmI_range_isEmpty(m));
+
+  eassert(esdmI_range_size(a) == 6);
+  eassert(esdmI_range_size(b) == 0);
+  eassert(esdmI_range_size(c) == 1);
+  eassert(esdmI_range_size(d) == 2);
+  eassert(esdmI_range_size(e) == 8);
+  eassert(esdmI_range_size(f) == 9);
+  eassert(esdmI_range_size(g) == 0);
+  eassert(esdmI_range_size(h) == 1);
+  eassert(esdmI_range_size(i) == 6);
+  eassert(esdmI_range_size(j) == 7);
+  eassert(esdmI_range_size(k) == 0);
+  eassert(esdmI_range_size(l) == 1);
+  eassert(esdmI_range_size(m) == 0);
 }
