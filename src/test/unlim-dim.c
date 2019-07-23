@@ -83,9 +83,9 @@ void test(char const * str, int dims, int64_t bounds_dset[], int64_t bounds_data
   ret = esdm_container_close(container);
   eassert(ret == ESDM_SUCCESS);
 
-  ret = esdm_container_open("mycontainer", &container);
+  ret = esdm_container_open("mycontainer", ESDM_MODE_FLAG_READ, &container);
   eassert(ret == ESDM_SUCCESS);
-  ret = esdm_dataset_open(container, "mydataset", &dataset);
+  ret = esdm_dataset_open(container, "mydataset", ESDM_MODE_FLAG_READ, &dataset);
   eassert(ret == ESDM_SUCCESS);
   size = esdm_dataset_get_actual_size(dataset);
   for(int i=0; i < dims; i++){

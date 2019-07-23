@@ -31,20 +31,20 @@ int main(int argc, char const *argv[]) {
   status = esdm_init();
   eassert(status == ESDM_SUCCESS);
 
-  status = esdm_container_open("mycontainer", &container);
+  status = esdm_container_open("mycontainer", ESDM_MODE_FLAG_READ, &container);
   eassert(status == ESDM_SUCCESS);
 
-  status = esdm_dataset_open(container, "mydataset", &dataset);
+  status = esdm_dataset_open(container, "mydataset", ESDM_MODE_FLAG_READ, &dataset);
   eassert(status == ESDM_SUCCESS);
 
   status = esdm_dataset_close(dataset);
   eassert(status == ESDM_SUCCESS);
 
   esdm_dataset_t * dataset2 = NULL;
-  status = esdm_dataset_open(container, "mydataset", &dataset2);
+  status = esdm_dataset_open(container, "mydataset", ESDM_MODE_FLAG_READ, &dataset2);
   eassert(status == ESDM_SUCCESS);
 
-  status = esdm_dataset_open(container, "mydataset", &dataset);
+  status = esdm_dataset_open(container, "mydataset", ESDM_MODE_FLAG_READ, &dataset);
   eassert(status == ESDM_SUCCESS);
 
   status = esdm_dataset_close(dataset);

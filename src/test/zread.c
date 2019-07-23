@@ -20,7 +20,7 @@
 
 #include <test/util/test_util.h>
 
- 
+
 #include <esdm.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -63,15 +63,15 @@ int main(int argc, char const *argv[]) {
   status = esdm_init();
   eassert(status == ESDM_SUCCESS);
 
-  eassert_crash(esdm_container_open("mycontainer", NULL));
-  eassert(esdm_container_open("", &container) == ESDM_INVALID_ARGUMENT_ERROR);
-  status = esdm_container_open("mycontainer", &container);
+  eassert_crash(esdm_container_open("mycontainer", ESDM_MODE_FLAG_READ, NULL));
+  eassert(esdm_container_open("", ESDM_MODE_FLAG_READ, &container) == ESDM_INVALID_ARGUMENT_ERROR);
+  status = esdm_container_open("mycontainer", ESDM_MODE_FLAG_READ, &container);
   eassert(status == ESDM_SUCCESS);
 
-  eassert_crash(esdm_dataset_open(NULL, "mydataset", &dataset));
-  eassert_crash(esdm_dataset_open(container, "mydataset", NULL));
-  eassert(esdm_dataset_open(container, "", &dataset) == ESDM_INVALID_ARGUMENT_ERROR);
-  status = esdm_dataset_open(container, "mydataset", &dataset);
+  eassert_crash(esdm_dataset_open(NULL, "mydataset", ESDM_MODE_FLAG_READ, &dataset));
+  eassert_crash(esdm_dataset_open(container, "mydataset",ESDM_MODE_FLAG_READ, NULL));
+  eassert(esdm_dataset_open(container, "",ESDM_MODE_FLAG_READ, &dataset) == ESDM_INVALID_ARGUMENT_ERROR);
+  status = esdm_dataset_open(container, "mydataset",ESDM_MODE_FLAG_READ, &dataset);
   eassert(status == ESDM_SUCCESS);
 
   int64_t size[] = {10, 20};

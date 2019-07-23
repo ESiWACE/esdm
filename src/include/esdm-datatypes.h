@@ -16,13 +16,10 @@ typedef smd_dtype_t *esdm_type_t;
 /**
  * ESDM Status codes and failure modes.
  */
-typedef enum esdm_mode {
-  ESDM_OVERWRITE,
-  ESDM_CREATE,
-  ESDM_AUTOCOMMIT,
-  ESDM_DATASET,
-  ESDM_CONTAINER,
-} esdm_mode;
+typedef enum {
+  ESDM_MODE_FLAG_WRITE = 1,
+  ESDM_MODE_FLAG_READ = 2
+} esdm_mode_flags_e;
 
 // where is the data accessible
 typedef enum data_accessibility_t {
@@ -36,6 +33,7 @@ typedef enum data_accessibility_t {
 typedef enum esdm_status {
   ESDM_SUCCESS = 0,
   ESDM_INVALID_ARGUMENT_ERROR,
+  ESDM_INVALID_PERMISSIONS,
   ESDM_ERROR
 } esdm_status;
 

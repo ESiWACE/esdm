@@ -353,9 +353,9 @@ static uint64_t find_offset_to_store_fragment(kdsa_backend_data_t* data){
 static int fragment_update(esdm_backend_t *backend, esdm_fragment_t *f) {
   DEBUG_ENTER;
 
+  int ret;
   // set data, options and tgt for convienience
   kdsa_backend_data_t *data = (kdsa_backend_data_t *)backend->data;
-  int ret = ESDM_SUCCESS;
   kdsa_fragment_metadata_t * fragmd = (kdsa_fragment_metadata_t*) f->backend_md;
 
   // lazy assignment of ID
@@ -364,19 +364,23 @@ static int fragment_update(esdm_backend_t *backend, esdm_fragment_t *f) {
     if(offset == 0){
       return ESDM_ERROR;
     }
-    kdsa_fragment_metadata_t * md = malloc(sizeof(kdsa_fragment_metadata_t));
-    f->backend_md = md;
+    fragmd = malloc(sizeof(kdsa_fragment_metadata_t));
+    f->backend_md = fragmd;
     eassert(f->backend_md);
-    md->offset = offset;
+    fragmd->offset = offset;
 
-    f->id = malloc(21);
+    f->id = malloc(22);
     eassert(f->id);
-    ea_generate_id(f->id, 20);
-
-    return ret;
+    sprintf(f->id, "%"PRId64, offset);
   }
 
-  return ret;
+  ret = kdsa_write_unregistered(data->handle, fragmd->offset, f->buf, f->bytes);
+  if(ret != 0){
+    WARN_STRERR("Error could not write data from volume %s", data->config->target);
+    return ESDM_ERROR;
+  }
+
+  return ESDM_SUCCESS;
 }
 
 ///////////////////////////////////////////////////////////////////////////////

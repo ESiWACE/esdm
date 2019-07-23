@@ -67,9 +67,9 @@ int main(int argc, char const *argv[]) {
   ret = esdm_container_close(container);
   eassert(ret == ESDM_SUCCESS);
 
-  ret = esdm_container_open("mycontainer", &container);
+  ret = esdm_container_open("mycontainer", ESDM_MODE_FLAG_READ, &container);
   eassert(ret == ESDM_SUCCESS);
-  ret = esdm_dataset_open(container, "mydataset", &dataset);
+  ret = esdm_dataset_open(container, "mydataset", ESDM_MODE_FLAG_READ, &dataset);
   eassert(ret == ESDM_SUCCESS);
   ret = esdm_dataset_get_fill_value(dataset, & fill_value_read);
   eassert(ret == ESDM_SUCCESS);
