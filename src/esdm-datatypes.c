@@ -1046,6 +1046,24 @@ esdm_status esdm_dataset_get_attributes(esdm_dataset_t *dataset, smd_attr_t **ou
   return ESDM_SUCCESS;
 }
 
+esdm_status esdm_dataset_rename(esdm_dataset_t *d, const char *name) {
+  ESDM_DEBUG(__func__);
+  eassert(name != NULL);
+  eassert(d != NULL);
+
+  int count = esdm_container_dataset_count(d->container);
+  for(int i=0; i<count; i++){
+    esdm_dataset_t *dset;
+    dset = esdm_container_dataset_from_array(d->container, i);
+    if (strcmp(dset->name, name) == 0){
+      return ESDM_ERROR;
+    }
+  }
+
+  d->name = strdup(name);
+  return ESDM_SUCCESS;
+}
+
 // Dataspace //////////////////////////////////////////////////////////////////
 
 esdm_status esdm_dataspace_create(int64_t dims, int64_t *sizes, esdm_type_t type, esdm_dataspace_t **out_dataspace) {

@@ -174,6 +174,8 @@ bool esdm_container_dataset_exists(esdm_container_t * container, char const * na
  */
 int esdm_container_dataset_count(esdm_container_t * container);
 
+esdm_status esdm_dataset_rename(esdm_dataset_t *dataset, const char *name);
+
 /*
  * Return the n-th dataset in the container array.
  *
