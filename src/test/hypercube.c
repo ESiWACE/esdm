@@ -15,7 +15,7 @@
  */
 
 /*
- * This test checks the sanity of the esdm_hypercube_t implementation.
+ * This test checks the sanity of the esdmI_hypercube_t implementation.
  */
 
 #include <esdm-internal.h>
@@ -26,14 +26,14 @@
 #include <stdlib.h>
 
 #define checkRange(a, min, max) do {\
-  esdm_range_t temp_a = (a);\
-  esdm_range_t temp_b = (esdm_range_t){ .start = min, .end = max };\
+  esdmI_range_t temp_a = (a);\
+  esdmI_range_t temp_b = (esdmI_range_t){ .start = min, .end = max };\
   eassert(temp_a.start == temp_b.start);\
   eassert(temp_a.end == temp_b.end);\
 } while(0)
 
 int main() {
-  esdm_range_t
+  esdmI_range_t
     a = { .start = -3, .end = 3 },
     b = { .start = -5, .end = -5 },
     c = { .start = -5, .end = -4 },

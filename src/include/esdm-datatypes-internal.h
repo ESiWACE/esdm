@@ -287,13 +287,15 @@ struct esdm_bytesequence {
   void *data;
 };
 
-struct esdm_range_t {
+typedef struct esdmI_range_t esdmI_range_t;
+struct esdmI_range_t {
   int64_t start, end; //start is inclusive, end is exclusive, i.e. the range includes all `x` with `start <= x < end`
 };
 
-struct esdm_hypercube_t {
+typedef struct esdmI_hypercube_t esdmI_hypercube_t;
+struct esdmI_hypercube_t {
   int64_t dims;
-  esdm_range_t ranges[];
+  esdmI_range_t ranges[];
 };
 
 #endif

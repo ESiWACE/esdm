@@ -1274,18 +1274,18 @@ smd_dtype_t const * esdm_dataspace_get_type(esdm_dataspace_t * d){
 }
 
 //Generate symbols for the inline functions.
-esdm_range_t esdmI_range_intersection(esdm_range_t a, esdm_range_t b);
-bool esdmI_range_isEmpty(esdm_range_t range);
-int64_t esdmI_range_size(esdm_range_t range);
+esdmI_range_t esdmI_range_intersection(esdmI_range_t a, esdmI_range_t b);
+bool esdmI_range_isEmpty(esdmI_range_t range);
+int64_t esdmI_range_size(esdmI_range_t range);
 
-esdm_hypercube_t* esdmI_hypercube_make(int64_t dimensions, int64_t* offset, int64_t* size) {
+esdmI_hypercube_t* esdmI_hypercube_make(int64_t dimensions, int64_t* offset, int64_t* size) {
   eassert(offset);
   eassert(size);
 
-  esdm_hypercube_t* result = malloc(sizeof(*result) + dimensions*sizeof(*result->ranges));
+  esdmI_hypercube_t* result = malloc(sizeof(*result) + dimensions*sizeof(*result->ranges));
   result->dims = dimensions;
   for(int64_t i = 0; i < dimensions; i++) {
-    result->ranges[i] = (esdm_range_t){
+    result->ranges[i] = (esdmI_range_t){
       .start = offset[i],
       .end = offset[i] + size[i]
     };
@@ -1293,20 +1293,20 @@ esdm_hypercube_t* esdmI_hypercube_make(int64_t dimensions, int64_t* offset, int6
   return result;
 }
 
-esdm_hypercube_t* esdmI_hypercube_makeCopy(esdm_hypercube_t* original) {
+esdmI_hypercube_t* esdmI_hypercube_makeCopy(esdmI_hypercube_t* original) {
   int64_t size = sizeof(*original) + original->dims*sizeof(*original->ranges);
-  esdm_hypercube_t* result = malloc(size);
+  esdmI_hypercube_t* result = malloc(size);
   memcpy(result, original, size);
   return result;
 }
 
-esdm_hypercube_t* esdmI_hypercube_makeIntersection(esdm_hypercube_t* a, esdm_hypercube_t* b) {
+esdmI_hypercube_t* esdmI_hypercube_makeIntersection(esdmI_hypercube_t* a, esdmI_hypercube_t* b) {
   eassert(a);
   eassert(b);
   eassert(a->dims == b->dims);
   int64_t dimensions = a->dims;
 
-  esdm_hypercube_t* result = malloc(sizeof(*result) + dimensions*sizeof(*result->ranges));
+  esdmI_hypercube_t* result = malloc(sizeof(*result) + dimensions*sizeof(*result->ranges));
   result->dims = dimensions;
   for(int64_t i = 0; i < dimensions; i++) {
     result->ranges[i] = esdmI_range_intersection(a->ranges[i], b->ranges[i]);
@@ -1318,7 +1318,7 @@ esdm_hypercube_t* esdmI_hypercube_makeIntersection(esdm_hypercube_t* a, esdm_hyp
   return result;
 }
 
-bool esdmI_hypercube_doesIntersect(esdm_hypercube_t* a, esdm_hypercube_t* b) {
+bool esdmI_hypercube_doesIntersect(esdmI_hypercube_t* a, esdmI_hypercube_t* b) {
   eassert(a);
   eassert(b);
   eassert(a->dims == b->dims);
@@ -1330,7 +1330,7 @@ bool esdmI_hypercube_doesIntersect(esdm_hypercube_t* a, esdm_hypercube_t* b) {
   return true;
 }
 
-void esdmI_hypercube_set_add(int64_t* inout_setSize, int64_t* inout_setBufferSize, esdm_hypercube_t*** inout_set, esdm_hypercube_t* cube) {
+void esdmI_hypercube_set_add(int64_t* inout_setSize, int64_t* inout_setBufferSize, esdmI_hypercube_t*** inout_set, esdmI_hypercube_t* cube) {
   eassert(inout_setSize);
   eassert(inout_setBufferSize);
   eassert(*inout_setSize <= *inout_setBufferSize);
@@ -1349,7 +1349,7 @@ void esdmI_hypercube_set_add(int64_t* inout_setSize, int64_t* inout_setBufferSiz
   (*inout_set)[(*inout_setSize)++] = cube;
 }
 
-void esdmI_hypercube_subtractFromSet(int64_t* inout_setSize, int64_t* inout_setBufferSize, esdm_hypercube_t*** inout_set, esdm_hypercube_t* subtrahend) {
+void esdmI_hypercube_subtractFromSet(int64_t* inout_setSize, int64_t* inout_setBufferSize, esdmI_hypercube_t*** inout_set, esdmI_hypercube_t* subtrahend) {
   eassert(subtrahend);
   eassert(inout_setSize);
   eassert(inout_setBufferSize);
@@ -1359,7 +1359,7 @@ void esdmI_hypercube_subtractFromSet(int64_t* inout_setSize, int64_t* inout_setB
 
   for(int64_t i = *inout_setSize; i--; ) {  //iterate backwards so that we can freely modify the tail of the array
     //check whether we need to modify this hypercube at all
-    esdm_hypercube_t* minuend = (*inout_set)[i];
+    esdmI_hypercube_t* minuend = (*inout_set)[i];
     if(!esdmI_hypercube_doesIntersect(minuend, subtrahend)) continue; //fast path: no intersection, the minuend remains in the set unmodified
 
     //we need to modify this cube, so take it out of the set
@@ -1374,7 +1374,7 @@ void esdmI_hypercube_subtractFromSet(int64_t* inout_setSize, int64_t* inout_setB
     for(int64_t curDim = 0; curDim < dimensions; curDim++) {
       //take the part of the minuend that is before the start of the subtrahend in this dimension
       if(minuend->ranges[curDim].start < subtrahend->ranges[curDim].start) {
-        esdm_hypercube_t* copy = esdmI_hypercube_makeCopy(minuend);
+        esdmI_hypercube_t* copy = esdmI_hypercube_makeCopy(minuend);
         if(copy->ranges[curDim].end > subtrahend->ranges[curDim].start) {
           copy->ranges[curDim].end = subtrahend->ranges[curDim].start;
         }
@@ -1382,7 +1382,7 @@ void esdmI_hypercube_subtractFromSet(int64_t* inout_setSize, int64_t* inout_setB
       }
       //take the part of the minuend that is behind the end of the subtrahend in this dimension
       if(minuend->ranges[curDim].end > subtrahend->ranges[curDim].end) {
-        esdm_hypercube_t* copy = esdmI_hypercube_makeCopy(minuend);
+        esdmI_hypercube_t* copy = esdmI_hypercube_makeCopy(minuend);
         if(copy->ranges[curDim].start < subtrahend->ranges[curDim].end) {
           copy->ranges[curDim].start = subtrahend->ranges[curDim].end;
         }
@@ -1396,6 +1396,6 @@ void esdmI_hypercube_subtractFromSet(int64_t* inout_setSize, int64_t* inout_setB
   }
 }
 
-void esdmI_hypercube_destroy(esdm_hypercube_t* cube) {
+void esdmI_hypercube_destroy(esdmI_hypercube_t* cube) {
   free(cube);
 }
