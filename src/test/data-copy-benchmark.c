@@ -15,7 +15,7 @@
  */
 
 /*
- * This test is a proof of concept for arbitrary hypercube memory mappings.
+ * This test is a benchmark for determining the performance of esdm_dataspace_copy_data().
  */
 
 #include <esdm.h>
