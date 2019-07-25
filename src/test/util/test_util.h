@@ -51,6 +51,7 @@ void etest_memset_buffer(int dims, int64_t bounds[], uint64_t * buff);
   #define eassert_crash(call)
 #else
   #define eassert_crash(call) do { \
+    printf("checking for expected crash...\n"); \
     pid_t child = fork(); \
     if(child) { \
       int status; \
@@ -61,6 +62,7 @@ void etest_memset_buffer(int dims, int64_t bounds[], uint64_t * buff);
       call; \
       exit(0); \
     } \
+    printf("... OK, child crashed successfully\n"); \
   } while(0)
 #endif
 
@@ -68,6 +70,7 @@ void etest_memset_buffer(int dims, int64_t bounds[], uint64_t * buff);
 //This is used to check for the presence of the appropriate exit() or ERROR_ESDM*() calls to check function contracts.
 //Checks for normal termination with a non-zero status.
 #define eassert_bailout(call) do { \
+  printf("checking for expected error...\n"); \
   pid_t child = fork(); \
   if(child) { \
     int status; \
@@ -79,6 +82,7 @@ void etest_memset_buffer(int dims, int64_t bounds[], uint64_t * buff);
     call; \
     exit(0); \
   } \
+  printf("... OK, child exited with an error\n"); \
 } while(0)
 
 
