@@ -193,9 +193,60 @@ void checkHypercubes() {
   esdmI_hypercube_t* intersectionEE = esdmI_hypercube_makeIntersection(cubeE, cubeE);
   eassert(!intersectionEE);
   eassert(!esdmI_hypercube_doesIntersect(cubeE, cubeE));
+
+  esdmI_hypercubeSet_t* set = esdmI_hypercubeSet_make();
+  esdmI_hypercubeSet_add(set, cubeA);
+  esdmI_hypercubeSet_add(set, cubeB);
+  eassert(esdmI_hypercubeSet_doesIntersect(set, cubeC));
+  printf("subtracting hypercube ");
+  esdmI_hypercube_print(cubeC, stdout);
+  printf(" from hypercube set\n");
+  esdmI_hypercubeSet_print(set, stdout);
+
+  esdmI_hypercubeSet_subtract(set, cubeC);
+  eassert(!esdmI_hypercubeSet_doesIntersect(set, cubeC));
+  printf("\nresult:\n");
+  esdmI_hypercubeSet_print(set, stdout);
+
+  esdmI_hypercubeSet_subtract(set, cubeA);
+  esdmI_hypercubeSet_subtract(set, cubeB);
+  eassert(!set->count);
+  esdmI_hypercubeSet_destroy(set);
+
+  esdmI_hypercube_destroy(cubeA);
+  esdmI_hypercube_destroy(cubeB);
+  esdmI_hypercube_destroy(cubeC);
+  esdmI_hypercube_destroy(cubeD);
+  esdmI_hypercube_destroy(cubeE);
+  esdmI_hypercube_destroy(intersectionAA);
+  esdmI_hypercube_destroy(intersectionAB);
+  esdmI_hypercube_destroy(intersectionAC);
+  esdmI_hypercube_destroy(intersectionAD);
+  esdmI_hypercube_destroy(intersectionAE);
+  esdmI_hypercube_destroy(intersectionBA);
+  esdmI_hypercube_destroy(intersectionBB);
+  esdmI_hypercube_destroy(intersectionBC);
+  esdmI_hypercube_destroy(intersectionBD);
+  esdmI_hypercube_destroy(intersectionBE);
+  esdmI_hypercube_destroy(intersectionCA);
+  esdmI_hypercube_destroy(intersectionCB);
+  esdmI_hypercube_destroy(intersectionCC);
+  esdmI_hypercube_destroy(intersectionCD);
+  esdmI_hypercube_destroy(intersectionCE);
+  esdmI_hypercube_destroy(intersectionDA);
+  esdmI_hypercube_destroy(intersectionDB);
+  esdmI_hypercube_destroy(intersectionDC);
+  esdmI_hypercube_destroy(intersectionDD);
+  esdmI_hypercube_destroy(intersectionDE);
+  esdmI_hypercube_destroy(intersectionEA);
+  esdmI_hypercube_destroy(intersectionEB);
+  esdmI_hypercube_destroy(intersectionEC);
+  esdmI_hypercube_destroy(intersectionED);
+  esdmI_hypercube_destroy(intersectionEE);
 }
 
 int main() {
   checkRanges();
   checkHypercubes();
+  printf("\nOK\n");
 }

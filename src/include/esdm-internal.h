@@ -266,6 +266,8 @@ inline bool esdmI_range_isEmpty(esdmI_range_t range) { return range.start >= ran
 
 inline int64_t esdmI_range_size(esdmI_range_t range) { return esdmI_range_isEmpty(range) ? 0 : range.end - range.start; }
 
+void esdmI_range_print(esdmI_range_t range, FILE* stream);
+
 esdmI_hypercube_t* esdmI_hypercube_make(int64_t dimensions, int64_t* offset, int64_t* size);
 
 esdmI_hypercube_t* esdmI_hypercube_makeCopy(esdmI_hypercube_t* original);
@@ -275,34 +277,22 @@ esdmI_hypercube_t* esdmI_hypercube_makeIntersection(esdmI_hypercube_t* a, esdmI_
 
 bool esdmI_hypercube_doesIntersect(esdmI_hypercube_t* a, esdmI_hypercube_t* b);
 
-/**
- * Add a hypercube pointer to a set of hypercube pointers.
- * May reallocate `*inout_set`, and will update `*inout_setSize` and `*inout_setBufferSize` accordingly.
- *
- * @param [inout] inout_setSize number of hypercubes in the set which is to be reduced
- * @param [inout] inout_setBufferSize number of hypercubes that can be stored in the set without reallocating the buffer
- * @param [inout] inout_set adress of a pointer to an array of `esdmI_hypercube_t` pointers
- * @param [in] cube pointer to the hypercube that should be subtracted
- */
-void esdmI_hypercube_set_add(int64_t* inout_setSize, int64_t* inout_setBufferSize, esdmI_hypercube_t*** inout_set, esdmI_hypercube_t* cube);
-
-
-/**
- * This function takes a set of hypercubes and subtracts the contents of another hypercube from it.
- * This operation may remove hypercubes from the set (when they are fully contained in the subtracted hypercube),
- * reduce the size of hypercubes (when their interior intersects with a single surface of the subtracted hypercube),
- * or split hypercubes into several smaller hypercubes (when their interior intersects with more than one surface of the subtracted hypercube).
- * The only guarantee is, that the resulting set will contain `<= 2 * dimensions * *inout_setSize` hypercubes, hopefully significantly less.
- *
- * May reallocate `*inout_set`, and will update `*inout_setSize` and `*inout_setBufferSize` accordingly.
- *
- * @param [in] cube pointer to the hypercube that should be subtracted
- * @param [inout] inout_setSize number of hypercubes in the set which is to be reduced
- * @param [inout] inout_setBufferSize number of hypercubes that can be stored in the set without reallocating the buffer
- * @param [inout] inout_set adress of a pointer to an array of `esdmI_hypercube_t` pointers
- */
-void esdmI_hypercube_subtractFromSet(int64_t* inout_setSize, int64_t* inout_setBufferSize, esdmI_hypercube_t*** inout_set, esdmI_hypercube_t* subtrahend);
+void esdmI_hypercube_print(esdmI_hypercube_t* cube, FILE* stream);
 
 void esdmI_hypercube_destroy(esdmI_hypercube_t* cube);
+
+esdmI_hypercubeSet_t* esdmI_hypercubeSet_make();  //convenience function to construct a heap allocated object
+void esdmI_hypercubeSet_construct(esdmI_hypercubeSet_t* me);  //no allocation, initialization only
+
+void esdmI_hypercubeSet_add(esdmI_hypercubeSet_t* me, esdmI_hypercube_t* cube);
+
+void esdmI_hypercubeSet_subtract(esdmI_hypercubeSet_t* me, esdmI_hypercube_t* cube);
+
+bool esdmI_hypercubeSet_doesIntersect(esdmI_hypercubeSet_t* me, esdmI_hypercube_t* cube);
+
+void esdmI_hypercubeSet_print(esdmI_hypercubeSet_t* me, FILE* stream);  //for debugging purposes
+
+void esdmI_hypercubeSet_destruct(esdmI_hypercubeSet_t* me); //counterpart to esdmI_hypercubeSet_construct()
+void esdmI_hypercubeSet_destroy(esdmI_hypercubeSet_t* me);  //counterpart to esdmI_hypercubeSet_make()
 
 #endif

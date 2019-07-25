@@ -300,4 +300,10 @@ struct esdmI_hypercube_t {
   esdmI_range_t ranges[];
 };
 
+typedef struct esdmI_hypercubeSet_t esdmI_hypercubeSet_t;
+struct esdmI_hypercubeSet_t {
+  int64_t count, allocatedCount;
+  esdmI_hypercube_t** cubes;
+};
+
 #endif
