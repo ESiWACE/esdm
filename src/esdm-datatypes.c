@@ -598,7 +598,7 @@ esdm_status esdm_dataset_create(esdm_container_t *c, const char *name, esdm_data
   esdm_dataset_t *dset;
   esdm_dataset_init(c, name, dspace, & dset);
   dset->mode_flags = ESDM_MODE_FLAG_WRITE;
-  
+
   esdm_status status = esdm.modules->metadata_backend->callbacks.dataset_create(esdm.modules->metadata_backend, dset);
   if(status != ESDM_SUCCESS){
     esdmI_dataset_destroy(dset);
@@ -957,6 +957,10 @@ esdm_status esdm_dataset_close(esdm_dataset_t *dset) {
 
   dset->refcount--;
   if(dset->refcount){
+    return ESDM_SUCCESS;
+  }
+  if(dset->status == ESDM_DATA_DIRTY){
+    // needs to be synchronized, though
     return ESDM_SUCCESS;
   }
 
