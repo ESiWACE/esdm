@@ -1066,6 +1066,7 @@ esdm_status esdm_dataset_rename(esdm_dataset_t *d, const char *name) {
 
   free(d->name);
   d->name = strdup(name);
+  d->container->status = ESDM_DATA_DIRTY;
   return ESDM_SUCCESS;
 }
 
@@ -1264,6 +1265,7 @@ esdm_status esdm_dataset_name_dims(esdm_dataset_t *d, char **names) {
     strcpy(posVar, names[i]);
     posVar += 1 + strlen(names[i]);
   }
+  d->container->status = ESDM_DATA_DIRTY;
   return ESDM_SUCCESS;
 }
 
