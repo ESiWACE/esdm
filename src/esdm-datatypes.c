@@ -1064,6 +1064,7 @@ esdm_status esdm_dataset_rename(esdm_dataset_t *d, const char *name) {
     }
   }
 
+  free(d->name);
   d->name = strdup(name);
   return ESDM_SUCCESS;
 }
