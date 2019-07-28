@@ -1030,6 +1030,7 @@ esdm_status esdm_dataset_delete_attribute(esdm_dataset_t *dataset, const char *n
 
   eassert(name);
 
+  smd_attr_t *attr;
   esdm_status status = esdm_dataset_get_attributes(dataset, &attr);
   if (status == ESDM_SUCCESS){
     int pos = smd_find_position_by_name(attr, name);
