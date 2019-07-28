@@ -288,9 +288,10 @@ esdm_status esdm_container_close(esdm_container_t *c) {
   return ret;
 }
 
-esdm_status esdm_container_delete_attribute(esdm_container_t *c, smd_attr_t *attr, const char *name) {
+esdm_status esdm_container_delete_attribute(esdm_container_t *c, const char *name) {
   ESDM_DEBUG(__func__);
 
+  smd_attr_t *attr;
   esdm_status status = esdm_container_get_attributes(c, &attr);
   if (name != NULL && status == ESDM_SUCCESS){
     int pos = smd_find_position_by_name(attr, name);
@@ -1024,7 +1025,7 @@ esdm_status esdmI_dataset_destroy(esdm_dataset_t *dset) {
 
 // not tested yet
 
-esdm_status esdm_dataset_delete_attribute(esdm_dataset_t *dataset, smd_attr_t *attr, const char *name){
+esdm_status esdm_dataset_delete_attribute(esdm_dataset_t *dataset, const char *name){
   ESDM_DEBUG(__func__);
 
   eassert(name);
@@ -1087,6 +1088,7 @@ esdm_status esdm_dataspace_create(int64_t dims, int64_t *sizes, esdm_type_t type
 
     memcpy(dataspace->size, sizes, sizeof(int64_t) * dims);
     memset(dataspace->offset, 0, sizeof(int64_t) * dims);
+
   }else{
     dataspace->size = NULL;
     dataspace->offset = NULL;
