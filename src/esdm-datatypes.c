@@ -101,7 +101,7 @@ int esdm_container_dataset_get_actual_size(esdm_container_t *c, char *name){
 
     for(int j = 0; j < ndims; j++){
 
-      if (strcmp(names[i],name) == 0){
+      if (strcmp(names[j],name) == 0){
         pos = j;
         break;
       }
