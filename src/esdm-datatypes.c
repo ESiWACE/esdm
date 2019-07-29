@@ -75,13 +75,65 @@ int esdm_container_dataset_count(esdm_container_t * c){
   return c->dsets.count;
 }
 
-esdm_dataset_t * esdm_container_dataset_from_array(esdm_container_t * c, int i){
-    eassert(c != NULL);
-    eassert(i >= 0);
-    if(i >= c->dsets.count){
-      return NULL;
+int esdm_container_dataset_get_actual_size(esdm_container_t *c, char *name){
+  ESDM_DEBUG(__func__);
+  eassert(c != NULL);
+  eassert(name != NULL);
+
+  int count = esdm_container_dataset_count(c);
+  int pos = -1;
+  esdm_dataset_t *dset;
+
+  for(int i = 0; i < count; i++){
+    dset = esdm_container_dataset_from_array(c, i);
+
+    int ndims = dset->dataspace->dims;
+
+    if (ndims <= 0)
+      return ESDM_ERROR;
+
+    char const *const *names = NULL;
+    esdm_status status = esdm_dataset_get_name_dims(dset, &names);
+    if(status != ESDM_SUCCESS) return(ESDM_ERROR);
+
+    if (names == NULL)
+      return ESDM_ERROR;
+
+    for(int j = 0; j < ndims; j++){
+
+      if (strcmp(names[i],name) == 0){
+        pos = j;
+        break;
+      }
+
     }
-    return c->dsets.dset[i];
+
+    if (pos != -1)
+      i = count + 1; // for exiting the main loop
+  }
+
+  if (pos == -1)
+    return(ESDM_ERROR);
+  else return esdm_dataset_get_size(dset, pos);
+
+}
+
+int esdm_dataset_get_size(esdm_dataset_t *d, int i){
+  ESDM_DEBUG(__func__);
+  eassert(d != NULL);
+  eassert(i >= 0);
+
+  return (d->actual_size[i]);
+}
+
+esdm_dataset_t * esdm_container_dataset_from_array(esdm_container_t * c, int i){
+  ESDM_DEBUG(__func__);
+  eassert(c != NULL);
+  eassert(i >= 0);
+  if(i >= c->dsets.count){
+    return NULL;
+  }
+  return c->dsets.dset[i];
 }
 
 void esdmI_container_register_dataset(esdm_container_t * c, esdm_dataset_t *dset){
@@ -817,7 +869,19 @@ esdm_status esdm_dataset_open_md_parse(esdm_dataset_t *d, char * md, int size){
 	return ESDM_SUCCESS;
 }
 
+esdm_status ESDM_dimension_update_actual_size (esdm_dataset_t *d, int dimid, int actual_size){
+  ESDM_DEBUG(__func__);
+
+  d->dataspace->size[dimid] = actual_size;
+  d->actual_size[dimid] = actual_size;
+
+// this function may have to work to all datasets too
+
+  return ESDM_SUCCESS;
+}
+
 esdm_status esdm_dataset_ref(esdm_dataset_t * d){
+  ESDM_DEBUG(__func__);
   if(d->status != ESDM_DATA_NOT_LOADED){
     d->refcount++;
     return ESDM_SUCCESS;

@@ -165,6 +165,12 @@ esdm_status esdm_container_close(esdm_container_t *container);
  */
 bool esdm_container_dataset_exists(esdm_container_t * container, char const * name);
 
+esdm_status ESDM_dimension_update_actual_size (esdm_dataset_t *d, int dimid, int actual_size);
+
+int esdm_container_dataset_get_actual_size(esdm_container_t *c, char *name);
+
+int esdm_dataset_get_size(esdm_dataset_t * d, int i);
+
 /*
  * Return the number of datasets in the container.
  *
