@@ -233,6 +233,31 @@ int64_t const * esdm_dataspace_get_size(esdm_dataspace_t * d);
 int64_t const * esdm_dataspace_get_offset(esdm_dataspace_t * d);
 smd_dtype_t const * esdm_dataspace_get_type(esdm_dataspace_t * d);
 
+/**
+ * Get the effective stride of a dataspace.
+ *
+ * If a stride has been set for the dataspace, that stride is copied to the `out_stride` array,
+ * otherwise the effective stride is calculated and returned in that same array.
+ *
+ * @param [in] space the dataspace to query
+ * @param [out] out_stride pointer to an array of size `space->dims` which will be filled with the components of the stride.
+ *
+ * As with `esdm_dataspace_set_stride()`, the stride is given in terms of fundamental datatype elements and needs to be multiplied with `esdm_sizeof(space->type)` to get the stride in bytes.
+ */
+void esdm_dataspace_getEffectiveStride(esdm_dataspace_t* space, int64_t* out_stride);
+
+/**
+ * Get the offset in bytes of the element at the given logical position.
+ * The resulting offset may be negative if a custom stride has been set that has negative component(s).
+ * Otherwise, a contiguous C order multidimensional array is assumed, producing only positive offsets.
+ *
+ * @param [in] space the dataspace to query
+ * @param [in] coords an array with the coordinates of the element's logical location
+ *
+ * @return an offset in bytes
+ */
+int64_t esdm_dataspace_elementOffset(esdm_dataspace_t* space, int64_t* coords);
+
 esdm_status esdm_dataset_change_name(esdm_dataset_t *dset, char const * new_name);
 
 /*

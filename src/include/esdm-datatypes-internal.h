@@ -210,7 +210,7 @@ struct esdm_config_backend_t {
 
   int max_threads_per_node;
   int max_global_threads;
-  uint64_t max_fragment_size;
+  uint64_t max_fragment_size; //this is a soft limit that may be exceeded anytime
   data_accessibility_t data_accessibility;
 
   json_t *performance_model;

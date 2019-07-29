@@ -1189,6 +1189,26 @@ void esdm_dataspace_print(esdm_dataspace_t *d) {
   printf("))");
 }
 
+void esdm_dataspace_getEffectiveStride(esdm_dataspace_t* space, int64_t* out_stride) {
+  if(space->stride) {
+    memcpy(out_stride, space->stride, space->dims*sizeof(*space->stride));
+  } else {
+    int64_t curSize = 1;
+    for(int64_t i = space->dims; i--; curSize *= space->size[i]) {
+      out_stride[i] = curSize;
+    }
+  }
+}
+
+int64_t esdm_dataspace_elementOffset(esdm_dataspace_t* space, int64_t* coords) {
+  int64_t offset = 0;
+  for(int64_t i = space->dims, size = 1; i--; size *= space->size[i]) {
+    int64_t curStride = space->stride ? space->stride[i] : size;
+    offset += (coords[i] - space->offset[i])*size;
+  }
+  return offset * esdm_sizeof(space->type);
+}
+
 void esdm_fragment_print(esdm_fragment_t *f) {
   printf("FRAGMENT(%p,", (void *)f);
   esdm_dataspace_print(f->dataspace);

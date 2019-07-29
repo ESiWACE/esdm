@@ -277,6 +277,17 @@ esdmI_hypercube_t* esdmI_hypercube_makeIntersection(esdmI_hypercube_t* a, esdmI_
 
 bool esdmI_hypercube_doesIntersect(esdmI_hypercube_t* a, esdmI_hypercube_t* b);
 
+/**
+ * Return the shape of the hypercube as an offset and a size vector.
+ *
+ * @param [in] cube the hypercube to get the shape of
+ * @param [out] out_offset array of size cube->dims that will be filled with the offset vector components
+ * @param [out] out_size array of size cube->dims that will be filled with the size vector components
+ */
+void esdmI_hypercube_getOffsetAndSize(esdmI_hypercube_t* cube, int64_t* out_offset, int64_t* out_size);
+
+int64_t esdmI_hypercube_size(esdmI_hypercube_t* cube);
+
 void esdmI_hypercube_print(esdmI_hypercube_t* cube, FILE* stream);
 
 void esdmI_hypercube_destroy(esdmI_hypercube_t* cube);

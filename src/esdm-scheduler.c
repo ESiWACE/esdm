@@ -144,13 +144,6 @@ static int64_t abs_int64(int64_t a) {
   return a > 0 ? a : -a;
 }
 
-static void setDefaultStride(int64_t dimensions, int64_t* size, int64_t* stride) {
-  int64_t curSize = 1;
-  for(int64_t i = dimensions; i--; curSize *= size[i]) {
-    stride[i] = curSize;
-  }
-}
-
 /**
  * Generate some, hopefully dimensionally reduced, instructions to perform `memcpy()` calls.
  * This is a helper function that is used to implement both `esdm_dataspace_copy_data()`
@@ -217,15 +210,9 @@ static void esdmI_dataspace_copy_instructions(
   }
 
   //in case the stride fields are set to NULL, determine the effective strides
-  int64_t* sourceStride = sourceSpace->stride;
-  int64_t* destStride = destSpace->stride;
-  int64_t sourceStrideBuf[dimensions], destStrideBuf[dimensions];
-  if(!sourceStride) {
-    setDefaultStride(dimensions, sourceSpace->size, sourceStride = sourceStrideBuf);
-  }
-  if(!destStride) {
-    setDefaultStride(dimensions, destSpace->size, destStride = destStrideBuf);
-  }
+  int64_t sourceStride[dimensions], destStride[dimensions];
+  esdm_dataspace_getEffectiveStride(sourceSpace, sourceStride);
+  esdm_dataspace_getEffectiveStride(destSpace, destStride);
 
   //determine how much data we can move with memcpy() at a time
   int64_t dataPointerOffset = 0, memcpySize = 1;  //both are counts of fundamental elements, not bytes
@@ -402,6 +389,19 @@ esdm_status esdm_scheduler_enqueue_read(esdm_instance_t *esdm, io_request_status
   return ESDM_SUCCESS;
 }
 
+//Decide how the given dataset should be split into fragments to get sensible fragment sizes.
+//Returns a hypercube set with one hypercube for each fragment that should be generated.
+esdmI_hypercubeSet_t* esdm_scheduler_makeSplitRecommendation(esdm_instance_t *esdm, esdm_dataspace_t* space) {
+  eassert(esdm);
+  eassert(space);
+
+  esdmI_hypercube_t* cube = esdmI_hypercube_make(space->dims, space->offset, space->size);
+  esdmI_hypercubeSet_t* result = esdmI_hypercubeSet_make();
+  esdmI_hypercubeSet_add(result, cube); //trivial implementation: just return the shape of the dataspace as a single hypercube.
+  esdmI_hypercube_destroy(cube);
+  return result;
+}
+
 //TODO Factor out the code to determine the split dimension, and make that new function also return the correct effective stride for the split dimension.
 //     Refactor the rest of the function to allow splitting any dimension(s).
 esdm_status esdm_scheduler_enqueue_write(esdm_instance_t *esdm, io_request_status_t *status, esdm_dataset_t *dataset, void *buf, esdm_dataspace_t *space) {
@@ -409,113 +409,45 @@ esdm_status esdm_scheduler_enqueue_write(esdm_instance_t *esdm, io_request_statu
   //Gather I/O recommendations
   //esdm_performance_recommendation(esdm, NULL, NULL);    // e.g., split, merge, replication?
   //esdm_layout_recommendation(esdm, NULL, NULL);		  // e.g., merge, split, transform?
+  esdmI_hypercubeSet_t* cubes = esdm_scheduler_makeSplitRecommendation(esdm, space);
 
-  // choose the dimension to split
-  int split_dim = 0;
-  for (int i = 0; i < space->dims; i++) {
-    if (space->size[i] != 1) {
-      split_dim = i;
-      break;
+  int64_t dim[space->dims], offset[space->dims], stride[space->dims];
+  for(int64_t i = 0, backendIndex = -1; i < cubes->count; i++) {
+    status->pending_ops++;
+    backendIndex = (backendIndex + 1)%esdm->modules->data_backend_count;
+    esdm_backend_t* curBackend = esdm->modules->data_backends[backendIndex];
+    eassert(curBackend);
+
+    esdmI_hypercube_getOffsetAndSize(cubes->cubes[i], offset, dim);
+    esdm_dataspace_getEffectiveStride(space, stride);
+
+    esdm_dataspace_t* subspace;
+    esdm_status ret = esdm_dataspace_subspace(space, space->dims, dim, offset, &subspace);
+    eassert(ret == ESDM_SUCCESS);
+    ret = esdm_dataspace_set_stride(subspace, stride);
+    eassert(ret == ESDM_SUCCESS);
+    esdm_fragment_t* fragment;
+    ret = esdmI_fragment_create(dataset, subspace, (char*)buf + esdm_dataspace_elementOffset(space, offset), &fragment);
+    eassert(ret == ESDM_SUCCESS);
+    fragment->backend = curBackend;
+
+    io_work_t* task = malloc(sizeof(*task));
+    *task = (io_work_t){
+      .fragment = fragment,
+      .op = ESDM_OP_WRITE,
+      .return_code = ESDM_SUCCESS,
+      .parent = status,
+      .callback = NULL,
+      .data = {NULL, NULL}
+    };
+
+    if (curBackend->threads == 0) {
+      backend_thread(task, curBackend);
+    } else {
+      g_thread_pool_push(curBackend->threadPool, task, &error);
     }
   }
 
-  // how big is one sub-hypercube? we call it y axis for the easier reading
-  uint64_t one_y_size = 1;
-  for (int i = 0; i < space->dims; i++) {
-    if (i != split_dim) {
-      one_y_size *= space->size[i];
-    }
-  }
-  one_y_size *= esdm_sizeof(space->type);
-
-  if (one_y_size == 0) {
-    return ESDM_SUCCESS;
-  }
-
-  uint64_t y_count = space->size[split_dim];
-  uint64_t per_backend[esdm->modules->data_backend_count];
-
-  memset(per_backend, 0, sizeof(per_backend));
-
-  while (y_count > 0) {
-    for (int i = 0; i < esdm->modules->data_backend_count; i++) {
-      status->pending_ops++;
-      esdm_backend_t *b = esdm->modules->data_backends[i];
-      // how many of these fit into our buffer
-      uint64_t backend_y_per_buffer = b->config->max_fragment_size / one_y_size;
-      if (backend_y_per_buffer == 0) {
-        //XXX This looks like it's simply disregarding max_fragment_size.
-        //    If any other code assumes that max_fragment_size is actually honored, we'll get undefined behavior.
-        backend_y_per_buffer = 1;
-      }
-      if (backend_y_per_buffer >= y_count) {
-        per_backend[i] += y_count;
-        y_count = 0;
-        break;
-      } else {
-        per_backend[i] += backend_y_per_buffer;
-        y_count -= backend_y_per_buffer;
-      }
-    }
-  }
-  ESDM_DEBUG_FMT("Will submit %d operations and for backend0: %d y-blocks", status->pending_ops, per_backend[0]);
-
-  uint64_t offset_y = 0;
-  int64_t dim[space->dims];
-  int64_t offset[space->dims];
-  memcpy(offset, space->offset, space->dims * sizeof(int64_t));
-  memcpy(dim, space->size, space->dims * sizeof(int64_t));
-
-  int64_t y_stride = space->stride ? space->stride[split_dim] : one_y_size;
-  for (int i = 0; i < esdm->modules->data_backend_count; i++) {
-    esdm_backend_t *b = esdm->modules->data_backends[i];
-    eassert(b);
-    // how many of these fit into our buffer
-    uint64_t backend_y_per_buffer = b->config->max_fragment_size / one_y_size;
-    if (backend_y_per_buffer == 0) {
-      //XXX This looks like it's simply disregarding max_fragment_size.
-      //    If any other code assumes that max_fragment_size is actually honored, we'll get undefined behavior.
-      backend_y_per_buffer = 1;
-    }
-
-    uint64_t y_total_access = per_backend[i];
-    esdm_status ret;
-    while (y_total_access > 0) {
-      //XXX This is only correct because we use the first dimension with more than one slice as the split dimension.
-      //    If that were not the case, we would need to calculate the effective stride for the split dimension in the non-strided case.
-      uint64_t y_to_access = y_total_access > backend_y_per_buffer ? backend_y_per_buffer : y_total_access;
-      y_total_access -= y_to_access;
-
-      dim[split_dim] = y_to_access;
-      offset[split_dim] = offset_y + space->offset[split_dim];
-
-      io_work_t *task = (io_work_t *)malloc(sizeof(io_work_t));
-      esdm_dataspace_t *subspace;
-
-      ret = esdm_dataspace_subspace(space, space->dims, dim, offset, &subspace);
-      eassert(ret == ESDM_SUCCESS);
-      if(space->stride) {
-        //the buffer that we use the subspace for is in the layout of `space`, so we need to copy the layout information to `subspace`
-        ret = esdm_dataspace_set_stride(subspace, space->stride);
-        eassert(ret == ESDM_SUCCESS);
-      }
-      task->parent = status;
-      task->op = ESDM_OP_WRITE;
-      ret = esdmI_fragment_create(dataset, subspace, (char *)buf + offset_y * y_stride, &task->fragment);
-      eassert(ret == ESDM_SUCCESS);
-      task->fragment->backend = b;
-      task->callback = NULL;
-      if (b->threads == 0) {
-        backend_thread(task, b);
-      } else {
-        g_thread_pool_push(b->threadPool, task, &error);
-      }
-
-      offset_y += y_to_access;
-    }
-  }
-
-  // now enqueue the operations
   return ESDM_SUCCESS;
 }
 

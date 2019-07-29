@@ -96,6 +96,27 @@ bool esdmI_hypercube_doesIntersect(esdmI_hypercube_t* a, esdmI_hypercube_t* b) {
   return true;
 }
 
+void esdmI_hypercube_getOffsetAndSize(esdmI_hypercube_t* cube, int64_t* out_offset, int64_t* out_size) {
+  eassert(out_offset);
+  eassert(out_size);
+
+  for(int64_t i = 0; i < cube->dims; i++) {
+    out_offset[i] = cube->ranges[i].start;
+    out_size[i] = esdmI_range_size(cube->ranges[i]);
+  }
+}
+
+int64_t esdmI_hypercube_size(esdmI_hypercube_t* cube) {
+  eassert(cube);
+  eassert(cube->dims > 0);
+
+  int64_t result = 1;
+  for(int64_t i = 0; i < cube->dims; i++) {
+    result *= esdmI_range_size(cube->ranges[i]);
+  }
+  return result;
+}
+
 void esdmI_hypercube_print(esdmI_hypercube_t* cube, FILE* stream) {
   fprintf(stream, "(");
   for(int64_t i = 0; i < cube->dims; i++) {
