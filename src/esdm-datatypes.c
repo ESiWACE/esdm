@@ -688,7 +688,7 @@ esdm_status esdmI_create_fragment_from_metadata(esdm_dataset_t *dset, json_t * j
       return ESDM_ERROR;
     }
     for(int i=0; i < dims; i++){
-      offset[i] = json_integer_value(json_array_get(elem, i));
+      stride[i] = json_integer_value(json_array_get(elem, i));
     }
   }
 
