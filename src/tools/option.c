@@ -385,6 +385,7 @@ int option_parse(int argc, char **argv, option_help *args, int *printhelp) {
   if (error != 0) {
     printf("Invalid options\n");
     *printhelp = -1;
+    exit(1);
   }
 
   return i;

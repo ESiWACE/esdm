@@ -288,9 +288,10 @@ esdm_status esdm_container_close(esdm_container_t *c) {
   return ret;
 }
 
-esdm_status esdm_container_delete_attribute(esdm_container_t *c, smd_attr_t *attr, const char *name) {
+esdm_status esdm_container_delete_attribute(esdm_container_t *c, const char *name) {
   ESDM_DEBUG(__func__);
 
+  smd_attr_t *attr;
   esdm_status status = esdm_container_get_attributes(c, &attr);
   if (name != NULL && status == ESDM_SUCCESS){
     int pos = smd_find_position_by_name(attr, name);
@@ -598,7 +599,7 @@ esdm_status esdm_dataset_create(esdm_container_t *c, const char *name, esdm_data
   esdm_dataset_t *dset;
   esdm_dataset_init(c, name, dspace, & dset);
   dset->mode_flags = ESDM_MODE_FLAG_WRITE;
-  
+
   esdm_status status = esdm.modules->metadata_backend->callbacks.dataset_create(esdm.modules->metadata_backend, dset);
   if(status != ESDM_SUCCESS){
     esdmI_dataset_destroy(dset);
@@ -959,6 +960,10 @@ esdm_status esdm_dataset_close(esdm_dataset_t *dset) {
   if(dset->refcount){
     return ESDM_SUCCESS;
   }
+  if(dset->status == ESDM_DATA_DIRTY){
+    // needs to be synchronized, though
+    return ESDM_SUCCESS;
+  }
 
   esdm_status ret = ESDM_SUCCESS;
   dset->status = ESDM_DATA_NOT_LOADED;
@@ -1020,11 +1025,12 @@ esdm_status esdmI_dataset_destroy(esdm_dataset_t *dset) {
 
 // not tested yet
 
-esdm_status esdm_dataset_delete_attribute(esdm_dataset_t *dataset, smd_attr_t *attr, const char *name){
+esdm_status esdm_dataset_delete_attribute(esdm_dataset_t *dataset, const char *name){
   ESDM_DEBUG(__func__);
 
   eassert(name);
 
+  smd_attr_t *attr;
   esdm_status status = esdm_dataset_get_attributes(dataset, &attr);
   if (status == ESDM_SUCCESS){
     int pos = smd_find_position_by_name(attr, name);
@@ -1060,7 +1066,9 @@ esdm_status esdm_dataset_rename(esdm_dataset_t *d, const char *name) {
     }
   }
 
+  free(d->name);
   d->name = strdup(name);
+  d->container->status = ESDM_DATA_DIRTY;
   return ESDM_SUCCESS;
 }
 
@@ -1081,6 +1089,7 @@ esdm_status esdm_dataspace_create(int64_t dims, int64_t *sizes, esdm_type_t type
 
     memcpy(dataspace->size, sizes, sizeof(int64_t) * dims);
     memset(dataspace->offset, 0, sizeof(int64_t) * dims);
+
   }else{
     dataspace->size = NULL;
     dataspace->offset = NULL;
@@ -1279,6 +1288,7 @@ esdm_status esdm_dataset_name_dims(esdm_dataset_t *d, char **names) {
     strcpy(posVar, names[i]);
     posVar += 1 + strlen(names[i]);
   }
+  d->container->status = ESDM_DATA_DIRTY;
   return ESDM_SUCCESS;
 }
 
