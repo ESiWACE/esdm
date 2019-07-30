@@ -205,7 +205,20 @@ static int fragment_retrieve(esdm_backend_t *backend, esdm_fragment_t *f, json_t
   sprintfFragmentPath(path, f);
   DEBUG("path_fragment: %s", path);
 
-  int ret = entry_retrieve(path, f->buf, f->bytes);
+  //ensure that we have a contiguous read buffer
+  void* readBuffer = f->dataspace->stride ? malloc(f->bytes) : f->buf;
+
+  int ret = entry_retrieve(path, readBuffer, f->bytes);
+
+  if(f->dataspace->stride) {
+    //data is not necessarily supposed to be contiguous in memory -> copy from contiguous dataspace
+    esdm_dataspace_t* contiguousSpace;
+    esdm_dataspace_subspace(f->dataspace, f->dataspace->dims, f->dataspace->size, f->dataspace->offset, &contiguousSpace);
+    esdm_dataspace_copy_data(contiguousSpace, readBuffer, f->dataspace, f->buf);
+    esdm_dataspace_destroy(contiguousSpace);
+    free(readBuffer);
+  }
+
   return ret;
 }
 
@@ -223,6 +236,18 @@ static int fragment_update(esdm_backend_t *backend, esdm_fragment_t *f) {
   // set data, options and tgt for convienience
   posix_backend_data_t *data = (posix_backend_data_t *)backend->data;
   const char *tgt = data->target;
+  int ret = ESDM_SUCCESS;
+
+  //ensure that we have the data contiguously in memory
+  void* writeBuffer = f->buf;
+  if(f->dataspace->stride) {
+    //data is not necessarily contiguous in memory -> copy to contiguous dataspace
+    writeBuffer = malloc(f->bytes);
+    esdm_dataspace_t* contiguousSpace;
+    esdm_dataspace_subspace(f->dataspace, f->dataspace->dims, f->dataspace->size, f->dataspace->offset, &contiguousSpace);
+    esdm_dataspace_copy_data(f->dataspace, f->buf, contiguousSpace, writeBuffer);
+    esdm_dataspace_destroy(contiguousSpace);
+  }
 
   char path[PATH_MAX];
   // lazy assignment of ID
@@ -230,37 +255,43 @@ static int fragment_update(esdm_backend_t *backend, esdm_fragment_t *f) {
     sprintfFragmentPath(path, f);
     DEBUG("path: %s\n", path);
     // create data
-    int ret = entry_update(path, f->buf, f->bytes, 1);
-    return ret;
-  }
-  int ret;
-  f->id = malloc(21);
-  eassert(f->id);
-  // ensure that the fragment with the ID doesn't exist, yet
-  while(1){
-    ea_generate_id(f->id, 20);
-    struct stat sb;
-    sprintfFragmentDir(path, f);
-    if (stat(path, &sb) == -1) {
-      int ret = mkdir_recursive(path);
-      if (ret != 0 && errno != EEXIST) {
-        WARN("error on creating directory \"%s\": %s", path, strerror(errno));
-        return ESDM_ERROR;
+    ret = entry_update(path, writeBuffer, f->bytes, 1);
+  } else {
+    f->id = malloc(21);
+    eassert(f->id);
+    // ensure that the fragment with the ID doesn't exist, yet
+    while(1){
+      ea_generate_id(f->id, 20);
+      struct stat sb;
+      sprintfFragmentDir(path, f);
+      if (stat(path, &sb) == -1) {
+        if (mkdir_recursive(path) != 0 && errno != EEXIST) {
+          WARN("error on creating directory \"%s\": %s", path, strerror(errno));
+          ret = ESDM_ERROR;
+          break;
+        }
       }
-    }
-    sprintfFragmentPath(path, f);
-    int fd = open(path, O_WRONLY | O_CREAT | O_EXCL, S_IWUSR | S_IRUSR | S_IWGRP | S_IRGRP | S_IROTH);
-    if(fd < 0){
-      if(errno == EEXIST){
-        continue;
+      sprintfFragmentPath(path, f);
+      int fd = open(path, O_WRONLY | O_CREAT | O_EXCL, S_IWUSR | S_IRUSR | S_IWGRP | S_IRGRP | S_IROTH);
+      if(fd < 0){
+        if(errno == EEXIST){
+          continue;
+        }
+        WARN("error on creating file \"%s\": %s", path, strerror(errno));
+        ret = ESDM_ERROR;
+        break;
       }
-      WARN("error on creating file \"%s\": %s", path, strerror(errno));
-      return ESDM_ERROR;
+
+      //write the data
+      ret = write_check(fd, writeBuffer, f->bytes);
+      close(fd);
+      break;
     }
-    ret = write_check(fd, f->buf, f->bytes);
-    close(fd);
-    return ret;
   }
+
+  //cleanup
+  if(f->dataspace->stride) free(writeBuffer);
+  return ret;
 }
 
 ///////////////////////////////////////////////////////////////////////////////
