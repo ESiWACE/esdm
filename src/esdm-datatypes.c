@@ -75,56 +75,6 @@ int esdm_container_dataset_count(esdm_container_t * c){
   return c->dsets.count;
 }
 
-int esdm_container_dataset_get_actual_size(esdm_container_t *c, char *name){
-  ESDM_DEBUG(__func__);
-  eassert(c != NULL);
-  eassert(name != NULL);
-
-  int count = esdm_container_dataset_count(c);
-  int pos = -1;
-  esdm_dataset_t *dset;
-
-  for(int i = 0; i < count; i++){
-    dset = esdm_container_dataset_from_array(c, i);
-
-    int ndims = dset->dataspace->dims;
-
-    if (ndims <= 0)
-      return ESDM_ERROR;
-
-    char const *const *names = NULL;
-    esdm_status status = esdm_dataset_get_name_dims(dset, &names);
-    if(status != ESDM_SUCCESS) return(ESDM_ERROR);
-
-    if (names == NULL)
-      return ESDM_ERROR;
-
-    for(int j = 0; j < ndims; j++){
-
-      if (strcmp(names[j],name) == 0){
-        pos = j;
-        break;
-      }
-
-    }
-
-    if (pos != -1)
-      i = count + 1; // for exiting the main loop
-  }
-
-  if (pos == -1)
-    return(ESDM_ERROR);
-  else return esdm_dataset_get_size(dset, pos);
-
-}
-
-int esdm_dataset_get_size(esdm_dataset_t *d, int i){
-  ESDM_DEBUG(__func__);
-  eassert(d != NULL);
-  eassert(i >= 0);
-
-  return (d->actual_size[i]);
-}
 
 esdm_dataset_t * esdm_container_dataset_from_array(esdm_container_t * c, int i){
   ESDM_DEBUG(__func__);
@@ -869,17 +819,6 @@ esdm_status esdm_dataset_open_md_parse(esdm_dataset_t *d, char * md, int size){
 	return ESDM_SUCCESS;
 }
 
-esdm_status ESDM_dimension_update_actual_size (esdm_dataset_t *d, int dimid, int actual_size){
-  ESDM_DEBUG(__func__);
-
-  d->dataspace->size[dimid] = actual_size;
-  d->actual_size[dimid] = actual_size;
-
-// this function may have to work to all datasets too
-
-  return ESDM_SUCCESS;
-}
-
 esdm_status esdm_dataset_ref(esdm_dataset_t * d){
   ESDM_DEBUG(__func__);
   if(d->status != ESDM_DATA_NOT_LOADED){
@@ -1356,6 +1295,15 @@ esdm_status esdm_dataset_name_dims(esdm_dataset_t *d, char **names) {
   return ESDM_SUCCESS;
 }
 
+esdm_status esdm_dataset_rename_dim(esdm_dataset_t *d, char const *name, int i){
+  eassert(i >= 0);
+  eassert(i < d->dataspace->dims );
+  char ** names = d->dims_dset_id;
+  names[i] = (char*) name;
+
+  return esdm_dataset_name_dims(d, names);
+}
+
 esdm_status esdm_dataset_get_name_dims(esdm_dataset_t *d, char const *const **out_names) {
   eassert(d != NULL);
   eassert(out_names != NULL);
@@ -1385,6 +1333,23 @@ int64_t const * esdm_dataset_get_actual_size(esdm_dataset_t *dset){
   }
   return dset->dataspace->size;
 }
+
+int64_t const * esdm_dataset_get_size(esdm_dataset_t *dset){
+  return dset->dataspace->size;
+}
+
+esdm_status esdm_dataset_update_size(esdm_dataset_t *d, uint64_t * sizes){
+  ESDM_DEBUG(__func__);
+  void * tgt;
+  if(d->actual_size){
+    tgt = d->actual_size;
+  }else{
+    tgt = d->dataspace->size;
+  }
+  memcpy(sizes, tgt, sizeof(uint64_t) * d->dataspace->dims);
+  return ESDM_SUCCESS;
+}
+
 
 smd_dtype_t const * esdm_dataset_get_type(esdm_dataset_t * d){
   eassert(d);

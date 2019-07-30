@@ -165,11 +165,16 @@ esdm_status esdm_container_close(esdm_container_t *container);
  */
 bool esdm_container_dataset_exists(esdm_container_t * container, char const * name);
 
-esdm_status ESDM_dimension_update_actual_size (esdm_dataset_t *d, int dimid, int actual_size);
-
-int esdm_container_dataset_get_actual_size(esdm_container_t *c, char *name);
-
-int esdm_dataset_get_size(esdm_dataset_t * d, int i);
+/*
+ functions to change the size of the dataspace
+ */
+esdm_status esdm_dataset_update_size(esdm_dataset_t *dset, uint64_t * sizes);
+int64_t const * esdm_dataset_get_size(esdm_dataset_t * dset);
+/*
+ This function returns the actual size for ulim
+ Return a pointer to the internal size (having the same dimensions)
+ */
+int64_t const * esdm_dataset_get_actual_size(esdm_dataset_t *dset);
 
 /*
  * Return the number of datasets in the container.
@@ -211,7 +216,6 @@ esdm_dataset_t * esdm_container_dataset_from_array(esdm_container_t * container,
 
 esdm_status esdm_dataset_create(esdm_container_t *container, const char *name, esdm_dataspace_t *dataspace, esdm_dataset_t **out_dataset);
 
-esdm_status esdm_dataset_name_dims(esdm_dataset_t *dataset, char **names);
 
 /*
  The value to be used if data hasn't been written to a datapoint, it must be of the same type as the dataset type.
@@ -229,6 +233,19 @@ esdm_status esdm_dataset_get_fill_value(esdm_dataset_t *dataset, void * value);
  */
 char const * esdm_dataset_name(esdm_dataset_t *dataset);
 
+/*
+ Name the dimensions of a dataset
+ */
+esdm_status esdm_dataset_name_dims(esdm_dataset_t *dataset, char **names);
+
+/*
+ Rename a single dimension
+ */
+esdm_status esdm_dataset_rename_dim(esdm_dataset_t *dataset, char const *name, int i);
+
+/*
+ * out names still belongs to the dataset
+ */
 esdm_status esdm_dataset_get_name_dims(esdm_dataset_t *dataset, char const *const **out_names);
 
 esdm_status esdm_dataset_get_dataspace(esdm_dataset_t *dset, esdm_dataspace_t **out_dataspace);
@@ -265,12 +282,6 @@ void esdm_dataspace_getEffectiveStride(esdm_dataspace_t* space, int64_t* out_str
 int64_t esdm_dataspace_elementOffset(esdm_dataspace_t* space, int64_t* coords);
 
 esdm_status esdm_dataset_change_name(esdm_dataset_t *dset, char const * new_name);
-
-/*
- This function returns the actual size for ulim
- Return a pointer to the internal size (having the same dimensions)
- */
-int64_t const * esdm_dataset_get_actual_size(esdm_dataset_t *dset);
 
 esdm_status esdm_dataset_iterator(esdm_container_t *container, esdm_dataset_iterator_t **out_iter);
 
