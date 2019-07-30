@@ -152,7 +152,7 @@ void esdmI_hypercubeSet_add(esdmI_hypercubeSet_t* me, esdmI_hypercube_t* cube) {
   //grow the buffer if necessary
   if(me->count == me->allocatedCount) {
     me->allocatedCount <<= 1;
-    me->cubes = realloc(me->cubes, me->allocatedCount);
+    me->cubes = realloc(me->cubes, me->allocatedCount*sizeof(*me->cubes));
     eassert(me->cubes);
   }
   eassert(me->allocatedCount > me->count);
