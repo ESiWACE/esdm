@@ -445,6 +445,11 @@ esdm_status esdm_dataspace_serialize(esdm_dataspace_t *dataspace, void **out);
 
 uint64_t esdm_dataspace_element_count(esdm_dataspace_t *dataspace);
 
+/**
+ * Calculate the logical amount of data in a dataspace in bytes.
+ *
+ * @return the volume of the dataspace's hypercube times the size of its elements
+ */
 uint64_t esdm_dataspace_size(esdm_dataspace_t *dataspace);
 
 

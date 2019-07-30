@@ -25,6 +25,7 @@
 #include <esdm-internal.h>
 #include <esdm.h>
 #include <glib.h>
+#include <math.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -320,7 +321,6 @@ esdm_status esdm_dataspace_copy_data(esdm_dataspace_t* sourceSpace, void *voidPt
   return ESDM_SUCCESS;
 }
 
-//FIXME: This has zero test coverage currently.
 static void read_copy_callback(io_work_t *work) {
   if (work->return_code != ESDM_SUCCESS) {
     DEBUG("Error reading from fragment ", work->fragment);
@@ -374,6 +374,14 @@ esdm_status esdm_scheduler_enqueue_read(esdm_instance_t *esdm, io_request_status
     if (esdmI_scheduler_try_direct_io(f, buf, buf_space)) {
       task->callback = NULL;
     } else {
+      //We cannot instruct the fragment to read the data directly into `buf` as we may only need a part of the fragment's data, and the overshoot may cause UB.
+      //And we don't want to allocate more memory here than just enough to actually read the fragment's data, so we cannot use the fragment's possibly strided dataspace.
+      //However, we can ensure that the fragment can read directly into our buffer by supplying an unstrided dataspace.
+      esdm_dataspace_t* contiguousSpace;
+      esdm_dataspace_subspace(f->dataspace, f->dataspace->dims, f->dataspace->size, f->dataspace->offset, &contiguousSpace);
+      esdm_dataspace_destroy(f->dataspace);
+      f->dataspace = contiguousSpace;
+
       f->buf = malloc(size);  //This buffer will be filled by some background I/O process, read_copy_callback() will only be invoked *after* that has happened.
       task->callback = read_copy_callback;
       task->data.mem_buf = buf;
@@ -391,14 +399,57 @@ esdm_status esdm_scheduler_enqueue_read(esdm_instance_t *esdm, io_request_status
 
 //Decide how the given dataset should be split into fragments to get sensible fragment sizes.
 //Returns a hypercube set with one hypercube for each fragment that should be generated.
-esdmI_hypercubeSet_t* esdm_scheduler_makeSplitRecommendation(esdm_instance_t *esdm, esdm_dataspace_t* space) {
+esdmI_hypercubeSet_t* esdm_scheduler_makeSplitRecommendation(esdm_instance_t *esdm, esdm_dataspace_t* space, int64_t maxFragmentSize) {
   eassert(esdm);
   eassert(space);
 
-  esdmI_hypercube_t* cube = esdmI_hypercube_make(space->dims, space->offset, space->size);
   esdmI_hypercubeSet_t* result = esdmI_hypercubeSet_make();
-  esdmI_hypercubeSet_add(result, cube); //trivial implementation: just return the shape of the dataspace as a single hypercube.
-  esdmI_hypercube_destroy(cube);
+
+  //determine the count of splitable dimensions (length > 1)
+  uint64_t splitDims = 0;
+  for(int64_t i = 0; i < space->dims; i++) {
+    if(space->size[i] > 1) splitDims++;
+  }
+  if(!splitDims) {
+    //only a single element, use a trivial recommendation
+    esdmI_hypercube_t* cube = esdmI_hypercube_make(space->dims, space->offset, space->size);
+    esdmI_hypercubeSet_add(result, cube);
+    esdmI_hypercube_destroy(cube);
+    return result;
+  }
+
+  //determine the split factors per dimension
+  double targetEdgeLength = pow(maxFragmentSize/(double)esdm_sizeof(esdm_dataspace_get_type(space)), 1.0/splitDims);
+  int64_t splitFactors[space->dims];
+  memset(splitFactors, 0, sizeof(splitFactors));
+  for(int64_t i = 0; i < space->dims; i++) {
+    splitFactors[i] = (int64_t)ceil(space->size[i]/targetEdgeLength);
+    eassert(splitFactors[i] >= 1);
+    eassert(splitFactors[i] <= space->size[i]);
+  }
+
+  //create the split hypercubes
+  int64_t splitCoords[space->dims];
+  memset(splitCoords, 0, sizeof(splitCoords));
+  esdmI_hypercube_t* curCube = esdmI_hypercube_makeDefault(space->dims);
+  while(true) {
+    //set the current ranges
+    for(int64_t i = 0; i < space->dims; i++) {
+      curCube->ranges[i] = (esdmI_range_t){
+        .start = space->offset[i] + splitCoords[i]*space->size[i]/splitFactors[i],
+        .end = space->offset[i] + (splitCoords[i] + 1)*space->size[i]/splitFactors[i]
+      };
+    }
+
+    esdmI_hypercubeSet_add(result, curCube);
+
+    //update the split coords
+    int64_t updateDim;
+    for(updateDim = space->dims; updateDim--; ) {
+      if(++(splitCoords[updateDim]) < splitFactors[updateDim]) break;
+    }
+    if(updateDim < 0) break;
+  }
   return result;
 }
 
@@ -409,7 +460,7 @@ esdm_status esdm_scheduler_enqueue_write(esdm_instance_t *esdm, io_request_statu
   //Gather I/O recommendations
   //esdm_performance_recommendation(esdm, NULL, NULL);    // e.g., split, merge, replication?
   //esdm_layout_recommendation(esdm, NULL, NULL);		  // e.g., merge, split, transform?
-  esdmI_hypercubeSet_t* cubes = esdm_scheduler_makeSplitRecommendation(esdm, space);
+  esdmI_hypercubeSet_t* cubes = esdm_scheduler_makeSplitRecommendation(esdm, space, 100000000); //FIXME: Use a sensible size value derived from the backends' max_fragment_size values.
 
   int64_t dim[space->dims], offset[space->dims], stride[space->dims];
   for(int64_t i = 0, backendIndex = -1; i < cubes->count; i++) {
