@@ -268,6 +268,8 @@ inline int64_t esdmI_range_size(esdmI_range_t range) { return esdmI_range_isEmpt
 
 void esdmI_range_print(esdmI_range_t range, FILE* stream);
 
+esdmI_hypercube_t* esdmI_hypercube_makeDefault(int64_t dimensions); //initializes an empty hypercube with the given dimension count at (0, 0, ...)
+
 esdmI_hypercube_t* esdmI_hypercube_make(int64_t dimensions, int64_t* offset, int64_t* size);
 
 esdmI_hypercube_t* esdmI_hypercube_makeCopy(esdmI_hypercube_t* original);

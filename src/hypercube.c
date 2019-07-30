@@ -44,6 +44,20 @@ void esdmI_range_print(esdmI_range_t range, FILE* stream) {
   }
 }
 
+esdmI_hypercube_t* esdmI_hypercube_makeDefault(int64_t dimensions) {
+  eassert(dimensions >= 0);
+
+  esdmI_hypercube_t* result = malloc(sizeof(*result) + dimensions*sizeof(*result->ranges));
+  result->dims = dimensions;
+  for(int64_t i = 0; i < dimensions; i++) {
+    result->ranges[i] = (esdmI_range_t){
+      .start = 0,
+      .end = 0
+    };
+  }
+  return result;
+}
+
 esdmI_hypercube_t* esdmI_hypercube_make(int64_t dimensions, int64_t* offset, int64_t* size) {
   eassert(offset);
   eassert(size);
