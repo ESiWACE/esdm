@@ -152,6 +152,24 @@ esdm_status esdm_modules_finalize(esdm_instance_t *esdm) {
   return ESDM_SUCCESS;
 }
 
+esdm_backend_t** esdm_modules_makeBackendRecommendation(esdm_modules_t* modules, esdm_dataspace_t* space, int64_t* out_moduleCount, int64_t* out_maxFragmentSize) {
+  eassert(out_moduleCount);
+
+  //trivial implementation for now: just return a copy of our modules array
+  *out_moduleCount = modules->data_backend_count;
+  esdm_backend_t** result = ea_memdup(modules->data_backends, *out_moduleCount*sizeof(*result));
+
+  if(out_maxFragmentSize) {
+    //determine the minimal max_fragment_size of a data backend that we return
+    *out_maxFragmentSize = INT64_MAX;
+    for(int64_t i = 0; i < *out_moduleCount; i++) {
+      if(*out_maxFragmentSize > result[i]->config->max_fragment_size) *out_maxFragmentSize = result[i]->config->max_fragment_size;
+    }
+  }
+
+  return result;
+}
+
 esdm_status esdm_modules_get_by_type(esdm_module_type_t type, esdm_module_type_array_t **array) {
   ESDM_DEBUG(__func__);
   return ESDM_SUCCESS;

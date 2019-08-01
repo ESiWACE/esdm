@@ -59,6 +59,17 @@ esdm_modules_t *esdm_modules_init(esdm_instance_t *esdm);
 
 esdm_status esdm_modules_finalize();
 
+/**
+ * Make a recommendation on which data backend to use to store data for the given dataspace.
+ *
+ * @param [in] modules usually esdm->modules
+ * @param [in] space the dataspace for which the recommendation is to be made
+ * @param [out] out_moduleCount returns the number of recommended backends
+ * @param [out] out_maxFragmentSize a max fragment size that is suitable for use with all the recommended backends (optional, may be NULL)
+ * @return a freshly allocated array of *out_moduleCount backend pointers, must be free'd by the caller
+ */
+esdm_backend_t** esdm_modules_makeBackendRecommendation(esdm_modules_t* modules, esdm_dataspace_t* space, int64_t* out_moduleCount, int64_t* out_maxFragmentSize);
+
 esdm_status esdm_modules_register();
 
 esdm_status esdm_modules_get_by_type(esdm_module_type_t type, esdm_module_type_array_t **array);

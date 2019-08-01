@@ -399,8 +399,7 @@ esdm_status esdm_scheduler_enqueue_read(esdm_instance_t *esdm, io_request_status
 
 //Decide how the given dataset should be split into fragments to get sensible fragment sizes.
 //Returns a hypercube set with one hypercube for each fragment that should be generated.
-esdmI_hypercubeSet_t* esdm_scheduler_makeSplitRecommendation(esdm_instance_t *esdm, esdm_dataspace_t* space, int64_t maxFragmentSize) {
-  eassert(esdm);
+esdmI_hypercubeSet_t* esdm_scheduler_makeSplitRecommendation(esdm_dataspace_t* space, int64_t maxFragmentSize) {
   eassert(space);
 
   esdmI_hypercubeSet_t* result = esdmI_hypercubeSet_make();
@@ -453,20 +452,20 @@ esdmI_hypercubeSet_t* esdm_scheduler_makeSplitRecommendation(esdm_instance_t *es
   return result;
 }
 
-//TODO Factor out the code to determine the split dimension, and make that new function also return the correct effective stride for the split dimension.
-//     Refactor the rest of the function to allow splitting any dimension(s).
 esdm_status esdm_scheduler_enqueue_write(esdm_instance_t *esdm, io_request_status_t *status, esdm_dataset_t *dataset, void *buf, esdm_dataspace_t *space) {
   GError *error;
   //Gather I/O recommendations
   //esdm_performance_recommendation(esdm, NULL, NULL);    // e.g., split, merge, replication?
   //esdm_layout_recommendation(esdm, NULL, NULL);		  // e.g., merge, split, transform?
-  esdmI_hypercubeSet_t* cubes = esdm_scheduler_makeSplitRecommendation(esdm, space, 100000000); //FIXME: Use a sensible size value derived from the backends' max_fragment_size values.
+  int64_t backendCount, maxFragmentSize;
+  esdm_backend_t** backends = esdm_modules_makeBackendRecommendation(esdm->modules, space, &backendCount, &maxFragmentSize);
+  eassert(backends);
+  esdmI_hypercubeSet_t* cubes = esdm_scheduler_makeSplitRecommendation(space, maxFragmentSize);
 
   int64_t dim[space->dims], offset[space->dims], stride[space->dims];
-  for(int64_t i = 0, backendIndex = -1; i < cubes->count; i++) {
+  for(int64_t i = 0; i < cubes->count; i++) {
     status->pending_ops++;
-    backendIndex = (backendIndex + 1)%esdm->modules->data_backend_count;
-    esdm_backend_t* curBackend = esdm->modules->data_backends[backendIndex];
+    esdm_backend_t* curBackend = backends[i%backendCount];
     eassert(curBackend);
 
     esdmI_hypercube_getOffsetAndSize(cubes->cubes[i], offset, dim);
@@ -499,6 +498,7 @@ esdm_status esdm_scheduler_enqueue_write(esdm_instance_t *esdm, io_request_statu
     }
   }
 
+  free(backends);
   return ESDM_SUCCESS;
 }
 
