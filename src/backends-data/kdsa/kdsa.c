@@ -350,6 +350,7 @@ static uint64_t find_offset_to_store_fragment(kdsa_backend_data_t* data){
 }
 
 
+//TODO this has zero test coverage currently
 static int fragment_update(esdm_backend_t *backend, esdm_fragment_t *f) {
   DEBUG_ENTER;
 
@@ -374,6 +375,7 @@ static int fragment_update(esdm_backend_t *backend, esdm_fragment_t *f) {
     sprintf(f->id, "%"PRId64, offset);
   }
 
+  //FIXME make this stride aware!
   ret = kdsa_write_unregistered(data->handle, fragmd->offset, f->buf, f->bytes);
   if(ret != 0){
     WARN_STRERR("Error could not write data from volume %s", data->config->target);

@@ -350,6 +350,7 @@ static int dataset_destroy(esdm_backend_t *backend, esdm_dataset_t *dataset) {
 // Fragment Helpers ///////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////
 
+//TODO this has zero test coverage currently
 static int fragment_update(esdm_backend_t *backend, esdm_fragment_t *fragment) {
   char *path;
   char *path_fragment;
