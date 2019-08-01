@@ -258,3 +258,9 @@ void ea_generate_id(char *str, size_t length){
 
   str[length] = '\0';
 }
+
+void* ea_memdup(void* data, size_t size) {
+  void* result = malloc(size);
+  memcpy(result, data, size);
+  return result;
+}

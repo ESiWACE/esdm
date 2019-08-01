@@ -228,6 +228,16 @@ esdm_backend_t * esdmI_get_backend(char const * plugin_id);
 
 void ea_generate_id(char *str, size_t length);
 
+/**
+ * Create a copy of an arbitrary memory buffer.
+ * This is essentially a strdup() for non-string data.
+ *
+ * @param [in] data pointer to the bytes to copy
+ * @param [in] size count of bytes to copy
+ * @return freshly malloc'ed buffer containing a copy of the bytes, must be free'd by the caller
+ */
+void* ea_memdup(void* data, size_t size);
+
 int ea_compute_hash_str(const char * str);
 bool ea_is_valid_dataset_name(const char *str);
 
