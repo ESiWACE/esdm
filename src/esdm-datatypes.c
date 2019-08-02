@@ -1106,6 +1106,28 @@ esdm_status esdm_dataspace_create(int64_t dims, int64_t *sizes, esdm_type_t type
   return ESDM_SUCCESS;
 }
 
+esdm_status esdmI_dataspace_createFromHypercube(esdmI_hypercube_t* extends, esdm_type_t type, esdm_dataspace_t** out_space) {
+  ESDM_DEBUG(__func__);
+  eassert(extends);
+  eassert(out_space);
+
+  int64_t dimensions = esdmI_hypercube_dimensions(extends);
+  eassert(dimensions >= 0);
+
+  esdm_dataspace_t* result = malloc(sizeof(*result));
+  *result = (esdm_dataspace_t){
+    .type = type,
+    .dims = dimensions,
+    .size = malloc(dimensions*sizeof(*result->size)),
+    .offset = malloc(dimensions*sizeof(*result->offset)),
+    .stride = NULL
+  };
+  esdmI_hypercube_getOffsetAndSize(extends, result->offset, result->size);
+
+  *out_space = result;
+  return ESDM_SUCCESS;
+}
+
 uint8_t esdm_dataspace_overlap(esdm_dataspace_t *a, esdm_dataspace_t *b) {
   // TODO: allow comparison of spaces of different size? Alternative maybe to transform into comparable space, provided a mask or dimension index mapping
 
@@ -1356,12 +1378,12 @@ esdm_status esdm_dataset_update_size(esdm_dataset_t *d, uint64_t * sizes){
 }
 
 
-smd_dtype_t const * esdm_dataset_get_type(esdm_dataset_t * d){
+esdm_type_t esdm_dataset_get_type(esdm_dataset_t * d){
   eassert(d);
   return d->dataspace->type;
 }
 
-smd_dtype_t const * esdm_dataspace_get_type(esdm_dataspace_t * d){
+esdm_type_t esdm_dataspace_get_type(esdm_dataspace_t * d){
   eassert(d);
   return d->type;
 }

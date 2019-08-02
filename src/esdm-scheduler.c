@@ -335,8 +335,6 @@ bool esdmI_scheduler_try_direct_io(esdm_fragment_t *f, void * buf, esdm_dataspac
   eassert(f->dataspace->dims == da->dims);
   eassert(f->dataspace->type == da->type);
 
-  uint64_t dimensions = f->dataspace->dims;
-
   int64_t instructionDims, chunkSize, sourceOffset, destOffset;
   esdmI_dataspace_copy_instructions(f->dataspace, da, &instructionDims, &chunkSize, &sourceOffset, &destOffset, NULL, NULL, NULL);
   if(instructionDims < 0) return true; //no overlap, nothing to do, we did it successfully
@@ -472,7 +470,7 @@ esdm_status esdm_scheduler_enqueue_write(esdm_instance_t *esdm, io_request_statu
     esdm_dataspace_getEffectiveStride(space, stride);
 
     esdm_dataspace_t* subspace;
-    esdm_status ret = esdm_dataspace_subspace(space, space->dims, dim, offset, &subspace);
+    esdm_status ret = esdmI_dataspace_createFromHypercube(cubes->cubes[i], esdm_dataspace_get_type(space), &subspace);
     eassert(ret == ESDM_SUCCESS);
     ret = esdm_dataspace_set_stride(subspace, stride);
     eassert(ret == ESDM_SUCCESS);

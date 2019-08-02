@@ -249,12 +249,12 @@ esdm_status esdm_dataset_rename_dim(esdm_dataset_t *dataset, char const *name, i
 esdm_status esdm_dataset_get_name_dims(esdm_dataset_t *dataset, char const *const **out_names);
 
 esdm_status esdm_dataset_get_dataspace(esdm_dataset_t *dset, esdm_dataspace_t **out_dataspace);
-smd_dtype_t const * esdm_dataset_get_type(esdm_dataset_t * d);
+esdm_type_t esdm_dataset_get_type(esdm_dataset_t * d);
 
 int64_t esdm_dataspace_get_dims(esdm_dataspace_t * d);
 int64_t const * esdm_dataspace_get_size(esdm_dataspace_t * d);
 int64_t const * esdm_dataspace_get_offset(esdm_dataspace_t * d);
-smd_dtype_t const * esdm_dataspace_get_type(esdm_dataspace_t * d);
+esdm_type_t esdm_dataspace_get_type(esdm_dataspace_t * d);
 
 /**
  * Get the effective stride of a dataspace.

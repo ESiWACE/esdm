@@ -110,6 +110,8 @@ bool esdmI_hypercube_doesIntersect(esdmI_hypercube_t* a, esdmI_hypercube_t* b) {
   return true;
 }
 
+int64_t esdmI_hypercube_dimensions(esdmI_hypercube_t* cube);  //instantiate inline function
+
 void esdmI_hypercube_getOffsetAndSize(esdmI_hypercube_t* cube, int64_t* out_offset, int64_t* out_size) {
   eassert(out_offset);
   eassert(out_size);

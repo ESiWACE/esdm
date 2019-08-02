@@ -275,6 +275,16 @@ esdm_status esdmI_dataset_destroy(esdm_dataset_t *dataset);
 
 esdm_status esdmI_container_destroy(esdm_container_t *container);
 
+/**
+ * Create a dataspace. Takes the shape in the form of an `esdmI_hypercube_t`.
+ *
+ * Similar to `esdm_dataspace_create()`, but takes an `esdmI_hypercube_t*` instead of a pair of `offset` and `size` arrays.
+ *
+ * @param [in] extends the logical shape of the dataspace that is to be created
+ * @param [out] out_space returns a new dataspace object that needs to be destructed by the caller
+ */
+esdm_status esdmI_dataspace_createFromHypercube(esdmI_hypercube_t* extends, esdm_type_t type, esdm_dataspace_t** out_space);
+
 //the resulting range may be empty
 inline esdmI_range_t esdmI_range_intersection(esdmI_range_t a, esdmI_range_t b) {
   return (esdmI_range_t){
@@ -299,6 +309,8 @@ esdmI_hypercube_t* esdmI_hypercube_makeCopy(esdmI_hypercube_t* original);
 esdmI_hypercube_t* esdmI_hypercube_makeIntersection(esdmI_hypercube_t* a, esdmI_hypercube_t* b);
 
 bool esdmI_hypercube_doesIntersect(esdmI_hypercube_t* a, esdmI_hypercube_t* b);
+
+inline int64_t esdmI_hypercube_dimensions(esdmI_hypercube_t* cube) { return cube->dims; }
 
 /**
  * Return the shape of the hypercube as an offset and a size vector.
