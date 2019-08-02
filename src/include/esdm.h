@@ -430,6 +430,23 @@ esdm_status esdm_dataspace_makeContiguous(esdm_dataspace_t *dataspace, esdm_data
 esdm_status esdm_dataspace_set_stride(esdm_dataspace_t* dataspace, int64_t* stride);
 
 /**
+ * Copy the stride information from one dataspace to another.
+ *
+ * This is useful when defining a subspace that is supposed to access the same buffer as the enclosing dataspace.
+ * A simple `esdm_dataspace_subspace()` will assume contiguous storage for the subspace,
+ * a subsequent call `esdm_dataspace_copyDatalayout(subspace, bufferSpace)` will provide the subspace with the correct stride values to access its possibly non-contiguous part from the same buffer.
+ * Note that it is still necessary to adjust the buffer's address by means of `esdm_dataspace_elementOffset()` to compute the actual address of the subspace's first element.
+ *
+ * The `strideSource` must have the same dimension count as the `dataspace`.
+ *
+ * @param [inout] dataspace the dataspace to update
+ * @param [in] strideSource the dataspace that provides the data layout information which is to be copied
+ *
+ * @return `ESDM_SUCCESS`
+ */
+esdm_status esdm_dataspace_copyDatalayout(esdm_dataspace_t* dataspace, esdm_dataspace_t* strideSource);
+
+/**
  * Copy data from one buffer to another, possibly partially, possibly rearranging the data as prescribed by the given dataspaces.
  *
  * This function copies all the data that is contained within the intersection of the two dataspaces from the source buffer to the destination buffer.

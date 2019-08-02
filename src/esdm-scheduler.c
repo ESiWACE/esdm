@@ -460,19 +460,18 @@ esdm_status esdm_scheduler_enqueue_write(esdm_instance_t *esdm, io_request_statu
   eassert(backends);
   esdmI_hypercubeSet_t* cubes = esdm_scheduler_makeSplitRecommendation(space, maxFragmentSize);
 
-  int64_t dim[space->dims], offset[space->dims], stride[space->dims];
+  int64_t dim[space->dims], offset[space->dims];
   for(int64_t i = 0; i < cubes->count; i++) {
     status->pending_ops++;
     esdm_backend_t* curBackend = backends[i%backendCount];
     eassert(curBackend);
 
     esdmI_hypercube_getOffsetAndSize(cubes->cubes[i], offset, dim);
-    esdm_dataspace_getEffectiveStride(space, stride);
 
     esdm_dataspace_t* subspace;
     esdm_status ret = esdmI_dataspace_createFromHypercube(cubes->cubes[i], esdm_dataspace_get_type(space), &subspace);
     eassert(ret == ESDM_SUCCESS);
-    ret = esdm_dataspace_set_stride(subspace, stride);
+    ret = esdm_dataspace_copyDatalayout(subspace, space);
     eassert(ret == ESDM_SUCCESS);
     esdm_fragment_t* fragment;
     ret = esdmI_fragment_create(dataset, subspace, (char*)buf + esdm_dataspace_elementOffset(space, offset), &fragment);

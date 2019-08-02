@@ -729,6 +729,31 @@ esdm_status esdm_dataspace_set_stride(esdm_dataspace_t* space, int64_t* stride){
   return ESDM_SUCCESS;
 }
 
+esdm_status esdm_dataspace_copyDatalayout(esdm_dataspace_t* space, esdm_dataspace_t* source) {
+  eassert(space);
+  eassert(source);
+  eassert(space->dims == source->dims);
+
+  //get rid of old stride array
+  free(space->stride);
+  space->stride = NULL;
+
+  //check whether we actually need a stride array
+  if(!source->stride) {
+    bool haveMismatch = false;
+    for(int64_t i = 1; i < space->dims && !haveMismatch; i++) { //don't check first dimension size, it's irrelevant for the effective strides
+      haveMismatch = space->size[i] != source->size[i];
+    }
+    if(!haveMismatch) return ESDM_SUCCESS;  //no explicit stride in source and identical dim sizes -> implicit stride matches -> no need to set explicit stride
+  }
+
+  //copy the stride info from the source
+  space->stride = malloc(space->dims*sizeof(*space->stride));
+  esdm_dataspace_getEffectiveStride(source, space->stride);
+
+  return ESDM_SUCCESS;
+}
+
 esdm_status esdm_dataset_open_md_parse(esdm_dataset_t *d, char * md, int size){
 	esdm_status ret;
 	char * js = md;
