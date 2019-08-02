@@ -1098,7 +1098,6 @@ esdm_status esdm_dataspace_create(int64_t dims, int64_t *sizes, esdm_type_t type
     dataspace->offset = NULL;
   }
   dataspace->type = type;
-  dataspace->subspace_of = NULL;
   dataspace->stride = NULL;
   DEBUG("New dataspace: dims=%d\n", dataspace->dims);
 
@@ -1164,7 +1163,6 @@ esdm_status esdm_dataspace_subspace(esdm_dataspace_t *dataspace, int64_t dims, i
     // populate subspace members
     subspace->size = (int64_t *)malloc(sizeof(int64_t) * dims);
     subspace->offset = (int64_t *)malloc(sizeof(int64_t) * dims);
-    subspace->subspace_of = dataspace;
     subspace->stride = NULL;
     subspace->type = dataspace->type;
     smd_type_ref(subspace->type);
