@@ -387,6 +387,19 @@ esdm_status esdm_dataspace_deserialize(void *serialized_dataspace, esdm_dataspac
 esdm_status esdm_dataspace_subspace(esdm_dataspace_t *dataspace, int64_t dims, int64_t *size, int64_t *offset, esdm_dataspace_t **out_dataspace);
 
 /**
+ * Define a dataspace that covers the same logical hypercube as the given dataspace, but which uses the standard, contiguous C array element order.
+ * The stride of the original dataspace will be ignored totally.
+ *
+ * - Allocates process local memory structures.
+ *
+ * @param [in] dataspace the dataspace that is to be copied
+ * @param [out] out_dataspace pointer to the new contiguous dataspace
+ *
+ * @return `ESDM_SUCCESS`
+ */
+esdm_status esdm_dataspace_makeContiguous(esdm_dataspace_t *dataspace, esdm_dataspace_t **out_dataspace);
+
+/**
  * Specify a non-standard serialization order for a dataspace.
  *
  * This can be used to handle FORTRAN arrays, for example, or do some crazy stuff like inverted dimensions, or to skip over holes.

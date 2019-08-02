@@ -213,7 +213,7 @@ static int fragment_retrieve(esdm_backend_t *backend, esdm_fragment_t *f, json_t
   if(f->dataspace->stride) {
     //data is not necessarily supposed to be contiguous in memory -> copy from contiguous dataspace
     esdm_dataspace_t* contiguousSpace;
-    esdm_dataspace_subspace(f->dataspace, f->dataspace->dims, f->dataspace->size, f->dataspace->offset, &contiguousSpace);
+    esdm_dataspace_makeContiguous(f->dataspace, &contiguousSpace);
     esdm_dataspace_copy_data(contiguousSpace, readBuffer, f->dataspace, f->buf);
     esdm_dataspace_destroy(contiguousSpace);
     free(readBuffer);
@@ -244,7 +244,7 @@ static int fragment_update(esdm_backend_t *backend, esdm_fragment_t *f) {
     //data is not necessarily contiguous in memory -> copy to contiguous dataspace
     writeBuffer = malloc(f->bytes);
     esdm_dataspace_t* contiguousSpace;
-    esdm_dataspace_subspace(f->dataspace, f->dataspace->dims, f->dataspace->size, f->dataspace->offset, &contiguousSpace);
+    esdm_dataspace_makeContiguous(f->dataspace, &contiguousSpace);
     esdm_dataspace_copy_data(f->dataspace, f->buf, contiguousSpace, writeBuffer);
     esdm_dataspace_destroy(contiguousSpace);
   }

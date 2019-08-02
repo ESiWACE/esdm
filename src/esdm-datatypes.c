@@ -1179,6 +1179,13 @@ esdm_status esdm_dataspace_subspace(esdm_dataspace_t *dataspace, int64_t dims, i
   return status;
 }
 
+esdm_status esdm_dataspace_makeContiguous(esdm_dataspace_t *dataspace, esdm_dataspace_t **out_dataspace) {
+  ESDM_DEBUG(__func__);
+  eassert(dataspace);
+
+  return esdm_dataspace_subspace(dataspace, dataspace->dims, dataspace->size, dataspace->offset, out_dataspace);
+}
+
 void esdm_dataspace_print(esdm_dataspace_t *d) {
   printf("DATASPACE(size(%ld", d->size[0]);
   for (int64_t i = 1; i < d->dims; i++) {

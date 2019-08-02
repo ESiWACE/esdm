@@ -378,7 +378,7 @@ esdm_status esdm_scheduler_enqueue_read(esdm_instance_t *esdm, io_request_status
       //And we don't want to allocate more memory here than just enough to actually read the fragment's data, so we cannot use the fragment's possibly strided dataspace.
       //However, we can ensure that the fragment can read directly into our buffer by supplying an unstrided dataspace.
       esdm_dataspace_t* contiguousSpace;
-      esdm_dataspace_subspace(f->dataspace, f->dataspace->dims, f->dataspace->size, f->dataspace->offset, &contiguousSpace);
+      esdm_dataspace_makeContiguous(f->dataspace, &contiguousSpace);
       esdm_dataspace_destroy(f->dataspace);
       f->dataspace = contiguousSpace;
 
