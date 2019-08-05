@@ -1153,6 +1153,15 @@ esdm_status esdmI_dataspace_createFromHypercube(esdmI_hypercube_t* extends, esdm
   return ESDM_SUCCESS;
 }
 
+esdm_status esdmI_dataspace_getExtends(esdm_dataspace_t* space, esdmI_hypercube_t** out_extends) {
+  ESDM_DEBUG(__func__);
+  eassert(space);
+  eassert(out_extends);
+
+  *out_extends = esdmI_hypercube_make(space->dims, space->offset, space->size);
+  return ESDM_SUCCESS;
+}
+
 uint8_t esdm_dataspace_overlap(esdm_dataspace_t *a, esdm_dataspace_t *b) {
   // TODO: allow comparison of spaces of different size? Alternative maybe to transform into comparable space, provided a mask or dimension index mapping
 

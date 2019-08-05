@@ -522,6 +522,27 @@ esdm_status esdm_scheduler_wait(io_request_status_t *status) {
   return ESDM_SUCCESS;
 }
 
+static bool fragmentsCoverSpace(esdm_dataspace_t* space, int64_t fragmentCount, esdm_fragment_t** fragments, esdmI_hypercubeSet_t** out_uncoveredRegion) {
+  eassert(space);
+  eassert(fragments);
+  eassert(out_uncoveredRegion);
+
+  esdmI_hypercube_t* curCube;
+  *out_uncoveredRegion = esdmI_hypercubeSet_make();
+
+  esdmI_dataspace_getExtends(space, &curCube);
+  esdmI_hypercubeSet_add(*out_uncoveredRegion, curCube);
+  esdmI_hypercube_destroy(curCube);
+
+  for(int64_t i = 0; i < fragmentCount; i++) {
+    esdmI_dataspace_getExtends(fragments[i]->dataspace, &curCube);
+    esdmI_hypercubeSet_subtract(*out_uncoveredRegion, curCube);
+    esdmI_hypercube_destroy(curCube);
+  }
+
+  return esdmI_hypercubeSet_isEmpty(*out_uncoveredRegion);
+}
+
 esdm_status esdm_scheduler_process_blocking(esdm_instance_t *esdm, io_operation_t op, esdm_dataset_t *dataset, void *buf, esdm_dataspace_t *subspace) {
   ESDM_DEBUG(__func__);
 
@@ -539,6 +560,14 @@ esdm_status esdm_scheduler_process_blocking(esdm_instance_t *esdm, io_operation_
     ret = esdmI_dataset_lookup_fragments(dataset, subspace, & frag_count, &read_frag);
     eassert(ret == ESDM_SUCCESS);
     DEBUG("fragments to read: %d", frag_count);
+
+    //check whether we have all the requested data
+    esdmI_hypercubeSet_t* uncovered;
+    if(!fragmentsCoverSpace(subspace, frag_count, read_frag, &uncovered)) {
+      eassert(false && "TODO check whether we want to error out, or initialize with a fill value, and return the uncovered points");
+    }
+    esdmI_hypercubeSet_destroy(uncovered);
+
     ret = esdm_scheduler_enqueue_read(esdm, &status, frag_count, read_frag, buf, subspace);
   } else {
     eassert(0 && "Unknown operation");

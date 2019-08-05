@@ -285,6 +285,16 @@ esdm_status esdmI_container_destroy(esdm_container_t *container);
  */
 esdm_status esdmI_dataspace_createFromHypercube(esdmI_hypercube_t* extends, esdm_type_t type, esdm_dataspace_t** out_space);
 
+/**
+ * Get the logical extends covered by a dataspace in the form of an `esdmI_hypercube_t`.
+ *
+ * @param [in] space the dataspace to query
+ * @param [out] out_extends returns a pointer to a hypercube with the extends of the dataspace, the caller is responsible to destroy the returned pointer
+ *
+ * @return ESDM_SUCCESS
+ */
+esdm_status esdmI_dataspace_getExtends(esdm_dataspace_t* space, esdmI_hypercube_t** out_extends);
+
 //the resulting range may be empty
 inline esdmI_range_t esdmI_range_intersection(esdmI_range_t a, esdmI_range_t b) {
   return (esdmI_range_t){
@@ -308,6 +318,8 @@ esdmI_hypercube_t* esdmI_hypercube_makeCopy(esdmI_hypercube_t* original);
 //returns NULL if the intersection is empty
 esdmI_hypercube_t* esdmI_hypercube_makeIntersection(esdmI_hypercube_t* a, esdmI_hypercube_t* b);
 
+bool esdmI_hypercube_isEmpty(esdmI_hypercube_t* cube);
+
 bool esdmI_hypercube_doesIntersect(esdmI_hypercube_t* a, esdmI_hypercube_t* b);
 
 inline int64_t esdmI_hypercube_dimensions(esdmI_hypercube_t* cube) { return cube->dims; }
@@ -329,6 +341,8 @@ void esdmI_hypercube_destroy(esdmI_hypercube_t* cube);
 
 esdmI_hypercubeSet_t* esdmI_hypercubeSet_make();  //convenience function to construct a heap allocated object
 void esdmI_hypercubeSet_construct(esdmI_hypercubeSet_t* me);  //no allocation, initialization only
+
+bool esdmI_hypercubeSet_isEmpty(esdmI_hypercubeSet_t* me);  //checks for logical emptiness, may remove empty hypercubes from the set
 
 void esdmI_hypercubeSet_add(esdmI_hypercubeSet_t* me, esdmI_hypercube_t* cube);
 
