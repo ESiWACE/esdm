@@ -34,6 +34,7 @@ typedef enum esdm_status {
   ESDM_SUCCESS = 0,
   ESDM_INVALID_ARGUMENT_ERROR,
   ESDM_INVALID_PERMISSIONS,
+  ESDM_INCOMPLETE_DATA, //returned when a read requests data that does not exist and no fill-value is set for the dataset
   ESDM_ERROR
 } esdm_status;
 

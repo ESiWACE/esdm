@@ -295,6 +295,16 @@ esdm_status esdmI_dataspace_createFromHypercube(esdmI_hypercube_t* extends, esdm
  */
 esdm_status esdmI_dataspace_getExtends(esdm_dataspace_t* space, esdmI_hypercube_t** out_extends);
 
+/**
+ * Set the logical extends covered by a dataspace in the form of an `esdmI_hypercube_t`.
+ *
+ * @param [in] space the dataspace to query
+ * @param [in] extends a hypercube with the extends of the dataspace
+ *
+ * @return ESDM_SUCCESS
+ */
+esdm_status esdmI_dataspace_setExtends(esdm_dataspace_t* space, esdmI_hypercube_t* extends);
+
 //the resulting range may be empty
 inline esdmI_range_t esdmI_range_intersection(esdmI_range_t a, esdmI_range_t b) {
   return (esdmI_range_t){
