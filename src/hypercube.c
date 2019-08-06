@@ -98,6 +98,15 @@ esdmI_hypercube_t* esdmI_hypercube_makeIntersection(esdmI_hypercube_t* a, esdmI_
   return result;
 }
 
+bool esdmI_hypercube_isEmpty(esdmI_hypercube_t* me) {
+  eassert(me);
+
+  for(int64_t i = 0; i < me->dims; i++) {
+    if(esdmI_range_isEmpty(me->ranges[i])) return true;
+  }
+  return false;
+}
+
 bool esdmI_hypercube_doesIntersect(esdmI_hypercube_t* a, esdmI_hypercube_t* b) {
   eassert(a);
   eassert(b);
@@ -159,6 +168,21 @@ void esdmI_hypercubeSet_construct(esdmI_hypercubeSet_t* me) {
   };
   me->cubes = malloc(me->allocatedCount*sizeof(*me->cubes));
   eassert(me->cubes);
+}
+
+bool esdmI_hypercubeSet_isEmpty(esdmI_hypercubeSet_t* me) {
+  for(int64_t i = me->count; i--; ) { //iterate backwards since we may remove hypercubes from the set
+    if(esdmI_hypercube_isEmpty(me->cubes[i])) {
+      //remove the empty cube from the set
+      esdmI_hypercube_destroy(me->cubes[i]);
+      me->cubes[i] = me->cubes[--me->count];
+    } else {
+      return false; //found one non-empty hypercube, that's enough
+    }
+  }
+
+  eassert(me->count == 0);
+  return true;
 }
 
 void esdmI_hypercubeSet_add(esdmI_hypercubeSet_t* me, esdmI_hypercube_t* cube) {

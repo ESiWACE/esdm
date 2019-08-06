@@ -395,6 +395,48 @@ esdm_status esdm_scheduler_enqueue_read(esdm_instance_t *esdm, io_request_status
   return ESDM_SUCCESS;
 }
 
+static esdm_status esdm_scheduler_enqueue_fill(esdm_instance_t* esdm, io_request_status_t* status, void* fillValue, void* buf, esdm_dataspace_t* bufSpace, esdmI_hypercubeSet_t* fillRegion) {
+  //I would really love to make the fill operation asynchronous.
+  //However, it does not make any sense to use one of our backend threads, because the backends are concerned with storage, not with pure in-memory operations.
+  //And I don't know about any non-backend mechanisms in ESDM yet that allow for asynchronous execution.
+  //Of course, it's not such a big deal if fill value painting is performed synchronously, as it should be a memory bound operation anyways,
+  //and we don't expect it to take excessive amounts of time like I/O does.
+  //
+  //TODO Check whether such non-backend mechanisms exist already, and decide whether we really want to make fill-value setting asynchronous.
+
+  esdm_status ret;
+  int64_t dimensions = esdm_dataspace_get_dims(bufSpace);
+  esdm_type_t type = esdm_dataspace_get_type(bufSpace);
+
+  //create a dataspace with stride zero (all logical elements are mapped to the one and only element in memory) which we use as a source in the subsequent copy operations
+  esdm_dataspace_t* sourceSpace;
+  int64_t size[dimensions], stride[dimensions];
+  for(int64_t i = 0; i < dimensions; i++) {
+    size[i] = INT64_MAX;
+    stride[i] = 0;
+  }
+  ret = esdm_dataspace_create(dimensions, size, type, &sourceSpace);
+  eassert(ret == ESDM_SUCCESS);
+  ret = esdm_dataspace_set_stride(sourceSpace, stride);
+  eassert(ret == ESDM_SUCCESS);
+
+  //for each hypercube in the set, copy the fill value to the corresponding bufSpace area
+  for(int64_t i = 0; i < fillRegion->count; i++) {
+    esdmI_hypercube_t* curCube = fillRegion->cubes[i];
+    eassert(curCube->dims == dimensions);
+
+    //adjust the extends of the source dataspace to select which part of the buffer we want to fill
+    ret = esdmI_dataspace_setExtends(sourceSpace, curCube);
+    eassert(ret == ESDM_SUCCESS);
+
+    //fill the hypercube
+    esdm_dataspace_copy_data(sourceSpace, fillValue, bufSpace, buf);
+    eassert(ret == ESDM_SUCCESS);
+  }
+
+  return ESDM_SUCCESS;
+}
+
 //Decide how the given dataset should be split into fragments to get sensible fragment sizes.
 //Returns a hypercube set with one hypercube for each fragment that should be generated.
 esdmI_hypercubeSet_t* esdm_scheduler_makeSplitRecommendation(esdm_dataspace_t* space, int64_t maxFragmentSize) {
@@ -522,6 +564,27 @@ esdm_status esdm_scheduler_wait(io_request_status_t *status) {
   return ESDM_SUCCESS;
 }
 
+static bool fragmentsCoverSpace(esdm_dataspace_t* space, int64_t fragmentCount, esdm_fragment_t** fragments, esdmI_hypercubeSet_t** out_uncoveredRegion) {
+  eassert(space);
+  eassert(fragments);
+  eassert(out_uncoveredRegion);
+
+  esdmI_hypercube_t* curCube;
+  *out_uncoveredRegion = esdmI_hypercubeSet_make();
+
+  esdmI_dataspace_getExtends(space, &curCube);
+  esdmI_hypercubeSet_add(*out_uncoveredRegion, curCube);
+  esdmI_hypercube_destroy(curCube);
+
+  for(int64_t i = 0; i < fragmentCount; i++) {
+    esdmI_dataspace_getExtends(fragments[i]->dataspace, &curCube);
+    esdmI_hypercubeSet_subtract(*out_uncoveredRegion, curCube);
+    esdmI_hypercube_destroy(curCube);
+  }
+
+  return esdmI_hypercubeSet_isEmpty(*out_uncoveredRegion);
+}
+
 esdm_status esdm_scheduler_process_blocking(esdm_instance_t *esdm, io_operation_t op, esdm_dataset_t *dataset, void *buf, esdm_dataspace_t *subspace) {
   ESDM_DEBUG(__func__);
 
@@ -530,28 +593,50 @@ esdm_status esdm_scheduler_process_blocking(esdm_instance_t *esdm, io_operation_
   esdm_status ret = esdm_scheduler_status_init(&status);
   eassert(ret == ESDM_SUCCESS);
 
-  esdm_fragment_t **read_frag = NULL;
-  int frag_count;
-
   if (op == ESDM_OP_WRITE) {
     ret = esdm_scheduler_enqueue_write(esdm, &status, dataset, buf, subspace);
   } else if (op == ESDM_OP_READ) {
+    esdm_fragment_t **read_frag = NULL;
+    int frag_count;
     ret = esdmI_dataset_lookup_fragments(dataset, subspace, & frag_count, &read_frag);
     eassert(ret == ESDM_SUCCESS);
     DEBUG("fragments to read: %d", frag_count);
-    ret = esdm_scheduler_enqueue_read(esdm, &status, frag_count, read_frag, buf, subspace);
+
+    //check whether we have all the requested data
+    esdmI_hypercubeSet_t* uncovered;
+    if(!fragmentsCoverSpace(subspace, frag_count, read_frag, &uncovered)) {
+      esdm_type_t type = esdm_dataspace_get_type(subspace);
+      eassert(type == esdm_dataset_get_type(dataset));  //TODO handle the case that the two types don't match
+      char fillValue[esdm_sizeof(type)];
+      ret = esdm_dataset_get_fill_value(dataset, fillValue);
+      if(ret == ESDM_SUCCESS) {
+        //we have a fill value, so we continue to read, fill the uncovered parts with the fill value, and signal back to the user how much uncovered data we filled
+        ret = esdm_scheduler_enqueue_fill(esdm, &status, fillValue, buf, subspace, uncovered);
+      } else {
+        ret = ESDM_INCOMPLETE_DATA; //no fill value set, so we error out
+      }
+    }
+
+    if(ret == ESDM_SUCCESS) {
+      //all preliminaries successful, commit to reading
+      ret = esdm_scheduler_enqueue_read(esdm, &status, frag_count, read_frag, buf, subspace);
+      eassert(ret == ESDM_SUCCESS);
+
+      ret = esdm_scheduler_wait(&status);
+      eassert(ret == ESDM_SUCCESS);
+
+      ret = esdm_scheduler_status_finalize(&status);
+      eassert(ret == ESDM_SUCCESS);
+
+      ret = status.return_code;
+    }
+
+    //cleanup, must not happen before we wait for the background processes to finish their tasks
+    esdmI_hypercubeSet_destroy(uncovered);
+    free(read_frag);
   } else {
     eassert(0 && "Unknown operation");
   }
-  eassert(ret == ESDM_SUCCESS);
 
-  ret = esdm_scheduler_wait(&status);
-  eassert(ret == ESDM_SUCCESS);
-
-  ret = esdm_scheduler_status_finalize(&status);
-  eassert(ret == ESDM_SUCCESS);
-
-  free(read_frag);
-
-  return status.return_code;
+  return ret;
 }
