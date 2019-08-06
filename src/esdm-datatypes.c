@@ -1352,9 +1352,7 @@ esdm_status esdm_dataset_name_dims(esdm_dataset_t *d, char **names) {
       return ESDM_ERROR;
     }
   }
-  if (d->dims_dset_id != NULL) {
-    free(d->dims_dset_id);
-  }
+  void * old = d->dims_dset_id;
   d->dims_dset_id = (char **)malloc(dims * sizeof(void *) + size);
   char *posVar = (char *)d->dims_dset_id + dims * sizeof(void *);
   for (int i = 0; i < dims; i++) {
@@ -1362,6 +1360,10 @@ esdm_status esdm_dataset_name_dims(esdm_dataset_t *d, char **names) {
     strcpy(posVar, names[i]);
     posVar += 1 + strlen(names[i]);
   }
+  if (old != NULL) {
+    free(old);
+  }
+
   d->container->status = ESDM_DATA_DIRTY;
   return ESDM_SUCCESS;
 }
