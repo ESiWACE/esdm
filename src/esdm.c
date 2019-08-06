@@ -182,7 +182,9 @@ esdm_status esdm_dataset_set_fill_value(esdm_dataset_t *d, void * value){
   if(d->fill_value){
     smd_attr_destroy(d->fill_value);
   }
-  d->fill_value = smd_attr_new("fill-value", d->dataspace->type, value, 10);
+  if(value != NULL){
+    d->fill_value = smd_attr_new("fill-value", d->dataspace->type, value, 10);
+  }
   return ESDM_SUCCESS;
 }
 
