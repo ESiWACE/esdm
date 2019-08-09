@@ -190,25 +190,18 @@ static void esdmI_dataspace_copy_instructions(
   eassert(out_destOffset);
 
   uint64_t dimensions = sourceSpace->dims;
+  esdmI_hypercube_t *sourceExtends, *destExtends;
+  esdmI_dataspace_getExtends(sourceSpace, &sourceExtends);
+  esdmI_dataspace_getExtends(destSpace, &destExtends);
 
   //determine the hypercube that contains the overlap between the two hypercubes
   //(the intersection of two hypercubes is also a hypercube)
+  esdmI_hypercube_t* overlap = esdmI_hypercube_makeIntersection(sourceExtends, destExtends);
+  if(!overlap) return;  //overlap is empty => nothing to do
   int64_t overlapOffset[dimensions];
-  uint64_t overlapSize[dimensions];
-  for(int64_t i = 0; i < dimensions; i++) {
-    int64_t sourceX0 = sourceSpace->offset[i];
-    int64_t sourceX1 = sourceX0 + sourceSpace->size[i];
-    int64_t destX0 = destSpace->offset[i];
-    int64_t destX1 = destX0 + destSpace->size[i];
-    int64_t overlapX0 = max_int64(sourceX0, destX0);
-    int64_t overlapX1 = min_int64(sourceX1, destX1);
-    overlapOffset[i] = overlapX0;
-    overlapSize[i] = overlapX1 - overlapX0;
-    if(overlapX0 > overlapX1) {
-      *out_instructionDims = -1; //overlap is empty => nothing to do
-      return;
-    }
-  }
+  int64_t overlapSize[dimensions];
+  esdmI_hypercube_getOffsetAndSize(overlap, overlapOffset, overlapSize);
+  esdmI_hypercube_destroy(overlap);
 
   //in case the stride fields are set to NULL, determine the effective strides
   int64_t sourceStride[dimensions], destStride[dimensions];
@@ -451,7 +444,8 @@ esdmI_hypercubeSet_t* esdm_scheduler_makeSplitRecommendation(esdm_dataspace_t* s
   }
   if(!splitDims) {
     //only a single element, use a trivial recommendation
-    esdmI_hypercube_t* cube = esdmI_hypercube_make(space->dims, space->offset, space->size);
+    esdmI_hypercube_t* cube;
+    esdmI_dataspace_getExtends(space, &cube);
     esdmI_hypercubeSet_add(result, cube);
     esdmI_hypercube_destroy(cube);
     return result;

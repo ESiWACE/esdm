@@ -362,16 +362,6 @@ int64_t esdm_dataspace_get_dims(esdm_dataspace_t * d){
   return d->dims;
 }
 
-int64_t const * esdm_dataspace_get_size(esdm_dataspace_t * d){
-  eassert(d);
-  return d->size;
-}
-
-int64_t const * esdm_dataspace_get_offset(esdm_dataspace_t * d){
-  eassert(d);
-  return d->offset;
-}
-
 
 // Fragment ///////////////////////////////////////////////////////////////////
 

@@ -252,8 +252,6 @@ esdm_status esdm_dataset_get_dataspace(esdm_dataset_t *dset, esdm_dataspace_t **
 esdm_type_t esdm_dataset_get_type(esdm_dataset_t * d);
 
 int64_t esdm_dataspace_get_dims(esdm_dataspace_t * d);
-int64_t const * esdm_dataspace_get_size(esdm_dataspace_t * d);
-int64_t const * esdm_dataspace_get_offset(esdm_dataspace_t * d);
 esdm_type_t esdm_dataspace_get_type(esdm_dataspace_t * d);
 
 /**
