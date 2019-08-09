@@ -254,6 +254,36 @@ bool esdmI_hypercubeSet_doesIntersect(esdmI_hypercubeSet_t* me, esdmI_hypercube_
   return false;
 }
 
+bool esdmI_hypercubeSet_doesCoverFully(esdmI_hypercubeSet_t* me, esdmI_hypercube_t* cube) {
+  //make a list of the cubes in the set that actually intersect with cube, this avoids unnecessary splitting and reduces the total workload of this algorithm
+  esdmI_hypercube_t** intersectingCubes = malloc(me->count*sizeof(*intersectingCubes));
+  int64_t intersectingCubesCount = 0;
+  for(int64_t i = 0; i < me->count; i++) {
+    if(esdmI_hypercube_doesIntersect(me->cubes[i], cube)) {
+      intersectingCubes[intersectingCubesCount++] = me->cubes[i];
+    }
+  }
+
+  //create a new hypercube set that contains exactly the given cube
+  esdmI_hypercubeSet_t restSet;
+  esdmI_hypercubeSet_construct(&restSet);
+  esdmI_hypercubeSet_add(&restSet, cube);
+
+  //subtract all the intersecting cubes from the rest set
+  for(int64_t i = 0; i < intersectingCubesCount; i++) {
+    esdmI_hypercubeSet_subtract(&restSet, intersectingCubes[i]);
+    if(!restSet.count) break; //fast exit once the restSet becomes empty, this line is not necessary, but it might speed up some cases a bit
+  }
+
+  //check whether something remained in the rest set
+  bool result = esdmI_hypercubeSet_isEmpty(&restSet);
+
+  //cleanup
+  esdmI_hypercubeSet_destruct(&restSet);
+  free(intersectingCubes);
+  return result;
+}
+
 void esdmI_hypercubeSet_print(esdmI_hypercubeSet_t* me, FILE* stream) {
   for(int64_t i = 0; i < me->count; i++) {
     esdmI_hypercube_print(me->cubes[i], stream);

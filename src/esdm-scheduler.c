@@ -585,6 +585,64 @@ static bool fragmentsCoverSpace(esdm_dataspace_t* space, int64_t fragmentCount, 
   return esdmI_hypercubeSet_isEmpty(*out_uncoveredRegion);
 }
 
+//Find and remove all fragments that either do not intersect with the bounds at all, or are fully covered by other fragments.
+//The current algorithm is greedy, an optimal algorithm would very likely have a much higher complexity.
+//
+//XXX This function is quadratic in the number of hypercube allocations it produces by the repeated construction/destruction of the `otherFragments` hypercube set.
+//    It could be optimized for `malloc()` calls by updating the `otherFragments` hypercube set instead of tearing it down and building a new one,
+//    but that would either require gripping into the innards of the `esdmI_hypercubeSet_t`
+//    or writing a member function that just does not make sense within the interface of `esdmI_hypercubeSet_t`.
+//    I have opted for the cleaner code for now.
+static void removeRedundantFragments(esdmI_hypercube_t* bounds, int* inout_fragmentCount, esdm_fragment_t** fragments) {
+  //get the bounded extends of each fragment and filter out any fragments that do not intersect with the given bounds
+  typedef struct fragmentDescription {
+    esdm_fragment_t* fragment;
+    esdmI_hypercube_t* boundedExtends;
+  } fragmentDescription;
+  fragmentDescription* descriptions = malloc(*inout_fragmentCount*sizeof(*descriptions));
+  int64_t fragmentCount = 0;
+  for(int64_t i = 0; i < *inout_fragmentCount; i++) {
+    esdmI_hypercube_t* extends, *boundedExtends;
+    esdmI_dataspace_getExtends(fragments[i]->dataspace, &extends);
+    if((boundedExtends = esdmI_hypercube_makeIntersection(bounds, extends))) {
+      descriptions[fragmentCount++] = (fragmentDescription){
+        .fragment = fragments[i],
+        .boundedExtends = boundedExtends
+      };
+    }
+    esdmI_hypercube_destroy(extends);
+  }
+
+  //filter out any fragment that is fully covered by other fragments
+  for(int64_t i = fragmentCount; i--; ) { //walk backwards so that we can easily remove the current element from the array
+    //build a hypercube set from all the fragments except this one
+    esdmI_hypercubeSet_t otherFragments;
+    esdmI_hypercubeSet_construct(&otherFragments);
+    for(int64_t j = 0; j < fragmentCount; j++) {
+      if(i != j) esdmI_hypercubeSet_add(&otherFragments, descriptions[j].boundedExtends);
+    }
+
+    //check whether the current fragment is fully covered by the other fragments
+    if(esdmI_hypercubeSet_doesCoverFully(&otherFragments, descriptions[i].boundedExtends)) {
+      //this fragment is redundant, remove it from the list
+      esdmI_hypercube_destroy(descriptions[i].boundedExtends);
+      descriptions[i].boundedExtends = NULL;  //necessary to avoid UB on the next line when i == fragmentCount-1
+      descriptions[i] = descriptions[--fragmentCount];
+    }
+
+    //cleanup
+    esdmI_hypercubeSet_destruct(&otherFragments);
+  }
+
+  //return the data to the caller and clean up
+  for(int64_t i = 0; i < fragmentCount; i++) {
+    fragments[i] = descriptions[i].fragment;
+    esdmI_hypercube_destroy(descriptions[i].boundedExtends);
+  }
+  free(descriptions);
+  *inout_fragmentCount = fragmentCount;
+}
+
 esdm_status esdm_scheduler_process_blocking(esdm_instance_t *esdm, io_operation_t op, esdm_dataset_t *dataset, void *buf, esdm_dataspace_t *subspace) {
   ESDM_DEBUG(__func__);
 
@@ -600,6 +658,9 @@ esdm_status esdm_scheduler_process_blocking(esdm_instance_t *esdm, io_operation_
     int frag_count;
     ret = esdmI_dataset_lookup_fragments(dataset, subspace, & frag_count, &read_frag);
     eassert(ret == ESDM_SUCCESS);
+    esdmI_hypercube_t* readExtends;
+    esdmI_dataspace_getExtends(subspace, &readExtends);
+    removeRedundantFragments(readExtends, &frag_count, read_frag);
     DEBUG("fragments to read: %d", frag_count);
 
     //check whether we have all the requested data

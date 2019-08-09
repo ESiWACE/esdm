@@ -360,6 +360,8 @@ void esdmI_hypercubeSet_subtract(esdmI_hypercubeSet_t* me, esdmI_hypercube_t* cu
 
 bool esdmI_hypercubeSet_doesIntersect(esdmI_hypercubeSet_t* me, esdmI_hypercube_t* cube);
 
+bool esdmI_hypercubeSet_doesCoverFully(esdmI_hypercubeSet_t* me, esdmI_hypercube_t* cube);
+
 void esdmI_hypercubeSet_print(esdmI_hypercubeSet_t* me, FILE* stream);  //for debugging purposes
 
 void esdmI_hypercubeSet_destruct(esdmI_hypercubeSet_t* me); //counterpart to esdmI_hypercubeSet_construct()
