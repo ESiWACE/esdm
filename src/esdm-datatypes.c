@@ -460,32 +460,12 @@ esdm_status esdm_fragment_commit(esdm_fragment_t *f) {
   return ret;
 }
 
-//TODO: This should be a call-through to esdm_dataspace_overlap().
-int esdmI_fragment_overlaps(esdm_dataspace_t * da, esdm_fragment_t * f){
-  esdm_dataspace_t * db = f->dataspace;
-  if(da->dims != db->dims) {
-    return 0;
-  }
-
-  // TODO handle nested subspaces correctly
-  for (int d = 0; d < da->dims; d++) {
-    int o1 = da->offset[d];
-    int s1 = da->size[d];
-
-    int o2 = db->offset[d];
-    int s2 = db->size[d];
-
-    // if it is out of bounds: abort
-    if (o1 + s1 <= o2) return 0;
-    if (o2 + s2 <= o1) return 0;
-  }
-
-  // it overlaps
-  return 1;
-}
-
 esdm_status esdmI_dataset_lookup_fragments(esdm_dataset_t *dset, esdm_dataspace_t *dspace, int *out_frag_count, esdm_fragment_t ***out_fragments){
   ESDM_DEBUG(__func__);
+
+  esdmI_hypercube_t* searchExtends;
+  esdmI_dataspace_getExtends(dspace, &searchExtends);
+
   int found = 0;
 
   int const count = dset->fragments.count;
@@ -494,22 +474,15 @@ esdm_status esdmI_dataset_lookup_fragments(esdm_dataset_t *dset, esdm_dataspace_
   // check for overlap with all fragments
 	for (int i = 0; i < count; i++) {
     esdm_fragment_t * f = dset->fragments.frag[i];
-    int ret = esdmI_fragment_overlaps(dspace, f);
-    if(ret){
-      frags[found] = f;
-      found++;
+    esdmI_hypercube_t* fragmentExtends;
+    esdmI_dataspace_getExtends(f->dataspace, &fragmentExtends);
+    if(esdmI_hypercube_doesIntersect(fragmentExtends, searchExtends)) {
+      frags[found++] = f;
     }
-    // TODO smartly select only good fragments
+    esdmI_hypercube_destroy(fragmentExtends);
   }
-  // Check if we covered the whole subspace area
-  // TODO
-  /*if(dset->fill_value){
-    fill the rest of the requested data with the fill values
-  }else{
-    // it is an error to partially read data
-    return ESDM_ERROR;
-  }*/
 
+  esdmI_hypercube_destroy(searchExtends);
   *out_fragments = frags;
   *out_frag_count = found;
 
@@ -1160,17 +1133,6 @@ esdm_status esdmI_dataspace_setExtends(esdm_dataspace_t* space, esdmI_hypercube_
 
   esdmI_hypercube_getOffsetAndSize(extends, space->offset, space->size);
   return ESDM_SUCCESS;
-}
-
-uint8_t esdm_dataspace_overlap(esdm_dataspace_t *a, esdm_dataspace_t *b) {
-  // TODO: allow comparison of spaces of different size? Alternative maybe to transform into comparable space, provided a mask or dimension index mapping
-
-  if (a->dims != b->dims) {
-    // dims do not match so, we say they can not overlap
-    return 0;
-  }
-
-  return 0;
 }
 
 /**
