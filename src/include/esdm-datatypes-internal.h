@@ -11,7 +11,8 @@ enum esdm_data_status_e {
   ESDM_DATA_NOT_LOADED,
   ESDM_DATA_LOADING,
   ESDM_DATA_DIRTY,
-  ESDM_DATA_PERSISTENT
+  ESDM_DATA_PERSISTENT,
+  ESDM_DATA_DELETED
 };
 
 typedef enum esdm_data_status_e esdm_data_status_e;
@@ -113,7 +114,7 @@ struct esdm_backend_t_callbacks_t {
   int (*fragment_create)(esdm_backend_t * b, esdm_fragment_t *fragment);
   int (*fragment_retrieve)(esdm_backend_t * b, esdm_fragment_t *fragment);
   int (*fragment_update)(esdm_backend_t * b, esdm_fragment_t *fragment);
-  int (*fragment_destroy)(esdm_backend_t * b, esdm_fragment_t *fragment);
+  int (*fragment_delete)(esdm_backend_t * b, esdm_fragment_t *fragment);
   int (*fragment_metadata_create)(esdm_backend_t * b, esdm_fragment_t *fragment, smd_string_stream_t* stream);
   void* (*fragment_metadata_load)(esdm_backend_t * b, esdm_fragment_t *fragment, json_t *metadata);
   int (*fragment_metadata_free)(esdm_backend_t * b, void * options);
@@ -132,12 +133,14 @@ struct esdm_md_backend_callbacks_t {
   int (*container_retrieve)(esdm_md_backend_t *, esdm_container_t *container, char ** out_json, int * out_size);
   int (*container_update)(esdm_md_backend_t *, esdm_container_t *container);
   int (*container_destroy)(esdm_md_backend_t *, esdm_container_t *container);
+  int (*container_remove)(esdm_md_backend_t *, esdm_container_t *container);
 
   int (*dataset_create)(esdm_md_backend_t *, esdm_dataset_t *dataset);
   int (*dataset_commit)(esdm_md_backend_t *, esdm_dataset_t *dataset, char * json, int md_size);
   int (*dataset_retrieve)(esdm_md_backend_t *, esdm_dataset_t *dataset, char ** out_json, int * out_size);
   int (*dataset_update)(esdm_md_backend_t *, esdm_dataset_t *dataset);
   int (*dataset_destroy)(esdm_md_backend_t *, esdm_dataset_t *dataset);
+  int (*dataset_remove)(esdm_md_backend_t *, esdm_dataset_t *dataset);
 
   int (*mkfs)(esdm_md_backend_t *, int format_flags);
 };

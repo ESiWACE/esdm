@@ -147,6 +147,8 @@ esdm_status esdm_container_link_attribute(esdm_container_t *container, int overw
 /* This function returns the attributes */
 esdm_status esdm_container_get_attributes(esdm_container_t *container, smd_attr_t **out_metadata);
 
+esdm_status esdm_container_delete(esdm_container_t *container);
+
 /**
  * Close a container object. If it isn't in use any more free it.
  *
@@ -337,6 +339,8 @@ esdm_status esdm_dataset_commit(esdm_dataset_t *dataset);
  * @return status
  */
 esdm_status esdm_dataset_close(esdm_dataset_t *dataset);
+
+esdm_status esdm_dataset_delete(esdm_dataset_t *dataset);
 
 esdm_status esdm_dataset_delete_attribute(esdm_dataset_t *dataset, const char *name);
 

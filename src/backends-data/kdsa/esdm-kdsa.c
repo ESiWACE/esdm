@@ -303,12 +303,12 @@ static int fragment_retrieve(esdm_backend_t *backend, esdm_fragment_t *f) {
 
 static uint64_t try_to_use_block(kdsa_backend_data_t* data, uint64_t bitmap_pos){
   int ret = 0;
-  uint64_t expected = data->block_map[bitmap_pos];
-  if(expected == UINT64_MAX){
-    return 0;
-  }
-  uint64_t val = ~expected;
   for(int b = 0; b < 64; b++){
+    uint64_t expected = data->block_map[bitmap_pos];
+    if(expected == UINT64_MAX){
+      return 0;
+    }
+    uint64_t val = ~expected;
     if( val & 1 ){
       uint64_t swap = expected | 1lu << b;
       ret = kdsa_compare_and_swap(data->handle, bitmap_pos*sizeof(uint64_t) + sizeof(kdsa_persistent_header_t), expected, swap, & data->block_map[bitmap_pos]);
@@ -394,6 +394,29 @@ static int fragment_update(esdm_backend_t *backend, esdm_fragment_t *f) {
   return ESDM_SUCCESS;
 }
 
+static int fragment_delete(esdm_backend_t * b, esdm_fragment_t *f){
+  kdsa_fragment_metadata_t * fragmd = (kdsa_fragment_metadata_t*) f->backend_md;
+
+  if(! fragmd){
+    return ESDM_SUCCESS;
+  }
+  kdsa_backend_data_t *data = (kdsa_backend_data_t *) b->data;
+
+  uint64_t pos = (fragmd->offset - data->h.offset_to_data) / data->h.blocksize;
+  uint64_t bitmap_pos = pos / 64;
+  int bit = ~(1<<(pos % 64));
+
+  int ret = 1;
+  while(ret != 0){
+    uint64_t expected = data->block_map[bitmap_pos];
+    uint64_t swap = expected & bit;
+    ret = kdsa_compare_and_swap(data->handle, bitmap_pos*sizeof(uint64_t) + sizeof(kdsa_persistent_header_t), expected, swap, & data->block_map[bitmap_pos]);
+  }
+
+  return ESDM_SUCCESS;
+}
+
+
 ///////////////////////////////////////////////////////////////////////////////
 // ESDM Callbacks /////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////
@@ -438,7 +461,7 @@ static esdm_backend_t backend_template = {
   NULL,
   fragment_retrieve,
   fragment_update,
-  NULL,
+  fragment_delete,
   NULL,
   fragment_metadata_load,
   fragment_metadata_free,

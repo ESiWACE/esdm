@@ -207,6 +207,34 @@ static int container_create(esdm_md_backend_t *backend, esdm_container_t *contai
   return ESDM_SUCCESS;
 }
 
+static int container_remove(esdm_md_backend_t *backend, esdm_container_t *c){
+  metadummy_backend_options_t *options = (metadummy_backend_options_t *)backend->data;
+  const char *tgt = options->target;
+
+  char path_metadata[PATH_MAX];
+  DEBUG("tgt: %p\n", tgt);
+  sprintf(path_metadata, "%s/containers/%s.md", tgt, c->name);
+
+  if(unlink(path_metadata) == 0){
+    return ESDM_SUCCESS;
+  }
+  return ESDM_ERROR;
+}
+
+static int dataset_remove(esdm_md_backend_t * backend, esdm_dataset_t *d){
+  char path_metadata[PATH_MAX];
+  metadummy_backend_options_t *options = (metadummy_backend_options_t *)backend->data;
+  const char *tgt = options->target;
+
+  DEBUG("tgt: %p\n", tgt);
+
+  sprintfDatasetMd(path_metadata, d);
+  if(unlink(path_metadata) == 0){
+    return ESDM_SUCCESS;
+  }
+  return ESDM_ERROR;
+}
+
 static int container_commit(esdm_md_backend_t *backend, esdm_container_t *container, char * json, int md_size) {
   DEBUG_ENTER;
 
@@ -378,12 +406,14 @@ container_commit,
 container_retrieve,
 NULL,
 NULL,
+container_remove,
 
 dataset_create,
 dataset_commit,
 dataset_retrieve,
 NULL,
 NULL,
+dataset_remove,
 
 mkfs,
 },

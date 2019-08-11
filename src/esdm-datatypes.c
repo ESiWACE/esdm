@@ -530,6 +530,68 @@ esdm_status esdmI_dataset_lookup_fragments(esdm_dataset_t *dset, esdm_dataspace_
   return ret;
 }
 
+esdm_status esdm_container_delete(esdm_container_t *c){
+  ESDM_DEBUG(__func__);
+  eassert(c);
+  eassert(c->status != ESDM_DATA_DELETED);
+  int ret = ESDM_SUCCESS;
+  int status;
+  for(int i=0; i < c->dsets.count; i++){
+    esdm_dataset_t * ds = c->dsets.dset[i];
+    status = esdm_dataset_delete(ds);
+    if(status != ESDM_SUCCESS){
+      if(i == 0){
+        return status;
+      }
+      ret = status;
+    }
+  }
+  c->status = ESDM_DATA_DELETED;
+  c->dsets.count = 0;
+
+  status = esdm.modules->metadata_backend->callbacks.container_remove(esdm.modules->metadata_backend, c);
+  if(status != ESDM_SUCCESS){
+    ret = status;
+  }
+  esdm_container_close(c);
+  return ret;
+}
+
+esdm_status esdm_dataset_delete(esdm_dataset_t *d){
+  ESDM_DEBUG(__func__);
+  eassert(d);
+  eassert(d->status != ESDM_DATA_DELETED);
+  int ret = ESDM_SUCCESS;
+  int status;
+
+  if(d->status == ESDM_DATA_NOT_LOADED){
+    ret = esdm_dataset_ref(d);
+    if(ret != ESDM_SUCCESS){
+      return ret;
+    }
+  }
+  // TODO check usage of dataset
+  for(int i=0; i < d->fragments.count; i++){
+    esdm_fragment_t * frag = d->fragments.frag[i];
+    status = frag->backend->callbacks.fragment_delete(frag->backend, frag);
+    if(status != ESDM_SUCCESS){
+      if(i == 0){
+        return status;
+      }
+      ret = status;
+    }
+    esdm_fragment_destroy(frag);
+  }
+  d->status = ESDM_DATA_DELETED;
+  status = esdm.modules->metadata_backend->callbacks.dataset_remove(esdm.modules->metadata_backend, d);
+  if(status != ESDM_SUCCESS){
+    ret = status;
+  }
+  d->fragments.count = 0;
+  esdm_dataset_close(d);
+  return ret;
+}
+
 esdm_status esdm_fragment_destroy(esdm_fragment_t *frag) {
   ESDM_DEBUG(__func__);
   eassert(frag);

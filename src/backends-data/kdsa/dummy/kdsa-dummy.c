@@ -40,7 +40,6 @@ int kdsa_compare_and_swap(kdsa_vol_handle_t handle, kdsa_vol_offset_t off, uint6
   }
 
   debug("C&S: %lu %lu %lu\n", off, compare, swap);
-  assert(compare != swap);
 
   uint64_t cur;
   int ret;
