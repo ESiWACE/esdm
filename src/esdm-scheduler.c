@@ -653,6 +653,15 @@ esdm_status esdm_scheduler_process_blocking(esdm_instance_t *esdm, io_operation_
 
   if (op == ESDM_OP_WRITE) {
     ret = esdm_scheduler_enqueue_write(esdm, &status, dataset, buf, subspace);
+    if( ret != ESDM_SUCCESS){
+      return ret;
+    }
+    ret = esdm_scheduler_wait(&status);
+    eassert(ret == ESDM_SUCCESS);
+
+    ret = esdm_scheduler_status_finalize(&status);
+    eassert(ret == ESDM_SUCCESS);
+    return status.return_code;
   } else if (op == ESDM_OP_READ) {
     esdm_fragment_t **read_frag = NULL;
     int frag_count;
