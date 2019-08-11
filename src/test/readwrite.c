@@ -101,6 +101,9 @@ int main(int argc, char const *argv[]) {
   ret = esdm_write(dataset, buf_w, subspace);
   eassert(ret == ESDM_SUCCESS);
 
+  ret = esdm_dataset_commit(dataset);
+  eassert(ret == ESDM_SUCCESS);
+
   // Read the data to the dataset
   ret = esdm_read(dataset, buf_r, subspace);
   eassert(ret == ESDM_SUCCESS);

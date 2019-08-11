@@ -57,9 +57,6 @@
 ///////////////////////////////////////////////////////////////////////////////
 
 static int entry_retrieve(const char *path, void *buf, uint64_t size) {
-  int status;
-  struct stat sb;
-
   DEBUG("entry_retrieve(%s)", path);
 
   // write to non existing file
@@ -193,7 +190,7 @@ static int fsck() {
 // Fragment Handlers //////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////
 
-static int fragment_retrieve(esdm_backend_t *backend, esdm_fragment_t *f, json_t *metadata) {
+static int fragment_retrieve(esdm_backend_t *backend, esdm_fragment_t *f) {
   DEBUG_ENTER;
 
   // set data, options and tgt for convienience
@@ -220,14 +217,6 @@ static int fragment_retrieve(esdm_backend_t *backend, esdm_fragment_t *f, json_t
   }
 
   return ret;
-}
-
-
-static int fragment_metadata_create(esdm_backend_t *backend, esdm_fragment_t *fragment, smd_string_stream_t* stream){
-  DEBUG_ENTER;
-  smd_string_stream_printf(stream, "{}");
-
-  return 0;
 }
 
 static int fragment_update(esdm_backend_t *backend, esdm_fragment_t *f) {
@@ -332,7 +321,9 @@ posix_backend_performance_estimate, // performance_estimate
 NULL,
 fragment_retrieve,
 fragment_update,
-fragment_metadata_create,
+NULL,
+NULL,
+NULL,
 NULL,
 mkfs,
 },

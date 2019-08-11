@@ -418,8 +418,8 @@ esdm_status esdmI_fragment_create(esdm_dataset_t *d, esdm_dataspace_t *sspace, v
 esdm_status esdm_fragment_retrieve(esdm_fragment_t *fragment) {
   ESDM_DEBUG(__func__);
   // Call backend
-  esdm_backend_t *backend = fragment->backend; // TODO: decision component, upon many
-  int ret = backend->callbacks.fragment_retrieve(backend, fragment, NULL); // TODO
+  esdm_backend_t *backend = fragment->backend;
+  int ret = backend->callbacks.fragment_retrieve(backend, fragment);
   if(ret == ESDM_SUCCESS){
     fragment->status = ESDM_DATA_PERSISTENT;
   }
@@ -453,9 +453,13 @@ void esdm_fragment_metadata_create(esdm_fragment_t *f, smd_string_stream_t * str
       smd_string_stream_printf(stream, ",%ld", d->stride[i]);
     }
   }
-  smd_string_stream_printf(stream, "],\"data\":");
-  f->backend->callbacks.fragment_metadata_create(f->backend, f, stream);
-  smd_string_stream_printf(stream, "}");
+  if(f->backend->callbacks.fragment_metadata_create){
+    smd_string_stream_printf(stream, "],\"backend\":");
+    f->backend->callbacks.fragment_metadata_create(f->backend, f, stream);
+    smd_string_stream_printf(stream, "}");
+  }else{
+    smd_string_stream_printf(stream, "]}");
+  }
 }
 
 esdm_status esdm_fragment_commit(esdm_fragment_t *f) {
@@ -529,17 +533,16 @@ esdm_status esdmI_dataset_lookup_fragments(esdm_dataset_t *dset, esdm_dataspace_
 esdm_status esdm_fragment_destroy(esdm_fragment_t *frag) {
   ESDM_DEBUG(__func__);
   eassert(frag);
-
+  if(frag->backend_md){
+    eassert(frag->backend->callbacks.fragment_metadata_free);
+    frag->backend->callbacks.fragment_metadata_free(frag->backend, frag->backend_md);
+  }
   if(frag->id){
     free(frag->id);
-  }
-  if(frag->backend_md){
-    free(frag->backend_md);
   }
   if(frag->dataspace){
     esdm_dataspace_destroy(frag->dataspace);
   }
-
   if(frag->status == ESDM_DATA_PERSISTENT || frag->status == ESDM_DATA_NOT_LOADED){
     free(frag);
   }else{
@@ -655,8 +658,6 @@ esdm_status esdmI_create_fragment_from_metadata(esdm_dataset_t *dset, json_t * j
   f->backend = esdmI_get_backend(plugin_id);
   eassert(f->backend);
 
-  f->backend_md = NULL;
-
   elem = json_object_get(json, "id");
   char const  * id = json_string_value(elem);
   f->id = strdup(id);
@@ -695,7 +696,6 @@ esdm_status esdmI_create_fragment_from_metadata(esdm_dataset_t *dset, json_t * j
     }
   }
 
-	// TODO at this point deserialize module specific options
   ret = esdm_dataspace_subspace(dset->dataspace, dims, size, offset, & space);
   eassert(ret == ESDM_SUCCESS);
 
@@ -712,6 +712,14 @@ esdm_status esdmI_create_fragment_from_metadata(esdm_dataset_t *dset, json_t * j
   f->elements = elements;
   f->bytes = bytes;
 	f->status = ESDM_DATA_NOT_LOADED;
+
+  // deserialize module specific options
+  if(f->backend->callbacks.fragment_metadata_load){
+    elem = json_object_get(json, "backend");
+    f->backend_md = f->backend->callbacks.fragment_metadata_load(f->backend, f, elem);
+  }else{
+    f->backend_md = NULL;
+  }
 
   *out = f;
   return ESDM_SUCCESS;

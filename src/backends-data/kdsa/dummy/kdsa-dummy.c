@@ -1,8 +1,6 @@
 // This is a dummy implementation of the KDSA API for debugging purposes.
 // It stores the data simply in a file.
 
-#include <assert.h>
-
 #include <stdlib.h>
 #include <stdint.h>
 #include <string.h>
@@ -13,6 +11,7 @@
 #include <sys/stat.h>
 #include <fcntl.h>
 
+#include <esdm-debug.h>
 #include <kdsa.h>
 
 //#define DEBUG
@@ -27,7 +26,6 @@
 
 
 int kdsa_compare_and_swap(kdsa_vol_handle_t handle, kdsa_vol_offset_t off, uint64_t compare, uint64_t swap, uint64_t *out_res){
-  int res;
   int fd = * handle;
 
   struct flock fl;
@@ -41,12 +39,27 @@ int kdsa_compare_and_swap(kdsa_vol_handle_t handle, kdsa_vol_offset_t off, uint6
     return -1;
   }
 
+  printf("C&W: %lld %lld %lld\n", off, compare, swap);
+  uint64_t cur;
+  int ret;
+  ret = pread(fd, & cur, sizeof(uint64_t), off);
+  eassert(ret == sizeof(uint64_t));
+  if(cur == compare){
+    ret = pwrite(fd, & swap, sizeof(uint64_t), off);
+    eassert(ret == sizeof(uint64_t));
+    ret = 0;
+    *out_res = swap;
+  }else{
+    ret = -1;
+    *out_res = cur;
+  }
+
   fl.l_type = F_UNLCK;
   if (fcntl(fd, F_SETLK, &fl) != 0) {
     return -1;
   }
 
-  return 0;
+  return ret;
 }
 
 int kdsa_get_volume_size(kdsa_vol_handle_t handle, kdsa_size_t *out_size){
@@ -57,15 +70,19 @@ int kdsa_get_volume_size(kdsa_vol_handle_t handle, kdsa_size_t *out_size){
 
 int kdsa_write_unregistered(kdsa_vol_handle_t handle, kdsa_vol_offset_t off, void* buf, kdsa_size_t bytes){
   FUNC_START
+  printf("W: %lld (%lld)\n", off, bytes);
+
   int f = * handle;
   size_t ret;
   ret = pwrite(f, buf, bytes, off);
   assert(ret == bytes);
+  fdatasync(f);
   return 0;
 }
 
 int kdsa_read_unregistered(kdsa_vol_handle_t handle, kdsa_vol_offset_t off,  void* buf, kdsa_size_t bytes){
   FUNC_START
+  printf("R: %lld (%lld)\n", off, bytes);
 
   int f = * handle;
   size_t ret;

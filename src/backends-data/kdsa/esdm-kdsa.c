@@ -53,9 +53,6 @@
 #define WARN_STRERR(fmt, ...) WARN(fmt ": %s", __VA_ARGS__, strerror(errno));
 #define WARN_CHECK_RET(ret, fmt, ...) if(ret != 0){ WARN(fmt ": %s", __VA_ARGS__, strerror(errno)); }
 
-#define sprintfFragmentDir(path, f) (sprintf(path, "%s/%c%c/%s", tgt, f->dataset->id[0], f->dataset->id[1], f->dataset->id+2))
-#define sprintfFragmentPath(path, f) (sprintf(path, "%s/%c%c/%s/%s", tgt, f->dataset->id[0], f->dataset->id[1], f->dataset->id+2, f->id))
-
 #define ESDM_MAGIC 69083068077013010ull
 
 typedef kdsa_vol_handle_t handle_t;
@@ -228,7 +225,7 @@ static int mkfs(esdm_backend_t *backend, int format_flags) {
   };
 
   ret = kdsa_write_unregistered(data->handle, 0, & data->h, sizeof(kdsa_persistent_header_t));
-  printf("[mkfs] Formatting %s\n", tgt);
+  printf("[mkfs] Formatting %s with %lld blocks and a blockmap of %lld entries\n", tgt, blocks,  blockmap_size);
   if (ret != 0) {
     WARN_CHECK_RET(ret, "[mkfs] WARNING could not format volume %s", tgt);
     if(! ignore_err){
@@ -267,14 +264,30 @@ static int fsck() {
 // Fragment Handlers //////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////
 
-static int fragment_retrieve(esdm_backend_t *backend, esdm_fragment_t *f, json_t *metadata) {
+static void * fragment_metadata_load(esdm_backend_t * b, esdm_fragment_t *f, json_t *md){
+  kdsa_fragment_metadata_t * fragmd = malloc(sizeof(kdsa_fragment_metadata_t));
+  eassert(f->id);
+  long long unsigned offset;
+  sscanf(f->id, "%llu", & offset);
+  fragmd->offset = offset;
+
+  return fragmd;
+}
+
+static int fragment_metadata_free(esdm_backend_t * b, void * f){
+  //kdsa_fragment_metadata_t * fragmd = (kdsa_fragment_metadata_t *) f;
+  free(f);
+  return 0;
+}
+
+
+static int fragment_retrieve(esdm_backend_t *backend, esdm_fragment_t *f) {
   DEBUG_ENTER;
 
   // set data, options and tgt for convienience
   kdsa_backend_data_t *data = (kdsa_backend_data_t *)backend->data;
   int ret = 0;
   kdsa_fragment_metadata_t * fragmd = (kdsa_fragment_metadata_t*) f->backend_md;
-
   ret = kdsa_read_unregistered(data->handle, fragmd->offset, f->buf, f->bytes);
   if(ret != 0){
     WARN_STRERR("Error could not read data from volume %s", data->config->target);
@@ -283,14 +296,6 @@ static int fragment_retrieve(esdm_backend_t *backend, esdm_fragment_t *f, json_t
 
   return ESDM_SUCCESS;
 }
-
-static int fragment_metadata_create(esdm_backend_t *backend, esdm_fragment_t *fragment, smd_string_stream_t* stream){
-  DEBUG_ENTER;
-  smd_string_stream_printf(stream, "{}");
-
-  return 0;
-}
-
 
 static uint64_t try_to_use_block(kdsa_backend_data_t* data, uint64_t bitmap_pos){
   int ret = 0;
@@ -317,7 +322,7 @@ static uint64_t try_to_use_block(kdsa_backend_data_t* data, uint64_t bitmap_pos)
 static uint64_t find_offset_to_store_fragment(kdsa_backend_data_t* data){
   int ret = 0;
   ret = pthread_spin_lock(& data->block_lock);
-  if(data->free_blocks_estimate*100 / data->h.blockcount > 98){
+  if(data->free_blocks_estimate*100 / data->h.blockcount <= 3){
     ret = load_block_bitmap(data);
     if( ret != 0 || data->free_blocks_estimate == 0){
       // could not load or no more space available
@@ -330,6 +335,7 @@ static uint64_t find_offset_to_store_fragment(kdsa_backend_data_t* data){
   uint64_t blockmap_size = calc_block_map_size(data->h.blockcount);
   for(int i = 0; i < 30; i++){
     uint64_t bitmap_pos = rand() % blockmap_size;
+    //uint64_t bitmap_pos = 0 % blockmap_size;
     offset = try_to_use_block(data, bitmap_pos);
     if(offset != 0){
       break;
@@ -345,6 +351,7 @@ static uint64_t find_offset_to_store_fragment(kdsa_backend_data_t* data){
       }
     }
   }
+  data->free_blocks_estimate--;
   ret = pthread_spin_unlock(& data->block_lock);
   return offset;
 }
@@ -357,10 +364,10 @@ static int fragment_update(esdm_backend_t *backend, esdm_fragment_t *f) {
   int ret;
   // set data, options and tgt for convienience
   kdsa_backend_data_t *data = (kdsa_backend_data_t *)backend->data;
-  kdsa_fragment_metadata_t * fragmd = (kdsa_fragment_metadata_t*) f->backend_md;
 
+  kdsa_fragment_metadata_t * fragmd = (kdsa_fragment_metadata_t*) f->backend_md;
   // lazy assignment of ID
-  if(! fragmd){
+  if(! f->id){
     uint64_t offset = find_offset_to_store_fragment(data);
     if(offset == 0){
       return ESDM_ERROR;
@@ -374,8 +381,6 @@ static int fragment_update(esdm_backend_t *backend, esdm_fragment_t *f) {
     eassert(f->id);
     sprintf(f->id, "%"PRId64, offset);
   }
-
-  //FIXME make this stride aware!
   ret = kdsa_write_unregistered(data->handle, fragmd->offset, f->buf, f->bytes);
   if(ret != 0){
     WARN_STRERR("Error could not write data from volume %s", data->config->target);
@@ -429,8 +434,10 @@ static esdm_backend_t backend_template = {
   NULL,
   fragment_retrieve,
   fragment_update,
-  fragment_metadata_create,
   NULL,
+  NULL,
+  fragment_metadata_load,
+  fragment_metadata_free,
   mkfs,
 },
 };

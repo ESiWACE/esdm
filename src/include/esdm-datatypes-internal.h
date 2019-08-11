@@ -108,13 +108,15 @@ typedef enum esdm_module_type_t {
  */
 struct esdm_backend_t_callbacks_t {
   // General for ESDM
-  int (*finalize)(esdm_backend_t *);
-  int (*performance_estimate)(esdm_backend_t *, esdm_fragment_t *fragment, float *out_time);
-  int (*fragment_create)(esdm_backend_t *, esdm_fragment_t *fragment);
-  int (*fragment_retrieve)(esdm_backend_t *, esdm_fragment_t *fragment, json_t *metadata);
-  int (*fragment_update)(esdm_backend_t *, esdm_fragment_t *fragment);
-  int (*fragment_metadata_create)(esdm_backend_t *, esdm_fragment_t *fragment, smd_string_stream_t* stream);
-  int (*fragment_destroy)(esdm_backend_t *, esdm_fragment_t *fragment);
+  int (*finalize)(esdm_backend_t * b);
+  int (*performance_estimate)(esdm_backend_t * b, esdm_fragment_t *fragment, float *out_time);
+  int (*fragment_create)(esdm_backend_t * b, esdm_fragment_t *fragment);
+  int (*fragment_retrieve)(esdm_backend_t * b, esdm_fragment_t *fragment);
+  int (*fragment_update)(esdm_backend_t * b, esdm_fragment_t *fragment);
+  int (*fragment_destroy)(esdm_backend_t * b, esdm_fragment_t *fragment);
+  int (*fragment_metadata_create)(esdm_backend_t * b, esdm_fragment_t *fragment, smd_string_stream_t* stream);
+  void* (*fragment_metadata_load)(esdm_backend_t * b, esdm_fragment_t *fragment, json_t *metadata);
+  int (*fragment_metadata_free)(esdm_backend_t * b, void * options);
 
   int (*mkfs)(esdm_backend_t *, int format_flags);
 };
