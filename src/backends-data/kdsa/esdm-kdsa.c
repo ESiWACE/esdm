@@ -216,16 +216,20 @@ static int mkfs(esdm_backend_t *backend, int format_flags) {
 
   uint64_t blocks = calc_block_count(data->h.blocksize, data->size);
   uint64_t blockmap_size = calc_block_map_size(blocks);
+  uint64_t offset_to_data = sizeof(kdsa_persistent_header_t) + blockmap_size * sizeof(uint64_t);
+
+  offset_to_data = (offset_to_data + 63) / 64 * 64; // round to 64 bytes
+
   // fill data structure
   data->h = (kdsa_persistent_header_t){
     .magic = ESDM_MAGIC,
     .blocksize = data->h.blocksize,
     .blockcount = blocks,
-    .offset_to_data = sizeof(kdsa_persistent_header_t) + blockmap_size
+    .offset_to_data = offset_to_data
   };
 
   ret = kdsa_write_unregistered(data->handle, 0, & data->h, sizeof(kdsa_persistent_header_t));
-  printf("[mkfs] Formatting %s with %lld blocks and a blockmap of %lld entries\n", tgt, blocks,  blockmap_size);
+  printf("[mkfs] Formatting %s with %lu blocks and a blockmap of %lu entries\n", tgt, blocks,  blockmap_size);
   if (ret != 0) {
     WARN_CHECK_RET(ret, "[mkfs] WARNING could not format volume %s", tgt);
     if(! ignore_err){
@@ -304,10 +308,9 @@ static uint64_t try_to_use_block(kdsa_backend_data_t* data, uint64_t bitmap_pos)
     return 0;
   }
   uint64_t val = ~expected;
-  uint64_t offset = 0;
   for(int b = 0; b < 64; b++){
     if( val & 1 ){
-      uint64_t swap = expected | 1<<b;
+      uint64_t swap = expected | 1lu << b;
       ret = kdsa_compare_and_swap(data->handle, bitmap_pos*sizeof(uint64_t) + sizeof(kdsa_persistent_header_t), expected, swap, & data->block_map[bitmap_pos]);
       if (ret == 0){
         // found a block!
@@ -331,18 +334,17 @@ static uint64_t find_offset_to_store_fragment(kdsa_backend_data_t* data){
     }
   }
   // try 30 times to find a free block
-  uint64_t offset;
+  uint64_t offset = 0;
   uint64_t blockmap_size = calc_block_map_size(data->h.blockcount);
   for(int i = 0; i < 30; i++){
     uint64_t bitmap_pos = rand() % blockmap_size;
-    //uint64_t bitmap_pos = 0 % blockmap_size;
     offset = try_to_use_block(data, bitmap_pos);
     if(offset != 0){
       break;
     }
   }
   if(offset == 0){
-    // try sequential strategy starting at one block
+    // try a sequential strategy starting at one block, this is inefficient!
     uint64_t bitmap_pos = rand() % blockmap_size;
     for(int i = 0; i < blockmap_size; i++){
       offset = try_to_use_block(data, (i + bitmap_pos) % blockmap_size);
@@ -351,7 +353,9 @@ static uint64_t find_offset_to_store_fragment(kdsa_backend_data_t* data){
       }
     }
   }
-  data->free_blocks_estimate--;
+  if(offset != 0){
+    data->free_blocks_estimate--;
+  }
   ret = pthread_spin_unlock(& data->block_lock);
   return offset;
 }

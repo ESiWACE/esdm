@@ -134,7 +134,7 @@ void runRead(uint64_t * buf_w, int64_t * dim, int64_t * offset){
         uint64_t idx = y * size + x;
         if (buf_r[idx] != buf_w[idx]) {
           mismatches++;
-          //printf("Read %"PRId64" expected %"PRId64"\n", buf_r[idx], buf_w[idx]);
+          printf("Read timestep %d at pos %"PRIu64" %"PRId64" expected %"PRId64"\n", t, idx, buf_r[idx], buf_w[idx]);
         }
       }
     }

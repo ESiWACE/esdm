@@ -22,7 +22,7 @@
   #define debug(...)
 #endif
 
-#define FUNC_START debug("CALL %s\n", __PRETTY_FUNCTION__);
+#define FUNC_START debug("CALL %s\n", __func__);
 
 
 int kdsa_compare_and_swap(kdsa_vol_handle_t handle, kdsa_vol_offset_t off, uint64_t compare, uint64_t swap, uint64_t *out_res){
@@ -39,7 +39,9 @@ int kdsa_compare_and_swap(kdsa_vol_handle_t handle, kdsa_vol_offset_t off, uint6
     return -1;
   }
 
-  printf("C&W: %lld %lld %lld\n", off, compare, swap);
+  debug("C&S: %lu %lu %lu\n", off, compare, swap);
+  assert(compare != swap);
+
   uint64_t cur;
   int ret;
   ret = pread(fd, & cur, sizeof(uint64_t), off);
@@ -70,7 +72,7 @@ int kdsa_get_volume_size(kdsa_vol_handle_t handle, kdsa_size_t *out_size){
 
 int kdsa_write_unregistered(kdsa_vol_handle_t handle, kdsa_vol_offset_t off, void* buf, kdsa_size_t bytes){
   FUNC_START
-  printf("W: %lld (%lld)\n", off, bytes);
+  debug("W: %lu (%lu)\n", off, bytes);
 
   int f = * handle;
   size_t ret;
@@ -82,7 +84,7 @@ int kdsa_write_unregistered(kdsa_vol_handle_t handle, kdsa_vol_offset_t off, voi
 
 int kdsa_read_unregistered(kdsa_vol_handle_t handle, kdsa_vol_offset_t off,  void* buf, kdsa_size_t bytes){
   FUNC_START
-  printf("R: %lld (%lld)\n", off, bytes);
+  debug("R: %lu (%lu)\n", off, bytes);
 
   int f = * handle;
   size_t ret;
