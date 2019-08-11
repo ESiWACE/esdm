@@ -18,7 +18,10 @@ typedef int* kdsa_vol_handle_t;
 
 int kdsa_write_unregistered(kdsa_vol_handle_t handle, kdsa_vol_offset_t off, void* buf, kdsa_size_t bytes);
 int kdsa_read_unregistered(kdsa_vol_handle_t handle, kdsa_vol_offset_t off,  void* buf, kdsa_size_t bytes);
-int kdsa_connect(char* connection_string, uint32_t flags, kdsa_vol_handle_t *handle);
+int kdsa_compare_and_swap(kdsa_vol_handle_t handle, kdsa_vol_offset_t off, uint64_t compare, uint64_t swap, uint64_t *out_res);
+int kdsa_get_volume_size(kdsa_vol_handle_t handle, kdsa_size_t *out_size);
+
+int kdsa_connect(char* connection_string, uint32_t flags, kdsa_vol_handle_t *out_handle);
 int kdsa_disconnect(kdsa_vol_handle_t handle);
 
 #ifdef __cplusplus

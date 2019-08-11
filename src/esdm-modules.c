@@ -20,35 +20,11 @@
  *
  */
 
-#include <backends-data/posix/posix.h>
 #include <esdm-internal.h>
-#include <esdm.h>
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-
-#define DEBUG_ENTER ESDM_DEBUG_COM_FMT("MODULES", "", "")
-#define DEBUG(fmt, ...) ESDM_DEBUG_COM_FMT("MODULES", fmt, __VA_ARGS__)
-
-#ifdef ESDM_HAS_POSIX
-#  include "backends-data/posix/posix.h"
-#  pragma message("Building ESDM with support for generic POSIX backend.")
-#endif
-
-#ifdef ESDM_HAS_KDSA
-#  include "backends-data/kdsa/kdsa.h"
-#  pragma message("Building ESDM with Kove XPD KDSA support.")
-#endif
-
-#ifdef ESDM_HAS_CLOVIS
-#  include "backends-data/Clovis/clovis.h"
-#  pragma message("Building ESDM with Clovis support.")
-#endif
-
-#ifdef ESDM_HAS_WOS
-#  include "backends-data/WOS/wos.h"
-#  pragma message("Building ESDM with WOS support.")
-#endif
 
 // TODO: remove define on
 #define ESDM_HAS_MD_POSIX
@@ -56,6 +32,10 @@
 #  include "backends-metadata/posix/md-posix.h"
 #  pragma message("Building ESDM with support generic 'MD-POSIX' backend.")
 #endif
+
+
+#define DEBUG_ENTER ESDM_DEBUG_COM_FMT("MODULES", "", "")
+#define DEBUG(fmt, ...) ESDM_DEBUG_COM_FMT("MODULES", fmt, __VA_ARGS__)
 
 #define ESDM_HAS_MONDODB
 #ifdef ESDM_HAS_MONGODB
@@ -104,26 +84,9 @@ esdm_modules_t *esdm_modules_init(esdm_instance_t *esdm) {
     b->id,
     b->target);
 
-    if (strncmp(b->type, "POSIX", 5) == 0) {
-      backend = posix_backend_init(b);
-    }
-#ifdef ESDM_HAS_KDSA
-    else if (strncasecmp(b->type, "KDSA", 6) == 0) {
-      backend = kdsa_backend_init(b);
-    }
-#endif
-#ifdef ESDM_HAS_CLOVIS
-    else if (strncasecmp(b->type, "CLOVIS", 6) == 0) {
-      backend = clovis_backend_init(b);
-    }
-#endif
-#ifdef ESDM_HAS_WOS
-    else if (strncmp(b->type, "WOS", 3) == 0) {
-      backend = wos_backend_init(b);
-    }
-#endif
-    else {
-      ESDM_ERROR("Unknown backend type. Please check your ESDM configuration.");
+    backend = esdmI_init_backend(b->type, b);
+    if(! backend){
+      ESDM_ERROR_FMT("Unknown backend type: %s. Please check your ESDM configuration.", b->type);
     }
     backend->config = b;
     modules->data_backends[i] = backend;

@@ -26,6 +26,34 @@
 #define FUNC_START debug("CALL %s\n", __PRETTY_FUNCTION__);
 
 
+int kdsa_compare_and_swap(kdsa_vol_handle_t handle, kdsa_vol_offset_t off, uint64_t compare, uint64_t swap, uint64_t *out_res){
+  int res;
+  int fd = * handle;
+
+  struct flock fl;
+  memset(&fl, 0, sizeof(fl));
+
+  fl.l_type = F_WRLCK;
+  fl.l_whence = SEEK_SET;
+  fl.l_start = off;
+  fl.l_len = sizeof(uint64_t);
+  if (fcntl(fd, F_SETLK, &fl) != 0) {
+    return -1;
+  }
+
+  fl.l_type = F_UNLCK;
+  if (fcntl(fd, F_SETLK, &fl) != 0) {
+    return -1;
+  }
+
+  return 0;
+}
+
+int kdsa_get_volume_size(kdsa_vol_handle_t handle, kdsa_size_t *out_size){
+  *out_size = 10llu*1024*1024*1024;
+  return 0;
+}
+
 
 int kdsa_write_unregistered(kdsa_vol_handle_t handle, kdsa_vol_offset_t off, void* buf, kdsa_size_t bytes){
   FUNC_START
@@ -59,14 +87,15 @@ int kdsa_connect(char* connection_string, uint32_t flags, kdsa_vol_handle_t *han
     if (f == -1){
       return -1;
     }
-    size_t size = 0;
-    int ret = pwrite(f, & size, sizeof(size), 0);
-    assert(ret == sizeof(size));
   }
   int * fd = (int*) malloc(sizeof(int));
   *fd = f;
 
   *handle = (kdsa_vol_handle_t) fd;
+
+  kdsa_size_t size;
+  kdsa_get_volume_size(fd, & size);
+  pwrite(f, & size, 1, size);
 
   return 0;
 }

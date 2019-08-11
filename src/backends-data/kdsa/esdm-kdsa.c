@@ -157,7 +157,7 @@ static uint64_t calc_block_count(uint64_t blocksize, uint64_t volume_size){
 
 static int load_block_bitmap(kdsa_backend_data_t *data){
   uint64_t blockmap_size = calc_block_map_size(data->h.blockcount);
-  int ret = kdsa_read_unregistered(data->handle, sizeof(kdsa_persistent_header_t), & data->block_map, blockmap_size* sizeof(uint64_t));
+  int ret = kdsa_read_unregistered(data->handle, sizeof(kdsa_persistent_header_t), data->block_map, blockmap_size* sizeof(uint64_t));
   if(ret != 0){
     WARN_STRERR("%s", "Could not update block bitmap");
     data->free_blocks_estimate = 0;
@@ -222,7 +222,7 @@ static int mkfs(esdm_backend_t *backend, int format_flags) {
   // fill data structure
   data->h = (kdsa_persistent_header_t){
     .magic = ESDM_MAGIC,
-    .blocksize = 0,
+    .blocksize = data->h.blocksize,
     .blockcount = blocks,
     .offset_to_data = sizeof(kdsa_persistent_header_t) + blockmap_size
   };
@@ -247,7 +247,7 @@ static int mkfs(esdm_backend_t *backend, int format_flags) {
   }
   data->block_map[blockmap_size-1] = val;
 
-  ret = kdsa_write_unregistered(data->handle, sizeof(kdsa_persistent_header_t), & data->block_map, blockmap_size* sizeof(uint64_t));
+  ret = kdsa_write_unregistered(data->handle, sizeof(kdsa_persistent_header_t), data->block_map, blockmap_size* sizeof(uint64_t));
   if (ret != 0) {
     WARN_CHECK_RET(ret, "[mkfs] WARNING could not format volume %s", tgt);
     if(! ignore_err){

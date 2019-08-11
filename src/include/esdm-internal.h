@@ -86,6 +86,8 @@ esdm_status esdm_modules_get_by_type(esdm_module_type_t type, esdm_module_type_a
  *
  */
 
+esdm_backend_t * esdmI_init_backend(char const * name, esdm_config_backend_t * config);
+
 esdm_scheduler_t *esdm_scheduler_init(esdm_instance_t *esdm);
 
 esdm_status esdm_scheduler_finalize(esdm_instance_t *esdm);

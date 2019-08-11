@@ -80,11 +80,13 @@ set(ESDM_INCLUDE_DIRS "${CMAKE_SOURCE_DIR}/src/include;${GLIB_INCLUDE_DIRS};${JA
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}/)
 
 
-add_subdirectory(backends-data)
 add_subdirectory(backends-metadata)
 add_subdirectory(utils)
 add_subdirectory(test)
 add_subdirectory(tools)
+
+
+
 
 # Include directories for all target in this CMakeLists.txt
 include_directories(${CMAKE_BINARY_DIR} ${ESDM_INCLUDE_DIRS} ${GLIB_INCLUDE_DIRS} ${JANSSON_INCLUDE_DIRS} ${SMD_INCLUDES})
@@ -97,20 +99,10 @@ install(TARGETS esdmutils LIBRARY DESTINATION lib)
 
 
 # ESDM Middleware Library
-add_library(esdm SHARED esdm.c  esdm-scheduler.c  esdm-modules.c)
+add_library(esdm SHARED esdm.c  esdm-scheduler.c  esdm-modules.c backends-data/init.c)
 target_link_libraries(esdm ${GLIB_LDFLAGS} ${JANSSON_LDFLAGS} esdmutils esdmposix esdm-mdposix)
 if(BACKEND_MONGODB)
     target_link_libraries(esdm esdmmongodb)
-endif()
-
-if(BACKEND_CLOVIS)
-    add_definitions(-DESDM_HAS_CLOVIS=1)
-    target_link_libraries(esdm esdmclovis)
-endif()
-
-if(BACKEND_WOS)
-    add_definitions(-DESDM_HAS_WOS=1)
-    target_link_libraries(esdm esdmwos)
 endif()
 
 
@@ -121,16 +113,63 @@ install(TARGETS esdm LIBRARY DESTINATION lib)
 install(FILES "./include/esdm-datatypes.h" DESTINATION include)
 install(FILES "./include/esdm.h" DESTINATION include)
 
-
-
-
-
 SUBDIRS(interfaces)
 
 
 
+### Data backends ###
+option(BACKEND_POSIX "Compile backend for POSIX support?" ON)
+if(BACKEND_POSIX)
+	message(STATUS "WITH_BACKEND_POSIX")
+	add_definitions(-DESDM_HAS_POSIX=1)
+	SUBDIRS(backends-data/posix)
+	endif()
+
+option(BACKEND_LUSTRE "Compile backend for Lustre support?" OFF)
+if(BACKEND_LUSTRE)
+	message(STATUS "WITH_BACKEND_LUSTRE")
+	add_definitions(-DESDM_HAS_LUSTRE=1)
+	SUBDIRS(backends-data/lustre)
+endif()
+
+option(BACKEND_CLOVIS "Compile backend for Clovis support?" OFF)
+if(BACKEND_CLOVIS)
+	message(STATUS "WITH_BACKEND_CLOVIS")
+	add_definitions(-DESDM_HAS_CLOVIS=1)
+  target_link_libraries(esdm esdmclovis)
+	SUBDIRS(backends-data/Clovis)
+endif()
+
+option(BACKEND_WOS "Compile backend for WOS support?" OFF)
+if(BACKEND_WOS)
+	message(STATUS "WITH_BACKEND_WOS")
+	add_definitions(-DESDM_HAS_WOS=1)
+  target_link_libraries(esdm esdmwos)
+	SUBDIRS(backends-data/WOS)
+endif()
 
 
+option(BACKEND_KDSA "Compile backend for Kove XPD / KDSA API" OFF)
+option(BACKEND_KDSA_DUMMY "Compile dummy file backend for Kove XPD / KDSA API" OFF)
+
+message(STATUS "Searching for KDSA libraries")
+find_path(KDSA_INCLUDE_DIR kdsa.h HINTS ${KDSA_INCLUDE_DIR})
+find_library(KDSA_LIBRARY NAMES kdsa HINTS ${KDSA_LIB_DIR})
+string(COMPARE EQUAL "${KDSA_LIBRARY}" KDSA_LIBRARY-NOTFOUND _cmp)
+if(_cmp)
+  message("not found")
+else()
+  message(STATUS "found in ${KDSA_LIBRARY} and ${KDSA_INCLUDE_DIR}")
+  set(BACKEND_KDSA ON)
+endif()
+if(BACKEND_KDSA OR BACKEND_KDSA_DUMMY)
+	message(STATUS "WITH_BACKEND_KDSA")
+	add_definitions(-DESDM_HAS_KDSA=1)
+  target_link_libraries(esdm esdmkdsa)
+	SUBDIRS(backends-data/kdsa)
+endif()
+
+### END Data backends ###
 
 
 #
