@@ -93,31 +93,32 @@ static int entry_update(const char *path, void *buf, size_t len, int update_only
   return ret;
 }
 
-static int entry_destroy(const char *path) {
+static int fragment_delete(esdm_backend_t * backend, esdm_fragment_t *f){
   DEBUG_ENTER;
 
-  int status;
-  struct stat sb;
+  posix_backend_data_t *data = (posix_backend_data_t *)backend->data;
+  const char *tgt = data->target;
 
-  DEBUG("entry_destroy(%s)\n", path);
-
-  status = stat(path, &sb);
-  if (status == -1) {
-    perror("stat");
-    return -1;
+  char path[PATH_MAX];
+  if(f->id == NULL){
+    return ESDM_ERROR;
   }
+  sprintfFragmentPath(path, f);
 
-  print_stat(sb);
-
-  status = unlink(path);
-  if (status == -1) {
+  int ret = unlink(path);
+  if (ret == -1) {
     perror("unlink");
-    return -1;
+    return ESDM_ERROR;
+  }
+  sprintfFragmentDir(path, f);
+  ret = rmdir(path);
+  if (ret == -1) {
+    perror("rmdir");
+    return ESDM_ERROR;
   }
 
-  return 0;
+  return ESDM_SUCCESS;
 }
-
 
 static int mkfs(esdm_backend_t *backend, int format_flags) {
   posix_backend_data_t *data = (posix_backend_data_t *)backend->data;
@@ -321,7 +322,7 @@ posix_backend_performance_estimate, // performance_estimate
 NULL,
 fragment_retrieve,
 fragment_update,
-NULL,
+fragment_delete,
 NULL,
 NULL,
 NULL,
