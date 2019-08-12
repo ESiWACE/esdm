@@ -486,6 +486,7 @@ esdmI_hypercubeSet_t* esdm_scheduler_makeSplitRecommendation(esdm_dataspace_t* s
     int64_t updateDim;
     for(updateDim = space->dims; updateDim--; ) {
       if(++(splitCoords[updateDim]) < splitFactors[updateDim]) break;
+      splitCoords[updateDim] = 0;
     }
     if(updateDim < 0) break;
   }
