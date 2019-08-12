@@ -404,7 +404,7 @@ static int fragment_delete(esdm_backend_t * b, esdm_fragment_t *f){
 
   uint64_t pos = (fragmd->offset - data->h.offset_to_data) / data->h.blocksize;
   uint64_t bitmap_pos = pos / 64;
-  int bit = ~(1<<(pos % 64));
+  int bit = ~(1llu<<(pos % 64));
 
   int ret = 1;
   while(ret != 0){
