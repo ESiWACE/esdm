@@ -3,6 +3,7 @@
 
 #include <assert.h>
 #include <stdint.h>
+#include <unistd.h>
 
 void esdmI_log_dump();
 
