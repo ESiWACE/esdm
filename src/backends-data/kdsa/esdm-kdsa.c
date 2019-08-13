@@ -293,6 +293,7 @@ static int fragment_retrieve(esdm_backend_t *backend, esdm_fragment_t *f) {
   int ret = 0;
   kdsa_fragment_metadata_t * fragmd = (kdsa_fragment_metadata_t*) f->backend_md;
   ret = kdsa_read_unregistered(data->handle, fragmd->offset, f->buf, f->bytes);
+  printf("read: %lu\n", *(uint64_t*) f->buf);
   if(ret != 0){
     WARN_STRERR("Error could not read data from volume %s", data->config->target);
     return ESDM_ERROR;
@@ -385,6 +386,7 @@ static int fragment_update(esdm_backend_t *backend, esdm_fragment_t *f) {
     eassert(f->id);
     sprintf(f->id, "%"PRId64, offset);
   }
+  printf("write: %lu\n", *(uint64_t*) f->buf);
   ret = kdsa_write_unregistered(data->handle, fragmd->offset, f->buf, f->bytes);
   if(ret != 0){
     WARN_STRERR("Error could not write data from volume %s", data->config->target);

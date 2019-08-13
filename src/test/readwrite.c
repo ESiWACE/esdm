@@ -30,16 +30,14 @@
 
 int verify_data(uint64_t *a, uint64_t *b) {
   int mismatches = 0;
-  int idx;
 
-  int x, y;
-  for (x = 0; x < HEIGHT; x++) {
-    for (y = 0; y < WIDTH; y++) {
-      idx = y * HEIGHT + x;
+  for (int y = 0; y < HEIGHT; y++) {
+    for (int x = 0; x < WIDTH; x++) {
+      int idx = y * WIDTH + x;
 
       if (a[idx] != b[idx]) {
         mismatches++;
-        printf("idx=%04d, x=%04d, y=%04d should be %10ld but is %10ld\n", idx, x, y, a[idx], b[idx]);
+        printf("idx=%10d, x=%10d, y=%10d should be %10ld but is %10ld\n", idx, x, y, a[idx], b[idx]);
       }
     }
   }
@@ -52,10 +50,10 @@ int main(int argc, char const *argv[]) {
   uint64_t *buf_w = (uint64_t *)malloc(HEIGHT * WIDTH * sizeof(uint64_t));
   uint64_t *buf_r = (uint64_t *)malloc(HEIGHT * WIDTH * sizeof(uint64_t));
 
-  int x, y;
-  for (x = 0; x < HEIGHT; x++) {
-    for (y = 0; y < WIDTH; y++) {
-      buf_w[y * HEIGHT + x] = (y)*HEIGHT + x + 1;
+  for (int y = 0; y < HEIGHT; y++) {
+    for (int x = 0; x < WIDTH; x++) {
+      int idx = y * WIDTH + x;
+      buf_w[idx] = idx;
     }
   }
 
@@ -104,6 +102,7 @@ int main(int argc, char const *argv[]) {
   ret = esdm_dataset_commit(dataset);
   eassert(ret == ESDM_SUCCESS);
 
+  memset(buf_r, 0, HEIGHT * WIDTH * sizeof(uint64_t));
   // Read the data to the dataset
   ret = esdm_read(dataset, buf_r, subspace);
   eassert(ret == ESDM_SUCCESS);

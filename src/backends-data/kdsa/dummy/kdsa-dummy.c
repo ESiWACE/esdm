@@ -104,7 +104,7 @@ int kdsa_read_unregistered(kdsa_vol_handle_t handle, kdsa_vol_offset_t off,  voi
   int fd = open(name, O_RDONLY);
   ret = pread(fd, buf, bytes, 0);
   close(fd);
-  return ret != bytes;
+  return 0;
 #endif
 
   int f = * handle;
