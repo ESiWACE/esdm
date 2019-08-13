@@ -14,7 +14,8 @@
 #include <esdm-debug.h>
 #include <kdsa.h>
 
-//#define DEBUG
+#define DEBUG
+#define KDSA_DUMMY_USE_FILE_PER_OFF
 
 #ifdef DEBUG
   #define debug(...) printf(__VA_ARGS__);
@@ -72,21 +73,41 @@ int kdsa_get_volume_size(kdsa_vol_handle_t handle, kdsa_size_t *out_size){
 int kdsa_write_unregistered(kdsa_vol_handle_t handle, kdsa_vol_offset_t off, void* buf, kdsa_size_t bytes){
   FUNC_START
   debug("W: %lu (%lu)\n", off, bytes);
+  size_t ret;
+
+// detailed debugging
+#ifdef KDSA_DUMMY_USE_FILE_PER_OFF
+  char name[256];
+  sprintf(name, "kdsa-%ld.bin", off);
+  int fd = open(name, O_RDWR | O_TRUNC | O_CREAT, S_IRUSR|S_IWUSR);
+  ret = write(fd, buf, bytes);
+  close(fd);
+  assert(ret == bytes);
+  return 0;
+#endif
 
   int f = * handle;
-  size_t ret;
   ret = pwrite(f, buf, bytes, off);
   assert(ret == bytes);
-  fdatasync(f);
+  //fdatasync(f);
   return 0;
 }
 
 int kdsa_read_unregistered(kdsa_vol_handle_t handle, kdsa_vol_offset_t off,  void* buf, kdsa_size_t bytes){
   FUNC_START
   debug("R: %lu (%lu)\n", off, bytes);
+  size_t ret;
+
+#ifdef KDSA_DUMMY_USE_FILE_PER_OFF
+  char name[256];
+  sprintf(name, "kdsa-%ld.bin", off);
+  int fd = open(name, O_RDONLY);
+  ret = pread(fd, buf, bytes, 0);
+  close(fd);
+  return ret != bytes;
+#endif
 
   int f = * handle;
-  size_t ret;
   ret = pread(f, buf, bytes, off);
   if(ret == bytes){
     return 0;

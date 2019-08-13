@@ -229,7 +229,7 @@ static int mkfs(esdm_backend_t *backend, int format_flags) {
   };
 
   ret = kdsa_write_unregistered(data->handle, 0, & data->h, sizeof(kdsa_persistent_header_t));
-  printf("[mkfs] Formatting %s with %lu blocks and a blockmap of %lu entries\n", tgt, blocks,  blockmap_size);
+  printf("[mkfs] Formatting %s (size: %.2f GiB) with %lu blocks (size: %.1f MiB) and a blockmap of %lu entries\n", tgt, data->size /1024.0/1024/1024, blocks, data->h.blocksize / 1024.0/1024,  blockmap_size);
   if (ret != 0) {
     WARN_CHECK_RET(ret, "[mkfs] WARNING could not format volume %s", tgt);
     if(! ignore_err){

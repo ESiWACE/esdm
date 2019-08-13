@@ -25,8 +25,8 @@
 
 #include <esdm-internal.h>
 
-#define HEIGHT 10
-#define WIDTH 4096
+#define HEIGHT 2
+#define WIDTH 400
 
 int verify_data(uint64_t *a, uint64_t *b) {
   int mismatches = 0;
@@ -39,7 +39,7 @@ int verify_data(uint64_t *a, uint64_t *b) {
 
       if (a[idx] != b[idx]) {
         mismatches++;
-        //printf("idx=%04d, x=%04d, y=%04d should be %10ld but is %10ld\n", idx, x, y, a[idx], b[idx]);
+        printf("idx=%04d, x=%04d, y=%04d should be %10ld but is %10ld\n", idx, x, y, a[idx], b[idx]);
       }
     }
   }

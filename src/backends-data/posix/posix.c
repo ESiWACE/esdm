@@ -271,7 +271,6 @@ static int fragment_update(esdm_backend_t *backend, esdm_fragment_t *f) {
         ret = ESDM_ERROR;
         break;
       }
-
       //write the data
       ret = write_check(fd, writeBuffer, f->bytes);
       close(fd);
