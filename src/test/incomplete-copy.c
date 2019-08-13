@@ -21,6 +21,7 @@
 #include <esdm.h>
 #include <test/util/test_util.h>
 
+#include <unistd.h>
 #include <inttypes.h>
 #include <stdio.h>
 
