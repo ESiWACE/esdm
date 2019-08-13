@@ -14,8 +14,8 @@
 #include <esdm-debug.h>
 #include <kdsa.h>
 
-#define DEBUG
-#define KDSA_DUMMY_USE_FILE_PER_OFF
+//#define DEBUG
+//#define KDSA_DUMMY_USE_FILE_PER_OFF
 
 #ifdef DEBUG
   #define debug(...) printf(__VA_ARGS__);
