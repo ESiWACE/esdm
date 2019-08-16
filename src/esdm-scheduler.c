@@ -137,10 +137,6 @@ static int64_t min_int64(int64_t a, int64_t b) {
   return a < b ? a : b;
 }
 
-static int64_t max_int64(int64_t a, int64_t b) {
-  return a > b ? a : b;
-}
-
 static int64_t abs_int64(int64_t a) {
   return a > 0 ? a : -a;
 }

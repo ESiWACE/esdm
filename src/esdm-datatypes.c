@@ -1309,7 +1309,7 @@ int64_t esdm_dataspace_elementOffset(esdm_dataspace_t* space, int64_t* coords) {
   int64_t offset = 0;
   for(int64_t i = space->dims, size = 1; i--; size *= space->size[i]) {
     int64_t curStride = space->stride ? space->stride[i] : size;
-    offset += (coords[i] - space->offset[i])*size;
+    offset += (coords[i] - space->offset[i])*curStride;
   }
   return offset * esdm_sizeof(space->type);
 }
