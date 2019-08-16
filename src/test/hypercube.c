@@ -197,20 +197,20 @@ void checkHypercubes() {
   esdmI_hypercubeSet_t* set = esdmI_hypercubeSet_make();
   esdmI_hypercubeSet_add(set, cubeA);
   esdmI_hypercubeSet_add(set, cubeB);
-  eassert(esdmI_hypercubeSet_doesIntersect(set, cubeC));
+  eassert(esdmI_hypercubeList_doesIntersect(esdmI_hypercubeSet_list(set), cubeC));
   printf("subtracting hypercube ");
   esdmI_hypercube_print(cubeC, stdout);
   printf(" from hypercube set\n");
-  esdmI_hypercubeSet_print(set, stdout);
+  esdmI_hypercubeList_print(esdmI_hypercubeSet_list(set), stdout);
 
   esdmI_hypercubeSet_subtract(set, cubeC);
-  eassert(!esdmI_hypercubeSet_doesIntersect(set, cubeC));
+  eassert(!esdmI_hypercubeList_doesIntersect(esdmI_hypercubeSet_list(set), cubeC));
   printf("\nresult:\n");
-  esdmI_hypercubeSet_print(set, stdout);
+  esdmI_hypercubeList_print(esdmI_hypercubeSet_list(set), stdout);
 
   esdmI_hypercubeSet_subtract(set, cubeA);
   esdmI_hypercubeSet_subtract(set, cubeB);
-  eassert(!set->count);
+  eassert(!esdmI_hypercubeSet_count(set));
   esdmI_hypercubeSet_destroy(set);
 
   esdmI_hypercube_destroy(cubeA);

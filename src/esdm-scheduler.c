@@ -384,7 +384,7 @@ esdm_status esdm_scheduler_enqueue_read(esdm_instance_t *esdm, io_request_status
   return ESDM_SUCCESS;
 }
 
-static esdm_status esdm_scheduler_enqueue_fill(esdm_instance_t* esdm, io_request_status_t* status, void* fillValue, void* buf, esdm_dataspace_t* bufSpace, esdmI_hypercubeSet_t* fillRegion) {
+static esdm_status esdm_scheduler_enqueue_fill(esdm_instance_t* esdm, io_request_status_t* status, void* fillValue, void* buf, esdm_dataspace_t* bufSpace, esdmI_hypercubeList_t* fillRegion) {
   //I would really love to make the fill operation asynchronous.
   //However, it does not make any sense to use one of our backend threads, because the backends are concerned with storage, not with pure in-memory operations.
   //And I don't know about any non-backend mechanisms in ESDM yet that allow for asynchronous execution.
@@ -492,17 +492,18 @@ esdm_status esdm_scheduler_enqueue_write(esdm_instance_t *esdm, io_request_statu
   esdm_backend_t** backends = esdm_modules_makeBackendRecommendation(esdm->modules, space, &backendCount, &maxFragmentSize);
   eassert(backends);
   esdmI_hypercubeSet_t* cubes = esdm_scheduler_makeSplitRecommendation(space, maxFragmentSize);
+  esdmI_hypercubeList_t* cubeList = esdmI_hypercubeSet_list(cubes);
 
   int64_t dim[space->dims], offset[space->dims];
-  for(int64_t i = 0; i < cubes->count; i++) {
+  for(int64_t i = 0; i < cubeList->count; i++) {
     status->pending_ops++;
     esdm_backend_t* curBackend = backends[i%backendCount];
     eassert(curBackend);
 
-    esdmI_hypercube_getOffsetAndSize(cubes->cubes[i], offset, dim);
+    esdmI_hypercube_getOffsetAndSize(cubeList->cubes[i], offset, dim);
 
     esdm_dataspace_t* subspace;
-    esdm_status ret = esdmI_dataspace_createFromHypercube(cubes->cubes[i], esdm_dataspace_get_type(space), &subspace);
+    esdm_status ret = esdmI_dataspace_createFromHypercube(cubeList->cubes[i], esdm_dataspace_get_type(space), &subspace);
     eassert(ret == ESDM_SUCCESS);
     ret = esdm_dataspace_copyDatalayout(subspace, space);
     eassert(ret == ESDM_SUCCESS);
@@ -615,7 +616,7 @@ static void removeRedundantFragments(esdmI_hypercube_t* bounds, int* inout_fragm
     }
 
     //check whether the current fragment is fully covered by the other fragments
-    if(esdmI_hypercubeSet_doesCoverFully(&otherFragments, descriptions[i].boundedExtends)) {
+    if(esdmI_hypercubeList_doesCoverFully(esdmI_hypercubeSet_list(&otherFragments), descriptions[i].boundedExtends)) {
       //this fragment is redundant, remove it from the list
       esdmI_hypercube_destroy(descriptions[i].boundedExtends);
       descriptions[i].boundedExtends = NULL;  //necessary to avoid UB on the next line when i == fragmentCount-1
@@ -673,7 +674,7 @@ esdm_status esdm_scheduler_process_blocking(esdm_instance_t *esdm, io_operation_
       ret = esdm_dataset_get_fill_value(dataset, fillValue);
       if(ret == ESDM_SUCCESS) {
         //we have a fill value, so we continue to read, fill the uncovered parts with the fill value, and signal back to the user how much uncovered data we filled
-        ret = esdm_scheduler_enqueue_fill(esdm, &status, fillValue, buf, subspace, uncovered);
+        ret = esdm_scheduler_enqueue_fill(esdm, &status, fillValue, buf, subspace, esdmI_hypercubeSet_list(uncovered));
       } else {
         ret = ESDM_INCOMPLETE_DATA; //no fill value set, so we error out
       }

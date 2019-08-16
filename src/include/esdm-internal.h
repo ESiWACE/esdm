@@ -307,6 +307,8 @@ esdm_status esdmI_dataspace_getExtends(esdm_dataspace_t* space, esdmI_hypercube_
  */
 esdm_status esdmI_dataspace_setExtends(esdm_dataspace_t* space, esdmI_hypercube_t* extends);
 
+// esdmI_range_t ///////////////////////////////////////////////////////////////////////////////////
+
 //the resulting range may be empty
 inline esdmI_range_t esdmI_range_intersection(esdmI_range_t a, esdmI_range_t b) {
   return (esdmI_range_t){
@@ -320,6 +322,8 @@ inline bool esdmI_range_isEmpty(esdmI_range_t range) { return range.start >= ran
 inline int64_t esdmI_range_size(esdmI_range_t range) { return esdmI_range_isEmpty(range) ? 0 : range.end - range.start; }
 
 void esdmI_range_print(esdmI_range_t range, FILE* stream);
+
+// esdmI_hypercube_t ///////////////////////////////////////////////////////////////////////////////
 
 esdmI_hypercube_t* esdmI_hypercube_makeDefault(int64_t dimensions); //initializes an empty hypercube with the given dimension count at (0, 0, ...)
 
@@ -351,8 +355,20 @@ void esdmI_hypercube_print(esdmI_hypercube_t* cube, FILE* stream);
 
 void esdmI_hypercube_destroy(esdmI_hypercube_t* cube);
 
+// esdmI_hypercubeList_t ///////////////////////////////////////////////////////////////////////////
+
+bool esdmI_hypercubeList_doesIntersect(esdmI_hypercubeList_t* list, esdmI_hypercube_t* cube);
+
+bool esdmI_hypercubeList_doesCoverFully(esdmI_hypercubeList_t* list, esdmI_hypercube_t* cube);
+
+void esdmI_hypercubeList_print(esdmI_hypercubeList_t* list, FILE* stream);  //for debugging purposes
+
+// esdmI_hypercubeSet_t ////////////////////////////////////////////////////////////////////////////
+
 esdmI_hypercubeSet_t* esdmI_hypercubeSet_make();  //convenience function to construct a heap allocated object
 void esdmI_hypercubeSet_construct(esdmI_hypercubeSet_t* me);  //no allocation, initialization only
+
+esdmI_hypercubeList_t* esdmI_hypercubeSet_list(esdmI_hypercubeSet_t* me); //the returned list and the pointers it contains only remain valid as long the hypercubeSet is not changed in any way
 
 bool esdmI_hypercubeSet_isEmpty(esdmI_hypercubeSet_t* me);  //checks for logical emptiness, may remove empty hypercubes from the set
 
@@ -361,12 +377,6 @@ int64_t esdmI_hypercubeSet_count(esdmI_hypercubeSet_t* me);
 void esdmI_hypercubeSet_add(esdmI_hypercubeSet_t* me, esdmI_hypercube_t* cube);
 
 void esdmI_hypercubeSet_subtract(esdmI_hypercubeSet_t* me, esdmI_hypercube_t* cube);
-
-bool esdmI_hypercubeSet_doesIntersect(esdmI_hypercubeSet_t* me, esdmI_hypercube_t* cube);
-
-bool esdmI_hypercubeSet_doesCoverFully(esdmI_hypercubeSet_t* me, esdmI_hypercube_t* cube);
-
-void esdmI_hypercubeSet_print(esdmI_hypercubeSet_t* me, FILE* stream);  //for debugging purposes
 
 void esdmI_hypercubeSet_destruct(esdmI_hypercubeSet_t* me); //counterpart to esdmI_hypercubeSet_construct()
 void esdmI_hypercubeSet_destroy(esdmI_hypercubeSet_t* me);  //counterpart to esdmI_hypercubeSet_make()

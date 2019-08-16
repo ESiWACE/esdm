@@ -304,10 +304,17 @@ struct esdmI_hypercube_t {
   esdmI_range_t ranges[];
 };
 
+//Plain old data object. Neither owns the hypercubes, nor the memory in which their pointers are stored.
+typedef struct esdmI_hypercubeList_t {
+  esdmI_hypercube_t** cubes;
+  int64_t count;
+} esdmI_hypercubeList_t;
+
+//A hypercubeList that actually owns its memory, allowing it to grow/shrink as needed.
 typedef struct esdmI_hypercubeSet_t esdmI_hypercubeSet_t;
 struct esdmI_hypercubeSet_t {
-  int64_t count, allocatedCount;
-  esdmI_hypercube_t** cubes;
+  esdmI_hypercubeList_t list;
+  int64_t allocatedCount;
 };
 
 #endif
