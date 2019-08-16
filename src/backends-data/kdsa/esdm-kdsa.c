@@ -229,7 +229,7 @@ static int mkfs(esdm_backend_t *backend, int format_flags) {
   };
 
   ret = kdsa_write_unregistered(data->handle, 0, & data->h, sizeof(kdsa_persistent_header_t));
-  printf("[mkfs] Formatting %s with %lu blocks and a blockmap of %lu entries\n", tgt, blocks,  blockmap_size);
+  printf("[mkfs] Formatting %s (size: %.2f GiB) with %lu blocks (size: %.1f MiB) and a blockmap of %lu entries\n", tgt, data->size /1024.0/1024/1024, blocks, data->h.blocksize / 1024.0/1024,  blockmap_size);
   if (ret != 0) {
     WARN_CHECK_RET(ret, "[mkfs] WARNING could not format volume %s", tgt);
     if(! ignore_err){
@@ -243,7 +243,8 @@ static int mkfs(esdm_backend_t *backend, int format_flags) {
 
   // set the occupied bits of the last uint to address the situation when blocks % 64 != 0
   uint64_t val = 0;
-  for(int b = 0; b < blocks % 64; b++){
+  int occupy_blocks = 64 - (blocks % 64);
+  for(int b = 0; b < occupy_blocks; b++){
     val = (val>>1) | (1llu<<63); // always occupy the remaining largest block
   }
   data->block_map[blockmap_size-1] = val;
@@ -293,6 +294,7 @@ static int fragment_retrieve(esdm_backend_t *backend, esdm_fragment_t *f) {
   int ret = 0;
   kdsa_fragment_metadata_t * fragmd = (kdsa_fragment_metadata_t*) f->backend_md;
   ret = kdsa_read_unregistered(data->handle, fragmd->offset, f->buf, f->bytes);
+  DEBUG("read: %lu\n", *(uint64_t*) f->buf);
   if(ret != 0){
     WARN_STRERR("Error could not read data from volume %s", data->config->target);
     return ESDM_ERROR;
@@ -305,11 +307,12 @@ static uint64_t try_to_use_block(kdsa_backend_data_t* data, uint64_t bitmap_pos)
   int ret = 0;
   for(int b = 0; b < 64; b++){
     uint64_t expected = data->block_map[bitmap_pos];
+
     if(expected == UINT64_MAX){
       return 0;
     }
     uint64_t val = ~expected;
-    if( val & 1 ){
+    if( val & (1lu << b) ){
       uint64_t swap = expected | 1lu << b;
       ret = kdsa_compare_and_swap(data->handle, bitmap_pos*sizeof(uint64_t) + sizeof(kdsa_persistent_header_t), expected, swap, & data->block_map[bitmap_pos]);
       if (ret == 0){
@@ -330,6 +333,7 @@ static uint64_t find_offset_to_store_fragment(kdsa_backend_data_t* data){
     if( ret != 0 || data->free_blocks_estimate == 0){
       // could not load or no more space available
       ret = pthread_spin_unlock(& data->block_lock);
+      ESDM_WARN_FMT("KDSA: No free block found (loaded from: %lu)", data->free_blocks_estimate);
       return 0;
     }
   }
@@ -355,6 +359,8 @@ static uint64_t find_offset_to_store_fragment(kdsa_backend_data_t* data){
   }
   if(offset != 0){
     data->free_blocks_estimate--;
+  }else{
+    ESDM_WARN_FMT("KDSA: No free block found (assumed free: %lu)", data->free_blocks_estimate);
   }
   ret = pthread_spin_unlock(& data->block_lock);
   return offset;
@@ -385,6 +391,7 @@ static int fragment_update(esdm_backend_t *backend, esdm_fragment_t *f) {
     eassert(f->id);
     sprintf(f->id, "%"PRId64, offset);
   }
+  DEBUG("write: %lu\n", *(uint64_t*) f->buf);
   ret = kdsa_write_unregistered(data->handle, fragmd->offset, f->buf, f->bytes);
   if(ret != 0){
     WARN_STRERR("Error could not write data from volume %s", data->config->target);
@@ -520,8 +527,8 @@ esdm_backend_t *kdsa_backend_init(esdm_config_backend_t *config) {
     WARN_STRERR("Error could not read header from volume %s", data->config->target);
     return NULL;
   }
-  if(data->h.magic != ESDM_MAGIC){
-    WARN("It appears the volume is no ESDM volume, will disable write for now on %s", tgt);
+  if(data->h.magic != ESDM_MAGIC || blocksize != data->h.blocksize){
+    WARN("It appears the volume is no ESDM volume (or config does not fit), will disable write for now on %s expected blocksize: %lu", tgt, blocksize);
     if(blocksize == 0){
       ERROR("Blocksize is not set, cannot proceed as no KDSA volume is found on %s", tgt);
       return NULL;
