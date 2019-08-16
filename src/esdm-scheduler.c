@@ -528,6 +528,7 @@ esdm_status esdm_scheduler_enqueue_write(esdm_instance_t *esdm, io_request_statu
     }
   }
 
+  esdmI_hypercubeSet_destroy(cubes);
   free(backends);
   return ESDM_SUCCESS;
 }
