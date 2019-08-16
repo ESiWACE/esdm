@@ -185,6 +185,10 @@ bool esdmI_hypercubeSet_isEmpty(esdmI_hypercubeSet_t* me) {
   return true;
 }
 
+int64_t esdmI_hypercubeSet_count(esdmI_hypercubeSet_t* me) {
+  return me->count;
+}
+
 void esdmI_hypercubeSet_add(esdmI_hypercubeSet_t* me, esdmI_hypercube_t* cube) {
   eassert(me);
   eassert(cube);
@@ -254,6 +258,181 @@ bool esdmI_hypercubeSet_doesIntersect(esdmI_hypercubeSet_t* me, esdmI_hypercube_
   return false;
 }
 
+//Fill the given 2D array with the intersections of all the hypercubes within the set.
+//`count` must equal `me->count`, it must be passed redundantly to be usable as an array dimension for `out_intersectionMatrix` and `out_intersectionSizes`.
+//`out_intersectionMatrix` and `out_intersectionSizes` return a pointers to 2D arrays, call `destroyIntersectionMatrix()` to destruct/deallocate them.
+//
+//The self-intersection entries of the matrix are filled with NULL pointers, but the respective size is set to that of the self-intersecting cube.
+static void makeIntersectionMatrix(esdmI_hypercubeSet_t* me, int64_t count, esdmI_hypercube_t* (**out_intersectionMatrix)[count], int64_t (**out_intersectionSizes)[count]) {
+  eassert(me);
+  eassert(me->count == count);
+  eassert(out_intersectionMatrix);
+  eassert(out_intersectionSizes);
+
+  esdmI_hypercube_t* (*intersectionMatrix)[count] = malloc(count*sizeof(*intersectionMatrix));
+  int64_t (*intersectionSizes)[count] = malloc(count*sizeof(*intersectionSizes));
+
+  for(int64_t i = 0; i < count; i++) {
+    intersectionMatrix[i][i] = NULL;  //The algorithms relying on the intersection matrix work better when the self intersection is NULL.
+    intersectionSizes[i][i] = esdmI_hypercube_size(me->cubes[i]); //However, they need to know the size of the self intersection. I know, this does not look sensible, but it's what is actually needed.
+    for(int64_t j = i+1; j < count; j++) {
+      esdmI_hypercube_t* curIntersection = esdmI_hypercube_makeIntersection(me->cubes[i], me->cubes[j]);
+      intersectionMatrix[i][j] = intersectionMatrix[j][i] = curIntersection;
+      intersectionSizes[i][j] = intersectionSizes[j][i] = curIntersection ? esdmI_hypercube_size(curIntersection) : 0;
+    }
+  }
+
+  *out_intersectionMatrix = intersectionMatrix;
+  *out_intersectionSizes = intersectionSizes;
+}
+
+static void destroyIntersectionMatrix(int64_t count, esdmI_hypercube_t* (*intersectionMatrix)[count], int64_t (*intersectionSizes)[count]) {
+  for(int64_t i = 0; i < count; i++) {
+    for(int64_t j = i+1; j < count; j++) {  //only destroy the hypercubes above the diagonal; the cubes on the diagonal are not owned by the matrix, and the pointers balow the diagonal alias the pointers above the diagonal
+      if(intersectionMatrix[i][j]) esdmI_hypercube_destroy(intersectionMatrix[i][j]);
+    }
+  }
+  free(intersectionMatrix);
+  free(intersectionSizes);
+}
+
+//Check whether the `coveringCubes` fully cover the `coveredCube`.
+//Some or all of the pointers in `coveringCubes` may be NULL.
+static bool hypercubeIsFullyCovered(esdmI_hypercube_t* coveredCube, int64_t coveringCubesCount, esdmI_hypercube_t** coveringCubes) {
+  eassert(coveredCube);
+  eassert(coveringCubesCount >= 0);
+  eassert(coveringCubes);
+
+  esdmI_hypercubeSet_t restSet;
+  esdmI_hypercubeSet_construct(&restSet);
+  esdmI_hypercubeSet_add(&restSet, coveredCube);
+
+  for(int64_t i = 0; i < coveringCubesCount; i++) {
+    if(coveringCubes[i]) {
+      esdmI_hypercubeSet_subtract(&restSet, coveringCubes[i]);
+      if(!restSet.count) break; //fast exit once the restSet becomes empty, this line is not necessary, but it might speed up some cases a bit
+    }
+  }
+  bool result = !restSet.count;
+  esdmI_hypercubeSet_destruct(&restSet);
+  return result;
+}
+
+//Probabilistically find a single minimal subset of cubes that covers the entire space.
+static void findMinimalSubset(int64_t count, esdmI_hypercube_t** cubes, uint8_t* requiredCubes, esdmI_hypercube_t* (*intersectionMatrix)[count], uint8_t* out_selectedCubes) {
+  eassert(cubes);
+  eassert(requiredCubes);
+  eassert(intersectionMatrix);
+  eassert(out_selectedCubes);
+
+  memset(out_selectedCubes, true, count*sizeof(*out_selectedCubes));
+  uint8_t* checkedCubes = ea_memdup(requiredCubes, count*sizeof(*checkedCubes));
+  esdmI_hypercube_t* (*reducedMatrix)[count] = ea_memdup(intersectionMatrix, count*sizeof(*reducedMatrix));
+
+  //How many cubes do we need to check?
+  uint64_t uncheckedCubeCount = 0;
+  for(int64_t i = 0; i < count; i++) uncheckedCubeCount += !checkedCubes[i];
+
+  for(; uncheckedCubeCount; uncheckedCubeCount--) {
+    //randomly select a yet unchecked cube for checking
+    static unsigned int seed = 42;
+    uint64_t randomValue = rand_r(&seed);
+    uint64_t cubeSelector = randomValue*uncheckedCubeCount/((uint64_t)RAND_MAX + 1);  //this is an index into the cubes for which the checkedCubes[] bit is not set
+    int64_t checkIndex = 0;
+    for(; cubeSelector >= 0; checkIndex++) if(!checkedCubes[checkIndex]) cubeSelector--;  //turn the cubeSelector into a real index
+
+    //determine whether we can drop this cube
+    out_selectedCubes[checkIndex] = !hypercubeIsFullyCovered(cubes[checkIndex], count, reducedMatrix[checkIndex]);
+    if(!out_selectedCubes[checkIndex]) {
+      for(int64_t j = 0; j < count; j++) reducedMatrix[checkIndex][j] = reducedMatrix[j][checkIndex] = NULL;  //remove the dropped cube from the intersection matrix
+    }
+    checkedCubes[checkIndex] = true;
+  }
+
+  //cleanup
+  free(checkedCubes);
+  free(reducedMatrix);
+}
+
+//In contrast to a hypercube set, the hypercube list is just a plain old data object that does not own the cubes.
+//It does not even own the space in which the cube pointers are stored, so there's no destructor or whatever associated with it.
+typedef struct esdmI_hypercubeList_t {
+  esdmI_hypercube_t** cubes;
+  int64_t count;
+} esdmI_hypercubeList_t;
+
+//This function returns a number of minimal subsets of the cubes contained within the hypercubeSet.
+//The selection of the subsets is probabilistic as any complete algorithm I could think of would have had exponential complexity.
+//The probabilistic solution allows the caller to specify how much effort should be spent in finding minimal subsets.
+//With the probabilistic solution, the function creates as many subsets as indicated by `*inout_setCount`,
+//and returns the number of actually found subsets in the same memory location.
+//The returned value may be lower than the given value because a subset may be found several times.
+//
+//The probabilistic algorithm is written in such a way that it will find small minimal subsets more easily than subsets that contain more cubes.
+//
+//The complexity of the algorithm is `O(*inout_setCount * me->count^2)`.
+//
+//`*out_subsets` returns an array of `*inout_setCount` `esdmI_hypercubeList_t` objects.
+//It is the callers' responsibility to free the `*out_subsets` array.
+void esdmI_hypercubeSet_nonredundantSubsets(esdmI_hypercubeSet_t* me, int64_t* inout_setCount, esdmI_hypercubeList_t** out_subsets) {
+  eassert(me);
+  eassert(inout_setCount);
+  eassert(out_subsets);
+
+  //Determine which hypercubes in the set are needed unconditionally.
+  esdmI_hypercube_t* (*intersectionMatrix)[me->count];
+  int64_t (*intersectionSizes)[me->count];
+  makeIntersectionMatrix(me, me->count, &intersectionMatrix, &intersectionSizes);
+  uint8_t* requiredCubes = malloc(me->count*sizeof(*requiredCubes));
+  for(int64_t i = 0; i < me->count; i++) {
+    int64_t coverage = 0;
+    for(int64_t j = 0; j < me->count; j++) coverage += intersectionSizes[i][j];
+    if(coverage < 2*intersectionSizes[i][i]) {
+      //the coverage includes the size of the hypercube itself, and if it's not at least twice as big, some parts of the hypercube cannot be covered by other cubes
+      requiredCubes[i] = true;
+    } else {
+      //Ok, coverage check is positive. Now check whether all points inside this cube are actually covered by other cubes or not.
+      requiredCubes[i] = hypercubeIsFullyCovered(me->cubes[i], me->count, intersectionMatrix[i]);
+    }
+  }
+
+  //Probabilistically create a number of minimal sets.
+  int64_t setCount = 0;
+  uint8_t (*sets)[me->count] = malloc(*inout_setCount*sizeof(*sets)); //these are used as booleans, 1 means that the respective cube is used in the subset
+  for(; setCount < *inout_setCount; setCount++) {
+    findMinimalSubset(me->count, me->cubes, requiredCubes, intersectionMatrix, sets[setCount]);
+    //FIXME: Remove duplicate sets.
+  }
+
+  destroyIntersectionMatrix(me->count, intersectionMatrix, intersectionSizes);
+
+  //transform the data in `sets` to `out_subsets`
+  int64_t totalCubes = 0;
+  for(int64_t i = 0; i < setCount; i++) {
+    for(int64_t j = 0; j < me->count; j++) {
+      totalCubes += sets[i][j];
+    }
+  }
+  esdmI_hypercube_t** pointers;
+  esdmI_hypercubeList_t* subsets = malloc(setCount*sizeof(*subsets) + totalCubes*sizeof(*pointers)); //allocate the memory for both `pointers` and `subsets` in one go
+  pointers = (esdmI_hypercube_t**)(subsets + setCount);  //place the pointer array after the hypercube list array
+  for(int64_t i = 0; i < setCount; i++) {
+    subsets[i] = (esdmI_hypercubeList_t){
+      .cubes = pointers,
+      .count = 0
+    };
+    for(int64_t j = 0; j < me->count; j++) {
+      if(sets[i][j]) {
+        *(pointers++) = me->cubes[j];
+        subsets[i].count++;
+      }
+    }
+  }
+
+  *inout_setCount = setCount;
+  *out_subsets = subsets;
+}
+
 bool esdmI_hypercubeSet_doesCoverFully(esdmI_hypercubeSet_t* me, esdmI_hypercube_t* cube) {
   //make a list of the cubes in the set that actually intersect with cube, this avoids unnecessary splitting and reduces the total workload of this algorithm
   esdmI_hypercube_t** intersectingCubes = malloc(me->count*sizeof(*intersectingCubes));
@@ -264,22 +443,10 @@ bool esdmI_hypercubeSet_doesCoverFully(esdmI_hypercubeSet_t* me, esdmI_hypercube
     }
   }
 
-  //create a new hypercube set that contains exactly the given cube
-  esdmI_hypercubeSet_t restSet;
-  esdmI_hypercubeSet_construct(&restSet);
-  esdmI_hypercubeSet_add(&restSet, cube);
-
-  //subtract all the intersecting cubes from the rest set
-  for(int64_t i = 0; i < intersectingCubesCount; i++) {
-    esdmI_hypercubeSet_subtract(&restSet, intersectingCubes[i]);
-    if(!restSet.count) break; //fast exit once the restSet becomes empty, this line is not necessary, but it might speed up some cases a bit
-  }
-
-  //check whether something remained in the rest set
-  bool result = esdmI_hypercubeSet_isEmpty(&restSet);
+  //perform the check
+  bool result = hypercubeIsFullyCovered(cube, intersectingCubesCount, intersectingCubes);
 
   //cleanup
-  esdmI_hypercubeSet_destruct(&restSet);
   free(intersectingCubes);
   return result;
 }

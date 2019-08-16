@@ -356,6 +356,8 @@ void esdmI_hypercubeSet_construct(esdmI_hypercubeSet_t* me);  //no allocation, i
 
 bool esdmI_hypercubeSet_isEmpty(esdmI_hypercubeSet_t* me);  //checks for logical emptiness, may remove empty hypercubes from the set
 
+int64_t esdmI_hypercubeSet_count(esdmI_hypercubeSet_t* me);
+
 void esdmI_hypercubeSet_add(esdmI_hypercubeSet_t* me, esdmI_hypercube_t* cube);
 
 void esdmI_hypercubeSet_subtract(esdmI_hypercubeSet_t* me, esdmI_hypercube_t* cube);
