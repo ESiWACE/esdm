@@ -265,7 +265,11 @@ bool esdmI_hypercubeList_doesIntersect(esdmI_hypercubeList_t* list, esdmI_hyperc
 //`out_intersectionMatrix` and `out_intersectionSizes` return a pointers to 2D arrays, call `destroyIntersectionMatrix()` to destruct/deallocate them.
 //
 //The self-intersection entries of the matrix are filled with NULL pointers, but the respective size is set to that of the self-intersecting cube.
-static void makeIntersectionMatrix(esdmI_hypercubeList_t* list, int64_t count, esdmI_hypercube_t* (**out_intersectionMatrix)[count], int64_t (**out_intersectionSizes)[count]) {
+#define makeIntersectionMatrix(list, out_intersectionMatrix, out_intersectionSizes) do {\
+  esdmI_hypercubeList_t* l = list;\
+  makeIntersectionMatrix_internal(l, l->count, out_intersectionMatrix, out_intersectionSizes);\
+} while(false)
+static void makeIntersectionMatrix_internal(esdmI_hypercubeList_t* list, int64_t count, esdmI_hypercube_t* (**out_intersectionMatrix)[count], int64_t (**out_intersectionSizes)[count]) {
   eassert(list);
   eassert(list->count == count);
   eassert(out_intersectionMatrix);
@@ -321,7 +325,11 @@ static bool hypercubeIsFullyCovered(esdmI_hypercube_t* coveredCube, int64_t cove
 }
 
 //Probabilistically find a single minimal subset of cubes that covers the entire space.
-static void findMinimalSubset(int64_t count, esdmI_hypercube_t** cubes, uint8_t* requiredCubes, esdmI_hypercube_t* (*intersectionMatrix)[count], uint8_t* out_selectedCubes) {
+#define findMinimalSubset(list, requiredCubes, intersectionMatrix, out_selectedCubes) do {\
+  esdmI_hypercubeList_t* l = list;\
+  findMinimalSubset_internal(l->count, l->cubes, requiredCubes, intersectionMatrix, out_selectedCubes);\
+} while(false)
+static void findMinimalSubset_internal(int64_t count, esdmI_hypercube_t** cubes, uint8_t* requiredCubes, esdmI_hypercube_t* (*intersectionMatrix)[count], uint8_t* out_selectedCubes) {
   eassert(cubes);
   eassert(requiredCubes);
   eassert(intersectionMatrix);
@@ -377,7 +385,7 @@ void esdmI_hypercubeList_nonredundantSubsets(esdmI_hypercubeList_t* list, int64_
   //Determine which hypercubes in the set are needed unconditionally.
   esdmI_hypercube_t* (*intersectionMatrix)[list->count];
   int64_t (*intersectionSizes)[list->count];
-  makeIntersectionMatrix(list, list->count, &intersectionMatrix, &intersectionSizes);
+  makeIntersectionMatrix(list, &intersectionMatrix, &intersectionSizes);
   uint8_t* requiredCubes = malloc(list->count*sizeof(*requiredCubes));
   for(int64_t i = 0; i < list->count; i++) {
     int64_t coverage = 0;
@@ -395,7 +403,7 @@ void esdmI_hypercubeList_nonredundantSubsets(esdmI_hypercubeList_t* list, int64_
   int64_t setCount = 0;
   uint8_t (*sets)[list->count] = malloc(*inout_setCount*sizeof(*sets)); //these are used as booleans, 1 means that the respective cube is used in the subset
   for(; setCount < *inout_setCount; setCount++) {
-    findMinimalSubset(list->count, list->cubes, requiredCubes, intersectionMatrix, sets[setCount]);
+    findMinimalSubset(list, requiredCubes, intersectionMatrix, sets[setCount]);
     //FIXME: Remove duplicate sets.
   }
 
