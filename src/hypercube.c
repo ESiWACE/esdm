@@ -364,20 +364,7 @@ static void findMinimalSubset_internal(int64_t count, esdmI_hypercube_t** cubes,
   free(reducedMatrix);
 }
 
-//This function returns a number of minimal subsets of the cubes contained within the hypercubeSet.
-//The selection of the subsets is probabilistic as any complete algorithm I could think of would have had exponential complexity.
-//The probabilistic solution allows the caller to specify how much effort should be spent in finding minimal subsets.
-//With the probabilistic solution, the function creates as many subsets as indicated by `*inout_setCount`,
-//and returns the number of actually found subsets in the same memory location.
-//The returned value may be lower than the given value because a subset may be found several times.
-//
-//The probabilistic algorithm is written in such a way that it will find small minimal subsets more easily than subsets that contain more cubes.
-//
-//The complexity of the algorithm is `O(*inout_setCount * list->count^2)`.
-//
-//`*out_subsets` returns an array of `*inout_setCount` `esdmI_hypercubeList_t` objects.
-//It is the callers' responsibility to free the `*out_subsets` array.
-void esdmI_hypercubeList_nonredundantSubsets(esdmI_hypercubeList_t* list, int64_t* inout_setCount, esdmI_hypercubeList_t** out_subsets) {
+void esdmI_hypercubeList_nonredundantSubsets_internal(esdmI_hypercubeList_t* list, int64_t count, int64_t* inout_setCount, uint8_t (*out_subsets)[count]) {
   eassert(list);
   eassert(inout_setCount);
   eassert(out_subsets);
@@ -401,39 +388,14 @@ void esdmI_hypercubeList_nonredundantSubsets(esdmI_hypercubeList_t* list, int64_
 
   //Probabilistically create a number of minimal sets.
   int64_t setCount = 0;
-  uint8_t (*sets)[list->count] = malloc(*inout_setCount*sizeof(*sets)); //these are used as booleans, 1 means that the respective cube is used in the subset
   for(; setCount < *inout_setCount; setCount++) {
-    findMinimalSubset(list, requiredCubes, intersectionMatrix, sets[setCount]);
+    findMinimalSubset(list, requiredCubes, intersectionMatrix, out_subsets[setCount]);
     //FIXME: Remove duplicate sets.
   }
 
   destroyIntersectionMatrix(list->count, intersectionMatrix, intersectionSizes);
 
-  //transform the data in `sets` to `out_subsets`
-  int64_t totalCubes = 0;
-  for(int64_t i = 0; i < setCount; i++) {
-    for(int64_t j = 0; j < list->count; j++) {
-      totalCubes += sets[i][j];
-    }
-  }
-  esdmI_hypercube_t** pointers;
-  esdmI_hypercubeList_t* subsets = malloc(setCount*sizeof(*subsets) + totalCubes*sizeof(*pointers)); //allocate the memory for both `pointers` and `subsets` in one go
-  pointers = (esdmI_hypercube_t**)(subsets + setCount);  //place the pointer array after the hypercube list array
-  for(int64_t i = 0; i < setCount; i++) {
-    subsets[i] = (esdmI_hypercubeList_t){
-      .cubes = pointers,
-      .count = 0
-    };
-    for(int64_t j = 0; j < list->count; j++) {
-      if(sets[i][j]) {
-        *(pointers++) = list->cubes[j];
-        subsets[i].count++;
-      }
-    }
-  }
-
   *inout_setCount = setCount;
-  *out_subsets = subsets;
 }
 
 bool esdmI_hypercubeList_doesCoverFully(esdmI_hypercubeList_t* list, esdmI_hypercube_t* cube) {

@@ -361,6 +361,31 @@ bool esdmI_hypercubeList_doesIntersect(esdmI_hypercubeList_t* list, esdmI_hyperc
 
 bool esdmI_hypercubeList_doesCoverFully(esdmI_hypercubeList_t* list, esdmI_hypercube_t* cube);
 
+/**
+ * This function returns a number of minimal subsets of the cubes contained within the hypercubeList.
+ * The selection of the subsets is probabilistic as any complete algorithm I could think of would have had exponential complexity.
+ * The probabilistic solution allows the caller to specify how much effort should be spent in finding minimal subsets.
+ * With the probabilistic solution, the function creates as many subsets as indicated by `*inout_setCount`,
+ * and returns the number of actually found subsets in the same memory location.
+ * The returned value may be lower than the given value because a subset may be found several times.
+ *
+ * The probabilistic algorithm is written in such a way that it will find small minimal subsets more easily than subsets that contain more cubes.
+ *
+ * The complexity of the algorithm is `O(*inout_setCount * list->count^2)`.
+ *
+ * @param [in] list the hypercube list from which to select subsets
+ * @param [inout] inout_setCount on input the requested amount of subsets that are to be generated, on output the actual number of distinct subsets retured in `out_subsets`
+ * @param [out] out_subsets a 2D array of dimensions `out_subsets[*inout_setCount][list->count]`
+ *              that will be used to store the flags which cube is selected for which subset;
+ *              if `out_subsets[i][j]` is true then the cube with index `j` is selected for the subset `i`
+ */
+void esdmI_hypercubeList_nonredundantSubsets_internal(esdmI_hypercubeList_t* list, int64_t count, int64_t* inout_setCount, uint8_t (*out_subsets)[count]);
+//wrapper to encapsulate redundant passing of `list->count`
+#define esdmI_hypercubeList_nonredundantSubsets(list, inout_setCount, out_subsets) do {\
+  esdmI_hypercubeList_t* l = list;\
+  esdmI_hypercubeList_nonredundantSubsets_internal(list, list->count, inout_setCount, uint8_t out_subsets);\
+} while(false)
+
 void esdmI_hypercubeList_print(esdmI_hypercubeList_t* list, FILE* stream);  //for debugging purposes
 
 // esdmI_hypercubeSet_t ////////////////////////////////////////////////////////////////////////////
