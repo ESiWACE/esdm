@@ -814,17 +814,20 @@ esdm_status esdm_dataset_open_md_parse(esdm_dataset_t *d, char * md, int size){
   elem = json_object_get(root, "dims");
   int dims = json_integer_value(elem);
   elem = json_object_get(root, "size");
-  size_t arrsize = json_array_size(elem);
-  if (dims != arrsize) {
-    json_decref(root);
-    return ESDM_ERROR;
-  }
   int64_t sizes[dims];
+  size_t arrsize;
   bool has_ulim_dim = FALSE; // if true, then we must reconstruct the domain!
-  for (int i = 0; i < dims; i++) {
-    sizes[i] = json_integer_value(json_array_get(elem, i));
-    if(sizes[i] == 0){
-      has_ulim_dim = TRUE;
+  if(elem){
+    arrsize = json_array_size(elem);
+    if (dims != arrsize) {
+      json_decref(root);
+      return ESDM_ERROR;
+    }
+    for (int i = 0; i < dims; i++) {
+      sizes[i] = json_integer_value(json_array_get(elem, i));
+      if(sizes[i] == 0){
+        has_ulim_dim = TRUE;
+      }
     }
   }
   ret = esdm_dataspace_create(dims, sizes, type, &d->dataspace);
@@ -956,7 +959,6 @@ void esdmI_fragments_metadata_create(esdm_dataset_t *d, smd_string_stream_t * s)
 
 void esdmI_dataset_metadata_create(esdm_dataset_t *d, smd_string_stream_t*s){
   eassert(d->dataspace != NULL);
-  eassert(d->dataspace->size != NULL);
 
   smd_string_stream_printf(s, "{");
   smd_attr_ser_json(s, d->attr);
@@ -967,11 +969,15 @@ void esdmI_dataset_metadata_create(esdm_dataset_t *d, smd_string_stream_t*s){
   smd_string_stream_printf(s, ",\"id\":\"%s\"", d->id);
   smd_string_stream_printf(s, ",\"typ\":\"");
   smd_type_ser(s, d->dataspace->type);
-  smd_string_stream_printf(s,"\",\"dims\":%" PRId64 ",\"size\":[%" PRId64, d->dataspace->dims, d->dataspace->size[0]);
-  for (int i = 1; i < d->dataspace->dims; i++) {
-    smd_string_stream_printf(s, ",%" PRId64, d->dataspace->size[i]);
+  if(d->dataspace->dims != 0){
+    smd_string_stream_printf(s,"\",\"dims\":%" PRId64 ",\"size\":[%" PRId64, d->dataspace->dims, d->dataspace->size[0]);
+    for (int i = 1; i < d->dataspace->dims; i++) {
+      smd_string_stream_printf(s, ",%" PRId64, d->dataspace->size[i]);
+    }
+    smd_string_stream_printf(s, "]");
+  }else{
+    smd_string_stream_printf(s,"\",\"dims\":0");
   }
-  smd_string_stream_printf(s, "]");
   if (d->dims_dset_id != NULL) {
     smd_string_stream_printf(s, ",\"dims_dset_id\":[");
     if(d->dataspace->dims > 0){
@@ -1144,17 +1150,15 @@ esdm_status esdm_dataspace_create(int64_t dims, int64_t *sizes, esdm_type_t type
   esdm_dataspace_t *dataspace = (esdm_dataspace_t *)malloc(sizeof(esdm_dataspace_t));
 
   dataspace->dims = dims;
-  if(dims != 0){
-    dataspace->size = (int64_t *)malloc(sizeof(int64_t) * dims);
-    dataspace->offset = (int64_t *)malloc(sizeof(int64_t) * dims);
-
-    memcpy(dataspace->size, sizes, sizeof(int64_t) * dims);
-    memset(dataspace->offset, 0, sizeof(int64_t) * dims);
-
-  }else{
-    dataspace->size = NULL;
-    dataspace->offset = NULL;
+  if(dims == 0){
+    dims = 1;
   }
+  dataspace->size = (int64_t *)malloc(sizeof(int64_t) * dims);
+  dataspace->offset = (int64_t *)malloc(sizeof(int64_t) * dims);
+
+  memcpy(dataspace->size, sizes, sizeof(int64_t) * dims);
+  memset(dataspace->offset, 0, sizeof(int64_t) * dims);
+
   dataspace->type = type;
   dataspace->stride = NULL;
   DEBUG("New dataspace: dims=%d\n", dataspace->dims);

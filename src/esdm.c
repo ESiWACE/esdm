@@ -153,22 +153,40 @@ esdm_status esdm_finalize() {
   return ESDM_SUCCESS;
 }
 
-esdm_status esdm_write(esdm_dataset_t *dataset, void *buf, esdm_dataspace_t *out_subspace) {
+esdm_status esdm_write(esdm_dataset_t *dataset, void *buf, esdm_dataspace_t *space) {
   ESDM_DEBUG(__func__);
   eassert(dataset);
   eassert(buf);
-  eassert(out_subspace);
+  eassert(space);
 
-  return esdm_scheduler_process_blocking(&esdm, ESDM_OP_WRITE, dataset, buf, out_subspace);
+  if(space->dims == 0){
+    // this is a workaround to deal with 0 dimensional data
+    space->dims = 1;
+    space->size[0] = 1;
+    int ret = esdm_scheduler_process_blocking(&esdm, ESDM_OP_WRITE, dataset, buf, space);
+    space->dims = 0;
+    return ret;
+  }
+
+  return esdm_scheduler_process_blocking(&esdm, ESDM_OP_WRITE, dataset, buf, space);
 }
 
-esdm_status esdm_read(esdm_dataset_t *dataset, void *buf, esdm_dataspace_t *subspace) {
+esdm_status esdm_read(esdm_dataset_t *dataset, void *buf, esdm_dataspace_t *space) {
   ESDM_DEBUG("");
   eassert(dataset);
   eassert(buf);
-  eassert(subspace);
+  eassert(space);
 
-  return esdm_scheduler_process_blocking(&esdm, ESDM_OP_READ, dataset, buf, subspace);
+  if(space->dims == 0){
+    // this is a workaround to deal with 0 dimensional data
+    space->dims = 1;
+    space->size[0] = 1;
+    int ret = esdm_scheduler_process_blocking(&esdm, ESDM_OP_READ, dataset, buf, space);
+    space->dims = 0;
+    return ret;
+  }
+
+  return esdm_scheduler_process_blocking(&esdm, ESDM_OP_READ, dataset, buf, space);
 }
 
 esdm_status esdm_sync() {
