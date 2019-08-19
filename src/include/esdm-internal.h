@@ -383,7 +383,7 @@ void esdmI_hypercubeList_nonredundantSubsets_internal(esdmI_hypercubeList_t* lis
 //wrapper to encapsulate redundant passing of `list->count`
 #define esdmI_hypercubeList_nonredundantSubsets(list, inout_setCount, out_subsets) do {\
   esdmI_hypercubeList_t* l = list;\
-  esdmI_hypercubeList_nonredundantSubsets_internal(list, list->count, inout_setCount, uint8_t out_subsets);\
+  esdmI_hypercubeList_nonredundantSubsets_internal(l, l->count, inout_setCount, out_subsets);\
 } while(false)
 
 void esdmI_hypercubeList_print(esdmI_hypercubeList_t* list, FILE* stream);  //for debugging purposes

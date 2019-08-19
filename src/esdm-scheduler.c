@@ -579,60 +579,60 @@ static bool fragmentsCoverSpace(esdm_dataspace_t* space, int64_t fragmentCount, 
 }
 
 //Find and remove all fragments that either do not intersect with the bounds at all, or are fully covered by other fragments.
-//The current algorithm is greedy, an optimal algorithm would very likely have a much higher complexity.
-//
-//XXX This function is quadratic in the number of hypercube allocations it produces by the repeated construction/destruction of the `otherFragments` hypercube set.
-//    It could be optimized for `malloc()` calls by updating the `otherFragments` hypercube set instead of tearing it down and building a new one,
-//    but that would either require gripping into the innards of the `esdmI_hypercubeSet_t`
-//    or writing a member function that just does not make sense within the interface of `esdmI_hypercubeSet_t`.
-//    I have opted for the cleaner code for now.
+//This implementation tries to minimize the total amount of data that needs to be read, but may yield a nonoptimal solution because it has a probabilistic component.
 static void removeRedundantFragments(esdmI_hypercube_t* bounds, int* inout_fragmentCount, esdm_fragment_t** fragments) {
-  //get the bounded extends of each fragment and filter out any fragments that do not intersect with the given bounds
-  typedef struct fragmentDescription {
-    esdm_fragment_t* fragment;
-    esdmI_hypercube_t* boundedExtends;
-  } fragmentDescription;
-  fragmentDescription* descriptions = malloc(*inout_fragmentCount*sizeof(*descriptions));
+  eassert(bounds);
+  eassert(inout_fragmentCount);
+  eassert(fragments);
+
+  //compute the bounded extends for all the fragments, filter out the ones that do not intersect with the bounds at all, and create a hypercube list of the bounded extends
+  esdmI_hypercubeList_t list;
+  list.cubes = malloc(*inout_fragmentCount*sizeof(*list.cubes));
   int64_t fragmentCount = 0;
   for(int64_t i = 0; i < *inout_fragmentCount; i++) {
     esdmI_hypercube_t* extends, *boundedExtends;
     esdmI_dataspace_getExtends(fragments[i]->dataspace, &extends);
     if((boundedExtends = esdmI_hypercube_makeIntersection(bounds, extends))) {
-      descriptions[fragmentCount++] = (fragmentDescription){
-        .fragment = fragments[i],
-        .boundedExtends = boundedExtends
-      };
+      list.cubes[fragmentCount] = boundedExtends;
+      fragments[fragmentCount++] = fragments[i];
     }
     esdmI_hypercube_destroy(extends);
   }
+  list.count = fragmentCount;
 
-  //filter out any fragment that is fully covered by other fragments
-  for(int64_t i = fragmentCount; i--; ) { //walk backwards so that we can easily remove the current element from the array
-    //build a hypercube set from all the fragments except this one
-    esdmI_hypercubeSet_t otherFragments;
-    esdmI_hypercubeSet_construct(&otherFragments);
-    for(int64_t j = 0; j < fragmentCount; j++) {
-      if(i != j) esdmI_hypercubeSet_add(&otherFragments, descriptions[j].boundedExtends);
+  if(fragmentCount) { //the subset selection code would not be able to select a fragment subset if there is no fragment at all, so we avoid executing it in this case
+    //get a few nonredundant subsets of fragments
+    int64_t subsetCount = 10;
+    uint8_t (*subsets)[fragmentCount] = malloc(subsetCount*sizeof(*subsets));
+    esdmI_hypercubeList_nonredundantSubsets(&list, &subsetCount, subsets);
+
+    //select the subset with the smallest total fragment size
+    int64_t bestSize = INT64_MAX, bestIndex = -1;
+    for(int64_t i = 0; i < subsetCount; i++) {
+      int64_t curSize = 0;
+      for(int64_t j = 0; j < fragmentCount; j++) {
+        if(subsets[i][j]) curSize += esdm_dataspace_element_count(fragments[j]->dataspace);
+      }
+      if(curSize <= bestSize) {
+        bestSize = curSize;
+        bestIndex = i;
+      }
     }
+    eassert(bestIndex >= 0);
 
-    //check whether the current fragment is fully covered by the other fragments
-    if(esdmI_hypercubeList_doesCoverFully(esdmI_hypercubeSet_list(&otherFragments), descriptions[i].boundedExtends)) {
-      //this fragment is redundant, remove it from the list
-      esdmI_hypercube_destroy(descriptions[i].boundedExtends);
-      descriptions[i].boundedExtends = NULL;  //necessary to avoid UB on the next line when i == fragmentCount-1
-      descriptions[i] = descriptions[--fragmentCount];
+    //filter the list of fragments by the selected subset
+    fragmentCount = 0;
+    for(int64_t i = 0; i < list.count; i++) {
+      if(subsets[bestIndex][i]) fragments[fragmentCount++] = fragments[i];
     }
 
     //cleanup
-    esdmI_hypercubeSet_destruct(&otherFragments);
+    free(subsets);
   }
 
-  //return the data to the caller and clean up
-  for(int64_t i = 0; i < fragmentCount; i++) {
-    fragments[i] = descriptions[i].fragment;
-    esdmI_hypercube_destroy(descriptions[i].boundedExtends);
-  }
-  free(descriptions);
+  //cleanup and return data
+  for(int64_t i = 0; i < list.count; i++) esdmI_hypercube_destroy(list.cubes[i]);
+  free(list.cubes);
   *inout_fragmentCount = fragmentCount;
 }
 
