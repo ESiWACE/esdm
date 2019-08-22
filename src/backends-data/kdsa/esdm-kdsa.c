@@ -463,16 +463,16 @@ static esdm_backend_t backend_template = {
   .version = "0.0.1",
   .data = NULL,
   .callbacks = {
-    kdsa_finalize,
-    kdsa_backend_performance_estimate, // performance_estimate
-    NULL,
-    fragment_retrieve,
-    fragment_update,
-    fragment_delete,
-    NULL,
-    fragment_metadata_load,
-    fragment_metadata_free,
-    mkfs,
+    .finalize = kdsa_finalize,
+    .performance_estimate = kdsa_backend_performance_estimate, // performance_estimate
+    .fragment_create = NULL,
+    .fragment_retrieve = fragment_retrieve,
+    .fragment_update = fragment_update,
+    .fragment_delete = fragment_delete,
+    .fragment_metadata_create = NULL,
+    .fragment_metadata_load = fragment_metadata_load,
+    .fragment_metadata_free = fragment_metadata_free,
+    .mkfs = mkfs,
   },
 };
 
