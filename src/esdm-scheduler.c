@@ -483,6 +483,31 @@ esdmI_hypercubeSet_t* esdm_scheduler_makeSplitRecommendation(esdm_dataspace_t* s
   return result;
 }
 
+//Select the backend with the lowest estimatedBusyTime, and update the corresponding busy time according to the performance estimate for the given fragment.
+static esdm_backend_t* selectBackend(esdm_fragment_t* fragment, int64_t backendCount, esdm_backend_t** backends, float* estimatedBusyTimes) {
+  eassert(backendCount > 0);
+
+  float bestTime = FLT_MAX; //don't use 1/0 here because we may be running in a process that has enable exceptions for INF/NAN values
+  int64_t bestIndex = -1;
+  for(int64_t i = 0; i < backendCount; i++) {
+    if(bestTime >= estimatedBusyTimes[i]) {
+      bestTime = estimatedBusyTimes[i];
+      bestIndex = i;
+    }
+  }
+  eassert(bestIndex >= 0);
+
+  esdm_backend_t* result = backends[bestIndex];
+  float timeEstimate;
+  int ret = result->callbacks.performance_estimate(result, fragment, &timeEstimate);
+  if(ret) {
+    ESDM_WARN_FMT("error %d while estimating performance of backend \"%s\", assuming a throughput of 100 MiB/s\n", ret, result->name);
+    timeEstimate = esdm_dataspace_size(fragment->dataspace)/(100.0*1024*1024);
+  }
+  estimatedBusyTimes[bestIndex] += timeEstimate;
+  return result;
+}
+
 esdm_status esdm_scheduler_enqueue_write(esdm_instance_t *esdm, io_request_status_t *status, esdm_dataset_t *dataset, void *buf, esdm_dataspace_t *space) {
   GError *error;
   //Gather I/O recommendations
@@ -491,14 +516,13 @@ esdm_status esdm_scheduler_enqueue_write(esdm_instance_t *esdm, io_request_statu
   int64_t backendCount, maxFragmentSize;
   esdm_backend_t** backends = esdm_modules_makeBackendRecommendation(esdm->modules, space, &backendCount, &maxFragmentSize);
   eassert(backends);
+  float* estimatedBusyTimes = calloc(backendCount, sizeof(*estimatedBusyTimes));
   esdmI_hypercubeSet_t* cubes = esdm_scheduler_makeSplitRecommendation(space, maxFragmentSize);
   esdmI_hypercubeList_t* cubeList = esdmI_hypercubeSet_list(cubes);
 
   int64_t dim[space->dims], offset[space->dims];
   for(int64_t i = 0; i < cubeList->count; i++) {
     status->pending_ops++;
-    esdm_backend_t* curBackend = backends[i%backendCount];
-    eassert(curBackend);
 
     esdmI_hypercube_getOffsetAndSize(cubeList->cubes[i], offset, dim);
 
@@ -510,6 +534,8 @@ esdm_status esdm_scheduler_enqueue_write(esdm_instance_t *esdm, io_request_statu
     esdm_fragment_t* fragment;
     ret = esdmI_fragment_create(dataset, subspace, (char*)buf + esdm_dataspace_elementOffset(space, offset), &fragment);
     eassert(ret == ESDM_SUCCESS);
+    esdm_backend_t* curBackend = selectBackend(fragment, backendCount, backends, estimatedBusyTimes);
+    eassert(curBackend);
     fragment->backend = curBackend;
 
     io_work_t* task = malloc(sizeof(*task));
@@ -530,6 +556,7 @@ esdm_status esdm_scheduler_enqueue_write(esdm_instance_t *esdm, io_request_statu
   }
 
   esdmI_hypercubeSet_destroy(cubes);
+  free(estimatedBusyTimes);
   free(backends);
   return ESDM_SUCCESS;
 }
