@@ -740,55 +740,55 @@ static int esdm_backend_t_clovis_mkfs(esdm_backend_t *backend, int enforce_forma
 ///////////////////////////////////////////////////////////////////////////////
 
 esdm_backend_t_clovis_t esdm_backend_t_clovis = {
-.ebm_base = {
-.name = "CLOVIS",
-.type = ESDM_MODULE_DATA,
-.version = "0.0.1",
-.data = NULL,
-.blocksize = BLOCKSIZE,
-.callbacks = {
-(int (*)())esdm_backend_t_clovis_fini,      // finalize
-esdm_backend_t_clovis_performance_estimate, // performance_estimate
+  .ebm_base = {
+    .name = "CLOVIS",
+    .type = ESDM_MODULE_DATA,
+    .version = "0.0.1",
+    .data = NULL,
+    .blocksize = BLOCKSIZE,
+    .callbacks = {
+      (int (*)())esdm_backend_t_clovis_fini,      // finalize
+      esdm_backend_t_clovis_performance_estimate, // performance_estimate
 
-(int (*)())esdm_backend_t_clovis_alloc,
-(int (*)())esdm_backend_t_clovis_open,
-(int (*)())esdm_backend_t_clovis_write,
-(int (*)())esdm_backend_t_clovis_read,
-(int (*)())esdm_backend_t_clovis_close,
+      (int (*)())esdm_backend_t_clovis_alloc,
+      (int (*)())esdm_backend_t_clovis_open,
+      (int (*)())esdm_backend_t_clovis_write,
+      (int (*)())esdm_backend_t_clovis_read,
+      (int (*)())esdm_backend_t_clovis_close,
 
-// Metadata Callbacks
-NULL, // lookup
+      // Metadata Callbacks
+      NULL, // lookup
 
-// ESDM Data Model Specific
-NULL, // container create
-NULL, // container retrieve
-NULL, // container update
-NULL, // container delete
+      // ESDM Data Model Specific
+      NULL, // container create
+      NULL, // container retrieve
+      NULL, // container update
+      NULL, // container delete
 
-NULL, // dataset create
-NULL, // dataset retrieve
-NULL, // dataset update
-NULL, // dataset delete
+      NULL, // dataset create
+      NULL, // dataset retrieve
+      NULL, // dataset update
+      NULL, // dataset delete
 
-NULL,                                               // fragment create
-(int (*)())esdm_backend_t_clovis_fragment_retrieve, // fragment retrieve
-(int (*)())esdm_backend_t_clovis_fragment_update,   // fragment update
-NULL,                                               // fragment delete
-(int (*)())esdm_backend_t_clovis_mkfs,              // mkfs
-},
-},
-.ebm_ops = {
-.esdm_backend_t_init = esdm_backend_t_clovis_init,
-.esdm_backend_t_fini = esdm_backend_t_clovis_fini,
+      NULL,                                               // fragment create
+      (int (*)())esdm_backend_t_clovis_fragment_retrieve, // fragment retrieve
+      (int (*)())esdm_backend_t_clovis_fragment_update,   // fragment update
+      NULL,                                               // fragment delete
+      (int (*)())esdm_backend_t_clovis_mkfs,              // mkfs
+    },
+  },
+  .ebm_ops = {
+    .esdm_backend_t_init = esdm_backend_t_clovis_init,
+    .esdm_backend_t_fini = esdm_backend_t_clovis_fini,
 
-.esdm_backend_t_obj_alloc = esdm_backend_t_clovis_alloc,
-.esdm_backend_t_obj_open = esdm_backend_t_clovis_open,
-.esdm_backend_t_obj_write = esdm_backend_t_clovis_write,
-.esdm_backend_t_obj_read = esdm_backend_t_clovis_read,
-.esdm_backend_t_obj_close = esdm_backend_t_clovis_close,
-.mapping_get = mapping_get,
-.mapping_insert = mapping_insert,
-},
+    .esdm_backend_t_obj_alloc = esdm_backend_t_clovis_alloc,
+    .esdm_backend_t_obj_open = esdm_backend_t_clovis_open,
+    .esdm_backend_t_obj_write = esdm_backend_t_clovis_write,
+    .esdm_backend_t_obj_read = esdm_backend_t_clovis_read,
+    .esdm_backend_t_obj_close = esdm_backend_t_clovis_close,
+    .mapping_get = mapping_get,
+    .mapping_insert = mapping_insert,
+  },
 };
 
 esdm_backend_t *clovis_backend_init(esdm_config_backend_t *config) {

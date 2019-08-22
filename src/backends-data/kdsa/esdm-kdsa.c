@@ -455,25 +455,25 @@ int kdsa_finalize(esdm_backend_t *backend) {
 ///////////////////////////////////////////////////////////////////////////////
 
 static esdm_backend_t backend_template = {
-///////////////////////////////////////////////////////////////////////////////
-// NOTE: This serves as a template for the posix plugin and is memcopied!    //
-///////////////////////////////////////////////////////////////////////////////
-.name = "KDSA",
-.type = ESDM_MODULE_DATA,
-.version = "0.0.1",
-.data = NULL,
-.callbacks = {
-  kdsa_finalize,
-  kdsa_backend_performance_estimate, // performance_estimate
-  NULL,
-  fragment_retrieve,
-  fragment_update,
-  fragment_delete,
-  NULL,
-  fragment_metadata_load,
-  fragment_metadata_free,
-  mkfs,
-},
+  ///////////////////////////////////////////////////////////////////////////////
+  // NOTE: This serves as a template for the posix plugin and is memcopied!    //
+  ///////////////////////////////////////////////////////////////////////////////
+  .name = "KDSA",
+  .type = ESDM_MODULE_DATA,
+  .version = "0.0.1",
+  .data = NULL,
+  .callbacks = {
+    kdsa_finalize,
+    kdsa_backend_performance_estimate, // performance_estimate
+    NULL,
+    fragment_retrieve,
+    fragment_update,
+    fragment_delete,
+    NULL,
+    fragment_metadata_load,
+    fragment_metadata_free,
+    mkfs,
+  },
 };
 
 

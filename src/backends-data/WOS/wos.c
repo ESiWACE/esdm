@@ -878,43 +878,43 @@ int esdm_backend_t_wos_fragment_mkfs(esdm_backend_t *backend, int enforce_format
 ///////////////////////////////////////////////////////////////////////////////
 
 static esdm_backend_t backend_template = {
-///////////////////////////////////////////////////////////////////////////////
-// NOTE: This serves as a template for the posix plugin and is memcopied!    //
-///////////////////////////////////////////////////////////////////////////////
-.name = "WOS",
-.type = ESDM_MODULE_DATA,
-.version = "0.0.1",
-.data = NULL,
-.callbacks = {
-(int (*)())esdm_backend_t_wos_fini, // finalize
-wos_backend_performance_estimate,   // performance_estimate
+  ///////////////////////////////////////////////////////////////////////////////
+  // NOTE: This serves as a template for the posix plugin and is memcopied!    //
+  ///////////////////////////////////////////////////////////////////////////////
+  .name = "WOS",
+  .type = ESDM_MODULE_DATA,
+  .version = "0.0.1",
+  .data = NULL,
+  .callbacks = {
+    (int (*)())esdm_backend_t_wos_fini, // finalize
+    wos_backend_performance_estimate,   // performance_estimate
 
-(int (*)())esdm_backend_t_wos_alloc,
-(int (*)())esdm_backend_t_wos_open,
-(int (*)())esdm_backend_t_wos_write,
-(int (*)())esdm_backend_t_wos_read,
-(int (*)())esdm_backend_t_wos_close,
+    (int (*)())esdm_backend_t_wos_alloc,
+    (int (*)())esdm_backend_t_wos_open,
+    (int (*)())esdm_backend_t_wos_write,
+    (int (*)())esdm_backend_t_wos_read,
+    (int (*)())esdm_backend_t_wos_close,
 
-// Metadata Callbacks
-NULL, // lookup
+    // Metadata Callbacks
+    NULL, // lookup
 
-// ESDM Data Model Specific
-NULL, // container create
-NULL, // container retrieve
-NULL, // container update
-NULL, // container delete
+    // ESDM Data Model Specific
+    NULL, // container create
+    NULL, // container retrieve
+    NULL, // container update
+    NULL, // container delete
 
-NULL, // dataset create
-NULL, // dataset retrieve
-NULL, // dataset update
-NULL, // dataset delete
+    NULL, // dataset create
+    NULL, // dataset retrieve
+    NULL, // dataset update
+    NULL, // dataset delete
 
-NULL,                                            // fragment create
-(int (*)())esdm_backend_t_wos_fragment_retrieve, // fragment retrieve
-(int (*)())esdm_backend_t_wos_fragment_update,   // fragment update
-(int (*)())esdm_backend_t_wos_fragment_delete,   // fragment delete
-(int (*)())esdm_backend_t_wos_fragment_mkfs,     // TODO
-},
+    NULL,                                            // fragment create
+    (int (*)())esdm_backend_t_wos_fragment_retrieve, // fragment retrieve
+    (int (*)())esdm_backend_t_wos_fragment_update,   // fragment update
+    (int (*)())esdm_backend_t_wos_fragment_delete,   // fragment delete
+    (int (*)())esdm_backend_t_wos_fragment_mkfs,     // TODO
+  },
 };
 
 esdm_backend_t *wos_backend_init(esdm_config_backend_t *config) {

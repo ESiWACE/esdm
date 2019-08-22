@@ -308,25 +308,25 @@ int posix_finalize(esdm_backend_t *backend) {
 ///////////////////////////////////////////////////////////////////////////////
 
 static esdm_backend_t backend_template = {
-///////////////////////////////////////////////////////////////////////////////
-// NOTE: This serves as a template for the posix plugin and is memcopied!    //
-///////////////////////////////////////////////////////////////////////////////
-.name = "POSIX",
-.type = ESDM_MODULE_DATA,
-.version = "0.0.1",
-.data = NULL,
-.callbacks = {
-NULL,                               // finalize
-posix_backend_performance_estimate, // performance_estimate
-NULL,
-fragment_retrieve,
-fragment_update,
-fragment_delete,
-NULL,
-NULL,
-NULL,
-mkfs,
-},
+  ///////////////////////////////////////////////////////////////////////////////
+  // NOTE: This serves as a template for the posix plugin and is memcopied!    //
+  ///////////////////////////////////////////////////////////////////////////////
+  .name = "POSIX",
+  .type = ESDM_MODULE_DATA,
+  .version = "0.0.1",
+  .data = NULL,
+  .callbacks = {
+    NULL,                               // finalize
+    posix_backend_performance_estimate, // performance_estimate
+    NULL,
+    fragment_retrieve,
+    fragment_update,
+    fragment_delete,
+    NULL,
+    NULL,
+    NULL,
+    mkfs,
+  },
 };
 
 // Two versions of this function!!!
