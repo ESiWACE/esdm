@@ -35,6 +35,11 @@ int esdm_backend_t_parse_perf_model_lat_thp(json_t *str, esdm_perf_model_lat_thp
   return 0;
 }
 
+float esdm_backend_t_perf_model_get_throughput(esdm_perf_model_lat_thp_t* me) {
+  eassert(me);
+  return me->throughputBs > 0 ? me->throughputBs : 100.0*1024*1024; //default to 100 MiB/s if no throughput was set
+}
+
 int esdm_backend_t_perf_model_long_lat_perf_estimate(esdm_perf_model_lat_thp_t *data, esdm_fragment_t *fragment, float *out_time) {
   if (!data || !fragment | !out_time)
     return -1;

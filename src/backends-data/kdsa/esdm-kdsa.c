@@ -438,6 +438,14 @@ static int kdsa_backend_performance_estimate(esdm_backend_t *backend, esdm_fragm
   return esdm_backend_t_perf_model_long_lat_perf_estimate(&data->perf_model, fragment, out_time);
 }
 
+static float kdsa_backend_performance_estimate(esdm_backend_t* backend) {
+  DEBUG_ENTER;
+  eassert(backend);
+
+  kdsa_backend_data_t *data = (kdsa_backend_data_t *)backend->data;
+  return esdm_backend_t_perf_model_get_throughput(&data->perf_model);
+}
+
 int kdsa_finalize(esdm_backend_t *backend) {
   DEBUG_ENTER;
   kdsa_backend_data_t *b = (kdsa_backend_data_t *)backend->data;
@@ -465,6 +473,7 @@ static esdm_backend_t backend_template = {
   .callbacks = {
     .finalize = kdsa_finalize,
     .performance_estimate = kdsa_backend_performance_estimate, // performance_estimate
+    .estimate_throughput = kdsa_backend_estimate_throughput,
     .fragment_create = NULL,
     .fragment_retrieve = fragment_retrieve,
     .fragment_update = fragment_update,

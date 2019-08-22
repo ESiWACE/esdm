@@ -297,6 +297,13 @@ static int posix_backend_performance_estimate(esdm_backend_t *backend, esdm_frag
   return esdm_backend_t_perf_model_long_lat_perf_estimate(&data->perf_model, fragment, out_time);
 }
 
+static float posix_backend_estimate_throughput(esdm_backend_t* backend) {
+  DEBUG_ENTER;
+
+  posix_backend_data_t *data = (posix_backend_data_t *)backend->data;
+  return esdm_backend_t_perf_model_get_throughput(&data->perf_model);
+}
+
 int posix_finalize(esdm_backend_t *backend) {
   DEBUG_ENTER;
 
@@ -318,6 +325,7 @@ static esdm_backend_t backend_template = {
   .callbacks = {
     .finalize = NULL,                               // finalize
     .performance_estimate = posix_backend_performance_estimate, // performance_estimate
+    .estimate_throughput = posix_backend_estimate_throughput,
     .fragment_create = NULL,
     .fragment_retrieve = fragment_retrieve,
     .fragment_update = fragment_update,
