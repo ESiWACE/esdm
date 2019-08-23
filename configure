@@ -24,6 +24,7 @@ function help(){
 	echo "--with-mpicxx=<file>     : path to the MPI C++ compiler"
   echo "--with-kdsa-include=<dir>: path to kdsa.h"
   echo "--with-kdsa-lib=<dir>    : path to libkdsa.so"
+  echo "--enable-kdsa-dummy      : compile the KDSA dummy backend"
 	echo "--with-boost=<file>      : path to boost library used for WOS"
 	echo "--enable-wos=<file>      : path to WOS library"
 	echo
@@ -43,7 +44,7 @@ function reconfigure(){
 	exit $?
 }
 
-set -- `getopt -u -l "help,version,debug,reconfigure,prefix:,with-cc:,with-cxx:,enable-hdf5,enable-netcdf4,with-mpicc:,with-mpicxx:,verbose,build-dir:,enable-wos:,with-boost:,with-kdsa-lib:,with-kdsa-include:" -o "h" -- "$@"`
+set -- `getopt -u -l "help,version,debug,reconfigure,prefix:,with-cc:,with-cxx:,enable-hdf5,enable-netcdf4,with-mpicc:,with-mpicxx:,verbose,build-dir:,enable-wos:,with-boost:,with-kdsa-lib:,with-kdsa-include:,enable-kdsa-dummy" -o "h" -- "$@"`
 test $# -lt 1  && exit 1
 while test $# -gt 0
 do
@@ -57,6 +58,7 @@ do
 		--debug) debug="YES"; ;;
     --with-kdsa-include) kdsa_include="$2"; shift;;
     --with-kdsa-lib) kdsa_lib="$2"; shift;;
+    --enable-kdsa-dummy) kdsa_dummy="YES"; shift;;
 		--with-cc) ccbin="$2"; shift;;
 		--with-cxx) cxxbin="$2"; shift;;
 		--with-mpicc) mpicc="$2"; shift;;
@@ -111,6 +113,9 @@ if test -n "$kdsa_lib"; then
 fi
 if test -n "$kdsa_include"; then
 	CMAKEFLAGS="$CMAKEFLAGS -DKDSA_INCLUDE_DIR:FILEPATH=$kdsa_include"
+fi
+if test -n "$kdsa_dummy"; then
+  CMAKEFLAGS="$CMAKEFLAGS -DBACKEND_KDSA_DUMMY=ON"
 fi
 if test -n "$mpicc"; then
 	CMAKEFLAGS="$CMAKEFLAGS -DMPI_C_COMPILER:FILEPATH=$mpicc"
