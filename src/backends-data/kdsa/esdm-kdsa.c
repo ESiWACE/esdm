@@ -438,7 +438,7 @@ static int kdsa_backend_performance_estimate(esdm_backend_t *backend, esdm_fragm
   return esdm_backend_t_perf_model_long_lat_perf_estimate(&data->perf_model, fragment, out_time);
 }
 
-static float kdsa_backend_performance_estimate(esdm_backend_t* backend) {
+static float kdsa_backend_estimate_throughput(esdm_backend_t* backend) {
   DEBUG_ENTER;
   eassert(backend);
 
