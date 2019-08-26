@@ -426,9 +426,8 @@ static esdm_status esdm_scheduler_enqueue_fill(esdm_instance_t* esdm, io_request
   return ESDM_SUCCESS;
 }
 
-//Decide how the given dataset should be split into fragments to get sensible fragment sizes.
-//Returns a hypercube set with one hypercube for each fragment that should be generated.
-esdmI_hypercubeSet_t* esdm_scheduler_makeSplitRecommendation(esdm_dataspace_t* space, int64_t maxFragmentSize) {
+//Implementation of `esdm_scheduler_makeSplitRecommendation()` that tries to produce fragments that are about as wide as high/long/deep/... .
+static esdmI_hypercubeSet_t* makeSplitRecommendation_balancedDims(esdm_dataspace_t* space, int64_t maxFragmentSize) {
   eassert(space);
 
   esdmI_hypercubeSet_t* result = esdmI_hypercubeSet_make();
@@ -483,6 +482,95 @@ esdmI_hypercubeSet_t* esdm_scheduler_makeSplitRecommendation(esdm_dataspace_t* s
   return result;
 }
 
+struct dimInfo_t {
+  int64_t dimension;
+  int64_t absStride;
+  bool splitDim;
+};
+
+static int compare_dimInfo(const void* a, const void* b) {
+  const struct dimInfo_t* dimA = a, *dimB = b;
+  return dimA->absStride > dimB->absStride ? 1 :
+         dimA->absStride < dimB->absStride ? -1 : 0;
+}
+
+//Implementation of `esdm_scheduler_makeSplitRecommendation()` that splits only the dimensions with the largest strides.
+static esdmI_hypercubeSet_t* makeSplitRecommendation_contiguousFragments(esdm_dataspace_t* space, int64_t maxFragmentSize) {
+  eassert(space);
+
+  esdmI_hypercubeSet_t* result = esdmI_hypercubeSet_make();
+  esdmI_hypercube_t* extends;
+  esdmI_dataspace_getExtends(space, &extends);
+
+  if(maxFragmentSize > 0 && esdm_dataspace_size(space) < (uint64_t)maxFragmentSize) {
+    //fast path: just return the full extends if the dataspace fits into the maxFragmentSize
+    esdmI_hypercubeSet_add(result, extends);
+  } else {
+    //inquire some info about the dataspace
+    int64_t dimensions = space->dims, elementSize = esdm_sizeof(esdm_dataspace_get_type(space));
+    int64_t stride[dimensions], offset[dimensions], size[dimensions];
+    esdm_dataspace_getEffectiveStride(space, stride);
+    esdmI_hypercube_getOffsetAndSize(extends, offset, size);
+
+    //sort the dimensions by their locality
+    struct dimInfo_t dimInfo[dimensions];
+    for(int64_t i = 0; i < dimensions; i++) {
+      dimInfo[i] = (struct dimInfo_t){
+        .dimension = i,
+        .absStride = abs_int64(stride[i]),
+        .splitDim = true
+      };
+    };
+    qsort(dimInfo, dimensions, sizeof(*dimInfo), compare_dimInfo);
+
+    //search for the first dimension that exceeds the maxFragmentSize
+    int64_t splitDim = 0, fragmentSize = elementSize;
+    for(; splitDim < dimensions; splitDim++) {
+      if(fragmentSize*size[dimInfo[splitDim].dimension] > maxFragmentSize) break; //This is the dimension we need to split.
+    }
+    eassert(splitDim < dimensions); //should be guaranteed by the fast path above
+    int64_t splitSlices = (size[dimInfo[splitDim].dimension] + maxFragmentSize - 1)/maxFragmentSize;  //the amount of slices of the split dimension
+
+    //create the hypercubes for the fragments
+    int64_t fragmentCoords[dimensions];
+    memset(fragmentCoords, 0, sizeof(fragmentCoords));
+    while(fragmentCoords[splitDim] < splitSlices) {
+      //compute the cubes' ranges from its fragment coordinates
+      extends->ranges[dimInfo[splitDim].dimension] = (esdmI_range_t){
+        .start = offset[dimInfo[splitDim].dimension] + fragmentCoords[splitDim]*size[dimInfo[splitDim].dimension]/splitSlices,
+        .end = offset[dimInfo[splitDim].dimension] + (fragmentCoords[splitDim] + 1)*size[dimInfo[splitDim].dimension]/splitSlices
+      };
+      for(int64_t i = splitDim + 1; i < dimensions; i++) {
+        extends->ranges[dimInfo[i].dimension] = (esdmI_range_t){
+          .start = offset[dimInfo[i].dimension] + fragmentCoords[i],
+          .end = offset[dimInfo[i].dimension] + fragmentCoords[i] + 1
+        };
+      }
+
+      esdmI_hypercubeSet_add(result, extends);  //add the fragment to the result set
+
+      //advance coords to the next fragment
+      int64_t changeDim;
+      for(changeDim = dimensions; changeDim-- > splitDim + 1; ) {
+        if(++fragmentCoords[changeDim] < size[dimInfo[changeDim].dimension]) break;
+        fragmentCoords[changeDim] = 0;
+      }
+      if(changeDim == splitDim) ++fragmentCoords[changeDim];
+    }
+  }
+
+  esdmI_hypercube_destroy(extends);
+  return result;
+}
+
+
+//Decide how the given dataset should be split into fragments to get sensible fragment sizes.
+//Returns a hypercube set with one hypercube for each fragment that should be generated.
+esdmI_hypercubeSet_t* esdm_scheduler_makeSplitRecommendation(esdm_dataspace_t* space, int64_t maxFragmentSize) {
+  //return makeSplitRecommendation_balancedDims(space, maxFragmentSize);
+  return makeSplitRecommendation_contiguousFragments(space, maxFragmentSize);
+}
+
 // Split the given dataspace into sub-hypercubes, one for each given backend, matching the size of the sub-hypercubes to the estimated throughput of the respective backend.
 //
 // `out_backendExtends` is a pointer to an uninitialized array of hypercube pointers on entry,
@@ -509,7 +597,7 @@ static void splitToBackends(esdm_dataspace_t* space, int64_t backendCount, esdm_
   int64_t bestDim = -1;
   int64_t bestStride = 0;
   for(int64_t i = 0; i < dims; i++) {
-    int64_t absStride = stride[i] >= 0 ? stride[i] : -stride[i];
+    int64_t absStride = abs_int64(stride[i]);
     if(absStride >= bestStride && space->size[i] > 1) {
       bestStride = absStride;
       bestDim = i;
