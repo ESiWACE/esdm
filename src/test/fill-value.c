@@ -31,8 +31,8 @@ int main(int argc, char const *argv[]) {
   esdm_container_t *container = NULL;
   esdm_dataset_t *dataset = NULL;
 
-  int dims = 1;
-  int64_t bounds[] = {200};
+  int64_t bounds[] = {100, 100};
+  const int dims = sizeof(bounds)/sizeof(*bounds);
 
   ret = esdm_mkfs(ESDM_FORMAT_PURGE_RECREATE, ESDM_ACCESSIBILITY_GLOBAL);
   eassert(ret == ESDM_SUCCESS);
@@ -57,36 +57,68 @@ int main(int argc, char const *argv[]) {
   eassert(ret == ESDM_SUCCESS);
   eassert(fill_value_read == fill_value);
 
+  //fake some data
+  int64_t subspaceSize[] = {50, 50};
+  eassert(dims == sizeof(subspaceSize)/sizeof(*subspaceSize));
+  int64_t subspaceOffset[] = {25, 25};
+  eassert(dims == sizeof(subspaceOffset)/sizeof(*subspaceOffset));
+  uint64_t writeBuffer[subspaceSize[0]][subspaceSize[1]];
+  for(int y = 0; y < subspaceSize[0]; y++){
+    for(int x = 0; x < subspaceSize[1]; x++){
+      writeBuffer[y][x] = (y+subspaceOffset[0])*bounds[1] + x+subspaceOffset[1];
+    }
+  }
+
+  //write a subregion
+  esdm_dataspace_t* subspace;
+  ret = esdm_dataspace_subspace(dataspace, dims, subspaceSize, subspaceOffset, &subspace);
+  eassert(ret == ESDM_SUCCESS);
+  ret = esdm_write(dataset, writeBuffer, subspace);
+  eassert(ret == ESDM_SUCCESS);
+
+  //commit and close stuff
   ret = esdm_dataset_commit(dataset);
   eassert(ret == ESDM_SUCCESS);
   ret = esdm_container_commit(container);
   eassert(ret == ESDM_SUCCESS);
-
   ret = esdm_dataset_close(dataset);
   eassert(ret == ESDM_SUCCESS);
   ret = esdm_container_close(container);
   eassert(ret == ESDM_SUCCESS);
 
+  //reopen the dataset and play with changing the fill value
   ret = esdm_container_open("mycontainer", ESDM_MODE_FLAG_READ, &container);
   eassert(ret == ESDM_SUCCESS);
   ret = esdm_dataset_open(container, "mydataset", ESDM_MODE_FLAG_READ, &dataset);
   eassert(ret == ESDM_SUCCESS);
+  fill_value_read = 5417;
+  ret = esdm_dataset_get_fill_value(dataset, & fill_value_read);
+  eassert(ret == ESDM_SUCCESS);
+  eassert(fill_value_read == fill_value);
+  fill_value = 42;
+  ret = esdm_dataset_set_fill_value(dataset, & fill_value);
+  eassert(ret == ESDM_SUCCESS);
+  fill_value_read = 5417;
   ret = esdm_dataset_get_fill_value(dataset, & fill_value_read);
   eassert(ret == ESDM_SUCCESS);
   eassert(fill_value_read == fill_value);
 
-
-  printf("%lu %lu\n", fill_value, fill_value_read);
-
-  uint64_t buf_w[200];
-  ret = esdm_read(dataset, buf_w, dataspace);
+  //read the entire region back
+  uint64_t readBuffer[bounds[0]][bounds[1]];
+  ret = esdm_read(dataset, readBuffer, dataspace);
   eassert(ret == ESDM_SUCCESS);
 
-  // TODO
-  for(int i=0; i < 200; i++){
-    //eassert(buf_w[i] == fill_value);
+  //check that the result is actually what we expect (linear index within subspace, updated fill_value everywhere else)
+  for(int y=0; y < bounds[0]; y++){
+    for(int x=0; x < bounds[1]; x++){
+      uint64_t expectedValue = y*bounds[1] + x;
+      if(y < subspaceOffset[0] || y >= subspaceOffset[0] + subspaceSize[0]) expectedValue = fill_value;
+      if(x < subspaceOffset[1] || x >= subspaceOffset[1] + subspaceSize[1]) expectedValue = fill_value;
+      eassert(readBuffer[y][x] == expectedValue);
+    }
   }
 
+  //close down
   ret = esdm_dataset_commit(dataset);
   eassert(ret == ESDM_SUCCESS);
   ret = esdm_container_commit(container);
