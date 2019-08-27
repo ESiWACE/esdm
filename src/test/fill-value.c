@@ -23,6 +23,7 @@
 
 #include <test/util/test_util.h>
 #include <esdm.h>
+#include <esdm-internal.h>
 
 int main(int argc, char const *argv[]) {
   esdm_status ret = esdm_init();
@@ -105,7 +106,8 @@ int main(int argc, char const *argv[]) {
 
   //read the entire region back
   uint64_t readBuffer[bounds[0]][bounds[1]];
-  ret = esdm_read(dataset, readBuffer, dataspace);
+  esdmI_hypercubeSet_t* fillRegion;
+  ret = esdmI_readWithFillRegion(dataset, readBuffer, dataspace, &fillRegion);
   eassert(ret == ESDM_SUCCESS);
 
   //check that the result is actually what we expect (linear index within subspace, updated fill_value everywhere else)
@@ -118,7 +120,21 @@ int main(int argc, char const *argv[]) {
     }
   }
 
+  //check that the fillRegion is actually what we expect
+  esdmI_hypercubeList_t* cubes = esdmI_hypercubeSet_list(fillRegion);
+  eassert(cubes->count == 4); //expect one cube on each side of the data region
+  esdmI_hypercube_t* dataRegion = esdmI_hypercube_make(dims, subspaceOffset, subspaceSize);
+  eassert(!esdmI_hypercubeList_doesIntersect(cubes, dataRegion));
+  esdmI_hypercube_t* fullRegion = esdmI_hypercube_make(dims, (int64_t[]){0, 0}, bounds);
+  eassert(!esdmI_hypercubeList_doesCoverFully(cubes, fullRegion));
+  esdmI_hypercubeSet_add(fillRegion, dataRegion); //the sum of fillRegion + dataRegion must equal the full region exactly
+  eassert(esdmI_hypercubeList_doesCoverFully(esdmI_hypercubeSet_list(fillRegion), fullRegion));
+  esdmI_hypercubeSet_subtract(fillRegion, fullRegion);
+  eassert(esdmI_hypercubeSet_isEmpty(fillRegion));
+
+
   //close down
+  esdmI_hypercubeSet_destroy(fillRegion);
   ret = esdm_dataset_commit(dataset);
   eassert(ret == ESDM_SUCCESS);
   ret = esdm_container_commit(container);
