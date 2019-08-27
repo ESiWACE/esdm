@@ -260,7 +260,7 @@ static int mkfs(esdm_backend_t *backend, int format_flags) {
   return ESDM_SUCCESS;
 }
 
-static int fsck() {
+static int fsck(esdm_backend_t* backend) {
   return 0;
 }
 
@@ -482,6 +482,7 @@ static esdm_backend_t backend_template = {
     .fragment_metadata_load = fragment_metadata_load,
     .fragment_metadata_free = fragment_metadata_free,
     .mkfs = mkfs,
+    .fsck = fsck,
   },
 };
 

@@ -58,9 +58,8 @@ void parse_args(int argc, char **argv) {
   {0, "verbosity", "Set verbosity", OPTION_OPTIONAL_ARGUMENT, 'd', &o.verbosity},
   LAST_OPTION};
 
-  int ret;
   int print_help = 0;
-  ret = option_parse(argc, argv, options, &print_help);
+  option_parse(argc, argv, options, &print_help);
   if (print_help) {
     if (rank == 0) option_print_help(options, 0);
     exit(0);

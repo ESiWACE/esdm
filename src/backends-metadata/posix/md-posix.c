@@ -169,7 +169,7 @@ static int mkfs(esdm_md_backend_t *backend, int format_flags) {
   return ESDM_SUCCESS;
 }
 
-static int fsck() {
+static int fsck(esdm_md_backend_t* backend) {
   DEBUG_ENTER;
 
   return 0;
@@ -239,7 +239,6 @@ static int container_commit(esdm_md_backend_t *backend, esdm_container_t *contai
   DEBUG_ENTER;
 
   char path_metadata[PATH_MAX];
-  struct stat sb;
 
   metadummy_backend_options_t *options = (metadummy_backend_options_t *)backend->data;
   const char *tgt = options->target;
@@ -393,30 +392,27 @@ static int metadummy_finalize(esdm_md_backend_t *b) {
 ///////////////////////////////////////////////////////////////////////////////
 
 static esdm_md_backend_t backend_template = {
-.name = "metadummy",
-.version = "0.0.1",
-.data = NULL,
-.callbacks = {
-// General for ESDM
-metadummy_finalize,                     // finalize
-metadummy_backend_performance_estimate, // performance_estimate
+  .name = "metadummy",
+  .version = "0.0.1",
+  .data = NULL,
+  .callbacks = {
+    // General for ESDM
+    .finalize = metadummy_finalize,                     // finalize
+    .performance_estimate = metadummy_backend_performance_estimate, // performance_estimate
 
-container_create,
-container_commit,
-container_retrieve,
-NULL,
-NULL,
-container_remove,
+    .container_create = container_create,
+    .container_commit = container_commit,
+    .container_retrieve = container_retrieve,
+    .container_remove = container_remove,
 
-dataset_create,
-dataset_commit,
-dataset_retrieve,
-NULL,
-NULL,
-dataset_remove,
+    .dataset_create = dataset_create,
+    .dataset_commit = dataset_commit,
+    .dataset_retrieve = dataset_retrieve,
+    .dataset_remove = dataset_remove,
 
-mkfs,
-},
+    .mkfs = mkfs,
+    .fsck = fsck,
+  },
 };
 
 esdm_md_backend_t *metadummy_backend_init(esdm_config_backend_t *config) {

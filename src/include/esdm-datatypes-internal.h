@@ -121,6 +121,7 @@ struct esdm_backend_t_callbacks_t {
   int (*fragment_metadata_free)(esdm_backend_t * b, void * options);
 
   int (*mkfs)(esdm_backend_t *, int format_flags);
+  int (*fsck)(esdm_backend_t*);
 };
 
 struct esdm_md_backend_callbacks_t {
@@ -144,6 +145,7 @@ struct esdm_md_backend_callbacks_t {
   int (*dataset_remove)(esdm_md_backend_t *, esdm_dataset_t *dataset);
 
   int (*mkfs)(esdm_md_backend_t *, int format_flags);
+  int (*fsck)(esdm_md_backend_t*);
 };
 
 typedef enum esdmI_fragmentation_method_t {
