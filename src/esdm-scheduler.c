@@ -566,9 +566,15 @@ static esdmI_hypercubeSet_t* makeSplitRecommendation_contiguousFragments(esdm_da
 
 //Decide how the given dataset should be split into fragments to get sensible fragment sizes.
 //Returns a hypercube set with one hypercube for each fragment that should be generated.
-esdmI_hypercubeSet_t* esdm_scheduler_makeSplitRecommendation(esdm_dataspace_t* space, int64_t maxFragmentSize) {
-  //return makeSplitRecommendation_balancedDims(space, maxFragmentSize);
-  return makeSplitRecommendation_contiguousFragments(space, maxFragmentSize);
+esdmI_hypercubeSet_t* esdm_scheduler_makeSplitRecommendation(esdm_dataspace_t* space, esdm_backend_t* backend) {
+  switch(backend->config->fragmentation_method) {
+    case ESDMI_FRAGMENTATION_METHOD_EQUALIZED:
+      return makeSplitRecommendation_balancedDims(space, backend->config->max_fragment_size);
+    case ESDMI_FRAGMENTATION_METHOD_CONTIGUOUS:
+      return makeSplitRecommendation_contiguousFragments(space, backend->config->max_fragment_size);
+  }
+  fprintf(stderr, "fatal error: memory corruption detected: backend->config->fragmentation contains broken data\n");
+  abort();
 }
 
 // Split the given dataspace into sub-hypercubes, one for each given backend, matching the size of the sub-hypercubes to the estimated throughput of the respective backend.
@@ -677,7 +683,7 @@ esdm_status esdm_scheduler_enqueue_write(esdm_instance_t *esdm, io_request_statu
       eassert(ret == ESDM_SUCCESS);
       ret = esdm_dataspace_copyDatalayout(backendSpace, space);
       eassert(ret == ESDM_SUCCESS);
-      esdmI_hypercubeSet_t* cubes = esdm_scheduler_makeSplitRecommendation(backendSpace, curBackend->config->max_fragment_size);
+      esdmI_hypercubeSet_t* cubes = esdm_scheduler_makeSplitRecommendation(backendSpace, curBackend);
       esdmI_hypercubeList_t* cubeList = esdmI_hypercubeSet_list(cubes);
       esdm_dataspace_destroy(backendSpace);
 

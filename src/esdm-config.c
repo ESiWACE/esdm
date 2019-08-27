@@ -109,7 +109,7 @@ esdm_config_backend_t *esdm_config_get_metadata_coordinator(esdm_instance_t *esd
 
   esdm_config_backend_t *config_backend = (esdm_config_backend_t *)malloc(sizeof(esdm_config_backend_t));
   eassert(config_backend);
-  config_backend->type = json_string_value(type_e);
+  config_backend->type = json_string_value(type_e); //FIXME (systematic error): Using the strings from jansson without copying forces us to keep the jansson data around after initialization. Copy the strings, interpret the data, and purge the jansson data from memory.
   config_backend->esdm = root;
   config_backend->backend = md_e;
   if(! md_e){
@@ -169,8 +169,7 @@ esdm_config_backends_t *esdm_config_get_backends(esdm_instance_t *esdm) {
       // Element is array, therefor may contain valid backend configurations
       size_t size = json_array_size(elem);
 
-      esdm_config_backend_t *backends;
-      backends = (esdm_config_backend_t *)malloc(sizeof(esdm_config_backend_t) * size);
+      esdm_config_backend_t *backends = malloc(size*sizeof(*backends));
 
       //printf("JSON Array of %ld elem%s:\n", size, json_plural(size));
 
@@ -241,6 +240,18 @@ esdm_config_backends_t *esdm_config_get_backends(esdm_instance_t *esdm) {
           backends[i].max_fragment_size = 10 * 1024 * 1024;
         } else {
           backends[i].max_fragment_size = json_integer_value(elem);
+        }
+
+        elem = json_object_get(backend, "fragmentation-method");
+        backends[i].fragmentation_method = ESDMI_FRAGMENTATION_METHOD_CONTIGUOUS; //set the default
+        if(elem && json_typeof(elem) == JSON_STRING) {
+          if(!strcmp(json_string_value(elem), "contiguous")) {
+            backends[i].fragmentation_method = ESDMI_FRAGMENTATION_METHOD_CONTIGUOUS;
+          } else if(!strcmp(json_string_value(elem), "equalized")) {
+            backends[i].fragmentation_method = ESDMI_FRAGMENTATION_METHOD_EQUALIZED;
+          } else {
+            ESDM_ERROR("Unrecognized value of \"fragmentation-method\"");
+          }
         }
 
         backends[i].esdm = root;

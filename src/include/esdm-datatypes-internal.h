@@ -146,6 +146,11 @@ struct esdm_md_backend_callbacks_t {
   int (*mkfs)(esdm_md_backend_t *, int format_flags);
 };
 
+typedef enum esdmI_fragmentation_method_t {
+  ESDMI_FRAGMENTATION_METHOD_CONTIGUOUS,  //fragments are optimized for memory locality, may result in fragments that are single slices or even lines of the hypervolume
+  ESDMI_FRAGMENTATION_METHOD_EQUALIZED  //all dimensions are treated equally, creating fragments that extend in all available dimensions
+} esdmI_fragmentation_method_t;
+
 /**
  * On backend registration ESDM expects the backend to return a pointer to
  * a esdm_backend_t struct.
@@ -216,6 +221,7 @@ struct esdm_config_backend_t {
   int max_threads_per_node;
   int max_global_threads;
   uint64_t max_fragment_size; //this is a soft limit that may be exceeded anytime
+  esdmI_fragmentation_method_t fragmentation_method;
   data_accessibility_t data_accessibility;
 
   json_t *performance_model;
