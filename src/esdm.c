@@ -163,15 +163,15 @@ esdm_status esdm_write(esdm_dataset_t *dataset, void *buf, esdm_dataspace_t *spa
     // this is a workaround to deal with 0 dimensional data
     space->dims = 1;
     space->size[0] = 1;
-    int ret = esdm_scheduler_process_blocking(&esdm, ESDM_OP_WRITE, dataset, buf, space);
+    int ret = esdm_scheduler_write_blocking(&esdm, dataset, buf, space);
     space->dims = 0;
     return ret;
   }
 
-  return esdm_scheduler_process_blocking(&esdm, ESDM_OP_WRITE, dataset, buf, space);
+  return esdm_scheduler_write_blocking(&esdm, dataset, buf, space);
 }
 
-esdm_status esdm_read(esdm_dataset_t *dataset, void *buf, esdm_dataspace_t *space) {
+esdm_status esdmI_readWithFillRegion(esdm_dataset_t *dataset, void *buf, esdm_dataspace_t *space, esdmI_hypercubeSet_t** out_fillRegion) {
   ESDM_DEBUG("");
   eassert(dataset);
   eassert(buf);
@@ -181,12 +181,16 @@ esdm_status esdm_read(esdm_dataset_t *dataset, void *buf, esdm_dataspace_t *spac
     // this is a workaround to deal with 0 dimensional data
     space->dims = 1;
     space->size[0] = 1;
-    int ret = esdm_scheduler_process_blocking(&esdm, ESDM_OP_READ, dataset, buf, space);
+    int ret = esdm_scheduler_read_blocking(&esdm, dataset, buf, space, out_fillRegion);
     space->dims = 0;
     return ret;
   }
 
-  return esdm_scheduler_process_blocking(&esdm, ESDM_OP_READ, dataset, buf, space);
+  return esdm_scheduler_read_blocking(&esdm, dataset, buf, space, out_fillRegion);
+}
+
+esdm_status esdm_read(esdm_dataset_t *dataset, void *buf, esdm_dataspace_t *space) {
+  return esdmI_readWithFillRegion(dataset, buf, space, NULL);
 }
 
 esdm_status esdm_sync() {

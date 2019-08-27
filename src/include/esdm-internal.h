@@ -32,6 +32,20 @@ esdm_config_t *esdm_config_init_from_str(const char *str);
 
 esdm_status esdm_config_finalize(esdm_instance_t *esdm);
 
+/**
+ * As `esdm_read()`, but also return the region that was filled with the fill value as a hypercube set.
+ * If no fill value is set and any region without data is detected, this call will still return an error.
+ *
+ * @param [in] dataset TODO, currently a stub, we assume it has been identified/created before.... , json description?
+ * @param [out] buf a contiguous memory region that shall be filled with the data from permanent storage
+ * @param [in] subspace an existing dataspace that describes the shape and location of the hypercube that is to be read
+ * @param [out] out_fillRegion returns a new `esdmI_hypercubeSet_t*` that covers the region for which no data was found.
+ *
+ * @return status
+ */
+
+esdm_status esdmI_readWithFillRegion(esdm_dataset_t *dataset, void *buf, esdm_dataspace_t *subspace, esdmI_hypercubeSet_t** out_fillRegion);
+
 void esdm_dataset_init(esdm_container_t *container, const char *name, esdm_dataspace_t *dataspace, esdm_dataset_t **out_dataset);
 
 
@@ -98,12 +112,16 @@ esdm_status esdm_scheduler_status_finalize(io_request_status_t *status);
 
 /**
  * Calls to reads have to be completed before they can return to the application and are therefor blocking.
- * Use esdm_scheduler_process_blocking from functions in the application facing API to process blocking scheduling.
  *
  * Note: write is also blocking right now.
+ *
+ * @param[out] out_fillRegion Returns a pointer to a hypercube set that covers the region for which no data was found.
+ *                            It's the callers' responsibility to either pass NULL or to destroy the hypercube set themselves.
  */
 
-esdm_status esdm_scheduler_process_blocking(esdm_instance_t *esdm, io_operation_t type, esdm_dataset_t *dataset, void *buf, esdm_dataspace_t *subspace);
+esdm_status esdm_scheduler_read_blocking(esdm_instance_t *esdm, esdm_dataset_t *dataset, void *buf, esdm_dataspace_t *subspace, esdmI_hypercubeSet_t** out_fillRegion);
+
+esdm_status esdm_scheduler_write_blocking(esdm_instance_t *esdm, esdm_dataset_t *dataset, void *buf, esdm_dataspace_t *subspace);
 
 esdm_status esdm_scheduler_enqueue(esdm_instance_t *esdm, io_request_status_t *status, io_operation_t type, esdm_dataset_t *dataset, void *buf, esdm_dataspace_t *subspace);
 

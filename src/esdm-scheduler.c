@@ -833,7 +833,7 @@ static void removeRedundantFragments(esdmI_hypercube_t* bounds, int* inout_fragm
   *inout_fragmentCount = fragmentCount;
 }
 
-esdm_status esdm_scheduler_process_blocking(esdm_instance_t *esdm, io_operation_t op, esdm_dataset_t *dataset, void *buf, esdm_dataspace_t *subspace) {
+esdm_status esdm_scheduler_write_blocking(esdm_instance_t *esdm, esdm_dataset_t *dataset, void *buf, esdm_dataspace_t *subspace) {
   ESDM_DEBUG(__func__);
 
   io_request_status_t status;
@@ -841,62 +841,71 @@ esdm_status esdm_scheduler_process_blocking(esdm_instance_t *esdm, io_operation_
   esdm_status ret = esdm_scheduler_status_init(&status);
   eassert(ret == ESDM_SUCCESS);
 
-  if (op == ESDM_OP_WRITE) {
-    ret = esdm_scheduler_enqueue_write(esdm, &status, dataset, buf, subspace);
-    if( ret != ESDM_SUCCESS){
-      return ret;
+  ret = esdm_scheduler_enqueue_write(esdm, &status, dataset, buf, subspace);
+  if( ret != ESDM_SUCCESS){
+    return ret;
+  }
+  ret = esdm_scheduler_wait(&status);
+  eassert(ret == ESDM_SUCCESS);
+
+  ret = esdm_scheduler_status_finalize(&status);
+  eassert(ret == ESDM_SUCCESS);
+  return status.return_code;
+}
+
+esdm_status esdm_scheduler_read_blocking(esdm_instance_t *esdm, esdm_dataset_t *dataset, void *buf, esdm_dataspace_t *subspace, esdmI_hypercubeSet_t** out_fillRegion) {
+  ESDM_DEBUG(__func__);
+
+  io_request_status_t status;
+
+  esdm_status ret = esdm_scheduler_status_init(&status);
+  eassert(ret == ESDM_SUCCESS);
+
+  esdm_fragment_t **read_frag = NULL;
+  int frag_count;
+  ret = esdmI_dataset_lookup_fragments(dataset, subspace, & frag_count, &read_frag);
+  eassert(ret == ESDM_SUCCESS);
+  esdmI_hypercube_t* readExtends;
+  esdmI_dataspace_getExtends(subspace, &readExtends);
+  removeRedundantFragments(readExtends, &frag_count, read_frag);
+  DEBUG("fragments to read: %d", frag_count);
+
+  //check whether we have all the requested data
+  esdmI_hypercubeSet_t* uncovered;
+  if(!fragmentsCoverSpace(subspace, frag_count, read_frag, &uncovered)) {
+    esdm_type_t type = esdm_dataspace_get_type(subspace);
+    eassert(type == esdm_dataset_get_type(dataset));  //TODO handle the case that the two types don't match
+    char fillValue[esdm_sizeof(type)];
+    ret = esdm_dataset_get_fill_value(dataset, fillValue);
+    if(ret == ESDM_SUCCESS) {
+      //we have a fill value, so we continue to read, fill the uncovered parts with the fill value, and signal back to the user how much uncovered data we filled
+      ret = esdm_scheduler_enqueue_fill(esdm, &status, fillValue, buf, subspace, esdmI_hypercubeSet_list(uncovered));
+    } else {
+      ret = ESDM_INCOMPLETE_DATA; //no fill value set, so we error out
     }
+  }
+
+  if(ret == ESDM_SUCCESS) {
+    //all preliminaries successful, commit to reading
+    ret = esdm_scheduler_enqueue_read(esdm, &status, frag_count, read_frag, buf, subspace);
+    eassert(ret == ESDM_SUCCESS);
+
     ret = esdm_scheduler_wait(&status);
     eassert(ret == ESDM_SUCCESS);
 
     ret = esdm_scheduler_status_finalize(&status);
     eassert(ret == ESDM_SUCCESS);
-    return status.return_code;
-  } else if (op == ESDM_OP_READ) {
-    esdm_fragment_t **read_frag = NULL;
-    int frag_count;
-    ret = esdmI_dataset_lookup_fragments(dataset, subspace, & frag_count, &read_frag);
-    eassert(ret == ESDM_SUCCESS);
-    esdmI_hypercube_t* readExtends;
-    esdmI_dataspace_getExtends(subspace, &readExtends);
-    removeRedundantFragments(readExtends, &frag_count, read_frag);
-    DEBUG("fragments to read: %d", frag_count);
 
-    //check whether we have all the requested data
-    esdmI_hypercubeSet_t* uncovered;
-    if(!fragmentsCoverSpace(subspace, frag_count, read_frag, &uncovered)) {
-      esdm_type_t type = esdm_dataspace_get_type(subspace);
-      eassert(type == esdm_dataset_get_type(dataset));  //TODO handle the case that the two types don't match
-      char fillValue[esdm_sizeof(type)];
-      ret = esdm_dataset_get_fill_value(dataset, fillValue);
-      if(ret == ESDM_SUCCESS) {
-        //we have a fill value, so we continue to read, fill the uncovered parts with the fill value, and signal back to the user how much uncovered data we filled
-        ret = esdm_scheduler_enqueue_fill(esdm, &status, fillValue, buf, subspace, esdmI_hypercubeSet_list(uncovered));
-      } else {
-        ret = ESDM_INCOMPLETE_DATA; //no fill value set, so we error out
-      }
-    }
-
-    if(ret == ESDM_SUCCESS) {
-      //all preliminaries successful, commit to reading
-      ret = esdm_scheduler_enqueue_read(esdm, &status, frag_count, read_frag, buf, subspace);
-      eassert(ret == ESDM_SUCCESS);
-
-      ret = esdm_scheduler_wait(&status);
-      eassert(ret == ESDM_SUCCESS);
-
-      ret = esdm_scheduler_status_finalize(&status);
-      eassert(ret == ESDM_SUCCESS);
-
-      ret = status.return_code;
-    }
-
-    //cleanup, must not happen before we wait for the background processes to finish their tasks
-    esdmI_hypercubeSet_destroy(uncovered);
-    free(read_frag);
-  } else {
-    eassert(0 && "Unknown operation");
+    ret = status.return_code;
   }
+
+  //cleanup, must not happen before we wait for the background processes to finish their tasks
+  if(out_fillRegion) {  //either return the fill region to the user or destroy it
+    *out_fillRegion = uncovered;
+  } else {
+    esdmI_hypercubeSet_destroy(uncovered);
+  }
+  free(read_frag);
 
   return ret;
 }
