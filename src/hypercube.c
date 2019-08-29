@@ -349,7 +349,7 @@ static void findMinimalSubset_internal(int64_t count, esdmI_hypercube_t** cubes,
     uint64_t randomValue = rand_r(&seed);
     uint64_t cubeSelector = randomValue*uncheckedCubeCount/((uint64_t)RAND_MAX + 1);  //this is an index into the cubes for which the checkedCubes[] bit is not set
     int64_t checkIndex = 0;
-    for(; cubeSelector >= 0; checkIndex++) if(!checkedCubes[checkIndex]) cubeSelector--;  //turn the cubeSelector into a real index
+    for(; ; checkIndex++) if(!checkedCubes[checkIndex] && !cubeSelector--) break;  //turn the cubeSelector into a real index
 
     //determine whether we can drop this cube
     out_selectedCubes[checkIndex] = !hypercubeIsFullyCovered(cubes[checkIndex], count, reducedMatrix[checkIndex]);
@@ -382,7 +382,7 @@ void esdmI_hypercubeList_nonredundantSubsets_internal(esdmI_hypercubeList_t* lis
       requiredCubes[i] = true;
     } else {
       //Ok, coverage check is positive. Now check whether all points inside this cube are actually covered by other cubes or not.
-      requiredCubes[i] = hypercubeIsFullyCovered(list->cubes[i], list->count, intersectionMatrix[i]);
+      requiredCubes[i] = !hypercubeIsFullyCovered(list->cubes[i], list->count, intersectionMatrix[i]);
     }
   }
 
