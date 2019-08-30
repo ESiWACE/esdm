@@ -526,7 +526,15 @@ static esdmI_hypercubeSet_t* makeSplitRecommendation_contiguousFragments(esdm_da
     //search for the first dimension that exceeds the maxFragmentSize
     int64_t splitDim = 0, fragmentSize = elementSize;
     for(; splitDim < dimensions; splitDim++) {
-      if(fragmentSize*size[dimInfo[splitDim].dimension] > maxFragmentSize) break; //This is the dimension we need to split.
+      if(fragmentSize * size[dimInfo[splitDim].dimension] > maxFragmentSize) break; //This is the dimension we need to split.
+    } // Here is a bug, it needs to consider the size of all other dimensions
+    // if we couldn't find a dimension to split, we do not need to split the fragment by the last possible dimension.
+    if(splitDim == dimensions){
+      for(splitDim = dimensions - 1; splitDim > 0; splitDim--) {
+        if(size[dimInfo[splitDim].dimension] > 1){
+          break;
+        }
+      }
     }
     eassert(splitDim < dimensions); //should be guaranteed by the fast path above
     int64_t splitSlices = (size[dimInfo[splitDim].dimension] + maxFragmentSize - 1)/maxFragmentSize;  //the amount of slices of the split dimension
