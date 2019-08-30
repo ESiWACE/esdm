@@ -112,18 +112,40 @@ int main(int argc, char const *argv[]) {
   //Each data point is stored in three different fragments, and no two data points are stored in the same three fragments.
   //To successfully reconstruct the data, all 100 slices in a single direction must be selected, and no other fragments need to be read.
   //The test is, whether the algorithm actually finds one of these three solutions.
+  esdm_statistics_t before = esdm_write_stats();
   writeSliced(dataset, dataspace, 0, data);
   writeSliced(dataset, dataspace, 1, data);
   writeSliced(dataset, dataspace, 2, data);
+  esdm_statistics_t after = esdm_write_stats();
+
+  printf("bytes requested to write = %"PRId64" (expected %"PRId64")\n", after.bytesUser - before.bytesUser, (int64_t)3*sizeof(uint64_t[k_edgeLength][k_edgeLength][k_edgeLength]));
+  eassert(after.bytesUser - before.bytesUser == 3*sizeof(uint64_t[k_edgeLength][k_edgeLength][k_edgeLength]));
+  printf("bytes written to disk = %"PRId64" (expected %"PRId64")\n", after.bytesIo - before.bytesIo, (int64_t)3*sizeof(uint64_t[k_edgeLength][k_edgeLength][k_edgeLength]));
+  eassert(after.bytesIo - before.bytesIo == 3*sizeof(uint64_t[k_edgeLength][k_edgeLength][k_edgeLength]));
+  printf("write requests = %"PRId64" (expected %"PRId64")\n", after.requests - before.requests, (int64_t)3*k_edgeLength);
+  eassert(after.requests - before.requests == 3*k_edgeLength);
+  printf("fragments written = %"PRId64" (expected %"PRId64")\n", after.fragments - before.fragments, (int64_t)3*k_edgeLength);
+  eassert(after.fragments - before.fragments == 3*k_edgeLength && "only required to have complete knowledge of the fragments on disk");
 
   ret = esdm_dataset_commit(dataset);
   eassert(ret == ESDM_SUCCESS);
 
   // Read the data from the dataset
   clearData(data);
+  before = esdm_read_stats();
   ret = esdm_read(dataset, data, dataspace);
   eassert(ret == ESDM_SUCCESS);
+  after = esdm_read_stats();
   eassert(dataIsCorrect(data));
+
+  printf("bytes requested to read = %"PRId64" (expected %"PRId64")\n", after.bytesUser - before.bytesUser, (int64_t)sizeof(uint64_t[k_edgeLength][k_edgeLength][k_edgeLength]));
+  eassert(after.bytesUser - before.bytesUser == sizeof(uint64_t[k_edgeLength][k_edgeLength][k_edgeLength]));
+  printf("bytes read from disk = %"PRId64" (expected %"PRId64")\n", after.bytesIo - before.bytesIo, (int64_t)sizeof(uint64_t[k_edgeLength][k_edgeLength][k_edgeLength]));
+  eassert(after.bytesIo - before.bytesIo == sizeof(uint64_t[k_edgeLength][k_edgeLength][k_edgeLength]));
+  printf("read requests = %"PRId64" (expected %"PRId64")\n", after.requests - before.requests, (int64_t)1);
+  eassert(after.requests - before.requests == 1);
+  printf("fragments read = %"PRId64" (expected %"PRId64")\n", after.fragments - before.fragments, (int64_t)k_edgeLength);
+  eassert(after.fragments - before.fragments == k_edgeLength);
 
   ret = esdm_finalize();
   eassert(ret == ESDM_SUCCESS);

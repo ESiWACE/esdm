@@ -66,4 +66,14 @@ typedef struct esdm_fragment_t esdm_fragment_t;
 typedef struct esdm_md_backend_callbacks_t esdm_md_backend_callbacks_t;
 typedef struct esdm_md_backend_t esdm_md_backend_t;
 
+/**
+ * This POD struct is used to return a bunch of statistics to the user.
+ */
+typedef struct esdm_statistics_t {
+  uint64_t bytesUser; //the amount of bytes that the user requested to be read/written
+  uint64_t bytesIo; //the amount of bytes that actually were read/written from/to storage hardware
+  uint64_t requests;  //the amount of read/write requests issued by the user
+  uint64_t fragments; //the amount of data object actually read/written from/to storage hardware
+} esdm_statistics_t;
+
 #endif

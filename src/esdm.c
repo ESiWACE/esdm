@@ -227,3 +227,7 @@ esdm_status esdm_dataset_change_name(esdm_dataset_t *d, char const * new_name){
   d->status = ESDM_DATA_DIRTY;
   return ESDM_SUCCESS;
 }
+
+esdm_statistics_t esdm_read_stats() { return esdm.readStats; }
+
+esdm_statistics_t esdm_write_stats() { return esdm.writeStats; }

@@ -286,6 +286,8 @@ struct esdm_instance_t {
   int is_initialized;
   int procs_per_node;
   int total_procs;
+  esdm_statistics_t readStats;
+  esdm_statistics_t writeStats;
   esdm_config_t *config;
   esdm_modules_t *modules;
   esdm_layout_t *layout;

@@ -719,6 +719,10 @@ esdm_status esdm_scheduler_enqueue_write(esdm_instance_t *esdm, io_request_statu
         } else {
           g_thread_pool_push(curBackend->threadPool, task, &error);
         }
+
+        //update the statistics
+        esdm->writeStats.fragments++;
+        esdm->writeStats.bytesIo += esdm_dataspace_size(subspace);
       }
 
       esdmI_hypercubeSet_destroy(cubes);
@@ -726,6 +730,11 @@ esdm_status esdm_scheduler_enqueue_write(esdm_instance_t *esdm, io_request_statu
     }
   }
 
+  //update the statistics
+  esdm->writeStats.requests++;
+  esdm->writeStats.bytesUser += esdm_dataspace_size(space);
+
+  //cleanup
   free(backendExtends);
   free(backends);
   return ESDM_SUCCESS;
@@ -897,6 +906,14 @@ esdm_status esdm_scheduler_read_blocking(esdm_instance_t *esdm, esdm_dataset_t *
     eassert(ret == ESDM_SUCCESS);
 
     ret = status.return_code;
+
+    //update the statistics
+    esdm->readStats.requests++;
+    esdm->readStats.fragments += frag_count;
+    esdm->readStats.bytesUser += esdm_dataspace_size(subspace);
+    for(int64_t i = 0; i < frag_count; i++) {
+      esdm->readStats.bytesIo += esdm_dataspace_size(read_frag[i]->dataspace);
+    }
   }
 
   //cleanup, must not happen before we wait for the background processes to finish their tasks
