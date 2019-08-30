@@ -671,7 +671,7 @@ esdm_backend_t * esdmI_get_backend(char const * plugin_id){
 
 esdm_status esdmI_create_fragment_from_metadata(esdm_dataset_t *dset, json_t * json, esdm_fragment_t ** out) {
   int64_t dims = dset->dataspace->dims;
-  assert(dims > 0);
+  if(dims == 0) dims = 1;
 
   int ret;
   esdm_fragment_t *f;
@@ -1221,11 +1221,7 @@ esdm_status esdm_dataspace_subspace(esdm_dataspace_t *dataspace, int64_t dims, i
 
   // check for any inconsistencies between the given subspace and the dataspace
   esdm_status status = ESDM_SUCCESS;
-  if(dims != dataspace->dims) {
-    ESDM_LOG("Subspace dimension count does not match original space.");
-    status = ESDM_INVALID_ARGUMENT_ERROR;
-  }
-  if(status == ESDM_SUCCESS) {
+  if(dims == dataspace->dims) {
     for (int64_t i = 0; i < dims; i++) {
       if(size[i] <= 0) {
         ESDM_LOG_FMT(ESDM_LOGLEVEL_DEBUG, "invalid size argument to `%s()` detected: `size[%"PRId64"]` is not positive (%"PRId64")\n", __func__, i, size[i]);
@@ -1253,6 +1249,7 @@ esdm_status esdm_dataspace_subspace(esdm_dataspace_t *dataspace, int64_t dims, i
     memcpy(subspace, dataspace, sizeof(esdm_dataspace_t));
 
     // populate subspace members
+    subspace->dims = dims;
     subspace->size = (int64_t *)malloc(sizeof(int64_t) * dims);
     subspace->offset = (int64_t *)malloc(sizeof(int64_t) * dims);
     subspace->stride = NULL;
