@@ -26,33 +26,36 @@
 #include <esdm-internal.h>
 
 const int64_t k_dims = 3;
-#define k_edgeLength 100
-int64_t k_dataSize[] = {k_edgeLength, k_edgeLength, k_edgeLength};
+const int64_t k_edgeLength = 100;
 
-void fakeData(uint64_t (**out_data)[k_edgeLength][k_edgeLength]) {
-  *out_data = malloc(k_edgeLength*sizeof(**out_data));
-  for(int z = 0; z < k_edgeLength; z++) {
-    for(int y = 0; y < k_edgeLength; y++) {
-      for(int x = 0; x < k_edgeLength; x++) {
-        (*out_data)[z][y][x] = (z*k_edgeLength + y)*k_edgeLength + x;;
-      }
-    }
-  }
+int64_t totalElements(int64_t dims, int64_t* dimSizes) {
+  int64_t result = 1;
+  while(dims--) result *= dimSizes[dims];
+  return result;
 }
 
-void clearData(uint64_t (*data)[k_edgeLength][k_edgeLength]) {
-  memset(data, 0, k_edgeLength*sizeof(*data));
+int64_t totalSize(int64_t dims, int64_t* dimSizes) {
+  return sizeof(uint64_t)*totalElements(dims, dimSizes);
 }
 
-bool dataIsCorrect(uint64_t (*data)[k_edgeLength][k_edgeLength]) {
-  static uint64_t (*referenceData)[k_edgeLength][k_edgeLength] = NULL;
-  if(!referenceData) fakeData(&referenceData);
-  return !memcmp(data, referenceData, k_edgeLength*sizeof(*referenceData));
+void fakeData(int64_t dims, int64_t* dimSizes, uint64_t** out_data) {
+  *out_data = malloc(totalSize(dims, dimSizes));
+  for(int64_t i = totalElements(dims, dimSizes); i--; ) (*out_data)[i] = i;
 }
 
-void writeFragment(esdm_dataset_t* dataset, esdm_dataspace_t* dataspace, int64_t offset[k_dims], int64_t size[k_dims], uint64_t (*data)[k_edgeLength][k_edgeLength]) {
+void clearData(int64_t dims, int64_t* dimSizes, uint64_t* data) {
+  memset(data, 0, totalSize(dims, dimSizes));
+}
+
+bool dataIsCorrect(int64_t dims, int64_t* dimSizes, uint64_t* data) {
+  static uint64_t* referenceData = NULL;
+  if(!referenceData) fakeData(dims, dimSizes, &referenceData);
+  return !memcmp(data, referenceData, totalSize(dims, dimSizes));
+}
+
+void writeFragment(esdm_dataset_t* dataset, esdm_dataspace_t* dataspace, int64_t dims, int64_t* offset, int64_t* size, uint64_t* data) {
   esdm_dataspace_t* subspace;
-  int ret = esdm_dataspace_subspace(dataspace, k_dims, size, offset, &subspace);
+  int ret = esdm_dataspace_subspace(dataspace, dims, size, offset, &subspace);
   eassert(ret == ESDM_SUCCESS);
   ret = esdm_dataspace_copyDatalayout(subspace, dataspace);
   eassert(ret == ESDM_SUCCESS);
@@ -60,13 +63,13 @@ void writeFragment(esdm_dataset_t* dataset, esdm_dataspace_t* dataspace, int64_t
   eassert(ret == ESDM_SUCCESS);
 }
 
-void writeSliced(esdm_dataset_t* dataset, esdm_dataspace_t* dataspace, int64_t sliceDim, uint64_t (*data)[k_edgeLength][k_edgeLength]) {
-  int64_t* sliceSize = ea_memdup(k_dataSize, sizeof(k_dataSize));
+void writeSliced(esdm_dataset_t* dataset, esdm_dataspace_t* dataspace, int64_t dims, int64_t* dimSizes, uint64_t* data, int64_t sliceDim) {
+  int64_t* sliceSize = ea_memdup(dimSizes, dims*sizeof(*dimSizes));
   sliceSize[sliceDim] = 1;
-  int64_t* sliceOffset = calloc(k_dims, sizeof(*sliceOffset));;
+  int64_t* sliceOffset = calloc(dims, sizeof(*sliceOffset));
 
-  for(sliceOffset[sliceDim] = 0; sliceOffset[sliceDim] < k_edgeLength; sliceOffset[sliceDim]++) {
-    writeFragment(dataset, dataspace, sliceOffset, sliceSize, data);
+  for(sliceOffset[sliceDim] = 0; sliceOffset[sliceDim] < dimSizes[sliceDim]; sliceOffset[sliceDim]++) {
+    writeFragment(dataset, dataspace, dims, sliceOffset, sliceSize, data);
   }
 
   free(sliceSize);
@@ -75,8 +78,10 @@ void writeSliced(esdm_dataset_t* dataset, esdm_dataspace_t* dataspace, int64_t s
 
 int main(int argc, char const *argv[]) {
   // prepare data
-  uint64_t (*data)[k_edgeLength][k_edgeLength];
-  fakeData(&data);
+  int64_t dimSizes[k_dims];
+  for(int64_t i = 0; i < k_dims; i++) dimSizes[i] = k_edgeLength;
+  uint64_t* data;
+  fakeData(k_dims, dimSizes, &data);
 
   // Interaction with ESDM
   esdm_status ret;
@@ -91,7 +96,7 @@ int main(int argc, char const *argv[]) {
 
   // define dataspace
   esdm_dataspace_t *dataspace;
-  ret = esdm_dataspace_create(k_dims, k_dataSize, SMD_DTYPE_UINT64, &dataspace);
+  ret = esdm_dataspace_create(k_dims, dimSizes, SMD_DTYPE_UINT64, &dataspace);
   eassert(ret == ESDM_SUCCESS);
 
   esdm_container_t *container;
@@ -113,38 +118,38 @@ int main(int argc, char const *argv[]) {
   //To successfully reconstruct the data, all 100 slices in a single direction must be selected, and no other fragments need to be read.
   //The test is, whether the algorithm actually finds one of these three solutions.
   esdm_statistics_t before = esdm_write_stats();
-  writeSliced(dataset, dataspace, 0, data);
-  writeSliced(dataset, dataspace, 1, data);
-  writeSliced(dataset, dataspace, 2, data);
+  writeSliced(dataset, dataspace, k_dims, dimSizes, data, 0);
+  writeSliced(dataset, dataspace, k_dims, dimSizes, data, 1);
+  writeSliced(dataset, dataspace, k_dims, dimSizes, data, 2);
   esdm_statistics_t after = esdm_write_stats();
 
-  printf("bytes requested to write = %"PRId64" (expected %"PRId64")\n", after.bytesUser - before.bytesUser, (int64_t)3*sizeof(uint64_t[k_edgeLength][k_edgeLength][k_edgeLength]));
-  eassert(after.bytesUser - before.bytesUser == 3*sizeof(uint64_t[k_edgeLength][k_edgeLength][k_edgeLength]));
-  printf("bytes written to disk = %"PRId64" (expected %"PRId64")\n", after.bytesIo - before.bytesIo, (int64_t)3*sizeof(uint64_t[k_edgeLength][k_edgeLength][k_edgeLength]));
-  eassert(after.bytesIo - before.bytesIo == 3*sizeof(uint64_t[k_edgeLength][k_edgeLength][k_edgeLength]));
-  printf("write requests = %"PRId64" (expected %"PRId64")\n", after.requests - before.requests, (int64_t)3*k_edgeLength);
+  printf("bytes requested to write = %"PRId64" (expected %"PRId64")\n", after.bytesUser - before.bytesUser, 3*totalSize(k_dims, dimSizes));
+  eassert(after.bytesUser - before.bytesUser == 3*totalSize(k_dims, dimSizes));
+  printf("bytes written to disk = %"PRId64" (expected %"PRId64")\n", after.bytesIo - before.bytesIo, 3*totalSize(k_dims, dimSizes));
+  eassert(after.bytesIo - before.bytesIo == 3*totalSize(k_dims, dimSizes));
+  printf("write requests = %"PRId64" (expected %"PRId64")\n", after.requests - before.requests, 3*k_edgeLength);
   eassert(after.requests - before.requests == 3*k_edgeLength);
-  printf("fragments written = %"PRId64" (expected %"PRId64")\n", after.fragments - before.fragments, (int64_t)3*k_edgeLength);
+  printf("fragments written = %"PRId64" (expected %"PRId64")\n", after.fragments - before.fragments, 3*k_edgeLength);
   eassert(after.fragments - before.fragments == 3*k_edgeLength && "only required to have complete knowledge of the fragments on disk");
 
   ret = esdm_dataset_commit(dataset);
   eassert(ret == ESDM_SUCCESS);
 
   // Read the data from the dataset
-  clearData(data);
+  clearData(k_dims, dimSizes, data);
   before = esdm_read_stats();
   ret = esdm_read(dataset, data, dataspace);
   eassert(ret == ESDM_SUCCESS);
   after = esdm_read_stats();
-  eassert(dataIsCorrect(data));
+  eassert(dataIsCorrect(k_dims, dimSizes, data));
 
-  printf("bytes requested to read = %"PRId64" (expected %"PRId64")\n", after.bytesUser - before.bytesUser, (int64_t)sizeof(uint64_t[k_edgeLength][k_edgeLength][k_edgeLength]));
-  eassert(after.bytesUser - before.bytesUser == sizeof(uint64_t[k_edgeLength][k_edgeLength][k_edgeLength]));
-  printf("bytes read from disk = %"PRId64" (expected %"PRId64")\n", after.bytesIo - before.bytesIo, (int64_t)sizeof(uint64_t[k_edgeLength][k_edgeLength][k_edgeLength]));
-  eassert(after.bytesIo - before.bytesIo == sizeof(uint64_t[k_edgeLength][k_edgeLength][k_edgeLength]));
+  printf("bytes requested to read = %"PRId64" (expected %"PRId64")\n", after.bytesUser - before.bytesUser, totalSize(k_dims, dimSizes));
+  eassert(after.bytesUser - before.bytesUser == totalSize(k_dims, dimSizes));
+  printf("bytes read from disk = %"PRId64" (expected %"PRId64")\n", after.bytesIo - before.bytesIo, totalSize(k_dims, dimSizes));
+  eassert(after.bytesIo - before.bytesIo == totalSize(k_dims, dimSizes));
   printf("read requests = %"PRId64" (expected %"PRId64")\n", after.requests - before.requests, (int64_t)1);
   eassert(after.requests - before.requests == 1);
-  printf("fragments read = %"PRId64" (expected %"PRId64")\n", after.fragments - before.fragments, (int64_t)k_edgeLength);
+  printf("fragments read = %"PRId64" (expected %"PRId64")\n", after.fragments - before.fragments, k_edgeLength);
   eassert(after.fragments - before.fragments == k_edgeLength);
 
   ret = esdm_finalize();
