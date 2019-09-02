@@ -25,9 +25,6 @@
 
 #include <esdm-internal.h>
 
-const int64_t k_dims = 3;
-const int64_t k_edgeLength = 100;
-
 int64_t totalElements(int64_t dims, int64_t* dimSizes) {
   int64_t result = 1;
   while(dims--) result *= dimSizes[dims];
@@ -76,12 +73,54 @@ void writeSliced(esdm_dataset_t* dataset, esdm_dataspace_t* dataspace, int64_t d
   free(sliceOffset);
 }
 
+void exitWithUsage(const char* executableName, char* errorMessage) {
+  if(errorMessage) fprintf(stderr, "%s\n", errorMessage);
+  printf("usage: %s [(-d | --dims) dims] [(-e | --edge-size) edgeSize]\n", executableName);
+  printf("\n");
+  printf("\t(-d | --dims) dims\n");
+  printf("\t\tUse `dims` dimensions for the data hypercube.\n");
+  printf("\n");
+  printf("\t(-e | --edge-size) edgeSize\n");
+  printf("\t\tSet the length of all the sides of the data hypercube to `edgeSize`.\n");
+  exit(-!!errorMessage);
+}
+
+void parseArgs(int argc, char const** argv, int64_t* out_dims, int64_t* out_edgeLength) {
+  assert(argc > 0);
+  const char* executableName = argv[0];
+
+  //set defaults
+  *out_dims = 3;
+  *out_edgeLength = 100;
+
+  //parse the args
+  for(int i = 1; i < argc; i++) {
+    if(!strcmp(argv[i], "-d") || !strcmp(argv[i], "--dims")) {
+      if(++i >= argc) exitWithUsage(executableName, "error: -d | --dims option needs an argument\n");
+      char* endPtr;
+      *out_dims = strtoll(argv[i], &endPtr, 0);
+      if(*endPtr) exitWithUsage(executableName, "error: argument to -d | --dims option needs to be an integer\n");
+    } else if(!strcmp(argv[i], "-e") || !strcmp(argv[i], "--edge-size")) {
+      if(++i >= argc) exitWithUsage(executableName, "error: -e | --edge-size option needs an argument\n");
+      char* endPtr;
+      *out_edgeLength = strtoll(argv[i], &endPtr, 0);
+      if(*endPtr) exitWithUsage(executableName, "error: argument to -e | --edge-size option needs to be an integer\n");
+    } else {
+      exitWithUsage(executableName, "error: unrecognized option\n");
+    }
+  }
+}
+
 int main(int argc, char const *argv[]) {
+  // parse the command line args
+  int64_t dims, edgeLength;
+  parseArgs(argc, argv, &dims, &edgeLength);
+
   // prepare data
-  int64_t dimSizes[k_dims];
-  for(int64_t i = 0; i < k_dims; i++) dimSizes[i] = k_edgeLength;
+  int64_t dimSizes[dims];
+  for(int64_t i = 0; i < dims; i++) dimSizes[i] = edgeLength;
   uint64_t* data;
-  fakeData(k_dims, dimSizes, &data);
+  fakeData(dims, dimSizes, &data);
 
   // Interaction with ESDM
   esdm_status ret;
@@ -96,7 +135,7 @@ int main(int argc, char const *argv[]) {
 
   // define dataspace
   esdm_dataspace_t *dataspace;
-  ret = esdm_dataspace_create(k_dims, dimSizes, SMD_DTYPE_UINT64, &dataspace);
+  ret = esdm_dataspace_create(dims, dimSizes, SMD_DTYPE_UINT64, &dataspace);
   eassert(ret == ESDM_SUCCESS);
 
   esdm_container_t *container;
@@ -118,39 +157,37 @@ int main(int argc, char const *argv[]) {
   //To successfully reconstruct the data, all 100 slices in a single direction must be selected, and no other fragments need to be read.
   //The test is, whether the algorithm actually finds one of these three solutions.
   esdm_statistics_t before = esdm_write_stats();
-  writeSliced(dataset, dataspace, k_dims, dimSizes, data, 0);
-  writeSliced(dataset, dataspace, k_dims, dimSizes, data, 1);
-  writeSliced(dataset, dataspace, k_dims, dimSizes, data, 2);
+  for(int64_t sliceDim = 0; sliceDim < dims; sliceDim++) writeSliced(dataset, dataspace, dims, dimSizes, data, sliceDim);
   esdm_statistics_t after = esdm_write_stats();
 
-  printf("bytes requested to write = %"PRId64" (expected %"PRId64")\n", after.bytesUser - before.bytesUser, 3*totalSize(k_dims, dimSizes));
-  eassert(after.bytesUser - before.bytesUser == 3*totalSize(k_dims, dimSizes));
-  printf("bytes written to disk = %"PRId64" (expected %"PRId64")\n", after.bytesIo - before.bytesIo, 3*totalSize(k_dims, dimSizes));
-  eassert(after.bytesIo - before.bytesIo == 3*totalSize(k_dims, dimSizes));
-  printf("write requests = %"PRId64" (expected %"PRId64")\n", after.requests - before.requests, 3*k_edgeLength);
-  eassert(after.requests - before.requests == 3*k_edgeLength);
-  printf("fragments written = %"PRId64" (expected %"PRId64")\n", after.fragments - before.fragments, 3*k_edgeLength);
-  eassert(after.fragments - before.fragments == 3*k_edgeLength && "only required to have complete knowledge of the fragments on disk");
+  printf("bytes requested to write = %"PRId64" (expected %"PRId64")\n", after.bytesUser - before.bytesUser, dims*totalSize(dims, dimSizes));
+  eassert(after.bytesUser - before.bytesUser == dims*totalSize(dims, dimSizes));
+  printf("bytes written to disk = %"PRId64" (expected %"PRId64")\n", after.bytesIo - before.bytesIo, dims*totalSize(dims, dimSizes));
+  eassert(after.bytesIo - before.bytesIo == dims*totalSize(dims, dimSizes));
+  printf("write requests = %"PRId64" (expected %"PRId64")\n", after.requests - before.requests, dims*edgeLength);
+  eassert(after.requests - before.requests == dims*edgeLength);
+  printf("fragments written = %"PRId64" (expected %"PRId64")\n", after.fragments - before.fragments, dims*edgeLength);
+  eassert(after.fragments - before.fragments == dims*edgeLength && "only required to have complete knowledge of the fragments on disk");
 
   ret = esdm_dataset_commit(dataset);
   eassert(ret == ESDM_SUCCESS);
 
   // Read the data from the dataset
-  clearData(k_dims, dimSizes, data);
+  clearData(dims, dimSizes, data);
   before = esdm_read_stats();
   ret = esdm_read(dataset, data, dataspace);
   eassert(ret == ESDM_SUCCESS);
   after = esdm_read_stats();
-  eassert(dataIsCorrect(k_dims, dimSizes, data));
+  eassert(dataIsCorrect(dims, dimSizes, data));
 
-  printf("bytes requested to read = %"PRId64" (expected %"PRId64")\n", after.bytesUser - before.bytesUser, totalSize(k_dims, dimSizes));
-  eassert(after.bytesUser - before.bytesUser == totalSize(k_dims, dimSizes));
-  printf("bytes read from disk = %"PRId64" (expected %"PRId64")\n", after.bytesIo - before.bytesIo, totalSize(k_dims, dimSizes));
-  eassert(after.bytesIo - before.bytesIo == totalSize(k_dims, dimSizes));
+  printf("bytes requested to read = %"PRId64" (expected %"PRId64")\n", after.bytesUser - before.bytesUser, totalSize(dims, dimSizes));
+  eassert(after.bytesUser - before.bytesUser == totalSize(dims, dimSizes));
+  printf("bytes read from disk = %"PRId64" (expected %"PRId64")\n", after.bytesIo - before.bytesIo, totalSize(dims, dimSizes));
+  eassert(after.bytesIo - before.bytesIo == totalSize(dims, dimSizes));
   printf("read requests = %"PRId64" (expected %"PRId64")\n", after.requests - before.requests, (int64_t)1);
   eassert(after.requests - before.requests == 1);
-  printf("fragments read = %"PRId64" (expected %"PRId64")\n", after.fragments - before.fragments, k_edgeLength);
-  eassert(after.fragments - before.fragments == k_edgeLength);
+  printf("fragments read = %"PRId64" (expected %"PRId64")\n", after.fragments - before.fragments, edgeLength);
+  eassert(after.fragments - before.fragments == edgeLength);
 
   ret = esdm_finalize();
   eassert(ret == ESDM_SUCCESS);
