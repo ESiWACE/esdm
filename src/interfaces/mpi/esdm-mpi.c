@@ -92,7 +92,8 @@ esdm_status esdm_mpi_container_create(MPI_Comm com, const char *name, int allow_
   return ret;
 }
 
-esdm_status esdm_mpi_container_open(MPI_Comm com, const char *name, esdm_container_t **out_container){
+esdm_status esdm_mpi_container_open(MPI_Comm com, const char *name, int allow_overwrite, esdm_container_t **out_container){
+  // TODO use allow overwrite
   esdm_status ret;
   int rank;
   ret = MPI_Comm_rank(com, & rank);

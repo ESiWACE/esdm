@@ -102,7 +102,7 @@ void runRead(uint64_t * buf_w, int64_t * dim, int64_t * offset){
   // define dataspace
   esdm_dataspace_t *dataspace;
 
-  ret = esdm_mpi_container_open(MPI_COMM_WORLD, "mycontainer", &container);
+  ret = esdm_mpi_container_open(MPI_COMM_WORLD, "mycontainer", 0, &container);
   eassert(ret == ESDM_SUCCESS);
   ret = esdm_mpi_dataset_open(MPI_COMM_WORLD, container, "mydataset", &dataset);
   eassert(ret == ESDM_SUCCESS);
