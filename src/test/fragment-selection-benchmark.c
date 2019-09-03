@@ -58,6 +58,8 @@ void writeFragment(esdm_dataset_t* dataset, esdm_dataspace_t* dataspace, int64_t
   eassert(ret == ESDM_SUCCESS);
   ret = esdm_write(dataset, (char*)data + esdm_dataspace_elementOffset(dataspace, offset), subspace);
   eassert(ret == ESDM_SUCCESS);
+  ret = esdm_dataspace_destroy(subspace);
+  eassert(ret == ESDM_SUCCESS);
 }
 
 void writeSliced(esdm_dataset_t* dataset, esdm_dataspace_t* dataspace, int64_t dims, int64_t* dimSizes, uint64_t* data, int64_t sliceDim) {

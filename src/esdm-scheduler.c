@@ -186,18 +186,22 @@ static void esdmI_dataspace_copy_instructions(
   eassert(out_destOffset);
 
   uint64_t dimensions = sourceSpace->dims;
-  esdmI_hypercube_t *sourceExtends, *destExtends;
-  esdmI_dataspace_getExtends(sourceSpace, &sourceExtends);
-  esdmI_dataspace_getExtends(destSpace, &destExtends);
+  int64_t overlapOffset[dimensions];
+  int64_t overlapSize[dimensions];
 
   //determine the hypercube that contains the overlap between the two hypercubes
   //(the intersection of two hypercubes is also a hypercube)
-  esdmI_hypercube_t* overlap = esdmI_hypercube_makeIntersection(sourceExtends, destExtends);
-  if(!overlap) return;  //overlap is empty => nothing to do
-  int64_t overlapOffset[dimensions];
-  int64_t overlapSize[dimensions];
-  esdmI_hypercube_getOffsetAndSize(overlap, overlapOffset, overlapSize);
-  esdmI_hypercube_destroy(overlap);
+  {
+    esdmI_hypercube_t *sourceExtends, *destExtends;
+    esdmI_dataspace_getExtends(sourceSpace, &sourceExtends);
+    esdmI_dataspace_getExtends(destSpace, &destExtends);
+    esdmI_hypercube_t* overlap = esdmI_hypercube_makeIntersection(sourceExtends, destExtends);
+    esdmI_hypercube_destroy(sourceExtends);
+    esdmI_hypercube_destroy(destExtends);
+    if(!overlap) return;  //overlap is empty => nothing to do
+    esdmI_hypercube_getOffsetAndSize(overlap, overlapOffset, overlapSize);
+    esdmI_hypercube_destroy(overlap);
+  }
 
   //in case the stride fields are set to NULL, determine the effective strides
   int64_t sourceStride[dimensions], destStride[dimensions];
@@ -882,10 +886,13 @@ esdm_status esdm_scheduler_read_blocking(esdm_instance_t *esdm, esdm_dataset_t *
   int frag_count;
   ret = esdmI_dataset_lookup_fragments(dataset, subspace, & frag_count, &read_frag);
   eassert(ret == ESDM_SUCCESS);
-  esdmI_hypercube_t* readExtends;
-  esdmI_dataspace_getExtends(subspace, &readExtends);
-  removeRedundantFragments(readExtends, &frag_count, read_frag);
-  DEBUG("fragments to read: %d", frag_count);
+  {
+    esdmI_hypercube_t* readExtends;
+    esdmI_dataspace_getExtends(subspace, &readExtends);
+    removeRedundantFragments(readExtends, &frag_count, read_frag);
+    esdmI_hypercube_destroy(readExtends);
+    DEBUG("fragments to read: %d", frag_count);
+  }
 
   //check whether we have all the requested data
   esdmI_hypercubeSet_t* uncovered;

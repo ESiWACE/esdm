@@ -230,26 +230,35 @@ void esdmI_hypercubeSet_subtract(esdmI_hypercubeSet_t* me, esdmI_hypercube_t* su
     //while the splitting of the intersecting part is continued for the other dimensions.
     for(int64_t curDim = 0; curDim < dimensions; curDim++) {
       //take the part of the minuend that is before the start of the subtrahend in this dimension
+      esdmI_hypercube_t* copy = esdmI_hypercube_makeCopy(minuend);
       if(minuend->ranges[curDim].start < subtrahend->ranges[curDim].start) {
-        esdmI_hypercube_t* copy = esdmI_hypercube_makeCopy(minuend);
-        if(copy->ranges[curDim].end > subtrahend->ranges[curDim].start) {
-          copy->ranges[curDim].end = subtrahend->ranges[curDim].start;
+        if(minuend->ranges[curDim].end > subtrahend->ranges[curDim].start) {
+          copy->ranges[curDim] = (esdmI_range_t){
+            .start = minuend->ranges[curDim].start,
+            .end = subtrahend->ranges[curDim].start
+          };
         }
         esdmI_hypercubeSet_add(me, copy);
       }
       //take the part of the minuend that is behind the end of the subtrahend in this dimension
       if(minuend->ranges[curDim].end > subtrahend->ranges[curDim].end) {
-        esdmI_hypercube_t* copy = esdmI_hypercube_makeCopy(minuend);
         if(copy->ranges[curDim].start < subtrahend->ranges[curDim].end) {
-          copy->ranges[curDim].start = subtrahend->ranges[curDim].end;
+          copy->ranges[curDim] = (esdmI_range_t){
+            .start = subtrahend->ranges[curDim].end,
+            .end = minuend->ranges[curDim].end
+          };
         }
         esdmI_hypercubeSet_add(me, copy);
       }
+      esdmI_hypercube_destroy(copy);
       //Reduce the minuend in this dimension to the intersecting part.
       //This ensures that further splits along other dimensions won't intersect with the two parts we readded above.
       //The resulting range cannot be empty because we have already checked above that an intersection actually exists.
       minuend->ranges[curDim] = esdmI_range_intersection(minuend->ranges[curDim], subtrahend->ranges[curDim]);
     }
+
+    //cleanup
+    esdmI_hypercube_destroy(minuend);
   }
 }
 
@@ -393,6 +402,7 @@ void esdmI_hypercubeList_nonredundantSubsets_internal(esdmI_hypercubeList_t* lis
     //FIXME: Remove duplicate sets.
   }
 
+  free(requiredCubes);
   destroyIntersectionMatrix(list->count, intersectionMatrix, intersectionSizes);
 
   *inout_setCount = setCount;
