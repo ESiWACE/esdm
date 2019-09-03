@@ -202,14 +202,19 @@ esdm_status esdm_sync() {
 
 esdm_status esdm_dataset_set_fill_value(esdm_dataset_t *d, void * value){
   eassert(d);
-  eassert(value);
   if(d->fill_value){
     smd_attr_destroy(d->fill_value);
+    d->fill_value = NULL;
   }
   if(value != NULL){
     d->fill_value = smd_attr_new("fill-value", d->dataspace->type, value, 10);
   }
   return ESDM_SUCCESS;
+}
+
+int esdm_dataset_is_fill_value_set(esdm_dataset_t *d){
+  eassert(d);
+  return d->fill_value != NULL;
 }
 
 esdm_status esdm_dataset_get_fill_value(esdm_dataset_t *d, void * value){

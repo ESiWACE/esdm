@@ -230,6 +230,8 @@ esdm_status esdm_dataset_set_fill_value(esdm_dataset_t *dataset, void * value);
  */
 esdm_status esdm_dataset_get_fill_value(esdm_dataset_t *dataset, void * value);
 
+int esdm_dataset_is_fill_value_set(esdm_dataset_t *dataset);
+
 /*
  Returns the name of the dataset, do not free or temper with it, the name is still owned by the dataset
  */
