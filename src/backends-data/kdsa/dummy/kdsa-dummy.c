@@ -27,7 +27,7 @@
 
 
 int kdsa_compare_and_swap(kdsa_vol_handle_t handle, kdsa_vol_offset_t off, uint64_t compare, uint64_t swap, uint64_t *out_res){
-  int fd = * handle;
+  int fd = *(int*) handle;
 
   struct flock fl;
   memset(&fl, 0, sizeof(fl));
@@ -86,7 +86,7 @@ int kdsa_write_unregistered(kdsa_vol_handle_t handle, kdsa_vol_offset_t off, voi
   return 0;
 #endif
 
-  int f = * handle;
+  int f = *(int*) handle;
   ret = pwrite(f, buf, bytes, off);
   assert(ret == bytes);
   //fdatasync(f);
@@ -107,7 +107,7 @@ int kdsa_read_unregistered(kdsa_vol_handle_t handle, kdsa_vol_offset_t off,  voi
   return 0;
 #endif
 
-  int f = * handle;
+  int f = *(int*) handle;
   ret = pread(f, buf, bytes, off);
   if(ret == bytes){
     return 0;
@@ -141,7 +141,7 @@ int kdsa_connect(char* connection_string, uint32_t flags, kdsa_vol_handle_t *han
 
 int kdsa_disconnect(kdsa_vol_handle_t handle){
   FUNC_START
-  int ret = close(*handle);
+  int ret = close(*(int*)handle);
   free(handle);
   return ret;
 }

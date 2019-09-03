@@ -221,6 +221,7 @@ static int mkfs(esdm_backend_t *backend, int format_flags) {
   offset_to_data = (offset_to_data + 63) / 64 * 64; // round to 64 bytes
 
   // fill data structure
+  memset(& data->h, 0, sizeof(kdsa_persistent_header_t));
   data->h = (kdsa_persistent_header_t){
     .magic = ESDM_MAGIC,
     .blocksize = data->h.blocksize,
