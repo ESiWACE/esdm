@@ -259,6 +259,7 @@ esdm_status esdm_container_commit(esdm_container_t *c) {
     esdm_dataset_commit(dsets->dset[i]);
   }
 
+  free(buff);
   return ret;
 }
 

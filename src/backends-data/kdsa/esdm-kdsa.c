@@ -392,6 +392,8 @@ static int fragment_update(esdm_backend_t *backend, esdm_fragment_t *f) {
     eassert(f->id);
     sprintf(f->id, "%"PRId64, offset);
   }
+
+  //FIXME make this stride aware!
   DEBUG("write: %lu\n", *(uint64_t*) f->buf);
   ret = kdsa_write_unregistered(data->handle, fragmd->offset, f->buf, f->bytes);
   if(ret != 0){
