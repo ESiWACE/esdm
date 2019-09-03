@@ -221,7 +221,6 @@ static int mkfs(esdm_backend_t *backend, int format_flags) {
   offset_to_data = (offset_to_data + 63) / 64 * 64; // round to 64 bytes
 
   // fill data structure
-  memset(& data->h, 0, sizeof(kdsa_persistent_header_t));
   data->h = (kdsa_persistent_header_t){
     .magic = ESDM_MAGIC,
     .blocksize = data->h.blocksize,
@@ -294,6 +293,10 @@ static int fragment_retrieve(esdm_backend_t *backend, esdm_fragment_t *f) {
   kdsa_backend_data_t *data = (kdsa_backend_data_t *)backend->data;
   int ret = 0;
   kdsa_fragment_metadata_t * fragmd = (kdsa_fragment_metadata_t*) f->backend_md;
+  if(f->bytes > data->h.blocksize){
+    WARN("Error could not read more data than blocksize (%"PRIu64" > %"PRIu64")", f->bytes,  data->h.blocksize);
+    return ESDM_ERROR;
+  }
   ret = kdsa_read_unregistered(data->handle, fragmd->offset, f->buf, f->bytes);
   DEBUG("read: %lu\n", *(uint64_t*) f->buf);
   if(ret != 0){
@@ -391,6 +394,11 @@ static int fragment_update(esdm_backend_t *backend, esdm_fragment_t *f) {
     f->id = malloc(22);
     eassert(f->id);
     sprintf(f->id, "%"PRId64, offset);
+  }
+
+  if(f->bytes > data->h.blocksize){
+    WARN("Error could not write more data than blocksize (%"PRIu64" > %"PRIu64")", f->bytes,  data->h.blocksize);
+    return ESDM_ERROR;
   }
 
   //FIXME make this stride aware!
