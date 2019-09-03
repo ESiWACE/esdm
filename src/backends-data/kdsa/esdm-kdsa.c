@@ -550,8 +550,11 @@ esdm_backend_t *kdsa_backend_init(esdm_config_backend_t *config) {
     data->h.offset_to_data = 0;
     data->block_map = NULL;
   }else if(data->h.blockcount != calc_block_count(data->h.blocksize, data->size)){
-    ERROR("Blockcount in header does not match the block count determined when retrieving the volume size, it appears the volume size has been changed on %s. The max_fragment_size expected was: %lu", tgt, data->h.blocksize);
-    return NULL;
+    WARN("Blockcount in header does not match the block count determined when retrieving the volume size, it appears the volume size has been changed on %s. The max_fragment_size expected was: %lu", tgt, data->h.blocksize);
+    data->h.blocksize = blocksize;
+    data->h.blockcount = 0;
+    data->h.offset_to_data = 0;
+    data->block_map = NULL;
   }else{
     data->block_map = malloc(calc_block_map_size(data->h.blockcount)* sizeof(uint64_t));
     ret = load_block_bitmap(data);
