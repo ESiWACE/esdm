@@ -91,6 +91,22 @@ esdm_status esdm_write(esdm_dataset_t *dataset, void *buf, esdm_dataspace_t *sub
 
 esdm_status esdm_read(esdm_dataset_t *dataset, void *buf, esdm_dataspace_t *subspace);
 
+
+/**
+ * This function performs the operation on the data while is streamed in.
+ * The order of the data processing is not defined.
+ * Internally, threads might be used to run the function on subspaces (typically fragment level).
+ * Hence, the function must be thread safe.
+ * You can provide a user-ptr of shared space organized by you, this ptr is passed to the function
+ * The processing is as follows:
+ ** First run stream_func on each data, a stream function may output an intermediate result (return value). This function may be called multiple times and concurrently.
+ ** The reduce function is called once per stream output on the master thread allowing to merge the intermediate results.
+ */
+typedef void* (*esdm_stream_func_t)(esdm_dataspace_t *space, void * buff, void * user_ptr, void* esdm_fill_value);
+typedef void (*esdm_reduce_func_t)(esdm_dataspace_t *space, void * user_ptr, void * stream_func_out);
+esdm_status esdm_read_stream(esdm_dataset_t *dataset, esdm_dataspace_t *space, void * user_ptr, esdm_stream_func_t stream_func, esdm_reduce_func_t reduce_func);
+
+
 ///////////////////////////////////////////////////////////////////////////////
 // Public API: Data Model Manipulators ////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////
@@ -256,6 +272,8 @@ esdm_status esdm_dataset_get_dataspace(esdm_dataset_t *dset, esdm_dataspace_t **
 esdm_type_t esdm_dataset_get_type(esdm_dataset_t * d);
 
 int64_t esdm_dataspace_get_dims(esdm_dataspace_t * d);
+int64_t const* esdm_dataspace_get_size(esdm_dataspace_t * d);
+int64_t const* esdm_dataspace_get_offset(esdm_dataspace_t * d);
 esdm_type_t esdm_dataspace_get_type(esdm_dataspace_t * d);
 
 /**
