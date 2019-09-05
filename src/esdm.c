@@ -149,10 +149,11 @@ esdm_status esdm_finalize() {
   esdm_performance_finalize(&esdm);
   esdm_layout_finalize(&esdm);
   esdm_modules_finalize(&esdm);
-  esdm = (esdm_instance_t){ESDM_INSTANCE_INITIALIZERS};
-  is_initialized = false;
 
   esdm_log_on_exit(0);
+
+  esdm = (esdm_instance_t){ESDM_INSTANCE_INITIALIZERS};
+  is_initialized = false;
 
   return ESDM_SUCCESS;
 }
