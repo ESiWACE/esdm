@@ -3,6 +3,7 @@
 
 #include <jansson.h>
 #include <glib.h>
+#include <stdatomic.h>
 
 #include <esdm-datatypes.h>
 #include <smd-datatype.h>
@@ -186,7 +187,7 @@ typedef enum io_operation_t {
 } io_operation_t;
 
 typedef struct io_request_status_t {
-  int pending_ops;
+  atomic_int pending_ops;
   GMutex mutex;
   GCond done_condition;
   int return_code;
