@@ -52,15 +52,17 @@ int main(int argc, char const *argv[]) {
   eassert(status == ESDM_SUCCESS);
   eassert_crash(esdm_load_config_str(configString));
 
-  status = esdm_init();
-  eassert(status == ESDM_SUCCESS);
 
-  eassert_crash(esdm_set_procs_per_node(3));
-  eassert_crash(esdm_set_total_procs(6));
-  eassert_crash(esdm_load_config_str("[]"));
+  for(int i=0; i < 3; i++){
+    status = esdm_init();
+    eassert(status == ESDM_SUCCESS);
 
-  status = esdm_finalize();
-  eassert(status == ESDM_SUCCESS);
+    eassert_crash(esdm_set_procs_per_node(3));
+    eassert_crash(esdm_set_total_procs(6));
+    eassert_crash(esdm_load_config_str("[]"));
 
+    status = esdm_finalize();
+    eassert(status == ESDM_SUCCESS);
+  }
   printf("\nOK\n");
 }

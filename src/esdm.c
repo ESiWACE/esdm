@@ -150,6 +150,8 @@ esdm_status esdm_finalize() {
 
   esdm_log_on_exit(0);
 
+  is_initialized = 0;
+
   return ESDM_SUCCESS;
 }
 
