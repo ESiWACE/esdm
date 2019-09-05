@@ -297,11 +297,30 @@ static int fragment_retrieve(esdm_backend_t *backend, esdm_fragment_t *f) {
     WARN("Error could not read more data than blocksize (%"PRIu64" > %"PRIu64")", f->bytes,  data->h.blocksize);
     return ESDM_ERROR;
   }
-  ret = kdsa_read_unregistered(data->handle, fragmd->offset, f->buf, f->bytes);
-  DEBUG("read: %lu\n", *(uint64_t*) f->buf);
-  if(ret != 0){
-    WARN_STRERR("Error could not read data from volume %s", data->config->target);
-    return ESDM_ERROR;
+  if(f->dataspace->stride) {
+    //the data is not necessarily supposed to be contiguous in memory -> read into separate buffer
+    void* readBuffer = malloc(f->bytes);
+    ret = kdsa_read_unregistered(data->handle, fragmd->offset, readBuffer, f->bytes);
+    DEBUG("read: %lu\n", *(uint64_t*) readBuffer);
+    if(ret != 0){
+      WARN_STRERR("Error could not read data from volume %s", data->config->target);
+      free(readBuffer);
+      return ESDM_ERROR;
+    }
+
+    //copy to the requested data layout
+    esdm_dataspace_t* contiguousSpace;
+    esdm_dataspace_makeContiguous(f->dataspace, &contiguousSpace);
+    esdm_dataspace_copy_data(contiguousSpace, readBuffer, f->dataspace, f->buf);
+    esdm_dataspace_destroy(contiguousSpace);
+    free(readBuffer);
+  } else {
+    ret = kdsa_read_unregistered(data->handle, fragmd->offset, f->buf, f->bytes);
+    DEBUG("read: %lu\n", *(uint64_t*) f->buf);
+    if(ret != 0){
+      WARN_STRERR("Error could not read data from volume %s", data->config->target);
+      return ESDM_ERROR;
+    }
   }
 
   return ESDM_SUCCESS;
@@ -401,12 +420,28 @@ static int fragment_update(esdm_backend_t *backend, esdm_fragment_t *f) {
     return ESDM_ERROR;
   }
 
-  //FIXME make this stride aware!
   DEBUG("write: %lu\n", *(uint64_t*) f->buf);
-  ret = kdsa_write_unregistered(data->handle, fragmd->offset, f->buf, f->bytes);
-  if(ret != 0){
-    WARN_STRERR("Error could not write data from volume %s", data->config->target);
-    return ESDM_ERROR;
+  if(f->dataspace->stride) {
+    //The fragment appears to have a non-trivial stride. Linearize the fragment's data before writing.
+    void* writeBuffer = malloc(f->bytes);
+    esdm_dataspace_t* contiguousSpace;
+    esdm_dataspace_makeContiguous(f->dataspace, &contiguousSpace);
+    esdm_dataspace_copy_data(f->dataspace, f->buf, contiguousSpace, writeBuffer);
+    esdm_dataspace_destroy(contiguousSpace);
+
+    ret = kdsa_write_unregistered(data->handle, fragmd->offset, writeBuffer, f->bytes);
+    if(ret != 0){
+      WARN_STRERR("Error could not write data from volume %s", data->config->target);
+      return ESDM_ERROR;
+    }
+    free(writeBuffer);
+  } else {
+    //the fragment is a dense array in C index order, write it without any conversions
+    ret = kdsa_write_unregistered(data->handle, fragmd->offset, f->buf, f->bytes);
+    if(ret != 0){
+      WARN_STRERR("Error could not write data from volume %s", data->config->target);
+      return ESDM_ERROR;
+    }
   }
 
   return ESDM_SUCCESS;
