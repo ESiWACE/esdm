@@ -19,19 +19,21 @@
  * @brief Entry point for ESDM API Implementation
  */
 
+#include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 
 #include <esdm-internal.h>
 // TODO: Decide on initialization mechanism.
-static int is_initialized = 0;
+static bool is_initialized = false;
 
-esdm_instance_t esdm = {
-.procs_per_node = 1,
-.total_procs = 1,
-.config = NULL,
-};
+#define ESDM_INSTANCE_INITIALIZERS \
+  .procs_per_node = 1,\
+  .total_procs = 1,\
+  .config = NULL
+
+esdm_instance_t esdm = {ESDM_INSTANCE_INITIALIZERS};
 
 esdm_status esdm_set_procs_per_node(int procs) {
   eassert(procs > 0);
@@ -105,7 +107,7 @@ esdm_status esdm_init() {
     (void *)esdm.layout,
     (void *)esdm.performance);
 
-    is_initialized = 1;
+    is_initialized = true;
 
     ESDM_DEBUG("ESDM initialized and ready!");
   }
@@ -147,6 +149,8 @@ esdm_status esdm_finalize() {
   esdm_performance_finalize(&esdm);
   esdm_layout_finalize(&esdm);
   esdm_modules_finalize(&esdm);
+  esdm = (esdm_instance_t){ESDM_INSTANCE_INITIALIZERS};
+  is_initialized = false;
 
   esdm_log_on_exit(0);
 
