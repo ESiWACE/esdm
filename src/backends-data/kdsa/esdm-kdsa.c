@@ -465,6 +465,8 @@ int kdsa_finalize(esdm_backend_t *backend) {
   {
     WARN("Failed to disconnect from XPD: %s (%d)\n", strerror(errno), errno);
   }
+  WARN("Free blocks : %"PRIu64"\n", b->free_blocks_estimate);
+  free(backend->data);
   return 0;
 }
 
