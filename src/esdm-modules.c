@@ -99,15 +99,12 @@ esdm_modules_t *esdm_modules_init(esdm_instance_t *esdm) {
 esdm_status esdm_modules_finalize(esdm_instance_t *esdm) {
   ESDM_DEBUG(__func__);
 
-  // TODO: unregister and finalize modules in reverse order
-  /*
-	int i;
-	for(i = module_count - 1 ; i >= 0; i--){
-		modules[i]->finalize();
-	}
-	*/
-
   if (esdm->modules) {
+  	for(int i = esdm->modules->data_backend_count - 1 ; i >= 0; i--){
+      esdm_backend_t *backend =esdm->modules->data_backends[i];
+  		backend->callbacks.finalize(backend);
+  	}
+
     free(esdm->modules);
     esdm->modules = NULL;
   }
