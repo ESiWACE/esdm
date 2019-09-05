@@ -102,7 +102,9 @@ esdm_status esdm_modules_finalize(esdm_instance_t *esdm) {
   if (esdm->modules) {
   	for(int i = esdm->modules->data_backend_count - 1 ; i >= 0; i--){
       esdm_backend_t *backend =esdm->modules->data_backends[i];
-  		backend->callbacks.finalize(backend);
+      if(backend->callbacks.finalize){
+  		  backend->callbacks.finalize(backend);
+      }
   	}
 
     free(esdm->modules);
