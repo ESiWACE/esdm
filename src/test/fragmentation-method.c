@@ -104,7 +104,7 @@ void testMain(int64_t dims, int64_t* dimSizes, int64_t threads, int64_t nodeThre
   esdm_statistics_t after = esdm_write_stats();
 
   printf("fragments written = %"PRId64" (expected %"PRId64")\n", after.fragments - before.fragments, expectedFragmentCount);
-//  eassert(after.fragments - before.fragments == expectedFragmentCount);
+  eassert(after.fragments - before.fragments == expectedFragmentCount);
 
   ret = esdm_dataset_commit(dataset);
   eassert(ret == ESDM_SUCCESS);
@@ -115,15 +115,15 @@ void testMain(int64_t dims, int64_t* dimSizes, int64_t threads, int64_t nodeThre
   after = esdm_read_stats();
 
   printf("fragments read = %"PRId64" (expected %"PRId64")\n", after.fragments - before.fragments, expectedFragmentCount);
-//  eassert(after.fragments - before.fragments == expectedFragmentCount);
+  eassert(after.fragments - before.fragments == expectedFragmentCount);
 
   ret = esdm_finalize();
   eassert(ret == ESDM_SUCCESS);
 }
 
 int main() {
-  testMain(2, (int64_t[]){46, 466}, 0, 400, 2000, false, 4*32); //90 != 128
-  testMain(2, (int64_t[]){45, 465}, 0, 400, 2000, false, 3*31); //90 != 93
+  testMain(2, (int64_t[]){46, 466}, 0, 400, 2000, false, 4*32);
+  testMain(2, (int64_t[]){45, 465}, 0, 400, 2000, false, 3*31);
   testMain(3, (int64_t[]){10, 10, 10}, 0, 400, 50, true, 10*10*2);
   testMain(3, (int64_t[]){10, 10, 10}, 0, 400, 100, true, 10*10);
   testMain(3, (int64_t[]){10, 10, 10}, 0, 400, 200, true, 10*5);

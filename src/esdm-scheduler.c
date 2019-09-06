@@ -451,7 +451,7 @@ static esdmI_hypercubeSet_t* makeSplitRecommendation_balancedDims(esdm_dataspace
   }
 
   //determine the split factors per dimension
-  double targetEdgeLength = pow(maxFragmentSize/(double)esdm_sizeof(esdm_dataspace_get_type(space)), 1.0/splitDims);
+  double targetEdgeLength = floor(pow(maxFragmentSize/(double)esdm_sizeof(esdm_dataspace_get_type(space)), 1.0/splitDims));
   int64_t splitFactors[space->dims];
   memset(splitFactors, 0, sizeof(splitFactors));
   for(int64_t i = 0; i < space->dims; i++) {
