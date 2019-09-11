@@ -246,6 +246,12 @@ esdm_status esdm_container_commit(esdm_container_t *c) {
   ESDM_DEBUG(__func__);
   eassert(c);
 
+  // only do work if dirty
+  if(c->status != ESDM_DATA_DIRTY){
+    return ESDM_SUCCESS;
+  }
+  c->status = ESDM_DATA_PERSISTENT;
+
   size_t md_size;
   smd_string_stream_t * s = smd_string_stream_create();
   esdmI_container_metadata_create(c, s);
@@ -254,11 +260,10 @@ esdm_status esdm_container_commit(esdm_container_t *c) {
   esdm_status ret =  esdm.modules->metadata_backend->callbacks.container_commit(esdm.modules->metadata_backend, c, buff, md_size);
 
   // Also commit uncommited datasets of this container: cannot do this as it depends on how we are called
-  // esdm_datasets_t * dsets = & c->dsets;
-  // for(int i = 0; i < dsets->count; i++){
-  //   esdm_dataset_commit(dsets->dset[i]);
-  // }
-
+  esdm_datasets_t * dsets = & c->dsets;
+  for(int i = 0; i < dsets->count; i++){
+   esdm_dataset_commit(dsets->dset[i]);
+  }
   free(buff);
   return ret;
 }
@@ -355,6 +360,8 @@ void esdmI_dataset_register_fragment(esdm_dataset_t *dset, esdm_fragment_t *frag
 	}
 	f->frag[f->count] = frag;
 	f->count++;
+  dset->status = ESDM_DATA_DIRTY;
+  dset->container->status = ESDM_DATA_DIRTY;
 }
 
 
@@ -648,6 +655,7 @@ esdm_status esdm_dataset_create(esdm_container_t *c, const char *name, esdm_data
   }
 
   esdmI_container_register_dataset(c, dset);
+  c->status = ESDM_DATA_DIRTY;
   *out_dataset = dset;
 
   return ESDM_SUCCESS;
@@ -1004,20 +1012,24 @@ void esdmI_dataset_metadata_create(esdm_dataset_t *d, smd_string_stream_t*s){
   smd_string_stream_printf(s, "}");
 }
 
-esdm_status esdm_dataset_commit(esdm_dataset_t *dataset) {
+esdm_status esdm_dataset_commit(esdm_dataset_t *d) {
   ESDM_DEBUG(__func__);
-  eassert(dataset);
+  eassert(d);
 
-  // TODO only do work if dirty
+  // only do work if dirty
+  if(d->status != ESDM_DATA_DIRTY){
+    return ESDM_SUCCESS;
+  }
+  d->status = ESDM_DATA_PERSISTENT;
 
   size_t md_size;
   smd_string_stream_t* stream = smd_string_stream_create();
-  esdmI_dataset_metadata_create(dataset, stream);
+  esdmI_dataset_metadata_create(d, stream);
   char* buff = smd_string_stream_close(stream, & md_size);
   // TODO commit each uncommited fragment
 
   // md callback create/update container
-  esdm_status ret = esdm.modules->metadata_backend->callbacks.dataset_commit(esdm.modules->metadata_backend, dataset, buff, md_size);
+  esdm_status ret = esdm.modules->metadata_backend->callbacks.dataset_commit(esdm.modules->metadata_backend, d, buff, md_size);
   free(buff);
 
   return ret;
