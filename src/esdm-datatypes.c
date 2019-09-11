@@ -253,11 +253,11 @@ esdm_status esdm_container_commit(esdm_container_t *c) {
 
   esdm_status ret =  esdm.modules->metadata_backend->callbacks.container_commit(esdm.modules->metadata_backend, c, buff, md_size);
 
-  // Also commit uncommited datasets of this container
-  esdm_datasets_t * dsets = & c->dsets;
-  for(int i = 0; i < dsets->count; i++){
-    esdm_dataset_commit(dsets->dset[i]);
-  }
+  // Also commit uncommited datasets of this container: cannot do this as it depends on how we are called
+  // esdm_datasets_t * dsets = & c->dsets;
+  // for(int i = 0; i < dsets->count; i++){
+  //   esdm_dataset_commit(dsets->dset[i]);
+  // }
 
   free(buff);
   return ret;

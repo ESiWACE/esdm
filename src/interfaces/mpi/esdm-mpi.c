@@ -145,6 +145,12 @@ esdm_status esdm_mpi_container_commit(MPI_Comm com, esdm_container_t *c){
   int rank;
   ret = MPI_Comm_rank(com, & rank);
   if(ret != MPI_SUCCESS) return ESDM_ERROR;
+
+  esdm_datasets_t * dsets = & c->dsets;
+  for(int i = 0; i < dsets->count; i++){
+     esdm_mpi_dataset_commit(com, dsets->dset[i]);
+  }
+
   if(rank == 0){
     ret = esdm_container_commit(c);
   }
@@ -196,38 +202,21 @@ esdm_status esdm_mpi_dataset_create(MPI_Comm com, esdm_container_t *c, const cha
   }
 }
 
-esdm_status esdm_mpi_dataset_open(MPI_Comm com, esdm_container_t *c, const char *name, esdm_dataset_t **out_dataset){
-  esdm_status ret;
-  int rank;
-  ret = MPI_Comm_rank(com, & rank);
-  *out_dataset = NULL;
-
-  eassert(ret == MPI_SUCCESS);
-  // compute hash to ensure all have the same value
-  int hash;
-  hash = ea_compute_hash_str(name) + ea_compute_hash_str(c->name);
-
-  char * buff;
-  int size;
-  esdm_dataset_t *d = NULL;
-  esdm_datasets_t * dsets = & c->dsets;
-  for(int i=0; i < dsets->count; i++ ){
-    if(strcmp(dsets->dset[i]->name, name) == 0){
-      d = dsets->dset[i];
-      break;
-    }
-  }
-  if(! d){
-    return ESDM_ERROR;
-  }
+esdm_status esdm_mpi_dataset_ref(MPI_Comm com, esdm_dataset_t * d){
+  ESDM_DEBUG(__func__);
+  assert(d);
   if(d->status != ESDM_DATA_NOT_LOADED){
-    *out_dataset = d;
     d->refcount++;
     return ESDM_SUCCESS;
   }
 
+  char * buff;
+  int size;
+  int rank;
+  int ret = MPI_Comm_rank(com, & rank);
+  eassert(ret == MPI_SUCCESS);
+
   if(rank == 0){
-    check_hash_abort(com, hash, 0);
     ret = esdm_dataset_open_md_load(d, & buff, & size);
   	if(ret != ESDM_SUCCESS){
   		size = -1;
@@ -243,7 +232,6 @@ esdm_status esdm_mpi_dataset_open(MPI_Comm com, esdm_container_t *c, const char 
   		return ret;
     }
   }else{
-    check_hash_abort(com, hash, 1);
     ret = MPI_Bcast(& size, 1, MPI_INT, 0, com);
     eassert(ret == MPI_SUCCESS);
     if (size == 0){
@@ -261,19 +249,34 @@ esdm_status esdm_mpi_dataset_open(MPI_Comm com, esdm_container_t *c, const char 
   }
 
   free(buff);
-  *out_dataset = d;
   d->refcount++;
   return ESDM_SUCCESS;
+}
+
+esdm_status esdm_mpi_dataset_open(MPI_Comm com, esdm_container_t *c, const char *name, esdm_dataset_t **out_dataset){
+  // compute hash to ensure all have the same value
+  //int hash;
+  //hash = ea_compute_hash_str(name) + ea_compute_hash_str(c->name);
+  esdm_dataset_t *d = NULL;
+  esdm_datasets_t * dsets = & c->dsets;
+  for(int i=0; i < dsets->count; i++ ){
+    if(strcmp(dsets->dset[i]->name, name) == 0){
+      d = dsets->dset[i];
+      *out_dataset = d;
+      return esdm_mpi_dataset_ref(com, d);
+    }
+  }
+  return ESDM_ERROR;
 }
 
 esdm_status esdm_mpi_dataset_commit(MPI_Comm com, esdm_dataset_t *d){
   esdm_status ret;
   int rank;
   ret = MPI_Comm_rank(com, & rank);
-  if(rank != 0 && d->attr->childs != 0){
-    ESDM_ERROR("Only Rank 0 can attach metadata to a dataset");
-    return ESDM_ERROR;
-  }
+  //if(rank != 0 && d->attr->childs != 0){
+  //  ESDM_ERROR("Only Rank 0 can attach metadata to a dataset");
+  //  return ESDM_ERROR;
+  //}
 
   // retrieve for all fragments the metadata and attach it to the metadata
   if(rank == 0){
@@ -282,7 +285,7 @@ esdm_status esdm_mpi_dataset_commit(MPI_Comm com, esdm_dataset_t *d){
 
     ret = MPI_Reduce(& prev, & total, 1, MPI_INT, MPI_SUM, 0, com);
     eassert(ret == MPI_SUCCESS);
-    eassert(total > 0);
+    eassert(total >= 0);
   	d->fragments.frag = (esdm_fragment_t **) realloc(d->fragments.frag, total * sizeof(void*));
     d->fragments.count = total;
 
