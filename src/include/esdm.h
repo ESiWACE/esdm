@@ -205,6 +205,10 @@ int esdm_container_dataset_count(esdm_container_t * container);
 
 esdm_status esdm_dataset_rename(esdm_dataset_t *dataset, const char *name);
 
+void esdm_dataset_set_status_dirty(esdm_dataset_t * dataset);
+
+void esdm_container_set_status_dirty(esdm_container_t * container);
+
 /*
  * Return the n-th dataset in the container array.
  *

@@ -1410,6 +1410,7 @@ esdm_status esdm_dataset_name_dims(esdm_dataset_t *d, char **names) {
     free(old);
   }
 
+  d->status = ESDM_DATA_DIRTY;
   d->container->status = ESDM_DATA_DIRTY;
   return ESDM_SUCCESS;
 }
@@ -1421,6 +1422,16 @@ esdm_status esdm_dataset_rename_dim(esdm_dataset_t *d, char const *name, int i){
   names[i] = (char*) name;
 
   return esdm_dataset_name_dims(d, names);
+}
+
+void esdm_dataset_set_status_dirty(esdm_dataset_t * d){
+  eassert(d->status == ESDM_DATA_DIRTY || d->status == ESDM_DATA_PERSISTENT);
+  d->status = ESDM_DATA_DIRTY;
+}
+
+void esdm_container_set_status_dirty(esdm_container_t * c){
+  eassert(c->status == ESDM_DATA_DIRTY || c->status == ESDM_DATA_PERSISTENT);
+  c->status = ESDM_DATA_DIRTY;
 }
 
 esdm_status esdm_dataset_get_name_dims(esdm_dataset_t *d, char const *const **out_names) {
