@@ -187,7 +187,21 @@ static int container_create(esdm_md_backend_t *backend, esdm_container_t *contai
   metadummy_backend_options_t *options = (metadummy_backend_options_t *)backend->data;
   const char *tgt = options->target;
 
+
+  // create subdirectory if needed; find the last slash
+  for(int i = strlen(container->name) - 1; i > 1; i--){
+    if(container->name[i] == '/'){
+      char * dir = strdup(container->name);
+      dir[i] = 0;
+      sprintf(path, "%s/containers/%s", tgt, dir);
+      free(dir);
+      mkdir_recursive(path);
+      break;
+    }
+  }
+
   sprintf(path, "%s/containers/%s.md", tgt, container->name);
+
   int fd = open(path, O_WRONLY | O_CREAT | O_EXCL, S_IWUSR | S_IRUSR | S_IWGRP | S_IRGRP | S_IROTH);
   if(fd < 0){
     if( allow_overwrite && errno == EEXIST ){
