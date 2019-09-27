@@ -20,6 +20,11 @@
 #  pragma message("Building ESDM with WOS support.")
 #endif
 
+#ifdef ESDM_HAS_PMEM
+#  include "pmem/esdm-pmem.h"
+#  pragma message("Building ESDM with PMEM support.")
+#endif
+
 esdm_backend_t * esdmI_init_backend(char const * name, esdm_config_backend_t * b){
 #ifdef ESDM_HAS_POSIX
   if (strncmp(b->type, "POSIX", 5) == 0) {
@@ -39,6 +44,11 @@ esdm_backend_t * esdmI_init_backend(char const * name, esdm_config_backend_t * b
 #ifdef ESDM_HAS_WOS
   else if (strncmp(b->type, "WOS", 3) == 0) {
     return wos_backend_init(b);
+  }
+#endif
+#ifdef ESDM_HAS_PMEM
+  else if (strncmp(b->type, "PMEM", 4) == 0) {
+    return pmem_backend_init(b);
   }
 #endif
   return NULL;

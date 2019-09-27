@@ -124,7 +124,7 @@ if(BACKEND_POSIX)
 	message(STATUS "WITH_BACKEND_POSIX")
 	add_definitions(-DESDM_HAS_POSIX=1)
 	SUBDIRS(backends-data/posix)
-	endif()
+endif()
 
 option(BACKEND_LUSTRE "Compile backend for Lustre support?" OFF)
 if(BACKEND_LUSTRE)
@@ -168,6 +168,26 @@ if(BACKEND_KDSA OR BACKEND_KDSA_DUMMY)
 	add_definitions(-DESDM_HAS_KDSA=1)
   target_link_libraries(esdm esdmkdsa)
 	SUBDIRS(backends-data/kdsa)
+endif()
+
+option(BACKEND_PMEM "Compile backend for PMEM" OFF)
+
+find_path(PMEM_INCLUDE_DIR libpmem.h HINTS ${PMEM_INCLUDE_DIR})
+find_library(PMEM_LIBRARY NAMES pmem HINTS ${PMEM_LIB_DIR})
+string(COMPARE EQUAL "${PMEM_LIBRARY}" PMEM_LIBRARY-NOTFOUND _cmp)
+if(_cmp)
+  message("not found")
+else()
+  message(STATUS "found in ${PMEM_LIBRARY} and ${PMEM_INCLUDE_DIR}")
+  set(BACKEND_PMEM ON)
+endif()
+
+if(BACKEND_PMEM)
+	message(STATUS "WITH_BACKEND_PMEM")
+	add_definitions(-DESDM_HAS_PMEM=1)
+
+  SUBDIRS(backends-data/pmem)
+  target_link_libraries(esdm esdmpmem)
 endif()
 
 ### END Data backends ###
