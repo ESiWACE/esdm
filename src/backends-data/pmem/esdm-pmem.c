@@ -57,6 +57,27 @@
 // Helper and utility /////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////
 
+#if defined(__aarch64__)
+// TODO: This might be general enough to provide the functionality for any system
+// regardless of processor type given we aren't worried about thread/process migration.
+// Test on Intel systems and see if we can get rid of the architecture specificity
+// of the code.
+static unsigned long GetProcessorAndCore(int *chip, int *core){
+    return syscall(SYS_getcpu, core, chip, NULL);
+}
+// TODO: Add in AMD function
+#else
+// If we're not on an ARM processor assume we're on an intel processor and use the
+// rdtscp instruction.
+static unsigned long GetProcessorAndCore(int *chip, int *core){
+    unsigned long a,d,c;
+    __asm__ volatile("rdtscp" : "=a" (a), "=d" (d), "=c" (c));
+    *chip = (c & 0xFFF000)>>12;
+    *core = c & 0xFFF;
+    return ((unsigned long)a) | (((unsigned long)d) << 32);;
+}
+#endif
+
 ///////////////////////////////////////////////////////////////////////////////
 // Internal Helpers ///////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////
@@ -374,9 +395,14 @@ esdm_backend_t *pmem_backend_init(esdm_config_backend_t *config) {
   data->config = config;
   json_t *elem;
   elem = json_object_get(config->backend, "target");
-  data->target = json_string_value(elem);
+  char const * tgt = json_string_value(elem);
 
-  DEBUG("Backend config: target=%s\n", data->target);
+  int socket;
+  int core;
+  int ret = GetProcessorAndCore(& socket, & core);
+  data->target = malloc(strlen(tgt) + 3);
+  sprintf((char*)data->target, "%s%d", tgt, socket);
+  DEBUG("Backend config: socket=%d core=%d target=%s\n", socket, core, data->target);
 
   return backend;
 }
