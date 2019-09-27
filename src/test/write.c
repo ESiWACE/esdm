@@ -59,9 +59,9 @@ int main(int argc, char const *argv[]) {
   eassert_crash(esdm_container_create("", 1, &container));
   eassert_crash(esdm_container_create("mycontainer", 1, NULL));
   status = esdm_container_create("/po/test", 1, &container);
-  eassert(status == ESDM_ERROR);
+  eassert(status == ESDM_SUCCESS);
   status = esdm_container_create("po/test/", 1, &container);
-  eassert(status == ESDM_ERROR);
+  eassert(status == ESDM_SUCCESS);
   status = esdm_container_create("mycontainer", 1, &container);
   eassert(status == ESDM_SUCCESS);
 
