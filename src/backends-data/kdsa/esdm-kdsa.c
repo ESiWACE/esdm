@@ -337,8 +337,15 @@ static uint64_t try_to_use_block(kdsa_backend_data_t* data, uint64_t bitmap_pos)
     uint64_t val = ~expected;
     if( val & (1lu << b) ){
       uint64_t swap = expected | 1lu << b;
-      ret = kdsa_compare_and_swap(data->handle, bitmap_pos*sizeof(uint64_t) + sizeof(kdsa_persistent_header_t), expected, swap, & data->block_map[bitmap_pos]);
-      if (ret == 0){
+      kdsa_vol_offset_t offset = bitmap_pos*sizeof(uint64_t) + sizeof(kdsa_persistent_header_t);
+      ret = kdsa_compare_and_swap(data->handle, offset, expected, swap, & data->block_map[bitmap_pos]);
+      //printf("%llu %d expected: %llu swap: %llu got: %llu = bit: %d ret: %d offset: %llu\n", bitmap_pos, rank, expected, swap, data->block_map[bitmap_pos], b, ret, offset);
+
+      if (ret != 0){
+        ERROR("Could not invoke kdsa_compare_and_swap()\n");
+      }
+      if (data->block_map[bitmap_pos] == expected){
+        data->block_map[bitmap_pos] = swap;
         // found a block!
         return (b + 64*bitmap_pos) * data->h.blocksize + data->h.offset_to_data;
       }
@@ -459,14 +466,19 @@ static int fragment_delete(esdm_backend_t * b, esdm_fragment_t *f){
   uint64_t bitmap_pos = pos / 64;
   int bit = ~(1llu<<(pos % 64));
 
-  int ret = 1;
-  while(ret != 0){
+  while(true){
+    int ret = 1;
     uint64_t expected = data->block_map[bitmap_pos];
     uint64_t swap = expected & bit;
     ret = kdsa_compare_and_swap(data->handle, bitmap_pos*sizeof(uint64_t) + sizeof(kdsa_persistent_header_t), expected, swap, & data->block_map[bitmap_pos]);
+    if (ret != 0){
+      ERROR("Could not invoke kdsa_compare_and_swap()\n");
+    }
+    if (data->block_map[bitmap_pos] == expected){
+      data->block_map[bitmap_pos] = swap;
+      return ESDM_SUCCESS;
+    }
   }
-
-  return ESDM_SUCCESS;
 }
 
 

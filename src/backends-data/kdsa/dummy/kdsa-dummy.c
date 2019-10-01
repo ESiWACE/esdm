@@ -49,19 +49,15 @@ int kdsa_compare_and_swap(kdsa_vol_handle_t handle, kdsa_vol_offset_t off, uint6
   if(cur == compare){
     ret = pwrite(fd, & swap, sizeof(uint64_t), off);
     eassert(ret == sizeof(uint64_t));
-    ret = 0;
-    *out_res = swap;
-  }else{
-    ret = -1;
-    *out_res = cur;
   }
+  *out_res = cur;
 
   fl.l_type = F_UNLCK;
   if (fcntl(fd, F_SETLK, &fl) != 0) {
     return -1;
   }
 
-  return ret;
+  return 0;
 }
 
 int kdsa_get_volume_size(kdsa_vol_handle_t handle, kdsa_size_t *out_size){

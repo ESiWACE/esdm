@@ -401,7 +401,7 @@ esdm_backend_t *pmem_backend_init(esdm_config_backend_t *config) {
   int core;
   int ret = GetProcessorAndCore(& socket, & core);
   data->target = malloc(strlen(tgt) + 3);
-  sprintf((char*)data->target, "%s%d", tgt, socket);
+  sprintf((char*)data->target, "%s%d/esdm", tgt, socket);
   DEBUG("Backend config: socket=%d core=%d target=%s\n", socket, core, data->target);
 
   return backend;
