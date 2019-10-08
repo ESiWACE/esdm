@@ -56,8 +56,10 @@ void backend_thread(gpointer data_p, gpointer backend_id) {
   //pthread_spin_lock(& status->spinlock);
   size_t pending = atomic_fetch_sub(&status->pending_ops, 1);
   //printf("%d\n", status->pending_ops);
-  eassert(status->pending_ops >= 0);
-  if (status->pending_ops == 0) {
+  // Please note the return value from atomic_fetch_sub() is the original
+  // value stored in atomic object. Here, it's the value before subtraction.
+  eassert(pending >= 1);
+  if (pending == 1) {
     // mutex is very costly, therefore, wrap it behind atomics
     g_mutex_lock(&status->mutex);
     int waiting = atomic_fetch_add(&status->waiting, 0);
