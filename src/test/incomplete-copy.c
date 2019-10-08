@@ -24,6 +24,7 @@
 #include <unistd.h>
 #include <inttypes.h>
 #include <stdio.h>
+#include <stdlib.h>
 
 int main() {
   esdm_dataspace_t *logicalSpace;

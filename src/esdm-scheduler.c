@@ -118,12 +118,14 @@ static void backend_thread(io_work_t *work, esdm_backend_t *backend) {
   }
 
   g_mutex_lock(&status->mutex);
-  status->pending_ops--;
+  // Please note the return value from atomic_fetch_sub() is the original
+  // value stored in atomic object. Here, it's the value before subtraction.
+  size_t pendings = atomic_fetch_sub(&status->pending_ops, 1);
   if (ret != ESDM_SUCCESS){
     status->return_code = ret;
   }
-  eassert(status->pending_ops >= 0);
-  if (status->pending_ops == 0) {
+  eassert(pendings >= 1);
+  if (pendings == 1) {
     g_cond_signal(&status->done_condition);
   }
   g_mutex_unlock(&status->mutex);
@@ -351,7 +353,7 @@ bool esdmI_scheduler_try_direct_io(esdm_fragment_t *f, void * buf, esdm_dataspac
 esdm_status esdm_scheduler_enqueue_read(esdm_instance_t *esdm, io_request_status_t *status, int frag_count, esdm_fragment_t **read_frag, void *buf, esdm_dataspace_t *buf_space) {
   GError *error;
 
-  status->pending_ops += frag_count;
+  atomic_fetch_add(&status->pending_ops, frag_count);
 
   for (int i = 0; i < frag_count; i++) {
     esdm_fragment_t *f = read_frag[i];
@@ -698,7 +700,7 @@ esdm_status esdm_scheduler_enqueue_write(esdm_instance_t *esdm, io_request_statu
       //create a fragment and task for each of the hypercubes in the list
       int64_t dim[space->dims], offset[space->dims];
       for(int64_t i = 0; i < cubeList->count; i++) {
-        status->pending_ops++;
+        atomic_fetch_add(&status->pending_ops, 1);
 
         esdmI_hypercube_getOffsetAndSize(cubeList->cubes[i], offset, dim);
 
@@ -751,7 +753,7 @@ esdm_status esdm_scheduler_enqueue_write(esdm_instance_t *esdm, io_request_statu
 esdm_status esdm_scheduler_status_init(io_request_status_t *status) {
   g_mutex_init(&status->mutex);
   g_cond_init(&status->done_condition);
-  status->pending_ops = 0;
+  atomic_init(&status->pending_ops, 0);
   status->return_code = ESDM_SUCCESS;
   return ESDM_SUCCESS;
 }
@@ -764,7 +766,7 @@ esdm_status esdm_scheduler_status_finalize(io_request_status_t *status) {
 
 esdm_status esdm_scheduler_wait(io_request_status_t *status) {
   g_mutex_lock(&status->mutex);
-  if (status->pending_ops) {
+  if (atomic_load(&status->pending_ops)) {
     g_cond_wait(&status->done_condition, &status->mutex);
   }
   g_mutex_unlock(&status->mutex);

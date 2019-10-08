@@ -1,4 +1,5 @@
 #include <esdm.h>
+#include <stdlib.h>
 
 #include "tool-util.h"
 
