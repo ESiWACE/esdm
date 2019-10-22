@@ -894,7 +894,8 @@ esdm_status esdm_scheduler_read_blocking(esdm_instance_t *esdm, esdm_dataset_t *
 
   //check whether we have all the requested data
   esdmI_hypercubeSet_t* uncovered;
-  if(!fragmentsCoverSpace(subspace, frag_count, read_frag, &uncovered)) {
+  bool dataIsComplete = fragmentsCoverSpace(subspace, frag_count, read_frag, &uncovered);
+  if(!dataIsComplete) {
     esdm_type_t type = esdm_dataspace_get_type(subspace);
     eassert(type == esdm_dataset_get_type(dataset));  //TODO handle the case that the two types don't match
     char fillValue[esdm_sizeof(type)];
@@ -907,6 +908,7 @@ esdm_status esdm_scheduler_read_blocking(esdm_instance_t *esdm, esdm_dataset_t *
     }
   }
 
+  int64_t userBytes = 0, ioBytes = 0;
   if(ret == ESDM_SUCCESS) {
     //all preliminaries successful, commit to reading
     ret = esdm_scheduler_enqueue_read(esdm, &status, frag_count, read_frag, buf, subspace);
@@ -923,9 +925,19 @@ esdm_status esdm_scheduler_read_blocking(esdm_instance_t *esdm, esdm_dataset_t *
     //update the statistics
     esdm->readStats.requests++;
     esdm->readStats.fragments += frag_count;
-    esdm->readStats.bytesUser += esdm_dataspace_size(subspace);
+    userBytes = esdm_dataspace_size(subspace);
+    esdm->readStats.bytesUser += userBytes;
+    ioBytes = 0;
     for(int64_t i = 0; i < frag_count; i++) {
-      esdm->readStats.bytesIo += esdm_dataspace_size(read_frag[i]->dataspace);
+      ioBytes += esdm_dataspace_size(read_frag[i]->dataspace);
+    }
+    esdm->readStats.bytesIo += ioBytes;
+  }
+
+  //reading is done, check whether we want to store the resulting fragment for faster access in the future
+  if(ret == ESDM_SUCCESS && dataIsComplete) { //don't perform write-back of data that contains fill values, we do not want to transform data holes into stored data!
+    if(ioBytes/(double)userBytes > 8) { //TODO Turn this magic number into a proper configuration constant!
+      esdm_scheduler_write_blocking(esdm, dataset, buf, subspace);  //Ignore return code because this is just an optimization that writes a redundant data copy to disk.
     }
   }
 
