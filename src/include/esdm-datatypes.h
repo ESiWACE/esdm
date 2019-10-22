@@ -71,8 +71,10 @@ typedef struct esdm_md_backend_t esdm_md_backend_t;
  */
 typedef struct esdm_statistics_t {
   uint64_t bytesUser; //the amount of bytes that the user requested to be read/written
+  uint64_t bytesInternal; //the amount of bytes that were read/written due to an internal request
   uint64_t bytesIo; //the amount of bytes that actually were read/written from/to storage hardware
   uint64_t requests;  //the amount of read/write requests issued by the user
+  uint64_t internalRequests;  //the amount of internal read/write requests that were generated
   uint64_t fragments; //the amount of data object actually read/written from/to storage hardware
 } esdm_statistics_t;
 

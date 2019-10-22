@@ -169,12 +169,12 @@ esdm_status esdm_write(esdm_dataset_t *dataset, void *buf, esdm_dataspace_t *spa
     space->dims = 1;
     space->size[0] = 1;
     space->offset[0] = 0;
-    int ret = esdm_scheduler_write_blocking(&esdm, dataset, buf, space);
+    int ret = esdm_scheduler_write_blocking(&esdm, dataset, buf, space, false);
     space->dims = 0;
     return ret;
   }
 
-  return esdm_scheduler_write_blocking(&esdm, dataset, buf, space);
+  return esdm_scheduler_write_blocking(&esdm, dataset, buf, space, false);
 }
 
 esdm_status esdmI_readWithFillRegion(esdm_dataset_t *dataset, void *buf, esdm_dataspace_t *space, esdmI_hypercubeSet_t** out_fillRegion) {
@@ -188,12 +188,12 @@ esdm_status esdmI_readWithFillRegion(esdm_dataset_t *dataset, void *buf, esdm_da
     space->dims = 1;
     space->size[0] = 1;
     space->offset[0] = 0;
-    int ret = esdm_scheduler_read_blocking(&esdm, dataset, buf, space, out_fillRegion);
+    int ret = esdm_scheduler_read_blocking(&esdm, dataset, buf, space, out_fillRegion, false);
     space->dims = 0;
     return ret;
   }
 
-  return esdm_scheduler_read_blocking(&esdm, dataset, buf, space, out_fillRegion);
+  return esdm_scheduler_read_blocking(&esdm, dataset, buf, space, out_fillRegion, false);
 }
 
 esdm_status esdm_read(esdm_dataset_t *dataset, void *buf, esdm_dataspace_t *space) {

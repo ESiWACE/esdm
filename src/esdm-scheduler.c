@@ -672,7 +672,7 @@ static void splitToBackends(esdm_dataspace_t* space, int64_t backendCount, esdm_
   if(totalExtends) esdmI_hypercube_destroy(totalExtends);
 }
 
-esdm_status esdm_scheduler_enqueue_write(esdm_instance_t *esdm, io_request_status_t *status, esdm_dataset_t *dataset, void *buf, esdm_dataspace_t *space) {
+esdm_status esdm_scheduler_enqueue_write(esdm_instance_t *esdm, io_request_status_t *status, esdm_dataset_t *dataset, void *buf, esdm_dataspace_t *space, bool requestIsInternal) {
   GError *error;
   //Gather I/O recommendations
   //esdm_performance_recommendation(esdm, NULL, NULL);    // e.g., split, merge, replication?
@@ -741,8 +741,13 @@ esdm_status esdm_scheduler_enqueue_write(esdm_instance_t *esdm, io_request_statu
   }
 
   //update the statistics
-  esdm->writeStats.requests++;
-  esdm->writeStats.bytesUser += esdm_dataspace_size(space);
+  if(requestIsInternal) {
+    esdm->writeStats.internalRequests++;
+    esdm->writeStats.bytesInternal += esdm_dataspace_size(space);
+  } else {
+    esdm->writeStats.requests++;
+    esdm->writeStats.bytesUser += esdm_dataspace_size(space);
+  }
 
   //cleanup
   free(backendExtends);
@@ -852,7 +857,7 @@ static void removeRedundantFragments(esdmI_hypercube_t* bounds, int* inout_fragm
   *inout_fragmentCount = fragmentCount;
 }
 
-esdm_status esdm_scheduler_write_blocking(esdm_instance_t *esdm, esdm_dataset_t *dataset, void *buf, esdm_dataspace_t *subspace) {
+esdm_status esdm_scheduler_write_blocking(esdm_instance_t *esdm, esdm_dataset_t *dataset, void *buf, esdm_dataspace_t *subspace, bool requestIsInternal) {
   ESDM_DEBUG(__func__);
 
   io_request_status_t status;
@@ -860,7 +865,7 @@ esdm_status esdm_scheduler_write_blocking(esdm_instance_t *esdm, esdm_dataset_t 
   esdm_status ret = esdm_scheduler_status_init(&status);
   eassert(ret == ESDM_SUCCESS);
 
-  ret = esdm_scheduler_enqueue_write(esdm, &status, dataset, buf, subspace);
+  ret = esdm_scheduler_enqueue_write(esdm, &status, dataset, buf, subspace, requestIsInternal);
   if( ret != ESDM_SUCCESS){
     return ret;
   }
@@ -872,7 +877,7 @@ esdm_status esdm_scheduler_write_blocking(esdm_instance_t *esdm, esdm_dataset_t 
   return status.return_code;
 }
 
-esdm_status esdm_scheduler_read_blocking(esdm_instance_t *esdm, esdm_dataset_t *dataset, void *buf, esdm_dataspace_t *subspace, esdmI_hypercubeSet_t** out_fillRegion) {
+esdm_status esdm_scheduler_read_blocking(esdm_instance_t *esdm, esdm_dataset_t *dataset, void *buf, esdm_dataspace_t *subspace, esdmI_hypercubeSet_t** out_fillRegion, bool requestIsInternal) {
   ESDM_DEBUG(__func__);
 
   io_request_status_t status;
@@ -908,7 +913,7 @@ esdm_status esdm_scheduler_read_blocking(esdm_instance_t *esdm, esdm_dataset_t *
     }
   }
 
-  int64_t userBytes = 0, ioBytes = 0;
+  int64_t requestBytes = 0, ioBytes = 0;
   if(ret == ESDM_SUCCESS) {
     //all preliminaries successful, commit to reading
     ret = esdm_scheduler_enqueue_read(esdm, &status, frag_count, read_frag, buf, subspace);
@@ -923,21 +928,26 @@ esdm_status esdm_scheduler_read_blocking(esdm_instance_t *esdm, esdm_dataset_t *
     ret = status.return_code;
 
     //update the statistics
-    esdm->readStats.requests++;
     esdm->readStats.fragments += frag_count;
-    userBytes = esdm_dataspace_size(subspace);
-    esdm->readStats.bytesUser += userBytes;
+    requestBytes = esdm_dataspace_size(subspace);
     ioBytes = 0;
     for(int64_t i = 0; i < frag_count; i++) {
       ioBytes += esdm_dataspace_size(read_frag[i]->dataspace);
     }
     esdm->readStats.bytesIo += ioBytes;
+    if(requestIsInternal) {
+      esdm->readStats.internalRequests++;
+      esdm->readStats.bytesInternal += requestBytes;
+    } else {
+      esdm->readStats.requests++;
+      esdm->readStats.bytesUser += requestBytes;
+    }
   }
 
   //reading is done, check whether we want to store the resulting fragment for faster access in the future
   if(ret == ESDM_SUCCESS && dataIsComplete) { //don't perform write-back of data that contains fill values, we do not want to transform data holes into stored data!
-    if(ioBytes/(double)userBytes > 8) { //TODO Turn this magic number into a proper configuration constant!
-      esdm_scheduler_write_blocking(esdm, dataset, buf, subspace);  //Ignore return code because this is just an optimization that writes a redundant data copy to disk.
+    if(ioBytes/(double)requestBytes > 8) { //TODO Turn this magic number into a proper configuration constant!
+      esdm_scheduler_write_blocking(esdm, dataset, buf, subspace, true);  //Ignore return code because this is just an optimization that writes a redundant data copy to disk.
     }
   }
 
