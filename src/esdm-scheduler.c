@@ -672,6 +672,22 @@ static void splitToBackends(esdm_dataspace_t* space, int64_t backendCount, esdm_
   if(totalExtends) esdmI_hypercube_destroy(totalExtends);
 }
 
+//Not a sensible abstraction in itself, but it completes the updateRequestStats() function.
+static void updateIoStats(esdm_statistics_t* stats, uint64_t fragmentCount, uint64_t byteCount) {
+  stats->fragments += fragmentCount;
+  stats->bytesIo += byteCount;
+}
+
+static void updateRequestStats(esdm_statistics_t* stats, uint64_t requestCount, uint64_t byteCount, bool requestIsInternal) {
+  if(requestIsInternal) {
+    stats->internalRequests += requestCount;
+    stats->bytesInternal += byteCount;
+  } else {
+    stats->requests += requestCount;
+    stats->bytesUser += byteCount;
+  }
+}
+
 esdm_status esdm_scheduler_enqueue_write(esdm_instance_t *esdm, io_request_status_t *status, esdm_dataset_t *dataset, void *buf, esdm_dataspace_t *space, bool requestIsInternal) {
   GError *error;
   //Gather I/O recommendations
@@ -730,9 +746,7 @@ esdm_status esdm_scheduler_enqueue_write(esdm_instance_t *esdm, io_request_statu
           g_thread_pool_push(curBackend->threadPool, task, &error);
         }
 
-        //update the statistics
-        esdm->writeStats.fragments++;
-        esdm->writeStats.bytesIo += esdm_dataspace_size(subspace);
+        updateIoStats(&esdm->writeStats, 1, esdm_dataspace_size(subspace)); //update the statistics
       }
 
       esdmI_hypercubeSet_destroy(cubes);
@@ -740,14 +754,7 @@ esdm_status esdm_scheduler_enqueue_write(esdm_instance_t *esdm, io_request_statu
     }
   }
 
-  //update the statistics
-  if(requestIsInternal) {
-    esdm->writeStats.internalRequests++;
-    esdm->writeStats.bytesInternal += esdm_dataspace_size(space);
-  } else {
-    esdm->writeStats.requests++;
-    esdm->writeStats.bytesUser += esdm_dataspace_size(space);
-  }
+  updateRequestStats(&esdm->writeStats, 1, esdm_dataspace_size(space), requestIsInternal); //update the statistics
 
   //cleanup
   free(backendExtends);
@@ -928,20 +935,13 @@ esdm_status esdm_scheduler_read_blocking(esdm_instance_t *esdm, esdm_dataset_t *
     ret = status.return_code;
 
     //update the statistics
-    esdm->readStats.fragments += frag_count;
     requestBytes = esdm_dataspace_size(subspace);
     ioBytes = 0;
     for(int64_t i = 0; i < frag_count; i++) {
       ioBytes += esdm_dataspace_size(read_frag[i]->dataspace);
     }
-    esdm->readStats.bytesIo += ioBytes;
-    if(requestIsInternal) {
-      esdm->readStats.internalRequests++;
-      esdm->readStats.bytesInternal += requestBytes;
-    } else {
-      esdm->readStats.requests++;
-      esdm->readStats.bytesUser += requestBytes;
-    }
+    updateIoStats(&esdm->readStats, frag_count, ioBytes);
+    updateRequestStats(&esdm->readStats, 1, requestBytes, requestIsInternal);
   }
 
   //reading is done, check whether we want to store the resulting fragment for faster access in the future
