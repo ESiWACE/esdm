@@ -32,8 +32,8 @@
 
 #include <esdm-debug.h>
 #include <esdm.h>
+#include <esdm-datatypes-internal.h>
 
-#include "clovis.h"
 #include "clovis_internal.h"
 
 #define DEBUG(fmt) ESDM_DEBUG(fmt)
@@ -297,13 +297,13 @@ static char *object_meta_encode(const struct m0_uint128 *obj_id) {
 }
 
 static int esdm_backend_t_clovis_alloc(esdm_backend_t *eb,
-int n_dims,
-int *dims_size,
-esdm_type type,
-char *md1,
-char *md2,
-char **out_object_id,
-char **out_mero_metadata) {
+				       int n_dims,
+				       int *dims_size,
+				       esdm_type_t type,
+				       char *md1,
+				       char *md2,
+				       char **out_object_id,
+				       char **out_mero_metadata) {
   esdm_backend_t_clovis_t *ebm;
   struct m0_uint128 obj_id;
   int rc;
@@ -685,7 +685,7 @@ json_t *metadata) {
 }
 
 static int esdm_backend_t_clovis_fragment_update(esdm_backend_t *backend,
-esdm_fragment_t *fragment) {
+						 esdm_fragment_t *fragment) {
   char *obj_id = NULL;
   char *obj_meta = NULL;
   void *obj_handle = NULL;
@@ -717,10 +717,10 @@ esdm_fragment_t *fragment) {
 
   /*
      * Store this object's ID into fragment metadata. This metadata will be
-     * used later in retrieve() to read data from.
+     * used later in retrieve() to read data from. @TODO prepare metadata.
      */
-  fragment->metadata->size += sprintf(&fragment->metadata->json[fragment->metadata->size],
-  "{\"%s\" : \"%s\"}", CLOVIS_OBJ_ID, obj_id);
+//  fragment->metadata->size += sprintf(&fragment->metadata->json[fragment->metadata->size],
+//  "{\"%s\" : \"%s\"}", CLOVIS_OBJ_ID, obj_id);
 
 err:
   free(obj_id);
@@ -747,34 +747,18 @@ esdm_backend_t_clovis_t esdm_backend_t_clovis = {
     .data = NULL,
     .blocksize = BLOCKSIZE,
     .callbacks = {
-      (int (*)())esdm_backend_t_clovis_fini,      // finalize
-      esdm_backend_t_clovis_performance_estimate, // performance_estimate
-
-      (int (*)())esdm_backend_t_clovis_alloc,
-      (int (*)())esdm_backend_t_clovis_open,
-      (int (*)())esdm_backend_t_clovis_write,
-      (int (*)())esdm_backend_t_clovis_read,
-      (int (*)())esdm_backend_t_clovis_close,
-
-      // Metadata Callbacks
-      NULL, // lookup
-
-      // ESDM Data Model Specific
-      NULL, // container create
-      NULL, // container retrieve
-      NULL, // container update
-      NULL, // container delete
-
-      NULL, // dataset create
-      NULL, // dataset retrieve
-      NULL, // dataset update
-      NULL, // dataset delete
-
-      NULL,                                               // fragment create
-      (int (*)())esdm_backend_t_clovis_fragment_retrieve, // fragment retrieve
-      (int (*)())esdm_backend_t_clovis_fragment_update,   // fragment update
-      NULL,                                               // fragment delete
-      (int (*)())esdm_backend_t_clovis_mkfs,              // mkfs
+      .finalize                 = esdm_backend_t_clovis_fini,
+      .performance_estimate     = esdm_backend_t_clovis_performance_estimate,
+      .estimate_throughput      = NULL,
+      .fragment_create          = (int (*)())esdm_backend_t_clovis_alloc,
+      .fragment_retrieve        = (int (*)())esdm_backend_t_clovis_fragment_retrieve,
+      .fragment_update          = (int (*)())esdm_backend_t_clovis_fragment_update,
+      .fragment_delete          = NULL,
+      .fragment_metadata_create = NULL,
+      .fragment_metadata_load   = NULL,
+      .fragment_metadata_free   = NULL,
+      .mkfs                     = esdm_backend_t_clovis_mkfs,
+      .fsck                     = NULL
     },
   },
   .ebm_ops = {

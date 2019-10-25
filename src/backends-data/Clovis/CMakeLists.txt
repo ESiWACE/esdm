@@ -1,5 +1,5 @@
 # Please set this to the MERO/Clovis installed binary directory.
-set(MERO_DIR "/mero.bin")
+set(MERO_DIR "/data/MERO_BIN/usr")
 include_directories(${MERO_DIR}/include ${MERO_DIR}/include/mero)
 message(STATUS "MERO DIR: ${MERO_DIR}/include ${MERO_DIR}/include/mero")
 

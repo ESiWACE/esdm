@@ -1,6 +1,10 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+#include <esdm-debug.h>
+#include <esdm.h>
+#include <esdm-datatypes-internal.h>
+
 #include "../clovis.h"
 #include "../clovis_internal.h"
 

@@ -56,7 +56,7 @@ struct esdm_backend_t_xxxops {
   int (*esdm_backend_t_obj_alloc)(esdm_backend_t *eb,
   int n_dims,
   int *dims_size,
-  esdm_type type,
+  esdm_type_t type,
   char *md1,
   char *md2,
   char **out_object_id,
