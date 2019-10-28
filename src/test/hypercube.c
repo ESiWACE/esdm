@@ -245,8 +245,82 @@ void checkHypercubes() {
   esdmI_hypercube_destroy(intersectionEE);
 }
 
+void checkTouchWith(esdmI_hypercube_t* reference, int64_t* offset, int64_t* size, bool expectedResult) {
+  esdmI_hypercube_t* cube = esdmI_hypercube_make(3, offset, size);
+  eassert(cube);
+
+  printf("\n");
+  if(expectedResult) {
+    printf("checking that hypercube ");
+    esdmI_hypercube_print(reference, stdout);
+    printf("touches hypercube ");
+    esdmI_hypercube_print(cube, stdout);
+    printf("...");
+    fflush(stdout);
+    eassert(esdmI_hypercube_touches(reference, cube));
+  } else {
+    printf("checking that hypercube ");
+    esdmI_hypercube_print(reference, stdout);
+    printf("does not touch hypercube ");
+    esdmI_hypercube_print(cube, stdout);
+    printf("...");
+    fflush(stdout);
+    eassert(!esdmI_hypercube_touches(reference, cube));
+  }
+  printf(" OK\n");
+  esdmI_hypercube_destroy(cube);
+}
+
+void checkTouch() {
+  int64_t
+    offsetA[3] = { 0, 0, 0 }, //reference
+    sizeA[3] = { 10, 10, 10 },
+
+    offsetB[3] = { 5, 3, 3 }, //contained
+    sizeB[3] = { 4, 4, 4 },
+    offsetC[3] = { 5, 3, 3 }, //contained
+    sizeC[3] = { 5, 4, 4 },
+    offsetD[3] = { 5, 3, 3 }, //intersects
+    sizeD[3] = { 7, 4, 4 },
+    offsetE[3] = { 10, 3, 3 },  //touches
+    sizeE[3] = { 7, 4, 4 },
+    offsetF[3] = { 11, 3, 3 },  //somewhere else
+    sizeF[3] = { 7, 4, 4 },
+
+    offsetG[3] = { 10, -5, 3 }, //somewhere else
+    sizeG[3] = { 7, 4, 4 },
+    offsetH[3] = { 10, -4, 3 }, //no touch across corner!
+    sizeH[3] = { 7, 4, 4 },
+    offsetI[3] = { 10, -3, 3 }, //touches
+    sizeI[3] = { 7, 4, 4 },
+    offsetJ[3] = { 10, 9, 9 },  //single voxel touch
+    sizeJ[3] = { 7, 4, 4 },
+    offsetK[3] = { 10, 10, 10 },  //no touch across corner!
+    sizeK[3] = { 7, 4, 4 },
+    offsetL[3] = { 10, 11, 9 }, //somewhere else
+    sizeL[3] = { 7, 4, 4 };
+
+  esdmI_hypercube_t* referenceCube = esdmI_hypercube_make(3, offsetA, sizeA);
+  eassert(referenceCube);
+
+  checkTouchWith(referenceCube, offsetB, sizeB, false);
+  checkTouchWith(referenceCube, offsetC, sizeC, false);
+  checkTouchWith(referenceCube, offsetD, sizeD, false);
+  checkTouchWith(referenceCube, offsetE, sizeE, true);
+  checkTouchWith(referenceCube, offsetF, sizeF, false);
+  checkTouchWith(referenceCube, offsetG, sizeG, false);
+  checkTouchWith(referenceCube, offsetH, sizeH, false);
+  checkTouchWith(referenceCube, offsetI, sizeI, true);
+  checkTouchWith(referenceCube, offsetJ, sizeJ, true);
+  checkTouchWith(referenceCube, offsetK, sizeK, false);
+  checkTouchWith(referenceCube, offsetL, sizeL, false);
+
+  esdmI_hypercube_destroy(referenceCube);
+}
+
 int main() {
   checkRanges();
   checkHypercubes();
+  checkTouch();
   printf("\nOK\n");
 }

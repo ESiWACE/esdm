@@ -356,6 +356,11 @@ bool esdmI_hypercube_isEmpty(esdmI_hypercube_t* cube);
 
 bool esdmI_hypercube_doesIntersect(esdmI_hypercube_t* a, esdmI_hypercube_t* b);
 
+//Touch means no overlap is allowed.
+//The two hypercubes must share a single border such that there is at least one pair of voxels next to each other
+//where one voxel belongs to hypercube `a` while the other belongs to hypercube `b`.
+bool esdmI_hypercube_touches(esdmI_hypercube_t* a, esdmI_hypercube_t* b);
+
 inline int64_t esdmI_hypercube_dimensions(esdmI_hypercube_t* cube) { return cube->dims; }
 
 /**

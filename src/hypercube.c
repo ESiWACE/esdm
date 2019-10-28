@@ -119,6 +119,34 @@ bool esdmI_hypercube_doesIntersect(esdmI_hypercube_t* a, esdmI_hypercube_t* b) {
   return true;
 }
 
+bool esdmI_hypercube_touches(esdmI_hypercube_t* a, esdmI_hypercube_t* b) {
+  eassert(a);
+  eassert(b);
+  eassert(a->dims == b->dims);
+  int64_t dimensions = a->dims;
+
+  //"touch" means no overlap is allowed
+  if(esdmI_hypercube_doesIntersect(a, b)) return false;
+
+  //check that the two cubes share exactly one bound
+  bool haveBound = false;
+  int64_t boundDim = -1;
+  for(int64_t i = 0; i < dimensions; i++) {
+    if(a->ranges[i].start == b->ranges[i].end || a->ranges[i].end == b->ranges[i].start) {
+      if(haveBound) return false; //two shared bounds means two coords must be changed to get from one hypercube to the other -> no touch
+      haveBound = true;
+      boundDim = i;
+    }
+  }
+  if(!haveBound) return false;  //no dimension in which the two cubes are next to each other -> no touch
+
+  //check that there is overlap in the other dimensions
+  for(int64_t i = 0; i < dimensions; i++) {
+    if(i != boundDim && esdmI_range_isEmpty(esdmI_range_intersection(a->ranges[i], b->ranges[i]))) return false;
+  }
+  return true;
+}
+
 int64_t esdmI_hypercube_dimensions(esdmI_hypercube_t* cube);  //instantiate inline function
 
 void esdmI_hypercube_getOffsetAndSize(esdmI_hypercube_t* cube, int64_t* out_offset, int64_t* out_size) {
