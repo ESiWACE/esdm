@@ -147,6 +147,23 @@ bool esdmI_hypercube_touches(esdmI_hypercube_t* a, esdmI_hypercube_t* b) {
   return true;
 }
 
+double esdmI_hypercube_shapeSimilarity(esdmI_hypercube_t* a, esdmI_hypercube_t* b) {
+  eassert(a);
+  eassert(b);
+  eassert(a->dims == b->dims);
+  int64_t dimensions = a->dims;
+
+  double similarity = 1.0;
+  for(int64_t i = 0; i < dimensions; i++) {
+    int64_t sizeA = esdmI_range_size(a->ranges[i]), sizeB = esdmI_range_size(b->ranges[i]);
+    int64_t sizeMin = sizeA < sizeB ? sizeA : sizeB;
+    if(sizeA + sizeB) { //It's ok if sizeMin == 0, that just yields zero in the division below. It's not ok if the denominator is also zero, that would result in a NAN.
+      similarity *= 2*sizeMin / (double)(sizeA + sizeB);
+    } //No else: If both hypercubes have an empty dimension here, we'll provide the similarity of the remaining dims, which is fine.
+  }
+  return similarity;
+}
+
 int64_t esdmI_hypercube_dimensions(esdmI_hypercube_t* cube);  //instantiate inline function
 
 void esdmI_hypercube_getOffsetAndSize(esdmI_hypercube_t* cube, int64_t* out_offset, int64_t* out_size) {
