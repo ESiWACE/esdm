@@ -422,7 +422,8 @@ void esdmI_hypercubeList_print(esdmI_hypercubeList_t* list, FILE* stream);  //fo
 esdmI_hypercubeSet_t* esdmI_hypercubeSet_make();  //convenience function to construct a heap allocated object
 void esdmI_hypercubeSet_construct(esdmI_hypercubeSet_t* me);  //no allocation, initialization only
 
-esdmI_hypercubeList_t* esdmI_hypercubeSet_list(esdmI_hypercubeSet_t* me); //the returned list and the pointers it contains only remain valid as long the hypercubeSet is not changed in any way
+//the returned list and the pointers it contains only remain valid as long the hypercubeSet is not changed in any way
+esdmI_hypercubeList_t* esdmI_hypercubeSet_list(esdmI_hypercubeSet_t* me);
 
 bool esdmI_hypercubeSet_isEmpty(esdmI_hypercubeSet_t* me);  //checks for logical emptiness, may remove empty hypercubes from the set
 
@@ -434,5 +435,21 @@ void esdmI_hypercubeSet_subtract(esdmI_hypercubeSet_t* me, esdmI_hypercube_t* cu
 
 void esdmI_hypercubeSet_destruct(esdmI_hypercubeSet_t* me); //counterpart to esdmI_hypercubeSet_construct()
 void esdmI_hypercubeSet_destroy(esdmI_hypercubeSet_t* me);  //counterpart to esdmI_hypercubeSet_make()
+
+// esdmI_hypercubeNeighbourManager_t ///////////////////////////////////////////////////////////////
+
+esdmI_hypercubeNeighbourManager_t* esdmI_hypercubeNeighbourManager_make(int64_t dimensions);  //all hypercubes added to this manager need to have the same rank
+
+//the returned list and the pointers it contains only remain valid as long the hypercubeNeighbourManager is not changed in any way
+esdmI_hypercubeList_t* esdmI_hypercubeNeighbourManager_list(esdmI_hypercubeNeighbourManager_t* me);
+
+//takes possession of the cube, the caller needs to make a copy if necessary
+void esdmI_hypercubeNeighbourManager_pushBack(esdmI_hypercubeNeighbourManager_t* me, esdmI_hypercube_t* cube);
+
+//Returns a pointer to an array that lists the neighbour indices of the given cube, this array has `*out_neighbourCount` entries.
+//Callers must provide a non-NULL value for `out_neighbourCount`.
+int64_t* esdmI_hypercubeNeighbourManager_getNeighbours(esdmI_hypercubeNeighbourManager_t* me, int64_t index, int64_t* out_neighbourCount);
+
+void esdmI_hypercubeNeighbourManager_destroy(esdmI_hypercubeNeighbourManager_t* me);
 
 #endif

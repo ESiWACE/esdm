@@ -332,4 +332,39 @@ struct esdmI_hypercubeSet_t {
   int64_t allocatedCount;
 };
 
+//helper for esdmI_boundList_t
+typedef struct esdmI_boundListEntry_t esdmI_boundListEntry_t;
+struct esdmI_boundListEntry_t {
+  int64_t bound, cubeIndex;
+};
+
+//helper for esdmI_hypercubeNeighbourManager_t
+//The intention of implementing this as a class of its own is to facilitate changing the data structure
+//from a linear sorted list with binary search to some balanced tree in the future.
+//
+//This is private to esdmI_hypercubeNeighbourManager_t.
+typedef struct esdmI_boundList_t esdmI_boundList_t;
+struct esdmI_boundList_t {
+  esdmI_boundListEntry_t* entries;
+  int64_t count, allocatedCount;
+};
+
+//another helper for esdmI_hypercubeNeighbourManager_t
+typedef struct esdmI_neighbourList_t esdmI_neighbourList_t;
+struct esdmI_neighbourList_t {
+  int64_t neighbourCount, allocatedCount, *neighbourIndices;
+};
+
+//A hypercubeList that owns its memory, and which keeps track of the neighbourhood relations between the different hypercubes.
+typedef struct esdmI_hypercubeNeighbourManager_t esdmI_hypercubeNeighbourManager_t;
+struct esdmI_hypercubeNeighbourManager_t {
+  esdmI_hypercubeList_t list;
+  int64_t allocatedCount;
+  int64_t dims; //All hypercubes in the list must be of the same rank.
+
+  esdmI_neighbourList_t* neighbourLists;  //`list->count` entries, space for `allocatedCount` entries
+
+  esdmI_boundList_t boundLists[];  //one esdmI_boundList_t per dimension
+};
+
 #endif
