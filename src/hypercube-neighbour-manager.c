@@ -40,12 +40,12 @@ static void boundList_construct(esdmI_boundList_t* me) {
 
 //This is a no-fail lookup that always returns either the first entry with the given bound, or the place where such an entry should be inserted into the list.
 //As such, it may return a pointer past the end of the array if the bound is larger than all existing entries.
-static esdmI_boundListEntry_t* boundList_lookup(esdmI_boundList_t* me, int64_t bound) {
+static esdmI_boundListEntry_t* boundList_lookup(esdmI_boundList_t* me, int64_t bakedBound) {
   int64_t low = 0, high = me->count;
   while(low < high) {
     int64_t mid = (low + high)/2;
     eassert(mid < high);
-    if(me->entries[mid].bound < bound) {
+    if(me->entries[mid].bakedBound < bakedBound) {
       low = mid + 1;
     } else {
       high = mid;
@@ -54,7 +54,11 @@ static esdmI_boundListEntry_t* boundList_lookup(esdmI_boundList_t* me, int64_t b
   return &me->entries[high];
 }
 
-static void boundList_add(esdmI_boundList_t* me, int64_t bound, int64_t cubeIndex) {
+static int64_t bakeBound(int64_t bound, bool isStart) {
+  return 2*bound + !!isStart; //the !! is important to turn any internal representation of true into a 1
+}
+
+static void boundList_add(esdmI_boundList_t* me, int64_t bound, bool isStart, int64_t cubeIndex) {
   //make sure we have enough space
   if(me->count == me->allocatedCount) {
     me->allocatedCount *= 2;
@@ -63,19 +67,21 @@ static void boundList_add(esdmI_boundList_t* me, int64_t bound, int64_t cubeInde
   }
   eassert(me->allocatedCount > me->count);
 
-  esdmI_boundListEntry_t* iterator = boundList_lookup(me, bound); //get the place where to insert the entry …
+  int64_t bakedBound = bakeBound(bound, isStart);
+  esdmI_boundListEntry_t* iterator = boundList_lookup(me, bakedBound); //get the place where to insert the entry …
   memmove(iterator + 1, iterator, me->entries + me->count - iterator);  //… shift everything after that …
   *iterator = (esdmI_boundListEntry_t){ //… and insert the new entry
-    .bound = bound,
+    .bakedBound = bakedBound,
     .cubeIndex = cubeIndex
   };
 }
 
 //find the first entry with the given bound, or return NULL if no such entry exists
-static esdmI_boundListEntry_t* boundList_findFirst(esdmI_boundList_t* me, int64_t bound) {
-  esdmI_boundListEntry_t* result = boundList_lookup(me, bound);
+static esdmI_boundListEntry_t* boundList_findFirst(esdmI_boundList_t* me, int64_t bound, bool isStart) {
+  int64_t bakedBound = bakeBound(bound, isStart);
+  esdmI_boundListEntry_t* result = boundList_lookup(me, bakedBound);
   if(result - me->entries >= me->count) return NULL;
-  if(result->bound != bound) return NULL;
+  if(result->bakedBound != bakedBound) return NULL;
   return result;
 }
 
@@ -83,7 +89,7 @@ static esdmI_boundListEntry_t* boundList_findFirst(esdmI_boundList_t* me, int64_
 static esdmI_boundListEntry_t* boundList_nextEntry(esdmI_boundList_t* me, esdmI_boundListEntry_t* iterator) {
   int64_t nextIndex = iterator - me->entries + 1;
   if(nextIndex >= me->count) return NULL;
-  if(me->entries[nextIndex].bound != iterator->bound) return NULL;
+  if(me->entries[nextIndex].bakedBound != iterator->bakedBound) return NULL;
   return &me->entries[nextIndex];
 }
 
@@ -164,7 +170,7 @@ void esdmI_hypercubeNeighbourManager_pushBack(esdmI_hypercubeNeighbourManager_t*
   esdmI_neighbourList_t* neighbours = &me->neighbourLists[cubeIndex];
   neighbourList_construct(neighbours);
   for(int dim = 0; dim < me->dims; dim++) {
-    for(esdmI_boundListEntry_t* iterator = boundList_findFirst(&me->boundLists[dim], cube->ranges[dim].start);
+    for(esdmI_boundListEntry_t* iterator = boundList_findFirst(&me->boundLists[dim], cube->ranges[dim].start, false); //iterate the corresponding *end* bounds
         iterator;
         iterator = boundList_nextEntry(&me->boundLists[dim], iterator)
     ) {
@@ -173,9 +179,9 @@ void esdmI_hypercubeNeighbourManager_pushBack(esdmI_hypercubeNeighbourManager_t*
         neighbourList_add(&me->neighbourLists[iterator->cubeIndex], cubeIndex);
       }
     }
-    boundList_add(&me->boundLists[dim], cube->ranges[dim].start, cubeIndex);
+    boundList_add(&me->boundLists[dim], cube->ranges[dim].start, true, cubeIndex);
 
-    for(esdmI_boundListEntry_t* iterator = boundList_findFirst(&me->boundLists[dim], cube->ranges[dim].end);
+    for(esdmI_boundListEntry_t* iterator = boundList_findFirst(&me->boundLists[dim], cube->ranges[dim].end, true);  //iterate the corresponding *start* bounds
         iterator;
         iterator = boundList_nextEntry(&me->boundLists[dim], iterator)
     ) {
@@ -184,7 +190,7 @@ void esdmI_hypercubeNeighbourManager_pushBack(esdmI_hypercubeNeighbourManager_t*
         neighbourList_add(&me->neighbourLists[iterator->cubeIndex], cubeIndex);
       }
     }
-    boundList_add(&me->boundLists[dim], cube->ranges[dim].end, cubeIndex);
+    boundList_add(&me->boundLists[dim], cube->ranges[dim].end, false, cubeIndex);
   }
 }
 

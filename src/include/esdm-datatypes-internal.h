@@ -335,7 +335,8 @@ struct esdmI_hypercubeSet_t {
 //helper for esdmI_boundList_t
 typedef struct esdmI_boundListEntry_t esdmI_boundListEntry_t;
 struct esdmI_boundListEntry_t {
-  int64_t bound, cubeIndex;
+  int64_t bakedBound;  //the LSB is used to store whether the bound is a start or end bound (1 == start bound), the actual bound is shifted left one bit
+  int64_t cubeIndex;
 };
 
 //helper for esdmI_hypercubeNeighbourManager_t
