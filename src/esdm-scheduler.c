@@ -806,62 +806,90 @@ static bool fragmentsCoverSpace(esdm_dataspace_t* space, int64_t fragmentCount, 
   return esdmI_hypercubeSet_isEmpty(*out_uncoveredRegion);
 }
 
+enum {
+  NOT_VISITED = 0,  //the fragment has not been considered yet
+  IN_FRONT, //the fragment has been scheduled for consideration
+  SELECTED, //the fragment has been considered and was selected to be read
+  IGNORED //the fragment has been considered and was deemed useless
+};
+
 //Find and remove all fragments that either do not intersect with the bounds at all, or are fully covered by other fragments.
-//This implementation tries to minimize the total amount of data that needs to be read, but may yield a nonoptimal solution because it has a probabilistic component.
+//This implementation is heuristic, basing its decisions on the neighbourhood relationships between the fragments.
 static void removeRedundantFragments(esdmI_hypercube_t* bounds, int* inout_fragmentCount, esdm_fragment_t** fragments) {
   eassert(bounds);
   eassert(inout_fragmentCount);
+  eassert(*inout_fragmentCount > 0);
   eassert(fragments);
-
-  //compute the bounded extends for all the fragments, filter out the ones that do not intersect with the bounds at all, and create a hypercube list of the bounded extends
-  esdmI_hypercubeList_t list;
-  list.cubes = malloc(*inout_fragmentCount*sizeof(*list.cubes));
+  //Filter out all fragments that cannot contribute any data and add the contributing fragments to a neighbour manager.
+  //At the same time we determine a fragment with the best similarity to the bounds.
+  esdmI_hypercubeNeighbourManager_t* neighbourManager = esdmI_hypercubeNeighbourManager_make(fragments[0]->dataspace->dims);
   int64_t fragmentCount = 0;
   for(int64_t i = 0; i < *inout_fragmentCount; i++) {
-    esdmI_hypercube_t* extends, *boundedExtends;
+    esdmI_hypercube_t* extends;
     esdmI_dataspace_getExtends(fragments[i]->dataspace, &extends);
-    if((boundedExtends = esdmI_hypercube_makeIntersection(bounds, extends))) {
-      list.cubes[fragmentCount] = boundedExtends;
+    if(esdmI_hypercube_doesIntersect(bounds, extends)) {
+      esdmI_hypercubeNeighbourManager_pushBack(neighbourManager, extends);
       fragments[fragmentCount++] = fragments[i];
+    } else {
+      esdmI_hypercube_destroy(extends);
     }
-    esdmI_hypercube_destroy(extends);
   }
-  list.count = fragmentCount;
 
-  if(fragmentCount) { //the subset selection code would not be able to select a fragment subset if there is no fragment at all, so we avoid executing it in this case
-    //get a few nonredundant subsets of fragments
-    int64_t subsetCount = 10;
-    uint8_t (*subsets)[fragmentCount] = malloc(subsetCount*sizeof(*subsets));
-    esdmI_hypercubeList_nonredundantSubsets(&list, &subsetCount, subsets);
-
-    //select the subset with the smallest total fragment size
-    int64_t bestSize = INT64_MAX, bestIndex = -1;
-    for(int64_t i = 0; i < subsetCount; i++) {
-      int64_t curSize = 0;
-      for(int64_t j = 0; j < fragmentCount; j++) {
-        if(subsets[i][j]) curSize += esdm_dataspace_element_count(fragments[j]->dataspace);
-      }
-      if(curSize <= bestSize) {
-        bestSize = curSize;
+  *inout_fragmentCount = 0; //No fragments have effectively been selected yet. Will be set while we filter the fragments for output.
+  if(fragmentCount) {  //We need to have at least one overlapping fragment to start the following algorithm.
+    //Compute the similarities of the fragments with the bounds and cache their extends.
+    esdmI_hypercubeList_t* extendsList = esdmI_hypercubeNeighbourManager_list(neighbourManager);
+    double* similarities = malloc(fragmentCount*sizeof(*similarities));
+    double bestSimilarity = -1;
+    int64_t bestIndex = -1;
+    for(int64_t i = 0; i < fragmentCount; i++) {
+      similarities[i] = esdmI_hypercube_shapeSimilarity(bounds, extendsList->cubes[i]);
+      if(similarities[i] > bestSimilarity) {
+        bestSimilarity = similarities[i];
         bestIndex = i;
       }
     }
     eassert(bestIndex >= 0);
 
-    //filter the list of fragments by the selected subset
-    fragmentCount = 0;
-    for(int64_t i = 0; i < list.count; i++) {
-      if(subsets[bestIndex][i]) fragments[fragmentCount++] = fragments[i];
+    //Walk the neighbours of the selected fragment.
+    //The way this is implemented, it performs a depth-first search, which is aborted immediately when the entire region has been covered.
+    esdmI_hypercubeSet_t uncovered;
+    esdmI_hypercubeSet_construct(&uncovered);
+    esdmI_hypercubeSet_add(&uncovered, bounds);
+    uint8_t* visited = calloc(fragmentCount, sizeof(*visited));
+    visited[bestIndex] = IN_FRONT;
+    int64_t* front = malloc(fragmentCount*sizeof(*front));  //the indices of the nodes to visit
+    front[0] = bestIndex;
+    for(int64_t frontSize = 1; frontSize; ) {
+      int64_t curIndex = front[--frontSize];
+      visited[curIndex] = SELECTED; //FIXME: check whether this cube is still useful
+      esdmI_hypercubeSet_subtract(&uncovered, extendsList->cubes[curIndex]);
+      if(esdmI_hypercubeSet_isEmpty(&uncovered)) break;  //Fast abort of search when we have all data we need.
+      int64_t neighbourCount;
+      int64_t* neighbours = esdmI_hypercubeNeighbourManager_getNeighbours(neighbourManager, curIndex, &neighbourCount);
+      for(int64_t i = 0; i < neighbourCount; i++) {
+        int64_t curNeighbour = neighbours[i];
+        if(!visited[curNeighbour]) {
+          visited[curNeighbour] = IN_FRONT;
+          front[frontSize++] = curNeighbour;
+          //FIXME: prioritize the neighbours by their similarity
+        }
+      }
+    }
+    //FIXME: Check whether uncovered data remains. If so, find a cube that intersects with the uncovered region and restart the above loop from that fragment.
+
+    //Filter the list of fragments by the selected subset
+    for(int64_t i = 0; i < fragmentCount; i++) {
+      if(visited[i] == SELECTED) fragments[(*inout_fragmentCount)++] = fragments[i];
     }
 
     //cleanup
-    free(subsets);
+    free(similarities);
+    esdmI_hypercubeSet_destruct(&uncovered);
+    free(visited);
+    free(front);
   }
-
-  //cleanup and return data
-  for(int64_t i = 0; i < list.count; i++) esdmI_hypercube_destroy(list.cubes[i]);
-  free(list.cubes);
-  *inout_fragmentCount = fragmentCount;
+  esdmI_hypercubeNeighbourManager_destroy(neighbourManager);
 }
 
 esdm_status esdm_scheduler_write_blocking(esdm_instance_t *esdm, esdm_dataset_t *dataset, void *buf, esdm_dataspace_t *subspace, bool requestIsInternal) {
