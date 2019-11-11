@@ -859,24 +859,40 @@ static void removeRedundantFragments(esdmI_hypercube_t* bounds, int* inout_fragm
     uint8_t* visited = calloc(fragmentCount, sizeof(*visited));
     visited[bestIndex] = IN_FRONT;
     int64_t* front = malloc(fragmentCount*sizeof(*front));  //the indices of the nodes to visit
-    front[0] = bestIndex;
-    for(int64_t frontSize = 1; frontSize; ) {
-      int64_t curIndex = front[--frontSize];
-      visited[curIndex] = SELECTED; //FIXME: check whether this cube is still useful
-      esdmI_hypercubeSet_subtract(&uncovered, extendsList->cubes[curIndex]);
-      if(esdmI_hypercubeSet_isEmpty(&uncovered)) break;  //Fast abort of search when we have all data we need.
-      int64_t neighbourCount;
-      int64_t* neighbours = esdmI_hypercubeNeighbourManager_getNeighbours(neighbourManager, curIndex, &neighbourCount);
-      for(int64_t i = 0; i < neighbourCount; i++) {
-        int64_t curNeighbour = neighbours[i];
-        if(!visited[curNeighbour]) {
-          visited[curNeighbour] = IN_FRONT;
-          front[frontSize++] = curNeighbour;
-          //FIXME: prioritize the neighbours by their similarity
+    int64_t frontSize = 0;
+    front[frontSize++] = bestIndex;
+    while(true) {
+      bool done;
+      for(; frontSize; ) {
+        int64_t curIndex = front[--frontSize];
+        visited[curIndex] = SELECTED; //FIXME: check whether this cube is still useful
+        esdmI_hypercubeSet_subtract(&uncovered, extendsList->cubes[curIndex]);
+        if((done = esdmI_hypercubeSet_isEmpty(&uncovered))) break; //Fast abort of search when we have all data we need.
+        int64_t neighbourCount;
+        int64_t* neighbours = esdmI_hypercubeNeighbourManager_getNeighbours(neighbourManager, curIndex, &neighbourCount);
+        for(int64_t i = 0; i < neighbourCount; i++) {
+          int64_t curNeighbour = neighbours[i];
+          if(!visited[curNeighbour]) {
+            visited[curNeighbour] = IN_FRONT;
+            front[frontSize++] = curNeighbour;
+            //FIXME: prioritize the neighbours by their similarity
+          }
         }
       }
+      if(done || esdmI_hypercubeSet_isEmpty(&uncovered)) break;
+
+      //The available set of neighbours did not fully cover the bounds.
+      //Search for a (non-neighbour) cube that still contributes to the uncovered region and restart the neighbour search.
+      esdmI_hypercubeList_t* uncoveredList = esdmI_hypercubeSet_list(&uncovered);
+      for(int64_t i = 0; i < fragmentCount; i++) {
+        if(visited[i]) continue;
+        if(!esdmI_hypercubeList_doesIntersect(uncoveredList, extendsList->cubes[i])) continue;
+        visited[i] = IN_FRONT;
+        front[frontSize++] = i;
+        break;
+      }
+      if(!frontSize) break; //The uncovered region does not intersect with any fragments that we did not consider yet -> caller will need to handle incomplete read.
     }
-    //FIXME: Check whether uncovered data remains. If so, find a cube that intersects with the uncovered region and restart the above loop from that fragment.
 
     //Filter the list of fragments by the selected subset
     for(int64_t i = 0; i < fragmentCount; i++) {
