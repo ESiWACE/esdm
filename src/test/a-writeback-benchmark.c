@@ -26,7 +26,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-#define N (1 << 7)
+#define N (1 << 8)
 
 void initData(uint64_t (*data)[N]) {
   for(int y = 0; y < N; y++) {
@@ -135,11 +135,7 @@ int main(int argc, char const *argv[]) {
   initData(data);
 
   // Interaction with ESDM
-  esdm_status ret;
-  esdm_container_t *container = NULL;
-  esdm_dataset_t *dataset = NULL;
-
-  ret = esdm_init();
+  esdm_status ret = esdm_init();
   eassert(ret == ESDM_SUCCESS);
 
   ret = esdm_mkfs(ESDM_FORMAT_PURGE_RECREATE, ESDM_ACCESSIBILITY_GLOBAL);
@@ -147,46 +143,80 @@ int main(int argc, char const *argv[]) {
   ret = esdm_mkfs(ESDM_FORMAT_PURGE_RECREATE, ESDM_ACCESSIBILITY_NODELOCAL);
   eassert(ret == ESDM_SUCCESS);
 
+
+
+  printf("\nTest 1: Measure worst case reading and the effect of writeback in this case\n");
+
   // define dataspace
   int64_t bounds[2] = {N, N};
   esdm_dataspace_t *dataspace;
 
   ret = esdm_dataspace_create(2, bounds, SMD_DTYPE_UINT64, &dataspace);
   eassert(ret == ESDM_SUCCESS);
+  esdm_container_t *container;
   ret = esdm_container_create("mycontainer", 1, &container);
   eassert(ret == ESDM_SUCCESS);
 
-  ret = esdm_dataset_create(container, "mydataset", dataspace, &dataset);
+  esdm_dataset_t *dataset1;
+  ret = esdm_dataset_create(container, "dataset1", dataspace, &dataset1);
   eassert(ret == ESDM_SUCCESS);
-  ret = esdm_dataset_commit(dataset);
+  ret = esdm_dataset_commit(dataset1);
   eassert(ret == ESDM_SUCCESS);
   ret = esdm_container_commit(container);
   eassert(ret == ESDM_SUCCESS);
 
   timer myTimer;
   start_timer(&myTimer);
-  writeData(dataset, dataspace, data);
+  writeData(dataset1, dataspace, data);
   printf("write data: %.3fms\n", 1000*stop_timer(myTimer));
 
   memset(data, 0, N*sizeof(*data));
   start_timer(&myTimer);
-  readData(dataset, dataspace, data, (int64_t[2]){ 1, N}, 1, false);
+  readData(dataset1, dataspace, data, (int64_t[2]){ 1, N}, 1, false);
   printf("read data as written: %.3fms\n", 1000*stop_timer(myTimer));
   eassert(dataIsCorrect(data));
 
   memset(data, 0, N*sizeof(*data));
   start_timer(&myTimer);
-  readData(dataset, dataspace, data, (int64_t[2]){ N, 1}, N, true);
+  readData(dataset1, dataspace, data, (int64_t[2]){ N, 1}, N, true);
   printf("read data worst case: %.3fms\n", 1000*stop_timer(myTimer));
   eassert(dataIsCorrect(data));
 
   memset(data, 0, N*sizeof(*data));
   start_timer(&myTimer);
-  readData(dataset, dataspace, data, (int64_t[2]){ N, 1}, 1, false);
+  readData(dataset1, dataspace, data, (int64_t[2]){ N, 1}, 1, false);
   printf("read data worst case repeat: %.3fms\n", 1000*stop_timer(myTimer));
   eassert(dataIsCorrect(data));
 
+
+
+  printf("\nTest 2: Profile successive change of fragment shape\n");
+
   //TODO Perform gradual transposition test
+  esdm_dataset_t* dataset2;
+  ret = esdm_dataset_create(container, "dataset2", dataspace, &dataset2);
+  eassert(ret == ESDM_SUCCESS);
+  ret = esdm_dataset_commit(dataset2);
+  eassert(ret == ESDM_SUCCESS);
+  ret = esdm_container_commit(container);
+  eassert(ret == ESDM_SUCCESS);
+
+  start_timer(&myTimer);
+  writeData(dataset2, dataspace, data);
+  printf("write data: %.3fms\n", 1000*stop_timer(myTimer));
+
+  timer outerTimer;
+  start_timer(&outerTimer);
+  for(int64_t width = N, hight = 1, readFactor = 1; width; width /= 2, hight *=2, readFactor *= 2) {
+    memset(data, 0, N*sizeof(*data));
+    bool expectWriteback = readFactor >= 8;
+    start_timer(&myTimer);
+    readData(dataset2, dataspace, data, (int64_t[2]){ hight, width}, readFactor, expectWriteback);
+    printf("read data as %"PRId64"x%"PRId64" fragments: %.3fms%s\n", hight, width, 1000*stop_timer(myTimer), expectWriteback ? " (writeback)" : "");
+    if(expectWriteback) readFactor = 1;
+    eassert(dataIsCorrect(data));
+  }
+  printf("total: %.3fms\n", 1000*stop_timer(outerTimer));
 
   ret = esdm_finalize();
   eassert(ret == ESDM_SUCCESS);

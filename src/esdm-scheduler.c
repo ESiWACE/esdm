@@ -1007,7 +1007,7 @@ esdm_status esdm_scheduler_read_blocking(esdm_instance_t *esdm, esdm_dataset_t *
 
   //reading is done, check whether we want to store the resulting fragment for faster access in the future
   if(ret == ESDM_SUCCESS && dataIsComplete) { //don't perform write-back of data that contains fill values, we do not want to transform data holes into stored data!
-    if(ioBytes/(double)requestBytes > 8) { //TODO Turn this magic number into a proper configuration constant!
+    if(ioBytes/(double)requestBytes >= 8) { //TODO Turn this magic number into a proper configuration constant!
       esdm_scheduler_write_blocking(esdm, dataset, buf, subspace, true);  //Ignore return code because this is just an optimization that writes a redundant data copy to disk.
     }
   }
