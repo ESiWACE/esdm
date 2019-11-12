@@ -22,6 +22,8 @@
  *
  */
 
+#define _GNU_SOURCE
+
 #include <esdm-internal.h>
 #include <esdm.h>
 #include <glib.h>
@@ -813,6 +815,16 @@ enum {
   IGNORED //the fragment has been considered and was deemed useless
 };
 
+static int compareSimilarities(const void* a, const void* b, void* aux) {
+  const int64_t* leftIndex = a;
+  const int64_t* rightIndex = b;
+  double* similarities = aux;
+
+  double diff = similarities[*leftIndex] - similarities[*rightIndex];
+  return diff < 0 ? -1 :
+         diff > 0 ? 1 : 0;
+}
+
 //Find and remove all fragments that either do not intersect with the bounds at all, or are fully covered by other fragments.
 //This implementation is heuristic, basing its decisions on the neighbourhood relationships between the fragments.
 static void removeRedundantFragments(esdmI_hypercube_t* bounds, int* inout_fragmentCount, esdm_fragment_t** fragments) {
@@ -877,7 +889,7 @@ static void removeRedundantFragments(esdmI_hypercube_t* bounds, int* inout_fragm
             if(!visited[curNeighbour]) {
               visited[curNeighbour] = IN_FRONT;
               front[frontSize++] = curNeighbour;
-              //FIXME: prioritize the neighbours by their similarity
+              qsort_r(front, frontSize, sizeof(*front), compareSimilarities, similarities);
             }
           }
         } else {
