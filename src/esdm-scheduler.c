@@ -865,18 +865,23 @@ static void removeRedundantFragments(esdmI_hypercube_t* bounds, int* inout_fragm
       bool done;
       for(; frontSize; ) {
         int64_t curIndex = front[--frontSize];
-        visited[curIndex] = SELECTED; //FIXME: check whether this cube is still useful
-        esdmI_hypercubeSet_subtract(&uncovered, extendsList->cubes[curIndex]);
-        if((done = esdmI_hypercubeSet_isEmpty(&uncovered))) break; //Fast abort of search when we have all data we need.
-        int64_t neighbourCount;
-        int64_t* neighbours = esdmI_hypercubeNeighbourManager_getNeighbours(neighbourManager, curIndex, &neighbourCount);
-        for(int64_t i = 0; i < neighbourCount; i++) {
-          int64_t curNeighbour = neighbours[i];
-          if(!visited[curNeighbour]) {
-            visited[curNeighbour] = IN_FRONT;
-            front[frontSize++] = curNeighbour;
-            //FIXME: prioritize the neighbours by their similarity
+        esdmI_hypercube_t* curCube = extendsList->cubes[curIndex];
+        if(esdmI_hypercubeList_doesIntersect(esdmI_hypercubeSet_list(&uncovered), curCube)) {
+          visited[curIndex] = SELECTED;
+          esdmI_hypercubeSet_subtract(&uncovered, curCube);
+          if((done = esdmI_hypercubeSet_isEmpty(&uncovered))) break; //Fast abort of search when we have all data we need.
+          int64_t neighbourCount;
+          int64_t* neighbours = esdmI_hypercubeNeighbourManager_getNeighbours(neighbourManager, curIndex, &neighbourCount);
+          for(int64_t i = 0; i < neighbourCount; i++) {
+            int64_t curNeighbour = neighbours[i];
+            if(!visited[curNeighbour]) {
+              visited[curNeighbour] = IN_FRONT;
+              front[frontSize++] = curNeighbour;
+              //FIXME: prioritize the neighbours by their similarity
+            }
           }
+        } else {
+          visited[curIndex] = IGNORED;
         }
       }
       if(done || esdmI_hypercubeSet_isEmpty(&uncovered)) break;
