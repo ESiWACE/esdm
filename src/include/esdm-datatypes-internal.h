@@ -350,6 +350,18 @@ struct esdmI_boundList_t {
   int64_t count, allocatedCount;
 };
 
+//Stores an index of bounds in the form of a B-tree.
+//The max of 8 puts the sizeof(esdmI_boundTree_t) at 184 bytes, which is just short of three cache lines.
+#define BOUND_TREE_MAX_BRANCH_FACTOR 8
+#define BOUND_TREE_MAX_ENTRY_COUNT (BOUND_TREE_MAX_BRANCH_FACTOR - 1)
+typedef struct esdmI_boundTree_t esdmI_boundTree_t;
+struct esdmI_boundTree_t {
+  int64_t entryCount;
+  esdmI_boundListEntry_t bounds[BOUND_TREE_MAX_ENTRY_COUNT];
+  esdmI_boundTree_t* children[BOUND_TREE_MAX_BRANCH_FACTOR];
+  esdmI_boundTree_t* parent;
+};
+
 //another helper for esdmI_hypercubeNeighbourManager_t
 typedef struct esdmI_neighbourList_t esdmI_neighbourList_t;
 struct esdmI_neighbourList_t {
