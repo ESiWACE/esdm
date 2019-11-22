@@ -77,20 +77,22 @@ static void boundList_add(esdmI_boundList_t* me, int64_t bound, bool isStart, in
 }
 
 //find the first entry with the given bound, or return NULL if no such entry exists
-static esdmI_boundListEntry_t* boundList_findFirst(esdmI_boundList_t* me, int64_t bound, bool isStart) {
+static esdmI_boundListEntry_t* boundList_findFirst(esdmI_boundList_t* me, int64_t bound, bool isStart, esdmI_boundListEntry_t** out_iterator) {
+  eassert(out_iterator);
   int64_t bakedBound = bakeBound(bound, isStart);
   esdmI_boundListEntry_t* result = boundList_lookup(me, bakedBound);
   if(result - me->entries >= me->count) return NULL;
   if(result->bakedBound != bakedBound) return NULL;
-  return result;
+  return *out_iterator = result;
 }
 
 //returns the next entry with the same bound, or NULL
-static esdmI_boundListEntry_t* boundList_nextEntry(esdmI_boundList_t* me, esdmI_boundListEntry_t* iterator) {
-  int64_t nextIndex = iterator - me->entries + 1;
+static esdmI_boundListEntry_t* boundList_nextEntry(esdmI_boundList_t* me, esdmI_boundListEntry_t** inout_iterator) {
+  eassert(inout_iterator);
+  int64_t nextIndex = *inout_iterator - me->entries + 1;
   if(nextIndex >= me->count) return NULL;
-  if(me->entries[nextIndex].bakedBound != iterator->bakedBound) return NULL;
-  return &me->entries[nextIndex];
+  if(me->entries[nextIndex].bakedBound != (*inout_iterator)->bakedBound) return NULL;
+  return *inout_iterator = &me->entries[nextIndex];
 }
 
 static void boundList_destruct(esdmI_boundList_t* me) {
@@ -170,24 +172,25 @@ void esdmI_hypercubeNeighbourManager_pushBack(esdmI_hypercubeNeighbourManager_t*
   esdmI_neighbourList_t* neighbours = &me->neighbourLists[cubeIndex];
   neighbourList_construct(neighbours);
   for(int dim = 0; dim < me->dims; dim++) {
-    for(esdmI_boundListEntry_t* iterator = boundList_findFirst(&me->boundLists[dim], cube->ranges[dim].start, false); //iterate the corresponding *end* bounds
-        iterator;
-        iterator = boundList_nextEntry(&me->boundLists[dim], iterator)
+    esdmI_boundListEntry_t* iterator;
+    for(esdmI_boundListEntry_t* entry = boundList_findFirst(&me->boundLists[dim], cube->ranges[dim].start, false, &iterator); //iterate the corresponding *end* bounds
+        entry;
+        entry = boundList_nextEntry(&me->boundLists[dim], &iterator)
     ) {
-      if(esdmI_hypercube_touches(cube, me->list.cubes[iterator->cubeIndex])) {
-        neighbourList_add(neighbours, iterator->cubeIndex);
-        neighbourList_add(&me->neighbourLists[iterator->cubeIndex], cubeIndex);
+      if(esdmI_hypercube_touches(cube, me->list.cubes[entry->cubeIndex])) {
+        neighbourList_add(neighbours, entry->cubeIndex);
+        neighbourList_add(&me->neighbourLists[entry->cubeIndex], cubeIndex);
       }
     }
     boundList_add(&me->boundLists[dim], cube->ranges[dim].start, true, cubeIndex);
 
-    for(esdmI_boundListEntry_t* iterator = boundList_findFirst(&me->boundLists[dim], cube->ranges[dim].end, true);  //iterate the corresponding *start* bounds
-        iterator;
-        iterator = boundList_nextEntry(&me->boundLists[dim], iterator)
+    for(esdmI_boundListEntry_t* entry = boundList_findFirst(&me->boundLists[dim], cube->ranges[dim].end, true, &iterator);  //iterate the corresponding *start* bounds
+        entry;
+        entry = boundList_nextEntry(&me->boundLists[dim], &iterator)
     ) {
-      if(esdmI_hypercube_touches(cube, me->list.cubes[iterator->cubeIndex])) {
-        neighbourList_add(neighbours, iterator->cubeIndex);
-        neighbourList_add(&me->neighbourLists[iterator->cubeIndex], cubeIndex);
+      if(esdmI_hypercube_touches(cube, me->list.cubes[entry->cubeIndex])) {
+        neighbourList_add(neighbours, entry->cubeIndex);
+        neighbourList_add(&me->neighbourLists[entry->cubeIndex], cubeIndex);
       }
     }
     boundList_add(&me->boundLists[dim], cube->ranges[dim].end, false, cubeIndex);
