@@ -601,7 +601,10 @@ static void splitToBackends(esdm_dataspace_t* space, int64_t backendCount, esdm_
 
   //get some input data
   float* weights = malloc(backendCount*sizeof(*weights));
-  for(int64_t i = 0; i < backendCount; i++) weights[i] = backends[i]->callbacks.estimate_throughput(backends[i]);
+  for (int64_t i = 0; i < backendCount; i++) {
+    if (backends[i]->callbacks.estimate_throughput != NULL)
+      weights[i] = backends[i]->callbacks.estimate_throughput(backends[i]);
+  }
 
   int64_t dims = esdm_dataspace_get_dims(space);
   int64_t stride[dims];

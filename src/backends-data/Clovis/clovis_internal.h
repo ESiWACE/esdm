@@ -68,7 +68,7 @@ struct esdm_backend_t_xxxops {
 	 * return object handle in [out] obj_handle;
 	 */
   int (*esdm_backend_t_obj_open) (esdm_backend_t * eb,
-				  char *object_id, void **obj_handle);
+				  const char *object_id, void **obj_handle);
 
   /**
 	 * Write to an object.
@@ -103,14 +103,15 @@ struct esdm_backend_t_xxxops {
 };
 
 typedef struct {
-  esdm_backend_t ebm_base;
+  esdm_backend_t               ebm_base;
 
   /* Mero Clovis */
-  struct m0_clovis *ebm_clovis_instance;
-  struct m0_clovis_container ebm_clovis_container;
-  struct m0_clovis_config ebm_clovis_conf;
+  struct m0_clovis            *ebm_clovis_instance;
+  struct m0_clovis_container   ebm_clovis_container;
+  struct m0_clovis_config      ebm_clovis_conf;
 
-  struct m0_fid ebm_last_fid;
+  struct m0_fid                ebm_last_fid;
+  struct m0_mutex              ebm_mutex;
 
   /* for test */
   struct esdm_backend_t_xxxops ebm_ops;
