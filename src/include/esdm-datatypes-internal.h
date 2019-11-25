@@ -377,7 +377,7 @@ struct esdmI_hypercubeNeighbourManager_t {
 
   esdmI_neighbourList_t* neighbourLists;  //`list->count` entries, space for `allocatedCount` entries
 
-  esdmI_boundList_t boundLists[];  //one esdmI_boundList_t per dimension
+  esdmI_boundTree_t boundLists[];  //one esdmI_boundList_t per dimension
 };
 
 #endif
