@@ -351,8 +351,14 @@ struct esdmI_boundList_t {
 };
 
 //Stores an index of bounds in the form of a B-tree.
-//The max of 8 puts the sizeof(esdmI_boundTree_t) at 184 bytes, which is just short of three cache lines.
-#define BOUND_TREE_MAX_BRANCH_FACTOR 8
+//The max of 21 puts the sizeof(esdmI_boundTree_t) at 504 bytes, which is just short of eight cache lines.
+//This is a tuning parameter that might call for other values on other machines than mine.
+//
+//XXX: The motivation for this rather complex structure over the simple array in `esdmI_boundList_t` is that the later has a quadratic complexity.
+//     While the simple array access outperforms the more complicated data structure `esdmI_boundList_t`,
+//     the B-tree outperforms the simply array when we have a couple of thousands entries in the list.
+//     We simply cannot tolerate quadratic complexities when the N is controlled by HPC applications...
+#define BOUND_TREE_MAX_BRANCH_FACTOR 21
 #define BOUND_TREE_MAX_ENTRY_COUNT (BOUND_TREE_MAX_BRANCH_FACTOR - 1)
 typedef struct esdmI_boundTree_t esdmI_boundTree_t;
 struct esdmI_boundTree_t {
