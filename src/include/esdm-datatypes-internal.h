@@ -169,7 +169,7 @@ struct esdm_backend_t {
   char *name;
   esdm_module_type_t type;
   char *version; // 0.0.0
-  void *data;
+  void *data;    /* backend-specific data. */
   uint32_t blocksize; /* any io must be multiple of 'blocksize' and aligned. */
   esdm_backend_t_callbacks_t callbacks;
   int threads;

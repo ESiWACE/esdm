@@ -35,6 +35,6 @@
 * @return pointer to backend struct
 */
 
-esdm_backend_t *clovis_backend_init(esdm_config_backend_t *config);
+esdm_backend_t *clovis_backend_init (esdm_config_backend_t * config);
 
 #endif

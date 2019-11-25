@@ -223,7 +223,7 @@ static int fragment_retrieve(esdm_backend_t *backend, esdm_fragment_t *f) {
 static int fragment_update(esdm_backend_t *backend, esdm_fragment_t *f) {
   DEBUG_ENTER;
 
-  // set data, options and tgt for convienience
+  // set data, options and tgt for convenience
   posix_backend_data_t *data = (posix_backend_data_t *)backend->data;
   const char *tgt = data->target;
   int ret = ESDM_SUCCESS;
