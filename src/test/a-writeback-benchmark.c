@@ -117,6 +117,65 @@ void readData(esdm_dataset_t* dataset, esdm_dataspace_t* dataspace, int height, 
   eassert(afterStatsWrite.internalRequests - beforeStatsWrite.internalRequests == (expectWriteBack ? requestCount : 0));
 }
 
+void printUsage(const char* programPath) {
+  printf("Usage:\n");
+  printf("%s [-?|--help] [(-s|--size-exponent) S] [(-w|--width-exponent) W] [(-h|--height-exponent) H]\n", programPath);
+  printf("\n");
+  printf("\t-s S, --width-exponent S\n");
+  printf("\t\tset the size of the data matrix to 2^Sx2^S\n");
+  printf("\n");
+  printf("\t-w W, --width-exponent W\n");
+  printf("\t\tset the width of the data matrix to 2^W\n");
+  printf("\n");
+  printf("\t-h H, --height-exponent H\n");
+  printf("\t\tset the height of the data matrix to 2^H\n");
+}
+
+//argv[0] is expected to be the option name, argv[1] the integer that we need to parse
+long readIntArg(int argc, char const **argv) {
+  if(argc < 2) {
+    fprintf(stderr, "error: %s option needs an integer argument\n", *argv);
+    exit(1);
+  }
+  char* endPtr;
+  long result = strtol(argv[1], &endPtr, 0);
+  if(!*argv[1] || *endPtr) {
+    fprintf(stderr, "error: the argument \"%s\" to the %s option is not an integer\n", argv[1], argv[0]);
+    exit(1);
+  }
+  return result;
+}
+
+void readArgs(int argc, char const **argv, int* out_height, int* out_width) {
+  //save the program name
+  eassert(argc > 0);
+  char const* programPath = *argv++;
+  argc--;
+
+  //defaults
+  long heightExponent = 8, widthExponent = 8;
+
+  for(; argc > 0; argc--, argv++) {
+    if(!strcmp(*argv, "-w") || !strcmp(*argv, "--width-exponent")) {
+      widthExponent = readIntArg(argc--, argv++); //gobble up an additional argument;
+    } else if(!strcmp(*argv, "-h") || !strcmp(*argv, "--height-exponent")) {
+      heightExponent = readIntArg(argc--, argv++);  //gobble up an additional argument;
+    } else if(!strcmp(*argv, "-s") || !strcmp(*argv, "--size-exponent")) {
+      widthExponent = heightExponent = readIntArg(argc--, argv++);  //gobble up an additional argument;
+    } else if(!strcmp(*argv, "-?") || !strcmp(*argv, "--help")) {
+      printUsage(programPath);
+      exit(0);
+    } else {
+      fprintf(stderr, "error: unrecognized option \"%s\"\n\n", *argv);
+      printUsage(programPath);
+      exit(1);
+    }
+  }
+
+  *out_height = 1 << heightExponent;
+  *out_width = 1 << widthExponent;
+}
+
 //TODO: Benchmark idea:
 //      Write 2D dataset (NxN) as 1D slices.
 //      Read as transposed 1D slices. Measure time and check statistics, dataset is expected to be read N times.
@@ -130,9 +189,10 @@ void readData(esdm_dataset_t* dataset, esdm_dataspace_t* dataspace, int height, 
 //      ...
 
 int main(int argc, char const *argv[]) {
+  int height, width;
+  readArgs(argc, argv, &height, &width);
+
   // prepare data
-  int height = 1<<9;
-  int width = 1<<7;
   uint64_t (*data)[width] = malloc(height*sizeof(*data));
   initData(height, width, data);
 
