@@ -22,22 +22,33 @@
  * @brief A data backend to provide Clovis compatibility.
  */
 
+#define VERBOSE_DEBUG
 
 #include <errno.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 
-#undef NDEBUG
-
 #include <esdm-debug.h>
 #include <esdm.h>
 #include <esdm-datatypes-internal.h>
 
+#include "clovis/clovis.h"
+#include "clovis/clovis_internal.h"
+
 #include "clovis_internal.h"
 
-#define DEBUG(fmt)          ESDM_DEBUG(fmt)
+#ifdef VERBOSE_DEBUG
+#define DEBUG(fmt)          printf(fmt)
+#define DEBUG_FMT(fmt, ...) printf(fmt, __VA_ARGS__)
+#define DEBUG_ENTER         printf(">>>Entering %s:%d\n", __func__, __LINE__)
+#define DEBUG_LEAVE         printf("<<<Leaving  %s:%d\n", __func__, __LINE__)
+#else
+#define DEBUG(fmt)          ESDM_DEBUG_COM_FMT("CLOVIS", fmt)
 #define DEBUG_FMT(fmt, ...) ESDM_DEBUG_COM_FMT("CLOVIS", fmt, __VA_ARGS__)
+#define DEBUG_ENTER         ESDM_DEBUG_COM_FMT("CLOVIS", ">>>Entering %s:%d\n", __func__, __LINE__)
+#define DEBUG_LEAVE         ESDM_DEBUG_COM_FMT("CLOVIS", "<<<Leaving  %s:%d\n", __func__, __LINE__)
+#endif
 
 #define PAGE_4K (4096ULL)
 #define BLOCKSIZE (PAGE_4K)
@@ -56,6 +67,53 @@ static inline esdm_backend_t_clovis_t *
 eb2ebm(esdm_backend_t *eb)
 {
 	return container_of(eb, esdm_backend_t_clovis_t, ebm_base);
+}
+
+/*
+ * Lock the whole backend to prevent concurrent access.
+ * @TODO To investigate if this is really necessarily needed.
+ */
+static void ebm_lock(esdm_backend_t *backend)
+{
+	m0_mutex_lock(&eb2ebm(backend)->ebm_mutex);
+}
+
+static void ebm_unlock(esdm_backend_t *backend)
+{
+	m0_mutex_unlock(&eb2ebm(backend)->ebm_mutex);
+}
+
+/*
+ * Convert a normal pthread into a Mero thread.
+ * This is needed for Clovis operations if the thread is not created
+ * by m0_thread_init();
+ */
+static bool convert_pthread_to_mero_thread(esdm_backend_t *backend)
+{
+	esdm_backend_t_clovis_t *ebm;
+	struct m0_thread_tls *tls;
+	struct m0_thread     *mthread;
+	DEBUG_ENTER;
+
+	ebm = eb2ebm(backend);
+	tls = m0_thread_tls();
+	eassert(tls == NULL);
+
+	mthread = malloc(sizeof(struct m0_thread));
+	eassert(mthread != NULL);
+
+	memset(mthread, 0, sizeof(struct m0_thread));
+	m0_thread_adopt(mthread, ebm->ebm_clovis_instance->m0c_mero);
+
+	DEBUG_LEAVE;
+	return true;
+}
+
+static void revert_mero_thread_to_pthread()
+{
+	DEBUG_ENTER;
+	m0_thread_shun();
+	DEBUG_LEAVE;
 }
 
 /**
@@ -86,11 +144,13 @@ laddr_get()
 		first_newline = strchr(screen, '\n');
 		if (first_newline != 0)
 			*first_newline = '\0';
-		DEBUG_FMT("local addr = %s", screen);
+		DEBUG_FMT("local addr = %s\n", screen);
 	}
 	return rc > 0 ? strdup(screen) : NULL;
 }
 
+char *clovis_index_dir = "/tmp/";
+struct m0_idx_dix_config dix_conf = {.kc_create_meta = false };
 /**
  * @TODO Use the laddr_get() to generate a unique local address.
  * This is needed for running in MPI with the same configuration file,
@@ -106,8 +166,6 @@ conf_parse(char *conf, esdm_backend_t_clovis_t *ebm)
 	char *clovis_ha_addr;
 	char *clovis_prof;
 	char *clovis_proc_fid;
-	char *clovis_index_dir = "/tmp/";
-	struct m0_idx_dix_config dix_conf = {.kc_create_meta = false };
 	/*char *laddr, *combined_laddr; */
 
 	if ((clovis_local_addr = strsep(&conf, " ")) == NULL)
@@ -124,7 +182,7 @@ conf_parse(char *conf, esdm_backend_t_clovis_t *ebm)
 		return -EINVAL;
 	ebm->ebm_clovis_conf.cc_local_addr = combined_laddr;
 #else
-	ebm->ebm_clovis_conf.cc_local_addr = clovis_local_addr;
+	ebm->ebm_clovis_conf.cc_local_addr = strdup(clovis_local_addr);
 #endif
 
 	if ((clovis_ha_addr = strsep(&conf, " ")) == NULL)
@@ -141,8 +199,7 @@ conf_parse(char *conf, esdm_backend_t_clovis_t *ebm)
 
 	ebm->ebm_clovis_conf.cc_is_oostore = true;
 	ebm->ebm_clovis_conf.cc_is_read_verify = false;
-	ebm->ebm_clovis_conf.cc_tm_recv_queue_min_len =
-		M0_NET_TM_RECV_QUEUE_DEF_LEN;
+	ebm->ebm_clovis_conf.cc_tm_recv_queue_min_len = M0_NET_TM_RECV_QUEUE_DEF_LEN;
 	ebm->ebm_clovis_conf.cc_max_rpc_msg_size = M0_RPC_DEF_MAX_RPC_MSG_SIZE;
 	ebm->ebm_clovis_conf.cc_layout_id = 0;
 	/* for DIX index type. */
@@ -152,10 +209,10 @@ conf_parse(char *conf, esdm_backend_t_clovis_t *ebm)
 	ebm->ebm_clovis_conf.cc_idx_service_id = M0_CLOVIS_IDX_MOCK;
 	ebm->ebm_clovis_conf.cc_idx_service_conf = clovis_index_dir;
 
-	DEBUG_FMT("local addr = %s", ebm->ebm_clovis_conf.cc_local_addr);
-	DEBUG_FMT("ha addr    = %s", ebm->ebm_clovis_conf.cc_ha_addr);
-	DEBUG_FMT("profile    = %s", ebm->ebm_clovis_conf.cc_profile);
-	DEBUG_FMT("process id = %s", ebm->ebm_clovis_conf.cc_process_fid);
+	DEBUG_FMT("local addr = %s\n", ebm->ebm_clovis_conf.cc_local_addr);
+	DEBUG_FMT("ha addr    = %s\n", ebm->ebm_clovis_conf.cc_ha_addr);
+	DEBUG_FMT("profile    = %s\n", ebm->ebm_clovis_conf.cc_profile);
+	DEBUG_FMT("process id = %s\n", ebm->ebm_clovis_conf.cc_process_fid);
 	return 0;
 }
 
@@ -168,18 +225,21 @@ esdm_backend_t_clovis_init(char *conf, esdm_backend_t *eb)
 	unsigned int r;
 	unsigned long long f;
 	int rc;
+	DEBUG_ENTER;
 
 	ebm = eb2ebm(eb);
 
 	rc = conf_parse(conf, ebm);
 	if (rc != 0) {
+		DEBUG_LEAVE;
 		return rc;
 	}
 
 	/* Clovis instance */
 	rc = m0_clovis_init(&ebm->ebm_clovis_instance, &ebm->ebm_clovis_conf, true);
 	if (rc != 0) {
-		DEBUG_FMT("Failed to initilise Clovis: %d", rc);
+		DEBUG_LEAVE;
+		DEBUG_FMT("Failed to initilise Clovis: %d\n", rc);
 		return rc;
 	}
 
@@ -191,7 +251,8 @@ esdm_backend_t_clovis_init(char *conf, esdm_backend_t *eb)
 	rc = ebm->ebm_clovis_container.co_realm.re_entity.en_sm.sm_rc;
 
 	if (rc != 0) {
-		DEBUG("Failed to open uber realm");
+		DEBUG_LEAVE;
+		DEBUG("Failed to open uber realm.\n");
 		return rc;
 	}
 
@@ -203,7 +264,7 @@ esdm_backend_t_clovis_init(char *conf, esdm_backend_t *eb)
 	f = (t << 16) | (r & 0xff00) | (pid & 0xff);
 	gid.u_hi = f;
 	gid.u_lo = 1L;
-	DEBUG_FMT("GID set to: <%lx:%lx>", gid.u_hi, gid.u_lo);
+	DEBUG_FMT("GID set to: <%lx:%lx>\n", gid.u_hi, gid.u_lo);
 
 	/* create the global mapping index */
 	/* XXX NO NEED TO DO SO.
@@ -211,6 +272,7 @@ esdm_backend_t_clovis_init(char *conf, esdm_backend_t *eb)
 		 &gidxfid);
 	 */
 
+	DEBUG_LEAVE;
 	return rc;
 }
 
@@ -218,6 +280,7 @@ static int
 esdm_backend_t_clovis_fini(esdm_backend_t *eb)
 {
 	esdm_backend_t_clovis_t *ebm;
+	DEBUG_ENTER;
 
 	ebm = eb2ebm(eb);
 	m0_clovis_fini(ebm->ebm_clovis_instance, true);
@@ -225,6 +288,9 @@ esdm_backend_t_clovis_fini(esdm_backend_t *eb)
 	free((char *)ebm->ebm_clovis_conf.cc_ha_addr);
 	free((char *)ebm->ebm_clovis_conf.cc_profile);
 	free((char *)ebm->ebm_clovis_conf.cc_process_fid);
+	free(ebm);
+
+	DEBUG_LEAVE;
 	return 0;
 }
 
@@ -233,6 +299,7 @@ open_entity(struct m0_clovis_obj *obj)
 {
 	struct m0_clovis_entity *entity = &obj->ob_entity;
 	struct m0_clovis_op *ops[1] = { NULL };
+	DEBUG_ENTER;
 
 	m0_clovis_entity_open(entity, &ops[0]);
 	m0_clovis_op_launch(ops, 1);
@@ -241,6 +308,7 @@ open_entity(struct m0_clovis_obj *obj)
 	m0_clovis_op_fini(ops[0]);
 	m0_clovis_op_free(ops[0]);
 	ops[0] = NULL;
+	DEBUG_LEAVE;
 }
 
 static int
@@ -249,6 +317,7 @@ create_object(esdm_backend_t_clovis_t *ebm, struct m0_uint128 id)
 	int rc = 0;
 	struct m0_clovis_obj obj;
 	struct m0_clovis_op *ops[1] = { NULL };
+	DEBUG_ENTER;
 
 	memset(&obj, 0, sizeof(struct m0_clovis_obj));
 
@@ -269,6 +338,7 @@ create_object(esdm_backend_t_clovis_t *ebm, struct m0_uint128 id)
 	m0_clovis_op_free(ops[0]);
 	m0_clovis_obj_fini(&obj);
 
+	DEBUG_LEAVE;
 	return rc;
 }
 
@@ -295,11 +365,11 @@ object_id_encode(const struct m0_uint128 *obj_id)
 }
 
 static int
-object_id_decode(char *oid_json, struct m0_uint128 *obj_id)
+object_id_decode(const char *oid_json, struct m0_uint128 *obj_id)
 {
 	struct m0_fid fid;
 	int rc;
-	char *oid = strchr(oid_json, '=');
+	const char *oid = strchr(oid_json, '=');
 
 	if (oid == NULL)
 		return -EINVAL;
@@ -334,41 +404,46 @@ esdm_backend_t_clovis_alloc(esdm_backend_t *eb,
 	esdm_backend_t_clovis_t *ebm;
 	struct m0_uint128 obj_id;
 	int rc;
+	DEBUG_ENTER;
 
 	ebm = eb2ebm(eb);
 
 	/* First step: alloc a new fid for this new object. */
 	obj_id = object_id_alloc();
-	DEBUG_FMT("new obj id = <%lx:%lx>", FID_P((struct m0_fid *)&obj_id));
+	DEBUG_FMT("new obj id = <%lx:%lx>\n", FID_P((struct m0_fid *)&obj_id));
 
 	/* Then create object */
 	rc = create_object(ebm, obj_id);
 	if (rc == 0) {
 		/* encode this obj_id into string */
-		*out_object_id = object_id_encode(&obj_id);
+		*out_object_id     = object_id_encode(&obj_id);
 		*out_mero_metadata = object_meta_encode(&obj_id);
 	}
+	DEBUG_LEAVE;
 	return rc;
 }
 
 static int
 esdm_backend_t_clovis_open(esdm_backend_t *eb,
-			   char *object_id,
+			   const char *object_id,
 			   void **obj_handle)
 {
 	esdm_backend_t_clovis_t *ebm;
 	struct m0_clovis_obj *obj;
 	struct m0_uint128 obj_id;
 	int rc = 0;
+	DEBUG_ENTER;
 
 	ebm = eb2ebm(eb);
 
 	/* convert from json string to object id. */
 	object_id_decode(object_id, &obj_id);
 
-	obj = malloc(sizeof *obj);
-	if (obj == NULL)
+	obj = malloc(sizeof (struct m0_clovis_obj));
+	if (obj == NULL) {
+		DEBUG_LEAVE;
 		return -ENOMEM;
+	}
 
 	memset(obj, 0, sizeof(struct m0_clovis_obj));
 	m0_clovis_obj_init(obj,
@@ -379,6 +454,7 @@ esdm_backend_t_clovis_open(esdm_backend_t *eb,
 	open_entity(obj);
 	*obj_handle = obj;
 
+	DEBUG_LEAVE;
 	return rc;
 }
 
@@ -505,17 +581,23 @@ esdm_backend_t_clovis_close(esdm_backend_t *eb, void *obj_handle)
 {
 	struct m0_clovis_obj *obj;
 	int rc = 0;
+	DEBUG_ENTER;
 
 	obj = (struct m0_clovis_obj *)obj_handle;
 	m0_clovis_obj_fini(obj);
 	free(obj);
 
+	DEBUG_LEAVE;
 	return rc;
 }
 
 static int
-esdm_backend_t_clovis_performance_estimate()
+esdm_backend_t_clovis_performance_estimate(esdm_backend_t  *b,
+					   esdm_fragment_t *fragment,
+					   float           *out_time)
 {
+	DEBUG_ENTER;
+	DEBUG_LEAVE;
 	return 0;
 }
 
@@ -528,10 +610,10 @@ index_op_tail(struct m0_clovis_entity *ce, struct m0_clovis_op *op, int rc)
 				       M0_BITS(M0_CLOVIS_OS_FAILED,
 				       M0_CLOVIS_OS_STABLE),
 				       M0_TIME_NEVER);
-		DEBUG_FMT("operation (%d) rc: %i", op->op_code, op->op_rc);
+		DEBUG_FMT("operation (%d) rc: %i\n", op->op_code, op->op_rc);
 	}
 	else
-		DEBUG_FMT("operation (%d) fail rc: %i", op->op_code, rc);
+		DEBUG_FMT("operation (%d) fail rc: %i\n", op->op_code, rc);
 	m0_clovis_op_fini(op);
 	m0_clovis_op_free(op);
 	m0_clovis_entity_fini(ce);
@@ -586,7 +668,7 @@ clovis_index_put(struct m0_clovis_realm *parent,
 	M0_PRE(vals != NULL);
 
 	rc = index_op(parent, fid, M0_CLOVIS_IC_PUT, keys, vals);
-	DEBUG_FMT("put done: %i", rc);
+	DEBUG_FMT("put done: %i\n", rc);
 
 	return rc;
 }
@@ -608,7 +690,7 @@ clovis_index_get(struct m0_clovis_realm *parent,
 		if (vals->ov_buf[0] == NULL)
 			rc = -ENODATA;
 	}
-	DEBUG_FMT("get done: %i", rc);
+	DEBUG_FMT("get done: %i\n", rc);
 	return rc;
 }
 
@@ -687,22 +769,36 @@ static int
 esdm_backend_t_clovis_fragment_retrieve(esdm_backend_t  *backend,
 					esdm_fragment_t *fragment)
 {
-	void *obj_handle = NULL;
 	int   rc = 0;
+	bool  mthreaded = false;
 
-	if (backend == NULL || fragment == NULL || fragment->buf == NULL)
-		return ESDM_ERROR;
+	DEBUG_ENTER;
 
-	/* Check if id is valid */
-	if (fragment->id == NULL) {
-		DEBUG("INVALID metadata. No object ID is found");
+	if (backend == NULL || fragment == NULL || fragment->buf == NULL) {
+		DEBUG_LEAVE;
 		return ESDM_ERROR;
 	}
 
-	DEBUG_FMT("Retrieving from %s", obj_id);
+	/* Check if id is valid */
+	if (fragment->id == NULL) {
+		DEBUG("INVALID metadata. No object ID is found.\n");
+		return ESDM_ERROR;
+	}
 
+	if ((fragment->bytes & BLOCKMASK) != 0) {
+		DEBUG_FMT("size=%lu is not BLOCK aligned\n", fragment->bytes);
+		return ESDM_ERROR;
+	}
+
+	mthreaded = convert_pthread_to_mero_thread(backend);
+	ebm_lock(backend);
+
+	DEBUG_FMT("Retrieving from f=%p id=%s size=%lu\n", fragment, fragment->id, fragment->bytes);
+
+	void *obj_handle = NULL;
 	/* 2. open object with its object id. */
 	rc = esdm_backend_t_clovis_open(backend, fragment->id, &obj_handle);
+	DEBUG_FMT("Object Opened: obj=%p rc=%d\n", obj_handle, rc);
 	if (rc == 0) {
 		void *readBuffer;
 
@@ -716,7 +812,6 @@ esdm_backend_t_clovis_fragment_retrieve(esdm_backend_t  *backend,
 		} else {
 			readBuffer = fragment->buf;
 		}
-
 		/* 3. read from this object. */
 		rc = esdm_backend_t_clovis_read(backend,
 						obj_handle,
@@ -735,15 +830,18 @@ esdm_backend_t_clovis_fragment_retrieve(esdm_backend_t  *backend,
 						 fragment->buf);
 			esdm_dataspace_destroy(contiguousSpace);
 		}
-		/* 4. close this object. */
-		esdm_backend_t_clovis_close(backend, obj_handle);
-
 		if (fragment->dataspace->stride) {
 			/* This memory is allocated previously */
 			free(readBuffer);
 		}
+		/* 4. close this object. */
+		esdm_backend_t_clovis_close(backend, obj_handle);
 	}
 
+	ebm_unlock(backend);
+	if (mthreaded)
+		revert_mero_thread_to_pthread();
+	DEBUG_LEAVE;
 	return rc == 0 ? ESDM_SUCCESS : ESDM_ERROR;
 }
 
@@ -753,12 +851,22 @@ esdm_backend_t_clovis_fragment_update(esdm_backend_t  *backend,
 {
 	char *obj_id     = NULL;
 	char *obj_meta   = NULL;
-	void *obj_handle = NULL;
 	int   rc         = ESDM_SUCCESS;
-	void *writeBuffer;
+	void *writeBuffer = NULL;
+	bool  mthreaded = false;
+	DEBUG_ENTER;
 
-	eassert((fragment->bytes & BLOCKMASK) == 0);
 
+	if ((fragment->bytes & BLOCKMASK) != 0) {
+		DEBUG_FMT("size=%lu is not BLOCK aligned\n", fragment->bytes);
+		DEBUG_LEAVE;
+		return ESDM_ERROR;
+	}
+
+	mthreaded = convert_pthread_to_mero_thread(backend);
+	ebm_lock(backend);
+
+	DEBUG_FMT("f=%p stride=%p id=%s\n", fragment, fragment->dataspace->stride, fragment->id);
 	if (fragment->dataspace->stride) {
 		/*
 		 * The fragment appears to have a non-trivial stride.
@@ -783,7 +891,6 @@ esdm_backend_t_clovis_fragment_update(esdm_backend_t  *backend,
 		writeBuffer = fragment->buf;
 	}
 
-
 	/* 1. create a new object for this fragment if it doesn't exist. */
 	if (fragment->id == NULL) {
 		rc = esdm_backend_t_clovis_alloc(backend,
@@ -804,9 +911,12 @@ esdm_backend_t_clovis_fragment_update(esdm_backend_t  *backend,
 		fragment->id = strdup(obj_id);
 	}
 
-	DEBUG_FMT("Updating to %s (size=%lu)", fragment->id, fragment->bytes);
+
+	DEBUG_FMT("Updating to %s (size=%lu)\n", fragment->id, fragment->bytes);
 	// 2. open object with its object_id.
+	void *obj_handle = NULL;
 	rc = esdm_backend_t_clovis_open(backend, fragment->id, &obj_handle);
+	DEBUG_FMT("open obj=%p rc=%d\n", obj_handle, rc);
 	if (rc == 0) {
 		// 3. write to this object.
 		rc = esdm_backend_t_clovis_write(backend,
@@ -820,22 +930,48 @@ esdm_backend_t_clovis_fragment_update(esdm_backend_t  *backend,
 	}
 
 err:
+	ebm_unlock(backend);
+	if (mthreaded)
+		revert_mero_thread_to_pthread();
 	free(obj_id);
 	free(obj_meta);
 	if (fragment->dataspace->stride) {
 		/* writeBuffer is allocated previously in this function. */
 		free(writeBuffer);
 	}
+	DEBUG_LEAVE;
 	return (rc == 0) ? ESDM_SUCCESS : ESDM_ERROR;
 }
 
 static int
 esdm_backend_t_clovis_mkfs(esdm_backend_t *backend, int enforce_format)
 {
-	if (!backend)
+	DEBUG_ENTER;
+	if (!backend) {
+		DEBUG_LEAVE;
 		return ESDM_ERROR;
+	}
 
+	DEBUG_LEAVE;
 	return ESDM_SUCCESS;
+}
+
+static float
+esdm_backend_t_estimate_throughput(esdm_backend_t *b)
+{
+	DEBUG_ENTER;
+
+	DEBUG_LEAVE;
+	return 0.0;
+}
+
+static int
+esdm_backend_t_fragment_create(esdm_backend_t *b, esdm_fragment_t *fragment)
+{
+	DEBUG_ENTER;
+
+	DEBUG_LEAVE;
+	return 0;
 }
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -852,8 +988,8 @@ esdm_backend_t_clovis_t esdm_backend_t_clovis = {
 		 .callbacks = {
 			 .finalize                 = esdm_backend_t_clovis_fini,
 			 .performance_estimate     = esdm_backend_t_clovis_performance_estimate,
-			 .estimate_throughput      = NULL,
-			 .fragment_create          = NULL,
+			 .estimate_throughput      = esdm_backend_t_estimate_throughput,
+			 .fragment_create          = esdm_backend_t_fragment_create,
 			 .fragment_retrieve        = esdm_backend_t_clovis_fragment_retrieve,
 			 .fragment_update          = esdm_backend_t_clovis_fragment_update,
 			 .fragment_delete          = NULL,
@@ -881,19 +1017,23 @@ esdm_backend_t_clovis_t esdm_backend_t_clovis = {
 esdm_backend_t *
 clovis_backend_init(esdm_config_backend_t *config)
 {
-	esdm_backend_t *eb = &esdm_backend_t_clovis.ebm_base;
+	esdm_backend_t_clovis_t *ceb;
 	char *target = NULL;
 	int rc;
 
+	DEBUG_ENTER;
+
 	if (!config || !config->type || strcasecmp(config->type, "CLOVIS")
 			|| !config->target) {
-		DEBUG("Wrong configuration");
+		DEBUG("Wrong configuration\n");
 		return NULL;
 	}
+	ceb = malloc(sizeof esdm_backend_t_clovis);
+	memcpy(ceb, &esdm_backend_t_clovis, sizeof(esdm_backend_t_clovis));
 
-	DEBUG_FMT("backend type   = %s", config->type);
-	DEBUG_FMT("backend id     = %s", config->id);
-	DEBUG_FMT("backend target = %s", config->target);
+	DEBUG_FMT("backend type   = %s\n", config->type);
+	DEBUG_FMT("backend id     = %s\n", config->id);
+	DEBUG_FMT("backend target = %s\n", config->target);
 
 	/*
 	 *          "local_addr ha_addr profile process_fid"
@@ -904,11 +1044,14 @@ clovis_backend_init(esdm_config_backend_t *config)
 	if (target == NULL)
 		return NULL;
 
-	rc = esdm_backend_t_clovis_init(target, eb);
+	rc = esdm_backend_t_clovis_init(target, &ceb->ebm_base);
 	free(target);
+	m0_mutex_init(&ceb->ebm_mutex);
+
+	DEBUG_LEAVE;
 
 	if (rc != 0)
 		return NULL;
 	else
-		return eb;
+		return &ceb->ebm_base;
 }

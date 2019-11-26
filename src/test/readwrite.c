@@ -26,7 +26,7 @@
 #include <esdm-internal.h>
 
 #define HEIGHT 2
-#define WIDTH 400
+#define WIDTH  4096
 
 int verify_data(uint64_t *a, uint64_t *b) {
   int mismatches = 0;
