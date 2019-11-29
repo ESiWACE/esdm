@@ -28,10 +28,10 @@
 
 #define DEBUG_BOUND_TREE false
 
-// esdmI_boundList_t ///////////////////////////////////////////////////////////////////////////////
+// esdmI_boundArray_t ///////////////////////////////////////////////////////////////////////////////
 
-static void boundList_construct(esdmI_boundList_t* me) {
-  *me = (esdmI_boundList_t){
+static void boundArray_construct(esdmI_boundArray_t* me) {
+  *me = (esdmI_boundArray_t){
     .entries = NULL,
     .count = 0,
     .allocatedCount = 16
@@ -42,7 +42,7 @@ static void boundList_construct(esdmI_boundList_t* me) {
 
 //This is a no-fail lookup that always returns either the first entry with the given bound, or the place where such an entry should be inserted into the list.
 //As such, it may return a pointer past the end of the array if the bound is larger than all existing entries.
-static esdmI_boundListEntry_t* boundList_lookup(esdmI_boundList_t* me, int64_t bakedBound) {
+static esdmI_boundListEntry_t* boundArray_lookup(esdmI_boundArray_t* me, int64_t bakedBound) {
   int64_t low = 0, high = me->count;
   while(low < high) {
     int64_t mid = (low + high)/2;
@@ -60,7 +60,7 @@ static int64_t bakeBound(int64_t bound, bool isStart) {
   return 2*bound + !!isStart; //the !! is important to turn any internal representation of true into a 1
 }
 
-static void boundList_add(esdmI_boundList_t* me, int64_t bound, bool isStart, int64_t cubeIndex) {
+static void boundArray_add(esdmI_boundArray_t* me, int64_t bound, bool isStart, int64_t cubeIndex) {
   //make sure we have enough space
   if(me->count == me->allocatedCount) {
     me->allocatedCount *= 2;
@@ -70,7 +70,7 @@ static void boundList_add(esdmI_boundList_t* me, int64_t bound, bool isStart, in
   eassert(me->allocatedCount > me->count);
 
   int64_t bakedBound = bakeBound(bound, isStart);
-  esdmI_boundListEntry_t* iterator = boundList_lookup(me, bakedBound); //get the place where to insert the entry …
+  esdmI_boundListEntry_t* iterator = boundArray_lookup(me, bakedBound); //get the place where to insert the entry …
   memmove(iterator + 1, iterator, (me->entries + me->count++ - iterator)*sizeof(*iterator));  //… shift everything after that …
   *iterator = (esdmI_boundListEntry_t){ //… and insert the new entry
     .bakedBound = bakedBound,
@@ -79,17 +79,17 @@ static void boundList_add(esdmI_boundList_t* me, int64_t bound, bool isStart, in
 }
 
 //find the first entry with the given bound, or return NULL if no such entry exists
-static esdmI_boundListEntry_t* boundList_findFirst(esdmI_boundList_t* me, int64_t bound, bool isStart, esdmI_boundListEntry_t** out_iterator) {
+static esdmI_boundListEntry_t* boundArray_findFirst(esdmI_boundArray_t* me, int64_t bound, bool isStart, esdmI_boundListEntry_t** out_iterator) {
   eassert(out_iterator);
   int64_t bakedBound = bakeBound(bound, isStart);
-  esdmI_boundListEntry_t* result = boundList_lookup(me, bakedBound);
+  esdmI_boundListEntry_t* result = boundArray_lookup(me, bakedBound);
   if(result - me->entries >= me->count) return NULL;
   if(result->bakedBound != bakedBound) return NULL;
   return *out_iterator = result;
 }
 
 //returns the next entry with the same bound, or NULL
-static esdmI_boundListEntry_t* boundList_nextEntry(esdmI_boundList_t* me, esdmI_boundListEntry_t** inout_iterator) {
+static esdmI_boundListEntry_t* boundArray_nextEntry(esdmI_boundArray_t* me, esdmI_boundListEntry_t** inout_iterator) {
   eassert(inout_iterator);
   int64_t nextIndex = *inout_iterator - me->entries + 1;
   if(nextIndex >= me->count) return NULL;
@@ -97,7 +97,7 @@ static esdmI_boundListEntry_t* boundList_nextEntry(esdmI_boundList_t* me, esdmI_
   return *inout_iterator = &me->entries[nextIndex];
 }
 
-static void boundList_destruct(esdmI_boundList_t* me) {
+static void boundArray_destruct(esdmI_boundArray_t* me) {
   free(me->entries);
 }
 

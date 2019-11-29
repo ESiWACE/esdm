@@ -344,8 +344,8 @@ struct esdmI_boundListEntry_t {
 //from a linear sorted list with binary search to some balanced tree in the future.
 //
 //This is private to esdmI_hypercubeNeighbourManager_t.
-typedef struct esdmI_boundList_t esdmI_boundList_t;
-struct esdmI_boundList_t {
+typedef struct esdmI_boundArray_t esdmI_boundArray_t;
+struct esdmI_boundArray_t {
   esdmI_boundListEntry_t* entries;
   int64_t count, allocatedCount;
 };
@@ -354,8 +354,8 @@ struct esdmI_boundList_t {
 //The max of 21 puts the sizeof(esdmI_boundTree_t) at 504 bytes, which is just short of eight cache lines.
 //This is a tuning parameter that might call for other values on other machines than mine.
 //
-//XXX: The motivation for this rather complex structure over the simple array in `esdmI_boundList_t` is that the later has a quadratic complexity.
-//     While the simple array access outperforms the more complicated data structure `esdmI_boundList_t`,
+//XXX: The motivation for this rather complex structure over the simple array in `esdmI_boundArray_t` is that the later has a quadratic complexity.
+//     While the simple array access outperforms the more complicated data structure for small hypercube counts,
 //     the B-tree outperforms the simply array when we have a couple of thousands entries in the list.
 //     We simply cannot tolerate quadratic complexities when the N is controlled by HPC applications...
 #define BOUND_TREE_MAX_BRANCH_FACTOR 21
