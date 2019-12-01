@@ -783,7 +783,7 @@ esdm_status esdm_scheduler_status_finalize(io_request_status_t *status) {
 
 esdm_status esdm_scheduler_wait(io_request_status_t *status) {
   g_mutex_lock(&status->mutex);
-  if (atomic_load(&status->pending_ops)) {
+  while (atomic_load(&status->pending_ops)) {
     g_cond_wait(&status->done_condition, &status->mutex);
   }
   g_mutex_unlock(&status->mutex);

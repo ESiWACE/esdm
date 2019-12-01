@@ -110,9 +110,6 @@ int main(int argc, char const *argv[]) {
   // TODO: write subset
   // TODO: read subset -> subspace reconstruction
 
-  ret = esdm_finalize();
-  eassert(ret == ESDM_SUCCESS);
-
   // verify data and fail test if mismatches are found
   int mismatches = verify_data(buf_w, buf_r);
   printf("Mismatches: %d\n", mismatches);
@@ -122,6 +119,9 @@ int main(int argc, char const *argv[]) {
     printf("OK\n");
   }
   eassert(mismatches == 0);
+
+  ret = esdm_finalize();
+  eassert(ret == ESDM_SUCCESS);
 
   // clean up
   free(buf_w);
