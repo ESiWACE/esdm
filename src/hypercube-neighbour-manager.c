@@ -30,8 +30,28 @@
 
 // esdmI_boundArray_t ///////////////////////////////////////////////////////////////////////////////
 
+static void boundArray_add(esdmI_boundArray_t* me, int64_t bound, bool isStart, int64_t cubeIndex);
+static void boundArray_add_callStub(void* me, int64_t bound, bool isStart, int64_t cubeIndex) { boundArray_add(me, bound, isStart, cubeIndex); }
+
+static esdmI_boundListEntry_t* boundArray_findFirst(esdmI_boundArray_t* me, int64_t bound, bool isStart, esdmI_boundIterator_t* out_iterator);
+static esdmI_boundListEntry_t* boundArray_findFirst_callStub(void* me, int64_t bound, bool isStart, esdmI_boundIterator_t* out_iterator) { return boundArray_findFirst(me, bound, isStart, out_iterator); }
+
+static esdmI_boundListEntry_t* boundArray_nextEntry(esdmI_boundArray_t* me, esdmI_boundIterator_t* inout_iterator);
+static esdmI_boundListEntry_t* boundArray_nextEntry_callStub(void* me, esdmI_boundIterator_t* inout_iterator) { return boundArray_nextEntry(me, inout_iterator); }
+
+static void boundArray_destruct(esdmI_boundArray_t* me);
+static void boundArray_destruct_callStub(void* me) { boundArray_destruct(me); }
+
+static esdmI_boundList_vtable_t boundArray_vtable = {
+  .add = boundArray_add_callStub,
+  .findFirst = boundArray_findFirst_callStub,
+  .nextEntry = boundArray_nextEntry_callStub,
+  .destruct = boundArray_destruct_callStub
+};
+
 static void boundArray_construct(esdmI_boundArray_t* me) {
   *me = (esdmI_boundArray_t){
+    .super = { .vtable = &boundArray_vtable },
     .entries = NULL,
     .count = 0,
     .allocatedCount = 16
@@ -79,22 +99,24 @@ static void boundArray_add(esdmI_boundArray_t* me, int64_t bound, bool isStart, 
 }
 
 //find the first entry with the given bound, or return NULL if no such entry exists
-static esdmI_boundListEntry_t* boundArray_findFirst(esdmI_boundArray_t* me, int64_t bound, bool isStart, esdmI_boundListEntry_t** out_iterator) {
+static esdmI_boundListEntry_t* boundArray_findFirst(esdmI_boundArray_t* me, int64_t bound, bool isStart, esdmI_boundIterator_t* out_iterator) {
   eassert(out_iterator);
   int64_t bakedBound = bakeBound(bound, isStart);
   esdmI_boundListEntry_t* result = boundArray_lookup(me, bakedBound);
   if(result - me->entries >= me->count) return NULL;
   if(result->bakedBound != bakedBound) return NULL;
-  return *out_iterator = result;
+  return out_iterator->arrayIterator.entry = result;
 }
 
 //returns the next entry with the same bound, or NULL
-static esdmI_boundListEntry_t* boundArray_nextEntry(esdmI_boundArray_t* me, esdmI_boundListEntry_t** inout_iterator) {
+static esdmI_boundListEntry_t* boundArray_nextEntry(esdmI_boundArray_t* me, esdmI_boundIterator_t* inout_iterator) {
   eassert(inout_iterator);
-  int64_t nextIndex = *inout_iterator - me->entries + 1;
+  eassert(inout_iterator->arrayIterator.entry);
+
+  int64_t nextIndex = inout_iterator->arrayIterator.entry - me->entries + 1;
   if(nextIndex >= me->count) return NULL;
-  if(me->entries[nextIndex].bakedBound != (*inout_iterator)->bakedBound) return NULL;
-  return *inout_iterator = &me->entries[nextIndex];
+  if(me->entries[nextIndex].bakedBound != inout_iterator->arrayIterator.entry->bakedBound) return NULL;
+  return inout_iterator->arrayIterator.entry = &me->entries[nextIndex];
 }
 
 static void boundArray_destruct(esdmI_boundArray_t* me) {
@@ -103,13 +125,30 @@ static void boundArray_destruct(esdmI_boundArray_t* me) {
 
 // esdmI_boundTree_t ///////////////////////////////////////////////////////////////////////////////
 
-typedef struct esdmI_boundTreeIterator_t {
-  esdmI_boundTree_t* node;
-  int entryPosition;
-} esdmI_boundTreeIterator_t;
+static void boundTree_add(esdmI_boundTree_t* me, int64_t bound, bool isStart, int64_t cubeIndex);
+static void boundTree_add_callStub(void* me, int64_t bound, bool isStart, int64_t cubeIndex) { boundTree_add(me, bound, isStart, cubeIndex); }
+
+static esdmI_boundListEntry_t*  boundTree_findFirst(esdmI_boundTree_t* me, int64_t bound, bool isStart, esdmI_boundIterator_t* out_iterator);
+static esdmI_boundListEntry_t*  boundTree_findFirst_callStub(void* me, int64_t bound, bool isStart, esdmI_boundIterator_t* out_iterator) { return boundTree_findFirst(me, bound, isStart, out_iterator); }
+
+static esdmI_boundListEntry_t* boundTree_nextEntry(esdmI_boundTree_t* me, esdmI_boundIterator_t* inout_iterator);
+static esdmI_boundListEntry_t* boundTree_nextEntry_callStub(void* me, esdmI_boundIterator_t* inout_iterator) { return boundTree_nextEntry(me, inout_iterator); }
+
+static void boundTree_destruct(esdmI_boundTree_t* me);
+static void boundTree_destruct_callStub(void* me) { boundTree_destruct(me); }
+
+static esdmI_boundList_vtable_t boundTree_vtable = {
+  .add = boundTree_add_callStub,
+  .findFirst = boundTree_findFirst_callStub,
+  .nextEntry = boundTree_nextEntry_callStub,
+  .destruct = boundTree_destruct_callStub
+};
 
 static void boundTree_construct(esdmI_boundTree_t* me) {
-  *me = (esdmI_boundTree_t){0};  //full zero initialization
+  *me = (esdmI_boundTree_t){
+    .super = { .vtable = &boundTree_vtable }
+    //other fields are zero initialized
+  };
 }
 
 //For debugging purposes.
@@ -255,7 +294,7 @@ static int boundTree_findPositionInParent(esdmI_boundTree_t* me, esdmI_boundTree
   return -1;
 }
 
-static esdmI_boundListEntry_t* boundTree_findFirst_internal(esdmI_boundTree_t* me, int64_t bakedBound, esdmI_boundTreeIterator_t* out_iterator) {
+static esdmI_boundListEntry_t* boundTree_findFirst_internal(esdmI_boundTree_t* me, int64_t bakedBound, esdmI_boundIterator_t* out_iterator) {
   //Find the first entry that is greater or equal to the given bakedBound.
   int childIndex;
   while(true) {
@@ -269,33 +308,29 @@ static esdmI_boundListEntry_t* boundTree_findFirst_internal(esdmI_boundTree_t* m
     childIndex = boundTree_findPositionInParent(me, &me); //It's pointing at our last child, the corresponding entry is in a parent.
   }
   if(me && me->bounds[childIndex].bakedBound == bakedBound) {
-    *out_iterator = (esdmI_boundTreeIterator_t){
-      .node = me,
-      .entryPosition = childIndex
-    };
+    out_iterator->treeIterator.node = me;
+    out_iterator->treeIterator.entryPosition = childIndex;
     return &me->bounds[childIndex];
   }
-  *out_iterator = (esdmI_boundTreeIterator_t){
-    .node = NULL,
-    .entryPosition = -1
-  };
+    out_iterator->treeIterator.node = NULL;
+    out_iterator->treeIterator.entryPosition = -1;
   return NULL;
 }
 
-static esdmI_boundListEntry_t*  boundTree_findFirst(esdmI_boundTree_t* me, int64_t bound, bool isStart, esdmI_boundTreeIterator_t* out_iterator) {
+static esdmI_boundListEntry_t*  boundTree_findFirst(esdmI_boundTree_t* me, int64_t bound, bool isStart, esdmI_boundIterator_t* out_iterator) {
   if(DEBUG_BOUND_TREE) boundTree_checkTree(me);
   return boundTree_findFirst_internal(me, bakeBound(bound, isStart), out_iterator);
 }
 
-static esdmI_boundListEntry_t* boundTree_nextEntry(esdmI_boundTree_t* me, esdmI_boundTreeIterator_t* inout_iterator) {
+static esdmI_boundListEntry_t* boundTree_nextEntry(esdmI_boundTree_t* me, esdmI_boundIterator_t* inout_iterator) {
   eassert(inout_iterator);
-  eassert(inout_iterator->node);
+  eassert(inout_iterator->treeIterator.node);
   if(DEBUG_BOUND_TREE) boundTree_checkTree(me);
 
   //get the info from the iterator and advance the entry position
-  me = inout_iterator->node;
-  int64_t bakedBound = me->bounds[inout_iterator->entryPosition].bakedBound; //remember the bound we are looking for
-  int entryPosition = inout_iterator->entryPosition + 1;  //increment position
+  me = inout_iterator->treeIterator.node;
+  int64_t bakedBound = me->bounds[inout_iterator->treeIterator.entryPosition].bakedBound; //remember the bound we are looking for
+  int entryPosition = inout_iterator->treeIterator.entryPosition + 1;  //increment position
 
   //descent until we find a leaf
   while(me->children[entryPosition]) {
@@ -310,18 +345,14 @@ static esdmI_boundListEntry_t* boundTree_nextEntry(esdmI_boundTree_t* me, esdmI_
 
   //return the entry if we have found a valid one
   if(me && me->bounds[entryPosition].bakedBound == bakedBound) {
-    *inout_iterator = (esdmI_boundTreeIterator_t){
-      .node = me,
-      .entryPosition = entryPosition
-    };
+    inout_iterator->treeIterator.node = me;
+    inout_iterator->treeIterator.entryPosition = entryPosition;
     return &me->bounds[entryPosition];
   }
 
   //there are no more entries with the given bound
-  *inout_iterator = (esdmI_boundTreeIterator_t){
-    .node = NULL,
-    .entryPosition = -1
-  };
+  inout_iterator->treeIterator.node = NULL;
+  inout_iterator->treeIterator.entryPosition = -1;
   return NULL;
 }
 
@@ -331,6 +362,22 @@ static void boundTree_destruct(esdmI_boundTree_t* me) {
       boundTree_destruct(me->children[i]);
       free(me->children[i]);
     }
+  }
+}
+
+// esdmI_boundList_t ///////////////////////////////////////////////////////////////////////////////
+
+//Factory function to select which implementation we use.
+static esdmI_boundList_t* boundList_create() {
+  bool useTree = true;
+  if(useTree) {
+    esdmI_boundTree_t* result = malloc(sizeof(*result));
+    boundTree_construct(result);
+    return &result->super;
+  } else {
+    esdmI_boundArray_t* result = malloc(sizeof(*result));
+    boundArray_construct(result);
+    return &result->super;
   }
 }
 
@@ -378,7 +425,7 @@ esdmI_hypercubeNeighbourManager_t* esdmI_hypercubeNeighbourManager_make(int64_t 
   };
   result->list.cubes = malloc(result->allocatedCount*sizeof(*result->list.cubes));
   result->neighbourLists = malloc(result->allocatedCount*sizeof(*result->neighbourLists));
-  for(int64_t i = 0; i < dimensions; i++) boundTree_construct(&result->boundLists[i]);
+  for(int64_t i = 0; i < dimensions; i++) result->boundLists[i] = boundList_create();
   return result;
 }
 
@@ -407,28 +454,28 @@ void esdmI_hypercubeNeighbourManager_pushBack(esdmI_hypercubeNeighbourManager_t*
   esdmI_neighbourList_t* neighbours = &me->neighbourLists[cubeIndex];
   neighbourList_construct(neighbours);
   for(int dim = 0; dim < me->dims; dim++) {
-    esdmI_boundTreeIterator_t iterator;
-    for(esdmI_boundListEntry_t* entry = boundTree_findFirst(&me->boundLists[dim], cube->ranges[dim].start, false, &iterator); //iterate the corresponding *end* bounds
+    esdmI_boundIterator_t iterator;
+    for(esdmI_boundListEntry_t* entry = boundList_findFirst(me->boundLists[dim], cube->ranges[dim].start, false, &iterator); //iterate the corresponding *end* bounds
         entry;
-        entry = boundTree_nextEntry(&me->boundLists[dim], &iterator)
+        entry = boundList_nextEntry(me->boundLists[dim], &iterator)
     ) {
       if(esdmI_hypercube_touches(cube, me->list.cubes[entry->cubeIndex])) {
         neighbourList_add(neighbours, entry->cubeIndex);
         neighbourList_add(&me->neighbourLists[entry->cubeIndex], cubeIndex);
       }
     }
-    boundTree_add(&me->boundLists[dim], cube->ranges[dim].start, true, cubeIndex);
+    boundList_add(me->boundLists[dim], cube->ranges[dim].start, true, cubeIndex);
 
-    for(esdmI_boundListEntry_t* entry = boundTree_findFirst(&me->boundLists[dim], cube->ranges[dim].end, true, &iterator);  //iterate the corresponding *start* bounds
+    for(esdmI_boundListEntry_t* entry = boundList_findFirst(me->boundLists[dim], cube->ranges[dim].end, true, &iterator);  //iterate the corresponding *start* bounds
         entry;
-        entry = boundTree_nextEntry(&me->boundLists[dim], &iterator)
+        entry = boundList_nextEntry(me->boundLists[dim], &iterator)
     ) {
       if(esdmI_hypercube_touches(cube, me->list.cubes[entry->cubeIndex])) {
         neighbourList_add(neighbours, entry->cubeIndex);
         neighbourList_add(&me->neighbourLists[entry->cubeIndex], cubeIndex);
       }
     }
-    boundTree_add(&me->boundLists[dim], cube->ranges[dim].end, false, cubeIndex);
+    boundList_add(me->boundLists[dim], cube->ranges[dim].end, false, cubeIndex);
   }
 }
 
@@ -442,6 +489,6 @@ void esdmI_hypercubeNeighbourManager_destroy(esdmI_hypercubeNeighbourManager_t* 
   free(me->neighbourLists);
   for(int64_t i = me->list.count; i--; ) esdmI_hypercube_destroy(me->list.cubes[i]);
   free(me->list.cubes);
-  for(int64_t i = me->dims; i--; ) boundTree_destruct(&me->boundLists[i]);
+  for(int64_t i = me->dims; i--; ) boundList_destruct(me->boundLists[i]), free(me->boundLists[i]);
   free(me);
 }

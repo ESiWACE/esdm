@@ -4,6 +4,7 @@
 #include <jansson.h>
 #include <glib.h>
 #include <stdatomic.h>
+#include <stdbool.h>
 
 #include <esdm-datatypes.h>
 #include <smd-datatype.h>
@@ -332,12 +333,41 @@ struct esdmI_hypercubeSet_t {
   int64_t allocatedCount;
 };
 
-//helper for esdmI_boundList_t
+//helper for the esdmI_boundList_t implementations
 typedef struct esdmI_boundListEntry_t esdmI_boundListEntry_t;
 struct esdmI_boundListEntry_t {
   int64_t bakedBound;  //the LSB is used to store whether the bound is a start or end bound (1 == start bound), the actual bound is shifted left one bit
   int64_t cubeIndex;
 };
+
+typedef struct esdmI_boundTree_t esdmI_boundTree_t;
+typedef union esdmI_boundIterator_t {
+  struct {
+    esdmI_boundListEntry_t* entry;
+  } arrayIterator;
+  struct {
+    esdmI_boundTree_t* node;
+    int entryPosition;
+  } treeIterator;
+} esdmI_boundIterator_t;
+
+typedef struct esdmI_boundList_vtable_t esdmI_boundList_vtable_t;
+struct esdmI_boundList_vtable_t {
+  void (*add)(void* me, int64_t bound, bool isStart, int64_t cubeIndex);
+  esdmI_boundListEntry_t* (*findFirst)(void* me, int64_t bound, bool isStart, esdmI_boundIterator_t* out_iterator);
+  esdmI_boundListEntry_t* (*nextEntry)(void* me, esdmI_boundIterator_t* inout_iterator);
+  void (*destruct)(void* me);
+};
+
+typedef struct esdmI_boundList_t esdmI_boundList_t;
+struct esdmI_boundList_t {
+  esdmI_boundList_vtable_t* vtable;
+};
+
+static inline void boundList_add(esdmI_boundList_t* me, int64_t bound, bool isStart, int64_t cubeIndex) { me->vtable->add(me, bound, isStart, cubeIndex); }
+static inline esdmI_boundListEntry_t* boundList_findFirst(esdmI_boundList_t* me, int64_t bound, bool isStart, esdmI_boundIterator_t* out_iterator) { return me->vtable->findFirst(me, bound, isStart, out_iterator); }
+static inline esdmI_boundListEntry_t* boundList_nextEntry(esdmI_boundList_t* me, esdmI_boundIterator_t* inout_iterator) { return me->vtable->nextEntry(me, inout_iterator); }
+static inline void boundList_destruct(esdmI_boundList_t* me) { me->vtable->destruct(me); }
 
 //helper for esdmI_hypercubeNeighbourManager_t
 //The intention of implementing this as a class of its own is to facilitate changing the data structure
@@ -346,12 +376,13 @@ struct esdmI_boundListEntry_t {
 //This is private to esdmI_hypercubeNeighbourManager_t.
 typedef struct esdmI_boundArray_t esdmI_boundArray_t;
 struct esdmI_boundArray_t {
+  esdmI_boundList_t super;
   esdmI_boundListEntry_t* entries;
   int64_t count, allocatedCount;
 };
 
 //Stores an index of bounds in the form of a B-tree.
-//The max of 21 puts the sizeof(esdmI_boundTree_t) at 504 bytes, which is just short of eight cache lines.
+//The max of 21 puts the sizeof(esdmI_boundTree_t) at 512 bytes, which is exactly eight cache lines.
 //This is a tuning parameter that might call for other values on other machines than mine.
 //
 //XXX: The motivation for this rather complex structure over the simple array in `esdmI_boundArray_t` is that the later has a quadratic complexity.
@@ -360,8 +391,8 @@ struct esdmI_boundArray_t {
 //     We simply cannot tolerate quadratic complexities when the N is controlled by HPC applications...
 #define BOUND_TREE_MAX_BRANCH_FACTOR 21
 #define BOUND_TREE_MAX_ENTRY_COUNT (BOUND_TREE_MAX_BRANCH_FACTOR - 1)
-typedef struct esdmI_boundTree_t esdmI_boundTree_t;
 struct esdmI_boundTree_t {
+  esdmI_boundList_t super;
   int64_t entryCount;
   esdmI_boundListEntry_t bounds[BOUND_TREE_MAX_ENTRY_COUNT];
   esdmI_boundTree_t* children[BOUND_TREE_MAX_BRANCH_FACTOR];
@@ -383,7 +414,7 @@ struct esdmI_hypercubeNeighbourManager_t {
 
   esdmI_neighbourList_t* neighbourLists;  //`list->count` entries, space for `allocatedCount` entries
 
-  esdmI_boundTree_t boundLists[];  //one esdmI_boundList_t per dimension
+  esdmI_boundList_t* boundLists[];  //one esdmI_boundList_t per dimension
 };
 
 #endif
