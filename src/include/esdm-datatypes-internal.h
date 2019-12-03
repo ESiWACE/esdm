@@ -259,8 +259,14 @@ struct esdm_io_t {
 
 // Entry points and state for core components /////////////////////////////////
 
+enum {
+  BOUND_LIST_IMPLEMENTATION_ARRAY = 0,
+  BOUND_LIST_IMPLEMENTATION_BTREE = 1
+};
+
 typedef struct esdm_config_t {
   void *json;
+  uint8_t boundListImplementation;  //one of the BOUND_LIST_IMPLEMENTATION_* constants
 } esdm_config_t;
 
 typedef struct esdm_modules_t {

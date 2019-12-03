@@ -70,6 +70,7 @@ void esdmI_log_dump(){
   printf("\n");
 }
 
+//FIXME: This function does not do what it says on the lid. Refactor into an init function and a function that actually sets the buffer log level.
 void esdm_loglevel_buffer(esdm_loglevel_e lvl){
   if(lvl > 0){
     int ret;

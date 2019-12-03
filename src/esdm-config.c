@@ -43,6 +43,24 @@ esdm_config_t *esdm_config_init_from_str(const char *config_str) {
   config = (esdm_config_t *)malloc(sizeof(esdm_config_t));
   config->json = json;
 
+  json_t* esdm_e = json_object_get(json, "esdm");
+  if(! esdm_e) ESDM_ERROR("Configuration: esdm tag not set");
+
+  config->boundListImplementation = BOUND_LIST_IMPLEMENTATION_BTREE;  //default
+  json_t* boundListImplementation_e = json_object_get(json, "bound list implementation");
+  if(boundListImplementation_e) {
+    const char* selection = json_string_value(boundListImplementation_e);
+    if(!selection) {
+      ESDM_ERROR("Configuration: \"bound list implementation\" tag is not a string");
+    } else if(!strcmp(selection, "array")) {
+      config->boundListImplementation = BOUND_LIST_IMPLEMENTATION_ARRAY;
+    } else if(!strcmp(selection, "btree")) {
+      config->boundListImplementation = BOUND_LIST_IMPLEMENTATION_BTREE;
+    } else {
+      ESDM_ERROR_FMT("Configuration: unrecognized value of \"bound list implementation\" tag: \"%s\"", selection);
+    }
+  }
+
   return config;
 }
 

@@ -369,15 +369,20 @@ static void boundTree_destruct(esdmI_boundTree_t* me) {
 
 //Factory function to select which implementation we use.
 static esdmI_boundList_t* boundList_create() {
-  bool useTree = true;
-  if(useTree) {
-    esdmI_boundTree_t* result = malloc(sizeof(*result));
-    boundTree_construct(result);
-    return &result->super;
-  } else {
-    esdmI_boundArray_t* result = malloc(sizeof(*result));
-    boundArray_construct(result);
-    return &result->super;
+  switch(esdmI_getConfig()->boundListImplementation) {
+    default:
+      ESDM_WARN("configuration parameter boundListImplementation has an illegal value, continuing with B-tree implementation");
+      //fallthrough
+    case BOUND_LIST_IMPLEMENTATION_BTREE: {
+      esdmI_boundTree_t* result = malloc(sizeof(*result));
+      boundTree_construct(result);
+      return &result->super;
+    }
+    case BOUND_LIST_IMPLEMENTATION_ARRAY: {
+      esdmI_boundArray_t* result = malloc(sizeof(*result));
+      boundArray_construct(result);
+      return &result->super;
+    }
   }
 }
 

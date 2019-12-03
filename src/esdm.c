@@ -258,3 +258,5 @@ esdm_status esdm_read_stream(esdm_dataset_t *d, esdm_dataspace_t *space, void * 
 esdm_statistics_t esdm_read_stats() { return esdm.readStats; }
 
 esdm_statistics_t esdm_write_stats() { return esdm.writeStats; }
+
+esdm_config_t* esdmI_getConfig() { return esdm.config; }

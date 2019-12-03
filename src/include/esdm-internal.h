@@ -30,6 +30,8 @@ esdm_config_t *esdm_config_init();
 
 esdm_config_t *esdm_config_init_from_str(const char *str);
 
+esdm_config_t* esdmI_getConfig();
+
 esdm_status esdm_config_finalize(esdm_instance_t *esdm);
 
 /**

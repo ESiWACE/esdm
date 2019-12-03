@@ -188,24 +188,18 @@ void readArgs(int argc, char const **argv, int* out_height, int* out_width) {
 //      Read as 16xN/16 slices, check statistics (2x read).
 //      ...
 
-int main(int argc, char const *argv[]) {
-  int height, width;
-  readArgs(argc, argv, &height, &width);
-
-  // prepare data
-  uint64_t (*data)[width] = malloc(height*sizeof(*data));
-  initData(height, width, data);
-
-  // Interaction with ESDM
-  esdm_status ret = esdm_init();
+void runTestWithConfig(int height, int width, const char* configString) {
+  esdm_status ret = esdm_load_config_str(configString);
+  eassert(ret == ESDM_SUCCESS);
+  ret = esdm_init();
   eassert(ret == ESDM_SUCCESS);
 
+  esdm_loglevel(ESDM_LOGLEVEL_WARNING); //stop the esdm_mkfs() call from spamming us with infos about deleted objects
   ret = esdm_mkfs(ESDM_FORMAT_PURGE_RECREATE, ESDM_ACCESSIBILITY_GLOBAL);
   eassert(ret == ESDM_SUCCESS);
   ret = esdm_mkfs(ESDM_FORMAT_PURGE_RECREATE, ESDM_ACCESSIBILITY_NODELOCAL);
   eassert(ret == ESDM_SUCCESS);
-
-
+  esdm_loglevel(ESDM_LOGLEVEL_INFO);
 
   printf("\nTest 1: Measure worst case reading and the effect of writeback in this case\n");
 
@@ -226,6 +220,10 @@ int main(int argc, char const *argv[]) {
   eassert(ret == ESDM_SUCCESS);
   ret = esdm_container_commit(container);
   eassert(ret == ESDM_SUCCESS);
+
+  // perform the transposition test
+  uint64_t (*data)[width] = malloc(height*sizeof(*data));
+  initData(height, width, data);
 
   timer myTimer;
   start_timer(&myTimer);
@@ -254,7 +252,7 @@ int main(int argc, char const *argv[]) {
 
   printf("\nTest 2: Profile successive change of fragment shape\n");
 
-  //TODO Perform gradual transposition test
+  // Perform gradual transposition test
   esdm_dataset_t* dataset2;
   ret = esdm_dataset_create(container, "dataset2", dataspace, &dataset2);
   eassert(ret == ESDM_SUCCESS);
@@ -282,6 +280,20 @@ int main(int argc, char const *argv[]) {
 
   ret = esdm_finalize();
   eassert(ret == ESDM_SUCCESS);
+}
+
+int main(int argc, char const *argv[]) {
+  int height, width;
+  readArgs(argc, argv, &height, &width);
+
+  printf("=== array based bound list ===\n\n");
+  runTestWithConfig(height, width, "{ \"esdm\": { \"bound list implementation\": \"array\", \"backends\": [ { \"type\": \"POSIX\", \"id\": \"p1\", \"accessibility\": \"global\", \"target\": \"./_posix1\" } ], \"metadata\": { \"type\": \"metadummy\", \"id\": \"md\", \"target\": \"./_metadummy\" } } }");
+
+  printf("\n\n=== B-tree based bound list ===\n\n");
+  runTestWithConfig(height, width, "{ \"esdm\": { \"bound list implementation\": \"btree\", \"backends\": [ { \"type\": \"POSIX\", \"id\": \"p1\", \"accessibility\": \"global\", \"target\": \"./_posix1\" } ], \"metadata\": { \"type\": \"metadummy\", \"id\": \"md\", \"target\": \"./_metadummy\" } } }");
+
+  printf("\n\n=== array based bound list (repeat) ===\n\n");
+  runTestWithConfig(height, width, "{ \"esdm\": { \"bound list implementation\": \"array\", \"backends\": [ { \"type\": \"POSIX\", \"id\": \"p1\", \"accessibility\": \"global\", \"target\": \"./_posix1\" } ], \"metadata\": { \"type\": \"metadummy\", \"id\": \"md\", \"target\": \"./_metadummy\" } } }");
 
   printf("\nOK\n");
 
