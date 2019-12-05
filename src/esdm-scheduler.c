@@ -856,12 +856,20 @@ static void removeRedundantFragments(esdmI_hypercube_t* bounds, int* inout_fragm
     esdmI_hypercubeList_t* extendsList = esdmI_hypercubeNeighbourManager_list(neighbourManager);
     double* similarities = malloc(fragmentCount*sizeof(*similarities));
     double bestSimilarity = -1;
-    int64_t bestIndex = -1;
+    int64_t bestOverlap = -1, bestIndex = -1;
     for(int64_t i = 0; i < fragmentCount; i++) {
       similarities[i] = esdmI_hypercube_shapeSimilarity(bounds, extendsList->cubes[i]);
       if(similarities[i] > bestSimilarity) {
         bestSimilarity = similarities[i];
+        bestOverlap = esdmI_hypercube_overlap(bounds, extendsList->cubes[i]);
         bestIndex = i;
+      } else if(similarities[i] == bestSimilarity) {
+        //In case of a tie in similarity, we prefer the cube with the largest overlap.
+        int64_t overlap = esdmI_hypercube_overlap(bounds, extendsList->cubes[i]);
+        if(overlap > bestOverlap) {
+          bestOverlap = esdmI_hypercube_overlap(bounds, extendsList->cubes[i]);
+          bestIndex = i;
+        }
       }
     }
     eassert(bestIndex >= 0);

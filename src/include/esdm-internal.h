@@ -363,6 +363,11 @@ bool esdmI_hypercube_doesIntersect(esdmI_hypercube_t* a, esdmI_hypercube_t* b);
 //where one voxel belongs to hypercube `a` while the other belongs to hypercube `b`.
 bool esdmI_hypercube_touches(esdmI_hypercube_t* a, esdmI_hypercube_t* b);
 
+//Returns the count of grid points that are shared between the two hypercubes.
+//This method is cheaper to call than the equivalent *_makeIntersection(), *_size(), *_destroy() combo;
+//it avoids the overhead of actually creating the intersection hypercube.
+int64_t esdmI_hypercube_overlap(esdmI_hypercube_t* a, esdmI_hypercube_t* b);
+
 //Returns a value between 0.0 and 1.0 that is a measure of how similar the shapes of the hypercubes are.
 //The positions of the two cubes are irrelevant, only size and shape matter.
 //The algorithm basically translates both hypercubes to start at (0, ..., 0) and then checks the volume of the intersection against the volume of the two hypercubes.

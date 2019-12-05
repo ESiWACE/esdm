@@ -147,6 +147,19 @@ bool esdmI_hypercube_touches(esdmI_hypercube_t* a, esdmI_hypercube_t* b) {
   return true;
 }
 
+int64_t esdmI_hypercube_overlap(esdmI_hypercube_t* a, esdmI_hypercube_t* b) {
+  eassert(a);
+  eassert(b);
+  eassert(a->dims == b->dims);
+  int64_t dimensions = a->dims;
+
+  int64_t overlap = 1;
+  for(int64_t i = 0; overlap && i < dimensions; i++) {
+    overlap *= esdmI_range_size(esdmI_range_intersection(a->ranges[i], b->ranges[i]));
+  }
+  return overlap;
+}
+
 double esdmI_hypercube_shapeSimilarity(esdmI_hypercube_t* a, esdmI_hypercube_t* b) {
   eassert(a);
   eassert(b);
