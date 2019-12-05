@@ -26,13 +26,13 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-void initData(int64_t length, uint64_t* data) {
+void initData(int64_t length, uint8_t* data) {
   for(int i = 0; i < length; i++) {
     data[i] = i%256;
   }
 }
 
-bool dataIsCorrect(int64_t length, uint64_t* data) {
+bool dataIsCorrect(int64_t length, uint8_t* data) {
   for(int i = 0; i < length; i++) {
     if(data[i] != i%256) return false;
   }
@@ -40,7 +40,7 @@ bool dataIsCorrect(int64_t length, uint64_t* data) {
 }
 
 //writes all possible fragments
-void writeData(esdm_dataset_t* dataset, esdm_dataspace_t* dataspace, int64_t length, uint64_t *data) {
+void writeData(esdm_dataset_t* dataset, esdm_dataspace_t* dataspace, int64_t length, uint8_t *data) {
   int ret;
   int64_t fragmentCount = 0;
   int64_t totalSize = 0;
@@ -79,7 +79,7 @@ void writeData(esdm_dataset_t* dataset, esdm_dataspace_t* dataspace, int64_t len
   printf("write %"PRId64" fragments of %"PRId64" bytes of data (%"PRId64" bytes total): %.3fms\n", fragmentCount, length*sizeof(*data), totalSize, 1000*stop_timer(myTimer));
 }
 
-void readRandomFragment(esdm_dataset_t* dataset, esdm_dataspace_t* dataspace, int64_t length, uint64_t* data) {
+void readRandomFragment(esdm_dataset_t* dataset, esdm_dataspace_t* dataspace, int64_t length, uint8_t* data) {
   //XXX: If we would select x0 randomly first, and then select x1 from the remaining eligible range, we would not need the trial-and-error loop.
   //     However, we would pay with a non-uniform distribution of the intervals:
   //     x0 would be trivially equally distributed, but x1 would have a heavy bias towards the end of the data array.
@@ -199,7 +199,7 @@ void runTestWithConfig(int64_t length, int64_t readCount, const char* configStri
 
   // define dataspace
   esdm_dataspace_t *dataspace;
-  ret = esdm_dataspace_create(1, &length, SMD_DTYPE_UINT64, &dataspace);
+  ret = esdm_dataspace_create(1, &length, SMD_DTYPE_UINT8, &dataspace);
   eassert(ret == ESDM_SUCCESS);
   esdm_container_t *container;
   ret = esdm_container_create("mycontainer", 1, &container);
@@ -214,7 +214,7 @@ void runTestWithConfig(int64_t length, int64_t readCount, const char* configStri
   eassert(ret == ESDM_SUCCESS);
 
   // perform the test
-  uint64_t* data = malloc(length*sizeof(*data));
+  uint8_t* data = malloc(length*sizeof(*data));
   initData(length, data);
 
   writeData(dataset, dataspace, length, data);
