@@ -26,6 +26,9 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+int64_t totalFragmentCount = 0, totalWrittenData = 0;
+double totalWriteTime = 0, totalReadTime = 0;
+
 void initData(int64_t length, uint8_t* data) {
   for(int i = 0; i < length; i++) {
     data[i] = i%256;
@@ -76,7 +79,11 @@ void writeData(esdm_dataset_t* dataset, esdm_dataspace_t* dataspace, int64_t len
   ret = esdm_dataset_commit(dataset);
   eassert(ret == ESDM_SUCCESS);
 
-  printf("write %"PRId64" fragments of %"PRId64" bytes of data (%"PRId64" bytes total): %.3fms\n", fragmentCount, length*sizeof(*data), totalSize, 1000*stop_timer(myTimer));
+  double writeTime = stop_timer(myTimer);
+  printf("write %"PRId64" fragments of %"PRId64" bytes of data (%"PRId64" bytes total): %.3fms\n", fragmentCount, length*sizeof(*data), totalSize, 1000*writeTime);
+  totalFragmentCount += fragmentCount;
+  totalWrittenData += totalSize;
+  totalWriteTime += writeTime;
 }
 
 void readRandomFragment(esdm_dataset_t* dataset, esdm_dataspace_t* dataspace, int64_t length, uint8_t* data) {
@@ -132,6 +139,10 @@ void printUsage(const char* programPath) {
   printf("\t-c C, --count C\n");
   printf("\t\tSet the count of fragments that are read back from the dataset.\n");
   printf("\n");
+  printf("\t-r R, --repetitions R\n");
+  printf("\t\tNumber of times that the entire test is to be repeated,\n");
+  printf("\t\tincluding reinitialization and recreation of the ESDM file system.\n");
+  printf("\n");
   printf("\t-?, -h, --help\n");
   printf("\t\tPrint this usage information and exit.\n");
 }
@@ -151,7 +162,7 @@ int64_t readIntArg(int argc, char const **argv) {
   return result;
 }
 
-void readArgs(int argc, char const **argv, int64_t* out_length, int64_t* out_readCount) {
+void readArgs(int argc, char const **argv, int64_t* out_length, int64_t* out_readCount, int64_t* out_repetitions) {
   //save the program name
   eassert(argc > 0);
   char const* programPath = *argv++;
@@ -160,12 +171,15 @@ void readArgs(int argc, char const **argv, int64_t* out_length, int64_t* out_rea
   //defaults
   *out_length = 70;  //2485 fragments
   *out_readCount = 100;
+  *out_repetitions = 1;
 
   for(; argc > 0; argc--, argv++) {
     if(!strcmp(*argv, "-l") || !strcmp(*argv, "--length")) {
       *out_length = readIntArg(argc--, argv++); //gobble up an additional argument;
     } else if(!strcmp(*argv, "-c") || !strcmp(*argv, "--count")) {
       *out_readCount = readIntArg(argc--, argv++);  //gobble up an additional argument;
+    } else if(!strcmp(*argv, "-r") || !strcmp(*argv, "--repetitions")) {
+      *out_repetitions = readIntArg(argc--, argv++);  //gobble up an additional argument;
     } else if(!strcmp(*argv, "-?") || !strcmp(*argv, "-h") || !strcmp(*argv, "--help")) {
       printUsage(programPath);
       exit(0);
@@ -222,7 +236,9 @@ void runTestWithConfig(int64_t length, int64_t readCount, const char* configStri
   timer myTimer;
   start_timer(&myTimer);
   for(int64_t i = 0; i < readCount; i++) readRandomFragment(dataset, dataspace, length, data);
-  printf("read %"PRId64" random fragments: %.3fms\n", readCount, 1000*stop_timer(myTimer));
+  double readTime = stop_timer(myTimer);
+  printf("read %"PRId64" random fragments: %.3fms\n", readCount, 1000*readTime);
+  totalReadTime += readTime;
   eassert(dataIsCorrect(length, data));
 
   ret = esdm_finalize();
@@ -230,17 +246,27 @@ void runTestWithConfig(int64_t length, int64_t readCount, const char* configStri
 }
 
 int main(int argc, char const *argv[]) {
-  int64_t length, readCount;
-  readArgs(argc, argv, &length, &readCount);
+  int64_t length, readCount, repetitions;
+  readArgs(argc, argv, &length, &readCount, &repetitions);
 
-  printf("=== array based bound list ===\n\n");
-  runTestWithConfig(length, readCount, "{ \"esdm\": { \"bound list implementation\": \"array\", \"backends\": [ { \"type\": \"POSIX\", \"id\": \"p1\", \"accessibility\": \"global\", \"target\": \"./_posix1\" } ], \"metadata\": { \"type\": \"metadummy\", \"id\": \"md\", \"target\": \"./_metadummy\" } } }");
+  double arrayReadTime = 0, btreeReadTime = 0;
+  for(int64_t i = 0; i < repetitions; i++) {
+    totalReadTime = 0;
+    printf("\n\n=== array based bound list ===\n\n");
+    runTestWithConfig(length, readCount, "{ \"esdm\": { \"bound list implementation\": \"array\", \"backends\": [ { \"type\": \"POSIX\", \"id\": \"p1\", \"accessibility\": \"global\", \"target\": \"./_posix1\" } ], \"metadata\": { \"type\": \"metadummy\", \"id\": \"md\", \"target\": \"./_metadummy\" } } }");
+    arrayReadTime += totalReadTime;
 
-  printf("\n\n=== B-tree based bound list ===\n\n");
-  runTestWithConfig(length, readCount, "{ \"esdm\": { \"bound list implementation\": \"btree\", \"backends\": [ { \"type\": \"POSIX\", \"id\": \"p1\", \"accessibility\": \"global\", \"target\": \"./_posix1\" } ], \"metadata\": { \"type\": \"metadummy\", \"id\": \"md\", \"target\": \"./_metadummy\" } } }");
+    totalReadTime = 0;
+    printf("\n\n=== B-tree based bound list ===\n\n");
+    runTestWithConfig(length, readCount, "{ \"esdm\": { \"bound list implementation\": \"btree\", \"backends\": [ { \"type\": \"POSIX\", \"id\": \"p1\", \"accessibility\": \"global\", \"target\": \"./_posix1\" } ], \"metadata\": { \"type\": \"metadummy\", \"id\": \"md\", \"target\": \"./_metadummy\" } } }");
+    btreeReadTime += totalReadTime;
+  }
 
-  printf("\n\n=== array based bound list (repeat) ===\n\n");
-  runTestWithConfig(length, readCount, "{ \"esdm\": { \"bound list implementation\": \"array\", \"backends\": [ { \"type\": \"POSIX\", \"id\": \"p1\", \"accessibility\": \"global\", \"target\": \"./_posix1\" } ], \"metadata\": { \"type\": \"metadummy\", \"id\": \"md\", \"target\": \"./_metadummy\" } } }");
+  printf("\nTotals:\n");
+  printf("\twritten data: %"PRId64" bytes in %"PRId64" fragments (%g bytes/fragment avg)\n", totalWrittenData, totalFragmentCount, totalWrittenData/(double)totalFragmentCount);
+  printf("\twrite time: %.3fs (%.3fs avg)\n", totalWriteTime, totalWriteTime/2/repetitions);
+  printf("\tread time (array based bound list): %.3fs (%.3fs avg, %.3fms per call, %.3fus per considered fragment)\n", arrayReadTime, arrayReadTime/repetitions, arrayReadTime*1000/repetitions/readCount, arrayReadTime*1000*1000/readCount/totalFragmentCount*2);
+  printf("\tread time (B-tree based bound list): %.3fs (%.3fs avg, %.3fms per call, %.3fus per considered fragment)\n", btreeReadTime, btreeReadTime/repetitions, btreeReadTime*1000/repetitions/readCount, btreeReadTime*1000*1000/readCount/totalFragmentCount*2);
 
   printf("\nOK\n");
 
