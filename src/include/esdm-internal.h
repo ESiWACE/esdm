@@ -236,11 +236,18 @@ esdm_status esdm_dataset_open_md_parse(esdm_dataset_t *d, char * md, int size);
 esdm_status esdm_container_open_md_load(esdm_container_t *c, char ** out_md, int * out_size);
 esdm_status esdm_container_open_md_parse(esdm_container_t *c, char * md, int size);
 
+void esdmI_fragments_construct(esdm_fragments_t* me);
+void esdmI_fragments_add(esdm_fragments_t* me, esdm_fragment_t* fragment);  //takes possession of the fragment, eventually calling `esdm_fragment_destroy()` on it when the `esdm_fragments_t` object is destructed
+esdm_fragment_t** esdmI_fragments_list(esdm_fragments_t* me, int64_t* out_fragmentCount); //returns a pointer to internal storage
+esdm_fragment_t** esdmI_fragments_makeSetCoveringRegion(esdm_fragments_t* me, esdmI_hypercube_t* region, int64_t* out_fragmentCount);  //caller is responsible to free the returned array
+void esdmI_fragments_metadata_create(esdm_fragments_t* me, smd_string_stream_t* s);
+esdm_status esdmI_fragments_destruct(esdm_fragments_t* me);  //calls `esdm_fragment_destroy()` on its members, but does not invoke the `fragment_delete()` callback of the backend
+
 esdm_status esdmI_dataset_lookup_fragments(esdm_dataset_t *dataset, esdm_dataspace_t *space, int *out_frag_count, esdm_fragment_t ***out_fragments);
 
 void esdmI_container_register_dataset(esdm_container_t * c, esdm_dataset_t *dset);
+void esdm_fragment_metadata_create(esdm_fragment_t *f, smd_string_stream_t * stream);
 esdm_status esdmI_create_fragment_from_metadata(esdm_dataset_t *dset, json_t * json, esdm_fragment_t ** out);
-void esdmI_fragments_metadata_create(esdm_dataset_t *d, smd_string_stream_t * s);
 
 /**
  * Create a new fragment.

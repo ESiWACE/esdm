@@ -282,20 +282,11 @@ esdm_status esdm_mpi_dataset_commit(MPI_Comm com, esdm_dataset_t *d){
 
   // retrieve for all fragments the metadata and attach it to the metadata
   if(rank == 0){
-    int total;
-    int prev = d->fragments.count;
-
-    ret = MPI_Reduce(& prev, & total, 1, MPI_INT, MPI_SUM, 0, com);
-    eassert(ret == MPI_SUCCESS);
-    eassert(total >= 0);
-  	d->fragments.frag = (esdm_fragment_t **) realloc(d->fragments.frag, total * sizeof(void*));
-    d->fragments.count = total;
-
-    int size;
-    ret = MPI_Comm_size(com, & size);
+    int procCount;
+    ret = MPI_Comm_size(com, & procCount);
     int max_len = 10000000;
     char * buff = malloc(max_len);
-    for(int p = 1 ; p < size; p++){
+    for(int p = 1 ; p < procCount; p++){
       int size = max_len;
       MPI_Status mstatus;
       ret = MPI_Recv(buff, size, MPI_CHAR, MPI_ANY_SOURCE, 4711, com, & mstatus);
@@ -310,16 +301,15 @@ esdm_status esdm_mpi_dataset_commit(MPI_Comm com, esdm_dataset_t *d){
       json_t * elem = load_json(buff);
       int json_frags = json_array_size(elem);
 
-    	for (int i = 0; i < json_frags; i++) {
-    		esdm_fragment_t * fragment;
+      for (int i = 0; i < json_frags; i++) {
+        esdm_fragment_t * fragment;
         json_t * frag_elem = json_array_get(elem, i);
         ret = esdmI_create_fragment_from_metadata(d, frag_elem, & fragment);
         if (ret != ESDM_SUCCESS){
           MPI_Abort(com, 1);
         }
-    		d->fragments.frag[prev] = fragment;
-        prev++;
-    	}
+        esdmI_fragments_add(&d->fragments, fragment);
+      }
       json_decref(elem);
     }
     free(buff);
@@ -328,12 +318,9 @@ esdm_status esdm_mpi_dataset_commit(MPI_Comm com, esdm_dataset_t *d){
     MPI_Bcast(& ret, 1, MPI_INT, 0, com);
     return ret;
   }else{
-    ret = MPI_Reduce(& d->fragments.count, NULL, 1, MPI_INT, MPI_SUM, 0,   com);
-    eassert(ret == MPI_SUCCESS);
-
     size_t size;
     smd_string_stream_t * s = smd_string_stream_create();
-    esdmI_fragments_metadata_create(d, s);
+    esdmI_fragments_metadata_create(&d->fragments, s);
     char * buff = smd_string_stream_close(s, & size);
 
     ret = MPI_Send(buff, size + 1, MPI_CHAR, 0, 4711, com);

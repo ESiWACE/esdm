@@ -351,15 +351,8 @@ esdm_status esdmI_container_destroy(esdm_container_t *c) {
 }
 
 void esdmI_dataset_register_fragment(esdm_dataset_t *dset, esdm_fragment_t *frag){
-	ESDM_DEBUG(__func__);
-	esdm_fragments_t * f = & dset->fragments;
-	if (f->buff_size == f->count){
-		f->buff_size = f->buff_size * 2 + 5;
-		f->frag = (esdm_fragment_t**) realloc(f->frag, sizeof(void*) * f->buff_size);
-		eassert(f->frag != NULL);
-	}
-	f->frag[f->count] = frag;
-	f->count++;
+  ESDM_DEBUG(__func__);
+  esdmI_fragments_add(&dset->fragments, frag);
   dset->status = ESDM_DATA_DIRTY;
   dset->container->status = ESDM_DATA_DIRTY;
 }
@@ -482,35 +475,6 @@ esdm_status esdm_fragment_commit(esdm_fragment_t *f) {
   return ret;
 }
 
-esdm_status esdmI_dataset_lookup_fragments(esdm_dataset_t *dset, esdm_dataspace_t *dspace, int *out_frag_count, esdm_fragment_t ***out_fragments){
-  ESDM_DEBUG(__func__);
-
-  esdmI_hypercube_t* searchExtends;
-  esdmI_dataspace_getExtends(dspace, &searchExtends);
-
-  int found = 0;
-
-  int const count = dset->fragments.count;
-  esdm_status ret = ESDM_SUCCESS;
-  esdm_fragment_t ** frags = (esdm_fragment_t **) malloc(sizeof(void*) * count);
-  // check for overlap with all fragments
-	for (int i = 0; i < count; i++) {
-    esdm_fragment_t * f = dset->fragments.frag[i];
-    esdmI_hypercube_t* fragmentExtends;
-    esdmI_dataspace_getExtends(f->dataspace, &fragmentExtends);
-    if(esdmI_hypercube_doesIntersect(fragmentExtends, searchExtends)) {
-      frags[found++] = f;
-    }
-    esdmI_hypercube_destroy(fragmentExtends);
-  }
-
-  esdmI_hypercube_destroy(searchExtends);
-  *out_fragments = frags;
-  *out_frag_count = found;
-
-  return ret;
-}
-
 esdm_status esdm_container_delete(esdm_container_t *c){
   ESDM_DEBUG(__func__);
   eassert(c);
@@ -552,23 +516,29 @@ esdm_status esdm_dataset_delete(esdm_dataset_t *d){
     }
   }
   // TODO check usage of dataset
-  for(int i=0; i < d->fragments.count; i++){
-    esdm_fragment_t * frag = d->fragments.frag[i];
+  int64_t fragmentCount;
+  esdm_fragment_t** fragments = esdmI_fragments_list(&d->fragments, &fragmentCount);
+  for(int i=0; i < fragmentCount; i++){
+    esdm_fragment_t * frag = fragments[i];
     status = frag->backend->callbacks.fragment_delete(frag->backend, frag);
     if(status != ESDM_SUCCESS){
-      if(i == 0){
+      if(i == 0){ //FIXME: This early return means that the caller does not know anything about the state of the dataset in case of an error.
+                  //       Ideally, we should perform the action transactionally (either full success or no change at all),
+                  //       or we should try our best to delete as many fragments as possible in case of an error.
         return status;
       }
       ret = status;
     }
     esdm_fragment_destroy(frag);
   }
+  status = esdmI_fragments_destruct(&d->fragments);
+  if(status != ESDM_SUCCESS) ret = status;
+
   d->status = ESDM_DATA_DELETED;
   status = esdm.modules->metadata_backend->callbacks.dataset_remove(esdm.modules->metadata_backend, d);
   if(status != ESDM_SUCCESS){
     ret = status;
   }
-  d->fragments.count = 0;
   esdm_dataset_close(d);
   return ret;
 }
@@ -622,8 +592,8 @@ void esdm_dataset_init(esdm_container_t *c, const char *name, esdm_dataspace_t *
     }
   }
   d->status = ESDM_DATA_DIRTY;
-  memset(& d->fragments, 0, sizeof(d->fragments));
-	d->attr = smd_attr_new("Variables", SMD_DTYPE_EMPTY, NULL, 0);
+  esdmI_fragments_construct(&d->fragments);
+  d->attr = smd_attr_new("Variables", SMD_DTYPE_EMPTY, NULL, 0);
 
   *out_dataset = d;
 }
@@ -807,8 +777,8 @@ esdm_status esdm_dataspace_copyDatalayout(esdm_dataspace_t* space, esdm_dataspac
 }
 
 esdm_status esdm_dataset_open_md_parse(esdm_dataset_t *d, char * md, int size){
-	esdm_status ret;
-	char * js = md;
+  esdm_status ret;
+  char * js = md;
 
   // first strip the attributes
   size_t parsed = smd_attr_create_from_json(js + 1, size, & d->attr);
@@ -859,44 +829,40 @@ esdm_status esdm_dataset_open_md_parse(esdm_dataset_t *d, char * md, int size){
     memcpy(d->actual_size, sizes, sizeof(*d->actual_size) * dims);
   }
   elem = json_object_get(root, "dims_dset_id");
-	if (elem){
-	  arrsize = json_array_size(elem);
-	  if (dims != arrsize) {
-	    return ESDM_ERROR;
-	  }
-	  char *strs[dims];
-	  for (int i = 0; i < dims; i++) {
-	    strs[i] = (char *)json_string_value(json_array_get(elem, i));
-	  }
-	  esdm_dataset_name_dims(d, strs);
-	}
-	elem = json_object_get(root, "fragments");
-	if(! elem) {
-    json_decref(root);
-		return ESDM_ERROR;
-	}
-	arrsize = json_array_size(elem);
-	esdm_fragments_t * f = & d->fragments;
-	f->count = arrsize;
-	f->buff_size = arrsize;
-	f->frag = (esdm_fragment_t **) malloc(arrsize*sizeof(void*));
-
-	for (int i = 0; i < arrsize; i++) {
-		json_t * fjson = json_array_get(elem, i);
-		esdm_fragment_t * frag;
-    ret = esdmI_create_fragment_from_metadata(d, fjson, & frag);
-    if (ret != ESDM_SUCCESS){
-      free(f->frag);
-      return ret;
+  if (elem){
+    arrsize = json_array_size(elem);
+    if (dims != arrsize) {
+      return ESDM_ERROR;
     }
-		f->frag[i] = frag;
-    esdmI_dataset_update_actual_size(d, frag);
-	}
+    char *strs[dims];
+    for (int i = 0; i < dims; i++) {
+      strs[i] = (char *)json_string_value(json_array_get(elem, i));
+    }
+    esdm_dataset_name_dims(d, strs);
+  }
+
+  elem = json_object_get(root, "fragments");
+  if(! elem) {
+    json_decref(root);
+    return ESDM_ERROR;
+  }
+  arrsize = json_array_size(elem);
+  for (int i = 0; i < arrsize; i++) {
+    json_t * fjson = json_array_get(elem, i);
+    esdm_fragment_t * frag;
+    int status = esdmI_create_fragment_from_metadata(d, fjson, & frag);
+    if (status != ESDM_SUCCESS) {
+      ret = status;
+    } else {
+      esdmI_fragments_add(&d->fragments, frag);
+      esdmI_dataset_update_actual_size(d, frag);
+    }
+  }
   json_decref(root);
 
   d->status = ESDM_DATA_PERSISTENT;
 
-	return ESDM_SUCCESS;
+  return ESDM_SUCCESS;
 }
 
 esdm_status esdm_dataset_ref(esdm_dataset_t * d){
@@ -963,19 +929,6 @@ esdm_status esdm_dataset_open(esdm_container_t *c, const char *name, int esdm_mo
   return ret;
 }
 
-void esdmI_fragments_metadata_create(esdm_dataset_t *d, smd_string_stream_t * s){
-  smd_string_stream_printf(s, "[");
-
-	esdm_fragments_t * f = & d->fragments;
-	for(int i=0; i < f->count; i++){
-		if(i != 0){
-			smd_string_stream_printf(s, ",\n");
-		}
-		esdm_fragment_metadata_create(f->frag[i], s);
-	}
-  smd_string_stream_printf(s, "]");
-}
-
 void esdmI_dataset_metadata_create(esdm_dataset_t *d, smd_string_stream_t*s){
   eassert(d->dataspace != NULL);
 
@@ -1008,7 +961,7 @@ void esdmI_dataset_metadata_create(esdm_dataset_t *d, smd_string_stream_t*s){
     smd_string_stream_printf(s, "]");
   }
 	smd_string_stream_printf(s, ",\"fragments\":");
-  esdmI_fragments_metadata_create(d, s);
+  esdmI_fragments_metadata_create(&d->fragments, s);
   smd_string_stream_printf(s, "}");
 }
 
@@ -1055,22 +1008,11 @@ esdm_status esdm_dataset_close(esdm_dataset_t *dset) {
     return ESDM_SUCCESS;
   }
 
-  esdm_status ret = ESDM_SUCCESS;
   dset->status = ESDM_DATA_NOT_LOADED;
-
-	for (int i = 0; i < dset->fragments.count; i++) {
-    esdm_status r = esdm_fragment_destroy(dset->fragments.frag[i]);
-    if (r == ESDM_SUCCESS){
-      dset->fragments.frag[i] = NULL;
-    }else{
-      ret = ESDM_ERROR;
-    }
-  }
-  free(dset->fragments.frag);
 
   smd_attr_destroy(dset->attr);
 
-  return ret;
+  return esdmI_fragments_destruct(&dset->fragments);
 }
 
 esdm_status esdmI_dataset_destroy(esdm_dataset_t *dset) {
@@ -1079,16 +1021,7 @@ esdm_status esdmI_dataset_destroy(esdm_dataset_t *dset) {
 
   if(dset->status != ESDM_DATA_NOT_LOADED){
     // loaded to some extend
-    esdm_status ret = ESDM_SUCCESS;
-  	for (int i = 0; i < dset->fragments.count; i++) {
-      esdm_status r = esdm_fragment_destroy(dset->fragments.frag[i]);
-      if (r == ESDM_SUCCESS){
-        dset->fragments.frag[i] = NULL;
-      }else{
-        ret = ESDM_ERROR;
-      }
-    }
-    free(dset->fragments.frag);
+    esdm_status ret = esdmI_fragments_destruct(&dset->fragments);
 
     smd_attr_destroy(dset->attr); // maybe unref?
 
