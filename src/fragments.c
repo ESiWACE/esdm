@@ -14,6 +14,11 @@ void esdmI_fragments_add(esdm_fragments_t* me, esdm_fragment_t* fragment) {
     me->frag = realloc(me->frag, me->buff_size * sizeof(*me->frag));
   }
   me->frag[me->count++] = fragment;
+
+  esdmI_hypercube_t* extends;
+  esdmI_dataspace_getExtends(fragment->dataspace, &extends);
+  if(!me->neighbourManager) me->neighbourManager = esdmI_hypercubeNeighbourManager_make(esdmI_hypercube_dimensions(extends));
+  esdmI_hypercubeNeighbourManager_pushBack(me->neighbourManager, extends);
 }
 
 esdm_fragment_t** esdmI_fragments_list(esdm_fragments_t* me, int64_t* out_fragmentCount) {
@@ -49,17 +54,15 @@ esdm_fragment_t** esdmI_fragments_makeSetCoveringRegion(esdm_fragments_t* me, es
   esdm_fragment_t** fragmentSet = NULL;
   if(me->count) { //We need at least one fragment to know the dimension count, which we need to construct the neighbour manager.
     //Compute the neighbourhood info and check which fragments can be ignored because they do not provide any useful data.
-    esdmI_hypercubeNeighbourManager_t* neighbourManager = esdmI_hypercubeNeighbourManager_make(me->frag[0]->dataspace->dims);
     uint8_t* visited = malloc(me->count*sizeof(*visited));
     for(int64_t i = 0; i < me->count; i++) {
       esdmI_hypercube_t* extends;
       esdmI_dataspace_getExtends(me->frag[i]->dataspace, &extends);
-      esdmI_hypercubeNeighbourManager_pushBack(neighbourManager, extends);
       visited[i] = (esdmI_hypercube_doesIntersect(bounds, extends) ? NOT_VISITED : IGNORED);
     }
 
     //Compute the similarities of the fragments with the bounds and cache their extends.
-    esdmI_hypercubeList_t* extendsList = esdmI_hypercubeNeighbourManager_list(neighbourManager);
+    esdmI_hypercubeList_t* extendsList = esdmI_hypercubeNeighbourManager_list(me->neighbourManager);
     double* similarities = malloc(me->count*sizeof(*similarities));
     double bestSimilarity = -1;
     int64_t bestOverlap = -1, bestIndex = -1;
@@ -101,7 +104,7 @@ esdm_fragment_t** esdmI_fragments_makeSetCoveringRegion(esdm_fragments_t* me, es
             esdmI_hypercubeSet_subtract(&uncovered, curCube);
             if((done = esdmI_hypercubeSet_isEmpty(&uncovered))) break; //Fast abort of search when we have all data we need.
             int64_t neighbourCount;
-            int64_t* neighbours = esdmI_hypercubeNeighbourManager_getNeighbours(neighbourManager, curIndex, &neighbourCount);
+            int64_t* neighbours = esdmI_hypercubeNeighbourManager_getNeighbours(me->neighbourManager, curIndex, &neighbourCount);
             for(int64_t i = 0; i < neighbourCount; i++) {
               int64_t curNeighbour = neighbours[i];
               if(!visited[curNeighbour]) {
@@ -141,7 +144,6 @@ esdm_fragment_t** esdmI_fragments_makeSetCoveringRegion(esdm_fragments_t* me, es
       esdmI_hypercubeSet_destruct(&uncovered);
       free(similarities);
     }
-    esdmI_hypercubeNeighbourManager_destroy(neighbourManager);
   }
 
   return fragmentSet;
@@ -163,6 +165,8 @@ esdm_status esdmI_fragments_destruct(esdm_fragments_t* me) {
     if(ret != ESDM_SUCCESS) result = ret;
   }
   free(me->frag);
+  if(me->neighbourManager) esdmI_hypercubeNeighbourManager_destroy(me->neighbourManager);
+
   *me = (esdm_fragments_t){0};
   return result;
 }

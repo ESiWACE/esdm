@@ -35,8 +35,10 @@ struct esdm_container_t {
   int mode_flags; // set via esdm_mode_flags_e
 };
 
+typedef struct esdmI_hypercubeNeighbourManager_t esdmI_hypercubeNeighbourManager_t;
 struct esdm_fragments_t {
   esdm_fragment_t ** frag;
+  esdmI_hypercubeNeighbourManager_t* neighbourManager;
   int count;
   int buff_size;
 };
@@ -412,7 +414,6 @@ struct esdmI_neighbourList_t {
 };
 
 //A hypercubeList that owns its memory, and which keeps track of the neighbourhood relations between the different hypercubes.
-typedef struct esdmI_hypercubeNeighbourManager_t esdmI_hypercubeNeighbourManager_t;
 struct esdmI_hypercubeNeighbourManager_t {
   esdmI_hypercubeList_t list;
   int64_t allocatedCount;
