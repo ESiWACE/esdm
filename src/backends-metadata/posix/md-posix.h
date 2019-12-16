@@ -50,6 +50,8 @@ void posix_recursive_remove(const char *path);
 *
 *	* Populate esdm_md_backend_t struct and callbacks required for registration
 *
+* Takes possession of the config argument. Pass a `malloc()`ed object.
+*
 * @return pointer to backend struct
 */
 

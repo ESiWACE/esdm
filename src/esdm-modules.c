@@ -91,6 +91,7 @@ esdm_modules_t *esdm_modules_init(esdm_instance_t *esdm) {
     backend->config = b;
     modules->data_backends[i] = backend;
   }
+  free(config_backends);  //esdmI_init_backend() took possession of the individual backend config objects in this array, so we only need to get rid of the array itself
 
   esdm->modules = modules;
   return modules;
@@ -100,12 +101,17 @@ esdm_status esdm_modules_finalize(esdm_instance_t *esdm) {
   ESDM_DEBUG(__func__);
 
   if (esdm->modules) {
-  	for(int i = esdm->modules->data_backend_count - 1 ; i >= 0; i--){
+    for(int i = esdm->modules->data_backend_count - 1 ; i >= 0; i--){
       esdm_backend_t *backend =esdm->modules->data_backends[i];
       if(backend->callbacks.finalize){
-  		  backend->callbacks.finalize(backend);
+        backend->callbacks.finalize(backend);
       }
-  	}
+    }
+    free(esdm->modules->data_backends);
+
+    if(esdm->modules->metadata_backend->callbacks.finalize) {
+      esdm->modules->metadata_backend->callbacks.finalize(esdm->modules->metadata_backend);
+    }
 
     free(esdm->modules);
     esdm->modules = NULL;

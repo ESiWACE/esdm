@@ -465,7 +465,7 @@ static esdm_backend_t backend_template = {
 .data = NULL,
 .callbacks = {
 // General for ESDM
-NULL,                                 // finalize
+NULL,                                 // finalize, FIXME: We leak memory because this is not implemented.
 mongodb_backend_performance_estimate, // performance_estimate
 
 // Data Callbacks (POSIX like)
@@ -533,6 +533,8 @@ esdm_backend_t *mongodb_backend_init(esdm_config_backend_t *config) {
 
   //mongodb_test();
   //mongoconnect(0, NULL);
+
+  free(config); //We do not use it here, so we just get rid of it.
 
   return backend;
 }

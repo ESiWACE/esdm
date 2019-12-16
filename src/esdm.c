@@ -149,6 +149,7 @@ esdm_status esdm_finalize() {
   esdm_performance_finalize(&esdm);
   esdm_layout_finalize(&esdm);
   esdm_modules_finalize(&esdm);
+  esdm_config_finalize(&esdm);
 
   esdm_log_on_exit(0);
 

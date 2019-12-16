@@ -16,7 +16,7 @@ int main() {
 			"\"target\": \"./_metadummy\"}}}";
   esdm_load_config_str(cfg);
   esdm_init();
-  esdm_md_backend_t *b = esdm.modules->metadata_backend;
+  //esdm_md_backend_t *b = esdm.modules->metadata_backend;
 
   ret = esdm_mkfs(ESDM_FORMAT_PURGE_RECREATE, ESDM_ACCESSIBILITY_GLOBAL);
   eassert(ret == ESDM_SUCCESS);
@@ -88,8 +88,6 @@ int main() {
   //  int64_t offset[] = {10, 10};
   //  esdm_dataspace_subspace(dataspace, 2, size, offset, &res);
   //}
-
-  b->callbacks.finalize(b);
 
   esdm_dataspace_destroy(dataspace);
   esdm_container_close(container);

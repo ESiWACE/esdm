@@ -54,15 +54,13 @@ esdm_fragment_t** esdmI_fragments_makeSetCoveringRegion(esdm_fragments_t* me, es
   esdm_fragment_t** fragmentSet = NULL;
   if(me->count) { //We need at least one fragment to know the dimension count, which we need to construct the neighbour manager.
     //Compute the neighbourhood info and check which fragments can be ignored because they do not provide any useful data.
+    esdmI_hypercubeList_t* extendsList = esdmI_hypercubeNeighbourManager_list(me->neighbourManager);
     uint8_t* visited = malloc(me->count*sizeof(*visited));
     for(int64_t i = 0; i < me->count; i++) {
-      esdmI_hypercube_t* extends;
-      esdmI_dataspace_getExtends(me->frag[i]->dataspace, &extends);
-      visited[i] = (esdmI_hypercube_doesIntersect(bounds, extends) ? NOT_VISITED : IGNORED);
+      visited[i] = (esdmI_hypercube_doesIntersect(bounds, extendsList->cubes[i]) ? NOT_VISITED : IGNORED);
     }
 
     //Compute the similarities of the fragments with the bounds and cache their extends.
-    esdmI_hypercubeList_t* extendsList = esdmI_hypercubeNeighbourManager_list(me->neighbourManager);
     double* similarities = malloc(me->count*sizeof(*similarities));
     double bestSimilarity = -1;
     int64_t bestOverlap = -1, bestIndex = -1;

@@ -111,6 +111,8 @@ static int mongodb_lookup(esdm_backend_t *backend);
 *
 *	* Populate esdm_backend_t struct and callbacks required for registration
 *
+* Takes possession of the config object, pass a `malloc()`ed object.
+*
 * @return pointer to backend struct
 */
 

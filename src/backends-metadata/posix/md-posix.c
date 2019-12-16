@@ -395,8 +395,12 @@ static int metadummy_backend_performance_estimate(esdm_md_backend_t *backend, es
   return 0;
 }
 
-static int metadummy_finalize(esdm_md_backend_t *b) {
+static int metadummy_finalize(esdm_md_backend_t *me) {
   DEBUG_ENTER;
+
+  free(me->data);
+  free(me->config);
+  free(me);
 
   return 0;
 }
