@@ -205,10 +205,15 @@ void runTestWithConfig(int64_t length, int64_t readCount, const char* configStri
   eassert(ret == ESDM_SUCCESS);
 
   esdm_loglevel(ESDM_LOGLEVEL_WARNING); //stop the esdm_mkfs() call from spamming us with infos about deleted objects
+  timer myTimer;
+  start_timer(&myTimer);
   ret = esdm_mkfs(ESDM_FORMAT_PURGE_RECREATE, ESDM_ACCESSIBILITY_GLOBAL);
   eassert(ret == ESDM_SUCCESS);
+  printf("esdm_mkfs(): %.3fms\n", 1000*stop_timer(myTimer));
+  start_timer(&myTimer);
   ret = esdm_mkfs(ESDM_FORMAT_PURGE_RECREATE, ESDM_ACCESSIBILITY_NODELOCAL);
   eassert(ret == ESDM_SUCCESS);
+  printf("esdm_mkfs(): %.3fms\n", 1000*stop_timer(myTimer));
   esdm_loglevel(ESDM_LOGLEVEL_INFO);
 
   // define dataspace
@@ -233,7 +238,6 @@ void runTestWithConfig(int64_t length, int64_t readCount, const char* configStri
 
   writeData(dataset, dataspace, length, data);
 
-  timer myTimer;
   start_timer(&myTimer);
   for(int64_t i = 0; i < readCount; i++) readRandomFragment(dataset, dataspace, length, data);
   double readTime = stop_timer(myTimer);
@@ -256,24 +260,30 @@ int main(int argc, char const *argv[]) {
   int64_t length, readCount, repetitions;
   readArgs(argc, argv, &length, &readCount, &repetitions);
 
+  double arrayWriteTime = 0, btreeWriteTime = 0;
   double arrayReadTime = 0, btreeReadTime = 0;
   for(int64_t i = 0; i < repetitions; i++) {
-    totalReadTime = 0;
+    totalWriteTime = totalReadTime = 0;
     printf("\n\n=== array based bound list ===\n\n");
     runTestWithConfig(length, readCount, "{ \"esdm\": { \"bound list implementation\": \"array\", \"backends\": [ { \"type\": \"POSIX\", \"id\": \"p1\", \"accessibility\": \"global\", \"target\": \"./_posix1\" } ], \"metadata\": { \"type\": \"metadummy\", \"id\": \"md\", \"target\": \"./_metadummy\" } } }");
+    arrayWriteTime += totalWriteTime;
     arrayReadTime += totalReadTime;
 
-    totalReadTime = 0;
+    totalWriteTime = totalReadTime = 0;
     printf("\n\n=== B-tree based bound list ===\n\n");
     runTestWithConfig(length, readCount, "{ \"esdm\": { \"bound list implementation\": \"btree\", \"backends\": [ { \"type\": \"POSIX\", \"id\": \"p1\", \"accessibility\": \"global\", \"target\": \"./_posix1\" } ], \"metadata\": { \"type\": \"metadummy\", \"id\": \"md\", \"target\": \"./_metadummy\" } } }");
+    btreeWriteTime += totalWriteTime;
     btreeReadTime += totalReadTime;
   }
 
   printf("\nTotals:\n");
   printf("\twritten data: %"PRId64" bytes in %"PRId64" fragments (%g bytes/fragment avg)\n", totalWrittenData, totalFragmentCount, totalWrittenData/(double)totalFragmentCount);
-  printf("\twrite time: %.3fs (%.3fs avg)\n", totalWriteTime, totalWriteTime/2/repetitions);
-  printf("\tread time (array based bound list): %.3fs (%.3fs avg, %.3fms per call, %.3fus per considered fragment)\n", arrayReadTime, arrayReadTime/repetitions, arrayReadTime*1000/repetitions/readCount, arrayReadTime*1000*1000/readCount/totalFragmentCount*2);
-  printf("\tread time (B-tree based bound list): %.3fs (%.3fs avg, %.3fms per call, %.3fus per considered fragment)\n", btreeReadTime, btreeReadTime/repetitions, btreeReadTime*1000/repetitions/readCount, btreeReadTime*1000*1000/readCount/totalFragmentCount*2);
+  printf("\tarray based bound list:\n");
+  printf("\t\twrite time: %.3fs (%.3fs avg)\n", arrayWriteTime, arrayWriteTime/repetitions);
+  printf("\t\tread time: %.3fs (%.3fs avg, %.3fms per call, %.3fus per considered fragment)\n", arrayReadTime, arrayReadTime/repetitions, arrayReadTime*1000/repetitions/readCount, arrayReadTime*1000*1000/readCount/totalFragmentCount*2);
+  printf("\tB-tree based bound list:\n");
+  printf("\t\twrite time: %.3fs (%.3fs avg)\n", btreeWriteTime, btreeWriteTime/repetitions);
+  printf("\t\tread time: %.3fs (%.3fs avg, %.3fms per call, %.3fus per considered fragment)\n", btreeReadTime, btreeReadTime/repetitions, btreeReadTime*1000/repetitions/readCount, btreeReadTime*1000*1000/readCount/totalFragmentCount*2);
 
   printf("\nOK\n");
 
