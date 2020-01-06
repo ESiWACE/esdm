@@ -307,6 +307,11 @@ static float posix_backend_estimate_throughput(esdm_backend_t* backend) {
 int posix_finalize(esdm_backend_t *backend) {
   DEBUG_ENTER;
 
+  posix_backend_data_t* data = backend->data;
+  free(data->config);  //TODO: Do we need to destruct this?
+  free(data);
+  free(backend);
+
   return 0;
 }
 
@@ -323,8 +328,8 @@ static esdm_backend_t backend_template = {
   .version = "0.0.1",
   .data = NULL,
   .callbacks = {
-    .finalize = NULL,                               // finalize
-    .performance_estimate = posix_backend_performance_estimate, // performance_estimate
+    .finalize = posix_finalize,
+    .performance_estimate = posix_backend_performance_estimate,
     .estimate_throughput = posix_backend_estimate_throughput,
     .fragment_create = NULL,
     .fragment_retrieve = fragment_retrieve,
@@ -354,8 +359,8 @@ esdm_backend_t *posix_backend_init(esdm_config_backend_t *config) {
   memcpy(backend, &backend_template, sizeof(esdm_backend_t));
 
   // allocate memory for backend instance
-  backend->data = (void *)malloc(sizeof(posix_backend_data_t));
-  posix_backend_data_t *data = (posix_backend_data_t *)backend->data;
+  posix_backend_data_t *data = malloc(sizeof(*data));
+  backend->data = data;
 
   if (data && config->performance_model)
     esdm_backend_t_parse_perf_model_lat_thp(config->performance_model, &data->perf_model);
