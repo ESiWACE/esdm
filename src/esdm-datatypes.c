@@ -343,6 +343,8 @@ esdm_status esdmI_container_destroy(esdm_container_t *c) {
     }
   }
   if(ret == ESDM_SUCCESS){
+    free(dsets->dset);
+    smd_attr_destroy(c->attr);
     free(c->name);
     free(c);
   }
@@ -1031,13 +1033,9 @@ esdm_status esdmI_dataset_destroy(esdm_dataset_t *dset) {
     }
   }
   free(dset->name);
-
-  if (dset->dims_dset_id) {
-    free(dset->dims_dset_id);
-  }
-  if(dset->actual_size){
-    free(dset->actual_size);
-  }
+  free(dset->id);
+  free(dset->dims_dset_id);
+  free(dset->actual_size);
 
   if(dset->fill_value){
     smd_attr_destroy(dset->fill_value);
