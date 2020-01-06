@@ -168,6 +168,9 @@ esdm_status esdm_container_delete(esdm_container_t *container);
 /**
  * Close a container object. If it isn't in use any more free it.
  *
+ * Warning: This throws an error if there are any datasets within this container that are still open.
+ *          Make sure to close all datasets first.
+ *
  * @param [in] container an existing container object that is no longer needed
  */
 

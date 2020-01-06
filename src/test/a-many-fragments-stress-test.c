@@ -241,7 +241,12 @@ void runTestWithConfig(int64_t length, int64_t readCount, const char* configStri
   totalReadTime += readTime;
   eassert(dataIsCorrect(length, data));
 
+  free(data);
   ret = esdm_dataspace_destroy(dataspace);
+  eassert(ret == ESDM_SUCCESS);
+  ret = esdm_dataset_close(dataset);
+  eassert(ret == ESDM_SUCCESS);
+  ret = esdm_container_close(container);
   eassert(ret == ESDM_SUCCESS);
   ret = esdm_finalize();
   eassert(ret == ESDM_SUCCESS);

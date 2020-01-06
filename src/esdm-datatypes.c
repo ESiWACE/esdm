@@ -285,7 +285,7 @@ esdm_status esdm_container_close(esdm_container_t *c) {
   esdm_status ret = ESDM_SUCCESS;
   esdm_datasets_t * dsets = & c->dsets;
   for(int i = 0; i < dsets->count; i++){
-    if(dsets->dset[i]->refcount != 0){
+    if(dsets->dset[i]->refcount != 0){	//The container always holds the information about all its datasets. However, the datasets are only loaded when they are opened, and should not remain alive without the container being alive. That is why the refcount is checked for zero here, to stop the container from being closed while there still are external references to its datasets.
       ret = ESDM_ERROR;
     }
   }
