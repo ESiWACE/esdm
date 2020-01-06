@@ -240,7 +240,7 @@ struct esdm_config_backend_t {
 
 struct esdm_config_backends_t {
   int count;
-  esdm_config_backend_t *backends;
+  esdm_config_backend_t **backends;
 };
 
 typedef struct esdm_config_backends_t esdm_config_backends_t;

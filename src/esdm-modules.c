@@ -75,9 +75,8 @@ esdm_modules_t *esdm_modules_init(esdm_instance_t *esdm) {
   modules->data_backend_count = config_backends->count;
   modules->data_backends = malloc(config_backends->count * sizeof(esdm_backend_t *));
 
-  int i;
-  for (i = 0; i < config_backends->count; i++) {
-    b = &(config_backends->backends[i]);
+  for (int i = 0; i < config_backends->count; i++) {
+    b = config_backends->backends[i];
 
     DEBUG("Backend config: %d, %s, %s, %s\n", i,
     b->type,
@@ -91,7 +90,8 @@ esdm_modules_t *esdm_modules_init(esdm_instance_t *esdm) {
     backend->config = b;
     modules->data_backends[i] = backend;
   }
-  free(config_backends);  //esdmI_init_backend() took possession of the individual backend config objects in this array, so we only need to get rid of the array itself
+  free(config_backends->backends);  //esdmI_init_backend() took possession of the individual backend config objects in this array, so we only need to get rid of the array itself
+  free(config_backends);
 
   esdm->modules = modules;
   return modules;
