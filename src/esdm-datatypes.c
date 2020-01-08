@@ -307,6 +307,7 @@ esdm_status esdm_container_delete_attribute(esdm_container_t *c, const char *nam
       smd_attr_t * chld = smd_attr_get_child(attr, pos);
       smd_attr_destroy(chld);
       smd_attr_unlink_pos(attr, pos);
+      c->status = ESDM_DATA_DIRTY;
       return ESDM_SUCCESS;
     }
     return(ESDM_ERROR);
