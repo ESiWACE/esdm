@@ -238,28 +238,51 @@ int ea_compute_hash_str(const char * str){
   return hash;
 }
 
-void ea_generate_id(char *str, size_t length){
-  time_t timer;
-  time(&timer);
-
-  eassert(length > 4);
-  char charset[] = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789_";
-  uint64_t c = (uint64_t) timer;
-  int const count = (int)(sizeof(charset) -1);
-  int n = 0;
-  while(c > 0){
-      int key = c % count;
-      c /= count;
-      str[n] = charset[key];
-      n++; // Remove this line to make file creation "deterministic"
+static void getRandom(uint8_t* bytes, size_t count) {
+  static FILE* randomSource = NULL;
+  if(!randomSource) {
+    randomSource = fopen("/dev/urandom", "r");
+    eassert(randomSource);
   }
 
-  for (; n < length; n++) {
-      int key = rand() % count;
-      str[n] = charset[key];
+  while(count) {
+    size_t chunkSize = fread(bytes, sizeof(*bytes), count, randomSource);
+    bytes += chunkSize;
+    count -= chunkSize;
   }
+}
 
-  str[length] = '\0';
+static const char kCharset[] = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789_-";
+#define kCharsetBits 6
+_Static_assert(sizeof(kCharset) - 1 == 1 << kCharsetBits, "wrong number of characters in kCharset");
+
+void ea_generate_id(char* str, size_t length) {
+  size_t randomBitCount = length*kCharsetBits;
+  eassert(randomBitCount >= 128 && "don't try to use less than 128 random bits to avoid possibility of collision");
+
+  size_t randomByteCount = (randomBitCount + 7)/8;
+  uint8_t randomBytes[randomByteCount];
+  getRandom(randomBytes, randomByteCount);
+
+  uint64_t bitCache = 0;
+  size_t cachedBits = 0, usedRandomBytes = 0;
+  for(size_t i = 0; i < length; i++) {
+    //load enough bits into the cache
+    while(cachedBits < kCharsetBits) {
+      eassert(usedRandomBytes < randomByteCount);
+      bitCache = (bitCache << 8) | randomBytes[usedRandomBytes++];
+      cachedBits += 8;
+    }
+
+    //take kCharsetBits out of the cache
+    size_t index = bitCache & ((1 << kCharsetBits) - 1);
+    bitCache >>= kCharsetBits;
+    cachedBits -= kCharsetBits;
+
+    //use those random bits to output a character
+    str[i] = kCharset[index];
+  }
+  str[length] = 0;  //termination
 }
 
 void* ea_memdup(void* data, size_t size) {
