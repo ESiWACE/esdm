@@ -37,8 +37,6 @@ struct md_entry_struct {
   int type;
 };
 
-void posix_recursive_remove(const char *path);
-
 /**
 * Initializes the POSIX plugin. In particular this involves:
 *

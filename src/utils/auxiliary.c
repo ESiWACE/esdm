@@ -99,28 +99,31 @@ int mkdir_recursive(const char *path) {
   return mkdir(tmp, S_IRWXU);
 }
 
-void posix_recursive_remove(const char *path) {
+int posix_recursive_remove(const char *path) {
   ESDM_INFO_COM_FMT("AUX", "removing %s", path);
   struct stat sb = {0};
   int ret = stat(path, &sb);
-  if (ret == 0) {
-    if ((sb.st_mode & S_IFMT) == S_IFDIR) {
-      DIR *dir = opendir(path);
-      struct dirent *f = readdir(dir);
-      while (f) {
-        if (strcmp(f->d_name, ".") != 0 && strcmp(f->d_name, "..") != 0) {
-          char child_path[PATH_MAX];
-          sprintf(child_path, "%s/%s", path, f->d_name);
-          posix_recursive_remove(child_path);
-        }
-        f = readdir(dir);
+  if(ret) return ESDM_ERROR;
+
+  bool isDir = (sb.st_mode & S_IFMT) == S_IFDIR;
+  if(isDir) {
+    DIR *dir = opendir(path);
+    if(!dir) return ESDM_ERROR;
+
+    struct dirent *f;
+    while(!ret && (f = readdir(dir))) {
+      if (strcmp(f->d_name, ".") != 0 && strcmp(f->d_name, "..") != 0) {
+        char child_path[PATH_MAX];
+        sprintf(child_path, "%s/%s", path, f->d_name);
+        ret = posix_recursive_remove(child_path);
       }
-      closedir(dir);
-      rmdir(path);
-    } else {
-      unlink(path);
     }
+    ret |= closedir(dir);
   }
+
+  if(!ret) ret = unlinkat(AT_FDCWD, path, isDir ? AT_REMOVEDIR : 0);
+
+  return ret ? ESDM_ERROR : ESDM_SUCCESS;
 }
 
 // file I/O handling //////////////////////////////////////////////////////////

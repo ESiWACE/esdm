@@ -208,7 +208,7 @@ void print_stat(struct stat sb);
 
 int mkdir_recursive(const char *path);
 
-void posix_recursive_remove(const char *path);
+int posix_recursive_remove(const char *path); //returns an error code
 
 int read_file(char *filepath, char **buf);
 

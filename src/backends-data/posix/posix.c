@@ -139,7 +139,10 @@ static int mkfs(esdm_backend_t *backend, int format_flags) {
 
     sprintf(path, "%s/README-ESDM.TXT", tgt);
     if (stat(path, &sb) == 0) {
-      posix_recursive_remove(tgt);
+      if(posix_recursive_remove(tgt)) {
+        fprintf(stderr, "[mkfs] Error removing ESDM directory at \"%s\"\n", tgt);
+        return ESDM_ERROR;
+      }
     }else if(! ignore_err){
       printf("[mkfs] Error %s is not an ESDM directory\n", tgt);
       return ESDM_ERROR;
