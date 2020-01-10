@@ -792,7 +792,6 @@ esdm_status esdm_scheduler_wait(io_request_status_t *status) {
 
 static bool fragmentsCoverSpace(esdm_dataspace_t* space, int64_t fragmentCount, esdm_fragment_t** fragments, esdmI_hypercubeSet_t** out_uncoveredRegion) {
   eassert(space);
-  eassert(fragments);
   eassert(out_uncoveredRegion);
 
   esdmI_hypercube_t* curCube;
@@ -801,6 +800,10 @@ static bool fragmentsCoverSpace(esdm_dataspace_t* space, int64_t fragmentCount, 
   esdmI_dataspace_getExtends(space, &curCube);
   esdmI_hypercubeSet_add(*out_uncoveredRegion, curCube);
   esdmI_hypercube_destroy(curCube);
+
+  if(fragmentCount == 0){
+    return FALSE;
+  }
 
   for(int64_t i = 0; i < fragmentCount; i++) {
     esdmI_dataspace_getExtends(fragments[i]->dataspace, &curCube);
