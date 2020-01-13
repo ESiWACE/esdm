@@ -483,4 +483,8 @@ void start_timer(timer *t1);
 double stop_timer(timer t1);
 double timer_subtract(timer number, timer subtract);
 
+double esdmI_backendOutputTime();
+double esdmI_backendInputTime();
+void esdmI_resetBackendIoTimes();
+
 #endif
