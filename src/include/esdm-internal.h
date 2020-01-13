@@ -242,6 +242,12 @@ esdm_fragment_t** esdmI_fragments_list(esdm_fragments_t* me, int64_t* out_fragme
 esdm_fragment_t** esdmI_fragments_makeSetCoveringRegion(esdm_fragments_t* me, esdmI_hypercube_t* region, int64_t* out_fragmentCount);  //caller is responsible to free the returned array
 void esdmI_fragments_metadata_create(esdm_fragments_t* me, smd_string_stream_t* s);
 esdm_status esdmI_fragments_destruct(esdm_fragments_t* me);  //calls `esdm_fragment_destroy()` on its members, but does not invoke the `fragment_delete()` callback of the backend
+void esdmI_fragments_getStats(int64_t* out_addedFragments, double* out_fragmentAddTime, int64_t* out_createdSets, double* out_setCreationTime);
+double esdmI_fragments_getFragmentAddTime();
+int64_t esdmI_fragments_getFragmentAddCount();
+double esdmI_fragments_getSetCreationTime();
+int64_t esdmI_fragments_getSetCreationCount();
+void esdmI_fragments_resetStats();
 
 esdm_status esdmI_dataset_lookup_fragments(esdm_dataset_t *dataset, esdm_dataspace_t *space, int *out_frag_count, esdm_fragment_t ***out_fragments);
 
@@ -465,5 +471,16 @@ void esdmI_hypercubeNeighbourManager_pushBack(esdmI_hypercubeNeighbourManager_t*
 int64_t* esdmI_hypercubeNeighbourManager_getNeighbours(esdmI_hypercubeNeighbourManager_t* me, int64_t index, int64_t* out_neighbourCount);
 
 void esdmI_hypercubeNeighbourManager_destroy(esdmI_hypercubeNeighbourManager_t* me);
+
+// timer functions
+#ifdef ESM
+typedef clock64_t timer;
+#else
+typedef struct timespec timer;
+#endif
+
+void start_timer(timer *t1);
+double stop_timer(timer t1);
+double timer_subtract(timer number, timer subtract);
 
 #endif

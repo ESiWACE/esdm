@@ -19,6 +19,7 @@
  */
 
 #include <esdm.h>
+#include <esdm-internal.h>
 #include <test/util/test_util.h>
 
 #include <inttypes.h>
