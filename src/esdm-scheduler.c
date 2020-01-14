@@ -92,9 +92,13 @@ esdm_status esdm_scheduler_finalize(esdm_instance_t *esdm) {
   return ESDM_SUCCESS;
 }
 
+static double gOutputTime = 0, gInputTime = 0;
+
 static void backend_thread(io_work_t *work, esdm_backend_t *backend) {
   io_request_status_t *status = work->parent;
 
+  timer myTimer;
+  start_timer(&myTimer);
   DEBUG("Backend thread operates on %s via %s", backend->name, backend->config->target);
 
   eassert(backend == work->fragment->backend);
@@ -119,6 +123,8 @@ static void backend_thread(io_work_t *work, esdm_backend_t *backend) {
     work->callback(work);
   }
 
+  double localTime = stop_timer(myTimer);
+
   g_mutex_lock(&status->mutex);
   // Please note the return value from atomic_fetch_sub() is the original
   // value stored in atomic object. Here, it's the value before subtraction.
@@ -130,12 +136,21 @@ static void backend_thread(io_work_t *work, esdm_backend_t *backend) {
   if (pendings == 1) {
     g_cond_signal(&status->done_condition);
   }
+
+  switch (work->op) {
+    case (ESDM_OP_READ): gInputTime += localTime; break;
+    case (ESDM_OP_WRITE): gOutputTime += localTime; break;
+  }
   g_mutex_unlock(&status->mutex);
   //esdm_dataspace_destroy(work->fragment->dataspace);
 
   work->fragment->status = ESDM_DATA_NOT_LOADED;
   free(work);
 }
+
+double esdmI_backendOutputTime() { return gOutputTime; }
+double esdmI_backendInputTime() { return gInputTime; }
+void esdmI_resetBackendIoTimes() { gOutputTime = gInputTime = 0; }
 
 static int64_t min_int64(int64_t a, int64_t b) {
   return a < b ? a : b;

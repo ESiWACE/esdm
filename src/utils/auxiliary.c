@@ -99,28 +99,31 @@ int mkdir_recursive(const char *path) {
   return mkdir(tmp, S_IRWXU);
 }
 
-void posix_recursive_remove(const char *path) {
+int posix_recursive_remove(const char *path) {
   ESDM_INFO_COM_FMT("AUX", "removing %s", path);
   struct stat sb = {0};
   int ret = stat(path, &sb);
-  if (ret == 0) {
-    if ((sb.st_mode & S_IFMT) == S_IFDIR) {
-      DIR *dir = opendir(path);
-      struct dirent *f = readdir(dir);
-      while (f) {
-        if (strcmp(f->d_name, ".") != 0 && strcmp(f->d_name, "..") != 0) {
-          char child_path[PATH_MAX];
-          sprintf(child_path, "%s/%s", path, f->d_name);
-          posix_recursive_remove(child_path);
-        }
-        f = readdir(dir);
+  if(ret) return ESDM_ERROR;
+
+  bool isDir = (sb.st_mode & S_IFMT) == S_IFDIR;
+  if(isDir) {
+    DIR *dir = opendir(path);
+    if(!dir) return ESDM_ERROR;
+
+    struct dirent *f;
+    while(!ret && (f = readdir(dir))) {
+      if (strcmp(f->d_name, ".") != 0 && strcmp(f->d_name, "..") != 0) {
+        char child_path[PATH_MAX];
+        sprintf(child_path, "%s/%s", path, f->d_name);
+        ret = posix_recursive_remove(child_path);
       }
-      closedir(dir);
-      rmdir(path);
-    } else {
-      unlink(path);
     }
+    ret |= closedir(dir);
   }
+
+  if(!ret) ret = unlinkat(AT_FDCWD, path, isDir ? AT_REMOVEDIR : 0);
+
+  return ret ? ESDM_ERROR : ESDM_SUCCESS;
 }
 
 // file I/O handling //////////////////////////////////////////////////////////
@@ -235,28 +238,51 @@ int ea_compute_hash_str(const char * str){
   return hash;
 }
 
-void ea_generate_id(char *str, size_t length){
-  time_t timer;
-  time(&timer);
-
-  eassert(length > 4);
-  char charset[] = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789_";
-  uint64_t c = (uint64_t) timer;
-  int const count = (int)(sizeof(charset) -1);
-  int n = 0;
-  while(c > 0){
-      int key = c % count;
-      c /= count;
-      str[n] = charset[key];
-      n++; // Remove this line to make file creation "deterministic"
+static void getRandom(uint8_t* bytes, size_t count) {
+  static FILE* randomSource = NULL;
+  if(!randomSource) {
+    randomSource = fopen("/dev/urandom", "r");
+    eassert(randomSource);
   }
 
-  for (; n < length; n++) {
-      int key = rand() % count;
-      str[n] = charset[key];
+  while(count) {
+    size_t chunkSize = fread(bytes, sizeof(*bytes), count, randomSource);
+    bytes += chunkSize;
+    count -= chunkSize;
   }
+}
 
-  str[length] = '\0';
+static const char kCharset[] = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789_-";
+#define kCharsetBits 6
+_Static_assert(sizeof(kCharset) - 1 == 1 << kCharsetBits, "wrong number of characters in kCharset");
+
+void ea_generate_id(char* str, size_t length) {
+  size_t randomBitCount = length*kCharsetBits;
+  eassert(randomBitCount >= 128 && "don't try to use less than 128 random bits to avoid possibility of collision");
+
+  size_t randomByteCount = (randomBitCount + 7)/8;
+  uint8_t randomBytes[randomByteCount];
+  getRandom(randomBytes, randomByteCount);
+
+  uint64_t bitCache = 0;
+  size_t cachedBits = 0, usedRandomBytes = 0;
+  for(size_t i = 0; i < length; i++) {
+    //load enough bits into the cache
+    while(cachedBits < kCharsetBits) {
+      eassert(usedRandomBytes < randomByteCount);
+      bitCache = (bitCache << 8) | randomBytes[usedRandomBytes++];
+      cachedBits += 8;
+    }
+
+    //take kCharsetBits out of the cache
+    size_t index = bitCache & ((1 << kCharsetBits) - 1);
+    bitCache >>= kCharsetBits;
+    cachedBits -= kCharsetBits;
+
+    //use those random bits to output a character
+    str[i] = kCharset[index];
+  }
+  str[length] = 0;  //termination
 }
 
 void* ea_memdup(void* data, size_t size) {
@@ -264,3 +290,56 @@ void* ea_memdup(void* data, size_t size) {
   memcpy(result, data, size);
   return result;
 }
+
+#ifdef ESM
+
+void start_timer(timer *t1) {
+  *t1 = clock64();
+}
+
+double stop_timer(timer t1) {
+  timer end;
+  start_timer(&end);
+  return (end - t1) / 1000.0 / 1000.0;
+}
+
+double timer_subtract(timer number, timer subtract) {
+  return (number - subtract) / 1000.0 / 1000.0;
+}
+
+#else // POSIX COMPLAINT
+
+void start_timer(timer *t1) {
+  clock_gettime(CLOCK_MONOTONIC, t1);
+}
+
+static timer time_diff(struct timespec end, struct timespec start) {
+  struct timespec diff;
+  if (end.tv_nsec < start.tv_nsec) {
+    diff.tv_sec = end.tv_sec - start.tv_sec - 1;
+    diff.tv_nsec = 1000000000 + end.tv_nsec - start.tv_nsec;
+  } else {
+    diff.tv_sec = end.tv_sec - start.tv_sec;
+    diff.tv_nsec = end.tv_nsec - start.tv_nsec;
+  }
+  return diff;
+}
+
+static double time_to_double(struct timespec t) {
+  double d = (double)t.tv_nsec;
+  d /= 1000000000.0;
+  d += (double)t.tv_sec;
+  return d;
+}
+
+double timer_subtract(timer number, timer subtract) {
+  return time_to_double(time_diff(number, subtract));
+}
+
+double stop_timer(timer t1) {
+  timer end;
+  start_timer(&end);
+  return time_to_double(time_diff(end, t1));
+}
+
+#endif

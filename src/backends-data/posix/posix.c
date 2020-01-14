@@ -45,8 +45,8 @@
 #define WARNS(fmt) ESDM_WARN_COM_FMT("POSIX", "%s", fmt)
 
 
-#define sprintfFragmentDir(path, f) (sprintf(path, "%s/%c%c/%s", tgt, f->dataset->id[0], f->dataset->id[1], f->dataset->id+2))
-#define sprintfFragmentPath(path, f) (sprintf(path, "%s/%c%c/%s/%s", tgt, f->dataset->id[0], f->dataset->id[1], f->dataset->id+2, f->id))
+#define sprintfFragmentDir(path, f) (sprintf(path, "%s/%c/%c/%s/%c/%c", tgt, f->dataset->id[0], f->dataset->id[1], f->dataset->id+2, f->id[0], f->id[1]))
+#define sprintfFragmentPath(path, f) (sprintf(path, "%s/%c/%c/%s/%c/%c/%s", tgt, f->dataset->id[0], f->dataset->id[1], f->dataset->id+2, f->id[0], f->id[1], f->id+2))
 
 ///////////////////////////////////////////////////////////////////////////////
 // Helper and utility /////////////////////////////////////////////////////////
@@ -139,7 +139,10 @@ static int mkfs(esdm_backend_t *backend, int format_flags) {
 
     sprintf(path, "%s/README-ESDM.TXT", tgt);
     if (stat(path, &sb) == 0) {
-      posix_recursive_remove(tgt);
+      if(posix_recursive_remove(tgt)) {
+        fprintf(stderr, "[mkfs] Error removing ESDM directory at \"%s\"\n", tgt);
+        return ESDM_ERROR;
+      }
     }else if(! ignore_err){
       printf("[mkfs] Error %s is not an ESDM directory\n", tgt);
       return ESDM_ERROR;
@@ -247,11 +250,11 @@ static int fragment_update(esdm_backend_t *backend, esdm_fragment_t *f) {
     // create data
     ret = entry_update(path, writeBuffer, f->bytes, 1);
   } else {
-    f->id = malloc(21);
+    f->id = malloc(24);
     eassert(f->id);
     // ensure that the fragment with the ID doesn't exist, yet
     while(1){
-      ea_generate_id(f->id, 20);
+      ea_generate_id(f->id, 23);
       struct stat sb;
       sprintfFragmentDir(path, f);
       if (stat(path, &sb) == -1) {

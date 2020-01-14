@@ -2,12 +2,19 @@
 
 #include <esdm-internal.h>
 #include <stdlib.h>
+#include <test/util/test_util.h>
+
+static double gFragmentAddTime = 0.0, gMakeSetTime = 0.0;
+static int64_t gFragmentAddCount = 0, gMakeSetCount = 0;
 
 void esdmI_fragments_construct(esdm_fragments_t* me) {
   *me = (esdm_fragments_t){0};
 }
 
 void esdmI_fragments_add(esdm_fragments_t* me, esdm_fragment_t* fragment) {
+  timer myTimer;
+  start_timer(&myTimer);
+
   if(me->count == me->buff_size) {
     me->buff_size = (me->buff_size ? 2*me->buff_size : 8);
     eassert(me->buff_size > me->count);
@@ -19,6 +26,9 @@ void esdmI_fragments_add(esdm_fragments_t* me, esdm_fragment_t* fragment) {
   esdmI_dataspace_getExtends(fragment->dataspace, &extends);
   if(!me->neighbourManager) me->neighbourManager = esdmI_hypercubeNeighbourManager_make(esdmI_hypercube_dimensions(extends));
   esdmI_hypercubeNeighbourManager_pushBack(me->neighbourManager, extends);
+
+  gFragmentAddTime += stop_timer(myTimer);
+  gFragmentAddCount++;
 }
 
 esdm_fragment_t** esdmI_fragments_list(esdm_fragments_t* me, int64_t* out_fragmentCount) {
@@ -49,6 +59,9 @@ esdm_fragment_t** esdmI_fragments_makeSetCoveringRegion(esdm_fragments_t* me, es
   eassert(me);
   eassert(bounds);
   eassert(out_fragmentCount);
+
+  timer myTimer;
+  start_timer(&myTimer);
 
   *out_fragmentCount = 0;
   esdm_fragment_t** fragmentSet = NULL;
@@ -144,6 +157,9 @@ esdm_fragment_t** esdmI_fragments_makeSetCoveringRegion(esdm_fragments_t* me, es
     }
   }
 
+  gMakeSetTime = stop_timer(myTimer);
+  gMakeSetCount++;
+
   return fragmentSet;
 }
 
@@ -167,4 +183,20 @@ esdm_status esdmI_fragments_destruct(esdm_fragments_t* me) {
 
   *me = (esdm_fragments_t){0};
   return result;
+}
+
+void esdmI_fragments_getStats(int64_t* out_addedFragments, double* out_fragmentAddTime, int64_t* out_createdSets, double* out_setCreationTime) {
+  if(out_addedFragments) *out_addedFragments = gFragmentAddCount;
+  if(out_fragmentAddTime) *out_fragmentAddTime = gFragmentAddTime;
+  if(out_createdSets) *out_createdSets = gMakeSetCount;
+  if(out_setCreationTime) *out_setCreationTime = gMakeSetTime;
+}
+
+double esdmI_fragments_getFragmentAddTime() { return gFragmentAddTime; }
+int64_t esdmI_fragments_getFragmentAddCount() { return gFragmentAddCount; }
+double esdmI_fragments_getSetCreationTime() { return gMakeSetTime; }
+int64_t esdmI_fragments_getSetCreationCount() { return gMakeSetCount; }
+void esdmI_fragments_resetStats() {
+  gFragmentAddTime = gMakeSetTime = 0;
+  gFragmentAddCount = gMakeSetCount = 0;
 }

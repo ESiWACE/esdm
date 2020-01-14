@@ -116,7 +116,10 @@ static int mkfs(esdm_md_backend_t *backend, int format_flags) {
 
     sprintf(path, "%s/README-ESDM.TXT", tgt);
     if (stat(path, &sb) == 0) {
-      posix_recursive_remove(tgt);
+      if(posix_recursive_remove(tgt)) {
+        fprintf(stderr, "[mkfs] Error removing ESDM directory at \"%s\"\n", tgt);
+        return ESDM_ERROR;
+      }
     }else if(! ignore_err){
       printf("[mkfs] Error %s is not an ESDM directory\n", tgt);
       return ESDM_ERROR;
@@ -308,12 +311,12 @@ static int dataset_create(esdm_md_backend_t * backend, esdm_dataset_t *d){
 
   metadummy_backend_options_t *options = (metadummy_backend_options_t *)backend->data;
   const char *tgt = options->target;
-  d->id = malloc(17);
+  d->id = malloc(24);
   eassert(d->id);
 
   while(1){
     // TODO fix race condition with the file creation here
-    ea_generate_id(d->id, 16);
+    ea_generate_id(d->id, 23);
 
     // create directory for datsets
     sprintfDatasetMd(path_dataset, d);

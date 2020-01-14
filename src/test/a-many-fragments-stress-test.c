@@ -262,28 +262,58 @@ int main(int argc, char const *argv[]) {
 
   double arrayWriteTime = 0, btreeWriteTime = 0;
   double arrayReadTime = 0, btreeReadTime = 0;
+  double arrayFragmentAddTime = 0, btreeFragmentAddTime = 0;
+  double arrayFragmentSetCreationTime = 0, btreeFragmentSetCreationTime = 0;
+  int64_t arrayFragmentAddCount = 0, btreeFragmentAddCount = 0;
+  int64_t arrayFragmentSetCreationCount = 0, btreeFragmentSetCreationCount = 0;
+  double arrayOutputTime = 0, btreeOutputTime = 0;
+  double arrayInputTime = 0, btreeInputTime = 0;
   for(int64_t i = 0; i < repetitions; i++) {
     totalWriteTime = totalReadTime = 0;
+    esdmI_fragments_resetStats();
+    esdmI_resetBackendIoTimes();
     printf("\n\n=== array based bound list ===\n\n");
     runTestWithConfig(length, readCount, "{ \"esdm\": { \"bound list implementation\": \"array\", \"backends\": [ { \"type\": \"POSIX\", \"id\": \"p1\", \"accessibility\": \"global\", \"target\": \"./_posix1\" } ], \"metadata\": { \"type\": \"metadummy\", \"id\": \"md\", \"target\": \"./_metadummy\" } } }");
     arrayWriteTime += totalWriteTime;
     arrayReadTime += totalReadTime;
+    arrayFragmentAddTime += esdmI_fragments_getFragmentAddTime();
+    arrayFragmentAddCount += esdmI_fragments_getFragmentAddCount();
+    arrayFragmentSetCreationTime += esdmI_fragments_getSetCreationTime();
+    arrayFragmentSetCreationCount += esdmI_fragments_getSetCreationCount();
+    arrayOutputTime += esdmI_backendOutputTime();
+    arrayInputTime += esdmI_backendInputTime();
 
     totalWriteTime = totalReadTime = 0;
+    esdmI_fragments_resetStats();
+    esdmI_resetBackendIoTimes();
     printf("\n\n=== B-tree based bound list ===\n\n");
     runTestWithConfig(length, readCount, "{ \"esdm\": { \"bound list implementation\": \"btree\", \"backends\": [ { \"type\": \"POSIX\", \"id\": \"p1\", \"accessibility\": \"global\", \"target\": \"./_posix1\" } ], \"metadata\": { \"type\": \"metadummy\", \"id\": \"md\", \"target\": \"./_metadummy\" } } }");
     btreeWriteTime += totalWriteTime;
     btreeReadTime += totalReadTime;
+    btreeFragmentAddTime += esdmI_fragments_getFragmentAddTime();
+    btreeFragmentAddCount += esdmI_fragments_getFragmentAddCount();
+    btreeFragmentSetCreationTime += esdmI_fragments_getSetCreationTime();
+    btreeFragmentSetCreationCount += esdmI_fragments_getSetCreationCount();
+    btreeOutputTime += esdmI_backendOutputTime();
+    btreeInputTime += esdmI_backendInputTime();
   }
 
   printf("\nTotals:\n");
   printf("\twritten data: %"PRId64" bytes in %"PRId64" fragments (%g bytes/fragment avg)\n", totalWrittenData, totalFragmentCount, totalWrittenData/(double)totalFragmentCount);
   printf("\tarray based bound list:\n");
   printf("\t\twrite time: %.3fs (%.3fs avg)\n", arrayWriteTime, arrayWriteTime/repetitions);
+  printf("\t\t\tcomputing neighbourhood relations: %.3fs, %.3fus per call\n", arrayFragmentAddTime, 1000*1000*arrayFragmentAddTime/arrayFragmentAddCount);
+  printf("\t\t\tI/O time: %.3fs (%.3fs avg)\n", arrayOutputTime, arrayOutputTime/repetitions);
   printf("\t\tread time: %.3fs (%.3fs avg, %.3fms per call, %.3fus per considered fragment)\n", arrayReadTime, arrayReadTime/repetitions, arrayReadTime*1000/repetitions/readCount, arrayReadTime*1000*1000/readCount/totalFragmentCount*2);
+  printf("\t\t\tcomputing fragment sets: %.3fs, %.3fus per call\n", arrayFragmentSetCreationTime, 1000*1000*arrayFragmentSetCreationTime/arrayFragmentSetCreationCount);
+  printf("\t\t\tI/O time: %.3fs (%.3fs avg)\n", arrayInputTime, arrayInputTime/repetitions);
   printf("\tB-tree based bound list:\n");
   printf("\t\twrite time: %.3fs (%.3fs avg)\n", btreeWriteTime, btreeWriteTime/repetitions);
+  printf("\t\t\tcomputing neighbourhood relations: %.3fs, %.3fus per call\n", btreeFragmentAddTime, 1000*1000*btreeFragmentAddTime/btreeFragmentAddCount);
+  printf("\t\t\tI/O time: %.3fs (%.3fs avg)\n", btreeOutputTime, btreeOutputTime/repetitions);
   printf("\t\tread time: %.3fs (%.3fs avg, %.3fms per call, %.3fus per considered fragment)\n", btreeReadTime, btreeReadTime/repetitions, btreeReadTime*1000/repetitions/readCount, btreeReadTime*1000*1000/readCount/totalFragmentCount*2);
+  printf("\t\t\tcomputing fragment sets: %.3fs, %.3fus per call\n", btreeFragmentSetCreationTime, 1000*1000*btreeFragmentSetCreationTime/btreeFragmentSetCreationCount);
+  printf("\t\t\tI/O time: %.3fs (%.3fs avg)\n", btreeInputTime, btreeInputTime/repetitions);
 
   printf("\nOK\n");
 
