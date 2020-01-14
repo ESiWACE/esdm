@@ -170,6 +170,27 @@ if(BACKEND_KDSA OR BACKEND_KDSA_DUMMY)
 	SUBDIRS(backends-data/kdsa)
 endif()
 
+message(STATUS "Searching for IME libraries")
+option(BACKEND_IME "Compile backend for IME" OFF)
+find_path(IME_INCLUDE_DIR ime_native.h HINTS ${IME_INCLUDE_DIR})
+find_library(IME_LIBRARY NAMES im_client HINTS ${IME_LIB_DIR})
+string(COMPARE EQUAL "${IME_LIBRARY}" IME_LIBRARY-NOTFOUND _cmp)
+if(_cmp)
+  message("not found")
+else()
+  message(STATUS "found in ${IME_LIBRARY} and ${IME_INCLUDE_DIR}")
+  set(BACKEND_IME ON)
+endif()
+if(BACKEND_IME)
+	message(STATUS "WITH_BACKEND_IME")
+	add_definitions(-DESDM_HAS_IME=1)
+  target_link_libraries(esdm esdmime ${IME_LIBRARY})
+	SUBDIRS(backends-data/ime)
+endif()
+
+
+message(STATUS "Searching for PMEM libraries")
+
 option(BACKEND_PMEM "Compile backend for PMEM" OFF)
 
 find_path(PMEM_INCLUDE_DIR libpmem.h HINTS ${PMEM_INCLUDE_DIR})

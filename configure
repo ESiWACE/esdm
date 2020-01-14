@@ -22,6 +22,8 @@ function help(){
 	echo "--with-cxx=<file>        : path to the C++ compiler"
 	echo "--with-mpicc=<file>      : path to the MPI C compiler"
 	echo "--with-mpicxx=<file>     : path to the MPI C++ compiler"
+  echo "--with-ime-include=<dir> : path to ime_native.h"
+  echo "--with-ime-lib=<dir>     : path to libim_client.so"
   echo "--with-kdsa-include=<dir>: path to kdsa.h"
   echo "--with-kdsa-lib=<dir>    : path to libkdsa.so"
   echo "--enable-kdsa-dummy      : compile the KDSA dummy backend"
@@ -44,7 +46,7 @@ function reconfigure(){
 	exit $?
 }
 
-set -- `getopt -u -l "help,version,debug,reconfigure,prefix:,with-cc:,with-cxx:,enable-hdf5,enable-netcdf4,with-mpicc:,with-mpicxx:,verbose,build-dir:,enable-wos:,with-boost:,with-kdsa-lib:,with-kdsa-include:,enable-kdsa-dummy" -o "h" -- "$@"`
+set -- `getopt -u -l "help,version,debug,reconfigure,prefix:,with-cc:,with-cxx:,enable-hdf5,enable-netcdf4,with-mpicc:,with-mpicxx:,verbose,build-dir:,enable-wos:,with-ime-lib:,with-ime-include:,with-kdsa-lib:,with-kdsa-include:,enable-kdsa-dummy" -o "h" -- "$@"`
 test $# -lt 1  && exit 1
 while test $# -gt 0
 do
@@ -56,6 +58,8 @@ do
 		--version) cmake --version; exit;;
 		--prefix) prefix="$2"; shift;;
 		--debug) debug="YES"; ;;
+    --with-ime-include) ime_include="$2"; shift;;
+    --with-ime-lib) ime_lib="$2"; shift;;
     --with-kdsa-include) kdsa_include="$2"; shift;;
     --with-kdsa-lib) kdsa_lib="$2"; shift;;
     --enable-kdsa-dummy) kdsa_dummy="YES"; shift;;
@@ -108,11 +112,17 @@ if test -n "$netcdf4"; then
 	CMAKEFLAGS="$CMAKEFLAGS -DINTERFACE_NETCDF4=ON"
 fi
 
+if test -n "$ime_lib"; then
+	CMAKEFLAGS="$CMAKEFLAGS -DBACKEND_IME=ON -DIME_LIB_DIR:FILEPATH=$ime_lib"
+fi
+if test -n "$ime_include"; then
+	CMAKEFLAGS="$CMAKEFLAGS -DBACKEND_IME=ON -DIME_INCLUDE_DIR:FILEPATH=$ime_include"
+fi
 if test -n "$kdsa_lib"; then
 	CMAKEFLAGS="$CMAKEFLAGS -DBACKEND_KDSA=ON -DKDSA_LIB_DIR:FILEPATH=$kdsa_lib"
 fi
 if test -n "$kdsa_include"; then
-	CMAKEFLAGS="$CMAKEFLAGS -DKDSA_INCLUDE_DIR:FILEPATH=$kdsa_include"
+	CMAKEFLAGS="$CMAKEFLAGS -DBACKEND_KDSA=ON -DKDSA_INCLUDE_DIR:FILEPATH=$kdsa_include"
 fi
 if test -n "$kdsa_dummy"; then
   CMAKEFLAGS="$CMAKEFLAGS -DBACKEND_KDSA_DUMMY=ON"

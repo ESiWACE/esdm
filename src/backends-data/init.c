@@ -5,6 +5,11 @@
 #  pragma message("Building ESDM with support for generic POSIX backend.")
 #endif
 
+#ifdef ESDM_HAS_IME
+#  include "ime/ime.h"
+#  pragma message("Building ESDM with IME support.")
+#endif
+
 #ifdef ESDM_HAS_KDSA
 #  include "kdsa/esdm-kdsa.h"
 #  pragma message("Building ESDM with Kove XPD KDSA support.")
@@ -29,6 +34,11 @@ esdm_backend_t * esdmI_init_backend(char const * name, esdm_config_backend_t * b
 #ifdef ESDM_HAS_POSIX
   if (strncmp(b->type, "POSIX", 5) == 0) {
     return posix_backend_init(b);
+  }
+#endif
+#ifdef ESDM_HAS_IME
+  else if (strncasecmp(b->type, "IME", 3) == 0) {
+    return ime_backend_init(b);
   }
 #endif
 #ifdef ESDM_HAS_KDSA
