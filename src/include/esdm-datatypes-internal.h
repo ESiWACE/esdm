@@ -424,4 +424,22 @@ struct esdmI_hypercubeNeighbourManager_t {
   esdmI_boundList_t* boundLists[];  //one esdmI_boundList_t per dimension
 };
 
+typedef struct esdm_readTimes_t esdm_readTimes_t;
+struct esdm_readTimes_t {
+  double makeSet; //the time to determine the sets of fragments than need to be fetched from disk
+  double coverageCheck; //the time needed to check whether the available fragments cover the requested regions
+  double enqueue; //the time needed to queue the read requests
+  double completion;  //the time spent waiting for background tasks to complete
+  double writeback; //the time spent writing back fragments after transposition/composition into the user requested data layout
+  double total; //sum of all the times above and other small things like taking times...
+};
+
+typedef struct esdm_writeTimes_t esdm_writeTimes_t;
+struct esdm_writeTimes_t {
+  double backendDistribution; //the time spent deciding which backend should handle which parts of the data
+  double backendDispatch; //the time spent sending fragments to the different backends
+  double completion;  //the time spent waiting for background tasks to complete
+  double total; //sum of all the times above and other small things like taking times...
+};
+
 #endif
