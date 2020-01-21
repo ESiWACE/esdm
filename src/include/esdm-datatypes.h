@@ -78,4 +78,7 @@ typedef struct esdm_statistics_t {
   uint64_t fragments; //the amount of data object actually read/written from/to storage hardware
 } esdm_statistics_t;
 
+typedef struct esdmI_hypercube_t esdmI_hypercube_t;
+typedef struct esdm_fragments_t esdm_fragments_t;
+
 #endif

@@ -236,12 +236,15 @@ esdm_status esdm_dataset_open_md_parse(esdm_dataset_t *d, char * md, int size);
 esdm_status esdm_container_open_md_load(esdm_container_t *c, char ** out_md, int * out_size);
 esdm_status esdm_container_open_md_parse(esdm_container_t *c, char * md, int size);
 
-void esdmI_fragments_construct(esdm_fragments_t* me);
+esdm_fragments_t* esdmI_fragments_create(); //factory function that will return a pointer to a derived class object
 void esdmI_fragments_add(esdm_fragments_t* me, esdm_fragment_t* fragment);  //takes possession of the fragment, eventually calling `esdm_fragment_destroy()` on it when the `esdm_fragments_t` object is destructed
 esdm_fragment_t** esdmI_fragments_list(esdm_fragments_t* me, int64_t* out_fragmentCount); //returns a pointer to internal storage
 esdm_fragment_t** esdmI_fragments_makeSetCoveringRegion(esdm_fragments_t* me, esdmI_hypercube_t* region, int64_t* out_fragmentCount);  //caller is responsible to free the returned array
 void esdmI_fragments_metadata_create(esdm_fragments_t* me, smd_string_stream_t* s);
-esdm_status esdmI_fragments_destruct(esdm_fragments_t* me);  //calls `esdm_fragment_destroy()` on its members, but does not invoke the `fragment_delete()` callback of the backend
+esdm_status esdmI_fragments_destroy(esdm_fragments_t* me);  //calls `esdm_fragment_destroy()` on its members, but does not invoke the `fragment_delete()` callback of the backend
+
+void esdmI_neighbourFragments_construct(struct esdmI_neighbourFragments_t* me); //constructor for the neighbourhood manager based implementation
+
 void esdmI_fragments_getStats(int64_t* out_addedFragments, double* out_fragmentAddTime, int64_t* out_createdSets, double* out_setCreationTime);
 double esdmI_fragments_getFragmentAddTime();
 int64_t esdmI_fragments_getFragmentAddCount();

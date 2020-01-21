@@ -886,7 +886,7 @@ esdm_status esdm_scheduler_read_blocking(esdm_instance_t *esdm, esdm_dataset_t *
   {
     esdmI_hypercube_t* readExtends;
     esdmI_dataspace_getExtends(subspace, &readExtends);
-    read_frag = esdmI_fragments_makeSetCoveringRegion(&dataset->fragments, readExtends, &frag_count);
+    read_frag = esdmI_fragments_makeSetCoveringRegion(dataset->fragments, readExtends, &frag_count);
     esdmI_hypercube_destroy(readExtends);
     DEBUG("fragments to read: %d", frag_count);
   }
