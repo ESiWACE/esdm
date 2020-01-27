@@ -198,11 +198,14 @@ void readArgs(int argc, char const **argv, int64_t* out_length, int64_t* out_rea
 //This allows us to stress test the handling of many small fragments, without causing significant I/O times in the read path.
 //
 //XXX: This benchmark is written to use 1D data because 1D data provides the highest possible fragment count per given stored data volume.
-void runTestWithConfig(int64_t length, int64_t readCount, const char* configString) {
+void runTestWithConfig(int64_t length, int64_t readCount, const char* configString, esdm_readTimes_t* out_readTimes, esdm_writeTimes_t* out_writeTimes) {
   esdm_status ret = esdm_load_config_str(configString);
   eassert(ret == ESDM_SUCCESS);
   ret = esdm_init();
   eassert(ret == ESDM_SUCCESS);
+
+  esdm_readTimes_t previousReadTimes = esdmI_performance_read();
+  esdm_writeTimes_t previousWriteTimes = esdmI_performance_write();
 
   esdm_loglevel(ESDM_LOGLEVEL_WARNING); //stop the esdm_mkfs() call from spamming us with infos about deleted objects
   timer myTimer;
@@ -252,6 +255,21 @@ void runTestWithConfig(int64_t length, int64_t readCount, const char* configStri
   eassert(ret == ESDM_SUCCESS);
   ret = esdm_container_close(container);
   eassert(ret == ESDM_SUCCESS);
+
+  esdm_readTimes_t newReadTimes = esdmI_performance_read();
+  out_readTimes->makeSet += newReadTimes.makeSet - previousReadTimes.makeSet;
+  out_readTimes->coverageCheck += newReadTimes.coverageCheck - previousReadTimes.coverageCheck;
+  out_readTimes->enqueue += newReadTimes.enqueue - previousReadTimes.enqueue;
+  out_readTimes->completion += newReadTimes.completion - previousReadTimes.completion;
+  out_readTimes->writeback += newReadTimes.writeback - previousReadTimes.writeback;
+  out_readTimes->total += newReadTimes.total - previousReadTimes.total;
+
+  esdm_writeTimes_t newWriteTimes = esdmI_performance_write();
+  out_writeTimes->backendDistribution += newWriteTimes.backendDistribution - previousWriteTimes.backendDistribution;
+  out_writeTimes->backendDispatch += newWriteTimes.backendDispatch - previousWriteTimes.backendDispatch;
+  out_writeTimes->completion += newWriteTimes.completion - previousWriteTimes.completion;
+  out_writeTimes->total += newWriteTimes.total - previousWriteTimes.total;
+
   ret = esdm_finalize();
   eassert(ret == ESDM_SUCCESS);
 }
@@ -268,12 +286,14 @@ int main(int argc, char const *argv[]) {
   int64_t arrayFragmentSetCreationCount = 0, btreeFragmentSetCreationCount = 0;
   double arrayOutputTime = 0, btreeOutputTime = 0;
   double arrayInputTime = 0, btreeInputTime = 0;
+  esdm_readTimes_t arrayReadTimes = {0}, btreeReadTimes = {0};
+  esdm_writeTimes_t arrayWriteTimes = {0}, btreeWriteTimes = {0};
   for(int64_t i = 0; i < repetitions; i++) {
     totalWriteTime = totalReadTime = 0;
     esdmI_fragments_resetStats();
     esdmI_resetBackendIoTimes();
     printf("\n\n=== array based bound list ===\n\n");
-    runTestWithConfig(length, readCount, "{ \"esdm\": { \"bound list implementation\": \"array\", \"backends\": [ { \"type\": \"POSIX\", \"id\": \"p1\", \"accessibility\": \"global\", \"target\": \"./_posix1\" } ], \"metadata\": { \"type\": \"metadummy\", \"id\": \"md\", \"target\": \"./_metadummy\" } } }");
+    runTestWithConfig(length, readCount, "{ \"esdm\": { \"bound list implementation\": \"array\", \"backends\": [ { \"type\": \"POSIX\", \"id\": \"p1\", \"accessibility\": \"global\", \"target\": \"./_posix1\" } ], \"metadata\": { \"type\": \"metadummy\", \"id\": \"md\", \"target\": \"./_metadummy\" } } }", &arrayReadTimes, &arrayWriteTimes);
     arrayWriteTime += totalWriteTime;
     arrayReadTime += totalReadTime;
     arrayFragmentAddTime += esdmI_fragments_getFragmentAddTime();
@@ -287,7 +307,7 @@ int main(int argc, char const *argv[]) {
     esdmI_fragments_resetStats();
     esdmI_resetBackendIoTimes();
     printf("\n\n=== B-tree based bound list ===\n\n");
-    runTestWithConfig(length, readCount, "{ \"esdm\": { \"bound list implementation\": \"btree\", \"backends\": [ { \"type\": \"POSIX\", \"id\": \"p1\", \"accessibility\": \"global\", \"target\": \"./_posix1\" } ], \"metadata\": { \"type\": \"metadummy\", \"id\": \"md\", \"target\": \"./_metadummy\" } } }");
+    runTestWithConfig(length, readCount, "{ \"esdm\": { \"bound list implementation\": \"btree\", \"backends\": [ { \"type\": \"POSIX\", \"id\": \"p1\", \"accessibility\": \"global\", \"target\": \"./_posix1\" } ], \"metadata\": { \"type\": \"metadummy\", \"id\": \"md\", \"target\": \"./_metadummy\" } } }", &btreeReadTimes, &btreeWriteTimes);
     btreeWriteTime += totalWriteTime;
     btreeReadTime += totalReadTime;
     btreeFragmentAddTime += esdmI_fragments_getFragmentAddTime();
@@ -300,21 +320,55 @@ int main(int argc, char const *argv[]) {
 
   printf("\nTotals:\n");
   printf("\twritten data: %"PRId64" bytes in %"PRId64" fragments (%g bytes/fragment avg)\n", totalWrittenData, totalFragmentCount, totalWrittenData/(double)totalFragmentCount);
+  printf("\n");
   printf("\tarray based bound list:\n");
+  printf("\n");
   printf("\t\twrite time: %.3fs (%.3fs avg)\n", arrayWriteTime, arrayWriteTime/repetitions);
   printf("\t\t\tcomputing neighbourhood relations: %.3fs, %.3fus per call\n", arrayFragmentAddTime, 1000*1000*arrayFragmentAddTime/arrayFragmentAddCount);
-  printf("\t\t\tI/O time: %.3fs (%.3fs avg)\n", arrayOutputTime, arrayOutputTime/repetitions);
+  printf("\t\t\tbackend time: %.3fs (%.3fs avg)\n", arrayOutputTime, arrayOutputTime/repetitions);
+  printf("\n");
+  printf("\t\tesdm_performance_write():\n");
+  printf("\t\t\tbackendDistribution: %.3fs (%.3fs avg)\n", arrayWriteTimes.backendDistribution, arrayWriteTimes.backendDistribution/repetitions);
+  printf("\t\t\tbackendDispatch: %.3fs (%.3fs avg)\n", arrayWriteTimes.backendDispatch, arrayWriteTimes.backendDispatch/repetitions);
+  printf("\t\t\tcompletion: %.3fs (%.3fs avg)\n", arrayWriteTimes.completion, arrayWriteTimes.completion/repetitions);
+  printf("\t\t\ttotal: %.3fs (%.3fs avg)\n", arrayWriteTimes.total, arrayWriteTimes.total/repetitions);
+  printf("\n");
   printf("\t\tread time: %.3fs (%.3fs avg, %.3fms per call, %.3fus per considered fragment)\n", arrayReadTime, arrayReadTime/repetitions, arrayReadTime*1000/repetitions/readCount, arrayReadTime*1000*1000/readCount/totalFragmentCount*2);
   printf("\t\t\tcomputing fragment sets: %.3fs, %.3fus per call\n", arrayFragmentSetCreationTime, 1000*1000*arrayFragmentSetCreationTime/arrayFragmentSetCreationCount);
-  printf("\t\t\tI/O time: %.3fs (%.3fs avg)\n", arrayInputTime, arrayInputTime/repetitions);
+  printf("\t\t\tbackend time: %.3fs (%.3fs avg)\n", arrayInputTime, arrayInputTime/repetitions);
+  printf("\n");
+  printf("\t\tesdm_performance_read():\n");
+  printf("\t\t\tmakeSet: %.3fs (%.3fs avg)\n", arrayReadTimes.makeSet, arrayReadTimes.makeSet/repetitions);
+  printf("\t\t\tcoverageCheck: %.3fs (%.3fs avg)\n", arrayReadTimes.coverageCheck, arrayReadTimes.coverageCheck/repetitions);
+  printf("\t\t\tenqueue: %.3fs (%.3fs avg)\n", arrayReadTimes.enqueue, arrayReadTimes.enqueue/repetitions);
+  printf("\t\t\tcompletion: %.3fs (%.3fs avg)\n", arrayReadTimes.completion, arrayReadTimes.completion/repetitions);
+  printf("\t\t\twriteback: %.3fs (%.3fs avg)\n", arrayReadTimes.writeback, arrayReadTimes.writeback/repetitions);
+  printf("\t\t\ttotal: %.3fs (%.3fs avg)\n", arrayReadTimes.total, arrayReadTimes.total/repetitions);
+  printf("\n");
   printf("\tB-tree based bound list:\n");
+  printf("\n");
   printf("\t\twrite time: %.3fs (%.3fs avg)\n", btreeWriteTime, btreeWriteTime/repetitions);
   printf("\t\t\tcomputing neighbourhood relations: %.3fs, %.3fus per call\n", btreeFragmentAddTime, 1000*1000*btreeFragmentAddTime/btreeFragmentAddCount);
-  printf("\t\t\tI/O time: %.3fs (%.3fs avg)\n", btreeOutputTime, btreeOutputTime/repetitions);
+  printf("\t\t\tbackend time: %.3fs (%.3fs avg)\n", btreeOutputTime, btreeOutputTime/repetitions);
+  printf("\n");
+  printf("\t\tesdm_performance_write():\n");
+  printf("\t\t\tbackendDistribution: %.3fs (%.3fs avg)\n", btreeWriteTimes.backendDistribution, btreeWriteTimes.backendDistribution/repetitions);
+  printf("\t\t\tbackendDispatch: %.3fs (%.3fs avg)\n", btreeWriteTimes.backendDispatch, btreeWriteTimes.backendDispatch/repetitions);
+  printf("\t\t\tcompletion: %.3fs (%.3fs avg)\n", btreeWriteTimes.completion, btreeWriteTimes.completion/repetitions);
+  printf("\t\t\ttotal: %.3fs (%.3fs avg)\n", btreeWriteTimes.total, btreeWriteTimes.total/repetitions);
+  printf("\n");
   printf("\t\tread time: %.3fs (%.3fs avg, %.3fms per call, %.3fus per considered fragment)\n", btreeReadTime, btreeReadTime/repetitions, btreeReadTime*1000/repetitions/readCount, btreeReadTime*1000*1000/readCount/totalFragmentCount*2);
   printf("\t\t\tcomputing fragment sets: %.3fs, %.3fus per call\n", btreeFragmentSetCreationTime, 1000*1000*btreeFragmentSetCreationTime/btreeFragmentSetCreationCount);
-  printf("\t\t\tI/O time: %.3fs (%.3fs avg)\n", btreeInputTime, btreeInputTime/repetitions);
-
+  printf("\t\t\tbackend time: %.3fs (%.3fs avg)\n", btreeInputTime, btreeInputTime/repetitions);
+  printf("\n");
+  printf("\t\tesdm_performance_read():\n");
+  printf("\t\t\tmakeSet: %.3fs (%.3fs avg)\n", btreeReadTimes.makeSet, btreeReadTimes.makeSet/repetitions);
+  printf("\t\t\tcoverageCheck: %.3fs (%.3fs avg)\n", btreeReadTimes.coverageCheck, btreeReadTimes.coverageCheck/repetitions);
+  printf("\t\t\tenqueue: %.3fs (%.3fs avg)\n", btreeReadTimes.enqueue, btreeReadTimes.enqueue/repetitions);
+  printf("\t\t\tcompletion: %.3fs (%.3fs avg)\n", btreeReadTimes.completion, btreeReadTimes.completion/repetitions);
+  printf("\t\t\twriteback: %.3fs (%.3fs avg)\n", btreeReadTimes.writeback, btreeReadTimes.writeback/repetitions);
+  printf("\t\t\ttotal: %.3fs (%.3fs avg)\n", btreeReadTimes.total, btreeReadTimes.total/repetitions);
+  printf("\n");
   printf("\nOK\n");
 
   return 0;

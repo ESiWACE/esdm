@@ -487,4 +487,7 @@ double esdmI_backendOutputTime();
 double esdmI_backendInputTime();
 void esdmI_resetBackendIoTimes();
 
+esdm_readTimes_t esdmI_performance_read();
+esdm_writeTimes_t esdmI_performance_write();
+
 #endif

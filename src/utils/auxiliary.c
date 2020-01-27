@@ -107,13 +107,25 @@ int posix_recursive_remove(const char *path) {
 
   bool isDir = (sb.st_mode & S_IFMT) == S_IFDIR;
   if(isDir) {
+    //Create a dummy file that will later be removed along with the other files in this directory.
+    //
+    //XXX: This is a really dirty workaround to reduce the impact of a caching problem:
+    //     It appears that just unlinking a file/directory won't cause the kernel to cache some data associated with the containing directory.
+    //     Adding a file, however, will cause this caching, making the subsequent stat()/unlink() operations more efficient.
+    //     The effect is not huge, but still quite noticeable when we are dealing with more than 200k fragments.
+    //
+    //     Nevertheless, it seems we need to avoid creating hierarchies containing millions of files somehow.
+    char child_path[PATH_MAX];
+    sprintf(child_path, "%s/dummy", path);
+    int dummyFile = creat(child_path, S_IRUSR | S_IWUSR); //force the directory to be cached
+    if(dummyFile != -1) close(dummyFile);
+
     DIR *dir = opendir(path);
     if(!dir) return ESDM_ERROR;
 
     struct dirent *f;
     while(!ret && (f = readdir(dir))) {
       if (strcmp(f->d_name, ".") != 0 && strcmp(f->d_name, "..") != 0) {
-        char child_path[PATH_MAX];
         sprintf(child_path, "%s/%s", path, f->d_name);
         ret = posix_recursive_remove(child_path);
       }
