@@ -8,8 +8,13 @@ as data description formats such as HDF5 and NetCDF to
 more efficiently organize metadata and data across a variety of storage backends.
 
 [![Build Status](https://travis-ci.org/ESiWACE/esdm.svg?branch=master)](https://travis-ci.org/ESiWACE/esdm)
- 
+
 ## Requirements
+
+Ensure you cloned the repository with the required submodules:
+  * git clone --recurse-submodules
+Or to initialize the submodules after the cloning:
+  * git submodule update --init --recursive
 
  * glib2
  * a variant of MPI (for parallel support with ESDM and HDF5)
