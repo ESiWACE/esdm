@@ -2,16 +2,18 @@
 
 # To be called from the top level
 
-git clone https://github.com/DDNStorage/ime_native.git build/ime-native
-git clone https://github.com/DDNStorage/ime_2_posix.git build/ime-posix
+BUILD=${1:-build}
 
-mv build/ime-native/*.h build/ime-posix
-pushd build/ime-posix
+git clone https://github.com/DDNStorage/ime_native.git $BUILD/ime-native
+git clone https://github.com/DDNStorage/ime_2_posix.git $BUILD/ime-posix
+
+mv $BUILD/ime-native/*.h $BUILD/ime-posix
+pushd $BUILD/ime-posix
 make
 popd
 
 echo "Now you can configure ESDM with:"
-echo ./configure --with-ime-include=$PWD/build/ime-posix/ --with-ime-lib=$PWD/build/ime-posix/
+echo ./configure --with-ime-include=$PWD/$BUILD/ime-posix/ --with-ime-lib=$PWD/$BUILD/ime-posix/
 
 echo "Configuration information is provided in esdm-ime.conf"
 echo '{
@@ -31,6 +33,6 @@ echo '{
 }
 ' > esdm-ime.conf
 echo "To test, run:"
-echo cp esdm-ime.conf build/src/test
-echo cd build/src/test
+echo cp esdm-ime.conf $BUILD/src/test
+echo cd $BUILD/src/test
 echo ./readwrite-benchmark
