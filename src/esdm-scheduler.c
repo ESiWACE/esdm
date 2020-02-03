@@ -147,7 +147,6 @@ static void backend_thread(io_work_t *work, esdm_backend_t *backend) {
   g_mutex_unlock(&status->mutex);
   //esdm_dataspace_destroy(work->fragment->dataspace);
 
-  work->fragment->status = ESDM_DATA_NOT_LOADED;
   free(work);
 }
 
@@ -342,7 +341,22 @@ static void read_copy_callback(io_work_t *work) {
     return;
   }
   esdm_dataspace_copy_data(work->fragment->dataspace, work->fragment->buf, work->data.buf_space, work->data.mem_buf);
-  free(work->fragment->buf);  //TODO: Decide whether to cache the data.
+
+  //the intermediate buffer was allocated by `esdm_scheduler_enqueue_read()`
+  //TODO: Decide whether to free the buffer or to cache the data.
+  free(work->fragment->buf);
+  work->fragment->buf = NULL;
+  work->fragment->status = ESDM_DATA_NOT_LOADED;
+}
+
+static void buffer_cleanup_callback(io_work_t *work) {
+  if (work->return_code != ESDM_SUCCESS) {
+    DEBUG("Error reading from fragment ", work->fragment);
+    return;
+  }
+
+  //the buffer is a user supplied one, or allocated and freed by `esdm_read_stream()`, so we must get rid of the pointer to avoid UB
+  work->fragment->status = ESDM_DATA_NOT_LOADED;
   work->fragment->buf = NULL;
 }
 
@@ -385,7 +399,7 @@ esdm_status esdm_scheduler_enqueue_read(esdm_instance_t *esdm, io_request_status
     task->op = ESDM_OP_READ;
     task->fragment = f;
     if (esdmI_scheduler_try_direct_io(f, buf, buf_space)) {
-      task->callback = NULL;
+      task->callback = buffer_cleanup_callback;
     } else {
       //We cannot instruct the fragment to read the data directly into `buf` as we may only need a part of the fragment's data, and the overshoot may cause UB.
       //And we don't want to allocate more memory here than just enough to actually read the fragment's data, so we cannot use the fragment's possibly strided dataspace.
@@ -764,7 +778,7 @@ esdm_status esdm_scheduler_enqueue_write(esdm_instance_t *esdm, io_request_statu
           .op = ESDM_OP_WRITE,
           .return_code = ESDM_SUCCESS,
           .parent = status,
-          .callback = NULL,
+          .callback = buffer_cleanup_callback,
           .data = {NULL, NULL}
         };
 
