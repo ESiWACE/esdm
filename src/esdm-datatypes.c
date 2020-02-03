@@ -524,6 +524,8 @@ esdm_status esdm_dataset_delete(esdm_dataset_t *d){
   esdm_fragment_t** fragments = esdmI_fragments_list(d->fragments, &fragmentCount);
   for(int i=0; i < fragmentCount; i++){
     esdm_fragment_t * frag = fragments[i];
+    if(!frag) continue;
+
     status = frag->backend->callbacks.fragment_delete(frag->backend, frag);
     if(status != ESDM_SUCCESS){
       if(i == 0){ //FIXME: This early return means that the caller does not know anything about the state of the dataset in case of an error.
@@ -578,14 +580,20 @@ esdm_status esdm_fragment_destroy(esdm_fragment_t *frag) {
 void esdm_dataset_init(esdm_container_t *c, const char *name, esdm_dataspace_t *dspace, esdm_dataset_t **out_dataset){
   esdm_dataset_t *d = (esdm_dataset_t *)malloc(sizeof(esdm_dataset_t));
 
-  d->dims_dset_id = NULL;
-  d->name = strdup(name);
-  d->id = NULL; // to be filled by the metadata backend
-  d->fill_value = NULL;
-  d->refcount = 0;
-  d->container = c;
-  d->dataspace = dspace;
-  d->actual_size = NULL;
+  *d = (esdm_dataset_t){
+    .dims_dset_id = NULL,
+    .name = strdup(name),
+    .id = NULL, // to be filled by the metadata backend
+    .fill_value = NULL,
+    .refcount = 0,
+    .container = c,
+    .dataspace = dspace,
+    .actual_size = NULL,
+    .status = ESDM_DATA_DIRTY,
+    .attr = smd_attr_new("Variables", SMD_DTYPE_EMPTY, NULL, 0)
+  };
+
+  d->fragments = esdmI_fragments_create(d); //not done in the compound literal above so that the fragments constructor sees a fully initialized parent object
   if(dspace){
     // check for unlimited dims
     for(int i=0; i < dspace->dims; i++){
@@ -596,9 +604,6 @@ void esdm_dataset_init(esdm_container_t *c, const char *name, esdm_dataspace_t *
       }
     }
   }
-  d->status = ESDM_DATA_DIRTY;
-  d->fragments = esdmI_fragments_create();
-  d->attr = smd_attr_new("Variables", SMD_DTYPE_EMPTY, NULL, 0);
 
   *out_dataset = d;
 }
@@ -852,7 +857,7 @@ esdm_status esdm_dataset_open_md_parse(esdm_dataset_t *d, char * md, int size){
     return ESDM_ERROR;
   }
   arrsize = json_array_size(elem);
-  if(!d->fragments) d->fragments = esdmI_fragments_create();
+  if(!d->fragments) d->fragments = esdmI_fragments_create(d);
   for (int i = 0; i < arrsize; i++) {
     json_t * fjson = json_array_get(elem, i);
     esdm_fragment_t * frag;

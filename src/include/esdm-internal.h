@@ -236,7 +236,7 @@ esdm_status esdm_dataset_open_md_parse(esdm_dataset_t *d, char * md, int size);
 esdm_status esdm_container_open_md_load(esdm_container_t *c, char ** out_md, int * out_size);
 esdm_status esdm_container_open_md_parse(esdm_container_t *c, char * md, int size);
 
-esdm_fragments_t* esdmI_fragments_create(); //factory function that will return a pointer to a derived class object
+esdm_fragments_t* esdmI_fragments_create(esdm_dataset_t* parent); //factory function that will return a pointer to a derived class object, does not take possession of `extends`
 void esdmI_fragments_add(esdm_fragments_t* me, esdm_fragment_t* fragment);  //takes possession of the fragment, eventually calling `esdm_fragment_destroy()` on it when the `esdm_fragments_t` object is destructed
 esdm_fragment_t** esdmI_fragments_list(esdm_fragments_t* me, int64_t* out_fragmentCount); //returns a pointer to internal storage
 esdm_fragment_t** esdmI_fragments_makeSetCoveringRegion(esdm_fragments_t* me, esdmI_hypercube_t* region, int64_t* out_fragmentCount);  //caller is responsible to free the returned array

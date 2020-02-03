@@ -2,8 +2,11 @@
 #include <esdm-datatypes-internal.h>
 
 //decide which implementation to use
-esdm_fragments_t* esdmI_fragments_create() {
+esdm_fragments_t* esdmI_fragments_create(esdm_dataset_t* parent) {
   struct esdmI_neighbourFragments_t* result = malloc(sizeof(*result));
+  result->super = (esdm_fragments_t){
+    .parent = parent
+  };
   esdmI_neighbourFragments_construct(result);
   return &result->super;
 }

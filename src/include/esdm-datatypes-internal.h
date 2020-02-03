@@ -37,7 +37,7 @@ struct esdm_container_t {
 
 struct esdm_fragments_vtable_t {
   void (*add)(void* me, esdm_fragment_t* fragment);  //takes possession of the fragment, eventually calling `esdm_fragment_destroy()` on it when the `void` object is destructed
-  esdm_fragment_t** (*list)(void* me, int64_t* out_fragmentCount); //returns a pointer to internal storage
+  esdm_fragment_t** (*list)(void* me, int64_t* out_fragmentCount); //returns a pointer to internal storage, may contain NULL entries which will be counted in `*out_fragmentCount`
   esdm_fragment_t** (*makeSetCoveringRegion)(void* me, esdmI_hypercube_t* region, int64_t* out_fragmentCount);  //caller is responsible to free the returned array
   void (*metadata_create)(void* me, smd_string_stream_t* s);
   esdm_status (*destruct)(void* me);  //calls `esdm_fragment_destroy()` on its members, but does not invoke the `fragment_delete()` callback of the backend
@@ -46,6 +46,7 @@ struct esdm_fragments_vtable_t {
 //abstract base class to handle the list of fragments associated with a dataset
 struct esdm_fragments_t {
   struct esdm_fragments_vtable_t* vtable;
+  esdm_dataset_t* parent;
 };
 
 typedef struct esdmI_hypercubeNeighbourManager_t esdmI_hypercubeNeighbourManager_t;
