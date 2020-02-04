@@ -356,7 +356,7 @@ esdm_status esdmI_container_destroy(esdm_container_t *c) {
 
 void esdmI_dataset_register_fragment(esdm_dataset_t *dset, esdm_fragment_t *frag){
   ESDM_DEBUG(__func__);
-  esdmI_fragments_add(&dset->fragments, frag);
+  esdmI_fragments_add(dset->fragments, frag);
   dset->status = ESDM_DATA_DIRTY;
   dset->container->status = ESDM_DATA_DIRTY;
 }
@@ -521,7 +521,7 @@ esdm_status esdm_dataset_delete(esdm_dataset_t *d){
   }
   // TODO check usage of dataset
   int64_t fragmentCount;
-  esdm_fragment_t** fragments = esdmI_fragments_list(&d->fragments, &fragmentCount);
+  esdm_fragment_t** fragments = esdmI_fragments_list(d->fragments, &fragmentCount);
   for(int i=0; i < fragmentCount; i++){
     esdm_fragment_t * frag = fragments[i];
     status = frag->backend->callbacks.fragment_delete(frag->backend, frag);
@@ -535,8 +535,9 @@ esdm_status esdm_dataset_delete(esdm_dataset_t *d){
     }
     esdm_fragment_destroy(frag);
   }
-  status = esdmI_fragments_destruct(&d->fragments);
+  status = esdmI_fragments_destroy(d->fragments);
   if(status != ESDM_SUCCESS) ret = status;
+  d->fragments = NULL;
 
   d->status = ESDM_DATA_DELETED;
   status = esdm.modules->metadata_backend->callbacks.dataset_remove(esdm.modules->metadata_backend, d);
@@ -596,7 +597,7 @@ void esdm_dataset_init(esdm_container_t *c, const char *name, esdm_dataspace_t *
     }
   }
   d->status = ESDM_DATA_DIRTY;
-  esdmI_fragments_construct(&d->fragments);
+  d->fragments = esdmI_fragments_create();
   d->attr = smd_attr_new("Variables", SMD_DTYPE_EMPTY, NULL, 0);
 
   *out_dataset = d;
@@ -851,6 +852,7 @@ esdm_status esdm_dataset_open_md_parse(esdm_dataset_t *d, char * md, int size){
     return ESDM_ERROR;
   }
   arrsize = json_array_size(elem);
+  if(!d->fragments) d->fragments = esdmI_fragments_create();
   for (int i = 0; i < arrsize; i++) {
     json_t * fjson = json_array_get(elem, i);
     esdm_fragment_t * frag;
@@ -858,7 +860,7 @@ esdm_status esdm_dataset_open_md_parse(esdm_dataset_t *d, char * md, int size){
     if (status != ESDM_SUCCESS) {
       ret = status;
     } else {
-      esdmI_fragments_add(&d->fragments, frag);
+      esdmI_fragments_add(d->fragments, frag);
       esdmI_dataset_update_actual_size(d, frag);
     }
   }
@@ -965,7 +967,7 @@ void esdmI_dataset_metadata_create(esdm_dataset_t *d, smd_string_stream_t*s){
     smd_string_stream_printf(s, "]");
   }
 	smd_string_stream_printf(s, ",\"fragments\":");
-  esdmI_fragments_metadata_create(&d->fragments, s);
+  esdmI_fragments_metadata_create(d->fragments, s);
   smd_string_stream_printf(s, "}");
 }
 
@@ -1016,7 +1018,9 @@ esdm_status esdm_dataset_close(esdm_dataset_t *dset) {
 
   smd_attr_destroy(dset->attr);
 
-  return esdmI_fragments_destruct(&dset->fragments);
+  esdm_status result = esdmI_fragments_destroy(dset->fragments);
+  dset->fragments = NULL;
+  return result;
 }
 
 esdm_status esdmI_dataset_destroy(esdm_dataset_t *dset) {
@@ -1025,7 +1029,8 @@ esdm_status esdmI_dataset_destroy(esdm_dataset_t *dset) {
 
   if(dset->status != ESDM_DATA_NOT_LOADED){
     // loaded to some extend
-    esdm_status ret = esdmI_fragments_destruct(&dset->fragments);
+    esdm_status ret = esdmI_fragments_destroy(dset->fragments);
+    dset->fragments = NULL;
 
     smd_attr_destroy(dset->attr); // maybe unref?
 

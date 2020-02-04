@@ -308,7 +308,7 @@ esdm_status esdm_mpi_dataset_commit(MPI_Comm com, esdm_dataset_t *d){
         if (ret != ESDM_SUCCESS){
           MPI_Abort(com, 1);
         }
-        esdmI_fragments_add(&d->fragments, fragment);
+        esdmI_fragments_add(d->fragments, fragment);
       }
       json_decref(elem);
     }
@@ -320,7 +320,7 @@ esdm_status esdm_mpi_dataset_commit(MPI_Comm com, esdm_dataset_t *d){
   }else{
     size_t size;
     smd_string_stream_t * s = smd_string_stream_create();
-    esdmI_fragments_metadata_create(&d->fragments, s);
+    esdmI_fragments_metadata_create(d->fragments, s);
     char * buff = smd_string_stream_close(s, & size);
 
     ret = MPI_Send(buff, size + 1, MPI_CHAR, 0, 4711, com);

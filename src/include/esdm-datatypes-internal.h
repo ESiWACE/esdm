@@ -35,15 +35,29 @@ struct esdm_container_t {
   int mode_flags; // set via esdm_mode_flags_e
 };
 
-typedef struct esdmI_hypercubeNeighbourManager_t esdmI_hypercubeNeighbourManager_t;
+struct esdm_fragments_vtable_t {
+  void (*add)(void* me, esdm_fragment_t* fragment);  //takes possession of the fragment, eventually calling `esdm_fragment_destroy()` on it when the `void` object is destructed
+  esdm_fragment_t** (*list)(void* me, int64_t* out_fragmentCount); //returns a pointer to internal storage
+  esdm_fragment_t** (*makeSetCoveringRegion)(void* me, esdmI_hypercube_t* region, int64_t* out_fragmentCount);  //caller is responsible to free the returned array
+  void (*metadata_create)(void* me, smd_string_stream_t* s);
+  esdm_status (*destruct)(void* me);  //calls `esdm_fragment_destroy()` on its members, but does not invoke the `fragment_delete()` callback of the backend
+};
+
+//abstract base class to handle the list of fragments associated with a dataset
 struct esdm_fragments_t {
+  struct esdm_fragments_vtable_t* vtable;
+};
+
+typedef struct esdmI_hypercubeNeighbourManager_t esdmI_hypercubeNeighbourManager_t;
+//uses an esdmI_hypercubeNeighbourManaget_t to quickly decide which fragments are used to cover a given region
+struct esdmI_neighbourFragments_t {
+  esdm_fragments_t super;
   esdm_fragment_t ** frag;
   esdmI_hypercubeNeighbourManager_t* neighbourManager;
   int count;
   int buff_size;
 };
 
-typedef struct esdm_fragments_t esdm_fragments_t;
 
 struct esdm_dataset_t {
   char *name;
@@ -54,7 +68,7 @@ struct esdm_dataset_t {
   smd_attr_t *fill_value; // use for read of not-written data, if set
   smd_attr_t *attr;
   int64_t *actual_size; // used for unlimited dimensions
-  esdm_fragments_t fragments;
+  esdm_fragments_t* fragments;
   int refcount;
   esdm_data_status_e status;
   int mode_flags; // set via esdm_mode_flags_e
@@ -322,7 +336,6 @@ struct esdmI_range_t {
   int64_t start, end; //start is inclusive, end is exclusive, i.e. the range includes all `x` with `start <= x < end`
 };
 
-typedef struct esdmI_hypercube_t esdmI_hypercube_t;
 struct esdmI_hypercube_t {
   int64_t dims;
   esdmI_range_t ranges[];
