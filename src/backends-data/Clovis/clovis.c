@@ -55,11 +55,56 @@
 #define BLOCKMASK (BLOCKSIZE - 1)
 #define CLOVIS_OBJ_ID "obj_id"
 
-static struct m0_uint128 gid;
-static struct m0_fid gidxfid = {
+/* next global fid for new object */
+static struct m0_uint128 next_gid;
+
+/* Index to store <"container/dataset" -> object> mapping */
+static struct m0_fid index_cdname_to_object = {
 	.f_container = 0x1ULL,
 	.f_key = 0x1234567812345678ULL
 };
+
+/* Index to store <object -> last_pos> mapping */
+static struct m0_fid index_object_last_pos = {
+	.f_container = 0x1ULL,
+	.f_key = 0x1234567887654321ULL
+};
+
+/**
+ * This is the map<"container_name/dataset_name", fid>.
+ * Every "container_name/dataset_name" has a Clovis objct identified by <obj_id>
+ * in Mero system. This is stored as an internal metadata in a Mero index.
+ * When the container/dataset is accessed, Clovis opens the object and keeps
+ * the open handle in this map<obj_id, open_handle>.
+ * Fragments belonging to the same dataset are stored in the same object,
+ * and its "position" in this object is returned in "fragment->id".
+ * The last position (object tail) is stored in map<obj_id, last_pos> and it is
+ * stored in a Mero index.
+ */
+struct con_dataset_obj_pair {
+	/* "container_name/dataset_name" string */
+	char                 *cdo_contaner_dataset;
+
+	/* underlying object id */
+	char                 *cdo_obj_id;
+
+	/* the last pos for this object. */
+	m0_index              cdo_last_pos;
+
+	/* --- memory-only --- */
+	/* the open object handle */
+	struct m0_clovis_obj *cdo_obj_handle;
+
+	/* link into ::con_map */
+	m0_list_link          cdo_linkage;
+};
+
+/**
+ * The list to hold all mappings.
+ * @TODO This may be changed to hast table "m0_htable" if the list grows;
+ */
+static struct m0_list con_map;
+static struct m0_mutex map_lock;
 
 int clovis_index_create(struct m0_clovis_realm *parent, struct m0_fid *fid);
 
@@ -256,21 +301,21 @@ esdm_backend_t_clovis_init(char *conf, esdm_backend_t *eb)
 		return rc;
 	}
 
-	/* FIXME this makes the gid not reused. */
+	/* FIXME this makes the next_gid not reused. */
 	t = time(NULL);
 	srand(t);
 	r = rand();
 	pid = getpid();
 	f = (t << 16) | (r & 0xff00) | (pid & 0xff);
-	gid.u_hi = f;
-	gid.u_lo = 1L;
-	DEBUG_FMT("GID set to: <%lx:%lx>\n", gid.u_hi, gid.u_lo);
+	next_gid.u_hi = f;
+	next_gid.u_lo = 1L;
+	DEBUG_FMT("GID set to: <%lx:%lx>\n", next_gid.u_hi, next_gid.u_lo);
 
-	/* create the global mapping index */
-	/* XXX NO NEED TO DO SO.
-		 rc = clovis_index_create(&ebm->ebm_clovis_container.co_realm,
-		 &gidxfid);
-	 */
+	m0_list_init(&con_map);
+	m0_mutex_init(&map_lock);
+	/* create the global mapping index for <object -> last_pos> */
+	 rc = clovis_index_create(&ebm->ebm_clovis_container.co_realm,
+				  &index_object_last_pos);
 
 	DEBUG_LEAVE;
 	return rc;
@@ -279,8 +324,29 @@ esdm_backend_t_clovis_init(char *conf, esdm_backend_t *eb)
 static int
 esdm_backend_t_clovis_fini(esdm_backend_t *eb)
 {
-	esdm_backend_t_clovis_t *ebm;
+	esdm_backend_t_clovis_t     *ebm;
+	struct con_dataset_obj_pair *pair;
+	struct m0_list_link         *link;
 	DEBUG_ENTER;
+
+	/*
+	 * Walk through the object handle map, and close all the object handles.
+	 */
+	m0_mutex_lock(&map_lock);
+	while ((link = m0_list_first(&con_map)) != NULL) {
+		pair = m0_list_entry(link, struct con_dataset_obj_pair, con_linkage);
+		m0_list_del(link);
+		m0_bufvec_free(&pair->cdo_contaner_dataset);
+		if (pair->cdo_obj_handle != NULL) {
+			esdm_backend_t_clovis_close(pair->cdo_obj_handle);
+			pair->cdo_obj_handle = NULL;
+		}
+		m0_free(pair);
+	}
+	m0_mutex_unlock(&map_lock);
+
+	m0_list_fini(&con_map);
+	m0_mutex_fini(&map_lock);
 
 	ebm = eb2ebm(eb);
 	m0_clovis_fini(ebm->ebm_clovis_instance, true);
@@ -345,9 +411,9 @@ create_object(esdm_backend_t_clovis_t *ebm, struct m0_uint128 id)
 static struct m0_uint128
 object_id_alloc()
 {
-	/* gid.u_hi keeps unchanged in a one session. */
-	gid.u_lo++;
-	return gid;
+	/* next_gid.u_hi keeps unchanged in a one session. */
+	next_gid.u_lo++;
+	return next_gid;
 }
 
 static char *
@@ -410,7 +476,7 @@ esdm_backend_t_clovis_alloc(esdm_backend_t *eb,
 
 	/* First step: alloc a new fid for this new object. */
 	obj_id = object_id_alloc();
-	DEBUG_FMT("new obj id = <%lx:%lx>\n", FID_P((struct m0_fid *)&obj_id));
+	DEBUG_FMT("new obj id = "FID_F"\n", FID_P((struct m0_fid *)&obj_id));
 
 	/* Then create object */
 	rc = create_object(ebm, obj_id);
@@ -470,8 +536,8 @@ esdm_backend_t_clovis_rdwr(esdm_backend_t *eb,
 	uint64_t i;
 	struct m0_clovis_op *ops[1] = { NULL };
 	struct m0_indexvec ext;
-	struct m0_bufvec data_buf;
-	struct m0_bufvec attr_buf;
+	struct m0_bufvec data_buf = { { 0 } };
+	struct m0_bufvec attr_buf = { { 0 } };
 	uint64_t clovis_block_count;
 	uint64_t clovis_block_size;
 	int rc;
@@ -712,29 +778,29 @@ bufvec_fill(const char *value, struct m0_bufvec *vals)
 }
 
 static int
-mapping_get(esdm_backend_t *backend, const char *name, char **obj_id)
+mapping_get(esdm_backend_t *backend, struct m0_fid *index_fid,
+	    const char *name, char **value)
 {
 	esdm_backend_t_clovis_t *ebm = eb2ebm(backend);
 	int rc;
-	struct m0_bufvec key;
-	struct m0_bufvec val;
+	struct m0_bufvec key = { { 0 } };
+	struct m0_bufvec val = { { 0 } };
 
 	rc = bufvec_fill(name, &key) ? : bufvec_fill(NULL, &val);
 
 	if (rc == 0) {
 		rc = clovis_index_get(&ebm->ebm_clovis_container.co_realm,
-				      &gidxfid, &key, &val);
+				      index_fid, &key, &val);
 		if (rc == 0) {
 			/* malloc & copy & setting trailing zero. */
 			int datalen = val.ov_vec.v_count[0];
 			char *res = malloc(datalen + 1);
 			if (res != NULL) {
-	memcpy(res, val.ov_buf[0], datalen);
-	res[datalen] = 0;
-	*obj_id = res;
-			}
-			else
-	rc = -ENOMEM;
+				memcpy(res, val.ov_buf[0], datalen);
+				res[datalen] = 0;
+				*value = res;
+			} else
+				rc = -ENOMEM;
 		}
 	}
 
@@ -745,18 +811,19 @@ mapping_get(esdm_backend_t *backend, const char *name, char **obj_id)
 }
 
 static int
-mapping_insert(esdm_backend_t *backend, const char *name, const char *obj_id)
+mapping_insert(esdm_backend_t *backend, struct m0_fid *index_fid,
+	       const char *name, const char *value)
 {
 	esdm_backend_t_clovis_t *ebm = eb2ebm(backend);
 	int rc;
-	struct m0_bufvec key;
-	struct m0_bufvec val;
+	struct m0_bufvec key = { { 0 } };
+	struct m0_bufvec val = { { 0 } };
 
-	rc = bufvec_fill(name, &key) ? : bufvec_fill(obj_id, &val);
+	rc = bufvec_fill(name, &key) ? : bufvec_fill(value, &val);
 
 	if (rc == 0) {
 		rc = clovis_index_put(&ebm->ebm_clovis_container.co_realm,
-				      &gidxfid, &key, &val);
+				      index_fid, &key, &val);
 	}
 
 	m0_bufvec_free(&key);
@@ -771,6 +838,8 @@ esdm_backend_t_clovis_fragment_retrieve(esdm_backend_t  *backend,
 {
 	int   rc = 0;
 	bool  mthreaded = false;
+	struct m0_fid fid;
+	m0_bindex last_pos = -1LL;
 
 	DEBUG_ENTER;
 
@@ -795,9 +864,45 @@ esdm_backend_t_clovis_fragment_retrieve(esdm_backend_t  *backend,
 
 	DEBUG_FMT("Retrieving from f=%p id=%s size=%lu\n", fragment, fragment->id, fragment->bytes);
 
+	object_id_decode(fragment->id, &fid);
+	m0_mutex_lock(&map_lock);
+	m0_list_for_each_entry(&con_map, pair, struct con_dataset_obj_pair, cdo_linkage) {
+		if (m0_fid_equ(&fid, pair->cdo_fid)) {
+			/* found the object with the same fid. */
+			break;
+		}
+	}
+	if (pair == NULL) {
+		/* not found in cached map */
+		char *str_last_pos;
+		rc = mapping_get(backend, &index_object_last_pos,
+				 obj_id, &str_last_pos);
+		if (rc == 0) {
+			last_pos = atoll(str_last_pos);
+			free(str_last_pos);
+
+			pair = (struct con_dataset_obj_pair *)malloc(sizeof (struct con_dataset_obj_pair));
+			assert(pair != NULL);
+			memset(pair, 0, sizeof(struct con_dataset_obj_pair));
+			bufvec_fill(&pair->cdo_contaner_dataset, container_dataset);
+			pair->cdo_fid = fid;
+			pair->cdo_last_pos = last_pos;
+			m0_list_link_init(&pair->cdo_linkage);
+			m0_list_add(con_map, &pair->cdo_linkage);
+		}
+	}
+	m0_mutex_unlock(&map_lock);
+	if (rc != 0)
+		goto err;
+	assert(pair != NULL);
 	void *obj_handle = NULL;
-	/* 2. open object with its object id. */
-	rc = esdm_backend_t_clovis_open(backend, fragment->id, &obj_handle);
+	if (pair->cdo_obj_handle == NULL) {
+		/* object has not been opened. Let's open it and keep it open */
+		rc = esdm_backend_t_clovis_open(backend, fragment->id, &obj_handle);
+		if (rc == 0)
+			pair->cdo_obj_handle = obj_handle;
+	}
+
 	DEBUG_FMT("Object Opened: obj=%p rc=%d\n", obj_handle, rc);
 	if (rc == 0) {
 		void *readBuffer;
@@ -815,7 +920,7 @@ esdm_backend_t_clovis_fragment_retrieve(esdm_backend_t  *backend,
 		/* 3. read from this object. */
 		rc = esdm_backend_t_clovis_read(backend,
 						obj_handle,
-						0,
+						last_pos,
 						fragment->bytes,
 						readBuffer);
 
@@ -835,9 +940,10 @@ esdm_backend_t_clovis_fragment_retrieve(esdm_backend_t  *backend,
 			free(readBuffer);
 		}
 		/* 4. close this object. */
-		esdm_backend_t_clovis_close(backend, obj_handle);
+		//esdm_backend_t_clovis_close(backend, obj_handle);
 	}
 
+err:
 	ebm_unlock(backend);
 	if (mthreaded)
 		revert_mero_thread_to_pthread();
@@ -854,6 +960,9 @@ esdm_backend_t_clovis_fragment_update(esdm_backend_t  *backend,
 	int   rc         = ESDM_SUCCESS;
 	void *writeBuffer = NULL;
 	bool  mthreaded = false;
+	char *container_dataset = NULL;
+	struct con_dataset_obj_pair *pair = NULL;
+	m0_bindex last_pos;
 	DEBUG_ENTER;
 
 
@@ -866,7 +975,13 @@ esdm_backend_t_clovis_fragment_update(esdm_backend_t  *backend,
 	mthreaded = convert_pthread_to_mero_thread(backend);
 	ebm_lock(backend);
 
-	DEBUG_FMT("f=%p stride=%p id=%s\n", fragment, fragment->dataspace->stride, fragment->id);
+	asprintf(&container_dataset, "%s/%s",
+		 fragment->dataset->container->name, fragment->dataset->name);
+
+	DEBUG_FMT("fragment=%p stride=%p id=%s container/dataset=%s\n",
+			fragment, fragment->dataspace->stride, fragment->id,
+			container_dataset);
+
 	if (fragment->dataspace->stride) {
 		/*
 		 * The fragment appears to have a non-trivial stride.
@@ -891,42 +1006,138 @@ esdm_backend_t_clovis_fragment_update(esdm_backend_t  *backend,
 		writeBuffer = fragment->buf;
 	}
 
-	/* 1. create a new object for this fragment if it doesn't exist. */
+	/* 1. This is a new fragment. */
 	if (fragment->id == NULL) {
-		rc = esdm_backend_t_clovis_alloc(backend,
-						 fragment->dataspace->dims,
-						 NULL,
-						 0,
-						 NULL,
-						 NULL,
-						 &obj_id,
-						 &obj_meta);
+		/*
+		 *  1. Check the map<"container/dataset", object>
+		 *     if object does not exist, create one, and then
+		 *     store this map in an index.
+		 *  2. We will append this fragment to the end of this object.
+		 *     So, we need to track the object size. After that,
+		 *     the fragment id would be set to this 'offset'.
+		 */
+		m0_mutex_lock(&map_lock);
+		m0_list_for_each_entry(&con_map, pair, struct con_dataset_obj_pair, cdo_linkage) {
+			if (m0_strcmp(container_dataset, pair->cdo_contaner_dataset) == 0) {
+				/* found the object for this "container/dataset" in cached map */
+				break;
+			}
+		}
+		if (pair == NULL) {
+			/* not found in cached map. Let's load from key-value index*/
+			rc = mapping_get(backend, &index_cdname_to_object,
+					 container_dataset, &obj_id);
+			if (rc == 0) {
+				/* Load last_pos */
+				char *str_last_pos;
+				rc = mapping_get(backend, &index_object_last_pos,
+						 obj_id, &str_last_pos);
+				if (rc == 0) {
+					last_pos = atoll(str_last_pos);
+					free(str_last_pos);
+				}
+			}
+			if (rc != 0) {
+				/* not found in persistent map */
+				/* Let's create a new object for this c/d" */
+				rc = esdm_backend_t_clovis_alloc(backend,
+								 fragment->dataspace->dims,
+								 NULL,
+								 0,
+								 NULL,
+								 NULL,
+								 &obj_id,
+								 &obj_meta);
+				last_pos = 0;
+				if (rc == 0) {
+					char *str_last_pos = NULL;
+					asprintf(&str_last_pos, "%llu", last_pos);
+					rc = mapping_put(backend, &index_object_last_pos,
+                                                 obj_id, str_last_pos);
+					free(str_last_pos);
+					if (rc == 0)
+						rc = mapping_put(backend, &index_cdname_to_object,
+							 container_dataset, obj_id);
+				}
+			}
+
+			if (rc == 0) {
+				/* Store this object's ID into fragment metadata. */
+				asprintf(&fragment->id, "%llu@%s", last_pos, obj_id);
+
+				/* create an in-memory pair and link it into map */
+				pair = (struct con_dataset_obj_pair *)malloc(sizeof (struct con_dataset_obj_pair));
+				memset(pair, 0, sizeof(struct con_dataset_obj_pair));
+				pair->cdo_contaner_dataset = strdup(container_dataset);
+				pair->cdo_obj_id = strdup(obj_id);
+				pair->cdo_last_pos += fragment->bytes;
+				m0_list_link_init(&pair->cdo_linkage);
+				m0_list_add(con_map, &pair->cdo_linkage);
+			}
+		} else {
+			/* found */
+			asprintf(&fragment->id, "%llu@oid="FID_F, pair->cdo_last_pos, FID_P(&pair->cdo_fid));
+			pair->cdo_last_pos += fragment->bytes;
+		}
+		m0_mutex_unlock(&map_lock);
 		if (rc != 0)
 			goto err;
-
-		/*
-		 * Store this object's ID into fragment metadata. This metadata
-		 * will be used later in retrieve() to read data from.
-		 */
-		fragment->id = strdup(obj_id);
 	}
-
-
 	DEBUG_FMT("Updating to %s (size=%lu)\n", fragment->id, fragment->bytes);
+
+	/*
+	 * Check if this object has been opened.
+	 * If not, open this object, and keep its handle in a
+	 * map<object, handle>. This is just an in-memory data.
+	 */
+
 	// 2. open object with its object_id.
+	if (pair == NULL) {
+		m0_mutex_lock(&map_lock);
+		m0_list_for_each_entry(&con_map, pair, struct con_dataset_obj_pair, cdo_linkage) {
+			if (m0_strcmp(container_dataset, pair->cdo_contaner_dataset.buf) == 0) {
+				/* found the object for this "container/dataset". */
+				break;
+			}
+		}
+		if (pair == NULL) {
+			/* not found in cached map */
+			char *str_last_pos;
+			rc = mapping_get(backend, &index_object_last_pos,
+					 obj_id, &str_last_pos);
+			if (rc == 0) {
+				last_pos = atoll(str_last_pos);
+				free(str_last_pos);
+				pair = (struct con_dataset_obj_pair *)malloc(sizeof (struct con_dataset_obj_pair));
+				assert(pair != NULL);
+				memset(pair, 0, sizeof(struct con_dataset_obj_pair));
+				pair->cdo_contaner_dataset = strdup(container_dataset);
+				pair->cdo_obj_id = strdup(strpos(fragment->id, '='));
+				pair->cdo_last_pos = last_pos;
+				m0_list_link_init(&pair->cdo_linkage);
+				m0_list_add(con_map, &pair->cdo_linkage);
+			}
+		}
+		m0_mutex_unlock(&map_lock);
+		if (rc != 0)
+			goto err;
+	}
+	assert(pair != NULL);
 	void *obj_handle = NULL;
-	rc = esdm_backend_t_clovis_open(backend, fragment->id, &obj_handle);
+	if (pair->cdo_obj_handle == NULL) {
+		/* object has not been opened. Let's open it and keep it open */
+		rc = esdm_backend_t_clovis_open(backend, pair->cdo_obj_id, &obj_handle);
+		if (rc == 0)
+			pair->cdo_obj_handle = obj_handle;
+	}
 	DEBUG_FMT("open obj=%p rc=%d\n", obj_handle, rc);
 	if (rc == 0) {
-		// 3. write to this object.
 		rc = esdm_backend_t_clovis_write(backend,
 						 obj_handle,
-						 0,
+						 last_pos,
 						 fragment->bytes,
 						 writeBuffer);
 
-		// 4. close this object.
-		esdm_backend_t_clovis_close(backend, obj_handle);
 	}
 
 err:
@@ -935,6 +1146,7 @@ err:
 		revert_mero_thread_to_pthread();
 	free(obj_id);
 	free(obj_meta);
+	free(container_dataset);
 	if (fragment->dataspace->stride) {
 		/* writeBuffer is allocated previously in this function. */
 		free(writeBuffer);
