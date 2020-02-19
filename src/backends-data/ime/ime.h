@@ -43,7 +43,7 @@ int ime_finalize(esdm_backend_t *backend);
 *	* Load and potentially calibrate performance model
 *
 *	* Connect with support services e.g. for technical metadata
-*	* Setup directory structures used by this POSIX specific backend
+*	* Setup directory structures used by this IME specific backend
 *
 *	* Populate esdm_backend_t struct and callbacks required for registration
 *

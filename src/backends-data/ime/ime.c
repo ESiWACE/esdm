@@ -54,6 +54,44 @@
 // Helper and utility /////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////
 
+int write_check_ime(int fd, char *buf, size_t len) {
+  while (len > 0) {
+    ssize_t ret = ime_native_write(fd, buf, len);
+    if (ret != -1) {
+      buf = buf + ret;
+      len -= ret;
+    } else {
+      if (errno == EINTR) {
+        continue;
+      } else {
+        ESDM_ERROR_COM_FMT("IME", "write %s", strerror(errno));
+        return 1;
+      }
+    }
+  }
+  return 0;
+}
+
+int read_check_ime(int fd, char *buf, size_t len) {
+  while (len > 0) {
+    ssize_t ret = ime_native_read(fd, buf, len);
+    if (ret == 0) {
+      return 1;
+    } else if (ret != -1) {
+      buf += ret;
+      len -= ret;
+    } else {
+      if (errno == EINTR) {
+        continue;
+      } else {
+        ESDM_ERROR_COM_FMT("IME", "read %s", strerror(errno));
+        return 1;
+      }
+    }
+  }
+  return 0;
+}
+
 ///////////////////////////////////////////////////////////////////////////////
 // Internal Helpers ///////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////
@@ -62,14 +100,14 @@ static int entry_retrieve(const char *path, void *buf, uint64_t size) {
   DEBUG("entry_retrieve(%s)", path);
 
   // write to non existing file
-  int fd = open(path, O_RDONLY);
+  int fd = ime_native_open(path, O_RDONLY, 0);
   // everything ok? read and close
   if (fd < 0) {
     WARN("error on opening file \"%s\": %s", path, strerror(errno));
     return ESDM_ERROR;
   }
-  int ret = read_check(fd, buf, size);
-  close(fd);
+  int ret = read_check_ime(fd, buf, size);
+  ime_native_close(fd);
   return ret;
 }
 
@@ -84,13 +122,13 @@ static int entry_update(const char *path, void *buf, size_t len, int update_only
   }
 
   // write to non existing file
-  int fd = open(path, O_WRONLY | flags, S_IWUSR | S_IRUSR | S_IWGRP | S_IRGRP | S_IROTH);
+  int fd = ime_native_open(path, O_WRONLY | flags, S_IWUSR | S_IRUSR | S_IWGRP | S_IRGRP | S_IROTH);
   if(fd < 0){
     WARN("error on opening file: %s", strerror(errno));
     return ESDM_ERROR;
   }
-  int ret = write_check(fd, buf, len);
-  close(fd);
+  int ret = write_check_ime(fd, buf, len);
+  ime_native_close(fd);
 
   return ret;
 }
@@ -107,13 +145,13 @@ static int fragment_delete(esdm_backend_t * backend, esdm_fragment_t *f){
   }
   sprintfFragmentPath(path, f);
 
-  int ret = unlink(path);
+  int ret = ime_native_unlink(path);
   if (ret == -1) {
     perror("unlink");
     return ESDM_ERROR;
   }
   sprintfFragmentDir(path, f);
-  ret = rmdir(path);
+  ret = ime_native_rmdir(path);
   if (ret == -1) {
     perror("rmdir");
     return ESDM_ERROR;
@@ -140,8 +178,8 @@ static int mkfs(esdm_backend_t *backend, int format_flags) {
     printf("[mkfs] Removing %s\n", tgt);
 
     sprintf(path, "%s/README-ESDM.TXT", tgt);
-    if (stat(path, &sb) == 0) {
-      if(posix_recursive_remove(tgt)) {
+    if (ime_native_stat(path, &sb) == 0) {
+      if(posix_recursive_remove(tgt)) { // FIXME XXX
         fprintf(stderr, "[mkfs] Error removing ESDM directory at \"%s\"\n", tgt);
         return ESDM_ERROR;
       }
@@ -154,7 +192,7 @@ static int mkfs(esdm_backend_t *backend, int format_flags) {
   if(! (format_flags & ESDM_FORMAT_CREATE)){
     return ESDM_SUCCESS;
   }
-  if (stat(tgt, &sb) == 0) {
+  if (ime_native_stat(tgt, &sb) == 0) {
     if(! ignore_err){
       printf("[mkfs] Error %s exists already\n", tgt);
       return ESDM_ERROR;
@@ -164,7 +202,7 @@ static int mkfs(esdm_backend_t *backend, int format_flags) {
 
   printf("[mkfs] Creating %s\n", tgt);
 
-  int ret = mkdir(tgt, 0700);
+  int ret = ime_native_mkdir(tgt, 0700);
   if (ret != 0) {
     if(ignore_err){
       printf("[mkfs] WARNING couldn't create dir %s\n", tgt);
@@ -259,15 +297,15 @@ static int fragment_update(esdm_backend_t *backend, esdm_fragment_t *f) {
       ea_generate_id(f->id, 23);
       struct stat sb;
       sprintfFragmentDir(path, f);
-      if (stat(path, &sb) == -1) {
-        if (mkdir_recursive(path) != 0 && errno != EEXIST) {
+      if (ime_native_stat(path, &sb) == -1) {
+        if (mkdir_recursive(path) != 0 && errno != EEXIST) { // FIXME XXX
           WARN("error on creating directory \"%s\": %s", path, strerror(errno));
           ret = ESDM_ERROR;
           break;
         }
       }
       sprintfFragmentPath(path, f);
-      int fd = open(path, O_WRONLY | O_CREAT | O_EXCL, S_IWUSR | S_IRUSR | S_IWGRP | S_IRGRP | S_IROTH);
+      int fd = ime_native_open(path, O_WRONLY | O_CREAT | O_EXCL, S_IWUSR | S_IRUSR | S_IWGRP | S_IRGRP | S_IROTH);
       if(fd < 0){
         if(errno == EEXIST){
           continue;
@@ -277,8 +315,8 @@ static int fragment_update(esdm_backend_t *backend, esdm_fragment_t *f) {
         break;
       }
       //write the data
-      ret = write_check(fd, writeBuffer, f->bytes);
-      close(fd);
+      ret = write_check_ime(fd, writeBuffer, f->bytes);
+      ime_native_close(fd);
       break;
     }
   }
