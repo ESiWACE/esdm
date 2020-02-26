@@ -755,13 +755,10 @@ esdm_status esdm_scheduler_enqueue_write(esdm_instance_t *esdm, io_request_statu
       esdmI_hypercubeList_t* cubeList = esdmI_hypercubeSet_list(cubes);
       esdm_dataspace_destroy(backendSpace);
 
-      //create a fragment and task for each of the hypercubes in the list
+      //create a fragment for each of the hypercubes in the list
       int64_t dim[space->dims], offset[space->dims];
       for(int64_t i = 0; i < cubeList->count; i++) {
-        atomic_fetch_add(&status->pending_ops, 1);
-
         esdmI_hypercube_getOffsetAndSize(cubeList->cubes[i], offset, dim);
-
         esdm_dataspace_t* subspace;
         esdm_status ret = esdmI_dataspace_createFromHypercube(cubeList->cubes[i], esdm_dataspace_get_type(space), &subspace);
         eassert(ret == ESDM_SUCCESS);
@@ -770,31 +767,43 @@ esdm_status esdm_scheduler_enqueue_write(esdm_instance_t *esdm, io_request_statu
         esdm_fragment_t* fragment;
         ret = esdmI_fragment_create(dataset, subspace, (char*)buf + esdm_dataspace_elementOffset(space, offset), curBackend, &fragment);
         eassert(ret == ESDM_SUCCESS);
-        fragment->backend = curBackend;
-
-        io_work_t* task = malloc(sizeof(*task));
-        *task = (io_work_t){
-          .fragment = fragment,
-          .op = ESDM_OP_WRITE,
-          .return_code = ESDM_SUCCESS,
-          .parent = status,
-          .callback = buffer_cleanup_callback,
-          .data = {NULL, NULL}
-        };
-
-        if (curBackend->threads == 0) {
-          backend_thread(task, curBackend);
-        } else {
-          g_thread_pool_push(curBackend->threadPool, task, &error);
-        }
-
-        updateIoStats(&esdm->writeStats, 1, esdm_dataspace_size(subspace)); //update the statistics
+        //FIXME In the case that the fragment we create here is not internally discared, its `buf` member will continue to point to the user supplied buffer,
+        //      which may cause UB down the road. I think, we either need to keep these changes out of the master branch,
+        //      or we need to teach `esdm_fragment_t` to properly manage its memory by remembering whether its `buf` was user supplied or allocated internally.
       }
 
       esdmI_hypercubeSet_destroy(cubes);
       esdmI_hypercube_destroy(curExtends);
     }
   }
+
+  //Walk the list of fragments and create a write task for each dirty one.
+  int64_t fragmentCount;
+  esdm_fragment_t** fragmentList = esdmI_fragments_list(dataset->fragments, &fragmentCount);
+  for(int64_t i = 0; i < fragmentCount; i++) {
+    if(fragmentList[i] && fragmentList[i]->status == ESDM_DATA_DIRTY) {
+      io_work_t* task = malloc(sizeof(*task));
+      *task = (io_work_t){
+        .fragment = fragmentList[i],
+        .op = ESDM_OP_WRITE,
+        .return_code = ESDM_SUCCESS,
+        .parent = status,
+        .callback = NULL, //the fragment may not be the one we created, so we must not touch it's buffer member
+        .data = {NULL, NULL}
+      };
+
+      atomic_fetch_add(&status->pending_ops, 1);
+      esdm_backend_t* curBackend = fragmentList[i]->backend;
+      if (curBackend->threads == 0) {
+        backend_thread(task, curBackend);
+      } else {
+        g_thread_pool_push(curBackend->threadPool, task, &error);
+      }
+
+      updateIoStats(&esdm->writeStats, 1, esdm_dataspace_size(fragmentList[i]->dataspace)); //update the statistics
+    }
+  }
+
   gWriteTimes.backendDispatch += stop_timer(myTimer) - startTime;
 
   updateRequestStats(&esdm->writeStats, 1, esdm_dataspace_size(space), requestIsInternal); //update the statistics
