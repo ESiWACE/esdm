@@ -160,6 +160,18 @@ int64_t esdmI_hypercube_overlap(esdmI_hypercube_t* a, esdmI_hypercube_t* b) {
   return overlap;
 }
 
+bool esdmI_hypercube_equal(esdmI_hypercube_t* a, esdmI_hypercube_t* b) {
+  eassert(a);
+  eassert(b);
+  eassert(a->dims == b->dims);
+  int64_t dimensions = a->dims;
+
+  for(int64_t i = 0; i < dimensions; i++) {
+    if(!esdmI_range_equal(a->ranges[i], b->ranges[i])) return false;
+  }
+  return true;
+}
+
 double esdmI_hypercube_shapeSimilarity(esdmI_hypercube_t* a, esdmI_hypercube_t* b) {
   eassert(a);
   eassert(b);

@@ -352,6 +352,8 @@ inline esdmI_range_t esdmI_range_intersection(esdmI_range_t a, esdmI_range_t b) 
 
 inline bool esdmI_range_isEmpty(esdmI_range_t range) { return range.start >= range.end; }
 
+inline bool esdmI_range_equal(esdmI_range_t a, esdmI_range_t b) { return a.start == b.start && a.end == b.end; }
+
 inline int64_t esdmI_range_size(esdmI_range_t range) { return esdmI_range_isEmpty(range) ? 0 : range.end - range.start; }
 
 void esdmI_range_print(esdmI_range_t range, FILE* stream);
@@ -380,6 +382,8 @@ bool esdmI_hypercube_touches(esdmI_hypercube_t* a, esdmI_hypercube_t* b);
 //This method is cheaper to call than the equivalent *_makeIntersection(), *_size(), *_destroy() combo;
 //it avoids the overhead of actually creating the intersection hypercube.
 int64_t esdmI_hypercube_overlap(esdmI_hypercube_t* a, esdmI_hypercube_t* b);
+
+bool esdmI_hypercube_equal(esdmI_hypercube_t* a, esdmI_hypercube_t* b);
 
 //Returns a value between 0.0 and 1.0 that is a measure of how similar the shapes of the hypercubes are.
 //The positions of the two cubes are irrelevant, only size and shape matter.
