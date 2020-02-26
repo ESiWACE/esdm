@@ -10,11 +10,10 @@
 #include <smd-datatype.h>
 
 enum esdm_data_status_e {
-  ESDM_DATA_NOT_LOADED,
-  ESDM_DATA_LOADING,
-  ESDM_DATA_DIRTY,
-  ESDM_DATA_PERSISTENT,
-  ESDM_DATA_DELETED
+  ESDM_DATA_NOT_LOADED, //no data in memory, on-disk state is unspecified
+  ESDM_DATA_DIRTY,      //data in memory is different from data on disk
+  ESDM_DATA_PERSISTENT, //data is in memory, on-disk data is equal to data in memory
+  ESDM_DATA_DELETED     //no data in memory, no data on disk, and no data should be added in any way, the object is a zombie
 };
 
 typedef enum esdm_data_status_e esdm_data_status_e;
