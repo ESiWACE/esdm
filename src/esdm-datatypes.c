@@ -409,7 +409,7 @@ esdm_status esdmI_fragment_create(esdm_dataset_t *d, esdm_dataspace_t *sspace, v
   f->buf = buf; // zero copy?
   f->elements = elements;
   f->bytes = bytes;
-	f->status = ESDM_DATA_NOT_LOADED;
+	f->status = buf ? ESDM_DATA_DIRTY : ESDM_DATA_NOT_LOADED;
   f->backend = NULL;
 
 	esdmI_dataset_register_fragment(d, f);
