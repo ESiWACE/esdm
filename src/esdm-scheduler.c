@@ -768,7 +768,7 @@ esdm_status esdm_scheduler_enqueue_write(esdm_instance_t *esdm, io_request_statu
         ret = esdm_dataspace_copyDatalayout(subspace, space);
         eassert(ret == ESDM_SUCCESS);
         esdm_fragment_t* fragment;
-        ret = esdmI_fragment_create(dataset, subspace, (char*)buf + esdm_dataspace_elementOffset(space, offset), &fragment);
+        ret = esdmI_fragment_create(dataset, subspace, (char*)buf + esdm_dataspace_elementOffset(space, offset), curBackend, &fragment);
         eassert(ret == ESDM_SUCCESS);
         fragment->backend = curBackend;
 

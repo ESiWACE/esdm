@@ -386,7 +386,7 @@ int64_t const* esdm_dataspace_get_offset(esdm_dataspace_t * d){
  *	How does this integrate with the scheduler? On auto-commit this merely beeing pushed to sched for dispatch?
  */
 
-esdm_status esdmI_fragment_create(esdm_dataset_t *d, esdm_dataspace_t *sspace, void *buf, esdm_fragment_t **out_fragment) {
+esdm_status esdmI_fragment_create(esdm_dataset_t *d, esdm_dataspace_t *sspace, void *buf, esdm_backend_t* backend, esdm_fragment_t **out_fragment) {
   eassert(d);
   ESDM_DEBUG(__func__);
   esdm_fragment_t *f = (esdm_fragment_t *)malloc(sizeof(esdm_fragment_t));
@@ -410,7 +410,7 @@ esdm_status esdmI_fragment_create(esdm_dataset_t *d, esdm_dataspace_t *sspace, v
   f->elements = elements;
   f->bytes = bytes;
 	f->status = buf ? ESDM_DATA_DIRTY : ESDM_DATA_NOT_LOADED;
-  f->backend = NULL;
+  f->backend = backend;
 
 	esdmI_dataset_register_fragment(d, f);
   esdmI_dataset_update_actual_size(d, f);

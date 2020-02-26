@@ -271,7 +271,7 @@ esdm_status esdmI_create_fragment_from_metadata(esdm_dataset_t *dset, json_t * j
  *
  */
 
-esdm_status esdmI_fragment_create(esdm_dataset_t *dataset, esdm_dataspace_t *subspace, void *buf, esdm_fragment_t **out_fragment);
+esdm_status esdmI_fragment_create(esdm_dataset_t *dataset, esdm_dataspace_t *subspace, void *buf, esdm_backend_t* backend, esdm_fragment_t **out_fragment);
 
 esdm_backend_t * esdmI_get_backend(char const * plugin_id);
 

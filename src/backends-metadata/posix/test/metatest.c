@@ -46,7 +46,7 @@ int main() {
     int64_t size[] = {25, 50};
     ret = esdm_dataspace_subspace(dataspace, 2, size, offset, &s1);
     eassert(ret == ESDM_SUCCESS);
-    ret = esdmI_fragment_create(dataset, s1, buff, &f1);
+    ret = esdmI_fragment_create(dataset, s1, buff, NULL, &f1);
     eassert(ret == ESDM_SUCCESS);
   }
   {
@@ -54,7 +54,7 @@ int main() {
     int64_t size[] = {25, 50};
     ret = esdm_dataspace_subspace(dataspace, 2, size, offset, &s2);
     eassert(ret == ESDM_SUCCESS);
-    ret = esdmI_fragment_create(dataset, s2, buff, &f2);
+    ret = esdmI_fragment_create(dataset, s2, buff, NULL, &f2);
     eassert(ret == ESDM_SUCCESS);
   }
   {
@@ -62,7 +62,7 @@ int main() {
     int64_t size[] = {25, 50};
     ret = esdm_dataspace_subspace(dataspace, 2, size, offset, &s3);
     eassert(ret == ESDM_SUCCESS);
-    ret = esdmI_fragment_create(dataset, s3, buff, &f3);
+    ret = esdmI_fragment_create(dataset, s3, buff, NULL, &f3);
     eassert(ret == ESDM_SUCCESS);
   }
   {
@@ -70,7 +70,7 @@ int main() {
     int64_t size[] = {25, 50};
     ret = esdm_dataspace_subspace(dataspace, 2, size, offset, &s4);
     eassert(ret == ESDM_SUCCESS);
-    ret = esdmI_fragment_create(dataset, s4, buff, &f4);
+    ret = esdmI_fragment_create(dataset, s4, buff, NULL, &f4);
     eassert(ret == ESDM_SUCCESS);
   }
 
