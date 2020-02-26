@@ -244,6 +244,7 @@ void esdmI_fragments_metadata_create(esdm_fragments_t* me, smd_string_stream_t* 
 esdm_status esdmI_fragments_destroy(esdm_fragments_t* me);  //calls `esdm_fragment_destroy()` on its members, but does not invoke the `fragment_delete()` callback of the backend
 
 void esdmI_neighbourFragments_construct(struct esdmI_neighbourFragments_t* me); //constructor for the neighbourhood manager based implementation
+void esdmI_regularFragments_construct(struct esdmI_regularFragments_t* me, esdm_dataset_t* parent); //constructor for the fixed sized fragment based implementation
 
 void esdmI_fragments_getStats(int64_t* out_addedFragments, double* out_fragmentAddTime, int64_t* out_createdSets, double* out_setCreationTime);
 double esdmI_fragments_getFragmentAddTime();

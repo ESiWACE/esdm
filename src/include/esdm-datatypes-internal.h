@@ -52,12 +52,23 @@ typedef struct esdmI_hypercubeNeighbourManager_t esdmI_hypercubeNeighbourManager
 //uses an esdmI_hypercubeNeighbourManaget_t to quickly decide which fragments are used to cover a given region
 struct esdmI_neighbourFragments_t {
   esdm_fragments_t super;
+
   esdm_fragment_t ** frag;
   esdmI_hypercubeNeighbourManager_t* neighbourManager;
   int count;
   int buff_size;
 };
 
+//uses fragments of a fixed size
+//currently, it won't identify parts of a stored fragment that have (not) been written to by the user,
+//that would require an additional bitfield fragment to be used and updated.
+struct esdmI_regularFragments_t {
+  esdm_fragments_t super;
+
+  int64_t dimCount, totalFragmentCount;
+  int64_t* fragmentSize, *fragmentOffset, *fragmentCount;  //arrays of `dimCount` entries
+  esdm_fragment_t** fragments;  //`dimCount` dimensional array of size `fragmentCount`
+};
 
 struct esdm_dataset_t {
   char *name;
