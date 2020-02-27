@@ -23,7 +23,6 @@ int main() {
   ret = esdm_mkfs(ESDM_FORMAT_PURGE_RECREATE, ESDM_ACCESSIBILITY_NODELOCAL);
   eassert(ret == ESDM_SUCCESS);
 
-  char *buff = "test";
   esdm_dataspace_t *dataspace;
   {
     int64_t size[] = {50, 100};
@@ -46,7 +45,7 @@ int main() {
     int64_t size[] = {25, 50};
     ret = esdm_dataspace_subspace(dataspace, 2, size, offset, &s1);
     eassert(ret == ESDM_SUCCESS);
-    ret = esdmI_fragment_create(dataset, s1, buff, &f1);
+    ret = esdmI_fragment_create(dataset, s1, malloc(esdm_dataspace_size(s1)), &f1);
     eassert(ret == ESDM_SUCCESS);
   }
   {
@@ -54,7 +53,7 @@ int main() {
     int64_t size[] = {25, 50};
     ret = esdm_dataspace_subspace(dataspace, 2, size, offset, &s2);
     eassert(ret == ESDM_SUCCESS);
-    ret = esdmI_fragment_create(dataset, s2, buff, &f2);
+    ret = esdmI_fragment_create(dataset, s2, malloc(esdm_dataspace_size(s2)), &f2);
     eassert(ret == ESDM_SUCCESS);
   }
   {
@@ -62,7 +61,7 @@ int main() {
     int64_t size[] = {25, 50};
     ret = esdm_dataspace_subspace(dataspace, 2, size, offset, &s3);
     eassert(ret == ESDM_SUCCESS);
-    ret = esdmI_fragment_create(dataset, s3, buff, &f3);
+    ret = esdmI_fragment_create(dataset, s3, malloc(esdm_dataspace_size(s3)), &f3);
     eassert(ret == ESDM_SUCCESS);
   }
   {
@@ -70,7 +69,7 @@ int main() {
     int64_t size[] = {25, 50};
     ret = esdm_dataspace_subspace(dataspace, 2, size, offset, &s4);
     eassert(ret == ESDM_SUCCESS);
-    ret = esdmI_fragment_create(dataset, s4, buff, &f4);
+    ret = esdmI_fragment_create(dataset, s4, malloc(esdm_dataspace_size(s4)), &f4);
     eassert(ret == ESDM_SUCCESS);
   }
 
