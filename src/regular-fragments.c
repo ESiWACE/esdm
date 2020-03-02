@@ -1,6 +1,7 @@
 #define _GNU_SOURCE
 
 #include <esdm-internal.h>
+#include <math.h>
 #include <stdlib.h>
 #include <test/util/test_util.h>
 
@@ -28,11 +29,12 @@ static void ensureInitialization(struct esdmI_regularFragments_t* me) {
   me->fragmentSize = malloc(dims*sizeof(*me->fragmentSize)),
   me->fragmentOffset = malloc(dims*sizeof(*me->fragmentOffset)),
   me->fragmentCount = malloc(dims*sizeof(*me->fragmentCount)),
-  esdmI_hypercube_getOffsetAndSize(extends, fragmentOffset, me->fragmentSize);
+  esdmI_hypercube_getOffsetAndSize(extends, me->fragmentOffset, me->fragmentSize);
 
   //Now the interesting part: Find a suitable fragmentSize.
   eassert(dims >= 1);
-  bool dimIsSingleRange[dims] = {0};
+  bool dimIsSingleRange[dims];
+  memset(dimIsSingleRange, 0, sizeof(dimIsSingleRange));
   //we basically initialize these variables with the result of the first loop iteration (i = 0) in order to define a suitable `endIndex`
   int64_t singleRangeDimCount = dimIsSingleRange[0] = me->fragmentSize[0] <= root(dims, gMaxBlockSize);
   int64_t singleRangeSize = dimIsSingleRange[0] ? me->fragmentSize[0] : 1;
@@ -48,12 +50,17 @@ static void ensureInitialization(struct esdmI_regularFragments_t* me) {
     }
   }
   //actually compute the size of the fragments and their count in each dimension
-  int64_t maxDimLength = root(dims - singleRangeDimCount, gMaxBlockSize/(double)singleRangeSize);
-  me->totalFragmentCount = 1;
-  for(int64_t i = 0; i < dims; i++) {
-    me->fragmentCount[i] = (me->fragmentSize[i] + maxDimLength - 1)/maxDimLength; //ciel(me->fragmentSize[i]/maxDimLength)
-    me->fragmentSize[i] = (me->fragmentSize[i] + me->fragmentCount[i] - 1)/me->fragmentCount[i];  //ciel(me->fragmentSize[i]/me->fragmentCount[i])
-    me->totalFragmentCount *= me->fragmentCount[i];
+  if(dims > singleRangeDimCount) {
+    int64_t maxDimLength = root(dims - singleRangeDimCount, gMaxBlockSize/(double)singleRangeSize);
+    me->totalFragmentCount = 1;
+    for(int64_t i = 0; i < dims; i++) {
+      me->fragmentCount[i] = (me->fragmentSize[i] + maxDimLength - 1)/maxDimLength; //ciel(me->fragmentSize[i]/maxDimLength)
+      me->fragmentSize[i] = (me->fragmentSize[i] + me->fragmentCount[i] - 1)/me->fragmentCount[i];  //ciel(me->fragmentSize[i]/me->fragmentCount[i])
+      me->totalFragmentCount *= me->fragmentCount[i];
+    }
+  } else {
+    me->totalFragmentCount = 1;
+    for(int64_t i = 0; i < dims; i++) me->fragmentCount[i] = 1;
   }
 
   //initialize the multidimensional array of fragments
@@ -81,7 +88,7 @@ typedef struct IndexIterator_t {
 } IndexIterator_t;
 
 //returns the total number of fragment indices that are relevant for the given bounds
-static int64_t getIndexRanges(esdmI_regularFragments_t* me, esdmI_hypercube_t* bounds, int64_t* startIndexArray, int64_t* stopIndexArray) {
+static int64_t getIndexRanges(struct esdmI_regularFragments_t* me, esdmI_hypercube_t* bounds, int64_t* startIndexArray, int64_t* stopIndexArray) {
   //extract the bounds info
   const int64_t dimCount = me->dimCount;
   eassert(esdmI_hypercube_dimensions(bounds) == dimCount);
@@ -98,13 +105,13 @@ static int64_t getIndexRanges(esdmI_regularFragments_t* me, esdmI_hypercube_t* b
     if(startIndexArray[i] < 0) startIndexArray = 0;
     if(stopIndexArray[i] > me->fragmentCount[i]) stopIndexArray[i] = me->fragmentCount[i];
 
-    if(startIndexArray[i] >= stopIndexArray[i]) return NULL;  //return error if the bounds don't intersect with the dataset
+    if(startIndexArray[i] >= stopIndexArray[i]) return 0; //return error if the bounds don't intersect with the dataset
     indexCount *= stopIndexArray[i] - startIndexArray[i]; //the actual count of bins we have to return for this dimension
   }
   return indexCount;
 }
 
-static int64_t linearIndex(int64_t dimCount, int64_t* sizeArray, int64_t indexArray) {
+static int64_t linearIndex(int64_t dimCount, int64_t* sizeArray, int64_t* indexArray) {
   int64_t result = 0;
   for(int64_t i = 0; i < dimCount; i++) result = result * sizeArray[i] + indexArray[i];
   return result;
@@ -131,7 +138,7 @@ static void advanceIndex(IndexIterator_t* iter) {
   }
 }
 
-static esdmI_hypercube_t* makeBinBounds(esdmI_regularFragments_t* me, int64_t* indexArray) {
+static esdmI_hypercube_t* makeBinBounds(struct esdmI_regularFragments_t* me, int64_t* indexArray) {
   int64_t offset[me->dimCount];
   for(int64_t i = 0; i < me->dimCount; i++) {
     offset[i] = me->fragmentOffset[i] + me->fragmentSize[i]*indexArray[i];
@@ -160,8 +167,8 @@ static void add(void* meArg, esdm_fragment_t* fragment) {
   if(isPerfectFit) {
     //just replace the possibly existing fragment with the given one
     int64_t fragmentIndex = linearIndex(dimCount, me->fragmentCount, startIndex);
-    esdm_fragment_t* oldFragment = me->fragments[i];
-    me->fragments[i] = fragment;
+    esdm_fragment_t* oldFragment = me->fragments[fragmentIndex];
+    me->fragments[fragmentIndex] = fragment;
     if(oldFragment && oldFragment != fragment) {
       //FIXME: We should delete the old fragment from disk here, but to date, we lack the API to do that.
       if(esdm_fragment_destroy(oldFragment)) ESDM_ERROR("failed to destroy fragment");
@@ -197,11 +204,11 @@ static void add(void* meArg, esdm_fragment_t* fragment) {
 
         esdm_dataspace_t* subspace;
         if(esdm_dataspace_subspace(me->super.parent->dataspace, dimCount, binSize, binOffset, &subspace) != ESDM_SUCCESS) ESDM_ERROR("failed to create subspace");
-        if(esdmI_fragment_create(fragment->dataset, subspace, NULL, bin) != ESDM_SUCCESS) ESDM_ERROR("failed to create fragment");
+        if(esdmI_fragment_create(fragment->dataset, subspace, NULL, fragment->backend, bin) != ESDM_SUCCESS) ESDM_ERROR("failed to create fragment");
       }
       //make sure that we actually have a buffer to write to
       //(this either triggers when we created a new bin fragment, or when the bin is not loaded and no memory buffer is present)
-      if((*bin)->buf) (*bin)->buf = malloc(esdm_dataspace_size(subspace);
+      if((*bin)->buf) (*bin)->buf = malloc(esdm_dataspace_size((*bin)->dataspace));
 
       //copy the data into the bin fragment
       if(esdm_dataspace_copy_data(fragment->dataspace, fragment->buf, (*bin)->dataspace, (*bin)->buf) != ESDM_SUCCESS) ESDM_ERROR("failed to copy data");

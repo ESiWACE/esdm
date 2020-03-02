@@ -31,6 +31,8 @@
 esdmI_range_t esdmI_range_intersection(esdmI_range_t a, esdmI_range_t b);
 bool esdmI_range_isEmpty(esdmI_range_t range);
 int64_t esdmI_range_size(esdmI_range_t range);
+bool esdmI_range_equal(esdmI_range_t a, esdmI_range_t b);
+bool esdmI_range_contains(esdmI_range_t bowl, esdmI_range_t soup);
 
 void esdmI_range_print(esdmI_range_t range, FILE* stream) {
   if(esdmI_range_isEmpty(range)) {
@@ -115,6 +117,18 @@ bool esdmI_hypercube_doesIntersect(esdmI_hypercube_t* a, esdmI_hypercube_t* b) {
 
   for(int64_t i = 0; i < dimensions; i++) {
     if(esdmI_range_isEmpty(esdmI_range_intersection(a->ranges[i], b->ranges[i]))) return false;
+  }
+  return true;
+}
+
+bool esdmI_hypercube_contains(esdmI_hypercube_t* bowl, esdmI_hypercube_t* soup) {
+  eassert(bowl);
+  eassert(soup);
+  eassert(bowl->dims == soup->dims);
+  int64_t dimensions = bowl->dims;
+
+  for(int64_t i = 0; i < dimensions; i++) {
+    if(!esdmI_range_contains(bowl->ranges[i], soup->ranges[i])) return false;
   }
   return true;
 }

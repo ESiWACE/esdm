@@ -244,7 +244,7 @@ void esdmI_fragments_metadata_create(esdm_fragments_t* me, smd_string_stream_t* 
 esdm_status esdmI_fragments_destroy(esdm_fragments_t* me);  //calls `esdm_fragment_destroy()` on its members, but does not invoke the `fragment_delete()` callback of the backend
 
 void esdmI_neighbourFragments_construct(struct esdmI_neighbourFragments_t* me); //constructor for the neighbourhood manager based implementation
-void esdmI_regularFragments_construct(struct esdmI_regularFragments_t* me, esdm_dataset_t* parent); //constructor for the fixed sized fragment based implementation
+void esdmI_regularFragments_construct(struct esdmI_regularFragments_t* me); //constructor for the fixed sized fragment based implementation
 
 void esdmI_fragments_getStats(int64_t* out_addedFragments, double* out_fragmentAddTime, int64_t* out_createdSets, double* out_setCreationTime);
 double esdmI_fragments_getFragmentAddTime();
@@ -358,6 +358,8 @@ inline bool esdmI_range_isEmpty(esdmI_range_t range) { return range.start >= ran
 
 inline bool esdmI_range_equal(esdmI_range_t a, esdmI_range_t b) { return a.start == b.start && a.end == b.end; }
 
+inline bool esdmI_range_contains(esdmI_range_t bowl, esdmI_range_t soup) { return bowl.start <= soup.start && bowl.end >= soup.end; }
+
 inline int64_t esdmI_range_size(esdmI_range_t range) { return esdmI_range_isEmpty(range) ? 0 : range.end - range.start; }
 
 void esdmI_range_print(esdmI_range_t range, FILE* stream);
@@ -376,6 +378,8 @@ esdmI_hypercube_t* esdmI_hypercube_makeIntersection(esdmI_hypercube_t* a, esdmI_
 bool esdmI_hypercube_isEmpty(esdmI_hypercube_t* cube);
 
 bool esdmI_hypercube_doesIntersect(esdmI_hypercube_t* a, esdmI_hypercube_t* b);
+
+bool esdmI_hypercube_contains(esdmI_hypercube_t* bowl, esdmI_hypercube_t* soup);  //true if the soup is fully contained within the bowl
 
 //Touch means no overlap is allowed.
 //The two hypercubes must share a single border such that there is at least one pair of voxels next to each other
