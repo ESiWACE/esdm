@@ -91,7 +91,7 @@ struct esdm_fragment_t {
   esdm_dataspace_t *dataspace;
   esdm_backend_t *backend;
   void * backend_md; // backend-specific metadata if set
-  void *buf;
+  void *buf;  //FIXME: remember who's responsible to free this buffer, and actually do so
   size_t elements;
   size_t bytes;
   //int direct_io;
@@ -214,7 +214,8 @@ struct esdm_md_backend_t {
 
 typedef enum io_operation_t {
   ESDM_OP_WRITE = 0,
-  ESDM_OP_READ
+  ESDM_OP_READ,
+  ESDM_OP_NOOP
 } io_operation_t;
 
 typedef struct io_request_status_t {

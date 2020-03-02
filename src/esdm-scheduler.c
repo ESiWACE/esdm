@@ -108,12 +108,16 @@ static void backend_thread(io_work_t *work, esdm_backend_t *backend) {
 
   esdm_status ret;
   switch (work->op) {
-    case (ESDM_OP_READ): {
+    case ESDM_OP_READ: {
       ret = esdm_fragment_retrieve(work->fragment);
       break;
     }
-    case (ESDM_OP_WRITE): {
+    case ESDM_OP_WRITE: {
       ret = esdm_fragment_commit(work->fragment);
+      break;
+    }
+    case ESDM_OP_NOOP: {
+      ret = ESDM_SUCCESS;
       break;
     }
     default:
@@ -341,6 +345,14 @@ static void read_copy_callback(io_work_t *work) {
     return;
   }
   esdm_dataspace_copy_data(work->fragment->dataspace, work->fragment->buf, work->data.buf_space, work->data.mem_buf);
+}
+
+static void read_copyAndCleanup_callback(io_work_t *work) {
+  if (work->return_code != ESDM_SUCCESS) {
+    DEBUG("Error reading from fragment ", work->fragment);
+    return;
+  }
+  esdm_dataspace_copy_data(work->fragment->dataspace, work->fragment->buf, work->data.buf_space, work->data.mem_buf);
 
   //the intermediate buffer was allocated by `esdm_scheduler_enqueue_read()`
   //TODO: Decide whether to free the buffer or to cache the data.
@@ -398,7 +410,13 @@ esdm_status esdm_scheduler_enqueue_read(esdm_instance_t *esdm, io_request_status
     task->parent = status;
     task->op = ESDM_OP_READ;
     task->fragment = f;
-    if (esdmI_scheduler_try_direct_io(f, buf, buf_space)) {
+    if(f->status == ESDM_DATA_DIRTY || f->status == ESDM_DATA_PERSISTENT) {
+      //data is already in memory, we just need to copy it over
+      task->op = ESDM_OP_NOOP;
+      task->callback = read_copy_callback;
+      task->data.mem_buf = buf;
+      task->data.buf_space = buf_space;
+    } else if (esdmI_scheduler_try_direct_io(f, buf, buf_space)) {
       task->callback = buffer_cleanup_callback;
     } else {
       //We cannot instruct the fragment to read the data directly into `buf` as we may only need a part of the fragment's data, and the overshoot may cause UB.
@@ -409,8 +427,8 @@ esdm_status esdm_scheduler_enqueue_read(esdm_instance_t *esdm, io_request_status
       esdm_dataspace_destroy(f->dataspace);
       f->dataspace = contiguousSpace;
 
-      f->buf = malloc(size);  //This buffer will be filled by some background I/O process, read_copy_callback() will only be invoked *after* that has happened.
-      task->callback = read_copy_callback;
+      f->buf = malloc(size);  //This buffer will be filled by some background I/O process, read_copyAndCleanup_callback() will only be invoked *after* that has happened.
+      task->callback = read_copyAndCleanup_callback;
       task->data.mem_buf = buf;
       task->data.buf_space = buf_space;
     }
