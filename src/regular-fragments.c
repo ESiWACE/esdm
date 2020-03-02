@@ -156,64 +156,77 @@ static void add(void* meArg, esdm_fragment_t* fragment) {
   esdmI_hypercube_t* bounds;
   esdmI_dataspace_getExtends(fragment->dataspace, &bounds);
   int64_t binCount = getIndexRanges(me, bounds, startIndex, stopIndex);
+  static int dummy = 0;
 
-  //handle the special case that the given fragment covers exactly one entire bin (which is the case when we are loading a dataset from disk)
-  bool isPerfectFit = false;
-  if(binCount == 1) {
-    esdmI_hypercube_t* binBounds = makeBinBounds(me, startIndex);
-    isPerfectFit = esdmI_hypercube_equal(binBounds, bounds);
-  }
-
-  if(isPerfectFit) {
-    //just replace the possibly existing fragment with the given one
-    int64_t fragmentIndex = linearIndex(dimCount, me->fragmentCount, startIndex);
-    esdm_fragment_t* oldFragment = me->fragments[fragmentIndex];
-    me->fragments[fragmentIndex] = fragment;
-    if(oldFragment && oldFragment != fragment) {
-      //FIXME: We should delete the old fragment from disk here, but to date, we lack the API to do that.
-      if(esdm_fragment_destroy(oldFragment)) ESDM_ERROR("failed to destroy fragment");
+  if(binCount) {
+    //handle the special case that the given fragment covers exactly one entire bin (which is the case when we are loading a dataset from disk)
+    bool isPerfectFit = false;
+    if(binCount == 1) {
+      esdmI_hypercube_t* binBounds = makeBinBounds(me, startIndex);
+      isPerfectFit = esdmI_hypercube_equal(binBounds, bounds);
+      esdmI_hypercube_destroy(binBounds);
     }
-  } else {
-    //iterate over the touched bins updating/creating the fragments as needed
-    int64_t index[dimCount];
-    memcpy(index, startIndex, sizeof(index));
-    IndexIterator_t iter = {
-      .dimCount = dimCount,
-      .start = startIndex,
-      .stop = stopIndex,
-      .size = me->fragmentCount,
-      .index = index
-    };
-    for(int64_t fragmentIndex; indexIsValid(&iter, &fragmentIndex); advanceIndex(&iter)) {
-      esdm_fragment_t** bin = &me->fragments[fragmentIndex];
-      esdmI_hypercube_t* binExtends = makeBinBounds(me, index);
 
-      //ensure that we have a valid bin fragment and load its data from disk if necessary
-      if(*bin) {
-        if((*bin)->status == ESDM_DATA_NOT_LOADED) {
-          if(!esdmI_hypercube_contains(bounds, binExtends)) {
-            //the given data does not fully cover the bin, so we need to load the bin's data into memory for a read-modify-write cycle
-            if(esdm_fragment_retrieve(*bin) != ESDM_SUCCESS) ESDM_ERROR("failed to retrieve fragment");
-          }
-        } else if((*bin)->status == ESDM_DATA_DELETED) {
-            ESDM_ERROR("cannot update a deleted fragment");
-        } //we already have the data in memory in the cases ESDM_DATA_DIRTY and ESDM_DATA_PERSISTENT, so nothing to be done
+    if(isPerfectFit) {
+      //just replace the possibly existing fragment with the given one
+      int64_t fragmentIndex = linearIndex(dimCount, me->fragmentCount, startIndex);
+      esdm_fragment_t* bin = me->fragments[fragmentIndex];
+      if(bin) {
+        eassert(bin->buf);
+        //we cannot just replace the possibly existing fragment with the given one, because we do not control its memory buffer
+        if(esdm_dataspace_copy_data(fragment->dataspace, fragment->buf, bin->dataspace, bin->buf) != ESDM_SUCCESS) ESDM_ERROR("failed to copy data");
+      } else if(fragment->buf == &dummy) {
+        //this is a recursive call, the fragment was created without a buffer, and we can take possession of it
+        me->fragments[fragmentIndex] = fragment;
       } else {
-        int64_t binOffset[dimCount], binSize[dimCount];
-        esdmI_hypercube_getOffsetAndSize(binExtends, binOffset, binSize);
-
-        esdm_dataspace_t* subspace;
-        if(esdm_dataspace_subspace(me->super.parent->dataspace, dimCount, binSize, binOffset, &subspace) != ESDM_SUCCESS) ESDM_ERROR("failed to create subspace");
-        if(esdmI_fragment_create(fragment->dataset, subspace, NULL, fragment->backend, bin) != ESDM_SUCCESS) ESDM_ERROR("failed to create fragment");
+        //this is not a recursive call, delegate to the normal copying code
+        isPerfectFit = false;
       }
-      //make sure that we actually have a buffer to write to
-      //(this either triggers when we created a new bin fragment, or when the bin is not loaded and no memory buffer is present)
-      if((*bin)->buf) (*bin)->buf = malloc(esdm_dataspace_size((*bin)->dataspace));
+    }
+    if(!isPerfectFit) {
+      //iterate over the touched bins updating/creating the fragments as needed
+      int64_t index[dimCount];
+      memcpy(index, startIndex, sizeof(index));
+      IndexIterator_t iter = {
+        .dimCount = dimCount,
+        .start = startIndex,
+        .stop = stopIndex,
+        .size = me->fragmentCount,
+        .index = index
+      };
+      for(int64_t fragmentIndex; indexIsValid(&iter, &fragmentIndex); advanceIndex(&iter)) {
+        esdm_fragment_t** bin = &me->fragments[fragmentIndex];
+        esdmI_hypercube_t* binExtends = makeBinBounds(me, index);
 
-      //copy the data into the bin fragment
-      if(esdm_dataspace_copy_data(fragment->dataspace, fragment->buf, (*bin)->dataspace, (*bin)->buf) != ESDM_SUCCESS) ESDM_ERROR("failed to copy data");
-      (*bin)->status = ESDM_DATA_DIRTY;
-      esdmI_hypercube_destroy(binExtends);
+        //ensure that we have a valid bin fragment and load its data from disk if necessary
+        if(*bin) {
+          if((*bin)->status == ESDM_DATA_NOT_LOADED) {
+            if(!esdmI_hypercube_contains(bounds, binExtends)) {
+              //the given data does not fully cover the bin, so we need to load the bin's data into memory for a read-modify-write cycle
+              if(esdm_fragment_retrieve(*bin) != ESDM_SUCCESS) ESDM_ERROR("failed to retrieve fragment");
+            }
+          } else if((*bin)->status == ESDM_DATA_DELETED) {
+              ESDM_ERROR("cannot update a deleted fragment");
+          } //we already have the data in memory in the cases ESDM_DATA_DIRTY and ESDM_DATA_PERSISTENT, so nothing to be done
+        } else {
+          int64_t binOffset[dimCount], binSize[dimCount];
+          esdmI_hypercube_getOffsetAndSize(binExtends, binOffset, binSize);
+
+          esdm_dataspace_t* subspace;
+          if(esdm_dataspace_subspace(me->super.parent->dataspace, dimCount, binSize, binOffset, &subspace) != ESDM_SUCCESS) ESDM_ERROR("failed to create subspace");
+          //create the fragment with a dummy buffer pointer to signal the recursive call of this method that it can take possession of the fragment
+          if(esdmI_fragment_create(fragment->dataset, subspace, &dummy, fragment->backend, bin) != ESDM_SUCCESS) ESDM_ERROR("failed to create fragment");
+          (*bin)->buf = NULL; //the dummy pointer has served its purpose
+        }
+        //make sure that we actually have a buffer to write to
+        //(this either triggers when we created a new bin fragment, or when the bin is not loaded and no memory buffer is present)
+        if(!(*bin)->buf) (*bin)->buf = malloc(esdm_dataspace_size((*bin)->dataspace));
+
+        //copy the data into the bin fragment
+        if(esdm_dataspace_copy_data(fragment->dataspace, fragment->buf, (*bin)->dataspace, (*bin)->buf) != ESDM_SUCCESS) ESDM_ERROR("failed to copy data");
+        (*bin)->status = ESDM_DATA_DIRTY;
+        esdmI_hypercube_destroy(binExtends);
+      }
     }
   }
 
