@@ -423,13 +423,25 @@ esdm_status esdmI_fragment_create(esdm_dataset_t *d, esdm_dataspace_t *sspace, v
 esdm_status esdm_fragment_retrieve(esdm_fragment_t *fragment) {
   ESDM_DEBUG(__func__);
   // Call backend
-  esdm_backend_t *backend = fragment->backend;
-  int ret = backend->callbacks.fragment_retrieve(backend, fragment);
-  if(ret == ESDM_SUCCESS){
-    fragment->status = ESDM_DATA_PERSISTENT;
-  }
+  switch(fragment->status) {
+    case ESDM_DATA_NOT_LOADED: {
+      if(!fragment->buf) {
+        fragment->buf = malloc(esdm_dataspace_size(fragment->dataspace));  //ensure that we have a buffer to write to
+        //FIXME: Make a note that the fragment is responsible to clean up the buffer.
+      }
+      esdm_backend_t *backend = fragment->backend;
+      int ret = backend->callbacks.fragment_retrieve(backend, fragment);
+      if(ret == ESDM_SUCCESS){
+        fragment->status = ESDM_DATA_PERSISTENT;
+      }
+      return ret;
+    }
 
-  return ret;
+    case ESDM_DATA_PERSISTENT: return ESDM_SUCCESS; //data already loaded and up to date, nothing to be done
+    case ESDM_DATA_DIRTY: return ESDM_DIRTY_DATA_ERROR;
+    case ESDM_DATA_DELETED: return ESDM_DELETED_DATA_ERROR;
+  }
+  fprintf(stderr, "fatal error: unknown fragment status %d\n", fragment->status), abort(); //this must not be reachable
 }
 
 
