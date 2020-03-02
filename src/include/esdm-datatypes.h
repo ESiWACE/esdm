@@ -35,6 +35,8 @@ typedef enum esdm_status {
   ESDM_INVALID_ARGUMENT_ERROR,
   ESDM_INVALID_PERMISSIONS,
   ESDM_INCOMPLETE_DATA, //returned when a read requests data that does not exist and no fill-value is set for the dataset
+  ESDM_DIRTY_DATA_ERROR,  //attempt to read data from disk that's been modified in memory, the read would discard the in-memory changes
+  ESDM_DELETED_DATA_ERROR,  //attempt to access data that has been deleted from disk
   ESDM_ERROR
 } esdm_status;
 
