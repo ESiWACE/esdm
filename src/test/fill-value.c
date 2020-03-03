@@ -139,7 +139,10 @@ int main(int argc, char const *argv[]) {
       uint64_t expectedValue = y*bounds[1] + x;
       if(y < subspaceOffset[0] || y >= subspaceOffset[0] + subspaceSize[0]) expectedValue = fill_value;
       if(x < subspaceOffset[1] || x >= subspaceOffset[1] + subspaceSize[1]) expectedValue = fill_value;
-      eassert(readBuffer[y][x] == expectedValue);
+      if(readBuffer[y][x] != expectedValue) {
+        fprintf(stderr, "expected %"PRIu64" (data = %"PRIu64", fill value = %"PRIu64"), but found %"PRIu64"\n", expectedValue, y*bounds[1] + x, fill_value, readBuffer[y][x]);
+        eassert(readBuffer[y][x] == expectedValue);
+      }
     }
   }
 
