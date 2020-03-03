@@ -1283,6 +1283,34 @@ int64_t esdm_dataspace_elementOffset(esdm_dataspace_t* space, int64_t* coords) {
   return offset * esdm_sizeof(space->type);
 }
 
+esdm_status esdm_dataspace_fill(esdm_dataspace_t* dataspace, void* data, void* fillElement) {
+  if(!dataspace) return ESDM_ERROR;
+  if(!data) return ESDM_ERROR;
+  if(!fillElement) return ESDM_ERROR;
+
+  esdm_status ret;
+  int64_t dimensions = esdm_dataspace_get_dims(dataspace);
+  esdm_type_t type = esdm_dataspace_get_type(dataspace);
+
+  //create a dataspace with stride zero (all logical elements are mapped to the one and only element in memory) which we use as a source in the subsequent copy operation
+  esdm_dataspace_t* sourceSpace;
+  int64_t stride[dimensions];
+  memset(stride, 0, sizeof(stride));
+
+  ret = esdm_dataspace_create(dimensions, dataspace->size, type, &sourceSpace);
+  eassert(ret == ESDM_SUCCESS);
+  memcpy(sourceSpace->offset, dataspace->offset, dimensions*sizeof(*sourceSpace->offset));  //the source space's extends should match the dataspace's extends exactly
+  ret = esdm_dataspace_set_stride(sourceSpace, stride);
+  eassert(ret == ESDM_SUCCESS);
+
+  //fill the region
+  esdm_dataspace_copy_data(sourceSpace, fillElement, dataspace, data);
+  eassert(ret == ESDM_SUCCESS);
+
+  esdm_dataspace_destroy(sourceSpace);
+  return ESDM_SUCCESS;
+}
+
 void esdm_fragment_print(esdm_fragment_t *f) {
   printf("FRAGMENT(%p,", (void *)f);
   esdm_dataspace_print(f->dataspace);

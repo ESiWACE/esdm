@@ -501,6 +501,20 @@ esdm_status esdm_dataspace_copyDatalayout(esdm_dataspace_t* dataspace, esdm_data
 esdm_status esdm_dataspace_copy_data(esdm_dataspace_t* sourceSpace, void *sourceData, esdm_dataspace_t* destSpace, void *destData);
 
 /**
+ * Overwrite a buffer with a fill value.
+ *
+ * This functions sets all elements in the given `data` buffer to the value given by `*fillElement`.
+ * The amount and offsets of the `data` elements to set is controlled by the `dataspace` argument.
+ *
+ * @param [in] dataspace description of the area to overwrite
+ * @param [inout] data pointer to the first element to set
+ * @param [in] fillElement pointer to a single element which is used as a prototype.
+ *
+ * @return status
+ */
+esdm_status esdm_dataspace_fill(esdm_dataspace_t* dataspace, void* data, void* fillElement);
+
+/**
  * Destruct and free a dataspace object.
  *
  * @param [in] dataspace an existing dataspace object that is no longer needed
