@@ -178,6 +178,9 @@ static void add(void* meArg, esdm_fragment_t* fragment) {
       } else if(fragment->buf == &dummy) {
         //this is a recursive call, the fragment was created without a buffer, and we can take possession of it
         me->fragments[fragmentIndex] = fragment;
+      } else if(fragment->status == ESDM_DATA_NOT_LOADED) {
+        //the fragment has been created from metadata to connect us to the data stored on disk, take possession of the fragment
+        me->fragments[fragmentIndex] = fragment;
       } else {
         //this is not a recursive call, delegate to the normal copying code
         isPerfectFit = false;
