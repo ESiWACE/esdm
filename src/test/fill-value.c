@@ -110,6 +110,29 @@ int main(int argc, char const *argv[]) {
   ret = esdmI_readWithFillRegion(dataset, readBuffer, dataspace, &fillRegion);
   eassert(ret == ESDM_SUCCESS);
 
+  //Print a matrix of the comparison results, a good output has small letters 'f' (fill value) and 'd' (data) everywhere.
+  //Big letters signify an unexpected fill value 'F', unexpected data 'D', or other value 'X'.
+  //A question mark is printed where the expected data value equals the fill value.
+  printf("\n"
+         "d = good data\n"
+         "f = good fill value\n"
+         "\x1b[1mD\x1b[0m = unexpected data\n"
+         "\x1b[1mF\x1b[0m = unexpected fill value\n"
+         "\x1b[1mX\x1b[0m = neither data nor fill value\n"
+         "? = good data == fill value\n");
+  for(int y=0; y < bounds[0]; y++){
+    for(int x=0; x < bounds[1]; x++){
+      bool isData = readBuffer[y][x] == y*bounds[1] + x;
+      bool isFill = readBuffer[y][x] == fill_value;
+      bool expectFill = false;
+      if(y < subspaceOffset[0] || y >= subspaceOffset[0] + subspaceSize[0]) expectFill = true;
+      if(x < subspaceOffset[1] || x >= subspaceOffset[1] + subspaceSize[1]) expectFill = true;
+      char* statusLetter = ((char*[8]){"\x1b[1mX\x1b[m", "\x1b[1mX\x1b[m", "\x1b[1mF\x1b[m", "f", "d", "\x1b[1mD\x1b[m", "?", "?"})[4*isData + 2*isFill + expectFill];
+      printf("%s", statusLetter);
+    }
+    printf("\n");
+  }
+
   //check that the result is actually what we expect (linear index within subspace, updated fill_value everywhere else)
   for(int y=0; y < bounds[0]; y++){
     for(int x=0; x < bounds[1]; x++){
