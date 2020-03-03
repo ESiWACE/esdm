@@ -219,10 +219,21 @@ static void add(void* meArg, esdm_fragment_t* fragment) {
           if(esdm_dataspace_subspace(me->super.parent->dataspace, dimCount, binSize, binOffset, &subspace) != ESDM_SUCCESS) ESDM_ERROR("failed to create subspace");
           //create the fragment with a dummy buffer pointer to signal the recursive call of this method that it can take possession of the fragment
           if(esdmI_fragment_create(fragment->dataset, subspace, &dummy, fragment->backend, bin) != ESDM_SUCCESS) ESDM_ERROR("failed to create fragment");
-          (*bin)->buf = NULL; //the dummy pointer has served its purpose
+          (*bin)->buf = malloc(esdm_dataspace_size((*bin)->dataspace)); //the dummy pointer has served its purpose
+
+          //initialize the fragment's data with the fill value if necessary
+          if(!esdmI_hypercube_contains(bounds, binExtends)) {
+            esdm_type_t type = esdm_dataspace_get_type((*bin)->dataspace);
+            char fillValue[esdm_sizeof(type)];
+            if(esdm_dataset_get_fill_value((*bin)->dataset, fillValue) == ESDM_SUCCESS) {
+              if(esdm_dataspace_fill((*bin)->dataspace, (*bin)->buf, fillValue) != ESDM_SUCCESS) ESDM_ERROR("failed to initialize data with fill value");
+            } else {
+              memset((*bin)->buf, 0, esdm_dataspace_size((*bin)->dataspace)); //no fill value set, initialize the fragment to zeros
+            }
+          }
         }
         //make sure that we actually have a buffer to write to
-        //(this either triggers when we created a new bin fragment, or when the bin is not loaded and no memory buffer is present)
+        //(this triggers when the bin is not loaded and we didn't load it because it's entirely covered by the fragment)
         if(!(*bin)->buf) (*bin)->buf = malloc(esdm_dataspace_size((*bin)->dataspace));
 
         //copy the data into the bin fragment
