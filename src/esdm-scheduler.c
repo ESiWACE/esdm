@@ -463,6 +463,8 @@ static esdm_status esdm_scheduler_enqueue_fill(esdm_instance_t* esdm, io_request
     eassert(ret == ESDM_SUCCESS);
   }
 
+  esdm_dataspace_destroy(sourceSpace);
+
   return ESDM_SUCCESS;
 }
 
