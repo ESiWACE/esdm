@@ -21,15 +21,19 @@ static void ensureInitialization(struct esdmI_regularFragments_t* me) {
   eassert(dataspace && "cannot initialize without knowing the extends of the dataset");
 
   //some raw data and initialization
-  esdmI_hypercube_t* extends;
-  if(esdmI_dataspace_getExtends(dataspace, &extends) != ESDM_SUCCESS) ESDM_ERROR("failed to get the extends of the dataspace");
-  int64_t dims = esdmI_hypercube_dimensions(extends);
-  int64_t extendsSize = esdmI_hypercube_size(extends);
-  me->dimCount = dims,
-  me->fragmentSize = malloc(dims*sizeof(*me->fragmentSize)),
-  me->fragmentOffset = malloc(dims*sizeof(*me->fragmentOffset)),
-  me->fragmentCount = malloc(dims*sizeof(*me->fragmentCount)),
-  esdmI_hypercube_getOffsetAndSize(extends, me->fragmentOffset, me->fragmentSize);
+  int64_t dims, extendsSize;
+  {
+    esdmI_hypercube_t* extends;
+    if(esdmI_dataspace_getExtends(dataspace, &extends) != ESDM_SUCCESS) ESDM_ERROR("failed to get the extends of the dataspace");
+    dims = esdmI_hypercube_dimensions(extends);
+    extendsSize = esdmI_hypercube_size(extends);
+    me->dimCount = dims,
+    me->fragmentSize = malloc(dims*sizeof(*me->fragmentSize)),
+    me->fragmentOffset = malloc(dims*sizeof(*me->fragmentOffset)),
+    me->fragmentCount = malloc(dims*sizeof(*me->fragmentCount)),
+    esdmI_hypercube_getOffsetAndSize(extends, me->fragmentOffset, me->fragmentSize);
+    esdmI_hypercube_destroy(extends);
+  }
 
   //Now the interesting part: Find a suitable fragmentSize.
   eassert(dims >= 1);
