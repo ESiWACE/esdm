@@ -248,6 +248,7 @@ void runTestWithConfig(int height, int width, const char* configString) {
   printf("read data %dx1 fragments repeat: %.3fms\n", height, 1000*stop_timer(myTimer));
   eassert(dataIsCorrect(height, width, data));
 
+  esdm_dataset_close(dataset1);
 
 
   printf("\nTest 2: Profile successive change of fragment shape\n");
@@ -278,6 +279,10 @@ void runTestWithConfig(int height, int width, const char* configString) {
   }
   free(data);
   printf("total: %.3fms\n", 1000*stop_timer(outerTimer));
+
+  esdm_dataspace_destroy(dataspace);
+  esdm_dataset_close(dataset2);
+  esdm_container_close(container);
 
   ret = esdm_finalize();
   eassert(ret == ESDM_SUCCESS);
