@@ -276,6 +276,7 @@ void runTestWithConfig(int height, int width, const char* configString) {
     if(expectWriteback) readFactor = 1;
     eassert(dataIsCorrect(height, width, data));
   }
+  free(data);
   printf("total: %.3fms\n", 1000*stop_timer(outerTimer));
 
   ret = esdm_finalize();
