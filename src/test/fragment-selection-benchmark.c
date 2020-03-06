@@ -181,6 +181,7 @@ int main(int argc, char const *argv[]) {
   eassert(ret == ESDM_SUCCESS);
   after = esdm_read_stats();
   eassert(dataIsCorrect(dims, dimSizes, data));
+  free(data);
 
   printf("bytes requested to read = %"PRId64" (expected %"PRId64")\n", after.bytesUser - before.bytesUser, totalSize(dims, dimSizes));
   eassert(after.bytesUser - before.bytesUser == totalSize(dims, dimSizes));
@@ -190,6 +191,10 @@ int main(int argc, char const *argv[]) {
   eassert(after.requests - before.requests == 1);
   printf("fragments read = %"PRId64" (expected %"PRId64")\n", after.fragments - before.fragments, edgeLength);
 //  eassert(after.fragments - before.fragments == edgeLength);
+
+  esdm_dataspace_destroy(dataspace);
+  esdm_dataset_close(dataset);
+  esdm_container_close(container);
 
   ret = esdm_finalize();
   eassert(ret == ESDM_SUCCESS);
