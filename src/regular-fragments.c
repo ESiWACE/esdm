@@ -178,9 +178,11 @@ static void add(void* meArg, esdm_fragment_t* fragment) {
       } else if(fragment->buf == &dummy) {
         //this is a recursive call, the fragment was created without a buffer, and we can take possession of it
         me->fragments[fragmentIndex] = fragment;
+        fragment = NULL;  //don't destroy this fragment
       } else if(fragment->status == ESDM_DATA_NOT_LOADED) {
         //the fragment has been created from metadata to connect us to the data stored on disk, take possession of the fragment
         me->fragments[fragmentIndex] = fragment;
+        fragment = NULL;  //don't destroy this fragment
       } else {
         //this is not a recursive call, delegate to the normal copying code
         isPerfectFit = false;
@@ -244,6 +246,10 @@ static void add(void* meArg, esdm_fragment_t* fragment) {
     }
   }
 
+  if(fragment) {
+    fragment->status = ESDM_DATA_PERSISTENT;  //we have taken care of persisting all its data
+    esdm_fragment_destroy(fragment); //cleanup the fragment if we have copied its data out
+  }
   esdmI_hypercube_destroy(bounds);
 }
 
