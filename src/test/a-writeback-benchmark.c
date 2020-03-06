@@ -268,7 +268,7 @@ void runTestWithConfig(int height, int width, const char* configString) {
 
   timer outerTimer;
   start_timer(&outerTimer);
-  for(int64_t fragmentSize[2] = {1, width}, readFactor = 1; fragmentSize[1] && fragmentSize[0] < height; fragmentSize[1] /= 2, fragmentSize[0] *=2, readFactor *= 2) {
+  for(int64_t fragmentSize[2] = {1, width}, readFactor = 1; fragmentSize[1] && fragmentSize[0] <= height; fragmentSize[1] /= 2, fragmentSize[0] *=2, readFactor *= 2) {
     memset(data, 0, height*sizeof(*data));
     bool expectWriteback = readFactor >= 8;
     start_timer(&myTimer);
