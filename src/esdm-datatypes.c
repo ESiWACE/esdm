@@ -402,15 +402,18 @@ esdm_status esdmI_fragment_create(esdm_dataset_t *d, esdm_dataspace_t *sspace, v
   int64_t bytes = elements * esdm_sizeof(sspace->type);
   DEBUG("Entries in sspace: %d x %d bytes = %d bytes \n", elements, esdm_sizeof(sspace->type), bytes);
 
-  f->id = NULL;
-  f->backend_md  = NULL;
-  f->dataset = d;
-  f->dataspace = sspace;
-  f->buf = buf; // zero copy?
-  f->elements = elements;
-  f->bytes = bytes;
-	f->status = buf ? ESDM_DATA_DIRTY : ESDM_DATA_NOT_LOADED;
-  f->backend = backend;
+  *f = (esdm_fragment_t){
+    .id = NULL,
+    .backend_md  = NULL,
+    .dataset = d,
+    .dataspace = sspace,
+    .buf = buf, // zero copy?
+    .ownsBuf = false,
+    .elements = elements,
+    .bytes = bytes,
+    .status = buf ? ESDM_DATA_DIRTY : ESDM_DATA_NOT_LOADED,
+    .backend = backend
+  };
 
 	esdmI_dataset_register_fragment(d, f);
   esdmI_dataset_update_actual_size(d, f);
@@ -426,8 +429,17 @@ esdm_status esdm_fragment_retrieve(esdm_fragment_t *fragment) {
   switch(fragment->status) {
     case ESDM_DATA_NOT_LOADED: {
       if(!fragment->buf) {
+        if(fragment->dataspace->stride) { //since we need to allocate memory anyways, ensure that we work with a contiguous dataspace
+          esdm_dataspace_t* contiguousSpace;
+          esdm_status ret = esdm_dataspace_makeContiguous(fragment->dataspace, &contiguousSpace);
+          if(ret != ESDM_SUCCESS) return ret;
+          esdm_dataspace_destroy(fragment->dataspace);
+          fragment->dataspace = contiguousSpace;
+        }
+        eassert(!fragment->dataspace->stride);
+
         fragment->buf = malloc(esdm_dataspace_size(fragment->dataspace));  //ensure that we have a buffer to write to
-        //FIXME: Make a note that the fragment is responsible to clean up the buffer.
+        fragment->ownsBuf = true;
       }
       esdm_backend_t *backend = fragment->backend;
       int ret = backend->callbacks.fragment_retrieve(backend, fragment);
@@ -444,6 +456,36 @@ esdm_status esdm_fragment_retrieve(esdm_fragment_t *fragment) {
   fprintf(stderr, "fatal error: unknown fragment status %d\n", fragment->status), abort(); //this must not be reachable
 }
 
+esdm_status esdm_fragment_load(esdm_fragment_t *fragment) {
+  ESDM_DEBUG(__func__);
+  if(fragment->status == ESDM_DATA_DIRTY) return ESDM_SUCCESS;  //If the fragment is dirty, its data must already reside in memory, so there's nothing to be done.
+  return esdm_fragment_retrieve(fragment);
+}
+
+esdm_status esdm_fragment_unload(esdm_fragment_t* fragment) {
+  ESDM_DEBUG(__func__);
+  switch(fragment->status) {
+    case ESDM_DATA_NOT_LOADED: break; //already unloaded, nothing to do
+
+    case ESDM_DATA_DIRTY: {
+      //need to write out any changes before we can get rid of the in-memory buffer
+      esdm_status ret = esdm_fragment_commit(fragment);
+      if(ret != ESDM_SUCCESS) return ret;
+    } //fallthrough... we are now persistent
+    case ESDM_DATA_PERSISTENT: {
+      if(fragment->ownsBuf) free(fragment->buf);
+      fragment->buf = NULL;
+      fragment->ownsBuf = false;
+      fragment->status = ESDM_DATA_NOT_LOADED;
+    } break;
+
+    case ESDM_DATA_DELETED: break;  //no data exists, nothing to do
+
+    default:
+      fprintf(stderr, "fatal error: unknown fragment status %d\n", fragment->status), abort(); //this must not be reachable
+  }
+  return ESDM_SUCCESS;
+}
 
 void esdm_fragment_metadata_create(esdm_fragment_t *f, smd_string_stream_t * stream){
   eassert(f != NULL);
@@ -574,6 +616,11 @@ esdm_status esdm_fragment_destroy(esdm_fragment_t *frag) {
   }
   if(frag->dataspace){
     esdm_dataspace_destroy(frag->dataspace);
+  }
+  if(frag->buf && frag->ownsBuf) {  //TODO: Just call esdm_fragment_unload() at the beginning of the function? That would also make the warning below unnecessary.
+    free(frag->buf);
+    frag->buf = NULL;
+    frag->ownsBuf = false;
   }
   if(frag->status == ESDM_DATA_PERSISTENT || frag->status == ESDM_DATA_NOT_LOADED){
     free(frag);
@@ -745,6 +792,7 @@ esdm_status esdmI_create_fragment_from_metadata(esdm_dataset_t *dset, json_t * j
   f->dataset = dset;
   f->dataspace = space;
   f->buf = NULL;
+  f->ownsBuf = false;
   f->elements = elements;
   f->bytes = bytes;
 	f->status = ESDM_DATA_NOT_LOADED;

@@ -551,7 +551,29 @@ uint64_t esdm_dataspace_size(esdm_dataspace_t *dataspace);
 
 esdm_status esdm_fragment_deserialize(void *serialized_fragment, esdm_fragment_t **_out_fragment);
 
+/**
+ * Fetch data from disk if possible.
+ * Loads fragments that are not loaded, noops on those that are loaded and clean, and errors out on those that are dirty or deleted.
+ *
+ * XXX: This should probably be turned into an internal interface.
+ */
 esdm_status esdm_fragment_retrieve(esdm_fragment_t *fragment);
+
+/**
+ * Like esdm_fragment_retrieve(), but more permissive:
+ * Does not throw an ESDM_DIRTY_DATA_ERROR,
+ * simply ensures that the fragments data is available in memory.
+ */
+esdm_status esdm_fragment_load(esdm_fragment_t *fragment);
+
+/**
+ * Ensure that the fragment has no data in memory.
+ *
+ * If the fragment is dirty, it is committed, turning it into a persistent fragment.
+ * If the fragment is persistent, its buffer is released, turning it into an unloaded fragment.
+ * If the fragment is deleted or not loaded, nothing is done successfully.
+ */
+esdm_status esdm_fragment_unload(esdm_fragment_t* fragment);
 
 /**
  * Make fragment persistent to storage.

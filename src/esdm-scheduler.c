@@ -109,7 +109,7 @@ static void backend_thread(io_work_t *work, esdm_backend_t *backend) {
   esdm_status ret;
   switch (work->op) {
     case ESDM_OP_READ: {
-      ret = esdm_fragment_retrieve(work->fragment);
+      ret = esdm_fragment_load(work->fragment);
       break;
     }
     case ESDM_OP_WRITE: {
@@ -347,29 +347,12 @@ static void read_copy_callback(io_work_t *work) {
   esdm_dataspace_copy_data(work->fragment->dataspace, work->fragment->buf, work->data.buf_space, work->data.mem_buf);
 }
 
-static void read_copyAndCleanup_callback(io_work_t *work) {
-  if (work->return_code != ESDM_SUCCESS) {
-    DEBUG("Error reading from fragment ", work->fragment);
-    return;
-  }
-  esdm_dataspace_copy_data(work->fragment->dataspace, work->fragment->buf, work->data.buf_space, work->data.mem_buf);
-
-  //the intermediate buffer was allocated by `esdm_scheduler_enqueue_read()`
-  //TODO: Decide whether to free the buffer or to cache the data.
-  free(work->fragment->buf);
-  work->fragment->buf = NULL;
-  work->fragment->status = ESDM_DATA_NOT_LOADED;
-}
-
 static void buffer_cleanup_callback(io_work_t *work) {
   if (work->return_code != ESDM_SUCCESS) {
     DEBUG("Error reading from fragment ", work->fragment);
     return;
   }
-
-  //the buffer is a user supplied one, or allocated and freed by `esdm_read_stream()`, so we must get rid of the pointer to avoid UB
-  work->fragment->status = ESDM_DATA_NOT_LOADED;
-  work->fragment->buf = NULL;
+  work->return_code = esdm_fragment_unload(work->fragment); //get rid of the reference to user supplied data to avoid UB
 }
 
 bool esdmI_scheduler_try_direct_io(esdm_fragment_t *f, void * buf, esdm_dataspace_t * da){
@@ -383,17 +366,14 @@ bool esdmI_scheduler_try_direct_io(esdm_fragment_t *f, void * buf, esdm_dataspac
 
   //Ok, only a single memcpy() would be needed to move the data.
   //Determine whether the entire fragment's data would be needed.
-  if(esdm_dataspace_size(f->dataspace) == chunkSize) {
-    //The entire fragment's data is used in one piece.
-    //Setup it's data buffers' pointer so that the backend will directly fill the correct part of the users' buffer.
-    eassert(sourceOffset == 0 && "we have determined that we need the entire fragments data, so there should be no cut-off at the beginning");
-    f->buf = (char*)buf + destOffset;
-    return true;
-  } else {
-    //The fragments data is only used partially.
-    //Thus, direct I/O is impossible as it would overwrite data next to the needed portion.
-    return false;
-  }
+  if(esdm_dataspace_size(f->dataspace) != chunkSize) return false; //Only part of the data is used, making direct I/O impossible. That would overwrite data next to the needed portion.
+  if(f->buf) return false;  //The fragment is already loaded, thus reading it is by definition a copy.
+
+  //The entire fragment's data is used in one piece.
+  //Setup it's data buffers' pointer so that the backend will directly fill the correct part of the users' buffer.
+  eassert(sourceOffset == 0 && "we have determined that we need the entire fragments data, so there should be no cut-off at the beginning");
+  f->buf = (char*)buf + destOffset;
+  return true;
 }
 
 esdm_status esdm_scheduler_enqueue_read(esdm_instance_t *esdm, io_request_status_t *status, int frag_count, esdm_fragment_t **read_frag, void *buf, esdm_dataspace_t *buf_space) {
@@ -410,25 +390,11 @@ esdm_status esdm_scheduler_enqueue_read(esdm_instance_t *esdm, io_request_status
     task->parent = status;
     task->op = ESDM_OP_READ;
     task->fragment = f;
-    if(f->status == ESDM_DATA_DIRTY || f->status == ESDM_DATA_PERSISTENT) {
-      //data is already in memory, we just need to copy it over
-      task->op = ESDM_OP_NOOP;
-      task->callback = read_copy_callback;
-      task->data.mem_buf = buf;
-      task->data.buf_space = buf_space;
-    } else if (esdmI_scheduler_try_direct_io(f, buf, buf_space)) {
+    if (esdmI_scheduler_try_direct_io(f, buf, buf_space)) {
       task->callback = buffer_cleanup_callback;
     } else {
       //We cannot instruct the fragment to read the data directly into `buf` as we may only need a part of the fragment's data, and the overshoot may cause UB.
-      //And we don't want to allocate more memory here than just enough to actually read the fragment's data, so we cannot use the fragment's possibly strided dataspace.
-      //However, we can ensure that the fragment can read directly into our buffer by supplying an unstrided dataspace.
-      esdm_dataspace_t* contiguousSpace;
-      esdm_dataspace_makeContiguous(f->dataspace, &contiguousSpace);
-      esdm_dataspace_destroy(f->dataspace);
-      f->dataspace = contiguousSpace;
-
-      f->buf = malloc(size);  //This buffer will be filled by some background I/O process, read_copyAndCleanup_callback() will only be invoked *after* that has happened.
-      task->callback = read_copyAndCleanup_callback;
+      task->callback = read_copy_callback;
       task->data.mem_buf = buf;
       task->data.buf_space = buf_space;
     }

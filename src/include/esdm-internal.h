@@ -261,6 +261,8 @@ esdm_status esdmI_create_fragment_from_metadata(esdm_dataset_t *dset, json_t * j
 
 /**
  * Create a new fragment.
+ * If a non-NULL buf argument is supplied, the fragment only references the data, it does not take possession of the pointer.
+ * It is the user's responsibility to ensure that the data remains alive as long as the fragment is loaded.
  *
  *  - Allocate process local memory structures.
  *
