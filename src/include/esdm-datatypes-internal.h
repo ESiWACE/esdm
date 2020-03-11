@@ -70,6 +70,7 @@ struct esdm_fragment_t {
   size_t bytes;
   //int direct_io;
   esdm_data_status_e status;
+  bool ownsBuf; //If true, the fragment is responsible to free the buffer when it's destructed or unloaded. Otherwise, `buf` is just a reference for zero copy writing.
 };
 
 struct esdm_dataspace_t {
