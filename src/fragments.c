@@ -84,7 +84,9 @@ esdm_fragment_t** esdmI_fragments_makeSetCoveringRegion(esdm_fragments_t* me, es
         bestSimilarity = similarities[i];
         bestOverlap = esdmI_hypercube_overlap(bounds, extendsList->cubes[i]);
         bestIndex = i;
-      } else if(similarities[i] == bestSimilarity) {
+      } else if(similarities[i] < bestSimilarity) {
+        //noop to avoid writing `if(similarities[i] == bestSimilarity)` which would throw a warning about floating point comparison not being safe
+      } else {
         //In case of a tie in similarity, we prefer the cube with the largest overlap.
         int64_t overlap = esdmI_hypercube_overlap(bounds, extendsList->cubes[i]);
         if(overlap > bestOverlap) {

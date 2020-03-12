@@ -379,7 +379,6 @@ esdm_status esdm_scheduler_enqueue_read(esdm_instance_t *esdm, io_request_status
 
   for (int i = 0; i < frag_count; i++) {
     esdm_fragment_t *f = read_frag[i];
-    uint64_t size = esdm_dataspace_size(f->dataspace);
     esdm_backend_t *backend_to_use = f->backend;
 
     io_work_t *task = (io_work_t *)malloc(sizeof(io_work_t));
