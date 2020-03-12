@@ -147,6 +147,7 @@ static void backend_thread(io_work_t *work, esdm_backend_t *backend) {
   switch (work->op) {
     case (ESDM_OP_READ): gInputTime += localTime; break;
     case (ESDM_OP_WRITE): gOutputTime += localTime; break;
+    default: break;
   }
   g_mutex_unlock(&status->mutex);
   //esdm_dataspace_destroy(work->fragment->dataspace);
@@ -383,7 +384,6 @@ esdm_status esdm_scheduler_enqueue_read(esdm_instance_t *esdm, io_request_status
 
   for (int i = 0; i < frag_count; i++) {
     esdm_fragment_t *f = read_frag[i];
-    uint64_t size = esdm_dataspace_size(f->dataspace);
     esdm_backend_t *backend_to_use = f->backend;
 
     io_work_t *task = (io_work_t *)malloc(sizeof(io_work_t));
@@ -711,12 +711,11 @@ static void updateRequestStats(esdm_statistics_t* stats, uint64_t requestCount, 
   }
 }
 
-esdm_status esdm_scheduler_enqueue_write(esdm_instance_t *esdm, io_request_status_t *status, esdm_dataset_t *dataset, void *buf, esdm_dataspace_t *space, bool requestIsInternal) {
+esdm_status esdm_scheduler_createFragments(esdm_instance_t *esdm, esdm_dataset_t *dataset, void *buf, esdm_dataspace_t *space, bool requestIsInternal) {
   timer myTimer;
   start_timer(&myTimer);
-  double startTime; //reused for the different individual measurements
+  gWriteTimes.backendDistribution -= stop_timer(myTimer);
 
-  GError *error;
   //Gather I/O recommendations
   //esdm_performance_recommendation(esdm, NULL, NULL);    // e.g., split, merge, replication?
   //esdm_layout_recommendation(esdm, NULL, NULL);		  // e.g., merge, split, transform?
@@ -725,7 +724,6 @@ esdm_status esdm_scheduler_enqueue_write(esdm_instance_t *esdm, io_request_statu
   eassert(backends);
   esdmI_hypercube_t** backendExtends = malloc(backendCount*sizeof(*backendExtends));
   splitToBackends(space, backendCount, backends, backendExtends);
-  gWriteTimes.backendDistribution += startTime = stop_timer(myTimer);
   for(int64_t backendIndex = 0; backendIndex < backendCount; backendIndex++) {
     esdmI_hypercube_t* curExtends = backendExtends[backendIndex];
     if(curExtends) {
@@ -763,6 +761,20 @@ esdm_status esdm_scheduler_enqueue_write(esdm_instance_t *esdm, io_request_statu
     }
   }
 
+  //cleanup
+  free(backendExtends);
+  free(backends);
+  gWriteTimes.backendDistribution += stop_timer(myTimer);
+
+  updateRequestStats(&esdm->writeStats, 1, esdm_dataspace_size(space), requestIsInternal); //update the statistics
+  return ESDM_SUCCESS;
+}
+
+esdm_status esdm_scheduler_synchronize(esdm_instance_t *esdm, io_request_status_t *status, esdm_dataset_t *dataset) {
+  timer myTimer;
+  start_timer(&myTimer);
+  gWriteTimes.backendDispatch -= stop_timer(myTimer);
+
   //Walk the list of fragments and create a write task for each dirty one.
   int64_t fragmentCount;
   esdm_fragment_t** fragmentList = esdmI_fragments_list(dataset->fragments, &fragmentCount);
@@ -783,6 +795,7 @@ esdm_status esdm_scheduler_enqueue_write(esdm_instance_t *esdm, io_request_statu
       if (curBackend->threads == 0) {
         backend_thread(task, curBackend);
       } else {
+        GError *error;
         g_thread_pool_push(curBackend->threadPool, task, &error);
       }
 
@@ -790,13 +803,8 @@ esdm_status esdm_scheduler_enqueue_write(esdm_instance_t *esdm, io_request_statu
     }
   }
 
-  gWriteTimes.backendDispatch += stop_timer(myTimer) - startTime;
+  gWriteTimes.backendDispatch += stop_timer(myTimer);
 
-  updateRequestStats(&esdm->writeStats, 1, esdm_dataspace_size(space), requestIsInternal); //update the statistics
-
-  //cleanup
-  free(backendExtends);
-  free(backends);
   return ESDM_SUCCESS;
 }
 
@@ -857,10 +865,11 @@ esdm_status esdm_scheduler_write_blocking(esdm_instance_t *esdm, esdm_dataset_t 
   esdm_status ret = esdm_scheduler_status_init(&status);
   eassert(ret == ESDM_SUCCESS);
 
-  ret = esdm_scheduler_enqueue_write(esdm, &status, dataset, buf, subspace, requestIsInternal); //This function does its own internal time measurements.
-  if( ret != ESDM_SUCCESS){
-    return ret;
-  }
+  ret = esdm_scheduler_createFragments(esdm, dataset, buf, subspace, requestIsInternal);  //This function does its own internal time measurements.
+  if(ret != ESDM_SUCCESS) return ret;
+  ret = esdm_scheduler_synchronize(esdm, &status, dataset);
+  if(ret != ESDM_SUCCESS) return ret;
+
   double syncStartTime = stop_timer(myTimer);
 
   ret = esdm_scheduler_wait(&status);
