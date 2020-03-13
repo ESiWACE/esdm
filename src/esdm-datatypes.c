@@ -607,31 +607,24 @@ esdm_status esdm_dataset_delete(esdm_dataset_t *d){
 esdm_status esdm_fragment_destroy(esdm_fragment_t *frag) {
   ESDM_DEBUG(__func__);
   eassert(frag);
+
+  esdm_status result = ESDM_SUCCESS;
+  if(frag->status == ESDM_DATA_DIRTY) {
+    ESDM_LOG_FMT(ESDM_LOGLEVEL_WARNING, "destroying dirty fragment, this is a programming error", "");
+    result = ESDM_ERROR;
+  }
+
   if(frag->backend_md){
     eassert(frag->backend->callbacks.fragment_metadata_free);
     frag->backend->callbacks.fragment_metadata_free(frag->backend, frag->backend_md);
   }
-  if(frag->id){
-    free(frag->id);
-  }
-  if(frag->dataspace){
-    esdm_dataspace_destroy(frag->dataspace);
-  }
-  if(frag->buf && frag->ownsBuf) {  //TODO: Just call esdm_fragment_unload() at the beginning of the function? That would also make the warning below unnecessary.
-    free(frag->buf);
-    frag->buf = NULL;
-    frag->ownsBuf = false;
-  }
-  if(frag->status == ESDM_DATA_PERSISTENT || frag->status == ESDM_DATA_NOT_LOADED){
-    free(frag);
-  }else{
-    ESDM_LOG_FMT(ESDM_LOGLEVEL_WARNING, "Fragment not synchronized attempting to destroy it -- this is a memory leak.", "");
-    return ESDM_ERROR;
-  }
+  if(frag->id) free(frag->id);
+  if(frag->dataspace) esdm_dataspace_destroy(frag->dataspace);
+  if(frag->ownsBuf) free(frag->buf);
+  free(frag);
 
-  return ESDM_SUCCESS;
+  return result;
 }
-
 
 // Dataset ////////////////////////////////////////////////////////////////////
 
