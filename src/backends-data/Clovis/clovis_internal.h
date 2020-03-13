@@ -91,15 +91,15 @@ struct esdm_backend_t_xxxops {
   int (*esdm_backend_t_obj_close) (esdm_backend_t * eb, void *obj_handle);
 
   /**
-     * Insert an mapping (fragment name -> object id) into internal index.
+     * Insert a pair of (@name, @value) into internal index @index_fid.
      */
-  int (*mapping_insert) (esdm_backend_t * backend,
-			 const char *name, const char *obj_id);
+  int (*mapping_insert) (esdm_backend_t * backend, struct m0_fid *index_fid,
+			 const char *name, const char *value);
   /**
-     * Query an mapping (fragment name -> object id) into internal index.
+     * Query @value by @name from index @index_fid.
      */
-  int (*mapping_get) (esdm_backend_t * backend,
-		      const char *name, char **obj_id);
+  int (*mapping_get) (esdm_backend_t * backend, struct m0_fid *index_fid,
+		      const char *name, char **value);
 };
 
 typedef struct {
