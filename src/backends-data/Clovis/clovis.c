@@ -88,14 +88,14 @@ struct con_dataset_obj_pair {
 	char                 *cdo_obj_id;
 
 	/* the last pos for this object. */
-	m0_index              cdo_last_pos;
+	m0_bindex_t           cdo_last_pos;
 
 	/* --- memory-only --- */
 	/* the open object handle */
 	struct m0_clovis_obj *cdo_obj_handle;
 
 	/* link into ::con_map */
-	m0_list_link          cdo_linkage;
+	struct m0_list_link   cdo_linkage;
 };
 
 /**
@@ -191,7 +191,7 @@ laddr_get()
 	return rc > 0 ? strdup(screen) : NULL;
 }
 
-struct m0_idx_dix_config dix_conf = {.kc_create_meta = true };
+struct m0_idx_dix_config dix_conf = {.kc_create_meta = false };
 /**
  * @TODO Use the laddr_get() to generate a unique local address.
  * This is needed for running in MPI with the same configuration file,
@@ -565,10 +565,10 @@ index_op_tail(struct m0_clovis_entity *ce, struct m0_clovis_op *op, int rc)
 				       M0_BITS(M0_CLOVIS_OS_FAILED,
 				       M0_CLOVIS_OS_STABLE),
 				       M0_TIME_NEVER);
-		DEBUG_FMT("operation (%d) rc: %i\n", op->op_code, op->op_rc);
+		DEBUG_FMT("operation succeeded (op=%d) rc: %i\n", op->op_code, rc);
 	}
 	else
-		DEBUG_FMT("operation (%d) fail rc: %i\n", op->op_code, rc);
+		DEBUG_FMT("operation failed (op=%d) rc: %i\n", op->op_code, rc);
 	m0_clovis_op_fini(op);
 	m0_clovis_op_free(op);
 	m0_clovis_entity_fini(ce);
@@ -791,11 +791,12 @@ esdm_backend_t_clovis_fini(esdm_backend_t *eb)
 	 */
 	m0_mutex_lock(&con_map_lock);
 	while ((link = m0_list_first(&con_map)) != NULL) {
-		pair = m0_list_entry(link, struct con_dataset_obj_pair, con_linkage);
+		pair = m0_list_entry(link, struct con_dataset_obj_pair, cdo_linkage);
 		m0_list_del(link);
-		m0_bufvec_free(&pair->cdo_contaner_dataset);
+		free(pair->cdo_contaner_dataset);
+		free(pair->cdo_obj_id);
 		if (pair->cdo_obj_handle != NULL) {
-			esdm_backend_t_clovis_close(pair->cdo_obj_handle);
+			esdm_backend_t_clovis_close(eb, pair->cdo_obj_handle);
 			pair->cdo_obj_handle = NULL;
 		}
 		m0_free(pair);
@@ -821,22 +822,23 @@ static struct con_dataset_obj_pair *
 con_map_lookup_locked(const char *container_dataset)
 {
 	struct con_dataset_obj_pair *pair = NULL;
-	eassert(m0_mutex_is_locked(&con_map_mutex));
+	eassert(m0_mutex_is_locked(&con_map_lock));
 
 	m0_list_for_each_entry(&con_map, pair, struct con_dataset_obj_pair, cdo_linkage) {
-		if (m0_strcmp(container_dataset, pair->cdo_contaner_dataset) == 0) {
+		DEBUG_FMT("pair=%p, cdo_contaner_dataset=%s\n", pair, pair->cdo_contaner_dataset);
+		if (strcmp(container_dataset, pair->cdo_contaner_dataset) == 0) {
 			/* found the object for this "container/dataset" in cached map */
-			break;
+			return pair;
 		}
 	}
-	return pair;
+	return NULL;
 }
 
 static struct con_dataset_obj_pair *
-con_map_new_locked(const char *container_dataset, const char *obj_id, m0_bindex last_pos)
+con_map_new_locked(const char *container_dataset, const char *obj_id, m0_bindex_t last_pos)
 {
 	struct con_dataset_obj_pair *pair = NULL;
-	eassert(m0_mutex_is_locked(&con_map_mutex));
+	eassert(m0_mutex_is_locked(&con_map_lock));
 
 	/* create an in-memory pair and link it into map */
 	pair = (struct con_dataset_obj_pair *)malloc(sizeof (struct con_dataset_obj_pair));
@@ -847,7 +849,7 @@ con_map_new_locked(const char *container_dataset, const char *obj_id, m0_bindex 
 	pair->cdo_obj_id           = strdup(obj_id);
 	pair->cdo_last_pos         = last_pos;
 	m0_list_link_init(&pair->cdo_linkage);
-	m0_list_add(con_map, &pair->cdo_linkage);
+	m0_list_add(&con_map, &pair->cdo_linkage);
 
 	return pair;
 }
@@ -856,11 +858,12 @@ static int
 esdm_backend_t_clovis_fragment_retrieve(esdm_backend_t  *backend,
 					esdm_fragment_t *fragment)
 {
+	struct con_dataset_obj_pair *pair = NULL;
 	int   rc = 0;
 	bool  mthreaded = false;
 	char *container_dataset = NULL;
 	char *obj_id = NULL;
-	m0_bindex my_pos;
+	m0_bindex_t my_pos;
 
 	DEBUG_ENTER;
 
@@ -883,6 +886,7 @@ esdm_backend_t_clovis_fragment_retrieve(esdm_backend_t  *backend,
 	rc = asprintf(&container_dataset, "%s/%s",
 		      fragment->dataset->container->name, fragment->dataset->name);
 	eassert(rc > 0);
+	rc = 0;
 
 	my_pos = atoll(fragment->id);
 	obj_id = strdup(strchr(fragment->id, '@') + 1);
@@ -892,13 +896,12 @@ esdm_backend_t_clovis_fragment_retrieve(esdm_backend_t  *backend,
 
 	DEBUG_FMT("Retrieving from f=%p id=%s size=%lu\n", fragment, fragment->id, fragment->bytes);
 
-
 	m0_mutex_lock(&con_map_lock);
 	pair = con_map_lookup_locked(container_dataset);
 	if (pair == NULL) {
 		/* not found in cached map */
 		char *str_last_pos;
-		m0_bindex last_pos;
+		m0_bindex_t last_pos;
 		rc = mapping_get(backend, &index_object_last_pos,
 				 obj_id, &str_last_pos);
 		if (rc == 0) {
@@ -917,7 +920,8 @@ esdm_backend_t_clovis_fragment_retrieve(esdm_backend_t  *backend,
 		rc = esdm_backend_t_clovis_open(backend, obj_id, &obj_handle);
 		if (rc == 0)
 			pair->cdo_obj_handle = obj_handle;
-	}
+	} else
+		obj_handle = pair->cdo_obj_handle;
 
 	DEBUG_FMT("Object Opened: obj=%p rc=%d\n", obj_handle, rc);
 	if (rc == 0) {
@@ -979,7 +983,7 @@ esdm_backend_t_clovis_fragment_update(esdm_backend_t  *backend,
 	char *container_dataset = NULL;
 	char *str_last_pos = NULL;
 	struct con_dataset_obj_pair *pair = NULL;
-	m0_bindex last_pos;
+	m0_bindex_t last_pos = 0;
 	DEBUG_ENTER;
 
 	if ((fragment->bytes & BLOCKMASK) != 0) {
@@ -1057,10 +1061,10 @@ esdm_backend_t_clovis_fragment_update(esdm_backend_t  *backend,
 								 &obj_meta);
 				if (rc == 0) {
 					last_pos = 0;
-					asprintf(&str_last_pos, "%llu", last_pos);
-					rc = mapping_put(backend, &index_object_last_pos,
+					asprintf(&str_last_pos, "%"PRIu64, last_pos);
+					rc = mapping_insert(backend, &index_object_last_pos,
 							 obj_id, str_last_pos)?:
-						mapping_put(backend, &index_cdname_to_object,
+						mapping_insert(backend, &index_cdname_to_object,
 							    container_dataset, obj_id);
 					free(str_last_pos);
 				}
@@ -1068,13 +1072,13 @@ esdm_backend_t_clovis_fragment_update(esdm_backend_t  *backend,
 
 			if (rc == 0) {
 				/* Store this object's ID into fragment metadata. */
-				asprintf(&fragment->id, "%llu@%s", last_pos, obj_id);
+				asprintf(&fragment->id, "%"PRIu64"@%s", last_pos, obj_id);
 
 				pair = con_map_new_locked(container_dataset, obj_id, last_pos + fragment->bytes);
 			}
 		} else {
 			/* found */
-			asprintf(&fragment->id, "%llu@oid="FID_F, pair->cdo_last_pos, FID_P(&pair->cdo_fid));
+			asprintf(&fragment->id, "%"PRIu64"@%s", pair->cdo_last_pos, pair->cdo_obj_id);
 			pair->cdo_last_pos += fragment->bytes;
 		}
 		m0_mutex_unlock(&con_map_lock);
