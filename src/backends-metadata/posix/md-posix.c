@@ -311,12 +311,12 @@ static int dataset_create(esdm_md_backend_t * backend, esdm_dataset_t *d){
 
   metadummy_backend_options_t *options = (metadummy_backend_options_t *)backend->data;
   const char *tgt = options->target;
-  d->id = malloc(24);
+  d->id = malloc(ESDM_ID_LENGTH + 1);
   eassert(d->id);
 
   while(1){
     // TODO fix race condition with the file creation here
-    ea_generate_id(d->id, 23);
+    ea_generate_id(d->id, ESDM_ID_LENGTH);
 
     // create directory for datsets
     sprintfDatasetMd(path_dataset, d);

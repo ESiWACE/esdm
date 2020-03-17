@@ -9,6 +9,8 @@
 #include <esdm-datatypes.h>
 #include <smd-datatype.h>
 
+enum { ESDM_ID_LENGTH = 23 }; //= strlen(id), to allocate the buffers, add one byte for the termination
+
 enum esdm_data_status_e {
   ESDM_DATA_NOT_LOADED,
   ESDM_DATA_LOADING,
