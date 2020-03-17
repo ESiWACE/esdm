@@ -80,6 +80,28 @@ esdm_status esdm_finalize();
 esdm_status esdm_write(esdm_dataset_t *dataset, void *buf, esdm_dataspace_t *subspace);
 
 /**
+ * Write data with a given size and offset, but do not wait for completion.
+ * Call semantics are like `esdm_write()` except that there is no guarantee that data is actually written to disk or even copied out of `buf`.
+ * Consequently, any subsequent write to `*buf` is UB.
+ *
+ * @param [in] dataset TODO, currently a stub, we assume it has been identified/created before...., json description?
+ * @param [in] buf the pointer to a contiguous memory region that shall be written to permanent storage
+ * @param [in] subspace an existing dataspace that describes the shape and location of the hypercube that is to be written
+ *
+ * @return status
+ */
+esdm_status esdm_writeNonBlocking(esdm_dataset_t*, void* buf, esdm_dataspace_t* space);
+
+/**
+ * Conclude any pending writes to the given dataset which were started with `esdm_writeNonBlocking()`.
+ *
+ * @param [in] dataset the dataset that is supposed to be synchronized
+ *
+ * @return status
+ */
+esdm_status esdm_dataset_sync(esdm_dataset_t* dataset);
+
+/**
  * Reads a data fragment described by desc to the dataset dset.
  *
  * @param [in] dataset TODO, currently a stub, we assume it has been identified/created before.... , json description?

@@ -55,13 +55,15 @@ void writeData(esdm_dataset_t* dataset, esdm_dataspace_t* dataspace, int height,
     ret = esdm_dataspace_subspace(dataspace, 2, size, offset, &subspace);
     eassert(ret == ESDM_SUCCESS);
 
-    ret = esdm_write(dataset, data[i], subspace);
+    ret = esdm_writeNonBlocking(dataset, data[i], subspace);
     eassert(ret == ESDM_SUCCESS);
 
     ret = esdm_dataspace_destroy(subspace);
     eassert(ret == ESDM_SUCCESS);
   }
 
+  ret = esdm_dataset_sync(dataset);
+  eassert(ret == ESDM_SUCCESS);
   ret = esdm_dataset_commit(dataset);
   eassert(ret == ESDM_SUCCESS);
 

@@ -123,7 +123,22 @@ esdm_status esdm_scheduler_status_finalize(io_request_status_t *status);
 
 esdm_status esdm_scheduler_read_blocking(esdm_instance_t *esdm, esdm_dataset_t *dataset, void *buf, esdm_dataspace_t *subspace, esdmI_hypercubeSet_t** out_fillRegion, bool requestIsInternal);
 
+/**
+ * Directly write data to disk and wait for completion.
+ */
 esdm_status esdm_scheduler_write_blocking(esdm_instance_t *esdm, esdm_dataset_t *dataset, void *buf, esdm_dataspace_t *subspace, bool requestIsInternal);
+
+/**
+ * Set data for writing.
+ * May or may not copy the data out of the buffer, further access to `*buf` before a matching `esdm_scheduler_syncDataset()` call is UB.
+ * May or may not actually write out the data to disk.
+ */
+esdm_status esdm_scheduler_createFragments(esdm_instance_t *esdm, esdm_dataset_t *dataset, void *buf, esdm_dataspace_t *space, bool requestIsInternal);
+
+/**
+ * Perform any pending write and wait for completion.
+ */
+esdm_status esdm_scheduler_syncDataset(esdm_instance_t* esdm, esdm_dataset_t* dataset);
 
 esdm_status esdm_scheduler_enqueue(esdm_instance_t *esdm, io_request_status_t *status, io_operation_t type, esdm_dataset_t *dataset, void *buf, esdm_dataspace_t *subspace);
 

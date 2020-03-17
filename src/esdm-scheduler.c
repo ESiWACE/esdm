@@ -885,6 +885,33 @@ esdm_status esdm_scheduler_write_blocking(esdm_instance_t *esdm, esdm_dataset_t 
   return status.return_code;
 }
 
+esdm_status esdm_scheduler_syncDataset(esdm_instance_t* esdm, esdm_dataset_t* dataset) {
+  ESDM_DEBUG(__func__);
+
+  timer myTimer;
+  start_timer(&myTimer);
+
+  io_request_status_t status;
+  esdm_status ret = esdm_scheduler_status_init(&status);
+  eassert(ret == ESDM_SUCCESS);
+
+  ret = esdm_scheduler_synchronize(esdm, &status, dataset);
+  if(ret != ESDM_SUCCESS) return ret;
+
+  double syncStartTime = stop_timer(myTimer);
+
+  ret = esdm_scheduler_wait(&status);
+  eassert(ret == ESDM_SUCCESS);
+
+  ret = esdm_scheduler_status_finalize(&status);
+  eassert(ret == ESDM_SUCCESS);
+  double endTime = stop_timer(myTimer);
+
+  gWriteTimes.completion += endTime - syncStartTime;
+  gWriteTimes.total += endTime;
+
+  return status.return_code;
+}
 
 esdm_status esdm_scheduler_read_blocking(esdm_instance_t *esdm, esdm_dataset_t *dataset, void *buf, esdm_dataspace_t *subspace, esdmI_hypercubeSet_t** out_fillRegion, bool requestIsInternal) {
   ESDM_DEBUG(__func__);

@@ -178,6 +178,20 @@ esdm_status esdm_write(esdm_dataset_t *dataset, void *buf, esdm_dataspace_t *spa
   return esdm_scheduler_write_blocking(&esdm, dataset, buf, space, false);
 }
 
+esdm_status esdm_writeNonBlocking(esdm_dataset_t* dataset, void* buf, esdm_dataspace_t* space) {
+  ESDM_DEBUG(__func__);
+  eassert(dataset);
+  eassert(buf);
+  eassert(space);
+  eassert(space->dims);
+
+  return esdm_scheduler_createFragments(&esdm, dataset, buf, space, false);
+}
+
+esdm_status esdm_dataset_sync(esdm_dataset_t* dataset) {
+  return esdm_scheduler_syncDataset(&esdm, dataset);
+}
+
 esdm_status esdmI_readWithFillRegion(esdm_dataset_t *dataset, void *buf, esdm_dataspace_t *space, esdmI_hypercubeSet_t** out_fillRegion) {
   ESDM_DEBUG("");
   eassert(dataset);
