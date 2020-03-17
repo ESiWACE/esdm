@@ -174,18 +174,25 @@ static void add(void* meArg, esdm_fragment_t* fragment) {
     if(isPerfectFit) {
       //just replace the possibly existing fragment with the given one
       int64_t fragmentIndex = linearIndex(dimCount, me->fragmentCount, startIndex);
-      esdm_fragment_t* bin = me->fragments[fragmentIndex];
-      if(bin) {
-        eassert(bin->buf);
-        //we cannot just replace the possibly existing fragment with the given one, because we do not control its memory buffer
-        if(esdm_dataspace_copy_data(fragment->dataspace, fragment->buf, bin->dataspace, bin->buf) != ESDM_SUCCESS) ESDM_ERROR("failed to copy data");
+      esdm_fragment_t** bin = &me->fragments[fragmentIndex];
+      if(*bin) {
+        if(fragment->buf) {
+          if(!(*bin)->buf) {
+            //The bin has been created from metadata and has not been loaded yet.
+            //Present it with a buffer so that we may copy stuff into it.
+            (*bin)->buf = malloc(esdm_dataspace_size((*bin)->dataspace));
+            (*bin)->ownsBuf = true; //it's a present!
+          }
+          //we cannot just replace the possibly existing fragment with the given one, because we do not control its memory buffer
+          if(esdm_dataspace_copy_data(fragment->dataspace, fragment->buf, (*bin)->dataspace, (*bin)->buf) != ESDM_SUCCESS) ESDM_ERROR("failed to copy data");
+        }
       } else if(fragment->buf == &dummy) {
         //this is a recursive call, the fragment was created without a buffer, and we can take possession of it
-        me->fragments[fragmentIndex] = fragment;
+        *bin = fragment;
         fragment = NULL;  //don't destroy this fragment
       } else if(fragment->status == ESDM_DATA_NOT_LOADED) {
         //the fragment has been created from metadata to connect us to the data stored on disk, take possession of the fragment
-        me->fragments[fragmentIndex] = fragment;
+        *bin = fragment;
         fragment = NULL;  //don't destroy this fragment
       } else {
         //this is not a recursive call, delegate to the normal copying code
