@@ -100,6 +100,7 @@ struct esdm_backend_t_xxxops {
      */
   int (*mapping_get) (esdm_backend_t * backend, struct m0_fid *index_fid,
 		      const char *name, char **value);
+  int (*esdm_backend_t_mkfs)(esdm_backend_t *backend, int enforce_format);
 };
 
 typedef struct {
@@ -118,5 +119,8 @@ typedef struct {
 } esdm_backend_t_clovis_t;
 
 extern esdm_backend_t_clovis_t esdm_backend_t_clovis;
+extern struct m0_fid index_cdname_to_object;
+extern struct m0_fid index_object_last_pos;
+
 
 #endif

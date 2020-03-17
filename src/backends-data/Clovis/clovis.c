@@ -58,11 +58,11 @@
 static struct m0_uint128 next_gid;
 
 /* Index to store <"container/dataset" -> object> mapping */
-static struct m0_fid index_cdname_to_object =
+struct m0_fid index_cdname_to_object =
 	M0_FID_TINIT('x', 0x1ULL, 0x1234567812345678ULL);
 
 /* Index to store <object -> last_pos> mapping */
-static struct m0_fid index_object_last_pos =
+struct m0_fid index_object_last_pos =
 	M0_FID_TINIT('x', 0x1ULL, 0x8765432187654321ULL);
 
 /**
@@ -1232,6 +1232,7 @@ esdm_backend_t_clovis_t esdm_backend_t_clovis = {
 		.esdm_backend_t_obj_close = esdm_backend_t_clovis_close,
 		.mapping_get              = mapping_get,
 		.mapping_insert           = mapping_insert,
+		.esdm_backend_t_mkfs      = esdm_backend_t_clovis_mkfs,
 	},
 };
 
