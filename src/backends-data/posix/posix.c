@@ -250,11 +250,11 @@ static int fragment_update(esdm_backend_t *backend, esdm_fragment_t *f) {
     // create data
     ret = entry_update(path, writeBuffer, f->bytes, 1);
   } else {
-    f->id = malloc(24);
+    f->id = malloc(ESDM_ID_LENGTH + 1);
     eassert(f->id);
     // ensure that the fragment with the ID doesn't exist, yet
     while(1){
-      ea_generate_id(f->id, 23);
+      ea_generate_id(f->id, ESDM_ID_LENGTH);
       struct stat sb;
       sprintfFragmentDir(path, f);
       if (stat(path, &sb) == -1) {
