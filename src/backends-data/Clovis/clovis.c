@@ -42,12 +42,12 @@
 #define DEBUG(fmt)          printf(fmt)
 #define DEBUG_FMT(fmt, ...) printf(fmt, __VA_ARGS__)
 #define DEBUG_ENTER         printf(">>>Entering %s:%d\n", __func__, __LINE__)
-#define DEBUG_LEAVE         printf("<<<Leaving  %s:%d\n", __func__, __LINE__)
+#define DEBUG_LEAVE(rc)     printf("<<<Leaving  %s:%d:rc=%d\n", __func__, __LINE__, (rc))
 #else
 #define DEBUG(fmt)          ESDM_DEBUG_COM_FMT("CLOVIS", fmt)
 #define DEBUG_FMT(fmt, ...) ESDM_DEBUG_COM_FMT("CLOVIS", fmt, __VA_ARGS__)
 #define DEBUG_ENTER         ESDM_DEBUG_COM_FMT("CLOVIS", ">>>Entering %s:%d\n", __func__, __LINE__)
-#define DEBUG_LEAVE         ESDM_DEBUG_COM_FMT("CLOVIS", "<<<Leaving  %s:%d\n", __func__, __LINE__)
+#define DEBUG_LEAVE(rc)     ESDM_DEBUG_COM_FMT("CLOVIS", "<<<Leaving  %s:%d:rc=%d\n", __func__, __LINE__, (rc))
 #endif
 
 #define PAGE_4K (4096ULL)
@@ -82,7 +82,7 @@ struct m0_fid index_object_last_pos =
  */
 struct con_dataset_obj_pair {
 	/* "container_name/dataset_name" string */
-	char                 *cdo_contaner_dataset;
+	char                 *cdo_container_dataset;
 
 	/* underlying object id string */
 	char                 *cdo_obj_id;
@@ -147,7 +147,7 @@ static bool convert_pthread_to_mero_thread(esdm_backend_t *backend)
 	memset(mthread, 0, sizeof(struct m0_thread));
 	m0_thread_adopt(mthread, ebm->ebm_clovis_instance->m0c_mero);
 
-	DEBUG_LEAVE;
+	DEBUG_LEAVE(0);
 	return true;
 }
 
@@ -155,7 +155,7 @@ static void revert_mero_thread_to_pthread()
 {
 	DEBUG_ENTER;
 	m0_thread_shun();
-	DEBUG_LEAVE;
+	DEBUG_LEAVE(0);
 }
 
 /**
@@ -272,7 +272,7 @@ open_entity(struct m0_clovis_obj *obj)
 	m0_clovis_op_fini(ops[0]);
 	m0_clovis_op_free(ops[0]);
 	ops[0] = NULL;
-	DEBUG_LEAVE;
+	DEBUG_LEAVE(0);
 }
 
 static int
@@ -302,7 +302,7 @@ create_object(esdm_backend_t_clovis_t *ebm, struct m0_uint128 id)
 	m0_clovis_op_free(ops[0]);
 	m0_clovis_obj_fini(&obj);
 
-	DEBUG_LEAVE;
+	DEBUG_LEAVE(rc);
 	return rc;
 }
 
@@ -384,7 +384,7 @@ esdm_backend_t_clovis_alloc(esdm_backend_t *eb,
 		*out_object_id     = object_id_encode(&obj_id);
 		*out_mero_metadata = object_meta_encode(&obj_id);
 	}
-	DEBUG_LEAVE;
+	DEBUG_LEAVE(rc);
 	return rc;
 }
 
@@ -406,8 +406,9 @@ esdm_backend_t_clovis_open(esdm_backend_t *eb,
 
 	obj = malloc(sizeof (struct m0_clovis_obj));
 	if (obj == NULL) {
-		DEBUG_LEAVE;
-		return -ENOMEM;
+		rc = -ENOMEM;
+		DEBUG_LEAVE(rc);
+		return rc;
 	}
 
 	memset(obj, 0, sizeof(struct m0_clovis_obj));
@@ -419,7 +420,7 @@ esdm_backend_t_clovis_open(esdm_backend_t *eb,
 	open_entity(obj);
 	*obj_handle = obj;
 
-	DEBUG_LEAVE;
+	DEBUG_LEAVE(rc);
 	return rc;
 }
 
@@ -552,7 +553,7 @@ esdm_backend_t_clovis_close(esdm_backend_t *eb, void *obj_handle)
 	m0_clovis_obj_fini(obj);
 	free(obj);
 
-	DEBUG_LEAVE;
+	DEBUG_LEAVE(rc);
 	return rc;
 }
 
@@ -736,14 +737,14 @@ esdm_backend_t_clovis_init(char *conf, esdm_backend_t *eb)
 
 	rc = conf_parse(conf, ebm);
 	if (rc != 0) {
-		DEBUG_LEAVE;
+		DEBUG_LEAVE(rc);
 		return rc;
 	}
 
 	/* Clovis instance */
 	rc = m0_clovis_init(&ebm->ebm_clovis_instance, &ebm->ebm_clovis_conf, true);
 	if (rc != 0) {
-		DEBUG_LEAVE;
+		DEBUG_LEAVE(rc);
 		DEBUG_FMT("Failed to initilise Clovis: %d\n", rc);
 		return rc;
 	}
@@ -756,7 +757,7 @@ esdm_backend_t_clovis_init(char *conf, esdm_backend_t *eb)
 	rc = ebm->ebm_clovis_container.co_realm.re_entity.en_sm.sm_rc;
 
 	if (rc != 0) {
-		DEBUG_LEAVE;
+		DEBUG_LEAVE(rc);
 		DEBUG("Failed to open uber realm.\n");
 		return rc;
 	}
@@ -774,7 +775,7 @@ esdm_backend_t_clovis_init(char *conf, esdm_backend_t *eb)
 	m0_list_init(&con_map);
 	m0_mutex_init(&con_map_lock);
 
-	DEBUG_LEAVE;
+	DEBUG_LEAVE(rc);
 	return rc;
 }
 
@@ -793,7 +794,7 @@ esdm_backend_t_clovis_fini(esdm_backend_t *eb)
 	while ((link = m0_list_first(&con_map)) != NULL) {
 		pair = m0_list_entry(link, struct con_dataset_obj_pair, cdo_linkage);
 		m0_list_del(link);
-		free(pair->cdo_contaner_dataset);
+		free(pair->cdo_container_dataset);
 		free(pair->cdo_obj_id);
 		if (pair->cdo_obj_handle != NULL) {
 			esdm_backend_t_clovis_close(eb, pair->cdo_obj_handle);
@@ -814,7 +815,7 @@ esdm_backend_t_clovis_fini(esdm_backend_t *eb)
 	free((char *)ebm->ebm_clovis_conf.cc_process_fid);
 	free(ebm);
 
-	DEBUG_LEAVE;
+	DEBUG_LEAVE(0);
 	return 0;
 }
 
@@ -824,13 +825,16 @@ con_map_lookup_locked(const char *container_dataset)
 	struct con_dataset_obj_pair *pair = NULL;
 	eassert(m0_mutex_is_locked(&con_map_lock));
 
+	DEBUG_FMT("Lookup container_dataset=%s", container_dataset);
 	m0_list_for_each_entry(&con_map, pair, struct con_dataset_obj_pair, cdo_linkage) {
-		DEBUG_FMT("pair=%p, cdo_contaner_dataset=%s\n", pair, pair->cdo_contaner_dataset);
-		if (strcmp(container_dataset, pair->cdo_contaner_dataset) == 0) {
+		if (strcmp(container_dataset, pair->cdo_container_dataset) == 0) {
+			DEBUG_FMT(" Found pair=%p %"PRIu64"@%s handle=%p\n",
+				  pair, pair->cdo_last_pos, pair->cdo_obj_id, pair->cdo_obj_handle);
 			/* found the object for this "container/dataset" in cached map */
 			return pair;
 		}
 	}
+	DEBUG_FMT(" Not Found: pair=%p\n", NULL);
 	return NULL;
 }
 
@@ -845,9 +849,9 @@ con_map_new_locked(const char *container_dataset, const char *obj_id, m0_bindex_
 	eassert(pair != NULL);
 
 	memset(pair, 0, sizeof(struct con_dataset_obj_pair));
-	pair->cdo_contaner_dataset = strdup(container_dataset);
-	pair->cdo_obj_id           = strdup(obj_id);
-	pair->cdo_last_pos         = last_pos;
+	pair->cdo_container_dataset = strdup(container_dataset);
+	pair->cdo_obj_id            = strdup(obj_id);
+	pair->cdo_last_pos          = last_pos;
 	m0_list_link_init(&pair->cdo_linkage);
 	m0_list_add(&con_map, &pair->cdo_linkage);
 
@@ -868,8 +872,9 @@ esdm_backend_t_clovis_fragment_retrieve(esdm_backend_t  *backend,
 	DEBUG_ENTER;
 
 	if (backend == NULL || fragment == NULL || fragment->buf == NULL) {
-		DEBUG_LEAVE;
-		return ESDM_ERROR;
+		rc = ESDM_ERROR;
+		DEBUG_LEAVE(rc);
+		return rc;
 	}
 
 	/* Check if id is valid */
@@ -894,7 +899,8 @@ esdm_backend_t_clovis_fragment_retrieve(esdm_backend_t  *backend,
 	mthreaded = convert_pthread_to_mero_thread(backend);
 	ebm_lock(backend);
 
-	DEBUG_FMT("Retrieving from f=%p id=%s size=%lu\n", fragment, fragment->id, fragment->bytes);
+	DEBUG_FMT("Retrieving from f=%p id=%s size=%lu (pos=%lu id=%s)\n",
+		  fragment, fragment->id, fragment->bytes, my_pos, obj_id);
 
 	m0_mutex_lock(&con_map_lock);
 	pair = con_map_lookup_locked(container_dataset);
@@ -967,7 +973,7 @@ err:
 		revert_mero_thread_to_pthread();
 	free(obj_id);
 	free(container_dataset);
-	DEBUG_LEAVE;
+	DEBUG_LEAVE(rc);
 	return rc == 0 ? ESDM_SUCCESS : ESDM_ERROR;
 }
 
@@ -988,8 +994,9 @@ esdm_backend_t_clovis_fragment_update(esdm_backend_t  *backend,
 
 	if ((fragment->bytes & BLOCKMASK) != 0) {
 		DEBUG_FMT("size=%lu is not BLOCK aligned\n", fragment->bytes);
-		DEBUG_LEAVE;
-		return ESDM_ERROR;
+		rc = ESDM_ERROR;
+		DEBUG_LEAVE(rc);
+		return rc;
 	}
 
 	mthreaded = convert_pthread_to_mero_thread(backend);
@@ -998,6 +1005,7 @@ esdm_backend_t_clovis_fragment_update(esdm_backend_t  *backend,
 	rc = asprintf(&container_dataset, "%s/%s",
 		      fragment->dataset->container->name, fragment->dataset->name);
 	eassert(rc > 0);
+	rc = 0;
 
 	DEBUG_FMT("fragment=%p stride=%p id=%s container/dataset=%s\n",
 			fragment, fragment->dataspace->stride, fragment->id,
@@ -1036,6 +1044,7 @@ esdm_backend_t_clovis_fragment_update(esdm_backend_t  *backend,
 		 *     So, we need to track the object size. After that,
 		 *     the fragment id would be set to this 'offset'.
 		 */
+		rc = 0;
 		m0_mutex_lock(&con_map_lock);
 		pair = con_map_lookup_locked(container_dataset);
 		if (pair == NULL) {
@@ -1079,13 +1088,13 @@ esdm_backend_t_clovis_fragment_update(esdm_backend_t  *backend,
 		} else {
 			/* found */
 			asprintf(&fragment->id, "%"PRIu64"@%s", pair->cdo_last_pos, pair->cdo_obj_id);
+			last_pos = pair->cdo_last_pos;
 			pair->cdo_last_pos += fragment->bytes;
 		}
 		m0_mutex_unlock(&con_map_lock);
 		if (rc != 0)
 			goto err;
 	}
-	DEBUG_FMT("Updating to %s (size=%lu)\n", fragment->id, fragment->bytes);
 
 	/*
 	 * Check if this object has been opened.
@@ -1094,6 +1103,7 @@ esdm_backend_t_clovis_fragment_update(esdm_backend_t  *backend,
 	 */
 
 	// 2. open object with its object_id.
+	rc = 0;
 	if (pair == NULL) {
 		obj_id = strdup(strchr(fragment->id, '@') + 1);
 
@@ -1116,13 +1126,19 @@ esdm_backend_t_clovis_fragment_update(esdm_backend_t  *backend,
 			goto err;
 	}
 	assert(pair != NULL);
+
+	DEBUG_FMT("Updating to %s size=%lu (last_pos=%lu obj=%s)\n",
+		  fragment->id, fragment->bytes, last_pos, pair->cdo_obj_id);
+
 	void *obj_handle = NULL;
+	rc = 0;
 	if (pair->cdo_obj_handle == NULL) {
 		/* object has not been opened. Let's open it and keep it open */
 		rc = esdm_backend_t_clovis_open(backend, pair->cdo_obj_id, &obj_handle);
 		if (rc == 0)
 			pair->cdo_obj_handle = obj_handle;
-	}
+	} else
+		obj_handle = pair->cdo_obj_handle;
 	DEBUG_FMT("open obj=%p rc=%d\n", obj_handle, rc);
 	if (rc == 0) {
 		rc = esdm_backend_t_clovis_write(backend,
@@ -1130,7 +1146,6 @@ esdm_backend_t_clovis_fragment_update(esdm_backend_t  *backend,
 						 last_pos,
 						 fragment->bytes,
 						 writeBuffer);
-
 	}
 
 err:
@@ -1144,7 +1159,7 @@ err:
 		/* writeBuffer is allocated previously in this function. */
 		free(writeBuffer);
 	}
-	DEBUG_LEAVE;
+	DEBUG_LEAVE(rc);
 	return (rc == 0) ? ESDM_SUCCESS : ESDM_ERROR;
 }
 
@@ -1163,7 +1178,7 @@ esdm_backend_t_clovis_mkfs(esdm_backend_t *backend, int enforce_format)
 	     clovis_index_create(&ebm->ebm_clovis_container.co_realm,
 				 &index_object_last_pos);
 
-	DEBUG_LEAVE;
+	DEBUG_LEAVE(rc);
 	return rc == 0 ? ESDM_SUCCESS : ESDM_ERROR;
 }
 
@@ -1173,7 +1188,7 @@ esdm_backend_t_clovis_performance_estimate(esdm_backend_t  *b,
 					   float           *out_time)
 {
 	DEBUG_ENTER;
-	DEBUG_LEAVE;
+	DEBUG_LEAVE(0);
 	return ESDM_SUCCESS;
 }
 
@@ -1182,7 +1197,7 @@ esdm_backend_t_estimate_throughput(esdm_backend_t *b)
 {
 	DEBUG_ENTER;
 
-	DEBUG_LEAVE;
+	DEBUG_LEAVE(0);
 	return 0.0;
 }
 
@@ -1191,7 +1206,7 @@ esdm_backend_t_fragment_create(esdm_backend_t *b, esdm_fragment_t *fragment)
 {
 	DEBUG_ENTER;
 
-	DEBUG_LEAVE;
+	DEBUG_LEAVE(0);
 	return 0;
 }
 
@@ -1270,7 +1285,7 @@ clovis_backend_init(esdm_config_backend_t *config)
 	free(target);
 	m0_mutex_init(&ceb->ebm_mutex);
 
-	DEBUG_LEAVE;
+	DEBUG_LEAVE(0);
 
 	if (rc != 0)
 		return NULL;
