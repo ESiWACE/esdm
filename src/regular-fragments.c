@@ -229,7 +229,11 @@ static void add(void* meArg, esdm_fragment_t* fragment) {
           esdmI_hypercube_getOffsetAndSize(binExtends, binOffset, binSize);
 
           esdm_dataspace_t* subspace;
-          if(esdm_dataspace_subspace(me->super.parent->dataspace, dimCount, binSize, binOffset, &subspace) != ESDM_SUCCESS) ESDM_ERROR("failed to create subspace");
+          //FIXME: This produces an error when the size of the dataspace is not divisible by the size of the subspace for any dimension:
+          //       In that case, the last bin will not fully overlap with the dataspace, triggering the sanity check in `esdm_dataspace_subspace()`.
+          if(esdm_dataspace_subspace(me->super.parent->dataspace, dimCount, binSize, binOffset, &subspace) != ESDM_SUCCESS) {
+            ESDM_ERROR("failed to create subspace");
+          }
           //create the fragment with a dummy buffer pointer to signal the recursive call of this method that it can take possession of the fragment
           if(esdmI_fragment_create(fragment->dataset, subspace, &dummy, fragment->backend, bin) != ESDM_SUCCESS) ESDM_ERROR("failed to create fragment");
           (*bin)->buf = malloc(esdm_dataspace_size((*bin)->dataspace)); //the dummy pointer has served its purpose
