@@ -152,7 +152,7 @@ static void boundTree_construct(esdmI_boundTree_t* me) {
 }
 
 //For debugging purposes.
-static void boundTree_print(esdmI_boundTree_t* me, FILE* stream, int indentation) {
+__attribute__((unused)) static void boundTree_print(esdmI_boundTree_t* me, FILE* stream, int indentation) {
   if(!me) return;
 
   fprintf(stream, "%*s{\n", 4*indentation++, "");

@@ -236,6 +236,7 @@ esdm_status esdm_dataset_get_fill_value(esdm_dataset_t *d, void * value){
 esdm_status esdm_dataset_change_name(esdm_dataset_t *d, char const * new_name){
   eassert(d);
   eassert(new_name);
+  //FIXME Memory leak: the old name needs to be freed
   d->name = strdup(new_name);
   d->status = ESDM_DATA_DIRTY;
   return ESDM_SUCCESS;
@@ -246,7 +247,7 @@ esdm_status esdm_read_stream(esdm_dataset_t *d, esdm_dataspace_t *space, void * 
   // TODO emulation function for now.
   uint64_t size = esdm_dataspace_size(space);
   void * buf = malloc(size);
-  esdm_status ret = esdmI_readWithFillRegion(d, buf, space, NULL);
+  esdm_status ret = esdmI_readWithFillRegion(d, buf, space, NULL);  //FIXME: Don't ignore the return value.
   void * intermediate = stream_func(space, buf, user_ptr, d->fill_value);
   if(reduce_func){
     reduce_func(space, user_ptr, intermediate);

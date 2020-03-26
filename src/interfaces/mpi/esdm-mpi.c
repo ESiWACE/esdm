@@ -183,14 +183,16 @@ esdm_status esdm_mpi_dataset_create(MPI_Comm com, esdm_container_t *c, const cha
     if(ret == ESDM_SUCCESS){
       id = (*out_dataset)->id;
     }
-    int ret2 = MPI_Bcast(id, strlen(id)+1, MPI_CHAR, 0, com);
+    size_t length = strlen(id);
+    eassert(length <= ESDM_ID_LENGTH);
+    int ret2 = MPI_Bcast(id, length + 1, MPI_CHAR, 0, com);
     eassert(ret2 == MPI_SUCCESS);
     return ret;
   }else{
     check_hash_abort(com, hash, 1);
 
-    char id[20];
-    ret = MPI_Bcast(id, 17, MPI_CHAR, 0, com);
+    char id[ESDM_ID_LENGTH + 1];
+    ret = MPI_Bcast(id, ESDM_ID_LENGTH + 1, MPI_CHAR, 0, com);
     eassert(ret == MPI_SUCCESS);
     if(strlen(id) == 0){
       return ESDM_ERROR;
