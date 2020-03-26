@@ -100,7 +100,7 @@ install(TARGETS esdmutils LIBRARY DESTINATION lib)
 
 # ESDM Middleware Library
 add_library(esdm SHARED esdm.c  esdm-scheduler.c fragments.c  esdm-modules.c backends-data/init.c)
-target_link_libraries(esdm ${GLIB_LDFLAGS} ${JANSSON_LDFLAGS} esdmutils esdmposix esdm-mdposix)
+target_link_libraries(esdm ${GLIB_LDFLAGS} ${JANSSON_LDFLAGS} esdmutils esdmposix esdmdummy esdm-mdposix)
 if(BACKEND_MONGODB)
     target_link_libraries(esdm esdmmongodb)
 endif()
@@ -119,12 +119,15 @@ SUBDIRS(interfaces)
 
 
 ### Data backends ###
+SUBDIRS(backends-data/dummy)
+
 option(BACKEND_POSIX "Compile backend for POSIX support?" ON)
 if(BACKEND_POSIX)
 	message(STATUS "WITH_BACKEND_POSIX")
 	add_definitions(-DESDM_HAS_POSIX=1)
 	SUBDIRS(backends-data/posix)
 endif()
+
 
 option(BACKEND_LUSTRE "Compile backend for Lustre support?" OFF)
 if(BACKEND_LUSTRE)

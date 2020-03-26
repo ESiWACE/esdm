@@ -1,5 +1,7 @@
 #include <esdm-internal.h>
 
+#include "dummy/dummy.h"
+
 #ifdef ESDM_HAS_POSIX
 #  include "posix/posix.h"
 #  pragma message("Building ESDM with support for generic POSIX backend.")
@@ -31,8 +33,11 @@
 #endif
 
 esdm_backend_t * esdmI_init_backend(char const * name, esdm_config_backend_t * b){
+  if (strncmp(b->type, "DUMMY", 5) == 0) {
+    return dummy_backend_init(b);
+  }
 #ifdef ESDM_HAS_POSIX
-  if (strncmp(b->type, "POSIX", 5) == 0) {
+  else if (strncmp(b->type, "POSIX", 5) == 0) {
     return posix_backend_init(b);
   }
 #endif
@@ -42,7 +47,7 @@ esdm_backend_t * esdmI_init_backend(char const * name, esdm_config_backend_t * b
   }
 #endif
 #ifdef ESDM_HAS_KDSA
-  else if (strncasecmp(b->type, "KDSA", 6) == 0) {
+  else if (strncasecmp(b->type, "KDSA", 4) == 0) {
     return kdsa_backend_init(b);
   }
 #endif
