@@ -39,7 +39,237 @@ int64_t size;
 int64_t volume;
 int64_t volume_all;
 
-void runWrite(uint64_t * buf_w, int64_t * dim, int64_t * offset){
+typedef struct {
+  char* varname;
+  int64_t dimCount, timeDim;
+  int64_t* offset;
+  int64_t* size;
+  int64_t* fragmentSize;
+} instruction_t;
+
+//checkedScan() is a wrapper for fscanf() which returns true if, and only if the entire format string was matched successfully.
+#define simpleCheckedScan(stream, format) checkedScan_internal(stream, format "%n", &checkedScan_success)
+#define checkedScan(stream, format, ...) checkedScan_internal(stream, format "%n", __VA_ARGS__, &checkedScan_success)
+
+//Implementation of checkedScan()
+//
+//The address of the success variable needs to be attached to the end of the parameters pack that's passed through to vfscanf().
+//Since there is no way to add something to a va_list, I'm using a global variable which can be attached to the parameter pack by the preprocessor.
+//
+//This is not thread safe. It could be made thread safe by turning checkedScan_success into a thread-local variable.
+//That would be easy in C11 (use the `thread_local` keyword), but I really don't want to add a C version check here.
+static int checkedScan_success = 0;
+__attribute__((format(scanf, 2, 3)))
+bool checkedScan_internal(FILE* stream, const char* format, ...) {
+  va_list args;
+  va_start(args, format);
+
+  checkedScan_success = 0;
+  vfscanf(stream, format, args);
+
+  va_end(args);
+  return !!checkedScan_success;
+}
+
+//Vector<DimCount> ::= '(' ( <integer> ',' {DimCount-1} <integer> ')'
+void parseVector(FILE* stream, int64_t dimCount, int64_t** out_vector) {
+  int64_t* vector = *out_vector = malloc(dimCount*sizeof*vector);
+  for(int i = 0; i < dimCount; i++) {
+    bool success = false;
+    switch(2*!i + (i == dimCount - 1)) {  //+2 = open parenthesis is needed, +1 = close parenthesis is needed
+      case 0: success = checkedScan(stream, " %"SCNd64" ,", &vector[i]); break;
+      case 1: success = checkedScan(stream, " %"SCNd64" )", &vector[i]); break;
+      case 2: success = checkedScan(stream, " ( %"SCNd64" ,", &vector[i]); break;
+      case 3: success = checkedScan(stream, " ( %"SCNd64" )" , &vector[i]); break;
+    }
+    if(!success) fprintf(stderr, "error reading coordinate %d of vector\n", i + 1), abort();
+  }
+}
+
+//The instructions format is as follows:
+//
+//  * Whitespace between tokens is ignored.
+//
+//  * But '\n' terminates instructions.
+//
+//  * {*} means that everything to the left appears zero or more times, {N} means exactly N occurrences of everything to the left.
+//
+//  * Syntax:
+//
+//        Instructions ::= Instruction '\n' {*}
+//        Instruction ::= VarName '(' DimCount [ ',' TimeSpecification ] '):' Offset<DimCount> Size<DimCount> FragmentSize<DimCount>
+//        VarName ::= <word>
+//        DimCount ::= <unsigned integer>
+//        TimeSpecification ::= 't=' <unsigned integer>
+//        Offset<DimCount> ::= Vector<DimCount>
+//        Size<DimCount> ::= Vector<DimCount>
+//        FragmentSize<DimCount> ::= Vector<DimCount>
+//        Vector<DimCount> ::= '(' ( <integer> ',' {DimCount-1} <integer> ')'
+//
+//A legal instruction String would be:
+//    foo(2): (1,2) (3,4) (5,6)
+//    bar(3, t = 1): (7, 8, 9) (10, 11, 12) (13, 1, 15)
+//The time specification gives the index of the time dimension (zero based), the corresponding fragment size dimension must be 1.
+instruction_t* parseInstructions(FILE* instructions, size_t* out_instructionCount) {
+  size_t instructionCount = 0, allocatedInstructions = 8;
+  instruction_t* instructionList = malloc(allocatedInstructions*sizeof(*instructionList));
+
+  char* line = NULL;
+  size_t bufferSize = 0;
+  ssize_t lineLength;
+
+  while(0 < (lineLength = getline(&line, &bufferSize, instructions))) {
+    if(instructionCount == allocatedInstructions) {
+      instructionList = realloc(instructionList, (allocatedInstructions *= 2)*sizeof(*instructionList));
+      eassert(instructionList);
+    }
+    eassert(instructionCount < allocatedInstructions);
+    instruction_t* newInstruction = & instructionList[instructionCount];
+    *newInstruction = (instruction_t){.timeDim = -1};
+
+    FILE* lineStream = fmemopen(line, lineLength, "r");
+    //parse the varname and dimension count
+    bool success = checkedScan(lineStream, " %m[^( \t\f\n] ( %"SCNd64, &newInstruction->varname, &newInstruction->dimCount);
+    if(!success) fprintf(stderr, "error parsing instructions: couldn't recognize variable name and dimension count prefix in the line:\n%s\n", line), abort();
+
+    //parse the time specification, if present
+    if(simpleCheckedScan(lineStream, " ,")) {
+      //there seems to be a time specification here, parse it
+      success = checkedScan(lineStream, " t = %"SCNd64, &newInstruction->timeDim);
+      if(!success) fprintf(stderr, "error parsing time specification of variable '%s'\n", newInstruction->varname), abort();
+      if(newInstruction->timeDim < 0) fprintf(stderr, "error: the time dimension of variable '%s' is negative\n", newInstruction->varname), abort();
+      if(newInstruction->timeDim >= newInstruction->dimCount) {
+        fprintf(stderr, "error: the time dimension of variable '%s' is out of range, a zero based dimension index is required\n", newInstruction->varname);
+        abort();
+      }
+    }
+    if(!simpleCheckedScan(lineStream, " ) :")) fprintf(stderr, "error parsing instructions: missing '):' token sequence\n"), abort();
+
+    //parse the shape of the dataset
+    parseVector(lineStream, newInstruction->dimCount, &newInstruction->offset);
+    parseVector(lineStream, newInstruction->dimCount, &newInstruction->size);
+    parseVector(lineStream, newInstruction->dimCount, &newInstruction->fragmentSize);
+
+    //the fragment size must be 1 in the time dimension (if present)
+    if(newInstruction->timeDim >= 0) {
+      if(newInstruction->fragmentSize[newInstruction->timeDim] != 1) {
+        fprintf(stderr, "error: the fragment size of the time dimension (%"PRId64" of variable %s is not 1\n", newInstruction->timeDim, newInstruction->varname);
+        abort();
+      }
+    }
+  }
+  free(line);
+}
+
+void generateFragmentList(instruction_t* instruction, int64_t dimCount, int64_t (**out_fragmentOffsets)[dimCount], int64_t* out_fragmentCount) {
+  //determine the total count of fragments
+  int64_t totalFragmentCount = 1, fragmentCounts[dimCount];
+  for(int64_t i = dimCount; i--;) {
+    fragmentCounts[i] = (instruction->size[i] + instruction->fragmentSize[i] - 1)/instruction->fragmentSize[i];
+    totalFragmentCount *= fragmentCounts[i];
+  }
+
+  //determine our own share of fragments
+  int rank, procCount;
+  MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+  MPI_Comm_size(MPI_COMM_WORLD, &procCount);
+  int64_t startFragment = rank*totalFragmentCount/procCount;
+  int64_t stopFragment = (rank + 1)*totalFragmentCount/procCount;
+  *out_fragmentCount = stopFragment - startFragment;
+  int64_t (*fragmentOffsets)[dimCount] = *out_fragmentOffsets = malloc(*out_fragmentCount*sizeof*fragmentOffsets);
+
+  //compute the offsets of the fragments
+  for(int64_t fragment = stopFragment; fragment-- > startFragment; ) {
+    int64_t fragmentIndex = fragment - startFragment;
+    for(int64_t dim = dimCount, i = fragment; dim--; i /= fragmentCounts[dim]) {
+      fragmentOffsets[fragmentIndex][dim] = instruction->offset[dim] + i%fragmentCounts[dim] * instruction->fragmentSize[dim];
+    }
+  }
+}
+
+//*out_size is a preallocated array into which the actual dimensions of the fragment are written,
+//this may be smaller than *size indicates due to clipping the fragment to the limit.
+//offset, size, limit, and out_size point to arrays of size dimCount.
+//out_data is used to return a newly malloc'ed array with the fragment's data.
+void generateFragment(int64_t dimCount, int64_t* offset, int64_t* size, int64_t* limit, int64_t** out_data, int64_t* out_size) {
+  //determine the actual shape of the fragment
+  int64_t datapoints = 1;
+  for(int64_t i = dimCount; i--; ) {
+    out_size[i] = offset[i] + size[i] <= limit[i] ? offset[i] + size[i] : limit[i];
+    datapoints *= out_size[i];
+  }
+
+  //create the fragment's data
+  int64_t* data = *out_data = malloc(datapoints*sizeof*data);
+  for(int64_t i = datapoints; i--; ) {
+    int64_t value = 0;
+    for(int64_t dim = dimCount, index = i, factor = 1; dim--; index /= out_size[dim], factor *= size[dim]) {
+      int64_t coord = index%out_size[dim] + offset[dim];  //Extract the value of this coordinate from the index ...
+      value += factor*coord;  //... and reencode into a global index, ...
+    }
+    data[i] = value;  //... which we proceed to store as the datapoint.
+  }
+}
+
+bool isOutputTimestep(instruction_t* instruction, int64_t timestep) {
+  int64_t timeDim = instruction->timeDim;
+  if(timeDim < 0) {
+    return !timestep;  //run output on no-time variables in timestep 0
+  } else {
+    int64_t offset = instruction->offset[timeDim];
+    int64_t size = instruction->size[timeDim];
+    return timestep >= offset && timestep < offset + size;
+  }
+}
+
+void writeVariableTimestep(instruction_t* instruction, esdm_dataset_t* dataset, esdm_dataspace_t* dataspace, int64_t timestep) {
+  if(!isOutputTimestep(instruction, timestep)) return;
+
+  //set the time coord
+  bool haveTime = instruction->timeDim >= 0;
+  int64_t savedTimeOffset, savedTimeSize;
+  if(haveTime) {
+    savedTimeOffset = instruction->offset[instruction->timeDim];
+    savedTimeSize = instruction->size[instruction->timeDim];
+    instruction->offset[instruction->timeDim] = timestep;
+    instruction->size[instruction->timeDim] = 1;
+  }
+
+  //write the data
+  int64_t (*fragmentOffsets)[instruction->dimCount];
+  int64_t fragmentCount;
+  generateFragmentList(instruction, instruction->dimCount, &fragmentOffsets, &fragmentCount);
+
+  for(int64_t i = fragmentCount; i--; ) {
+    int64_t* data = NULL, dataSize[instruction->dimCount];
+    generateFragment(instruction->dimCount, fragmentOffsets[i], instruction->fragmentSize, instruction->size, &data, dataSize);
+
+    esdm_dataspace_t *subspace;
+    int ret = esdm_dataspace_subspace(dataspace, instruction->dimCount, dataSize, fragmentOffsets[i], &subspace);
+    eassert(ret == ESDM_SUCCESS);
+    ret = esdm_write(dataset, data, subspace);
+    eassert(ret == ESDM_SUCCESS);
+
+    ret = esdm_dataspace_destroy(subspace);
+    eassert(ret == ESDM_SUCCESS);
+    free(data);
+  }
+
+  //restore the time dim
+  if(haveTime) {
+    instruction->offset[instruction->timeDim] = savedTimeOffset;
+    instruction->size[instruction->timeDim] = savedTimeSize;
+  }
+}
+
+//TODO: Actually call this function...
+void writeTimestep(size_t instructionCount, instruction_t* instructions, esdm_dataset_t** datasets, esdm_dataspace_t** dataspaces, int64_t timestep) {
+  for(size_t i = 0; i != instructionCount; i++) {
+    writeVariableTimestep(&instructions[i], datasets[i], dataspaces[i], timestep);
+  }
+}
+
+void runSimpleWrite(uint64_t * buf_w, int64_t * dim, int64_t * offset){
   esdm_status ret;
   esdm_container_t *container = NULL;
   esdm_dataset_t *dataset = NULL;
@@ -264,7 +494,7 @@ int main(int argc, char *argv[]) {
       eassert(ret == ESDM_SUCCESS);
     }
     MPI_Barrier(MPI_COMM_WORLD);
-    runWrite(buf_w, dim, offset);
+    runSimpleWrite(buf_w, dim, offset);
   }
 
   if (run_read) {
