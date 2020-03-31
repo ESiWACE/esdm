@@ -64,11 +64,11 @@ bool checkedScan_internal(FILE* stream, const char* format, ...) {
   va_list args;
   va_start(args, format);
 
-  checkedScan_success = 0;
+  checkedScan_success = -1;
   vfscanf(stream, format, args);
 
   va_end(args);
-  return !!checkedScan_success;
+  return checkedScan_success >= 0;
 }
 
 //Vector<DimCount> ::= '(' ( <integer> ',' {DimCount-1} <integer> ')'
@@ -262,10 +262,72 @@ void writeVariableTimestep(instruction_t* instruction, esdm_dataset_t* dataset, 
   }
 }
 
-//TODO: Actually call this function...
 void writeTimestep(size_t instructionCount, instruction_t* instructions, esdm_dataset_t** datasets, esdm_dataspace_t** dataspaces, int64_t timestep) {
   for(size_t i = 0; i != instructionCount; i++) {
     writeVariableTimestep(&instructions[i], datasets[i], dataspaces[i], timestep);
+  }
+}
+
+void benchmarkWrite(size_t instructionCount, instruction_t* instructions) {
+  //determine the count of time steps to write
+  int64_t timeLimit = 0;
+  for(size_t i = instructionCount; i--; ) {
+    if(instructions[i].timeDim >= 0) {
+      int64_t limit = instructions[i].offset[instructions[i].timeDim] + instructions[i].size[instructions[i].timeDim];
+      timeLimit = timeLimit > limit ? timeLimit : limit;
+    }
+  }
+
+  //create the datasets
+  esdm_container_t *container = NULL;
+  int ret = esdm_mpi_container_create(MPI_COMM_WORLD, "mycontainer", 1, &container);
+  eassert(ret == ESDM_SUCCESS);
+  esdm_dataspace_t* spaces[instructionCount];
+  esdm_dataset_t* sets[instructionCount];
+  for(size_t i = instructionCount; i--; ) {
+    int64_t bounds[instructions[i].dimCount]; //unfortunately, we don't have a primitive to directly create a dataspace with an offset
+    for(int64_t dim = instructions[i].dimCount; dim--; ) bounds[dim] = instructions[i].offset[dim] + instructions[i].size[dim];
+
+    esdm_dataspace_t *dummy;
+    ret = esdm_dataspace_create(instructions[i].dimCount, bounds, SMD_DTYPE_UINT64, &dummy);
+    eassert(ret == ESDM_SUCCESS);
+    ret = esdm_dataspace_subspace(dummy, instructions[i].dimCount, instructions[i].size, instructions[i].offset, &spaces[i]);
+    eassert(ret == ESDM_SUCCESS);
+    ret = esdm_dataspace_destroy(dummy);
+    eassert(ret == ESDM_SUCCESS);
+    ret = esdm_mpi_dataset_create(MPI_COMM_WORLD, container, "mydataset", spaces[i], &sets[i]);
+    eassert(ret == ESDM_SUCCESS);
+  }
+
+  //perform the actual writes
+  timer t;
+  double time, md_sync_start;
+  MPI_Barrier(MPI_COMM_WORLD);
+  start_timer(&t);
+  for(int64_t t = 0; t < timeLimit; t++) writeTimestep(instructionCount, instructions, sets, spaces, t);
+  MPI_Barrier(MPI_COMM_WORLD);
+  md_sync_start = stop_timer(t);
+
+  //commit the changes to data to the metadata
+  for(size_t i = instructionCount; i--; ) {
+    ret = esdm_mpi_dataset_commit(MPI_COMM_WORLD, sets[i]);
+    eassert(ret == ESDM_SUCCESS);
+    ret = esdm_dataset_close(sets[i]);
+    eassert(ret == ESDM_SUCCESS);
+  }
+  ret = esdm_mpi_container_commit(MPI_COMM_WORLD, container);
+  eassert(ret == ESDM_SUCCESS);
+  ret = esdm_container_close(container);
+  eassert(ret == ESDM_SUCCESS);
+  MPI_Barrier(MPI_COMM_WORLD);
+  time = stop_timer(t);
+
+  //determine our performance
+  double total_time;
+  MPI_Reduce((void *)&time, &total_time, 1, MPI_DOUBLE, MPI_MAX, 0, MPI_COMM_WORLD);
+  double md_sync_time = total_time - md_sync_start;
+  if (mpi_rank == 0) {
+    printf("Write: %.3fs %.3f MiB/s size:%.0f MiB MDsyncTime: %.3fs\n", total_time, volume_all / total_time / 1024.0 / 1024, volume_all / 1024.0 / 1024, md_sync_time);
   }
 }
 
