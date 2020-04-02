@@ -119,6 +119,8 @@ instruction_t* parseInstructions(FILE* instructions, size_t* out_instructionCoun
   ssize_t lineLength;
 
   while(0 < (lineLength = getline(&line, &bufferSize, instructions))) {
+    if(!strlen(line)) continue; //ignore empty lines
+
     if(instructionCount == allocatedInstructions) {
       instructionList = realloc(instructionList, (allocatedInstructions *= 2)*sizeof(*instructionList));
       eassert(instructionList);
@@ -159,6 +161,9 @@ instruction_t* parseInstructions(FILE* instructions, size_t* out_instructionCoun
     }
   }
   free(line);
+
+  *out_instructionCount = instructionCount;
+  return instructionList;
 }
 
 void generateFragmentList(instruction_t* instruction, int64_t dimCount, int64_t (**out_fragmentOffsets)[dimCount], int64_t* out_fragmentCount) {
@@ -331,6 +336,49 @@ void benchmarkWrite(size_t instructionCount, instruction_t* instructions) {
   }
 }
 
+void parseCommandlineArgs(int argc, char** argv, char** configFile, FILE** writeInstructionFile, FILE** readInstructionFile) {
+  static char writeInstructions[] = "var1(3, t = 1): (0, 0, 0) (100, 10, 100) (10, 1, 10)\n"
+                                    "var2(2): (0, 0) (1000, 1000) (100, 100)\n";
+  *writeInstructionFile = fmemopen(writeInstructions, sizeof(writeInstructions), "r");
+  //TODO: Actually parse the commandline arguments...
+}
+
+int main2(int argc, char *argv[]) {
+  int provided;
+  MPI_Init_thread(&argc, &argv, MPI_THREAD_FUNNELED, &provided);
+
+  char* configFile = "_esdm.conf";
+  FILE *writeInstructionFile = NULL, *readInstructionFile = NULL;
+  parseCommandlineArgs(argc, argv, &configFile, &writeInstructionFile, &readInstructionFile);
+
+  esdm_mpi_init();
+  esdm_mpi_distribute_config_file(configFile);
+  int ret = esdm_init();
+  eassert(ret == ESDM_SUCCESS);
+
+  if(writeInstructionFile) {
+    size_t instructionCount;
+    instruction_t* instructions = parseInstructions(writeInstructionFile, &instructionCount);
+    benchmarkWrite(instructionCount, instructions);
+    fclose(writeInstructionFile);
+  }
+
+/* TODO
+  if(readInstructionFile) {
+    size_t instructionCount;
+    instruction_t* instructions = parseInstructions(readInstructionFile, &instructionCount);
+    benchmarkRead(instructionCount, instructions);
+    fclose(readInstructionFile);
+  }
+*/
+
+  esdm_mpi_finalize();
+  if(!mpi_rank) printf("\nOK\n");
+  MPI_Finalize();
+  return 0;
+}
+
+/*
 void runSimpleWrite(uint64_t * buf_w, int64_t * dim, int64_t * offset){
   esdm_status ret;
   esdm_container_t *container = NULL;
@@ -455,7 +503,13 @@ void runRead(uint64_t * buf_w, int64_t * dim, int64_t * offset){
   ret = esdm_container_close(container);
   eassert(ret == ESDM_SUCCESS);
 }
+*/
 
+int main(int argc, char** argv) {
+  return main2(argc, argv);
+}
+
+/*
 int main(int argc, char *argv[]) {
   int provided;
   MPI_Init_thread(&argc, &argv, MPI_THREAD_FUNNELED, &provided);
@@ -574,3 +628,4 @@ int main(int argc, char *argv[]) {
 
   return 0;
 }
+*/
