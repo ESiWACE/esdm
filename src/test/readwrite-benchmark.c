@@ -336,11 +336,51 @@ void benchmarkWrite(size_t instructionCount, instruction_t* instructions) {
   }
 }
 
+__attribute__((noreturn))
+void exitWithUsage(const char* execName, const char* errorMessage, int exitStatus) {
+  if(errorMessage) fprintf(stderr, "%s", errorMessage);
+  printf("usage: %s [(-r | -w | -c | --read | --write | --config) path]...\n", execName);
+  printf("\n");
+  printf("\t-r | --read path\n");
+  printf("\tPerform the read benchmark with the instructions provided by the file at path.\n");
+  printf("\n");
+  printf("\t-w | --write path\n");
+  printf("\tPerform the write benchmark with the instructions provided by the file at path.\n");
+  printf("\n");
+  printf("\t-c | --config path\n");
+  printf("\tUse the file at path as the ESDM configuration file.\n");
+
+  exit(exitStatus);
+}
+
 void parseCommandlineArgs(int argc, char** argv, char** configFile, FILE** writeInstructionFile, FILE** readInstructionFile) {
-  static char writeInstructions[] = "var1(3, t = 1): (0, 0, 0) (100, 10, 100) (10, 1, 10)\n"
-                                    "var2(2): (0, 0) (1000, 1000) (100, 100)\n";
-  *writeInstructionFile = fmemopen(writeInstructions, sizeof(writeInstructions), "r");
-  //TODO: Actually parse the commandline arguments...
+  if(argc == 1) {
+    //special handling of the zero argument case to ensure that this benchmark plays nicely as a test
+    static char defaultInstructions[] = "mydataset(3, t = 0): (0, 0, 0) (10, 1024, 1024) (1, 256, 1024)\n";
+    *writeInstructionFile = fmemopen(defaultInstructions, sizeof(defaultInstructions) - 1, "r");  //-1 for the length to avoid passing the terminating null byte to getline()
+    *readInstructionFile = fmemopen(defaultInstructions, sizeof(defaultInstructions) - 1, "r");
+    return;
+  }
+
+  *writeInstructionFile = *readInstructionFile = NULL;
+  for(int i = 1; i < argc; i++) {
+    if(!strcmp(argv[i], "-w") || !strcmp(argv[i], "--write")) {
+      if(++i >= argc) exitWithUsage(argv[0], "error: -w | --write option must have an argument\n", 1);
+      if(*writeInstructionFile) fprintf(stderr, "error: only a single -w | --write option is allowed\n"), exit(2);
+      if(!(*writeInstructionFile = fopen(argv[i], "r"))) fprintf(stderr, "error opening file at \"%s\"\n", argv[i]), exit(3);
+    } else if(!strcmp(argv[i], "-r") || !strcmp(argv[i], "--read")) {
+      if(++i >= argc) exitWithUsage(argv[0], "error: -r | --read option must have an argument\n", 4);
+      if(*readInstructionFile) fprintf(stderr, "error: only a single -r | --read option is allowed\n"), exit(5);
+      if(!(*readInstructionFile = fopen(argv[i], "r"))) fprintf(stderr, "error opening file at \"%s\"\n", argv[i]), exit(6);
+    } else if(!strcmp(argv[i], "-c") || !strcmp(argv[i], "--config")) {
+      if(++i >= argc) exitWithUsage(argv[0], "error: -c | --config option must have an argument\n", 7);
+      *configFile = argv[i];
+    } else if(!strcmp(argv[i], "-h") || !strcmp(argv[i], "-?") || !strcmp(argv[i], "--help")) {
+      exitWithUsage(argv[0], NULL, 0);
+    } else {
+      exitWithUsage(argv[0], "error: unexpected argument\n", 8);
+    }
+  }
 }
 
 int main2(int argc, char *argv[]) {
