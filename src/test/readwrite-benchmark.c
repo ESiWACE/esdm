@@ -166,6 +166,17 @@ instruction_t* parseInstructions(FILE* instructions, size_t* out_instructionCoun
   return instructionList;
 }
 
+//Also frees the instruction list itself.
+void deleteInstructions(size_t instructionCount, instruction_t* instructions) {
+  for(size_t i = instructionCount; i--; ) {
+    free(instructions[i].varname);
+    free(instructions[i].offset);
+    free(instructions[i].size);
+    free(instructions[i].fragmentSize);
+  }
+  free(instructions);
+}
+
 void generateFragmentList(instruction_t* instruction, int64_t dimCount, int64_t (**out_fragmentOffsets)[dimCount], int64_t* out_fragmentCount) {
   //determine the total count of fragments
   int64_t totalFragmentCount = 1, fragmentCounts[dimCount];
@@ -399,16 +410,18 @@ int main2(int argc, char *argv[]) {
   if(writeInstructionFile) {
     size_t instructionCount;
     instruction_t* instructions = parseInstructions(writeInstructionFile, &instructionCount);
-    benchmarkWrite(instructionCount, instructions);
     fclose(writeInstructionFile);
+    benchmarkWrite(instructionCount, instructions);
+    deleteInstructions(instructionCount, instructions);
   }
 
 /* TODO
   if(readInstructionFile) {
     size_t instructionCount;
     instruction_t* instructions = parseInstructions(readInstructionFile, &instructionCount);
-    benchmarkRead(instructionCount, instructions);
     fclose(readInstructionFile);
+    benchmarkRead(instructionCount, instructions);
+    deleteInstructions(instructionCount, instructions);
   }
 */
 
