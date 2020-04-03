@@ -28,17 +28,6 @@
 #include <esdm-mpi.h>
 #include "util/test_util.h"
 
-
-int mpi_size;
-int mpi_rank;
-int run_read = 0;
-int run_write = 0;
-long timesteps = 0;
-int cycleBlock = 0;
-int64_t size;
-int64_t volume;
-int64_t volume_all;
-
 typedef struct {
   char* varname;
   int64_t dimCount, timeDim;
@@ -126,7 +115,7 @@ instruction_t* parseInstructions(FILE* instructions, size_t* out_instructionCoun
       eassert(instructionList);
     }
     eassert(instructionCount < allocatedInstructions);
-    instruction_t* newInstruction = & instructionList[instructionCount];
+    instruction_t* newInstruction = & instructionList[instructionCount++];
     *newInstruction = (instruction_t){.timeDim = -1};
 
     FILE* lineStream = fmemopen(line, lineLength, "r");
@@ -207,10 +196,11 @@ void generateFragmentList(instruction_t* instruction, int64_t dimCount, int64_t 
 //this may be smaller than *size indicates due to clipping the fragment to the limit.
 //offset, size, limit, and out_size point to arrays of size dimCount.
 //out_data is used to return a newly malloc'ed array with the fragment's data.
-void getFragmentShape(int64_t dimCount, int64_t* offset, int64_t* size, int64_t* limit, int64_t* out_size) {
-  //determine the actual shape of the fragment
-  for(int64_t i = dimCount; i--; ) {
-    out_size[i] = offset[i] + size[i] <= limit[i] ? offset[i] + size[i] : limit[i];
+void getFragmentShape(instruction_t* instruction, int64_t* fragmentOffset, int64_t* out_size) {
+  for(int64_t i = instruction->dimCount; i--; ) {
+    int64_t limit = fragmentOffset[i] + instruction->fragmentSize[i];
+    if(limit > instruction->offset[i] + instruction->size[i]) limit = instruction->offset[i] + instruction->size[i];
+    out_size[i] = limit - fragmentOffset[i];
   }
 }
 
@@ -278,7 +268,7 @@ void writeVariableTimestep(instruction_t* instruction, esdm_dataset_t* dataset, 
 
   for(int64_t i = fragmentCount; i--; ) {
     int64_t* data = NULL, fragmentSize[instruction->dimCount];
-    getFragmentShape(instruction->dimCount, fragmentOffsets[i], instruction->fragmentSize, instruction->size, fragmentSize);
+    getFragmentShape(instruction, fragmentOffsets[i], fragmentSize);
     generateFragmentData(instruction->dimCount, fragmentOffsets[i], fragmentSize, instruction->size, &data);
 
     esdm_dataspace_t *subspace;
@@ -321,9 +311,15 @@ void benchmarkWrite(size_t instructionCount, instruction_t* instructions) {
   eassert(ret == ESDM_SUCCESS);
   esdm_dataspace_t* spaces[instructionCount];
   esdm_dataset_t* sets[instructionCount];
+  int64_t localBytes = 0;
   for(size_t i = instructionCount; i--; ) {
     int64_t bounds[instructions[i].dimCount]; //unfortunately, we don't have a primitive to directly create a dataspace with an offset
-    for(int64_t dim = instructions[i].dimCount; dim--; ) bounds[dim] = instructions[i].offset[dim] + instructions[i].size[dim];
+    int64_t datapointCount = 1;
+    for(int64_t dim = instructions[i].dimCount; dim--; ) {
+      bounds[dim] = instructions[i].offset[dim] + instructions[i].size[dim];
+      datapointCount *= instructions[i].size[dim];
+    }
+    localBytes += datapointCount*sizeof(int64_t);
 
     esdm_dataspace_t *dummy;
     ret = esdm_dataspace_create(instructions[i].dimCount, bounds, SMD_DTYPE_UINT64, &dummy);
@@ -364,9 +360,13 @@ void benchmarkWrite(size_t instructionCount, instruction_t* instructions) {
   //determine our performance
   double total_time;
   MPI_Reduce((void *)&time, &total_time, 1, MPI_DOUBLE, MPI_MAX, 0, MPI_COMM_WORLD);
+  int64_t globalBytes;
+  MPI_Reduce(&localBytes, &globalBytes, 1, MPI_INT64_T, MPI_SUM, 0, MPI_COMM_WORLD);
   double md_sync_time = total_time - md_sync_start;
-  if (mpi_rank == 0) {
-    printf("Write: %.3fs %.3f MiB/s size:%.0f MiB MDsyncTime: %.3fs\n", total_time, volume_all / total_time / 1024.0 / 1024, volume_all / 1024.0 / 1024, md_sync_time);
+  int rank;
+  MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+  if(!rank) {
+    printf("Write: %.3fs %.3f MiB/s size:%.0f MiB MDsyncTime: %.3fs\n", total_time, globalBytes / total_time / 1024.0 / 1024, globalBytes / 1024.0 / 1024, md_sync_time);
   }
 }
 
@@ -390,7 +390,7 @@ void readVariableTimestep(instruction_t* instruction, esdm_dataset_t* dataset, e
 
   for(int64_t i = fragmentCount; i--; ) {
     int64_t fragmentSize[instruction->dimCount];
-    getFragmentShape(instruction->dimCount, fragmentOffsets[i], instruction->fragmentSize, instruction->size, fragmentSize);
+    getFragmentShape(instruction, fragmentOffsets[i], fragmentSize);
     int64_t datapointCount = 1;
     for(int64_t dim = instruction->dimCount; dim--; ) datapointCount *= fragmentSize[dim];
     int64_t* data = malloc(datapointCount*sizeof*data);
@@ -437,7 +437,12 @@ void benchmarkRead(size_t instructionCount, instruction_t* instructions) {
 
   esdm_dataspace_t* spaces[instructionCount];
   esdm_dataset_t* sets[instructionCount];
+  int64_t localBytes = 0;
   for(size_t i = instructionCount; i--; ) {
+    int64_t datapointCount = 1;
+    for(int64_t dim = instructions[i].dimCount; dim--; ) datapointCount *= instructions[i].size[dim];
+    localBytes += datapointCount*sizeof(int64_t);
+
     ret = esdm_mpi_dataset_open(MPI_COMM_WORLD, container, instructions[i].varname, &sets[i]);
     eassert(ret == ESDM_SUCCESS);
     ret = esdm_dataset_get_dataspace(sets[i], &spaces[i]);
@@ -468,9 +473,13 @@ void benchmarkRead(size_t instructionCount, instruction_t* instructions) {
   //determine our performance
   double total_time;
   MPI_Reduce((void *)&time, &total_time, 1, MPI_DOUBLE, MPI_MAX, 0, MPI_COMM_WORLD);
+  int64_t globalBytes;
+  MPI_Reduce(&localBytes, &globalBytes, 1, MPI_INT64_T, MPI_SUM, 0, MPI_COMM_WORLD);
   double md_sync_time = total_time - md_sync_start;
-  if (mpi_rank == 0) {
-    printf("Read: %.3fs %.3f MiB/s size:%.0f MiB MDsyncTime: %.3fs\n", total_time, volume_all / total_time / 1024.0 / 1024, volume_all / 1024.0 / 1024, md_sync_time);
+  int rank;
+  MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+  if(!rank) {
+    printf("Read: %.3fs %.3f MiB/s size:%.0f MiB MDsyncTime: %.3fs\n", total_time, globalBytes / total_time / 1024.0 / 1024, globalBytes / 1024.0 / 1024, md_sync_time);
   }
 }
 
@@ -551,6 +560,8 @@ int main(int argc, char** argv) {
   }
 
   esdm_mpi_finalize();
-  if(!mpi_rank) printf("\nOK\n");
+  int rank;
+  MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+  if(!rank) printf("\nOK\n");
   MPI_Finalize();
 }
