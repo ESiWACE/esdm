@@ -635,9 +635,10 @@ void esdm_dataset_init(esdm_container_t *c, const char *name, esdm_dataspace_t *
   d->fill_value = NULL;
   d->refcount = 0;
   d->container = c;
-  d->dataspace = dspace;
+  d->dataspace = NULL;
   d->actual_size = NULL;
   if(dspace){
+    esdm_dataspace_copy(dspace, &d->dataspace);
     // check for unlimited dims
     for(int i=0; i < dspace->dims; i++){
       if(dspace->size[i] == 0){
@@ -1197,6 +1198,21 @@ esdm_status esdmI_dataspace_createFromHypercube(esdmI_hypercube_t* extends, esdm
 
   *out_space = result;
   return ESDM_SUCCESS;
+}
+
+esdm_status esdm_dataspace_copy(esdm_dataspace_t* orig, esdm_dataspace_t **out_dataspace) {
+  ESDM_DEBUG(__func__);
+  eassert(orig);
+  eassert(out_dataspace);
+
+  esdm_dataspace_t* copy = *out_dataspace = malloc(sizeof*copy);
+  *copy = (esdm_dataspace_t){
+    .type = orig->type,
+    .dims = orig->dims,
+    .size = ea_memdup(orig->size, orig->dims*sizeof*orig->size),
+    .offset = ea_memdup(orig->offset, orig->dims*sizeof*orig->offset),
+    .stride = orig->stride ? ea_memdup(orig->stride, orig->dims*sizeof*orig->stride) : NULL
+  };
 }
 
 esdm_status esdmI_dataspace_getExtends(esdm_dataspace_t* space, esdmI_hypercube_t** out_extends) {
