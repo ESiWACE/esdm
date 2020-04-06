@@ -417,6 +417,17 @@ esdm_status esdm_dataset_get_attributes(esdm_dataset_t *dataset, smd_attr_t **ou
 esdm_status esdm_dataspace_create(int64_t dims, int64_t *sizes, esdm_type_t type, esdm_dataspace_t **out_dataspace);
 
 /**
+ * Create a copy of a dataspace.
+ *
+ *  - Allocate process local memory structures.
+ * @param [in] orig the dataspace to copy
+ * @param [out] out_dataspace pointer to the new dataspace
+ *
+ * @return status
+ */
+esdm_status esdm_dataspace_copy(esdm_dataspace_t* orig, esdm_dataspace_t **out_dataspace);
+
+/**
  * Reinstantiate dataspace from serialization.
  */
 

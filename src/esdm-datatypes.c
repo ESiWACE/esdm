@@ -639,7 +639,7 @@ void esdm_dataset_init(esdm_container_t *c, const char *name, esdm_dataspace_t *
     .fill_value = NULL,
     .refcount = 0,
     .container = c,
-    .dataspace = dspace,
+    .dataspace = NULL,
     .actual_size = NULL,
     .status = ESDM_DATA_DIRTY,
     .attr = smd_attr_new("Variables", SMD_DTYPE_EMPTY, NULL, 0)
@@ -647,6 +647,7 @@ void esdm_dataset_init(esdm_container_t *c, const char *name, esdm_dataspace_t *
 
   d->fragments = esdmI_fragments_create(d); //not done in the compound literal above so that the fragments constructor sees a fully initialized parent object
   if(dspace){
+    esdm_dataspace_copy(dspace, &d->dataspace);
     // check for unlimited dims
     for(int i=0; i < dspace->dims; i++){
       if(dspace->size[i] == 0){
@@ -1207,6 +1208,21 @@ esdm_status esdmI_dataspace_createFromHypercube(esdmI_hypercube_t* extends, esdm
 
   *out_space = result;
   return ESDM_SUCCESS;
+}
+
+esdm_status esdm_dataspace_copy(esdm_dataspace_t* orig, esdm_dataspace_t **out_dataspace) {
+  ESDM_DEBUG(__func__);
+  eassert(orig);
+  eassert(out_dataspace);
+
+  esdm_dataspace_t* copy = *out_dataspace = malloc(sizeof*copy);
+  *copy = (esdm_dataspace_t){
+    .type = orig->type,
+    .dims = orig->dims,
+    .size = ea_memdup(orig->size, orig->dims*sizeof*orig->size),
+    .offset = ea_memdup(orig->offset, orig->dims*sizeof*orig->offset),
+    .stride = orig->stride ? ea_memdup(orig->stride, orig->dims*sizeof*orig->stride) : NULL
+  };
 }
 
 esdm_status esdmI_dataspace_getExtends(esdm_dataspace_t* space, esdmI_hypercube_t** out_extends) {

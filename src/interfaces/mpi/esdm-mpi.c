@@ -329,7 +329,6 @@ esdm_status esdm_mpi_dataset_commit(MPI_Comm com, esdm_dataset_t *d){
     eassert(ret == MPI_SUCCESS);
     free(buff);
 
-    d->status = ESDM_DATA_PERSISTENT;
     MPI_Bcast(& ret, 1, MPI_INT, 0, com);
 
     return ret;
