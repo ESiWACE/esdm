@@ -275,6 +275,16 @@ esdm_status esdm_dataset_rename_dim(esdm_dataset_t *dataset, char const *name, i
  */
 esdm_status esdm_dataset_get_name_dims(esdm_dataset_t *dataset, char const *const **out_names);
 
+/**
+ * Inquire the shape of a dataset.
+ *
+ * @param [in] dset the dataset to question
+ * @param [out] out_dataspace a reference to the dataset's dataspace
+ *
+ * @return status
+ *
+ * The dataset remains the owner of the dataspace, the caller must not destroy it.
+ */
 esdm_status esdm_dataset_get_dataspace(esdm_dataset_t *dset, esdm_dataspace_t **out_dataspace);
 esdm_type_t esdm_dataset_get_type(esdm_dataset_t * d);
 

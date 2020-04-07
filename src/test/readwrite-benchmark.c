@@ -282,6 +282,8 @@ void writeVariableTimestep(instruction_t* instruction, esdm_dataset_t* dataset, 
     free(data);
   }
 
+  free(fragmentOffsets);
+
   //restore the time dim
   if(haveTime) {
     instruction->offset[instruction->timeDim] = savedTimeOffset;
@@ -407,6 +409,8 @@ void readVariableTimestep(instruction_t* instruction, esdm_dataset_t* dataset, e
     free(data);
   }
 
+  free(fragmentOffsets);
+
   //restore the time dim
   if(haveTime) {
     instruction->offset[instruction->timeDim] = savedTimeOffset;
@@ -461,8 +465,6 @@ void benchmarkRead(size_t instructionCount, instruction_t* instructions) {
   //close the ESDM objects
   for(size_t i = instructionCount; i--; ) {
     ret = esdm_dataset_close(sets[i]);
-    eassert(ret == ESDM_SUCCESS);
-    ret = esdm_dataspace_destroy(spaces[i]);
     eassert(ret == ESDM_SUCCESS);
   }
   ret = esdm_container_close(container);
