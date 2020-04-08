@@ -173,7 +173,7 @@ int main(int argc, char *argv[]) {
 
   int64_t _size;
   char *config_file;
-  char *default_args[] = {argv[0], "1024", "_esdm.conf", "B", "10"};
+  char *default_args[] = {argv[0], "1024", "esdm.conf", "B", "10"};
   if (argc == 1) {
     argc = 5;
     argv = default_args;

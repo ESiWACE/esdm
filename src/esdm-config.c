@@ -99,7 +99,7 @@ char *esdm_config_gather() {
   ESDM_DEBUG(__func__);
 
   char *config_json = NULL;
-  read_file("_esdm.conf", & config_json);
+  read_file("esdm.conf", & config_json);
   return config_json;
 }
 

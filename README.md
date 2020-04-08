@@ -32,13 +32,18 @@ Or to initialize the submodules after the cloning:
   * dnf install gcc-c++ gcc libtool cmake
 
 #### Installation with Spack
+  Installation of spack itself:
+  * git clone https://github.com/spack/spack
+  * export PATH=$PATH:$PWD/spack/bin/
+  Check that a suitable compiler is found
+  * spack compilers
 
   First get the recent GCC:
-  * spack install gcc@8.1.0
+  * spack install gcc@9.3.0
   Then install the packages with GCC:
-  * spack install jansson%gcc@8.1.0 glib%gcc@8.1.0 openmpi%gcc@8.1.0 gettext%gcc@8.1.0
+  * spack install jansson%gcc@9.3.0 glib%gcc@9.3.0 openmpi%gcc@9.3.0 gettext%gcc@9.3.0
   Before running configure load the modules:
-  * spack load jansson%gcc@8.1.0 glib%gcc@8.1.0 openmpi%gcc@8.1.0 gcc gettext%gcc@8.1.0 -r
+  * spack load jansson%gcc@9.3.0 glib%gcc@9.3.0 openmpi%gcc@9.3.0 gcc gettext%gcc@9.3.0 -r
 
 ## Development
 
