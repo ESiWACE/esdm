@@ -134,6 +134,7 @@ esdm_status esdm_container_open_md_parse(esdm_container_t *c, char * md, int siz
 	char * js = md;
 
   // first strip the attributes
+  if(c->attr) smd_attr_destroy(c->attr);
   size_t parsed = smd_attr_create_from_json(js + 1, size, & c->attr);
   js += 1 + parsed;
   js[0] = '{';
@@ -635,9 +636,10 @@ void esdm_dataset_init(esdm_container_t *c, const char *name, esdm_dataspace_t *
   d->fill_value = NULL;
   d->refcount = 0;
   d->container = c;
-  d->dataspace = dspace;
+  d->dataspace = NULL;
   d->actual_size = NULL;
   if(dspace){
+    esdm_dataspace_copy(dspace, &d->dataspace);
     // check for unlimited dims
     for(int i=0; i < dspace->dims; i++){
       if(dspace->size[i] == 0){
@@ -838,9 +840,11 @@ esdm_status esdm_dataset_open_md_parse(esdm_dataset_t *d, char * md, int size){
   char * js = md;
 
   // first strip the attributes
+  if(d->attr) smd_attr_destroy(d->attr);
   size_t parsed = smd_attr_create_from_json(js + 1, size, & d->attr);
   js += 1 + parsed;
   if(strncmp(js + 1, "\"fill-value\"", 12) == 0){
+    if(d->fill_value) smd_attr_destroy(d->fill_value);
     parsed = smd_attr_create_from_json(js + 1, size, & d->fill_value);
     js += 1 + parsed;
   }
@@ -855,6 +859,7 @@ esdm_status esdm_dataset_open_md_parse(esdm_dataset_t *d, char * md, int size){
     DEBUG("Cannot parse type: %s", str);
     return ESDM_ERROR;
   }
+  if(d->id) free(d->id);
   elem = json_object_get(root, "id");
   d->id = strdup(json_string_value(elem));
   elem = json_object_get(root, "dims");
@@ -1068,6 +1073,7 @@ esdm_status esdm_dataset_close(esdm_dataset_t *dset) {
   dset->status = ESDM_DATA_NOT_LOADED;
 
   smd_attr_destroy(dset->attr);
+  dset->attr = NULL;
 
   return esdmI_fragments_destruct(&dset->fragments);
 }
@@ -1076,25 +1082,17 @@ esdm_status esdmI_dataset_destroy(esdm_dataset_t *dset) {
   ESDM_DEBUG(__func__);
   eassert(dset);
 
-  if(dset->status != ESDM_DATA_NOT_LOADED){
-    // loaded to some extend
-    esdm_status ret = esdmI_fragments_destruct(&dset->fragments);
+  esdm_status ret = esdmI_fragments_destruct(&dset->fragments);
+  if (ret != ESDM_SUCCESS) return ret;  // free dataset only if all fragments can be destroyed/are not longer in use
 
-    smd_attr_destroy(dset->attr); // maybe unref?
-
-    // free dataset only if all fragments can be destroyed/are not longer in use
-    if (ret != ESDM_SUCCESS){
-      return ret;
-    }
-  }
+  if(dset->attr) smd_attr_destroy(dset->attr); // maybe unref?
+  if(dset->fill_value) smd_attr_destroy(dset->fill_value);
+  if(dset->dataspace) esdm_dataspace_destroy(dset->dataspace);
   free(dset->name);
   free(dset->id);
   free(dset->dims_dset_id);
   free(dset->actual_size);
 
-  if(dset->fill_value){
-    smd_attr_destroy(dset->fill_value);
-  }
   free(dset);
   return ESDM_SUCCESS;
 }
@@ -1197,6 +1195,21 @@ esdm_status esdmI_dataspace_createFromHypercube(esdmI_hypercube_t* extends, esdm
 
   *out_space = result;
   return ESDM_SUCCESS;
+}
+
+esdm_status esdm_dataspace_copy(esdm_dataspace_t* orig, esdm_dataspace_t **out_dataspace) {
+  ESDM_DEBUG(__func__);
+  eassert(orig);
+  eassert(out_dataspace);
+
+  esdm_dataspace_t* copy = *out_dataspace = malloc(sizeof*copy);
+  *copy = (esdm_dataspace_t){
+    .type = orig->type,
+    .dims = orig->dims,
+    .size = ea_memdup(orig->size, orig->dims*sizeof*orig->size),
+    .offset = ea_memdup(orig->offset, orig->dims*sizeof*orig->offset),
+    .stride = orig->stride ? ea_memdup(orig->stride, orig->dims*sizeof*orig->stride) : NULL
+  };
 }
 
 esdm_status esdmI_dataspace_getExtends(esdm_dataspace_t* space, esdmI_hypercube_t** out_extends) {

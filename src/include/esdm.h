@@ -275,6 +275,16 @@ esdm_status esdm_dataset_rename_dim(esdm_dataset_t *dataset, char const *name, i
  */
 esdm_status esdm_dataset_get_name_dims(esdm_dataset_t *dataset, char const *const **out_names);
 
+/**
+ * Inquire the shape of a dataset.
+ *
+ * @param [in] dset the dataset to question
+ * @param [out] out_dataspace a reference to the dataset's dataspace
+ *
+ * @return status
+ *
+ * The dataset remains the owner of the dataspace, the caller must not destroy it.
+ */
 esdm_status esdm_dataset_get_dataspace(esdm_dataset_t *dset, esdm_dataspace_t **out_dataspace);
 esdm_type_t esdm_dataset_get_type(esdm_dataset_t * d);
 
@@ -393,6 +403,17 @@ esdm_status esdm_dataset_get_attributes(esdm_dataset_t *dataset, smd_attr_t **ou
  */
 
 esdm_status esdm_dataspace_create(int64_t dims, int64_t *sizes, esdm_type_t type, esdm_dataspace_t **out_dataspace);
+
+/**
+ * Create a copy of a dataspace.
+ *
+ *  - Allocate process local memory structures.
+ * @param [in] orig the dataspace to copy
+ * @param [out] out_dataspace pointer to the new dataspace
+ *
+ * @return status
+ */
+esdm_status esdm_dataspace_copy(esdm_dataspace_t* orig, esdm_dataspace_t **out_dataspace);
 
 /**
  * Reinstantiate dataspace from serialization.
