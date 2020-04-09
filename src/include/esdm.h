@@ -77,7 +77,7 @@ esdm_status esdm_finalize();
  * @return status
  */
 
-esdm_status esdm_write(esdm_dataset_t *dataset, void *buf, esdm_dataspace_t *subspace);
+esdm_status esdm_write(esdm_dataset_t *dataset, void *buf, esdm_dataspace_t *subspace, esdm_dataspace_t *memspace);
 
 /**
  * Reads a data fragment described by desc to the dataset dset.
@@ -89,7 +89,7 @@ esdm_status esdm_write(esdm_dataset_t *dataset, void *buf, esdm_dataspace_t *sub
  * @return status
  */
 
-esdm_status esdm_read(esdm_dataset_t *dataset, void *buf, esdm_dataspace_t *subspace);
+esdm_status esdm_read(esdm_dataset_t *dataset, void *buf, esdm_dataspace_t *subspace, esdm_dataspace_t *memspace);
 
 
 /**
@@ -435,6 +435,7 @@ esdm_status esdm_dataspace_deserialize(void *serialized_dataspace, esdm_dataspac
  * @return `ESDM_SUCCESS` on success, `ESDM_INVALID_ARGUMENT_ERROR` if the provided `dims`, `size`, or `offset` arguments do not agree with the provided `dataspace`
  */
 esdm_status esdm_dataspace_subspace(esdm_dataspace_t *dataspace, int64_t dims, int64_t *size, int64_t *offset, esdm_dataspace_t **out_dataspace);
+
 
 /**
  * Define a dataspace that covers the same logical hypercube as the given dataspace, but which uses the standard, contiguous C array element order.

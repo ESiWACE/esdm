@@ -55,7 +55,7 @@ void writeData(esdm_dataset_t* dataset, esdm_dataspace_t* dataspace, int height,
     ret = esdm_dataspace_subspace(dataspace, 2, size, offset, &subspace);
     eassert(ret == ESDM_SUCCESS);
 
-    ret = esdm_write(dataset, data[i], subspace);
+    ret = esdm_write(dataset, data[i], subspace, NULL);
     eassert(ret == ESDM_SUCCESS);
 
     ret = esdm_dataspace_destroy(subspace);
@@ -92,7 +92,7 @@ void readData(esdm_dataset_t* dataset, esdm_dataspace_t* dataspace, int height, 
       ret = esdm_dataspace_copyDatalayout(subspace, dataspace);
       eassert(ret == ESDM_SUCCESS);
 
-      ret = esdm_read(dataset, &data[y][x], subspace);
+      ret = esdm_read(dataset, &data[y][x], subspace, NULL);
       eassert(ret == ESDM_SUCCESS);
 
       ret = esdm_dataspace_destroy(subspace);

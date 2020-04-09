@@ -159,7 +159,7 @@ esdm_status esdm_finalize() {
   return ESDM_SUCCESS;
 }
 
-esdm_status esdm_write(esdm_dataset_t *dataset, void *buf, esdm_dataspace_t *space) {
+esdm_status esdm_write(esdm_dataset_t *dataset, void *buf, esdm_dataspace_t *space, esdm_dataspace_t *memspace) {
   ESDM_DEBUG(__func__);
   eassert(dataset);
   eassert(buf);
@@ -170,15 +170,15 @@ esdm_status esdm_write(esdm_dataset_t *dataset, void *buf, esdm_dataspace_t *spa
     space->dims = 1;
     space->size[0] = 1;
     space->offset[0] = 0;
-    int ret = esdm_scheduler_write_blocking(&esdm, dataset, buf, space, false);
+    int ret = esdm_scheduler_write_blocking(&esdm, dataset, buf,  space,memspace, false);
     space->dims = 0;
     return ret;
   }
 
-  return esdm_scheduler_write_blocking(&esdm, dataset, buf, space, false);
+  return esdm_scheduler_write_blocking(&esdm, dataset, buf, space, memspace, false);
 }
 
-esdm_status esdmI_readWithFillRegion(esdm_dataset_t *dataset, void *buf, esdm_dataspace_t *space, esdmI_hypercubeSet_t** out_fillRegion) {
+esdm_status esdmI_readWithFillRegion(esdm_dataset_t *dataset, void *buf, esdm_dataspace_t *space, esdm_dataspace_t *memspace, esdmI_hypercubeSet_t** out_fillRegion) {
   ESDM_DEBUG("");
   eassert(dataset);
   eassert(buf);
@@ -189,16 +189,16 @@ esdm_status esdmI_readWithFillRegion(esdm_dataset_t *dataset, void *buf, esdm_da
     space->dims = 1;
     space->size[0] = 1;
     space->offset[0] = 0;
-    int ret = esdm_scheduler_read_blocking(&esdm, dataset, buf, space, out_fillRegion, false);
+    int ret = esdm_scheduler_read_blocking(&esdm, dataset, buf, space, memspace, out_fillRegion, false);
     space->dims = 0;
     return ret;
   }
 
-  return esdm_scheduler_read_blocking(&esdm, dataset, buf, space, out_fillRegion, false);
+  return esdm_scheduler_read_blocking(&esdm, dataset, buf, space, memspace, out_fillRegion, false);
 }
 
-esdm_status esdm_read(esdm_dataset_t *dataset, void *buf, esdm_dataspace_t *space) {
-  return esdmI_readWithFillRegion(dataset, buf, space, NULL);
+esdm_status esdm_read(esdm_dataset_t *dataset, void *buf, esdm_dataspace_t *space, esdm_dataspace_t *memspace) {
+  return esdmI_readWithFillRegion(dataset, buf, space, memspace, NULL);
 }
 
 esdm_status esdm_sync() {
@@ -247,14 +247,14 @@ esdm_status esdm_read_stream(esdm_dataset_t *d, esdm_dataspace_t *space, void * 
   // TODO emulation function for now.
   uint64_t size = esdm_dataspace_size(space);
   void * buf = malloc(size);
-  esdm_status ret = esdmI_readWithFillRegion(d, buf, space, NULL);  //FIXME: Don't ignore the return value.
+  esdm_status ret = esdmI_readWithFillRegion(d, buf, space, NULL, NULL);  //FIXME: Don't ignore the return value.
   void * intermediate = stream_func(space, buf, user_ptr, d->fill_value);
   if(reduce_func){
     reduce_func(space, user_ptr, intermediate);
   }
   free(buf);
 
-  return ESDM_SUCCESS;
+  return ret;
 }
 
 esdm_statistics_t esdm_read_stats() { return esdm.readStats; }

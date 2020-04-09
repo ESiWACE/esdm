@@ -216,7 +216,7 @@ int main(int argc, char *argv[]) {
       dataspace_id = H5Dget_space(dataset_id);
       status = H5Sselect_hyperslab(dataspace_id, H5S_SELECT_SET, h5_offset, NULL, h5_dim, NULL);
 
-      ret = esdm_write(dataset, buf_w, subspace);
+      ret = esdm_write(dataset, buf_w, subspace, NULL);
       eassert(ret == ESDM_SUCCESS);
 
       // Write the dataset.
@@ -248,7 +248,7 @@ int main(int argc, char *argv[]) {
 
       status = H5Dread(dataset_id, H5T_NATIVE_INT, H5S_ALL, H5S_ALL, H5P_DEFAULT, dset_data);
 
-      ret = esdm_read(dataset, buf_r, subspace);
+      ret = esdm_read(dataset, buf_r, subspace, NULL);
       eassert(ret == ESDM_SUCCESS);
       // verify data and fail test if mismatches are found
       long idx;

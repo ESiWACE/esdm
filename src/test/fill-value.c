@@ -74,7 +74,7 @@ int main(int argc, char const *argv[]) {
   esdm_dataspace_t* subspace;
   ret = esdm_dataspace_subspace(dataspace, dims, subspaceSize, subspaceOffset, &subspace);
   eassert(ret == ESDM_SUCCESS);
-  ret = esdm_write(dataset, writeBuffer, subspace);
+  ret = esdm_write(dataset, writeBuffer, subspace, NULL);
   eassert(ret == ESDM_SUCCESS);
 
   //commit and close stuff
@@ -107,7 +107,7 @@ int main(int argc, char const *argv[]) {
   //read the entire region back
   uint64_t readBuffer[bounds[0]][bounds[1]];
   esdmI_hypercubeSet_t* fillRegion;
-  ret = esdmI_readWithFillRegion(dataset, readBuffer, dataspace, &fillRegion);
+  ret = esdmI_readWithFillRegion(dataset, readBuffer, dataspace, NULL, &fillRegion);
   eassert(ret == ESDM_SUCCESS);
 
   //Print a matrix of the comparison results, a good output has small letters 'f' (fill value) and 'd' (data) everywhere.

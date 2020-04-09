@@ -58,7 +58,7 @@ void writeData(esdm_dataset_t* dataset, esdm_dataspace_t* dataspace, int64_t len
       ret = esdm_dataspace_subspace(dataspace, 1, &size, &offset, &subspace);
       eassert(ret == ESDM_SUCCESS);
 
-      ret = esdm_write(dataset, &data[offset], subspace);
+      ret = esdm_write(dataset, &data[offset], subspace, NULL);
       eassert(ret == ESDM_SUCCESS);
 
       ret = esdm_dataspace_destroy(subspace);
@@ -109,7 +109,7 @@ void readRandomFragment(esdm_dataset_t* dataset, esdm_dataspace_t* dataspace, in
   ret = esdm_dataspace_copyDatalayout(subspace, dataspace);
   eassert(ret == ESDM_SUCCESS);
 
-  ret = esdm_read(dataset, &data[x0], subspace);
+  ret = esdm_read(dataset, &data[x0], subspace, NULL);
   eassert(ret == ESDM_SUCCESS);
 
   ret = esdm_dataspace_destroy(subspace);

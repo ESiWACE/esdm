@@ -372,7 +372,7 @@ bool esdmI_scheduler_try_direct_io(esdm_fragment_t *f, void * buf, esdm_dataspac
   return true;
 }
 
-esdm_status esdm_scheduler_enqueue_read(esdm_instance_t *esdm, io_request_status_t *status, int frag_count, esdm_fragment_t **read_frag, void *buf, esdm_dataspace_t *buf_space) {
+esdm_status esdm_scheduler_enqueue_read(esdm_instance_t *esdm, io_request_status_t *status, int frag_count, esdm_fragment_t **read_frag, void *buf, esdm_dataspace_t *buf_space, esdm_dataspace_t *memspace) {
   GError *error;
 
   atomic_fetch_add(&status->pending_ops, frag_count);
@@ -706,7 +706,7 @@ static void updateRequestStats(esdm_statistics_t* stats, uint64_t requestCount, 
   }
 }
 
-esdm_status esdm_scheduler_enqueue_write(esdm_instance_t *esdm, io_request_status_t *status, esdm_dataset_t *dataset, void *buf, esdm_dataspace_t *space, bool requestIsInternal) {
+esdm_status esdm_scheduler_enqueue_write(esdm_instance_t *esdm, io_request_status_t *status, esdm_dataset_t *dataset, void *buf, esdm_dataspace_t *space, esdm_dataspace_t *memspace, bool requestIsInternal) {
   timer myTimer;
   ea_start_timer(&myTimer);
   double startTime; //reused for the different individual measurements
@@ -833,7 +833,7 @@ static bool fragmentsCoverSpace(esdm_dataspace_t* space, int64_t fragmentCount, 
   return esdmI_hypercubeSet_isEmpty(*out_uncoveredRegion);
 }
 
-esdm_status esdm_scheduler_write_blocking(esdm_instance_t *esdm, esdm_dataset_t *dataset, void *buf, esdm_dataspace_t *subspace, bool requestIsInternal) {
+esdm_status esdm_scheduler_write_blocking(esdm_instance_t *esdm, esdm_dataset_t *dataset, void *buf, esdm_dataspace_t *subspace, esdm_dataspace_t *memspace, bool requestIsInternal) {
   ESDM_DEBUG(__func__);
 
   timer myTimer;
@@ -843,7 +843,7 @@ esdm_status esdm_scheduler_write_blocking(esdm_instance_t *esdm, esdm_dataset_t 
   esdm_status ret = esdm_scheduler_status_init(&status);
   eassert(ret == ESDM_SUCCESS);
 
-  ret = esdm_scheduler_enqueue_write(esdm, &status, dataset, buf, subspace, requestIsInternal); //This function does its own internal time measurements.
+  ret = esdm_scheduler_enqueue_write(esdm, &status, dataset, buf, subspace, memspace, requestIsInternal); //This function does its own internal time measurements.
   if( ret != ESDM_SUCCESS){
     return ret;
   }
@@ -863,7 +863,7 @@ esdm_status esdm_scheduler_write_blocking(esdm_instance_t *esdm, esdm_dataset_t 
 }
 
 
-esdm_status esdm_scheduler_read_blocking(esdm_instance_t *esdm, esdm_dataset_t *dataset, void *buf, esdm_dataspace_t *subspace, esdmI_hypercubeSet_t** out_fillRegion, bool requestIsInternal) {
+esdm_status esdm_scheduler_read_blocking(esdm_instance_t *esdm, esdm_dataset_t *dataset, void *buf, esdm_dataspace_t *subspace, esdm_dataspace_t *memspace, esdmI_hypercubeSet_t** out_fillRegion, bool requestIsInternal) {
   ESDM_DEBUG(__func__);
 
   timer myTimer;
@@ -909,7 +909,7 @@ esdm_status esdm_scheduler_read_blocking(esdm_instance_t *esdm, esdm_dataset_t *
   if(ret == ESDM_SUCCESS) {
     //all preliminaries successful, commit to reading
     startTime = ea_stop_timer(myTimer);
-    ret = esdm_scheduler_enqueue_read(esdm, &status, frag_count, read_frag, buf, subspace);
+    ret = esdm_scheduler_enqueue_read(esdm, &status, frag_count, read_frag, buf, subspace, memspace);
     eassert(ret == ESDM_SUCCESS);
     myTimes.enqueue = ea_stop_timer(myTimer) - startTime;
 
@@ -937,7 +937,7 @@ esdm_status esdm_scheduler_read_blocking(esdm_instance_t *esdm, esdm_dataset_t *
   //reading is done, check whether we want to store the resulting fragment for faster access in the future
   if(ret == ESDM_SUCCESS && dataIsComplete) { //don't perform write-back of data that contains fill values, we do not want to transform data holes into stored data!
     if(ioBytes/(double)requestBytes >= 8) { //TODO Turn this magic number into a proper configuration constant!
-      esdm_scheduler_write_blocking(esdm, dataset, buf, subspace, true);  //Ignore return code because this is just an optimization that writes a redundant data copy to disk.
+      esdm_scheduler_write_blocking(esdm, dataset, buf, subspace, memspace, true);  //Ignore return code because this is just an optimization that writes a redundant data copy to disk.
     }
   }
   myTimes.writeback = ea_stop_timer(myTimer) - startTime;

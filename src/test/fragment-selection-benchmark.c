@@ -56,7 +56,7 @@ void writeFragment(esdm_dataset_t* dataset, esdm_dataspace_t* dataspace, int64_t
   eassert(ret == ESDM_SUCCESS);
   ret = esdm_dataspace_copyDatalayout(subspace, dataspace);
   eassert(ret == ESDM_SUCCESS);
-  ret = esdm_write(dataset, (char*)data + esdm_dataspace_elementOffset(dataspace, offset), subspace);
+  ret = esdm_write(dataset, (char*)data + esdm_dataspace_elementOffset(dataspace, offset), subspace, NULL);
   eassert(ret == ESDM_SUCCESS);
   ret = esdm_dataspace_destroy(subspace);
   eassert(ret == ESDM_SUCCESS);
@@ -177,7 +177,7 @@ int main(int argc, char const *argv[]) {
   // Read the data from the dataset
   clearData(dims, dimSizes, data);
   before = esdm_read_stats();
-  ret = esdm_read(dataset, data, dataspace);
+  ret = esdm_read(dataset, data, dataspace, NULL);
   eassert(ret == ESDM_SUCCESS);
   after = esdm_read_stats();
   eassert(dataIsCorrect(dims, dimSizes, data));

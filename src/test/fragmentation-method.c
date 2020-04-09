@@ -51,14 +51,14 @@ bool dataIsCorrect(int64_t dims, int64_t* dimSizes, uint64_t* data) {
 void writeData(int64_t dims, int64_t* dimSizes, esdm_dataset_t* dataset, esdm_dataspace_t* dataspace) {
   uint64_t* data;
   fakeData(dims, dimSizes, &data);
-  esdm_status ret = esdm_write(dataset, data, dataspace);
+  esdm_status ret = esdm_write(dataset, data, dataspace, NULL);
   eassert(ret == ESDM_SUCCESS);
   free(data);
 }
 
 void readAndCheckData(int64_t dims, int64_t* dimSizes, esdm_dataset_t* dataset, esdm_dataspace_t* dataspace) {
   uint64_t* data = malloc(totalSize(dims, dimSizes));
-  esdm_status ret = esdm_read(dataset, data, dataspace);
+  esdm_status ret = esdm_read(dataset, data, dataspace, NULL);
   eassert(ret == ESDM_SUCCESS);
   eassert(dataIsCorrect(dims, dimSizes, data));
   free(data);

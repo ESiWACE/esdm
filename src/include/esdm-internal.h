@@ -46,7 +46,7 @@ esdm_status esdm_config_finalize(esdm_instance_t *esdm);
  * @return status
  */
 
-esdm_status esdmI_readWithFillRegion(esdm_dataset_t *dataset, void *buf, esdm_dataspace_t *subspace, esdmI_hypercubeSet_t** out_fillRegion);
+esdm_status esdmI_readWithFillRegion(esdm_dataset_t *dataset, void *buf, esdm_dataspace_t *subspace, esdm_dataspace_t *memspace, esdmI_hypercubeSet_t** out_fillRegion);
 
 void esdm_dataset_init(esdm_container_t *container, const char *name, esdm_dataspace_t *dataspace, esdm_dataset_t **out_dataset);
 
@@ -121,11 +121,11 @@ esdm_status esdm_scheduler_status_finalize(io_request_status_t *status);
  *                            It's the callers' responsibility to either pass NULL or to destroy the hypercube set themselves.
  */
 
-esdm_status esdm_scheduler_read_blocking(esdm_instance_t *esdm, esdm_dataset_t *dataset, void *buf, esdm_dataspace_t *subspace, esdmI_hypercubeSet_t** out_fillRegion, bool requestIsInternal);
+esdm_status esdm_scheduler_read_blocking(esdm_instance_t *esdm, esdm_dataset_t *dataset, void *buf, esdm_dataspace_t *subspace, esdm_dataspace_t *memspace, esdmI_hypercubeSet_t** out_fillRegion, bool requestIsInternal);
 
-esdm_status esdm_scheduler_write_blocking(esdm_instance_t *esdm, esdm_dataset_t *dataset, void *buf, esdm_dataspace_t *subspace, bool requestIsInternal);
+esdm_status esdm_scheduler_write_blocking(esdm_instance_t *esdm, esdm_dataset_t *dataset, void *buf, esdm_dataspace_t *subspace, esdm_dataspace_t *memspace, bool requestIsInternal);
 
-esdm_status esdm_scheduler_enqueue(esdm_instance_t *esdm, io_request_status_t *status, io_operation_t type, esdm_dataset_t *dataset, void *buf, esdm_dataspace_t *subspace);
+esdm_status esdm_scheduler_enqueue(esdm_instance_t *esdm, io_request_status_t *status, io_operation_t type, esdm_dataset_t *dataset, void *buf, esdm_dataspace_t *subspace, esdm_dataspace_t *memspace);
 
 esdm_status esdm_scheduler_wait(io_request_status_t *status);
 
@@ -352,11 +352,11 @@ inline esdmI_range_t esdmI_range_intersection(esdmI_range_t a, esdmI_range_t b) 
   };
 }
 
-inline bool esdmI_range_isEmpty(esdmI_range_t range) { return range.start >= range.end; }
+static inline bool esdmI_range_isEmpty(esdmI_range_t range) { return range.start >= range.end; }
 
-inline bool esdmI_range_equal(esdmI_range_t a, esdmI_range_t b) { return a.start == b.start && a.end == b.end; }
+static inline bool esdmI_range_equal(esdmI_range_t a, esdmI_range_t b) { return a.start == b.start && a.end == b.end; }
 
-inline int64_t esdmI_range_size(esdmI_range_t range) { return esdmI_range_isEmpty(range) ? 0 : range.end - range.start; }
+static inline int64_t esdmI_range_size(esdmI_range_t range) { return esdmI_range_isEmpty(range) ? 0 : range.end - range.start; }
 
 void esdmI_range_print(esdmI_range_t range, FILE* stream);
 

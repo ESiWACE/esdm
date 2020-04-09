@@ -119,13 +119,13 @@ int main(int argc, char const *argv[]) {
 
   // Write the data to the dataset
   printf("Write 0\n");
-  eassert_crash(esdm_write(NULL, buf_w, subspace));
+  eassert_crash(esdm_write(NULL, buf_w, subspace, NULL));
   printf("Write 1\n");
-  eassert_crash(esdm_write(dataset, NULL, subspace));
+  eassert_crash(esdm_write(dataset, NULL, subspace, NULL));
   printf("Write 2\n");
-  eassert_crash(esdm_write(dataset, buf_w, NULL));
+  eassert_crash(esdm_write(dataset, buf_w, NULL, NULL));
   printf("Write 3\n");
-  status = esdm_write(dataset, buf_w, subspace);
+  status = esdm_write(dataset, buf_w, subspace, NULL);
   eassert(status == ESDM_SUCCESS);
 
   eassert_crash(esdm_container_commit(NULL));
