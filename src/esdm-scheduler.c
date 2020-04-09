@@ -101,7 +101,7 @@ static void backend_thread(io_work_t *work, esdm_backend_t *backend) {
   io_request_status_t *status = work->parent;
 
   timer myTimer;
-  start_timer(&myTimer);
+  ea_start_timer(&myTimer);
   DEBUG("Backend thread operates on %s via %s", backend->name, backend->config->target);
 
   eassert(backend == work->fragment->backend);
@@ -126,7 +126,7 @@ static void backend_thread(io_work_t *work, esdm_backend_t *backend) {
     work->callback(work);
   }
 
-  double localTime = stop_timer(myTimer);
+  double localTime = ea_stop_timer(myTimer);
 
   g_mutex_lock(&status->mutex);
   // Please note the return value from atomic_fetch_sub() is the original
@@ -708,7 +708,7 @@ static void updateRequestStats(esdm_statistics_t* stats, uint64_t requestCount, 
 
 esdm_status esdm_scheduler_enqueue_write(esdm_instance_t *esdm, io_request_status_t *status, esdm_dataset_t *dataset, void *buf, esdm_dataspace_t *space, bool requestIsInternal) {
   timer myTimer;
-  start_timer(&myTimer);
+  ea_start_timer(&myTimer);
   double startTime; //reused for the different individual measurements
 
   GError *error;
@@ -720,7 +720,7 @@ esdm_status esdm_scheduler_enqueue_write(esdm_instance_t *esdm, io_request_statu
   eassert(backends);
   esdmI_hypercube_t** backendExtends = malloc(backendCount*sizeof(*backendExtends));
   splitToBackends(space, backendCount, backends, backendExtends);
-  gWriteTimes.backendDistribution += startTime = stop_timer(myTimer);
+  gWriteTimes.backendDistribution += startTime = ea_stop_timer(myTimer);
   for(int64_t backendIndex = 0; backendIndex < backendCount; backendIndex++) {
     esdmI_hypercube_t* curExtends = backendExtends[backendIndex];
     if(curExtends) {
@@ -776,7 +776,7 @@ esdm_status esdm_scheduler_enqueue_write(esdm_instance_t *esdm, io_request_statu
       esdmI_hypercube_destroy(curExtends);
     }
   }
-  gWriteTimes.backendDispatch += stop_timer(myTimer) - startTime;
+  gWriteTimes.backendDispatch += ea_stop_timer(myTimer) - startTime;
 
   updateRequestStats(&esdm->writeStats, 1, esdm_dataspace_size(space), requestIsInternal); //update the statistics
 
@@ -837,7 +837,7 @@ esdm_status esdm_scheduler_write_blocking(esdm_instance_t *esdm, esdm_dataset_t 
   ESDM_DEBUG(__func__);
 
   timer myTimer;
-  start_timer(&myTimer);
+  ea_start_timer(&myTimer);
 
   io_request_status_t status;
   esdm_status ret = esdm_scheduler_status_init(&status);
@@ -847,14 +847,14 @@ esdm_status esdm_scheduler_write_blocking(esdm_instance_t *esdm, esdm_dataset_t 
   if( ret != ESDM_SUCCESS){
     return ret;
   }
-  double syncStartTime = stop_timer(myTimer);
+  double syncStartTime = ea_stop_timer(myTimer);
 
   ret = esdm_scheduler_wait(&status);
   eassert(ret == ESDM_SUCCESS);
 
   ret = esdm_scheduler_status_finalize(&status);
   eassert(ret == ESDM_SUCCESS);
-  double endTime = stop_timer(myTimer);
+  double endTime = ea_stop_timer(myTimer);
 
   gWriteTimes.completion += endTime - syncStartTime;
   gWriteTimes.total += endTime;
@@ -867,7 +867,7 @@ esdm_status esdm_scheduler_read_blocking(esdm_instance_t *esdm, esdm_dataset_t *
   ESDM_DEBUG(__func__);
 
   timer myTimer;
-  start_timer(&myTimer);
+  ea_start_timer(&myTimer);
   esdm_readTimes_t myTimes = {0};
   double startTime; //reused for the different individual measurements
 
@@ -875,7 +875,7 @@ esdm_status esdm_scheduler_read_blocking(esdm_instance_t *esdm, esdm_dataset_t *
   esdm_status ret = esdm_scheduler_status_init(&status);
   eassert(ret == ESDM_SUCCESS);
 
-  startTime = stop_timer(myTimer);
+  startTime = ea_stop_timer(myTimer);
   int64_t frag_count;
   esdm_fragment_t** read_frag;
   {
@@ -885,10 +885,10 @@ esdm_status esdm_scheduler_read_blocking(esdm_instance_t *esdm, esdm_dataset_t *
     esdmI_hypercube_destroy(readExtends);
     DEBUG("fragments to read: %d", frag_count);
   }
-  myTimes.makeSet = stop_timer(myTimer) - startTime;
+  myTimes.makeSet = ea_stop_timer(myTimer) - startTime;
 
   //check whether we have all the requested data
-  startTime = stop_timer(myTimer);
+  startTime = ea_stop_timer(myTimer);
   esdmI_hypercubeSet_t* uncovered;
   bool dataIsComplete = fragmentsCoverSpace(subspace, frag_count, read_frag, &uncovered);
   if(!dataIsComplete) {
@@ -903,23 +903,23 @@ esdm_status esdm_scheduler_read_blocking(esdm_instance_t *esdm, esdm_dataset_t *
       ret = ESDM_INCOMPLETE_DATA; //no fill value set, so we error out
     }
   }
-  myTimes.coverageCheck = stop_timer(myTimer) - startTime;
+  myTimes.coverageCheck = ea_stop_timer(myTimer) - startTime;
 
   int64_t requestBytes = 0, ioBytes = 0;
   if(ret == ESDM_SUCCESS) {
     //all preliminaries successful, commit to reading
-    startTime = stop_timer(myTimer);
+    startTime = ea_stop_timer(myTimer);
     ret = esdm_scheduler_enqueue_read(esdm, &status, frag_count, read_frag, buf, subspace);
     eassert(ret == ESDM_SUCCESS);
-    myTimes.enqueue = stop_timer(myTimer) - startTime;
+    myTimes.enqueue = ea_stop_timer(myTimer) - startTime;
 
-    startTime = stop_timer(myTimer);
+    startTime = ea_stop_timer(myTimer);
     ret = esdm_scheduler_wait(&status);
     eassert(ret == ESDM_SUCCESS);
 
     ret = esdm_scheduler_status_finalize(&status);
     eassert(ret == ESDM_SUCCESS);
-    myTimes.completion = stop_timer(myTimer) - startTime;
+    myTimes.completion = ea_stop_timer(myTimer) - startTime;
 
     ret = status.return_code;
 
@@ -933,14 +933,14 @@ esdm_status esdm_scheduler_read_blocking(esdm_instance_t *esdm, esdm_dataset_t *
     updateRequestStats(&esdm->readStats, 1, requestBytes, requestIsInternal);
   }
 
-  startTime = stop_timer(myTimer);
+  startTime = ea_stop_timer(myTimer);
   //reading is done, check whether we want to store the resulting fragment for faster access in the future
   if(ret == ESDM_SUCCESS && dataIsComplete) { //don't perform write-back of data that contains fill values, we do not want to transform data holes into stored data!
     if(ioBytes/(double)requestBytes >= 8) { //TODO Turn this magic number into a proper configuration constant!
       esdm_scheduler_write_blocking(esdm, dataset, buf, subspace, true);  //Ignore return code because this is just an optimization that writes a redundant data copy to disk.
     }
   }
-  myTimes.writeback = stop_timer(myTimer) - startTime;
+  myTimes.writeback = ea_stop_timer(myTimer) - startTime;
 
   //cleanup, must not happen before we wait for the background processes to finish their tasks
   if(out_fillRegion) {  //either return the fill region to the user or destroy it
@@ -949,7 +949,7 @@ esdm_status esdm_scheduler_read_blocking(esdm_instance_t *esdm, esdm_dataset_t *
     esdmI_hypercubeSet_destroy(uncovered);
   }
   free(read_frag);
-  myTimes.total = stop_timer(myTimer);
+  myTimes.total = ea_stop_timer(myTimer);
 
   gReadTimes.makeSet += myTimes.makeSet;
   gReadTimes.coverageCheck += myTimes.coverageCheck;

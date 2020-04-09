@@ -48,7 +48,7 @@ void writeData(esdm_dataset_t* dataset, esdm_dataspace_t* dataspace, int64_t len
   int64_t fragmentCount = 0;
   int64_t totalSize = 0;
   timer myTimer;
-  start_timer(&myTimer);
+  ea_start_timer(&myTimer);
 
   for(int64_t offset = 0; offset < length; offset++) {
     for(int64_t size = 1; offset + size <= length; size++) {
@@ -79,7 +79,7 @@ void writeData(esdm_dataset_t* dataset, esdm_dataspace_t* dataspace, int64_t len
   ret = esdm_dataset_commit(dataset);
   eassert(ret == ESDM_SUCCESS);
 
-  double writeTime = stop_timer(myTimer);
+  double writeTime = ea_stop_timer(myTimer);
   printf("write %"PRId64" fragments of %"PRId64" bytes of data (%"PRId64" bytes total): %.3fms\n", fragmentCount, length*sizeof(*data), totalSize, 1000*writeTime);
   totalFragmentCount += fragmentCount;
   totalWrittenData += totalSize;
@@ -209,14 +209,14 @@ void runTestWithConfig(int64_t length, int64_t readCount, const char* configStri
 
   esdm_loglevel(ESDM_LOGLEVEL_WARNING); //stop the esdm_mkfs() call from spamming us with infos about deleted objects
   timer myTimer;
-  start_timer(&myTimer);
+  ea_start_timer(&myTimer);
   ret = esdm_mkfs(ESDM_FORMAT_PURGE_RECREATE, ESDM_ACCESSIBILITY_GLOBAL);
   eassert(ret == ESDM_SUCCESS);
-  printf("esdm_mkfs(): %.3fms\n", 1000*stop_timer(myTimer));
-  start_timer(&myTimer);
+  printf("esdm_mkfs(): %.3fms\n", 1000*ea_stop_timer(myTimer));
+  ea_start_timer(&myTimer);
   ret = esdm_mkfs(ESDM_FORMAT_PURGE_RECREATE, ESDM_ACCESSIBILITY_NODELOCAL);
   eassert(ret == ESDM_SUCCESS);
-  printf("esdm_mkfs(): %.3fms\n", 1000*stop_timer(myTimer));
+  printf("esdm_mkfs(): %.3fms\n", 1000*ea_stop_timer(myTimer));
   esdm_loglevel(ESDM_LOGLEVEL_INFO);
 
   // define dataspace
@@ -241,9 +241,9 @@ void runTestWithConfig(int64_t length, int64_t readCount, const char* configStri
 
   writeData(dataset, dataspace, length, data);
 
-  start_timer(&myTimer);
+  ea_start_timer(&myTimer);
   for(int64_t i = 0; i < readCount; i++) readRandomFragment(dataset, dataspace, length, data);
-  double readTime = stop_timer(myTimer);
+  double readTime = ea_stop_timer(myTimer);
   printf("read %"PRId64" random fragments: %.3fms\n", readCount, 1000*readTime);
   totalReadTime += readTime;
   eassert(dataIsCorrect(length, data));

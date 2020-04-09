@@ -13,7 +13,7 @@ void esdmI_fragments_construct(esdm_fragments_t* me) {
 
 void esdmI_fragments_add(esdm_fragments_t* me, esdm_fragment_t* fragment) {
   timer myTimer;
-  start_timer(&myTimer);
+  ea_start_timer(&myTimer);
 
   if(me->count == me->buff_size) {
     me->buff_size = (me->buff_size ? 2*me->buff_size : 8);
@@ -27,7 +27,7 @@ void esdmI_fragments_add(esdm_fragments_t* me, esdm_fragment_t* fragment) {
   if(!me->neighbourManager) me->neighbourManager = esdmI_hypercubeNeighbourManager_make(esdmI_hypercube_dimensions(extends));
   esdmI_hypercubeNeighbourManager_pushBack(me->neighbourManager, extends);
 
-  gFragmentAddTime += stop_timer(myTimer);
+  gFragmentAddTime += ea_stop_timer(myTimer);
   gFragmentAddCount++;
 }
 
@@ -61,7 +61,7 @@ esdm_fragment_t** esdmI_fragments_makeSetCoveringRegion(esdm_fragments_t* me, es
   eassert(out_fragmentCount);
 
   timer myTimer;
-  start_timer(&myTimer);
+  ea_start_timer(&myTimer);
 
   *out_fragmentCount = 0;
   esdm_fragment_t** fragmentSet = NULL;
@@ -159,7 +159,7 @@ esdm_fragment_t** esdmI_fragments_makeSetCoveringRegion(esdm_fragments_t* me, es
     }
   }
 
-  gMakeSetTime = stop_timer(myTimer);
+  gMakeSetTime = ea_stop_timer(myTimer);
   gMakeSetCount++;
 
   return fragmentSet;

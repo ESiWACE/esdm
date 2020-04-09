@@ -226,26 +226,26 @@ void runTestWithConfig(int height, int width, const char* configString) {
   initData(height, width, data);
 
   timer myTimer;
-  start_timer(&myTimer);
+  ea_start_timer(&myTimer);
   writeData(dataset1, dataspace, height, width, data);
-  printf("write data (%dx%d) as 1x%d fragments: %.3fms\n", height, width, width, 1000*stop_timer(myTimer));
+  printf("write data (%dx%d) as 1x%d fragments: %.3fms\n", height, width, width, 1000*ea_stop_timer(myTimer));
 
   memset(data, 0, height*sizeof(*data));
-  start_timer(&myTimer);
+  ea_start_timer(&myTimer);
   readData(dataset1, dataspace, height, width, data, (int64_t[2]){ 1, width}, 1, 1, false);
-  printf("read data as written: %.3fms\n", 1000*stop_timer(myTimer));
+  printf("read data as written: %.3fms\n", 1000*ea_stop_timer(myTimer));
   eassert(dataIsCorrect(height, width, data));
 
   memset(data, 0, height*sizeof(*data));
-  start_timer(&myTimer);
+  ea_start_timer(&myTimer);
   readData(dataset1, dataspace, height, width, data, (int64_t[2]){ height, 1}, width, height, true);
-  printf("read data as %dx1 fragments: %.3fms\n", height, 1000*stop_timer(myTimer));
+  printf("read data as %dx1 fragments: %.3fms\n", height, 1000*ea_stop_timer(myTimer));
   eassert(dataIsCorrect(height, width, data));
 
   memset(data, 0, height*sizeof(*data));
-  start_timer(&myTimer);
+  ea_start_timer(&myTimer);
   readData(dataset1, dataspace, height, width, data, (int64_t[2]){ height, 1}, 1, 1, false);
-  printf("read data %dx1 fragments repeat: %.3fms\n", height, 1000*stop_timer(myTimer));
+  printf("read data %dx1 fragments repeat: %.3fms\n", height, 1000*ea_stop_timer(myTimer));
   eassert(dataIsCorrect(height, width, data));
 
   esdm_dataset_close(dataset1);
@@ -262,23 +262,23 @@ void runTestWithConfig(int height, int width, const char* configString) {
   ret = esdm_container_commit(container);
   eassert(ret == ESDM_SUCCESS);
 
-  start_timer(&myTimer);
+  ea_start_timer(&myTimer);
   writeData(dataset2, dataspace, height, width, data);
-  printf("write data (%dx%d) as 1x%d fragments: %.3fms\n", height, width, width, 1000*stop_timer(myTimer));
+  printf("write data (%dx%d) as 1x%d fragments: %.3fms\n", height, width, width, 1000*ea_stop_timer(myTimer));
 
   timer outerTimer;
-  start_timer(&outerTimer);
+  ea_start_timer(&outerTimer);
   for(int64_t fragmentSize[2] = {1, width}, readFactor = 1; fragmentSize[1] && fragmentSize[0] <= height; fragmentSize[1] /= 2, fragmentSize[0] *=2, readFactor *= 2) {
     memset(data, 0, height*sizeof(*data));
     bool expectWriteback = readFactor >= 8;
-    start_timer(&myTimer);
+    ea_start_timer(&myTimer);
     readData(dataset2, dataspace, height, width, data, fragmentSize, readFactor, readFactor, expectWriteback);
-    printf("read data as %"PRId64"x%"PRId64" fragments: %.3fms%s\n", fragmentSize[0], fragmentSize[1], 1000*stop_timer(myTimer), expectWriteback ? " (writeback)" : "");
+    printf("read data as %"PRId64"x%"PRId64" fragments: %.3fms%s\n", fragmentSize[0], fragmentSize[1], 1000*ea_stop_timer(myTimer), expectWriteback ? " (writeback)" : "");
     if(expectWriteback) readFactor = 1;
     eassert(dataIsCorrect(height, width, data));
   }
   free(data);
-  printf("total: %.3fms\n", 1000*stop_timer(outerTimer));
+  printf("total: %.3fms\n", 1000*ea_stop_timer(outerTimer));
 
   esdm_dataspace_destroy(dataspace);
   esdm_dataset_close(dataset2);

@@ -305,23 +305,23 @@ void* ea_memdup(void* data, size_t size) {
 
 #ifdef ESM
 
-void start_timer(timer *t1) {
+void ea_start_timer(timer *t1) {
   *t1 = clock64();
 }
 
-double stop_timer(timer t1) {
+double ea_stop_timer(timer t1) {
   timer end;
-  start_timer(&end);
+  ea_start_timer(&end);
   return (end - t1) / 1000.0 / 1000.0;
 }
 
-double timer_subtract(timer number, timer subtract) {
+double ea_timer_subtract(timer number, timer subtract) {
   return (number - subtract) / 1000.0 / 1000.0;
 }
 
 #else // POSIX COMPLAINT
 
-void start_timer(timer *t1) {
+void ea_start_timer(timer *t1) {
   clock_gettime(CLOCK_MONOTONIC, t1);
 }
 
@@ -344,13 +344,13 @@ static double time_to_double(struct timespec t) {
   return d;
 }
 
-double timer_subtract(timer number, timer subtract) {
+double ea_timer_subtract(timer number, timer subtract) {
   return time_to_double(time_diff(number, subtract));
 }
 
-double stop_timer(timer t1) {
+double ea_stop_timer(timer t1) {
   timer end;
-  start_timer(&end);
+  ea_start_timer(&end);
   return time_to_double(time_diff(end, t1));
 }
 

@@ -338,10 +338,10 @@ void benchmarkWrite(size_t instructionCount, instruction_t* instructions) {
   timer t;
   double time, md_sync_start;
   MPI_Barrier(MPI_COMM_WORLD);
-  start_timer(&t);
+  ea_start_timer(&t);
   for(int64_t t = 0; t < timeLimit; t++) writeTimestep(instructionCount, instructions, sets, spaces, t);
   MPI_Barrier(MPI_COMM_WORLD);
-  md_sync_start = stop_timer(t);
+  md_sync_start = ea_stop_timer(t);
 
   //commit the changes to data to the metadata
   for(size_t i = instructionCount; i--; ) {
@@ -357,7 +357,7 @@ void benchmarkWrite(size_t instructionCount, instruction_t* instructions) {
   ret = esdm_container_close(container);
   eassert(ret == ESDM_SUCCESS);
   MPI_Barrier(MPI_COMM_WORLD);
-  time = stop_timer(t);
+  time = ea_stop_timer(t);
 
   //determine our performance
   double total_time;
@@ -457,10 +457,10 @@ void benchmarkRead(size_t instructionCount, instruction_t* instructions) {
   timer t;
   double time, md_sync_start;
   MPI_Barrier(MPI_COMM_WORLD);
-  start_timer(&t);
+  ea_start_timer(&t);
   for(int64_t t = 0; t < timeLimit; t++) readTimestep(instructionCount, instructions, sets, spaces, t);
   MPI_Barrier(MPI_COMM_WORLD);
-  md_sync_start = stop_timer(t);
+  md_sync_start = ea_stop_timer(t);
 
   //close the ESDM objects
   for(size_t i = instructionCount; i--; ) {
@@ -470,7 +470,7 @@ void benchmarkRead(size_t instructionCount, instruction_t* instructions) {
   ret = esdm_container_close(container);
   eassert(ret == ESDM_SUCCESS);
   MPI_Barrier(MPI_COMM_WORLD);
-  time = stop_timer(t);
+  time = ea_stop_timer(t);
 
   //determine our performance
   double total_time;

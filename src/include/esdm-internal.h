@@ -485,9 +485,9 @@ typedef clock64_t timer;
 typedef struct timespec timer;
 #endif
 
-void start_timer(timer *t1);
-double stop_timer(timer t1);
-double timer_subtract(timer number, timer subtract);
+void ea_start_timer(timer *t1);
+double ea_stop_timer(timer t1);
+double ea_timer_subtract(timer number, timer subtract);
 
 double esdmI_backendOutputTime();
 double esdmI_backendInputTime();
