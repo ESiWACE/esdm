@@ -253,7 +253,7 @@ esdm_status esdm_dataset_create(esdm_container_t *container, const char *name, e
  The value to be used if data hasn't been written to a datapoint, it must be of the same type as the dataset type.
  If the fill value was already set, overwrite it.
  */
-esdm_status esdm_dataset_set_fill_value(esdm_dataset_t *dataset, void * value);
+esdm_status esdm_dataset_set_fill_value(esdm_dataset_t *dataset, void const * value);
 
 /*
  Copy the fill value into value
@@ -270,7 +270,9 @@ char const * esdm_dataset_name(esdm_dataset_t *dataset);
 /*
  Name the dimensions of a dataset
  */
-esdm_status esdm_dataset_name_dims(esdm_dataset_t *dataset, char **names);
+esdm_status esdm_dataset_name_dims(esdm_dataset_t *dataset, char * const * names);
+
+//esdm_status esdm_dataset_name_dimsv(esdm_dataset_t *dataset, ...);
 
 /*
  Rename a single dimension
@@ -299,6 +301,11 @@ int64_t esdm_dataspace_get_dims(esdm_dataspace_t * d);
 int64_t const* esdm_dataspace_get_size(esdm_dataspace_t * d);
 int64_t const* esdm_dataspace_get_offset(esdm_dataspace_t * d);
 esdm_type_t esdm_dataspace_get_type(esdm_dataspace_t * d);
+
+/*
+ Returns the number of bytes covered by the dataspace
+ */
+int64_t esdm_dataspace_get_total_byte(esdm_dataspace_t * d);
 
 /**
  * Get the effective stride of a dataspace.

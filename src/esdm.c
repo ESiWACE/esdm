@@ -212,7 +212,7 @@ esdm_status esdm_sync() {
   return ESDM_SUCCESS;
 }
 
-esdm_status esdm_dataset_set_fill_value(esdm_dataset_t *d, void * value){
+esdm_status esdm_dataset_set_fill_value(esdm_dataset_t *d, void const * value){
   eassert(d);
   if(d->fill_value){
     smd_attr_destroy(d->fill_value);

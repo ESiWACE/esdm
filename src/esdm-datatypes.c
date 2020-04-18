@@ -370,6 +370,13 @@ int64_t esdm_dataspace_get_dims(esdm_dataspace_t * d){
   return d->dims;
 }
 
+int64_t esdm_dataspace_get_total_byte(esdm_dataspace_t * d){
+  eassert(d);
+  uint64_t elements = esdm_dataspace_element_count(d);
+  int64_t bytes = elements * esdm_sizeof(d->type);
+  return bytes;
+}
+
 int64_t const* esdm_dataspace_get_size(esdm_dataspace_t * d){
   eassert(d);
   return d->size;
@@ -1446,7 +1453,7 @@ uint64_t esdm_dataspace_size(esdm_dataspace_t *dataspace) {
 
 // Metadata //////////////////////////////////////////////////////////////////
 
-esdm_status esdm_dataset_name_dims(esdm_dataset_t *d, char **names) {
+esdm_status esdm_dataset_name_dims(esdm_dataset_t *d, char *const *names) {
   ESDM_DEBUG(__func__);
   eassert(d != NULL);
   eassert(names != NULL);
