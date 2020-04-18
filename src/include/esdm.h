@@ -249,7 +249,6 @@ esdm_dataset_t * esdm_container_dataset_from_array(esdm_container_t * container,
 
 esdm_status esdm_dataset_create(esdm_container_t *container, const char *name, esdm_dataspace_t *dataspace, esdm_dataset_t **out_dataset);
 
-
 /*
  The value to be used if data hasn't been written to a datapoint, it must be of the same type as the dataset type.
  If the fill value was already set, overwrite it.
@@ -411,6 +410,9 @@ esdm_status esdm_dataset_get_attributes(esdm_dataset_t *dataset, smd_attr_t **ou
  */
 
 esdm_status esdm_dataspace_create(int64_t dims, int64_t *sizes, esdm_type_t type, esdm_dataspace_t **out_dataspace);
+
+esdm_status esdm_dataspace_create_full(int64_t dims, int64_t *size, int64_t *offset, esdm_type_t type, esdm_dataspace_t **out_dataspace);
+
 
 /**
  * Create a copy of a dataspace.

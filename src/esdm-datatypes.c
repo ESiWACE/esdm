@@ -1152,6 +1152,34 @@ esdm_status esdm_dataset_rename(esdm_dataset_t *d, const char *name) {
 
 // Dataspace //////////////////////////////////////////////////////////////////
 
+esdm_status esdm_dataspace_create_full(int64_t dims, int64_t *sizes, int64_t *offset, esdm_type_t type, esdm_dataspace_t **out_dataspace){
+  ESDM_DEBUG(__func__);
+  eassert(dims >= 0);
+  eassert(sizes);
+  eassert(offset);
+  eassert(out_dataspace);
+
+  esdm_dataspace_t *dataspace = (esdm_dataspace_t *)malloc(sizeof(esdm_dataspace_t));
+
+  dataspace->dims = dims;
+  if(dims == 0){
+    dims = 1;
+  }
+  dataspace->size   = (int64_t *) malloc(sizeof(int64_t) * dims);
+  dataspace->offset = (int64_t *) malloc(sizeof(int64_t) * dims);
+
+  memcpy(dataspace->size, sizes, sizeof(int64_t) * dims);
+  memcpy(dataspace->offset, offset, sizeof(int64_t) * dims);
+
+  dataspace->type = type;
+  dataspace->stride = NULL;
+  DEBUG("New dataspace: dims=%d\n", dataspace->dims);
+
+  *out_dataspace = dataspace;
+
+  return ESDM_SUCCESS;
+}
+
 esdm_status esdm_dataspace_create(int64_t dims, int64_t *sizes, esdm_type_t type, esdm_dataspace_t **out_dataspace) {
   ESDM_DEBUG(__func__);
   eassert(dims >= 0);
