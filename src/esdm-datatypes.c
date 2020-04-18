@@ -278,7 +278,7 @@ esdm_status esdm_container_close(esdm_container_t *c) {
 
   eassert(c->refcount > 0);
 
-  esdm_container_commit(c);
+  // esdm_container_commit(c); CANNOT DO THIS WILL BREAK MPI
 
   c->refcount--;
   if(c->refcount > 0){
@@ -1070,7 +1070,7 @@ esdm_status esdm_dataset_close(esdm_dataset_t *dset) {
   eassert(dset->status != ESDM_DATA_NOT_LOADED);
   eassert(dset->refcount > 0);
 
-  esdm_dataset_commit(dset);
+  //esdm_dataset_commit(dset); CANNOT DO THIS WILL BREAK MPI
 
   dset->refcount--;
   if(dset->refcount){
