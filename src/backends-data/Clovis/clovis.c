@@ -584,8 +584,23 @@ clovis_index_create(struct m0_clovis_realm *parent, struct m0_fid *fid)
 	int rc = 0;
 
 	m0_clovis_idx_init(&idx, parent, (struct m0_uint128 *)fid);
-	rc = m0_clovis_entity_create(NULL, &idx.in_entity, &op);
-	rc = index_op_tail(&idx.in_entity, op, rc);
+	rc = m0_clovis_entity_create(NULL, &idx.in_entity, &op)?:
+		index_op_tail(&idx.in_entity, op, rc);
+	return rc;
+}
+
+int
+clovis_index_delete(struct m0_clovis_realm *parent, struct m0_fid *fid)
+{
+	struct m0_clovis_op *op = NULL;
+	struct m0_clovis_idx idx;
+	int rc = 0;
+
+	m0_clovis_idx_init(&idx, parent, (struct m0_uint128 *)fid);
+	rc = m0_clovis_entity_open(&idx.in_entity, &op) ?:
+		m0_clovis_entity_delete(&idx.in_entity, &op) ?:
+		index_op_tail(&idx.in_entity, op, rc);
+
 	return rc;
 }
 
@@ -606,7 +621,7 @@ index_op(struct m0_clovis_realm *parent,
 	if (rcs == NULL)
 		return -ENOMEM;
 	m0_clovis_idx_init(&idx, parent, (struct m0_uint128 *)fid);
-	rc = m0_clovis_idx_op(&idx, opcode, keys, vals, rcs, 0, &op);
+	rc = m0_clovis_idx_op(&idx, opcode, keys, vals, rcs, M0_OIF_OVERWRITE, &op);
 	rc = index_op_tail(&idx.in_entity, op, rc);
 	m0_free(rcs);
 	return rc;
@@ -697,6 +712,7 @@ mapping_get(esdm_backend_t *backend, struct m0_fid *index_fid,
 	m0_bufvec_free(&key);
 	m0_bufvec_free(&val);
 
+	DEBUG_FMT("GET:%d name=%s val=%s\n", rc, name, *value);
 	return rc;
 }
 
@@ -719,6 +735,7 @@ mapping_insert(esdm_backend_t *backend, struct m0_fid *index_fid,
 	m0_bufvec_free(&key);
 	m0_bufvec_free(&val);
 
+	DEBUG_FMT("PUT:%d name=%s val=%s\n", rc, name, value);
 	return rc;
 }
 
@@ -785,6 +802,8 @@ esdm_backend_t_clovis_fini(esdm_backend_t *eb)
 	esdm_backend_t_clovis_t     *ebm;
 	struct con_dataset_obj_pair *pair;
 	struct m0_list_link         *link;
+	char                        *str_last_pos;
+	int                          rc;
 	DEBUG_ENTER;
 
 	/*
@@ -794,6 +813,13 @@ esdm_backend_t_clovis_fini(esdm_backend_t *eb)
 	while ((link = m0_list_first(&con_map)) != NULL) {
 		pair = m0_list_entry(link, struct con_dataset_obj_pair, cdo_linkage);
 		m0_list_del(link);
+		asprintf(&str_last_pos, "%"PRIu64, pair->cdo_last_pos);
+		rc = mapping_insert(eb, &index_object_last_pos,
+				    pair->cdo_obj_id, str_last_pos);
+		eassert(rc == 0);
+		DEBUG_FMT("Saving the last_pos=%s for %s\n", str_last_pos, pair->cdo_obj_id);
+		free(str_last_pos);
+
 		free(pair->cdo_container_dataset);
 		free(pair->cdo_obj_id);
 		if (pair->cdo_obj_handle != NULL) {
@@ -919,7 +945,7 @@ esdm_backend_t_clovis_fragment_retrieve(esdm_backend_t  *backend,
 	m0_mutex_unlock(&con_map_lock);
 	if (rc != 0)
 		goto err;
-	assert(pair != NULL);
+	eassert(pair != NULL);
 	void *obj_handle = NULL;
 	if (pair->cdo_obj_handle == NULL) {
 		/* object has not been opened. Let's open it and keep it open */
@@ -1118,14 +1144,14 @@ esdm_backend_t_clovis_fragment_update(esdm_backend_t  *backend,
 				free(str_last_pos);
 
 				pair = con_map_new_locked(container_dataset, obj_id, last_pos + fragment->bytes);
-				assert(pair != NULL);
+				eassert(pair != NULL);
 			}
 		}
 		m0_mutex_unlock(&con_map_lock);
 		if (rc != 0)
 			goto err;
 	}
-	assert(pair != NULL);
+	eassert(pair != NULL);
 
 	DEBUG_FMT("Updating to %s size=%lu (last_pos=%lu obj=%s)\n",
 		  fragment->id, fragment->bytes, last_pos, pair->cdo_obj_id);
@@ -1166,19 +1192,25 @@ err:
 static int
 esdm_backend_t_clovis_mkfs(esdm_backend_t *backend, int enforce_format)
 {
+	int rc = 0;
 	esdm_backend_t_clovis_t *ebm;
-	int rc;
 	DEBUG_ENTER;
 
 	ebm = eb2ebm(backend);
+
+	rc = clovis_index_delete(&ebm->ebm_clovis_container.co_realm,
+				 &index_cdname_to_object);
+	rc = clovis_index_delete(&ebm->ebm_clovis_container.co_realm,
+				 &index_object_last_pos);
+	/* rc is ignored */
 
 	/* create the global mapping index for <object -> last_pos> */
 	rc = clovis_index_create(&ebm->ebm_clovis_container.co_realm,
 				 &index_cdname_to_object)?:
 	     clovis_index_create(&ebm->ebm_clovis_container.co_realm,
 				 &index_object_last_pos);
-
 	DEBUG_LEAVE(rc);
+
 	return rc == 0 ? ESDM_SUCCESS : ESDM_ERROR;
 }
 
