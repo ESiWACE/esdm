@@ -65,6 +65,8 @@ esdm_status esdm_load_config_str(const char *str);
 
 esdm_status esdm_init();
 
+int esdm_is_initialized();
+
 /**
  * Display status information for objects stored in ESDM.
  *

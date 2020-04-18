@@ -210,7 +210,7 @@ int mkdir_recursive(const char *path);
 
 int posix_recursive_remove(const char *path); //returns an error code
 
-int read_file(char *filepath, char **buf);
+int ea_read_file(char *filepath, char **buf);
 
 /**
  * Read while ensuring and retrying until len is read or error occured.

@@ -12,7 +12,7 @@ extern "C" {
 
 int esdm_mpi_get_tasks_per_node();
 
-void esdm_mpi_distribute_config_file(char *config_filename);
+esdm_status esdm_mpi_distribute_config_file(char *config_filename);
 
 esdm_status esdm_mpi_init();
 esdm_status esdm_mpi_init_manual();

@@ -67,6 +67,10 @@ esdm_status esdm_dataset_get_dataspace(esdm_dataset_t *dset, esdm_dataspace_t **
   return ESDM_SUCCESS;
 }
 
+int esdm_is_initialized(){
+  return is_initialized;
+}
+
 esdm_status esdm_init() {
   ESDM_DEBUG("Init");
 
@@ -88,7 +92,7 @@ esdm_status esdm_init() {
     }
 
     // find configuration
-    if (!esdm.config){
+    if (! esdm.config){
       esdm_config_init(&esdm);
     }
 

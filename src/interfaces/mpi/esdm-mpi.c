@@ -30,14 +30,17 @@ int esdm_mpi_get_tasks_per_node() {
   return count;
 }
 
-void esdm_mpi_distribute_config_file(char *config_filename) {
+esdm_status esdm_mpi_distribute_config_file(char *config_filename) {
   int mpi_rank;
   MPI_Comm_rank(MPI_COMM_WORLD, &mpi_rank);
 
   char *config = NULL;
   if (mpi_rank == 0) {
     int len;
-    int ret = read_file(config_filename, &config);
+    int ret = ea_read_file(config_filename, &config);
+    if(ret == 1){
+      return ESDM_ERROR;
+    }
     eassert(ret == 0);
     len = strlen(config) + 1;
     MPI_Bcast(&len, 1, MPI_INT, 0, MPI_COMM_WORLD);
@@ -50,6 +53,8 @@ void esdm_mpi_distribute_config_file(char *config_filename) {
   }
   esdm_load_config_str(config);
   free(config);
+
+  return ESDM_SUCCESS;
 }
 
 
@@ -73,8 +78,10 @@ esdm_status esdm_mpi_init_manual() {
 
 esdm_status esdm_mpi_init() {
   esdm_mpi_init_manual();
-  esdm_mpi_distribute_config_file("esdm.conf");
-
+  int esdm_status = esdm_mpi_distribute_config_file("esdm.conf");
+  if(esdm_status == ESDM_ERROR){
+    return ESDM_ERROR;
+  }
   return esdm_init();
 }
 
