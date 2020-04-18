@@ -5,12 +5,18 @@
 #ifndef ESDM_H
 #define ESDM_H
 
-#include <esdm-datatypes.h>
 #include <stdbool.h>
 #include <stddef.h>
 #include <sys/stat.h>
 #include <sys/types.h>
 #include <unistd.h>
+
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+#include <esdm-datatypes.h>
 
 ///////////////////////////////////////////////////////////////////////////////
 // ESDM ///////////////////////////////////////////////////////////////////////
@@ -688,5 +694,9 @@ esdm_statistics_t esdm_read_stats();
  * Get some statistics about the writes that have been performed.
  */
 esdm_statistics_t esdm_write_stats();
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif

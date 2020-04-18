@@ -5,6 +5,11 @@
 
 #include <esdm.h>
 
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 int esdm_mpi_get_tasks_per_node();
 
 void esdm_mpi_distribute_config_file(char *config_filename);
@@ -28,5 +33,9 @@ esdm_status esdm_mpi_dataset_open(MPI_Comm com, esdm_container_t *container, con
 esdm_status esdm_mpi_dataset_ref(MPI_Comm com, esdm_dataset_t * d);
 esdm_status esdm_mpi_dataset_commit(MPI_Comm com, esdm_dataset_t *dataset);
 
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif
