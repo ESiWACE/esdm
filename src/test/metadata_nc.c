@@ -108,12 +108,12 @@ static void write_test() {
 
   // 3) Attributes
   char *str = {"This is some history"};
-  smd_attr_t *attr1 = smd_attr_new("history", SMD_DTYPE_STRING, str, 0);
+  smd_attr_t *attr1 = smd_attr_new("history", SMD_DTYPE_STRING, str);
   ret = esdm_dataset_link_attribute(dataset, 0, attr1);
   eassert(ret == ESDM_SUCCESS);
 
   char *unit = {"Celsius"};
-  smd_attr_t *attr2 = smd_attr_new("unit", SMD_DTYPE_STRING, unit, 1);
+  smd_attr_t *attr2 = smd_attr_new("unit", SMD_DTYPE_STRING, unit);
   ret = esdm_dataset_link_attribute(dataset, 0, attr2);
   eassert(ret == ESDM_SUCCESS);
 
@@ -122,7 +122,7 @@ static void write_test() {
   // esdm_status esdm_container_get_attributes(esdm_container_t *container, smd_attr_t **out_metadata);
 
   float a = 5;
-  smd_attr_t *attr3 = smd_attr_new("variables", SMD_DTYPE_FLOAT, &a, 0);
+  smd_attr_t *attr3 = smd_attr_new("variables", SMD_DTYPE_FLOAT, &a);
   ret = esdm_container_link_attribute(container, 0, attr3);
   eassert(ret == ESDM_SUCCESS);
 

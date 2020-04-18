@@ -31,17 +31,17 @@ int main(){
   //Test  smd_attr_new
   printf("Test smd_attr_new:\n");
   int32_t value = 10;
-  smd_attr_t * attr = smd_attr_new("test1", SMD_DTYPE_INT32, & value, 0);
+  smd_attr_t * attr = smd_attr_new("test1", SMD_DTYPE_INT32, & value);
 
   char* test = "string";
-  smd_attr_t * attr1 = smd_attr_new("teststring",SMD_DTYPE_STRING, test,1);
+  smd_attr_t * attr1 = smd_attr_new("teststring",SMD_DTYPE_STRING, test);
   char * attr1_value = (char *)smd_attr_get_value(attr1);
   eassert(strcmp(attr1_value,test)==0);
 
   //test array
   int32_t  value2[3] = {1, 2, 3};
   smd_dtype_t * array_type = smd_type_array(SMD_DTYPE_INT32,3);
-  smd_attr_t * attr2 = smd_attr_new("test2", array_type, value2, 2);
+  smd_attr_t * attr2 = smd_attr_new("test2", array_type, value2);
   int32_t * attr2_value = (int32_t*)smd_attr_get_value(attr2);
   for(int i = 0;i < 3;i++){
     eassert(value2[i] == attr2_value[i]);
@@ -49,7 +49,7 @@ int main(){
   //test 2darray
   int32_t value2d [3][3] = {{1,2,3},{4,5,6},{0,0,0}};
   smd_dtype_t * array2d_type = smd_type_array(array_type, 3);
-  smd_attr_t * attr2d = smd_attr_new("test2d", array2d_type, value2d, 200);
+  smd_attr_t * attr2d = smd_attr_new("test2d", array2d_type, value2d);
   int32_t * attr2d_value = (int32_t *)smd_attr_get_value(attr2d);
   for(int i = 0; i < 6;i++){
     printf("i = %d\n", i);
@@ -92,10 +92,10 @@ int main(){
   //test get name
   printf("Test smd_attr_get_name:\n");
   char value3 = 'X';
-  smd_attr_t * attr3 = smd_attr_new("test3", SMD_DTYPE_CHAR, & value3,3);
+  smd_attr_t * attr3 = smd_attr_new("test3", SMD_DTYPE_CHAR, & value3);
   char * value4 = "Test 4";
-  smd_attr_t * attr4 = smd_attr_new("test3", SMD_DTYPE_STRING, value4, 4);
-  smd_attr_t * attr5 = smd_attr_new("test5", SMD_DTYPE_EMPTY, NULL, 5);
+  smd_attr_t * attr4 = smd_attr_new("test3", SMD_DTYPE_STRING, value4);
+  smd_attr_t * attr5 = smd_attr_new("test5", SMD_DTYPE_EMPTY, NULL);
 
   eassert(strcmp(smd_attr_get_name(attr), "test1") == 0);
   eassert(strcmp(smd_attr_get_name(attr3), "test3") == 0);
@@ -137,22 +137,9 @@ int main(){
   printf("Pass\n");
 
 
-  //Test find pos
-  //Check find position and is attr3 is replaced
-  printf("Test smd_find_position_by_id:\n");
-  int pos_ret = smd_find_position_by_id(attr, 4);
-  eassert(pos_ret == 0);
-
-  pos_ret = smd_find_position_by_id(attr, 5);
-  eassert(pos_ret == 1);
-
-  pos_ret = smd_find_position_by_id(attr, 3);
-  eassert(pos_ret == -1);
-  printf("Pass\n");
-
   //repeat find position with name search
   printf("Test smd_find_position_by_name:\n");
-  pos_ret = smd_find_position_by_name(attr, "test3");
+  int pos_ret = smd_find_position_by_name(attr, "test3");
   eassert(pos_ret == 0);
 
   pos_ret = smd_find_position_by_name(attr, "test5");
@@ -181,16 +168,10 @@ int main(){
   //test unlinking
   printf("Test smd_attr_unlink_pos:\n");
   smd_attr_unlink_pos(attr, 0);
-  pos_ret = smd_find_position_by_id(attr, 4);
-  eassert(pos_ret == -1);
   attr_count = smd_attr_count(attr);
   eassert(attr_count == 1);
-  pos_ret = smd_find_position_by_id(attr, 5);
-  eassert(pos_ret == 0);
 
   smd_attr_unlink_pos(attr, 0);
-  pos_ret = smd_find_position_by_id(attr, 5);
-  eassert(pos_ret == -1);
   attr_count = smd_attr_count(attr);
   eassert(attr_count == 0);
 
@@ -198,18 +179,12 @@ int main(){
   //test unlinking in reverse order
   link_ret = smd_attr_link(attr, attr4, 0);
   link_ret = smd_attr_link(attr, attr5, 0);
-  eassert(smd_find_position_by_id(attr, 4) == 0);
-  eassert(smd_find_position_by_id(attr, 5) == 1);
 
   smd_attr_unlink_pos(attr,1);
-  pos_ret = smd_find_position_by_id(attr ,5);
   eassert(pos_ret == -1);
-  pos_ret = smd_find_position_by_id(attr, 4);
-  eassert(pos_ret == 0);
   attr_count = smd_attr_count(attr);
   eassert(attr_count == 1);
   smd_attr_unlink_pos(attr,0);
-  pos_ret = smd_find_position_by_id(attr, 4);
   eassert(pos_ret == -1);
   attr_count = smd_attr_count(attr);
   eassert(attr_count == 0);
@@ -229,6 +204,6 @@ int main(){
   int count = smd_attr_count(attr);
   eassert(count == 2);
 
-  //iter tested in basic_types 
+  //iter tested in basic_types
   return 0;
 }

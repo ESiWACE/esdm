@@ -108,7 +108,7 @@ void esdmI_container_init(char const * name, esdm_container_t **out_container){
   c->refcount = 1;
   c->status = ESDM_DATA_DIRTY;
   memset(& c->dsets, 0, sizeof(esdm_datasets_t));
-  c->attr = smd_attr_new("Variables", SMD_DTYPE_EMPTY, NULL, 0);
+  c->attr = smd_attr_new("Variables", SMD_DTYPE_EMPTY, NULL);
   *out_container = c;
 }
 
@@ -651,7 +651,7 @@ void esdm_dataset_init(esdm_container_t *c, const char *name, esdm_dataspace_t *
   }
   d->status = ESDM_DATA_DIRTY;
   esdmI_fragments_construct(&d->fragments);
-  d->attr = smd_attr_new("Variables", SMD_DTYPE_EMPTY, NULL, 0);
+  d->attr = smd_attr_new("Variables", SMD_DTYPE_EMPTY, NULL);
 
   *out_dataset = d;
 }
