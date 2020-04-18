@@ -1505,6 +1505,9 @@ void esdm_container_set_status_dirty(esdm_container_t * c){
 esdm_status esdm_dataset_get_name_dims(esdm_dataset_t *d, char const *const **out_names) {
   eassert(d != NULL);
   eassert(out_names != NULL);
+  if(d->dims_dset_id == NULL){
+    return ESDM_ERROR;
+  }
   *out_names = (char const *const *)d->dims_dset_id;
   return ESDM_SUCCESS;
 }

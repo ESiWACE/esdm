@@ -212,6 +212,10 @@ esdm_status esdm_sync() {
   return ESDM_SUCCESS;
 }
 
+int esdm_container_get_mode_flags(esdm_container_t *c){
+  return c->mode_flags;
+}
+
 esdm_status esdm_dataset_set_fill_value(esdm_dataset_t *d, void const * value){
   eassert(d);
   if(d->fill_value){

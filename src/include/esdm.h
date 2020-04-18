@@ -149,6 +149,8 @@ esdm_status esdm_container_create(const char *name, int allow_overwrite, esdm_co
  */
 esdm_status esdm_container_open(const char *name, int esdm_mode_flags, esdm_container_t **out_container);
 
+int esdm_container_get_mode_flags(esdm_container_t * container);
+
 /**
  * Make container persistent to storage.
  * Enqueue for writing to backends.
