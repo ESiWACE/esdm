@@ -540,7 +540,7 @@ int main(int argc, char** argv) {
   FILE *writeInstructionFile = NULL, *readInstructionFile = NULL;
   parseCommandlineArgs(argc, argv, &configFile, &writeInstructionFile, &readInstructionFile);
 
-  esdm_mpi_init();
+  esdm_mpi_init_manual();
   esdm_mpi_distribute_config_file(configFile);
   esdm_status ret = esdm_init();
   eassert(ret == ESDM_SUCCESS);

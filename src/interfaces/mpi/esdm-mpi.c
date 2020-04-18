@@ -52,7 +52,9 @@ void esdm_mpi_distribute_config_file(char *config_filename) {
   free(config);
 }
 
-void esdm_mpi_init() {
+
+
+esdm_status esdm_mpi_init_manual() {
   int size;
   MPI_Comm_size(MPI_COMM_WORLD, &size);
   time_t timer;
@@ -65,7 +67,18 @@ void esdm_mpi_init() {
   int rank;
   MPI_Comm_rank(MPI_COMM_WORLD, &rank);
   srand(rank + (uint64_t) timer);
+
+  return ESDM_SUCCESS;
 }
+
+esdm_status esdm_mpi_init() {
+  esdm_mpi_init_manual();
+  esdm_mpi_distribute_config_file("esdm.conf");
+
+  return esdm_init();
+}
+
+
 
 void esdm_mpi_finalize(){
   esdm_finalize();
