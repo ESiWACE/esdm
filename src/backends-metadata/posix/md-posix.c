@@ -68,7 +68,7 @@ static int entry_create(const char *path, char * const json, int size) {
     return 1;
   }
   if ( json != NULL) {
-    int ret = write_check(fd, json, size);
+    int ret = ea_write_check(fd, json, size);
     close(fd);
     return ret;
   }
@@ -87,7 +87,7 @@ static int entry_update(const char *path, void *buf, size_t len) {
   // everything ok? write and close
   if (fd != -1) {
     // write some metadata
-    write_check(fd, buf, len);
+    ea_write_check(fd, buf, len);
     close(fd);
   }
 
@@ -287,7 +287,7 @@ static int container_retrieve(esdm_md_backend_t *backend, esdm_container_t *cont
   int fd = open(path_metadata, O_RDONLY);
   if (fd < 0) return ESDM_ERROR;
   char * json = (char *)malloc(len);
-  ret = read_check(fd, json, statbuf.st_size);
+  ret = ea_read_check(fd, json, statbuf.st_size);
   close(fd);
   json[statbuf.st_size] = 0;
   if (ret != 0){
@@ -374,7 +374,7 @@ static int dataset_retrieve(esdm_md_backend_t *backend, esdm_dataset_t *d, char 
   int fd = open(path_metadata, O_RDONLY);
   if (fd < 0) return ESDM_ERROR;
   char * json = (char *)malloc(len);
-  ret = read_check(fd, json, statbuf.st_size);
+  ret = ea_read_check(fd, json, statbuf.st_size);
   close(fd);
   json[statbuf.st_size] = 0;
   if (ret != 0){

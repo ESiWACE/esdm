@@ -152,7 +152,7 @@ int ea_read_file(char *filepath, char **buf) {
   lseek(fd, 0, SEEK_SET);
 
   char *string = malloc(fsize + 1);
-  int ret = read_check(fd, string, fsize);
+  int ret = ea_read_check(fd, string, fsize);
   close(fd);
 
   string[fsize] = 0;
@@ -163,7 +163,7 @@ int ea_read_file(char *filepath, char **buf) {
   return ret;
 }
 
-int write_check(int fd, char *buf, size_t len) {
+int ea_write_check(int fd, char *buf, size_t len) {
   while (len > 0) {
     ssize_t ret = write(fd, buf, len);
     if (ret != -1) {

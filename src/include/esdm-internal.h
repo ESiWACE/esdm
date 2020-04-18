@@ -216,13 +216,13 @@ int ea_read_file(char *filepath, char **buf);
  * Read while ensuring and retrying until len is read or error occured.
  */
 
-int read_check(int fd, char *buf, size_t len);
+int ea_read_check(int fd, char *buf, size_t len);
 
 /**
  * Write while ensuring and retrying until len is written or error occured.
  */
 
-int write_check(int fd, char *buf, size_t len);
+int ea_write_check(int fd, char *buf, size_t len);
 
 
 
