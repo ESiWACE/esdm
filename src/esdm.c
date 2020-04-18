@@ -93,7 +93,9 @@ esdm_status esdm_init() {
 
     // find configuration
     if (! esdm.config){
-      esdm_config_init(&esdm);
+      if(esdm_config_init(&esdm) == NULL){
+        return ESDM_ERROR;
+      }
     }
 
     // optional modules (e.g. data and metadata backends)
