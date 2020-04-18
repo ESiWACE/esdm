@@ -278,6 +278,8 @@ esdm_status esdm_container_close(esdm_container_t *c) {
 
   eassert(c->refcount > 0);
 
+  esdm_container_commit(c);
+
   c->refcount--;
   if(c->refcount > 0){
     return ESDM_SUCCESS;
@@ -1061,6 +1063,8 @@ esdm_status esdm_dataset_close(esdm_dataset_t *dset) {
   eassert(dset->status != ESDM_DATA_NOT_LOADED);
   eassert(dset->refcount > 0);
 
+  esdm_dataset_commit(dset);
+
   dset->refcount--;
   if(dset->refcount){
     return ESDM_SUCCESS;
@@ -1210,6 +1214,8 @@ esdm_status esdm_dataspace_copy(esdm_dataspace_t* orig, esdm_dataspace_t **out_d
     .offset = ea_memdup(orig->offset, orig->dims*sizeof*orig->offset),
     .stride = orig->stride ? ea_memdup(orig->stride, orig->dims*sizeof*orig->stride) : NULL
   };
+
+  return ESDM_SUCCESS;
 }
 
 esdm_status esdmI_dataspace_getExtends(esdm_dataspace_t* space, esdmI_hypercube_t** out_extends) {
