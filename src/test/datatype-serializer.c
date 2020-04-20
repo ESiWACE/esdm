@@ -45,7 +45,7 @@ int main() {
     esdm_dataspace_subspace(space, 2, dim2, offset, &subspace);
     eassert(subspace != NULL);
 
-    uint64_t size = esdm_dataspace_size(subspace);
+    uint64_t size = esdm_dataspace_total_bytes(subspace);
     printf("Offset: %d,%d -- size: %lu\n", (int)offset[0], (int)offset[1], size);
 
     // now copy the data from the position

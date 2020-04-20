@@ -255,7 +255,7 @@ esdm_status esdm_dataset_change_name(esdm_dataset_t *d, char const * new_name){
 esdm_status esdm_read_stream(esdm_dataset_t *d, esdm_dataspace_t *space, void * user_ptr, esdm_stream_func_t stream_func, esdm_reduce_func_t reduce_func)
 {
   // TODO emulation function for now.
-  uint64_t size = esdm_dataspace_size(space);
+  uint64_t size = esdm_dataspace_total_bytes(space);
   void * buf = malloc(size);
   esdm_status ret = esdmI_readWithFillRegion(d, buf, space, NULL, NULL);
   void * intermediate = stream_func(space, buf, user_ptr, d->fill_value);

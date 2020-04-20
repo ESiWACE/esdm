@@ -307,7 +307,7 @@ esdm_type_t esdm_dataspace_get_type(esdm_dataspace_t * d);
 /*
  Returns the number of bytes covered by the dataspace
  */
-int64_t esdm_dataspace_get_total_byte(esdm_dataspace_t * d);
+int64_t esdm_dataspace_total_bytes(esdm_dataspace_t * d);
 
 /**
  * Get the effective stride of a dataspace.
@@ -575,13 +575,6 @@ esdm_status esdm_dataspace_destroy(esdm_dataspace_t *dataspace);
 esdm_status esdm_dataspace_serialize(esdm_dataspace_t *dataspace, void **out);
 
 uint64_t esdm_dataspace_element_count(esdm_dataspace_t *dataspace);
-
-/**
- * Calculate the logical amount of data in a dataspace in bytes.
- *
- * @return the volume of the dataspace's hypercube times the size of its elements
- */
-uint64_t esdm_dataspace_size(esdm_dataspace_t *dataspace);
 
 
 // Fragment

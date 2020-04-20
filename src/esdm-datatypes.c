@@ -370,7 +370,7 @@ int64_t esdm_dataspace_get_dims(esdm_dataspace_t * d){
   return d->dims;
 }
 
-int64_t esdm_dataspace_get_total_byte(esdm_dataspace_t * d){
+int64_t esdm_dataspace_total_bytes(esdm_dataspace_t * d){
   eassert(d);
   uint64_t elements = esdm_dataspace_element_count(d);
   int64_t bytes = elements * esdm_sizeof(d->type);
@@ -448,7 +448,7 @@ esdm_status esdm_fragment_retrieve(esdm_fragment_t *fragment) {
         }
         eassert(!fragment->dataspace->stride);
 
-        fragment->buf = malloc(esdm_dataspace_size(fragment->dataspace));  //ensure that we have a buffer to write to
+        fragment->buf = malloc(esdm_dataspace_total_bytes(fragment->dataspace));  //ensure that we have a buffer to write to
         fragment->ownsBuf = true;
       }
       esdm_backend_t *backend = fragment->backend;
@@ -1443,12 +1443,6 @@ uint64_t esdm_dataspace_element_count(esdm_dataspace_t *subspace) {
     size *= subspace->size[i];
   }
   return size;
-}
-
-uint64_t esdm_dataspace_size(esdm_dataspace_t *dataspace) {
-  uint64_t size = esdm_dataspace_element_count(dataspace);
-  uint64_t bytes = size * esdm_sizeof(dataspace->type);
-  return bytes;
 }
 
 // Metadata //////////////////////////////////////////////////////////////////

@@ -362,7 +362,7 @@ bool esdmI_scheduler_try_direct_io(esdm_fragment_t *f, void * buf, esdm_dataspac
 
   //Ok, only a single memcpy() would be needed to move the data.
   //Determine whether the entire fragment's data would be needed.
-  if(esdm_dataspace_size(f->dataspace) != chunkSize) return false; //Only part of the data is used, making direct I/O impossible. That would overwrite data next to the needed portion.
+  if(esdm_dataspace_total_bytes(f->dataspace) != chunkSize) return false; //Only part of the data is used, making direct I/O impossible. That would overwrite data next to the needed portion.
   if(f->buf) return false;  //The fragment is already loaded, thus reading it is by definition a copy.
 
   //The entire fragment's data is used in one piece.
@@ -523,7 +523,7 @@ static esdmI_hypercubeSet_t* makeSplitRecommendation_contiguousFragments(esdm_da
   esdmI_hypercube_t* extends;
   esdmI_dataspace_getExtends(space, &extends);
 
-  if(maxFragmentSize > 0 && esdm_dataspace_size(space) < (uint64_t)maxFragmentSize) {
+  if(maxFragmentSize > 0 && esdm_dataspace_total_bytes(space) < (uint64_t)maxFragmentSize) {
     //fast path: just return the full extends if the dataspace fits into the maxFragmentSize
     esdmI_hypercubeSet_add(result, extends);
   } else {
@@ -769,7 +769,7 @@ esdm_status esdm_scheduler_enqueue_write(esdm_instance_t *esdm, io_request_statu
           g_thread_pool_push(curBackend->threadPool, task, &error);
         }
 
-        updateIoStats(&esdm->writeStats, 1, esdm_dataspace_size(subspace)); //update the statistics
+        updateIoStats(&esdm->writeStats, 1, esdm_dataspace_total_bytes(subspace)); //update the statistics
       }
 
       esdmI_hypercubeSet_destroy(cubes);
@@ -778,7 +778,7 @@ esdm_status esdm_scheduler_enqueue_write(esdm_instance_t *esdm, io_request_statu
   }
   gWriteTimes.backendDispatch += ea_stop_timer(myTimer) - startTime;
 
-  updateRequestStats(&esdm->writeStats, 1, esdm_dataspace_size(space), requestIsInternal); //update the statistics
+  updateRequestStats(&esdm->writeStats, 1, esdm_dataspace_total_bytes(space), requestIsInternal); //update the statistics
 
   //cleanup
   free(backendExtends);
@@ -924,10 +924,10 @@ esdm_status esdm_scheduler_read_blocking(esdm_instance_t *esdm, esdm_dataset_t *
     ret = status.return_code;
 
     //update the statistics
-    requestBytes = esdm_dataspace_size(subspace);
+    requestBytes = esdm_dataspace_total_bytes(subspace);
     ioBytes = 0;
     for(int64_t i = 0; i < frag_count; i++) {
-      ioBytes += esdm_dataspace_size(read_frag[i]->dataspace);
+      ioBytes += esdm_dataspace_total_bytes(read_frag[i]->dataspace);
     }
     updateIoStats(&esdm->readStats, frag_count, ioBytes);
     updateRequestStats(&esdm->readStats, 1, requestBytes, requestIsInternal);
