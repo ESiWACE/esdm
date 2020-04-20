@@ -66,7 +66,7 @@ static int entry_retrieve(const char *path, void *buf, uint64_t size) {
     WARN("error on opening file \"%s\": %s", path, strerror(errno));
     return ESDM_ERROR;
   }
-  int ret = read_check(fd, buf, size);
+  int ret = ea_read_check(fd, buf, size);
   close(fd);
   return ret;
 }
@@ -87,7 +87,7 @@ static int entry_update(const char *path, void *buf, size_t len, int update_only
     WARN("error on opening file: %s", strerror(errno));
     return ESDM_ERROR;
   }
-  int ret = write_check(fd, buf, len);
+  int ret = ea_write_check(fd, buf, len);
   close(fd);
 
   return ret;
@@ -275,7 +275,7 @@ static int fragment_update(esdm_backend_t *backend, esdm_fragment_t *f) {
         break;
       }
       //write the data
-      ret = write_check(fd, writeBuffer, f->bytes);
+      ret = ea_write_check(fd, writeBuffer, f->bytes);
       close(fd);
       break;
     }

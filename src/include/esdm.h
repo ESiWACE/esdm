@@ -65,6 +65,8 @@ esdm_status esdm_load_config_str(const char *str);
 
 esdm_status esdm_init();
 
+int esdm_is_initialized();
+
 /**
  * Display status information for objects stored in ESDM.
  *
@@ -146,6 +148,8 @@ esdm_status esdm_container_create(const char *name, int allow_overwrite, esdm_co
  * @return status
  */
 esdm_status esdm_container_open(const char *name, int esdm_mode_flags, esdm_container_t **out_container);
+
+int esdm_container_get_mode_flags(esdm_container_t * container);
 
 /**
  * Make container persistent to storage.
@@ -247,12 +251,11 @@ esdm_dataset_t * esdm_container_dataset_from_array(esdm_container_t * container,
 
 esdm_status esdm_dataset_create(esdm_container_t *container, const char *name, esdm_dataspace_t *dataspace, esdm_dataset_t **out_dataset);
 
-
 /*
  The value to be used if data hasn't been written to a datapoint, it must be of the same type as the dataset type.
  If the fill value was already set, overwrite it.
  */
-esdm_status esdm_dataset_set_fill_value(esdm_dataset_t *dataset, void * value);
+esdm_status esdm_dataset_set_fill_value(esdm_dataset_t *dataset, void const * value);
 
 /*
  Copy the fill value into value
@@ -269,7 +272,9 @@ char const * esdm_dataset_name(esdm_dataset_t *dataset);
 /*
  Name the dimensions of a dataset
  */
-esdm_status esdm_dataset_name_dims(esdm_dataset_t *dataset, char **names);
+esdm_status esdm_dataset_name_dims(esdm_dataset_t *dataset, char * const * names);
+
+//esdm_status esdm_dataset_name_dimsv(esdm_dataset_t *dataset, ...);
 
 /*
  Rename a single dimension
@@ -298,6 +303,11 @@ int64_t esdm_dataspace_get_dims(esdm_dataspace_t * d);
 int64_t const* esdm_dataspace_get_size(esdm_dataspace_t * d);
 int64_t const* esdm_dataspace_get_offset(esdm_dataspace_t * d);
 esdm_type_t esdm_dataspace_get_type(esdm_dataspace_t * d);
+
+/*
+ Returns the number of bytes covered by the dataspace
+ */
+int64_t esdm_dataspace_get_total_byte(esdm_dataspace_t * d);
 
 /**
  * Get the effective stride of a dataspace.
@@ -409,6 +419,9 @@ esdm_status esdm_dataset_get_attributes(esdm_dataset_t *dataset, smd_attr_t **ou
  */
 
 esdm_status esdm_dataspace_create(int64_t dims, int64_t *sizes, esdm_type_t type, esdm_dataspace_t **out_dataspace);
+
+esdm_status esdm_dataspace_create_full(int64_t dims, int64_t *size, int64_t *offset, esdm_type_t type, esdm_dataspace_t **out_dataspace);
+
 
 /**
  * Create a copy of a dataspace.

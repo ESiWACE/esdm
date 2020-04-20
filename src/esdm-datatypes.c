@@ -278,6 +278,8 @@ esdm_status esdm_container_close(esdm_container_t *c) {
 
   eassert(c->refcount > 0);
 
+  // esdm_container_commit(c); CANNOT DO THIS WILL BREAK MPI
+
   c->refcount--;
   if(c->refcount > 0){
     return ESDM_SUCCESS;
@@ -366,6 +368,13 @@ void esdmI_dataset_register_fragment(esdm_dataset_t *dset, esdm_fragment_t *frag
 int64_t esdm_dataspace_get_dims(esdm_dataspace_t * d){
   eassert(d);
   return d->dims;
+}
+
+int64_t esdm_dataspace_get_total_byte(esdm_dataspace_t * d){
+  eassert(d);
+  uint64_t elements = esdm_dataspace_element_count(d);
+  int64_t bytes = elements * esdm_sizeof(d->type);
+  return bytes;
 }
 
 int64_t const* esdm_dataspace_get_size(esdm_dataspace_t * d){
@@ -1061,6 +1070,8 @@ esdm_status esdm_dataset_close(esdm_dataset_t *dset) {
   eassert(dset->status != ESDM_DATA_NOT_LOADED);
   eassert(dset->refcount > 0);
 
+  //esdm_dataset_commit(dset); CANNOT DO THIS WILL BREAK MPI
+
   dset->refcount--;
   if(dset->refcount){
     return ESDM_SUCCESS;
@@ -1148,6 +1159,34 @@ esdm_status esdm_dataset_rename(esdm_dataset_t *d, const char *name) {
 
 // Dataspace //////////////////////////////////////////////////////////////////
 
+esdm_status esdm_dataspace_create_full(int64_t dims, int64_t *sizes, int64_t *offset, esdm_type_t type, esdm_dataspace_t **out_dataspace){
+  ESDM_DEBUG(__func__);
+  eassert(dims >= 0);
+  eassert(sizes);
+  eassert(offset);
+  eassert(out_dataspace);
+
+  esdm_dataspace_t *dataspace = (esdm_dataspace_t *)malloc(sizeof(esdm_dataspace_t));
+
+  dataspace->dims = dims;
+  if(dims == 0){
+    dims = 1;
+  }
+  dataspace->size   = (int64_t *) malloc(sizeof(int64_t) * dims);
+  dataspace->offset = (int64_t *) malloc(sizeof(int64_t) * dims);
+
+  memcpy(dataspace->size, sizes, sizeof(int64_t) * dims);
+  memcpy(dataspace->offset, offset, sizeof(int64_t) * dims);
+
+  dataspace->type = type;
+  dataspace->stride = NULL;
+  DEBUG("New dataspace: dims=%d\n", dataspace->dims);
+
+  *out_dataspace = dataspace;
+
+  return ESDM_SUCCESS;
+}
+
 esdm_status esdm_dataspace_create(int64_t dims, int64_t *sizes, esdm_type_t type, esdm_dataspace_t **out_dataspace) {
   ESDM_DEBUG(__func__);
   eassert(dims >= 0);
@@ -1210,6 +1249,8 @@ esdm_status esdm_dataspace_copy(esdm_dataspace_t* orig, esdm_dataspace_t **out_d
     .offset = ea_memdup(orig->offset, orig->dims*sizeof*orig->offset),
     .stride = orig->stride ? ea_memdup(orig->stride, orig->dims*sizeof*orig->stride) : NULL
   };
+
+  return ESDM_SUCCESS;
 }
 
 esdm_status esdmI_dataspace_getExtends(esdm_dataspace_t* space, esdmI_hypercube_t** out_extends) {
@@ -1412,7 +1453,7 @@ uint64_t esdm_dataspace_size(esdm_dataspace_t *dataspace) {
 
 // Metadata //////////////////////////////////////////////////////////////////
 
-esdm_status esdm_dataset_name_dims(esdm_dataset_t *d, char **names) {
+esdm_status esdm_dataset_name_dims(esdm_dataset_t *d, char *const *names) {
   ESDM_DEBUG(__func__);
   eassert(d != NULL);
   eassert(names != NULL);
@@ -1464,6 +1505,9 @@ void esdm_container_set_status_dirty(esdm_container_t * c){
 esdm_status esdm_dataset_get_name_dims(esdm_dataset_t *d, char const *const **out_names) {
   eassert(d != NULL);
   eassert(out_names != NULL);
+  if(d->dims_dset_id == NULL){
+    return ESDM_ERROR;
+  }
   *out_names = (char const *const *)d->dims_dset_id;
   return ESDM_SUCCESS;
 }

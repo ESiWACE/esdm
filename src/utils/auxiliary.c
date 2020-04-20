@@ -139,13 +139,12 @@ int posix_recursive_remove(const char *path) {
 }
 
 // file I/O handling //////////////////////////////////////////////////////////
-
-int read_file(char *filepath, char **buf) {
+int ea_read_file(char *filepath, char **buf) {
   eassert(buf);
 
   int fd = open(filepath, O_RDONLY);
   if (fd < 0) {
-    ESDM_ERROR_COM_FMT("POSIX", "cannot open %s %s", filepath, strerror(errno));
+    ESDM_WARN_COM_FMT("POSIX", "cannot open %s %s", filepath, strerror(errno));
     return 1;
   }
 
@@ -153,7 +152,7 @@ int read_file(char *filepath, char **buf) {
   lseek(fd, 0, SEEK_SET);
 
   char *string = malloc(fsize + 1);
-  int ret = read_check(fd, string, fsize);
+  int ret = ea_read_check(fd, string, fsize);
   close(fd);
 
   string[fsize] = 0;
@@ -164,7 +163,7 @@ int read_file(char *filepath, char **buf) {
   return ret;
 }
 
-int write_check(int fd, char *buf, size_t len) {
+int ea_write_check(int fd, char *buf, size_t len) {
   while (len > 0) {
     ssize_t ret = write(fd, buf, len);
     if (ret != -1) {
@@ -182,7 +181,7 @@ int write_check(int fd, char *buf, size_t len) {
   return 0;
 }
 
-int read_check(int fd, char *buf, size_t len) {
+int ea_read_check(int fd, char *buf, size_t len) {
   while (len > 0) {
     ssize_t ret = read(fd, buf, len);
     if (ret == 0) {

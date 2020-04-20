@@ -68,6 +68,9 @@ esdm_config_t *esdm_config_init(esdm_instance_t *esdm) {
   ESDM_DEBUG(__func__);
 
   char *config_str = esdm_config_gather(0, NULL);
+  if(config_str == NULL){
+    return NULL;
+  }
   esdm->config = esdm_config_init_from_str(config_str);
   free(config_str);
   return esdm->config;
@@ -99,7 +102,7 @@ char *esdm_config_gather() {
   ESDM_DEBUG(__func__);
 
   char *config_json = NULL;
-  read_file("esdm.conf", & config_json);
+  ea_read_file("esdm.conf", & config_json);
   return config_json;
 }
 

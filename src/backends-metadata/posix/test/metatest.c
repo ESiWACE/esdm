@@ -9,11 +9,18 @@ extern esdm_instance_t esdm;
 
 int main() {
   esdm_status ret;
-  char const * cfg = "{\"esdm\": {\"backends\": [],"
+  char const * cfg = "{\"esdm\": {\"backends\": ["
+  		"{"
+			"\"type\": \"DUMMY\","
+			"\"id\": \"p1\","
+			"\"target\": \"x\""
+			"}"
+    "],"
 		"\"metadata\": {"
 			"\"type\": \"metadummy\","
 			"\"id\": \"md\","
-			"\"target\": \"./_metadummy\"}}}";
+			"\"target\": \"./_metadummy\"}}"
+    "}";
   esdm_load_config_str(cfg);
   esdm_init();
   //esdm_md_backend_t *b = esdm.modules->metadata_backend;
@@ -89,7 +96,7 @@ int main() {
   //}
 
   esdm_dataspace_destroy(dataspace);
-  esdm_container_close(container);
+  esdmI_container_destroy(container);
 
   esdm_finalize();
 
