@@ -22,7 +22,10 @@ extern "C" {
 // ESDM ///////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////
 
+// Initialization /////////////////////////////////////////////////////////////
+
 // These functions must be used before calling init:
+
 /**
  * Set the number of processes to use per node.
  * Must not be called after `init()`.
@@ -75,6 +78,8 @@ int esdm_is_initialized();
 
 esdm_status esdm_finalize();
 
+// I/O ////////////////////////////////////////////////////////////////////////
+
 /**
  * Write data with a given size and offset.
  *
@@ -114,12 +119,58 @@ typedef void* (*esdm_stream_func_t)(esdm_dataspace_t *space, void * buff, void *
 typedef void (*esdm_reduce_func_t)(esdm_dataspace_t *space, void * user_ptr, void * stream_func_out);
 esdm_status esdm_read_stream(esdm_dataset_t *dataset, esdm_dataspace_t *space, void * user_ptr, esdm_stream_func_t stream_func, esdm_reduce_func_t reduce_func);
 
+// Auxiliary //////////////////////////////////////////////////////////////////
+
+//size_t esdm_sizeof(esdm_type_t type);
+#define esdm_sizeof(type) (type->size)
+
+/**
+  * Initialize backend by invoking mkfs callback for matching target
+  *
+  * @param [in] enforce_format  force reformatting existing system (may result in data loss)
+  * @param [in] target  target descriptor
+  *
+  * @return status
+  */
+
+enum esdm_format_flags{
+  ESDM_FORMAT_DELETE = 1,
+  ESDM_FORMAT_CREATE = 2,
+  ESDM_FORMAT_IGNORE_ERRORS = 4,
+  ESDM_FORMAT_PURGE_RECREATE = 7
+};
+
+esdm_status esdm_mkfs(int format_flags, data_accessibility_t target);
+
+// LOGGING
+
+/*
+Loglevel for stdout.
+*/
+void esdm_loglevel(esdm_loglevel_e loglevel);
+void esdm_log_on_exit(int on);
+/*
+ Keeps a log to record last messages for crashes
+ Must be called from a single master thread
+ NOTE: logging into the shared buffer costs performance.
+*/
+void esdm_loglevel_buffer(esdm_loglevel_e loglevel);
+
+// Statistics
+
+/**
+ * Get some statistics about the reads that have been performed.
+ */
+esdm_statistics_t esdm_read_stats();
+
+/**
+ * Get some statistics about the writes that have been performed.
+ */
+esdm_statistics_t esdm_write_stats();
 
 ///////////////////////////////////////////////////////////////////////////////
-// Public API: Data Model Manipulators ////////////////////////////////////////
-///////////////////////////////////////////////////////////////////////////////
-
 // Container //////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////////
 
 /**
  * Create a new container.
@@ -197,17 +248,6 @@ esdm_status esdm_container_close(esdm_container_t *container);
 bool esdm_container_dataset_exists(esdm_container_t * container, char const * name);
 
 /*
- functions to change the size of the dataspace
- */
-esdm_status esdm_dataset_update_size(esdm_dataset_t *dset, uint64_t * sizes);
-int64_t const * esdm_dataset_get_size(esdm_dataset_t * dset);
-/*
- This function returns the actual size for ulim
- Return a pointer to the internal size (having the same dimensions)
- */
-int64_t const * esdm_dataset_get_actual_size(esdm_dataset_t *dset);
-
-/*
  * Return the number of datasets in the container.
  *
  * @param [in] container an existing container to query
@@ -215,10 +255,6 @@ int64_t const * esdm_dataset_get_actual_size(esdm_dataset_t *dset);
  * @return the number of datasets
  */
 int esdm_container_dataset_count(esdm_container_t * container);
-
-esdm_status esdm_dataset_rename(esdm_dataset_t *dataset, const char *name);
-
-void esdm_dataset_set_status_dirty(esdm_dataset_t * dataset);
 
 void esdm_container_set_status_dirty(esdm_container_t * container);
 
@@ -231,6 +267,25 @@ void esdm_container_set_status_dirty(esdm_container_t * container);
  * @return the dataset or NULL, if dset_number >= count
  */
 esdm_dataset_t * esdm_container_dataset_from_array(esdm_container_t * container, int dset_number);
+
+///////////////////////////////////////////////////////////////////////////////
+// Dataset ////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////////
+
+/*
+ functions to change the size of the dataspace
+ */
+esdm_status esdm_dataset_update_size(esdm_dataset_t *dset, uint64_t * sizes);
+int64_t const * esdm_dataset_get_size(esdm_dataset_t * dset);
+/*
+ This function returns the actual size for ulim
+ Return a pointer to the internal size (having the same dimensions)
+ */
+int64_t const * esdm_dataset_get_actual_size(esdm_dataset_t *dset);
+
+esdm_status esdm_dataset_rename(esdm_dataset_t *dataset, const char *name);
+
+void esdm_dataset_set_status_dirty(esdm_dataset_t * dataset);
 
 // Dataset
 
@@ -299,6 +354,75 @@ esdm_status esdm_dataset_get_name_dims(esdm_dataset_t *dataset, char const *cons
 esdm_status esdm_dataset_get_dataspace(esdm_dataset_t *dset, esdm_dataspace_t **out_dataspace);
 esdm_type_t esdm_dataset_get_type(esdm_dataset_t * d);
 
+esdm_status esdm_dataset_change_name(esdm_dataset_t *dset, char const * new_name);
+
+esdm_status esdm_dataset_iterator(esdm_container_t *container, esdm_dataset_iterator_t **out_iter);
+
+/**
+ * Open a dataset.
+ *
+ *  - Allocate process local memory structures
+ *  - Retrieve metadata
+ *
+ * @param [in] container pointer to an open container that contains the dataset that is to be opened
+ * @param [in] name identifier of the dataset within the container, must not be empty
+ * @param [out] out_dataset returns a pointer to the opened dataset
+ *
+ * @return status
+ */
+esdm_status esdm_dataset_open(esdm_container_t *container, const char *name, int esdm_mode_flags, esdm_dataset_t **out_dataset);
+
+/*
+ Similar to esdm_dataset_open but returns the dataset without opening it
+ */
+esdm_status esdm_dataset_by_name(esdm_container_t *container, const char *name, int esdm_mode_flags, esdm_dataset_t **out_dataset);
+
+/*
+ * Obtain a reference to the dataset, if it was not yet open, it will be openend and metadata will be fetched.
+ * To return the dataset, call dataset_close()
+ *
+ * This function is *not thread-safe*.
+ * Only a single master thread must be used to call into ESDM.
+ */
+esdm_status esdm_dataset_ref(esdm_dataset_t *dataset);
+
+/**
+ * Make dataset persistent to storage.
+ * Schedule for writing to backends.
+ *
+ * @param [in] dataset pointer to an existing dataset which is to be committed to storage
+ *
+ * @return status
+ */
+esdm_status esdm_dataset_commit(esdm_dataset_t *dataset);
+
+/**
+ * Close a dataset object, if it isn't used anymore, it's metadata will be unloaded
+ *
+ * This function is *not thread-safe*.
+ * Only a single master thread must be used to call into ESDM.
+ *
+ * @param [in] dataset an existing dataset object that is no longer needed
+ *
+ * @return status
+ */
+esdm_status esdm_dataset_close(esdm_dataset_t *dataset);
+
+esdm_status esdm_dataset_delete(esdm_dataset_t *dataset);
+
+esdm_status esdm_dataset_delete_attribute(esdm_dataset_t *dataset, const char *name);
+
+/* This function adds the metadata to the ESDM */
+
+esdm_status esdm_dataset_link_attribute(esdm_dataset_t *dset, int overwrite, smd_attr_t *attr);
+
+/* This function returns the attributes */
+esdm_status esdm_dataset_get_attributes(esdm_dataset_t *dataset, smd_attr_t **out_metadata);
+
+///////////////////////////////////////////////////////////////////////////////
+// Dataspace //////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////////
+
 int64_t esdm_dataspace_get_dims(esdm_dataspace_t * d);
 int64_t const* esdm_dataspace_get_size(esdm_dataspace_t * d);
 int64_t const* esdm_dataspace_get_offset(esdm_dataspace_t * d);
@@ -334,73 +458,7 @@ void esdm_dataspace_getEffectiveStride(esdm_dataspace_t* space, int64_t* out_str
  */
 int64_t esdm_dataspace_elementOffset(esdm_dataspace_t* space, int64_t* coords);
 
-esdm_status esdm_dataset_change_name(esdm_dataset_t *dset, char const * new_name);
 
-esdm_status esdm_dataset_iterator(esdm_container_t *container, esdm_dataset_iterator_t **out_iter);
-
-/**
- * Open a dataset.
- *
- *  - Allocate process local memory structures
- *  - Retrieve metadata
- *
- * @param [in] container pointer to an open container that contains the dataset that is to be opened
- * @param [in] name identifier of the dataset within the container, must not be empty
- * @param [out] out_dataset returns a pointer to the opened dataset
- *
- * @return status
- */
-esdm_status esdm_dataset_open(esdm_container_t *container, const char *name, int esdm_mode_flags, esdm_dataset_t **out_dataset);
-
-/*
- Similar to esdm_dataset_open but returns the dataset without opening it
- */
-esdm_status esdm_dataset_by_name(esdm_container_t *container, const char *name, int esdm_mode_flags, esdm_dataset_t **out_dataset);
-
-/*
- * Obtain a reference to the dataset, if it was not yet open, it will be openend and metadata will be fetched.
- * To return the dataset, call dataset_close()
- *
- * This function is *not thread-safe*.
- * Only a single master thread must be used to call into ESDM.
- */
-esdm_status esdm_dataset_ref(esdm_dataset_t *dataset);
-
-
-/**
- * Make dataset persistent to storage.
- * Schedule for writing to backends.
- *
- * @param [in] dataset pointer to an existing dataset which is to be committed to storage
- *
- * @return status
- */
-
-esdm_status esdm_dataset_commit(esdm_dataset_t *dataset);
-
-
-/**
- * Close a dataset object, if it isn't used anymore, it's metadata will be unloaded
- *
- * This function is *not thread-safe*.
- * Only a single master thread must be used to call into ESDM.
- *
- * @param [in] dataset an existing dataset object that is no longer needed
- *
- * @return status
- */
-esdm_status esdm_dataset_close(esdm_dataset_t *dataset);
-
-esdm_status esdm_dataset_delete(esdm_dataset_t *dataset);
-
-esdm_status esdm_dataset_delete_attribute(esdm_dataset_t *dataset, const char *name);
-
-/* This function adds the metadata to the ESDM */
-
-esdm_status esdm_dataset_link_attribute(esdm_dataset_t *dset, int overwrite, smd_attr_t *attr);
-
-/* This function returns the attributes */
-esdm_status esdm_dataset_get_attributes(esdm_dataset_t *dataset, smd_attr_t **out_metadata);
 
 // Dataspace
 
@@ -576,8 +634,11 @@ esdm_status esdm_dataspace_serialize(esdm_dataspace_t *dataspace, void **out);
 
 uint64_t esdm_dataspace_element_count(esdm_dataspace_t *dataspace);
 
+void esdm_dataspace_print(esdm_dataspace_t *dataspace);
 
-// Fragment
+///////////////////////////////////////////////////////////////////////////////
+// Fragment ///////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////////
 
 /**
  * Reinstantiate fragment from serialization.
@@ -649,57 +710,6 @@ esdm_status esdm_fragment_destroy(esdm_fragment_t *fragment);
 
 
 void esdm_fragment_print(esdm_fragment_t *fragment);
-
-void esdm_dataspace_print(esdm_dataspace_t *dataspace);
-
-//size_t esdm_sizeof(esdm_type_t type);
-#define esdm_sizeof(type) (type->size)
-
-/**
-  * Initialize backend by invoking mkfs callback for matching target
-  *
-  * @param [in] enforce_format  force reformatting existing system (may result in data loss)
-  * @param [in] target  target descriptor
-  *
-  * @return status
-  */
-
-enum esdm_format_flags{
-  ESDM_FORMAT_DELETE = 1,
-  ESDM_FORMAT_CREATE = 2,
-  ESDM_FORMAT_IGNORE_ERRORS = 4,
-  ESDM_FORMAT_PURGE_RECREATE = 7
-};
-
-esdm_status esdm_mkfs(int format_flags, data_accessibility_t target);
-
-//// LOGGING
-
-/*
-Loglevel for stdout.
-*/
-void esdm_loglevel(esdm_loglevel_e loglevel);
-void esdm_log_on_exit(int on);
-/*
- Keeps a log to record last messages for crashes
- Must be called from a single master thread
- NOTE: logging into the shared buffer costs performance.
-*/
-void esdm_loglevel_buffer(esdm_loglevel_e loglevel);
-
-////////////////////////////////////////////////////////////////////////////////////////////////////
-// Statistics //////////////////////////////////////////////////////////////////////////////////////
-////////////////////////////////////////////////////////////////////////////////////////////////////
-
-/**
- * Get some statistics about the reads that have been performed.
- */
-esdm_statistics_t esdm_read_stats();
-
-/**
- * Get some statistics about the writes that have been performed.
- */
-esdm_statistics_t esdm_write_stats();
 
 #ifdef __cplusplus
 }
