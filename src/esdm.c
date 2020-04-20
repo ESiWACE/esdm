@@ -247,7 +247,7 @@ esdm_status esdm_read_stream(esdm_dataset_t *d, esdm_dataspace_t *space, void * 
   // TODO emulation function for now.
   uint64_t size = esdm_dataspace_size(space);
   void * buf = malloc(size);
-  esdm_status ret = esdmI_readWithFillRegion(d, buf, space, NULL, NULL);  //FIXME: Don't ignore the return value.
+  esdm_status ret = esdmI_readWithFillRegion(d, buf, space, NULL, NULL);
   void * intermediate = stream_func(space, buf, user_ptr, d->fill_value);
   if(reduce_func){
     reduce_func(space, user_ptr, intermediate);

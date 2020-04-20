@@ -781,8 +781,8 @@ esdm_backend_t_clovis_init(char *conf, esdm_backend_t *eb)
 
 	/* FIXME this makes the next_gid not reused. */
 	t = time(NULL);
-	srand(t);
-	r = rand();
+	srand(t); //FIXME: Don't use [s]rand().
+	r = rand(); //FIXME: Don't use [s]rand().
 	pid = getpid();
 	f = (t << 16) | (r & 0xff00) | (pid & 0xff);
 	next_gid.u_hi = f;

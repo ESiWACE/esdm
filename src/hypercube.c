@@ -29,8 +29,6 @@
 
 //Generate symbols for the inline functions.
 esdmI_range_t esdmI_range_intersection(esdmI_range_t a, esdmI_range_t b);
-bool esdmI_range_isEmpty(esdmI_range_t range);
-int64_t esdmI_range_size(esdmI_range_t range);
 
 void esdmI_range_print(esdmI_range_t range, FILE* stream) {
   if(esdmI_range_isEmpty(range)) {

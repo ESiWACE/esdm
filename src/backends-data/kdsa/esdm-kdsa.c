@@ -371,7 +371,7 @@ static uint64_t find_offset_to_store_fragment(kdsa_backend_data_t* data){
   uint64_t offset = 0;
   uint64_t blockmap_size = calc_block_map_size(data->h.blockcount);
   for(int i = 0; i < 30; i++){
-    uint64_t bitmap_pos = rand() % blockmap_size;
+    uint64_t bitmap_pos = rand() % blockmap_size; //FIXME: Don't use [s]rand().
     offset = try_to_use_block(data, bitmap_pos);
     if(offset != 0){
       break;
@@ -379,7 +379,7 @@ static uint64_t find_offset_to_store_fragment(kdsa_backend_data_t* data){
   }
   if(offset == 0){
     // try a sequential strategy starting at one block, this is inefficient!
-    uint64_t bitmap_pos = rand() % blockmap_size;
+    uint64_t bitmap_pos = rand() % blockmap_size; //FIXME: Don't use [s]rand().
     for(int i = 0; i < blockmap_size; i++){
       offset = try_to_use_block(data, (i + bitmap_pos) % blockmap_size);
       if(offset != 0){

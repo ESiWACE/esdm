@@ -66,7 +66,7 @@ esdm_status esdm_mpi_init_manual() {
 
   int rank;
   MPI_Comm_rank(MPI_COMM_WORLD, &rank);
-  srand(rank + (uint64_t) timer);
+  srand(rank + (uint64_t) timer); //FIXME: Don't use [s]rand().
 
   return ESDM_SUCCESS;
 }
