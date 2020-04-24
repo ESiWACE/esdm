@@ -27,14 +27,12 @@
 #include <stdlib.h>
 
 int main() {
-  esdm_dataspace_t *logicalSpace;
-  esdm_status result = esdm_dataspace_create(3, (int64_t[3]){8, 3, 14}, SMD_DTYPE_INT64, &logicalSpace);
-  assert(result == ESDM_SUCCESS);
+  esdm_dataspace_t *logicalSpace = esdm_dataspace_create_3d(0, 8, 0, 3, 0, 14, SMD_DTYPE_INT64);
+  assert(logicalSpace);
 
-  esdm_dataspace_t *sourceSubspace;
-  result = esdm_dataspace_subspace(logicalSpace, 3, (int64_t[3]){2, 3, 5}, (int64_t[3]){6, 0, 9}, &sourceSubspace);
-  assert(result == ESDM_SUCCESS);
-  result = esdm_dataspace_set_stride(sourceSubspace, (int64_t[3]){-3, 1, 6});
+  esdm_dataspace_t *sourceSubspace = esdm_dataspace_create_3d(6, 2, 0, 3, 9, 5, SMD_DTYPE_INT64);
+  assert(sourceSubspace);
+  esdm_status result = esdm_dataspace_set_stride(sourceSubspace, (int64_t[3]){-3, 1, 6});
   assert(result == ESDM_SUCCESS);
   int64_t sourceData[30] = {
     0x709, 0x719, 0x729,
@@ -53,9 +51,8 @@ int main() {
     0x60d, 0x61d, 0x62d
   }, *firstSourceByte = &sourceData[3];
 
-  esdm_dataspace_t *destSubspace;
-  result = esdm_dataspace_subspace(logicalSpace, 3, (int64_t[3]){3, 3, 3}, (int64_t[3]){5, 0, 10}, &destSubspace);
-  assert(result == ESDM_SUCCESS);
+  esdm_dataspace_t *destSubspace = esdm_dataspace_create_3d(5, 3, 0, 3, 10, 3, SMD_DTYPE_INT64);
+  assert(destSubspace);
   result = esdm_dataspace_set_stride(destSubspace, (int64_t[3]){-3, 1, -9});
   assert(result == ESDM_SUCCESS);
   int64_t destData[27] = {0}, expectedData[27] = {

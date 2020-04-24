@@ -251,6 +251,7 @@ esdm_status esdmI_create_fragment_from_metadata(esdm_dataset_t *dset, json_t * j
  * It is the user's responsibility to ensure that the data remains alive as long as the fragment is loaded.
  *
  *  - Allocate process local memory structures.
+ *  - Takes possession of the dataspace. Do not modify or destroy it after calling this function!
  *
  *
  *	A fragment is part of a dataset.

@@ -47,11 +47,8 @@ int main(int argc, char const *argv[]) {
   eassert(ret == ESDM_SUCCESS);
 
   // define dataspace
-  int64_t bounds[] = {10, 20};
-  esdm_dataspace_t *dataspace;
-
-  ret = esdm_dataspace_create(2, bounds, SMD_DTYPE_UINT64, &dataspace);
-  eassert(ret == ESDM_SUCCESS);
+  esdm_dataspace_t *dataspace = esdm_dataspace_create_2d(0, 10, 0, 20, SMD_DTYPE_UINT64);
+  eassert(dataspace);
 
   ret = esdm_container_create("mycontainer", 1, &container);
   eassert(ret == ESDM_SUCCESS);

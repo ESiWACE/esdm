@@ -220,9 +220,8 @@ void runTestWithConfig(int64_t length, int64_t readCount, const char* configStri
   esdm_loglevel(ESDM_LOGLEVEL_INFO);
 
   // define dataspace
-  esdm_dataspace_t *dataspace;
-  ret = esdm_dataspace_create(1, &length, SMD_DTYPE_UINT8, &dataspace);
-  eassert(ret == ESDM_SUCCESS);
+  esdm_dataspace_t *dataspace = esdm_dataspace_create_1d(0, length, SMD_DTYPE_UINT8);
+  eassert(dataspace);
   esdm_container_t *container;
   ret = esdm_container_create("mycontainer", 1, &container);
   eassert(ret == ESDM_SUCCESS);

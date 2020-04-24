@@ -30,11 +30,8 @@ int main() {
   ret = esdm_mkfs(ESDM_FORMAT_PURGE_RECREATE, ESDM_ACCESSIBILITY_NODELOCAL);
   eassert(ret == ESDM_SUCCESS);
 
-  esdm_dataspace_t *dataspace;
-  {
-    int64_t size[] = {50, 100};
-    esdm_dataspace_create(2, size, SMD_DTYPE_UINT64, &dataspace);
-  }
+  esdm_dataspace_t *dataspace = esdm_dataspace_create_2d(0, 50, 0, 100, SMD_DTYPE_UINT64);
+  eassert(dataspace);
   esdm_container_t *container;
 
   ret = esdm_container_create("testContainer", 1, &container);
@@ -44,39 +41,30 @@ int main() {
   ret = esdm_dataset_create(container, "testDataset", dataspace, &dataset);
   eassert(ret == ESDM_SUCCESS);
 
-  esdm_dataspace_t *s1, *s2, *s3, *s4;
   esdm_fragment_t *f1, *f2, *f3, *f4;
 
   {
-    int64_t offset[] = {0, 0};
-    int64_t size[] = {25, 50};
-    ret = esdm_dataspace_subspace(dataspace, 2, size, offset, &s1);
-    eassert(ret == ESDM_SUCCESS);
-    ret = esdmI_fragment_create(dataset, s1, malloc(esdm_dataspace_total_bytes(s1)), &f1);
+    esdm_dataspace_t* space = esdm_dataspace_create_2d(0, 25, 0, 50, SMD_DTYPE_UINT64);
+    eassert(space);
+    ret = esdmI_fragment_create(dataset, space, malloc(esdm_dataspace_total_bytes(space)), &f1);
     eassert(ret == ESDM_SUCCESS);
   }
   {
-    int64_t offset[] = {25, 0};
-    int64_t size[] = {25, 50};
-    ret = esdm_dataspace_subspace(dataspace, 2, size, offset, &s2);
-    eassert(ret == ESDM_SUCCESS);
-    ret = esdmI_fragment_create(dataset, s2, malloc(esdm_dataspace_total_bytes(s2)), &f2);
+    esdm_dataspace_t* space = esdm_dataspace_create_2d(25, 25, 0, 50, SMD_DTYPE_UINT64);
+    eassert(space);
+    ret = esdmI_fragment_create(dataset, space, malloc(esdm_dataspace_total_bytes(space)), &f2);
     eassert(ret == ESDM_SUCCESS);
   }
   {
-    int64_t offset[] = {25, 50};
-    int64_t size[] = {25, 50};
-    ret = esdm_dataspace_subspace(dataspace, 2, size, offset, &s3);
-    eassert(ret == ESDM_SUCCESS);
-    ret = esdmI_fragment_create(dataset, s3, malloc(esdm_dataspace_total_bytes(s3)), &f3);
+    esdm_dataspace_t* space = esdm_dataspace_create_2d(25, 25, 50, 50, SMD_DTYPE_UINT64);
+    eassert(space);
+    ret = esdmI_fragment_create(dataset, space, malloc(esdm_dataspace_total_bytes(space)), &f3);
     eassert(ret == ESDM_SUCCESS);
   }
   {
-    int64_t offset[] = {0, 50};
-    int64_t size[] = {25, 50};
-    ret = esdm_dataspace_subspace(dataspace, 2, size, offset, &s4);
-    eassert(ret == ESDM_SUCCESS);
-    ret = esdmI_fragment_create(dataset, s4, malloc(esdm_dataspace_total_bytes(s4)), &f4);
+    esdm_dataspace_t* space = esdm_dataspace_create_2d(0, 25, 50, 50, SMD_DTYPE_UINT64);
+    eassert(space);
+    ret = esdmI_fragment_create(dataset, space, malloc(esdm_dataspace_total_bytes(space)), &f4);
     eassert(ret == ESDM_SUCCESS);
   }
 
