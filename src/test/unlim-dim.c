@@ -55,14 +55,14 @@ void test(char const * str, int dims, int64_t bounds_dset[], int64_t bounds_data
 
   uint64_t * buf_w;
   etest_gen_buffer(dims, bounds_data, & buf_w);
-  ret = esdm_write(dataset, buf_w, subspace, NULL);
+  ret = esdm_write(dataset, buf_w, subspace);
   eassert(ret == ESDM_SUCCESS);
   ret = esdm_container_commit(container);
   eassert(ret == ESDM_SUCCESS);
 
   etest_memset_buffer(dims, bounds_data, buf_w);
 
-  ret = esdm_read(dataset, buf_w, subspace, NULL);
+  ret = esdm_read(dataset, buf_w, subspace);
   eassert(ret == ESDM_SUCCESS);
 
   ret = etest_verify_buffer(dims, bounds_data, buf_w);

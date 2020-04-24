@@ -99,7 +99,7 @@ int main(int argc, char const *argv[]) {
     eassert(ret == ESDM_SUCCESS);
 
     // Write the data to the dataset
-    ret = esdm_write(dataset, buf_w, subspace, NULL);
+    ret = esdm_write(dataset, buf_w, subspace);
     eassert(ret == ESDM_SUCCESS);
 
     ret = esdm_dataset_commit(dataset);
@@ -107,7 +107,7 @@ int main(int argc, char const *argv[]) {
 
     memset(buf_r, 0, HEIGHT * WIDTH * sizeof(uint64_t));
     // Read the data to the dataset
-    ret = esdm_read(dataset, buf_r, subspace, NULL);
+    ret = esdm_read(dataset, buf_r, subspace);
     eassert(ret == ESDM_SUCCESS);
 
     // TODO: write subset

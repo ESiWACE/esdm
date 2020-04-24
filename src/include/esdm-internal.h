@@ -98,11 +98,11 @@ esdm_status esdm_scheduler_status_finalize(io_request_status_t *status);
  *                            It's the callers' responsibility to either pass NULL or to destroy the hypercube set themselves.
  */
 
-esdm_status esdm_scheduler_read_blocking(esdm_instance_t *esdm, esdm_dataset_t *dataset, void *buf, esdm_dataspace_t *subspace, esdm_dataspace_t *memspace, esdmI_hypercubeSet_t** out_fillRegion, bool requestIsInternal);
+esdm_status esdm_scheduler_read_blocking(esdm_instance_t *esdm, esdm_dataset_t *dataset, void *buf, esdm_dataspace_t *memspace, esdmI_hypercubeSet_t** out_fillRegion, bool requestIsInternal);
 
-esdm_status esdm_scheduler_write_blocking(esdm_instance_t *esdm, esdm_dataset_t *dataset, void *buf, esdm_dataspace_t *subspace, esdm_dataspace_t *memspace, bool requestIsInternal);
+esdm_status esdm_scheduler_write_blocking(esdm_instance_t *esdm, esdm_dataset_t *dataset, void *buf, esdm_dataspace_t *memspace, bool requestIsInternal);
 
-esdm_status esdm_scheduler_enqueue(esdm_instance_t *esdm, io_request_status_t *status, io_operation_t type, esdm_dataset_t *dataset, void *buf, esdm_dataspace_t *subspace, esdm_dataspace_t *memspace);
+esdm_status esdm_scheduler_enqueue(esdm_instance_t *esdm, io_request_status_t *status, io_operation_t type, esdm_dataset_t *dataset, void *buf, esdm_dataspace_t *memspace);
 
 esdm_status esdm_scheduler_wait(io_request_status_t *status);
 
@@ -112,12 +112,12 @@ esdm_status esdm_scheduler_wait(io_request_status_t *status);
  *
  * @param [in] dataset TODO, currently a stub, we assume it has been identified/created before.... , json description?
  * @param [out] buf a contiguous memory region that shall be filled with the data from permanent storage
- * @param [in] subspace an existing dataspace that describes the shape and location of the hypercube that is to be read
+ * @param [in] memspace a dataspace that describes the location, size, and memory layout of the part of the data that is to be read
  * @param [out] out_fillRegion returns a new `esdmI_hypercubeSet_t*` that covers the region for which no data was found.
  *
  * @return status
  */
-esdm_status esdmI_readWithFillRegion(esdm_dataset_t *dataset, void *buf, esdm_dataspace_t *subspace, esdm_dataspace_t *memspace, esdmI_hypercubeSet_t** out_fillRegion);
+esdm_status esdmI_readWithFillRegion(esdm_dataset_t *dataset, void *buf, esdm_dataspace_t *memspace, esdmI_hypercubeSet_t** out_fillRegion);
 
 ///////////////////////////////////////////////////////////////////////////////
 // Performance ////////////////////////////////////////////////////////////////
@@ -258,7 +258,7 @@ esdm_status esdmI_create_fragment_from_metadata(esdm_dataset_t *dset, json_t * j
  *	@return Pointer to new fragment.
  *
  */
-esdm_status esdmI_fragment_create(esdm_dataset_t *dataset, esdm_dataspace_t *subspace, void *buf, esdm_fragment_t **out_fragment);
+esdm_status esdmI_fragment_create(esdm_dataset_t *dataset, esdm_dataspace_t *memspace, void *buf, esdm_fragment_t **out_fragment);
 
 ///////////////////////////////////////////////////////////////////////////////
 // Dysfunctional stuff ////////////////////////////////////////////////////////
@@ -425,7 +425,7 @@ bool esdmI_hypercube_equal(esdmI_hypercube_t* a, esdmI_hypercube_t* b);
 //A return value of 1.0 means that the two hypercubes are identical modulo translation, a value of 0.0 is only achieved if one of the hypercubes is empty.
 double esdmI_hypercube_shapeSimilarity(esdmI_hypercube_t* a, esdmI_hypercube_t* b);
 
-inline int64_t esdmI_hypercube_dimensions(esdmI_hypercube_t* cube) { return cube->dims; }
+static inline int64_t esdmI_hypercube_dimensions(esdmI_hypercube_t* cube) { return cube->dims; }
 
 /**
  * Return the shape of the hypercube as an offset and a size vector.

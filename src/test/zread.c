@@ -81,10 +81,10 @@ int main(int argc, char const *argv[]) {
   status = esdm_dataspace_create(2, size, SMD_DTYPE_UINT64, &space);
   eassert(status == ESDM_SUCCESS);
 
-  eassert_crash(esdm_read(NULL, buf_r, space, NULL));
-  eassert_crash(esdm_read(dataset, NULL, space, NULL));
-  eassert_crash(esdm_read(dataset, buf_r, NULL, NULL));
-  status = esdm_read(dataset, buf_r, space, NULL);
+  eassert_crash(esdm_read(NULL, buf_r, space));
+  eassert_crash(esdm_read(dataset, NULL, space));
+  eassert_crash(esdm_read(dataset, buf_r, NULL));
+  status = esdm_read(dataset, buf_r, space);
   eassert(status == ESDM_SUCCESS);
 
   status = esdm_finalize();

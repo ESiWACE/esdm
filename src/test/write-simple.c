@@ -74,7 +74,7 @@ int main(int argc, char const *argv[]) {
   eassert(ret == ESDM_SUCCESS);
 
   // Write the data to the dataset
-  ret = esdm_write(dataset, buf_w, subspace, NULL);
+  ret = esdm_write(dataset, buf_w, subspace);
   eassert(ret == ESDM_SUCCESS);
 
   ret = esdm_container_commit(container);

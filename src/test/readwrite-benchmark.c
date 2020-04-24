@@ -274,7 +274,7 @@ void writeVariableTimestep(instruction_t* instruction, esdm_dataset_t* dataset, 
     esdm_dataspace_t *subspace;
     esdm_status ret = esdm_dataspace_subspace(dataspace, instruction->dimCount, fragmentSize, fragmentOffsets[i], &subspace);
     eassert(ret == ESDM_SUCCESS);
-    ret = esdm_write(dataset, data, subspace, NULL);
+    ret = esdm_write(dataset, data, subspace);
     eassert(ret == ESDM_SUCCESS);
 
     ret = esdm_dataspace_destroy(subspace);
@@ -400,7 +400,7 @@ void readVariableTimestep(instruction_t* instruction, esdm_dataset_t* dataset, e
     esdm_dataspace_t *subspace;
     esdm_status ret = esdm_dataspace_subspace(dataspace, instruction->dimCount, fragmentSize, fragmentOffsets[i], &subspace);
     eassert(ret == ESDM_SUCCESS);
-    ret = esdm_read(dataset, data, subspace, NULL);
+    ret = esdm_read(dataset, data, subspace);
     eassert(ret == ESDM_SUCCESS);
     checkFragmentData(instruction->dimCount, fragmentOffsets[i], fragmentSize, instruction->size, data);
 
