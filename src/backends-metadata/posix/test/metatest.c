@@ -30,7 +30,7 @@ int main() {
   ret = esdm_mkfs(ESDM_FORMAT_PURGE_RECREATE, ESDM_ACCESSIBILITY_NODELOCAL);
   eassert(ret == ESDM_SUCCESS);
 
-  esdm_dataspace_t *dataspace = esdm_dataspace_create_2d(0, 50, 0, 100, SMD_DTYPE_UINT64);
+  esdm_dataspace_t *dataspace = esdm_dataspace_create_2d(50, 100, SMD_DTYPE_UINT64);
   eassert(dataspace);
   esdm_container_t *container;
 
@@ -44,25 +44,25 @@ int main() {
   esdm_fragment_t *f1, *f2, *f3, *f4;
 
   {
-    esdm_dataspace_t* space = esdm_dataspace_create_2d(0, 25, 0, 50, SMD_DTYPE_UINT64);
+    esdm_dataspace_t* space = esdm_dataspace_create_2do(0, 25, 0, 50, SMD_DTYPE_UINT64);
     eassert(space);
     ret = esdmI_fragment_create(dataset, space, malloc(esdm_dataspace_total_bytes(space)), &f1);
     eassert(ret == ESDM_SUCCESS);
   }
   {
-    esdm_dataspace_t* space = esdm_dataspace_create_2d(25, 25, 0, 50, SMD_DTYPE_UINT64);
+    esdm_dataspace_t* space = esdm_dataspace_create_2do(25, 25, 0, 50, SMD_DTYPE_UINT64);
     eassert(space);
     ret = esdmI_fragment_create(dataset, space, malloc(esdm_dataspace_total_bytes(space)), &f2);
     eassert(ret == ESDM_SUCCESS);
   }
   {
-    esdm_dataspace_t* space = esdm_dataspace_create_2d(25, 25, 50, 50, SMD_DTYPE_UINT64);
+    esdm_dataspace_t* space = esdm_dataspace_create_2do(25, 25, 50, 50, SMD_DTYPE_UINT64);
     eassert(space);
     ret = esdmI_fragment_create(dataset, space, malloc(esdm_dataspace_total_bytes(space)), &f3);
     eassert(ret == ESDM_SUCCESS);
   }
   {
-    esdm_dataspace_t* space = esdm_dataspace_create_2d(0, 25, 50, 50, SMD_DTYPE_UINT64);
+    esdm_dataspace_t* space = esdm_dataspace_create_2do(0, 25, 50, 50, SMD_DTYPE_UINT64);
     eassert(space);
     ret = esdmI_fragment_create(dataset, space, malloc(esdm_dataspace_total_bytes(space)), &f4);
     eassert(ret == ESDM_SUCCESS);

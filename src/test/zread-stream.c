@@ -96,7 +96,7 @@ int main(int argc, char const *argv[]) {
   eassert(status == ESDM_SUCCESS);
 
   //failing input tests are in write.c
-  esdm_dataspace_t *space = esdm_dataspace_create_2d(0, 10, 0, 20, SMD_DTYPE_UINT64);
+  esdm_dataspace_t *space = esdm_dataspace_create_2d(10, 20, SMD_DTYPE_UINT64);
   eassert(space);
 
   my_user_data_t user_data = {0, 0, buf_w};

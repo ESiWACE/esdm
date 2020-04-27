@@ -459,10 +459,29 @@ esdm_status esdm_dataspace_create_full(int64_t dims, int64_t *size, int64_t *off
  *
  * Convenience helper that calls through to esdm_dataspace_create_full().
  */
-static inline esdm_dataspace_t* esdm_dataspace_create_1d(int64_t offset, int64_t size, esdm_type_t type) {
+static inline esdm_dataspace_t* esdm_dataspace_create_1do(int64_t offset, int64_t size, esdm_type_t type) {
   esdm_dataspace_t* result;
   int64_t offsetArray[1] = {offset}, sizeArray[1] = {size};
   esdm_status status = esdm_dataspace_create_full(1, sizeArray, offsetArray, type, &result);
+  return status == ESDM_SUCCESS ? result : NULL;
+}
+/**
+
+ * Create a new 1D dataspace.
+ *
+ * Convenience helper that calls through to esdm_dataspace_create_full().
+ */
+static inline esdm_dataspace_t* esdm_dataspace_create_1d(int64_t size, esdm_type_t type) { return esdm_dataspace_create_1do(0, size, type); }
+
+/**
+ * Create a new 2D dataspace.
+ *
+ * Convenience helper that calls through to esdm_dataspace_create_full().
+ */
+static inline esdm_dataspace_t* esdm_dataspace_create_2do(int64_t xOffset, int64_t xSize, int64_t yOffset, int64_t ySize, esdm_type_t type) {
+  esdm_dataspace_t* result;
+  int64_t offsetArray[2] = {xOffset, yOffset}, sizeArray[2] = {xSize, ySize};
+  esdm_status status = esdm_dataspace_create_full(2, sizeArray, offsetArray, type, &result);
   return status == ESDM_SUCCESS ? result : NULL;
 }
 
@@ -471,10 +490,17 @@ static inline esdm_dataspace_t* esdm_dataspace_create_1d(int64_t offset, int64_t
  *
  * Convenience helper that calls through to esdm_dataspace_create_full().
  */
-static inline esdm_dataspace_t* esdm_dataspace_create_2d(int64_t xOffset, int64_t xSize, int64_t yOffset, int64_t ySize, esdm_type_t type) {
+static inline esdm_dataspace_t* esdm_dataspace_create_2d(int64_t xSize, int64_t ySize, esdm_type_t type) { return esdm_dataspace_create_2do(0, xSize, 0, ySize, type); }
+
+/**
+ * Create a new 3D dataspace.
+ *
+ * Convenience helper that calls through to esdm_dataspace_create_full().
+ */
+static inline esdm_dataspace_t* esdm_dataspace_create_3do(int64_t xOffset, int64_t xSize, int64_t yOffset, int64_t ySize, int64_t zOffset, int64_t zSize, esdm_type_t type) {
   esdm_dataspace_t* result;
-  int64_t offsetArray[2] = {xOffset, yOffset}, sizeArray[2] = {xSize, ySize};
-  esdm_status status = esdm_dataspace_create_full(2, sizeArray, offsetArray, type, &result);
+  int64_t offsetArray[3] = {xOffset, yOffset, zOffset}, sizeArray[3] = {xSize, ySize, zSize};
+  esdm_status status = esdm_dataspace_create_full(3, sizeArray, offsetArray, type, &result);
   return status == ESDM_SUCCESS ? result : NULL;
 }
 
@@ -483,12 +509,7 @@ static inline esdm_dataspace_t* esdm_dataspace_create_2d(int64_t xOffset, int64_
  *
  * Convenience helper that calls through to esdm_dataspace_create_full().
  */
-static inline esdm_dataspace_t* esdm_dataspace_create_3d(int64_t xOffset, int64_t xSize, int64_t yOffset, int64_t ySize, int64_t zOffset, int64_t zSize, esdm_type_t type) {
-  esdm_dataspace_t* result;
-  int64_t offsetArray[3] = {xOffset, yOffset, zOffset}, sizeArray[3] = {xSize, ySize, zSize};
-  esdm_status status = esdm_dataspace_create_full(3, sizeArray, offsetArray, type, &result);
-  return status == ESDM_SUCCESS ? result : NULL;
-}
+static inline esdm_dataspace_t* esdm_dataspace_create_3d(int64_t xSize, int64_t ySize, int64_t zSize, esdm_type_t type) { return esdm_dataspace_create_3do(0, xSize, 0, ySize, 0, zSize, type); }
 
 
 /**

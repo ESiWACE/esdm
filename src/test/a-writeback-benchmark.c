@@ -204,7 +204,7 @@ void runTestWithConfig(int height, int width, const char* configString) {
   printf("\nTest 1: Measure worst case reading and the effect of writeback in this case\n");
 
   // define dataspace
-  esdm_dataspace_t *dataspace = esdm_dataspace_create_2d(0, height, 0, width, SMD_DTYPE_UINT64);
+  esdm_dataspace_t *dataspace = esdm_dataspace_create_2d(height, width, SMD_DTYPE_UINT64);
   eassert(dataspace);
   esdm_container_t *container;
   ret = esdm_container_create("mycontainer", 1, &container);

@@ -72,7 +72,7 @@ int main(int argc, char const *argv[]) {
   eassert(ret == ESDM_SUCCESS);
 
   // define dataspace
-  esdm_dataspace_t *dataspace = esdm_dataspace_create_2d(0, HEIGHT, 0, WIDTH*COUNT, SMD_DTYPE_UINT64);
+  esdm_dataspace_t *dataspace = esdm_dataspace_create_2d(HEIGHT, WIDTH*COUNT, SMD_DTYPE_UINT64);
   eassert(dataspace);
 
   ret = esdm_container_create("mycontainer", 1, &container);

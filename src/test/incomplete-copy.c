@@ -27,10 +27,10 @@
 #include <stdlib.h>
 
 int main() {
-  esdm_dataspace_t *logicalSpace = esdm_dataspace_create_3d(0, 8, 0, 3, 0, 14, SMD_DTYPE_INT64);
+  esdm_dataspace_t *logicalSpace = esdm_dataspace_create_3d(8, 3, 14, SMD_DTYPE_INT64);
   assert(logicalSpace);
 
-  esdm_dataspace_t *sourceSubspace = esdm_dataspace_create_3d(6, 2, 0, 3, 9, 5, SMD_DTYPE_INT64);
+  esdm_dataspace_t *sourceSubspace = esdm_dataspace_create_3do(6, 2, 0, 3, 9, 5, SMD_DTYPE_INT64);
   assert(sourceSubspace);
   esdm_status result = esdm_dataspace_set_stride(sourceSubspace, (int64_t[3]){-3, 1, 6});
   assert(result == ESDM_SUCCESS);
@@ -51,7 +51,7 @@ int main() {
     0x60d, 0x61d, 0x62d
   }, *firstSourceByte = &sourceData[3];
 
-  esdm_dataspace_t *destSubspace = esdm_dataspace_create_3d(5, 3, 0, 3, 10, 3, SMD_DTYPE_INT64);
+  esdm_dataspace_t *destSubspace = esdm_dataspace_create_3do(5, 3, 0, 3, 10, 3, SMD_DTYPE_INT64);
   assert(destSubspace);
   result = esdm_dataspace_set_stride(destSubspace, (int64_t[3]){-3, 1, -9});
   assert(result == ESDM_SUCCESS);

@@ -84,7 +84,7 @@ static void write_test() {
   // write the actual metadata
   ret = esdm_container_create("mycontainer", 1, &container);
   eassert(ret == ESDM_SUCCESS);
-  esdm_dataspace_t *dataspace =  esdm_dataspace_create_2d(0, 10, 0, 20, SMD_DTYPE_UINT64);
+  esdm_dataspace_t *dataspace =  esdm_dataspace_create_2d(10, 20, SMD_DTYPE_UINT64);
 
   // NetCDF consists of three types of things
   // 1) Dimensions
