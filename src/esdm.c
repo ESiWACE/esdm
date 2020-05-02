@@ -289,16 +289,14 @@ esdm_status esdm_write_req_start(esdm_write_request_t ** req_out, esdm_dataset_t
 }
 
 void esdm_write_req_submit_buffer(esdm_write_request_t * req){
-  printf("HERE\n");
   req->end_buff = req->buffer + req->proc_size;
 }
 
 
 esdm_status esdm_write_req_commit(esdm_write_request_t * req){
-  // assert(req->buffer != NULL);
+  eassert(req->buffer != NULL);
   if(req->bpos != req->buffer + req->size){
-    printf("ERROR\n");
-    exit(1);
+    ESDM_ERROR("Req-Commit buffer position != expected position");
   }
   esdm_write(req->dset, req->buffer, req->file_space);
 

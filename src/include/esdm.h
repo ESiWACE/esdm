@@ -769,18 +769,34 @@ esdm_status esdm_fragment_destroy(esdm_fragment_t *fragment);
 void esdm_fragment_print(esdm_fragment_t *fragment);
 
 /**
- * Streaming functionalities
+ * Stream request functionality aims to minimize memory copies by preparing the data buffer while data is
+ * computed.
+
+ * User semantics:
+  write_request req;
+  req_start(& req)
+  foreach of your data elements:
+    compute element
+    req_pack(& req, elem)
+  req_commit(& req)
+
+ * The request functions are not thread-safe at the moment
  */
 
 esdm_status esdm_write_req_start(esdm_write_request_t ** req_out, esdm_dataset_t * dset, esdm_dataspace_t * file_space);
 
-// free's the request afterwards upon success
+/*
+ * Completes the write operation and cleans the request if needed
+ */
 esdm_status esdm_write_req_commit(esdm_write_request_t * req);
+
+/*
+ * Commit a temporary buffer, this is an internal function used by esdm_write_req_pack_*
+ * Users should not use this function.
+ */
 void esdm_write_req_submit_buffer(esdm_write_request_t * req);
 
-/**
- * Streaming functionalities
- */
+// Public structures and supportive functions
 struct esdm_write_request_t {
   esdm_dataset_t * dset;
   esdm_dataspace_t * file_space;
