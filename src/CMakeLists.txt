@@ -15,6 +15,14 @@ set_package_properties(JANSSON PROPERTIES
 )
 include_directories(${JANSSON_INCLUDE_DIRS})
 
+pkg_search_module(SCIL scil)
+set_package_properties(SCIL PROPERTIES
+	DESCRIPTION "Library for compression."
+	URL "https://github.com/JulianKunkel/scil"
+	TYPE OPTIONAL
+	PURPOSE "Support for SCIL compression."
+)
+
 find_package (Threads)
 
 # Optional
@@ -53,6 +61,15 @@ message(STATUS "JANSSON_LDFLAGS_OTHER   ${JANSSON_LDFLAGS_OTHER}")
 message(STATUS "JANSSON_INCLUDE_DIRS   ${JANSSON_INCLUDE_DIRS}")
 message(STATUS "JANSSON_CFLAGS   ${JANSSON_CFLAGS}")
 message(STATUS "JANSSON_CFLAGS_OTHER   ${JANSSON_CFLAGS_OTHER}")
+
+message(STATUS "SCIL_FOUND   ${SCIL_FOUND}")
+message(STATUS "SCIL_LIBRARIES   ${SCIL_LIBRARIES}")
+message(STATUS "SCIL_LIBRARY_DIR   ${SCIL_LIBRARY_DIR}")
+message(STATUS "SCIL_LDFLAGS   ${SCIL_LDFLAGS}")
+message(STATUS "SCIL_LDFLAGS_OTHER   ${SCIL_LDFLAGS_OTHER}")
+message(STATUS "SCIL_INCLUDE_DIRS   ${SCIL_INCLUDE_DIRS}")
+message(STATUS "SCIL_CFLAGS   ${SCIL_CFLAGS}")
+message(STATUS "SCIL_CFLAGS_OTHER   ${SCIL_CFLAGS_OTHER}")
 
 
 
