@@ -93,6 +93,11 @@ esdm_status esdm_finalize();
 esdm_status esdm_write(esdm_dataset_t *dataset, void *buf, esdm_dataspace_t *subspace);
 
 /**
+ * Identical to esdm_write except that it uses size/offset tuples instead of the subspace
+ */
+//esdm_status esdm_write_so(esdm_dataset_t *dataset, void *buf, int64_t *size, int64_t *offset);
+
+/**
  * Reads a data fragment described by desc to the dataset dset.
  *
  * @param [in] dataset TODO, currently a stub, we assume it has been identified/created before.... , json description?
@@ -103,6 +108,11 @@ esdm_status esdm_write(esdm_dataset_t *dataset, void *buf, esdm_dataspace_t *sub
  */
 
 esdm_status esdm_read(esdm_dataset_t *dataset, void *buf, esdm_dataspace_t *subspace);
+
+/**
+ * Identical to esdm_read except that it uses size/offset tuples instead of the subspace
+ */
+//esdm_status esdm_read_so(esdm_dataset_t *dataset, void *buf, int64_t *size, int64_t *offset);
 
 
 /**
@@ -756,9 +766,54 @@ esdm_status esdm_fragment_destroy(esdm_fragment_t *fragment);
  * @enduml
  *
  */
-
-
 void esdm_fragment_print(esdm_fragment_t *fragment);
+
+/**
+ * Streaming functionalities
+ */
+
+esdm_status esdm_write_req_start(esdm_write_request_t ** req_out, esdm_dataset_t * dset, esdm_dataspace_t * file_space);
+
+// free's the request afterwards upon success
+esdm_status esdm_write_req_commit(esdm_write_request_t * req);
+void esdm_write_req_submit_buffer(esdm_write_request_t * req);
+
+/**
+ * Streaming functionalities
+ */
+struct esdm_write_request_t {
+  esdm_dataset_t * dset;
+  esdm_dataspace_t * file_space;
+  uint64_t size;
+  int proc_size; // the number of bytes to batch together before starting processing
+
+  char * buffer;
+  char * bpos;
+  char * end_buff;
+
+  esdm_write_request_internal_t * ri;
+};
+
+// Macro set to generate variadic request pack function
+
+#define TYPES TYPE(int8_t) TYPE(uint8_t) TYPE(int16_t) TYPE(uint16_t) TYPE(int32_t) TYPE(uint32_t) TYPE(int64_t) TYPE(uint64_t) TYPE(float) TYPE(double)
+
+#define TYPE(typ) \
+static inline void esdm_write_req_pack_##typ(esdm_write_request_t *rq, typ data){ \
+    do { \
+    assert(rq->buffer != NULL); \
+    *((typ*) rq->bpos) = data; \
+    rq->bpos += sizeof(typ); \
+    assert(rq->bpos <= rq->end_buff); \
+    if(rq->bpos == rq->end_buff){ \
+      esdm_write_req_submit_buffer(rq);\
+    } \
+  } while(0);\
+}
+
+TYPES
+#undef TYPE
+
 
 #ifdef __cplusplus
 }

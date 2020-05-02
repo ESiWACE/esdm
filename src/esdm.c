@@ -272,3 +272,38 @@ esdm_statistics_t esdm_read_stats() { return esdm.readStats; }
 esdm_statistics_t esdm_write_stats() { return esdm.writeStats; }
 
 esdm_config_t* esdmI_getConfig() { return esdm.config; }
+
+esdm_status esdm_write_req_start(esdm_write_request_t ** req_out, esdm_dataset_t * dset, esdm_dataspace_t * file_space){
+  esdm_write_request_t * req = (esdm_write_request_t*) malloc(sizeof(esdm_write_request_t));
+  req->dset = dset;
+  req->file_space = file_space;
+  uint64_t size = esdm_dataspace_total_bytes(file_space);
+  req->buffer = (char*) malloc(size);
+  assert(req->buffer);
+  req->bpos = req->buffer;
+  req->proc_size = 10240; // TODO should come from the configuration file: architecture dependent, backend dependent
+  req->end_buff = req->buffer + req->proc_size;
+  req->size = size;
+  *req_out = req;
+  return ESDM_SUCCESS;
+}
+
+void esdm_write_req_submit_buffer(esdm_write_request_t * req){
+  printf("HERE\n");
+  req->end_buff = req->buffer + req->proc_size;
+}
+
+
+esdm_status esdm_write_req_commit(esdm_write_request_t * req){
+  // assert(req->buffer != NULL);
+  if(req->bpos != req->buffer + req->size){
+    printf("ERROR\n");
+    exit(1);
+  }
+  esdm_write(req->dset, req->buffer, req->file_space);
+
+  free(req->buffer);
+  req->buffer = NULL;
+  free(req);
+  return ESDM_SUCCESS;
+}

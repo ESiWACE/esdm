@@ -444,4 +444,8 @@ struct esdm_writeTimes_t {
   double total; //sum of all the times above and other small things like taking times...
 };
 
+struct esdm_write_request_internal_t{
+  int x;
+};
+
 #endif
