@@ -68,6 +68,8 @@ typedef struct esdm_fragment_t esdm_fragment_t;
 typedef struct esdm_md_backend_callbacks_t esdm_md_backend_callbacks_t;
 typedef struct esdm_md_backend_t esdm_md_backend_t;
 
+typedef struct scil_user_hints_t scil_user_hints_t;
+
 typedef struct esdm_write_request_t  esdm_write_request_t;
 typedef struct esdm_write_request_internal_t esdm_write_request_internal_t;
 

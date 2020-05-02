@@ -1,5 +1,4 @@
-/* This file is part of ESDM.
- * See the enclosed LICENSE */
+/* This file is part of ESDM. See the enclosed LICENSE */
 
 /**
  * @file
@@ -10,9 +9,5 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-
-#ifdef HAVE_SCIL
-#include <scil.h>
-#endif
 
 #include <esdm-internal.h>

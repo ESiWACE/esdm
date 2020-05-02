@@ -9,6 +9,15 @@
 #include <esdm-datatypes.h>
 #include <smd-datatype.h>
 
+#ifdef HAVE_SCIL
+#include <scil.h>
+#else
+// fake definition of hints
+struct scil_user_hints_t{
+  int missing;
+};
+#endif
+
 enum { ESDM_ID_LENGTH = 23 }; //= strlen(id), to allocate the buffers, add one byte for the termination
 
 enum esdm_data_status_e {
@@ -59,6 +68,7 @@ struct esdm_dataset_t {
   int refcount;
   esdm_data_status_e status;
   int mode_flags; // set via esdm_mode_flags_e
+  scil_user_hints_t * chints; // compression hints from SCIL, NULL if none available
 };
 
 struct esdm_fragment_t {

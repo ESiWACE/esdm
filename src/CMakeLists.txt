@@ -63,7 +63,7 @@ message(STATUS "JANSSON_CFLAGS   ${JANSSON_CFLAGS}")
 message(STATUS "JANSSON_CFLAGS_OTHER   ${JANSSON_CFLAGS_OTHER}")
 
 if(SCIL_FOUND)
-  set (CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -DHAVE_SCIL")
+  set (CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -DHAVE_SCIL ${SCIL_CFLAGS}")
 endif(SCIL_FOUND)
 
 message(STATUS "SCIL_FOUND   ${SCIL_FOUND}")
@@ -99,7 +99,6 @@ option(ENABLE_HDF5 "Compile Plugin for HDF5 Virtual Object Layer?" OFF)
 set(ESDM_INCLUDE_DIRS "${CMAKE_SOURCE_DIR}/src/include;${GLIB_INCLUDE_DIRS};${JANSSON_INCLUDE_DIRS};${SMD_INCLUDES}")
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}/)
 
-
 add_subdirectory(backends-metadata)
 add_subdirectory(utils)
 add_subdirectory(test)
@@ -120,7 +119,7 @@ install(TARGETS esdmutils LIBRARY DESTINATION lib)
 
 # ESDM Middleware Library
 add_library(esdm SHARED esdm.c  esdm-scheduler.c fragments.c  esdm-modules.c backends-data/init.c)
-target_link_libraries(esdm ${GLIB_LDFLAGS} ${JANSSON_LDFLAGS} esdmutils esdmposix esdmdummy esdm-mdposix)
+target_link_libraries(esdm ${GLIB_LDFLAGS} ${JANSSON_LDFLAGS} ${SCIL_LDFLAGS} esdmutils esdmposix esdmdummy esdm-mdposix)
 if(BACKEND_MONGODB)
     target_link_libraries(esdm esdmmongodb)
 endif()

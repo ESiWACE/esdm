@@ -295,6 +295,8 @@ int64_t const * esdm_dataset_get_actual_size(esdm_dataset_t *dset);
 
 esdm_status esdm_dataset_rename(esdm_dataset_t *dataset, const char *name);
 
+esdm_status esdm_dataset_set_compression_hint(esdm_dataset_t * dataset, scil_user_hints_t const * hints);
+
 void esdm_dataset_set_status_dirty(esdm_dataset_t * dataset);
 
 // Dataset
