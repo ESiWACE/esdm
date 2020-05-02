@@ -146,7 +146,7 @@ if test -n "$boost"; then
 fi
 
 echo PKG_CONFIG_PATH="$PKG_CONFIG_PATH"
-COMMAND="mkdir -p $buildDIR && cd $buildDIR && echo $PARAMETERS > configure.log ; rm CMakeCache.txt 2>/dev/null; cmake $CMAKEFLAGS $SRCDIR"
+COMMAND="mkdir -p $buildDIR && echo $PARAMETERS > $buildDIR/configure.log && cd $buildDIR && echo $PARAMETERS > configure.log ; rm CMakeCache.txt 2>/dev/null; cmake $CMAKEFLAGS $SRCDIR"
 
 echo $COMMAND
 
