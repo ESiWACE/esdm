@@ -445,7 +445,7 @@ struct esdm_writeTimes_t {
 };
 
 struct esdm_write_request_internal_t{
-  int x;
+  io_request_status_t status;
 };
 
 #endif

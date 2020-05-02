@@ -800,12 +800,12 @@ void esdm_write_req_submit_buffer(esdm_write_request_t * req);
 struct esdm_write_request_t {
   esdm_dataset_t * dset;
   esdm_dataspace_t * file_space;
-  uint64_t size;
+  uint64_t to_transfer; // amount of bytes still to transfer
   int proc_size; // the number of bytes to batch together before starting processing
 
   char * buffer;
-  char * bpos;
-  char * end_buff;
+  char * bpos;   // position in the buffer
+  char * end_buff; // end position in the buffer
 
   esdm_write_request_internal_t * ri;
 };
@@ -818,9 +818,9 @@ struct esdm_write_request_t {
 static inline void esdm_write_req_pack_##typ(esdm_write_request_t *rq, typ data){ \
     do { \
     assert(rq->buffer != NULL); \
+    assert(rq->bpos <= (rq->end_buff - sizeof(typ))); \
     *((typ*) rq->bpos) = data; \
     rq->bpos += sizeof(typ); \
-    assert(rq->bpos <= rq->end_buff); \
     if(rq->bpos == rq->end_buff){ \
       esdm_write_req_submit_buffer(rq);\
     } \
