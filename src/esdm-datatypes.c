@@ -786,6 +786,8 @@ esdm_status esdmI_create_fragment_from_metadata(esdm_dataset_t *dset, json_t * j
   elem = json_object_get(json, "act-size"); // if it is compressed the actual size may differ
   if(elem){
     f->actual_bytes = json_integer_value(elem);
+  }else{
+    f->actual_bytes = -1;
   }
 
   elem = json_object_get(json, "stride");

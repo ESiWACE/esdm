@@ -236,7 +236,7 @@ static int fragment_retrieve(esdm_backend_t *backend, esdm_fragment_t *f) {
     }
     readBuffer = scil_buf;
 #else
-    ESDM_WARN_COM_FMT("Use ESDM trying to decompress but compiled without SCIL support.");
+    ESDM_WARN("Use ESDM trying to decompress but compiled without SCIL support.");
     return ESDM_ERROR;
 #endif
   }
@@ -279,7 +279,7 @@ static int fragment_update(esdm_backend_t *backend, esdm_fragment_t *f) {
 
   size_t bytes_to_write = f->bytes;
 
-  byte * scil_buf = NULL;
+  char * scil_buf = NULL;
   if(f->dataset->chints && f->dataspace->dims <= 5){
 #ifdef HAVE_SCIL
     scil_context_t *ctx;
@@ -294,7 +294,7 @@ static int fragment_update(esdm_backend_t *backend, esdm_fragment_t *f) {
     scil_buf = malloc(buf_size);
     size_t out_size = 0;
 
-    ret = scil_compress(scil_buf, buf_size, writeBuffer, & scil_dims, & out_size, ctx);
+    ret = scil_compress((byte*)scil_buf, buf_size, writeBuffer, & scil_dims, & out_size, ctx);
     ret = scil_destroy_context(ctx);
     DEBUG("SCIL compressed: %ld => %ld\n", f->bytes, out_size);
     if(out_size < f->bytes){
