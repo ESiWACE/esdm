@@ -79,7 +79,8 @@ struct esdm_fragment_t {
   void * backend_md; // backend-specific metadata if set
   void *buf;
   size_t elements;
-  size_t bytes;
+  size_t bytes; // expected size in bytes
+  size_t actual_bytes; // actual size, can differ from actual size due to compression
   //int direct_io;
   esdm_data_status_e status;
   bool ownsBuf; //If true, the fragment is responsible to free the buffer when it's destructed or unloaded. Otherwise, `buf` is just a reference for zero copy writing.
@@ -457,5 +458,7 @@ struct esdm_writeTimes_t {
 struct esdm_write_request_internal_t{
   io_request_status_t status;
 };
+
+
 
 #endif

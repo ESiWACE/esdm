@@ -14,7 +14,8 @@
 
 int main(int argc, char const *argv[]) {
   // prepare data
-  uint64_t *buf_w = (uint64_t *)malloc(10 * 20 * sizeof(uint64_t));
+  uint64_t *buf_w = (uint64_t *) malloc(10 * 20 * sizeof(uint64_t));
+  uint64_t *buf_r = (uint64_t *) malloc(10 * 20 * sizeof(uint64_t));
 
   for (int x = 0; x < 10; x++) {
     for (int y = 0; y < 20; y++) {
@@ -39,16 +40,18 @@ int main(int argc, char const *argv[]) {
   status = esdm_dataspace_create(2, bounds, SMD_DTYPE_UINT64, &dataspace);
   eassert(status == ESDM_SUCCESS);
 
-  status = esdm_container_create("mycontainer", 1, &container);
+  status = esdm_container_create("scil", 1, &container);
   eassert(status == ESDM_SUCCESS);
 
-  status = esdm_dataset_create(container, "mydataset", dataspace, &dataset);
+  status = esdm_dataset_create(container, "test1", dataspace, &dataset);
   eassert(status == ESDM_SUCCESS);
+
+  #define ABSTOL 1
 
 #ifdef HAVE_SCIL
   scil_user_hints_t hints;
   scil_user_hints_initialize(& hints);
-  hints.absolute_tolerance = 1.0;
+  hints.absolute_tolerance = ABSTOL;
   status = esdm_dataset_set_compression_hint(dataset, & hints);
   eassert(status == ESDM_SUCCESS);
 #else
@@ -76,6 +79,12 @@ int main(int argc, char const *argv[]) {
   eassert(status == ESDM_SUCCESS);
   status = esdm_dataset_commit(dataset);
   eassert(status == ESDM_SUCCESS);
+
+  status = esdm_read(dataset, buf_r, subspace);
+  eassert(status == ESDM_SUCCESS);
+  for (int x = 0; x < 200; x++) {
+    eassert(buf_r[x] >= (buf_w[x] - ABSTOL) && buf_r[x] <= (buf_w[x] + ABSTOL));
+  }
 
   status = esdm_finalize();
   eassert(status == ESDM_SUCCESS);
