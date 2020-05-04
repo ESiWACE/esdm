@@ -226,9 +226,11 @@ void read_test() {
   txt = (char *)smd_attr_get_value(a1);
   eassert(strcmp(txt, "Celsius") == 0);
 
+  free(type);
+  free(type_e);
+
   ret = esdm_dataset_close(dataset);
   eassert(ret == ESDM_SUCCESS);
-
   ret = esdm_container_close(container);
   eassert(ret == ESDM_SUCCESS);
 }

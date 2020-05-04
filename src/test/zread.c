@@ -84,6 +84,11 @@ int main(int argc, char const *argv[]) {
   status = esdm_read(dataset, buf_r, space.ptr);
   eassert(status == ESDM_SUCCESS);
 
+  status = esdm_dataset_close(dataset);
+  eassert(status == ESDM_SUCCESS);
+  status = esdm_container_close(container);
+  eassert(status == ESDM_SUCCESS);
+
   status = esdm_finalize();
   eassert(status == ESDM_SUCCESS);
 

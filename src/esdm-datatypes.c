@@ -912,6 +912,7 @@ esdm_status esdm_dataset_open_md_parse(esdm_dataset_t *d, char * md, int size){
       }
     }
   }
+  if(d->dataspace) esdm_dataspace_destroy(d->dataspace);
   ret = esdm_dataspace_create(dims, sizes, type, &d->dataspace);
   if (ret != ESDM_SUCCESS) {
     json_decref(root);

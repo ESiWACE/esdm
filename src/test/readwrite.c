@@ -88,15 +88,11 @@ int main(int argc, char const *argv[]) {
 
   for (int n = 0 ; n < COUNT; n++) {
     // define subspace
-    int64_t size[] = {HEIGHT, WIDTH};
-    int64_t offset[] = {0, n * WIDTH};
-    esdm_dataspace_t *subspace;
-
-    ret = esdm_dataspace_subspace(dataspace.ptr, 2, size, offset, &subspace);
-    eassert(ret == ESDM_SUCCESS);
+    esdm_simple_dspace_t subspace = esdm_dataspace_2do(0, HEIGHT, n*WIDTH, WIDTH, SMD_DTYPE_UINT64);
+    eassert(subspace.ptr);
 
     // Write the data to the dataset
-    ret = esdm_write(dataset, buf_w, subspace);
+    ret = esdm_write(dataset, buf_w, subspace.ptr);
     eassert(ret == ESDM_SUCCESS);
 
     ret = esdm_dataset_commit(dataset);
@@ -104,7 +100,7 @@ int main(int argc, char const *argv[]) {
 
     memset(buf_r, 0, HEIGHT * WIDTH * sizeof(uint64_t));
     // Read the data to the dataset
-    ret = esdm_read(dataset, buf_r, subspace);
+    ret = esdm_read(dataset, buf_r, subspace.ptr);
     eassert(ret == ESDM_SUCCESS);
 
     // TODO: write subset
@@ -120,6 +116,11 @@ int main(int argc, char const *argv[]) {
     }
     eassert(mismatches == 0);
   }
+
+  ret = esdm_dataset_close(dataset);
+  eassert(ret == ESDM_SUCCESS);
+  ret = esdm_container_close(container);
+  eassert(ret == ESDM_SUCCESS);
 
   ret = esdm_finalize();
   eassert(ret == ESDM_SUCCESS);

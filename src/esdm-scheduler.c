@@ -500,6 +500,7 @@ static esdmI_hypercubeSet_t* makeSplitRecommendation_balancedDims(esdm_dataspace
     }
     if(updateDim < 0) break;
   }
+  esdmI_hypercube_destroy(curCube);
   return result;
 }
 
