@@ -84,18 +84,18 @@ static void write_test() {
   // write the actual metadata
   ret = esdm_container_create("mycontainer", 1, &container);
   eassert(ret == ESDM_SUCCESS);
-  esdm_dataspace_t *dataspace =  esdm_dataspace_create_2d(10, 20, SMD_DTYPE_UINT64);
+  esdm_simple_dspace_t dataspace =  esdm_dataspace_2d(10, 20, SMD_DTYPE_UINT64);
 
   // NetCDF consists of three types of things
   // 1) Dimensions
   // Dimensions are implicitly part of ESDM when defining the bounds of a dataspace, but they are unnamed
   // So we have to name them
 
-  ret = esdm_dataset_create(container, "var2", dataspace, &dataset2);
+  ret = esdm_dataset_create(container, "var2", dataspace.ptr, &dataset2);
   eassert(ret == ESDM_SUCCESS);
 
   // 2) Variables
-  ret = esdm_dataset_create(container, "myVariable", dataspace, &dataset);
+  ret = esdm_dataset_create(container, "myVariable", dataspace.ptr, &dataset);
   eassert(ret == ESDM_SUCCESS);
 
   char *names[] = {"longitude", "latitude"};
@@ -149,7 +149,6 @@ void read_test() {
   esdm_status ret;
 
   // Interaction with ESDM
-  // esdm_dataspace_t *dataspace = NULL;
   esdm_container_t *container = NULL;
   esdm_dataset_t *dataset = NULL;
 

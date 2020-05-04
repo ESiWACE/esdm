@@ -75,14 +75,6 @@ struct esdm_fragment_t {
   bool ownsBuf; //If true, the fragment is responsible to free the buffer when it's destructed or unloaded. Otherwise, `buf` is just a reference for zero copy writing.
 };
 
-struct esdm_dataspace_t {
-  esdm_type_t type;
-  int64_t dims;
-  int64_t *size;
-  int64_t *offset;
-  int64_t *stride;  //may be NULL, in this case contiguous storage in C order is assumed
-};
-
 // MODULES ////////////////////////////////////////////////////////////////////
 
 /**

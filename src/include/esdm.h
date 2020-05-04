@@ -455,61 +455,69 @@ esdm_status esdm_dataspace_create(int64_t dims, int64_t *sizes, esdm_type_t type
 esdm_status esdm_dataspace_create_full(int64_t dims, int64_t *size, int64_t *offset, esdm_type_t type, esdm_dataspace_t **out_dataspace);
 
 /**
- * Create a new 1D dataspace.
+ * Create a dataspace on the stack with up to three dimensions.
  *
- * Convenience helper that calls through to esdm_dataspace_create_full().
+ * **Do not use this directly, use `esdm_dataspace_2d()` and friends instead!**
  */
-static inline esdm_dataspace_t* esdm_dataspace_create_1do(int64_t offset, int64_t size, esdm_type_t type) {
-  esdm_dataspace_t* result;
-  int64_t offsetArray[1] = {offset}, sizeArray[1] = {size};
-  esdm_status status = esdm_dataspace_create_full(1, sizeArray, offsetArray, type, &result);
-  return status == ESDM_SUCCESS ? result : NULL;
-}
-/**
+#define esdm_simple_dataspace_construct_internal(dimCount, xOffset, xSize, yOffset, ySize, zOffset, zSize, dataType) \
+  ((esdm_simple_dspace_t){ \
+    .ptr = &(esdm_dataspace_t){ \
+      .type = dataType, \
+      .dims = dimCount, \
+      .size = (int64_t [3]){xSize, ySize, zSize}, \
+      .offset = (int64_t [3]){xOffset, yOffset, zOffset}, \
+      .strideBacking = (int64_t [3]){0}, \
+      .stride = NULL \
+    } \
+  })
 
+/**
  * Create a new 1D dataspace.
  *
- * Convenience helper that calls through to esdm_dataspace_create_full().
+ * Construct a simple dataspace on the stack.
+ * Since the lifetime of the dataspace is automatic, it is an error to call `esdm_dataspace_destroy()` on it.
  */
-static inline esdm_dataspace_t* esdm_dataspace_create_1d(int64_t size, esdm_type_t type) { return esdm_dataspace_create_1do(0, size, type); }
+#define esdm_dataspace_1do(offset, size, type) esdm_simple_dataspace_construct_internal(1, offset, size, 0, 0, 0, 0, type)
+
+/**
+ * Create a new 1D dataspace.
+ *
+ * Construct a simple dataspace on the stack.
+ * Since the lifetime of the dataspace is automatic, it is an error to call `esdm_dataspace_destroy()` on it.
+ */
+#define esdm_dataspace_1d(size, type) esdm_simple_dataspace_construct_internal(1, 0, size, 0, 0, 0, 0, type)
 
 /**
  * Create a new 2D dataspace.
  *
- * Convenience helper that calls through to esdm_dataspace_create_full().
+ * Construct a simple dataspace on the stack.
+ * Since the lifetime of the dataspace is automatic, it is an error to call `esdm_dataspace_destroy()` on it.
  */
-static inline esdm_dataspace_t* esdm_dataspace_create_2do(int64_t xOffset, int64_t xSize, int64_t yOffset, int64_t ySize, esdm_type_t type) {
-  esdm_dataspace_t* result;
-  int64_t offsetArray[2] = {xOffset, yOffset}, sizeArray[2] = {xSize, ySize};
-  esdm_status status = esdm_dataspace_create_full(2, sizeArray, offsetArray, type, &result);
-  return status == ESDM_SUCCESS ? result : NULL;
-}
+#define esdm_dataspace_2do(xOffset, xSize, yOffset, ySize, type) esdm_simple_dataspace_construct_internal(2, xOffset, xSize, yOffset, ySize, 0, 0, type)
 
 /**
  * Create a new 2D dataspace.
  *
- * Convenience helper that calls through to esdm_dataspace_create_full().
+ * Construct a simple dataspace on the stack.
+ * Since the lifetime of the dataspace is automatic, it is an error to call `esdm_dataspace_destroy()` on it.
  */
-static inline esdm_dataspace_t* esdm_dataspace_create_2d(int64_t xSize, int64_t ySize, esdm_type_t type) { return esdm_dataspace_create_2do(0, xSize, 0, ySize, type); }
+#define esdm_dataspace_2d(xSize, ySize, type) esdm_simple_dataspace_construct_internal(2, 0, xSize, 0, ySize, 0, 0, type)
 
 /**
  * Create a new 3D dataspace.
  *
- * Convenience helper that calls through to esdm_dataspace_create_full().
+ * Construct a simple dataspace on the stack.
+ * Since the lifetime of the dataspace is automatic, it is an error to call `esdm_dataspace_destroy()` on it.
  */
-static inline esdm_dataspace_t* esdm_dataspace_create_3do(int64_t xOffset, int64_t xSize, int64_t yOffset, int64_t ySize, int64_t zOffset, int64_t zSize, esdm_type_t type) {
-  esdm_dataspace_t* result;
-  int64_t offsetArray[3] = {xOffset, yOffset, zOffset}, sizeArray[3] = {xSize, ySize, zSize};
-  esdm_status status = esdm_dataspace_create_full(3, sizeArray, offsetArray, type, &result);
-  return status == ESDM_SUCCESS ? result : NULL;
-}
+#define esdm_dataspace_3do(xOffset, xSize, yOffset, ySize, zOffset, zSize, type) esdm_simple_dataspace_construct_internal(3, xOffset, xSize, yOffset, ySize, zOffset, zSize, type)
 
 /**
  * Create a new 3D dataspace.
  *
- * Convenience helper that calls through to esdm_dataspace_create_full().
+ * Construct a simple dataspace on the stack.
+ * Since the lifetime of the dataspace is automatic, it is an error to call `esdm_dataspace_destroy()` on it.
  */
-static inline esdm_dataspace_t* esdm_dataspace_create_3d(int64_t xSize, int64_t ySize, int64_t zSize, esdm_type_t type) { return esdm_dataspace_create_3do(0, xSize, 0, ySize, 0, zSize, type); }
+#define esdm_dataspace_3d(xSize, ySize, zSize, type) esdm_simple_dataspace_construct_internal(3, 0, xSize, 0, ySize, 0, zSize, type)
 
 
 /**

@@ -96,11 +96,11 @@ int main(int argc, char const *argv[]) {
   eassert(status == ESDM_SUCCESS);
 
   //failing input tests are in write.c
-  esdm_dataspace_t *space = esdm_dataspace_create_2d(10, 20, SMD_DTYPE_UINT64);
-  eassert(space);
+  esdm_simple_dspace_t space = esdm_dataspace_2d(10, 20, SMD_DTYPE_UINT64);
+  eassert(space.ptr);
 
   my_user_data_t user_data = {0, 0, buf_w};
-  status = esdm_read_stream(dataset, space, & user_data, stream_func, reduce_func);
+  status = esdm_read_stream(dataset, space.ptr, & user_data, stream_func, reduce_func);
   eassert(status == ESDM_SUCCESS);
 
   status = esdm_finalize();

@@ -807,13 +807,36 @@ esdm_status esdmI_create_fragment_from_metadata(esdm_dataset_t *dset, json_t * j
   return ESDM_SUCCESS;
 }
 
+static void ensureStrideBuffer(esdm_dataspace_t* space) {
+  eassert(space);
+
+  //Case 0: It's already allocated.
+  if(space->stride) return;
+
+  //Case 1: It's a simple dataspace that lives on the stack and has a buffer ready for using.
+  if((space->stride = space->strideBacking)) return;
+
+  //Case 2: It's a normal dataspace that lives on the heap, allowing us to dynamically allocate the stride buffer.
+  space->stride = malloc(space->dims * sizeof *space->stride);
+}
+
+static void removeStrideBuffer(esdm_dataspace_t* space) {
+  eassert(space);
+
+  //Fast return if there is no stride set.
+  if(!space->stride) return;
+
+  //Check whether the stride lives on the heap (no stack-based backing is set) and free it if appropriate.
+  if(!space->strideBacking) free(space->stride);
+
+  space->stride = NULL;
+}
+
 esdm_status esdm_dataspace_set_stride(esdm_dataspace_t* space, int64_t* stride){
   eassert(space);
   int dims = space->dims;
 
-  if(! space->stride){
-    space->stride = malloc(dims * sizeof(int64_t));
-  }
+  ensureStrideBuffer(space);
   memcpy(space->stride, stride, dims * sizeof(int64_t));
 
   return ESDM_SUCCESS;
@@ -825,8 +848,7 @@ esdm_status esdm_dataspace_copyDatalayout(esdm_dataspace_t* space, esdm_dataspac
   eassert(space->dims == source->dims);
 
   //get rid of old stride array
-  free(space->stride);
-  space->stride = NULL;
+  removeStrideBuffer(space);
 
   //check whether we actually need a stride array
   if(!source->stride) {
@@ -838,7 +860,7 @@ esdm_status esdm_dataspace_copyDatalayout(esdm_dataspace_t* space, esdm_dataspac
   }
 
   //copy the stride info from the source
-  space->stride = malloc(space->dims*sizeof(*space->stride));
+  ensureStrideBuffer(space);
   esdm_dataspace_getEffectiveStride(source, space->stride);
 
   return ESDM_SUCCESS;
@@ -1179,7 +1201,7 @@ esdm_status esdm_dataspace_create_full(int64_t dims, int64_t *sizes, int64_t *of
   memcpy(dataspace->offset, offset, sizeof(int64_t) * dims);
 
   dataspace->type = type;
-  dataspace->stride = NULL;
+  dataspace->stride = dataspace->strideBacking = NULL;
   DEBUG("New dataspace: dims=%d\n", dataspace->dims);
 
   *out_dataspace = dataspace;
@@ -1206,7 +1228,7 @@ esdm_status esdm_dataspace_create(int64_t dims, int64_t *sizes, esdm_type_t type
   memset(dataspace->offset, 0, sizeof(int64_t) * dims);
 
   dataspace->type = type;
-  dataspace->stride = NULL;
+  dataspace->stride = dataspace->strideBacking = NULL;
   DEBUG("New dataspace: dims=%d\n", dataspace->dims);
 
   *out_dataspace = dataspace;
@@ -1228,6 +1250,7 @@ esdm_status esdmI_dataspace_createFromHypercube(esdmI_hypercube_t* extends, esdm
     .dims = dimensions,
     .size = malloc(dimensions*sizeof(*result->size)),
     .offset = malloc(dimensions*sizeof(*result->offset)),
+    .strideBacking = NULL,
     .stride = NULL
   };
   esdmI_hypercube_getOffsetAndSize(extends, result->offset, result->size);
@@ -1247,6 +1270,7 @@ esdm_status esdm_dataspace_copy(esdm_dataspace_t* orig, esdm_dataspace_t **out_d
     .dims = orig->dims,
     .size = ea_memdup(orig->size, orig->dims*sizeof*orig->size),
     .offset = ea_memdup(orig->offset, orig->dims*sizeof*orig->offset),
+    .strideBacking = NULL,
     .stride = orig->stride ? ea_memdup(orig->stride, orig->dims*sizeof*orig->stride) : NULL
   };
 
@@ -1315,7 +1339,7 @@ esdm_status esdm_dataspace_subspace(esdm_dataspace_t *dataspace, int64_t dims, i
     subspace->dims = dims;
     subspace->size = (int64_t *)malloc(sizeof(int64_t) * dims);
     subspace->offset = (int64_t *)malloc(sizeof(int64_t) * dims);
-    subspace->stride = NULL;
+    subspace->stride = subspace->strideBacking = NULL;
     subspace->type = dataspace->type;
     smd_type_ref(subspace->type);
 
@@ -1415,11 +1439,9 @@ void esdm_fragment_print(esdm_fragment_t *f) {
 esdm_status esdm_dataspace_destroy(esdm_dataspace_t *d) {
   ESDM_DEBUG(__func__);
   eassert(d);
+  removeStrideBuffer(d);
   free(d->offset);
   free(d->size);
-  if(d->stride){
-    free(d->stride);
-  }
   free(d);
   return ESDM_SUCCESS;
 }

@@ -75,13 +75,13 @@ int main(int argc, char const *argv[]) {
   eassert(status == ESDM_SUCCESS);
 
   //failing input tests are in write.c
-  esdm_dataspace_t *space = esdm_dataspace_create_2d(10, 20, SMD_DTYPE_UINT64);
-  eassert(space);
+  esdm_simple_dspace_t space = esdm_dataspace_2d(10, 20, SMD_DTYPE_UINT64);
+  eassert(space.ptr);
 
-  eassert_crash(esdm_read(NULL, buf_r, space));
-  eassert_crash(esdm_read(dataset, NULL, space));
+  eassert_crash(esdm_read(NULL, buf_r, space.ptr));
+  eassert_crash(esdm_read(dataset, NULL, space.ptr));
   eassert_crash(esdm_read(dataset, buf_r, NULL));
-  status = esdm_read(dataset, buf_r, space);
+  status = esdm_read(dataset, buf_r, space.ptr);
   eassert(status == ESDM_SUCCESS);
 
   status = esdm_finalize();

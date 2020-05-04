@@ -47,13 +47,13 @@ int main(int argc, char const *argv[]) {
   eassert(ret == ESDM_SUCCESS);
 
   // define dataspace
-  esdm_dataspace_t *dataspace = esdm_dataspace_create_2d(10, 20, SMD_DTYPE_UINT64);
-  eassert(dataspace);
+  esdm_simple_dspace_t dataspace = esdm_dataspace_2d(10, 20, SMD_DTYPE_UINT64);
+  eassert(dataspace.ptr);
 
   ret = esdm_container_create("mycontainer", 1, &container);
   eassert(ret == ESDM_SUCCESS);
 
-  ret = esdm_dataset_create(container, "mydataset", dataspace, &dataset);
+  ret = esdm_dataset_create(container, "mydataset", dataspace.ptr, &dataset);
   eassert(ret == ESDM_SUCCESS);
 
   ret = esdm_container_commit(container);
@@ -67,7 +67,7 @@ int main(int argc, char const *argv[]) {
   int64_t offset[] = {0, 0};
   esdm_dataspace_t *subspace;
 
-  ret = esdm_dataspace_subspace(dataspace, 2, size, offset, &subspace);
+  ret = esdm_dataspace_subspace(dataspace.ptr, 2, size, offset, &subspace);
   eassert(ret == ESDM_SUCCESS);
 
   // Write the data to the dataset

@@ -27,12 +27,12 @@
 #include <stdlib.h>
 
 int main() {
-  esdm_dataspace_t *logicalSpace = esdm_dataspace_create_3d(8, 3, 14, SMD_DTYPE_INT64);
-  assert(logicalSpace);
+  esdm_simple_dspace_t logicalSpace = esdm_dataspace_3d(8, 3, 14, SMD_DTYPE_INT64);
+  assert(logicalSpace.ptr);
 
-  esdm_dataspace_t *sourceSubspace = esdm_dataspace_create_3do(6, 2, 0, 3, 9, 5, SMD_DTYPE_INT64);
-  assert(sourceSubspace);
-  esdm_status result = esdm_dataspace_set_stride(sourceSubspace, (int64_t[3]){-3, 1, 6});
+  esdm_simple_dspace_t sourceSubspace = esdm_dataspace_3do(6, 2, 0, 3, 9, 5, SMD_DTYPE_INT64);
+  assert(sourceSubspace.ptr);
+  esdm_status result = esdm_dataspace_set_stride(sourceSubspace.ptr, (int64_t[3]){-3, 1, 6});
   assert(result == ESDM_SUCCESS);
   int64_t sourceData[30] = {
     0x709, 0x719, 0x729,
@@ -51,9 +51,9 @@ int main() {
     0x60d, 0x61d, 0x62d
   }, *firstSourceByte = &sourceData[3];
 
-  esdm_dataspace_t *destSubspace = esdm_dataspace_create_3do(5, 3, 0, 3, 10, 3, SMD_DTYPE_INT64);
-  assert(destSubspace);
-  result = esdm_dataspace_set_stride(destSubspace, (int64_t[3]){-3, 1, -9});
+  esdm_simple_dspace_t destSubspace = esdm_dataspace_3do(5, 3, 0, 3, 10, 3, SMD_DTYPE_INT64);
+  assert(destSubspace.ptr);
+  result = esdm_dataspace_set_stride(destSubspace.ptr, (int64_t[3]){-3, 1, -9});
   assert(result == ESDM_SUCCESS);
   int64_t destData[27] = {0}, expectedData[27] = {
     0x70c, 0x71c, 0x72c,
@@ -69,17 +69,10 @@ int main() {
     0x000, 0x000, 0x000,
   }, *firstDestByte = &destData[6 + 2*9];
 
-  result = esdm_dataspace_copy_data(sourceSubspace, firstSourceByte, destSubspace, firstDestByte);
+  result = esdm_dataspace_copy_data(sourceSubspace.ptr, firstSourceByte, destSubspace.ptr, firstDestByte);
   assert(result == ESDM_SUCCESS);
 
   for(int64_t i = 0; i < 27; i++) eassert(destData[i] == expectedData[i]);
-
-  result = esdm_dataspace_destroy(logicalSpace);
-  assert(result == ESDM_SUCCESS);
-  result = esdm_dataspace_destroy(sourceSubspace);
-  assert(result == ESDM_SUCCESS);
-  result = esdm_dataspace_destroy(destSubspace);
-  assert(result == ESDM_SUCCESS);
 
   printf("\nOK\n");
 }
