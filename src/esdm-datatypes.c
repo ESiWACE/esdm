@@ -30,6 +30,10 @@
 #include <stdlib.h>
 #include <string.h>
 
+#ifdef HAVE_SCIL
+#include <scil.h>
+#endif
+
 #define DEBUG_ENTER ESDM_DEBUG_COM_FMT("DATATYPES", "", "")
 #define DEBUG(fmt, ...) ESDM_DEBUG_COM_FMT("DATATYPES", fmt, __VA_ARGS__)
 
@@ -421,6 +425,7 @@ esdm_status esdmI_fragment_create(esdm_dataset_t *d, esdm_dataspace_t *sspace, v
     .ownsBuf = false,
     .elements = elements,
     .bytes = bytes,
+    .actual_bytes = -1,
     .status = buf ? ESDM_DATA_DIRTY : ESDM_DATA_NOT_LOADED,
     .backend = NULL
   };
@@ -510,7 +515,11 @@ void esdm_fragment_metadata_create(esdm_fragment_t *f, smd_string_stream_t * str
     smd_string_stream_printf(stream, ",%ld", d->size[i]);
   }
 
-  smd_string_stream_printf(stream, "],\"offset\":[");
+  if(f->actual_bytes != -1){
+    smd_string_stream_printf(stream, "],\"act-size\":%ld,\"offset\":[", f->actual_bytes);
+  }else{
+    smd_string_stream_printf(stream, "],\"offset\":[");
+  }
   if(d->dims) smd_string_stream_printf(stream, "%ld", d->offset[0]);
   for (int i = 1; i < d->dims; i++) {
     smd_string_stream_printf(stream, ",%ld", d->offset[i]);
@@ -638,15 +647,9 @@ esdm_status esdm_fragment_destroy(esdm_fragment_t *frag) {
 
 void esdm_dataset_init(esdm_container_t *c, const char *name, esdm_dataspace_t *dspace, esdm_dataset_t **out_dataset){
   esdm_dataset_t *d = (esdm_dataset_t *)malloc(sizeof(esdm_dataset_t));
-
-  d->dims_dset_id = NULL;
+  memset(d, 0, sizeof(esdm_dataset_t));
   d->name = strdup(name);
-  d->id = NULL; // to be filled by the metadata backend
-  d->fill_value = NULL;
-  d->refcount = 0;
   d->container = c;
-  d->dataspace = NULL;
-  d->actual_size = NULL;
   if(dspace){
     esdm_dataspace_copy(dspace, &d->dataspace);
     // check for unlimited dims
@@ -696,6 +699,22 @@ esdm_status esdm_dataset_create(esdm_container_t *c, const char *name, esdm_data
   *out_dataset = dset;
 
   return ESDM_SUCCESS;
+}
+
+esdm_status esdm_dataset_set_compression_hint(esdm_dataset_t * dset, scil_user_hints_t const * hints){
+  eassert(dset);
+#ifdef HAVE_SCIL
+  if(dset->chints){ // can only set compression hints once
+    return ESDM_ERROR;
+  }
+  if(hints){
+    dset->chints = malloc(sizeof(scil_user_hints_t));
+    scil_user_hints_copy(dset->chints, hints);
+  }
+  return ESDM_SUCCESS;
+#else
+  return ESDM_ERROR;
+#endif
 }
 
 esdm_status esdm_dataset_open_md_load(esdm_dataset_t *dset, char ** out_md, int * out_size){
@@ -763,6 +782,13 @@ esdm_status esdmI_create_fragment_from_metadata(esdm_dataset_t *dset, json_t * j
   }
   esdm_dataspace_t * space;
 
+  elem = json_object_get(json, "act-size"); // if it is compressed the actual size may differ
+  if(elem){
+    f->actual_bytes = json_integer_value(elem);
+  }else{
+    f->actual_bytes = -1;
+  }
+
   elem = json_object_get(json, "stride");
   bool haveStride = (elem != NULL);
   int64_t stride[dims];
@@ -806,13 +832,36 @@ esdm_status esdmI_create_fragment_from_metadata(esdm_dataset_t *dset, json_t * j
   return ESDM_SUCCESS;
 }
 
+static void ensureStrideBuffer(esdm_dataspace_t* space) {
+  eassert(space);
+
+  //Case 0: It's already allocated.
+  if(space->stride) return;
+
+  //Case 1: It's a simple dataspace that lives on the stack and has a buffer ready for using.
+  if((space->stride = space->strideBacking)) return;
+
+  //Case 2: It's a normal dataspace that lives on the heap, allowing us to dynamically allocate the stride buffer.
+  space->stride = malloc(space->dims * sizeof *space->stride);
+}
+
+static void removeStrideBuffer(esdm_dataspace_t* space) {
+  eassert(space);
+
+  //Fast return if there is no stride set.
+  if(!space->stride) return;
+
+  //Check whether the stride lives on the heap (no stack-based backing is set) and free it if appropriate.
+  if(!space->strideBacking) free(space->stride);
+
+  space->stride = NULL;
+}
+
 esdm_status esdm_dataspace_set_stride(esdm_dataspace_t* space, int64_t* stride){
   eassert(space);
   int dims = space->dims;
 
-  if(! space->stride){
-    space->stride = malloc(dims * sizeof(int64_t));
-  }
+  ensureStrideBuffer(space);
   memcpy(space->stride, stride, dims * sizeof(int64_t));
 
   return ESDM_SUCCESS;
@@ -824,8 +873,7 @@ esdm_status esdm_dataspace_copyDatalayout(esdm_dataspace_t* space, esdm_dataspac
   eassert(space->dims == source->dims);
 
   //get rid of old stride array
-  free(space->stride);
-  space->stride = NULL;
+  removeStrideBuffer(space);
 
   //check whether we actually need a stride array
   if(!source->stride) {
@@ -837,7 +885,7 @@ esdm_status esdm_dataspace_copyDatalayout(esdm_dataspace_t* space, esdm_dataspac
   }
 
   //copy the stride info from the source
-  space->stride = malloc(space->dims*sizeof(*space->stride));
+  ensureStrideBuffer(space);
   esdm_dataspace_getEffectiveStride(source, space->stride);
 
   return ESDM_SUCCESS;
@@ -889,6 +937,7 @@ esdm_status esdm_dataset_open_md_parse(esdm_dataset_t *d, char * md, int size){
       }
     }
   }
+  if(d->dataspace) esdm_dataspace_destroy(d->dataspace);
   ret = esdm_dataspace_create(dims, sizes, type, &d->dataspace);
   if (ret != ESDM_SUCCESS) {
     json_decref(root);
@@ -1102,6 +1151,7 @@ esdm_status esdmI_dataset_destroy(esdm_dataset_t *dset) {
   free(dset->id);
   free(dset->dims_dset_id);
   free(dset->actual_size);
+  if(dset->chints) free(dset->chints);
 
   free(dset);
   return ESDM_SUCCESS;
@@ -1172,6 +1222,7 @@ esdm_status esdm_dataspace_create_full(int64_t dims, int64_t *sizes, int64_t *of
     .size = ea_memdup(sizes, dims*sizeof*sizes),
     .offset = ea_memdup(offset, dims*sizeof*offset),
     .type = type,
+    .strideBacking = NULL,
     .stride = NULL
   };
 
@@ -1204,6 +1255,7 @@ esdm_status esdmI_dataspace_createFromHypercube(esdmI_hypercube_t* extends, esdm
     .dims = dimensions,
     .size = malloc(dimensions*sizeof(*result->size)),
     .offset = malloc(dimensions*sizeof(*result->offset)),
+    .strideBacking = NULL,
     .stride = NULL
   };
   esdmI_hypercube_getOffsetAndSize(extends, result->offset, result->size);
@@ -1223,6 +1275,7 @@ esdm_status esdm_dataspace_copy(esdm_dataspace_t* orig, esdm_dataspace_t **out_d
     .dims = orig->dims,
     .size = ea_memdup(orig->size, orig->dims*sizeof*orig->size),
     .offset = ea_memdup(orig->offset, orig->dims*sizeof*orig->offset),
+    .strideBacking = NULL,
     .stride = orig->stride ? ea_memdup(orig->stride, orig->dims*sizeof*orig->stride) : NULL
   };
 
@@ -1294,7 +1347,7 @@ esdm_status esdm_dataspace_subspace(esdm_dataspace_t *dataspace, int64_t dims, i
     subspace->dims = dims;
     subspace->size = ea_memdup(size, dims*sizeof*size);
     subspace->offset = ea_memdup(offset, dims*sizeof*offset);
-    subspace->stride = NULL;
+    subspace->stride = subspace->strideBacking = NULL;
     subspace->type = dataspace->type;
     smd_type_ref(subspace->type); //FIXME: This is inconsistent with the other esdm_dataspace_create*() functions which do not call smd_type_ref(). I guess the other assignments need to be fixed.
 
@@ -1391,11 +1444,9 @@ void esdm_fragment_print(esdm_fragment_t *f) {
 esdm_status esdm_dataspace_destroy(esdm_dataspace_t *d) {
   ESDM_DEBUG(__func__);
   eassert(d);
+  removeStrideBuffer(d);
   free(d->offset);
   free(d->size);
-  if(d->stride){
-    free(d->stride);
-  }
   free(d);
   return ESDM_SUCCESS;
 }

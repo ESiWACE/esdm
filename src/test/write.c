@@ -60,7 +60,11 @@ int main(int argc, char const *argv[]) {
   eassert_crash(esdm_container_create("mycontainer", 1, NULL));
   status = esdm_container_create("/po/test", 1, &container);
   eassert(status == ESDM_SUCCESS);
+  status = esdm_container_close(container);
+  eassert(status == ESDM_SUCCESS);
   status = esdm_container_create("po/test/", 1, &container);
+  eassert(status == ESDM_SUCCESS);
+  status = esdm_container_close(container);
   eassert(status == ESDM_SUCCESS);
   status = esdm_container_create("mycontainer", 1, &container);
   eassert(status == ESDM_SUCCESS);
@@ -136,11 +140,23 @@ int main(int argc, char const *argv[]) {
   status = esdm_dataset_commit(dataset);
   eassert(status == ESDM_SUCCESS);
 
+  eassert_crash(esdm_dataset_close(NULL));
+  status = esdm_dataset_close(dataset);
+  eassert(status == ESDM_SUCCESS);
+
+  eassert_crash(esdm_container_close(NULL));
+  status = esdm_container_close(container);
+  eassert(status == ESDM_SUCCESS);
+
   status = esdm_finalize();
   eassert(status == ESDM_SUCCESS);
 
   // clean up
   free(buf_w);
+  status = esdm_dataspace_destroy(dataspace);
+  eassert(status == ESDM_SUCCESS);
+  status = esdm_dataspace_destroy(subspace);
+  eassert(status == ESDM_SUCCESS);
 
   printf("\nOK\n");
 

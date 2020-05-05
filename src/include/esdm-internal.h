@@ -251,6 +251,7 @@ esdm_status esdmI_create_fragment_from_metadata(esdm_dataset_t *dset, json_t * j
  * It is the user's responsibility to ensure that the data remains alive as long as the fragment is loaded.
  *
  *  - Allocate process local memory structures.
+ *  - Takes possession of the dataspace. Do not modify or destroy it after calling this function!
  *
  *
  *	A fragment is part of a dataset.
@@ -516,5 +517,9 @@ void esdmI_hypercubeNeighbourManager_pushBack(esdmI_hypercubeNeighbourManager_t*
 int64_t* esdmI_hypercubeNeighbourManager_getNeighbours(esdmI_hypercubeNeighbourManager_t* me, int64_t index, int64_t* out_neighbourCount);
 
 void esdmI_hypercubeNeighbourManager_destroy(esdmI_hypercubeNeighbourManager_t* me);
+
+#ifdef HAVE_SCIL
+SCIL_Datatype_t ea_esdm_datatype_to_scil(smd_basic_type_t type);
+#endif
 
 #endif

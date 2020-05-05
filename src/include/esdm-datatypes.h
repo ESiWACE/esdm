@@ -68,6 +68,27 @@ typedef struct esdm_fragment_t esdm_fragment_t;
 typedef struct esdm_md_backend_callbacks_t esdm_md_backend_callbacks_t;
 typedef struct esdm_md_backend_t esdm_md_backend_t;
 
+//This needs to be public to allow creating simple dataspaces.
+struct esdm_dataspace_t {
+  esdm_type_t type;
+  int64_t dims;
+  int64_t *size;
+  int64_t *offset;
+  int64_t *strideBacking; //May hold a sufficiently large memory buffer to be used in case that a stride is set. This is used for simple dataspaces which must use a stack based stride.
+  int64_t *stride;  //may be NULL, in this case contiguous storage in C order is assumed
+};
+
+//Facilitate creating small dataspace objects on the stack.
+//To be used with one of the esdm_dataspace_<N>d[o]() constructor macros.
+typedef struct esdm_simple_dspace_t {
+  esdm_dataspace_t* ptr;
+} esdm_simple_dspace_t;
+
+typedef struct scil_user_hints_t scil_user_hints_t;
+
+typedef struct esdm_write_request_t  esdm_write_request_t;
+typedef struct esdm_write_request_internal_t esdm_write_request_internal_t;
+
 /**
  * This POD struct is used to return a bunch of statistics to the user.
  */

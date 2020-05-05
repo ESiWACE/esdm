@@ -93,6 +93,11 @@ esdm_status esdm_finalize();
 esdm_status esdm_write(esdm_dataset_t *dataset, void *buf, esdm_dataspace_t *subspace);
 
 /**
+ * Identical to esdm_write except that it uses size/offset tuples instead of the subspace
+ */
+//esdm_status esdm_write_so(esdm_dataset_t *dataset, void *buf, int64_t *size, int64_t *offset);
+
+/**
  * Reads a data fragment described by desc to the dataset dset.
  *
  * @param [in] dataset TODO, currently a stub, we assume it has been identified/created before.... , json description?
@@ -103,6 +108,11 @@ esdm_status esdm_write(esdm_dataset_t *dataset, void *buf, esdm_dataspace_t *sub
  */
 
 esdm_status esdm_read(esdm_dataset_t *dataset, void *buf, esdm_dataspace_t *subspace);
+
+/**
+ * Identical to esdm_read except that it uses size/offset tuples instead of the subspace
+ */
+//esdm_status esdm_read_so(esdm_dataset_t *dataset, void *buf, int64_t *size, int64_t *offset);
 
 
 /**
@@ -285,6 +295,8 @@ int64_t const * esdm_dataset_get_actual_size(esdm_dataset_t *dset);
 
 esdm_status esdm_dataset_rename(esdm_dataset_t *dataset, const char *name);
 
+esdm_status esdm_dataset_set_compression_hint(esdm_dataset_t * dataset, scil_user_hints_t const * hints);
+
 void esdm_dataset_set_status_dirty(esdm_dataset_t * dataset);
 
 // Dataset
@@ -423,13 +435,155 @@ esdm_status esdm_dataset_get_attributes(esdm_dataset_t *dataset, smd_attr_t **ou
 // Dataspace //////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////
 
+/**
+ * Create a new dataspace.
+ *
+ *  - Allocate process local memory structures.
+ *
+ * @param [in] dims count of dimensions of the new dataspace
+ * @param [in] sizes array of the sizes of the different dimensions, the length of this array is dims. Must not be `NULL` unless `dims == 0`
+ * @param [in] type the datatype for each data point
+ * @param [out] out_dataspace pointer to the new dataspace
+ *
+ * @return status
+ *
+ */
+esdm_status esdm_dataspace_create(int64_t dims, int64_t *sizes, esdm_type_t type, esdm_dataspace_t **out_dataspace);
+
+/**
+ * Create a new dataspace.
+ *
+ *  - Allocate process local memory structures.
+ *
+ * @param [in] dims count of dimensions of the new dataspace
+ * @param [in] sizes array of the sizes of the different dimensions, the length of this array is dims. Must not be `NULL` unless `dims == 0`
+ * @param [in] offset array containing the logical coordinates of the first data point in this dataspace
+ * @param [in] type the datatype for each data point
+ * @param [out] out_dataspace pointer to the new dataspace
+ *
+ * @return status
+ *
+ */
+esdm_status esdm_dataspace_create_full(int64_t dims, int64_t *size, int64_t *offset, esdm_type_t type, esdm_dataspace_t **out_dataspace);
+
+/**
+ * Create a dataspace on the stack with up to three dimensions.
+ *
+ * **Do not use this directly, use `esdm_dataspace_2d()` and friends instead!**
+ */
+#define esdm_simple_dataspace_construct_internal(dimCount, xOffset, xSize, yOffset, ySize, zOffset, zSize, dataType) \
+  ((esdm_simple_dspace_t){ \
+    .ptr = &(esdm_dataspace_t){ \
+      .type = dataType, \
+      .dims = dimCount, \
+      .size = (int64_t [3]){xSize, ySize, zSize}, \
+      .offset = (int64_t [3]){xOffset, yOffset, zOffset}, \
+      .strideBacking = (int64_t [3]){0}, \
+      .stride = NULL \
+    } \
+  })
+
+/**
+ * Create a new 1D dataspace.
+ *
+ * Construct a simple dataspace on the stack.
+ * Since the lifetime of the dataspace is automatic, it is an error to call `esdm_dataspace_destroy()` on it.
+ */
+#define esdm_dataspace_1do(offset, size, type) esdm_simple_dataspace_construct_internal(1, offset, size, 0, 0, 0, 0, type)
+
+/**
+ * Create a new 1D dataspace.
+ *
+ * Construct a simple dataspace on the stack.
+ * Since the lifetime of the dataspace is automatic, it is an error to call `esdm_dataspace_destroy()` on it.
+ */
+#define esdm_dataspace_1d(size, type) esdm_simple_dataspace_construct_internal(1, 0, size, 0, 0, 0, 0, type)
+
+/**
+ * Create a new 2D dataspace.
+ *
+ * Construct a simple dataspace on the stack.
+ * Since the lifetime of the dataspace is automatic, it is an error to call `esdm_dataspace_destroy()` on it.
+ */
+#define esdm_dataspace_2do(xOffset, xSize, yOffset, ySize, type) esdm_simple_dataspace_construct_internal(2, xOffset, xSize, yOffset, ySize, 0, 0, type)
+
+/**
+ * Create a new 2D dataspace.
+ *
+ * Construct a simple dataspace on the stack.
+ * Since the lifetime of the dataspace is automatic, it is an error to call `esdm_dataspace_destroy()` on it.
+ */
+#define esdm_dataspace_2d(xSize, ySize, type) esdm_simple_dataspace_construct_internal(2, 0, xSize, 0, ySize, 0, 0, type)
+
+/**
+ * Create a new 3D dataspace.
+ *
+ * Construct a simple dataspace on the stack.
+ * Since the lifetime of the dataspace is automatic, it is an error to call `esdm_dataspace_destroy()` on it.
+ */
+#define esdm_dataspace_3do(xOffset, xSize, yOffset, ySize, zOffset, zSize, type) esdm_simple_dataspace_construct_internal(3, xOffset, xSize, yOffset, ySize, zOffset, zSize, type)
+
+/**
+ * Create a new 3D dataspace.
+ *
+ * Construct a simple dataspace on the stack.
+ * Since the lifetime of the dataspace is automatic, it is an error to call `esdm_dataspace_destroy()` on it.
+ */
+#define esdm_dataspace_3d(xSize, ySize, zSize, type) esdm_simple_dataspace_construct_internal(3, 0, xSize, 0, ySize, 0, zSize, type)
+
+
+/**
+ * Create a copy of a dataspace.
+ *
+ *  - Allocate process local memory structures.
+ * @param [in] orig the dataspace to copy
+ * @param [out] out_dataspace pointer to the new dataspace
+ *
+ * @return status
+ */
+esdm_status esdm_dataspace_copy(esdm_dataspace_t* orig, esdm_dataspace_t **out_dataspace);
+
+/**
+ * Define a dataspace that is a subset of the given dataspace.
+ *
+ * - Allocates process local memory structures.
+ *
+ * @param [in] dataspace an existing dataspace that encloses the subspace
+ * @param [in] dims length of the `size` and `offset` arguments, must be equal to the number of dimensions of the given `dataspace`
+ * @param [in] size size of the hypercube of data within the subspace
+ * @param [in] offset location of the first data point within the subspace
+ * @param [out] out_dataspace pointer to the new sub-dataspace
+ *
+ * @return `ESDM_SUCCESS` on success, `ESDM_INVALID_ARGUMENT_ERROR` if the provided `dims`, `size`, or `offset` arguments do not agree with the provided `dataspace`
+ */
+esdm_status esdm_dataspace_subspace(esdm_dataspace_t *dataspace, int64_t dims, int64_t *size, int64_t *offset, esdm_dataspace_t **out_dataspace);
+
+/**
+ * Define a dataspace that covers the same logical hypercube as the given dataspace, but which uses the standard, contiguous C array element order.
+ * The stride of the original dataspace will be ignored totally.
+ *
+ * - Allocates process local memory structures.
+ *
+ * @param [in] dataspace the dataspace that is to be copied
+ * @param [out] out_dataspace pointer to the new contiguous dataspace
+ *
+ * @return `ESDM_SUCCESS`
+ */
+esdm_status esdm_dataspace_makeContiguous(esdm_dataspace_t *dataspace, esdm_dataspace_t **out_dataspace);
+
+
 int64_t esdm_dataspace_get_dims(esdm_dataspace_t * d);
 int64_t const* esdm_dataspace_get_size(esdm_dataspace_t * d);
 int64_t const* esdm_dataspace_get_offset(esdm_dataspace_t * d);
 esdm_type_t esdm_dataspace_get_type(esdm_dataspace_t * d);
 
-/*
- Returns the number of bytes covered by the dataspace
+/**
+ * Returns the number of datapoints in the dataspace.
+ */
+uint64_t esdm_dataspace_element_count(esdm_dataspace_t *dataspace);
+
+/**
+ * Returns the number of bytes covered by the dataspace.
  */
 int64_t esdm_dataspace_total_bytes(esdm_dataspace_t * d);
 
@@ -459,72 +613,11 @@ void esdm_dataspace_getEffectiveStride(esdm_dataspace_t* space, int64_t* out_str
 int64_t esdm_dataspace_elementOffset(esdm_dataspace_t* space, int64_t* coords);
 
 
-
-// Dataspace
-
-/**
- * Create a new dataspace.
- *
- *  - Allocate process local memory structures.
- *
- * @param [in] dims count of dimensions of the new dataspace
- * @param [in] sizes array of the sizes of the different dimensions, the length of this array is dims. Must not be `NULL` unless `dims == 0`
- * @param [in] type the datatype for each data point
- * @param [out] out_dataspace pointer to the new dataspace
- *
- * @return status
- *
- */
-
-esdm_status esdm_dataspace_create(int64_t dims, int64_t *sizes, esdm_type_t type, esdm_dataspace_t **out_dataspace);
-
-esdm_status esdm_dataspace_create_full(int64_t dims, int64_t *size, int64_t *offset, esdm_type_t type, esdm_dataspace_t **out_dataspace);
-
-
-/**
- * Create a copy of a dataspace.
- *
- *  - Allocate process local memory structures.
- * @param [in] orig the dataspace to copy
- * @param [out] out_dataspace pointer to the new dataspace
- *
- * @return status
- */
-esdm_status esdm_dataspace_copy(esdm_dataspace_t* orig, esdm_dataspace_t **out_dataspace);
-
 /**
  * Reinstantiate dataspace from serialization.
  */
 
 esdm_status esdm_dataspace_deserialize(void *serialized_dataspace, esdm_dataspace_t **out_dataspace);
-
-/**
- * Define a dataspace that is a subset of the given dataspace.
- *
- * - Allocates process local memory structures.
- *
- * @param [in] dataspace an existing dataspace that encloses the subspace
- * @param [in] dims length of the `size` and `offset` arguments, must be equal to the number of dimensions of the given `dataspace`
- * @param [in] size size of the hypercube of data within the subspace
- * @param [in] offset location of the first data point within the subspace
- * @param [out] out_dataspace pointer to the new sub-dataspace
- *
- * @return `ESDM_SUCCESS` on success, `ESDM_INVALID_ARGUMENT_ERROR` if the provided `dims`, `size`, or `offset` arguments do not agree with the provided `dataspace`
- */
-esdm_status esdm_dataspace_subspace(esdm_dataspace_t *dataspace, int64_t dims, int64_t *size, int64_t *offset, esdm_dataspace_t **out_dataspace);
-
-/**
- * Define a dataspace that covers the same logical hypercube as the given dataspace, but which uses the standard, contiguous C array element order.
- * The stride of the original dataspace will be ignored totally.
- *
- * - Allocates process local memory structures.
- *
- * @param [in] dataspace the dataspace that is to be copied
- * @param [out] out_dataspace pointer to the new contiguous dataspace
- *
- * @return `ESDM_SUCCESS`
- */
-esdm_status esdm_dataspace_makeContiguous(esdm_dataspace_t *dataspace, esdm_dataspace_t **out_dataspace);
 
 /**
  * Specify a non-standard serialization order for a dataspace.
@@ -631,8 +724,6 @@ esdm_status esdm_dataspace_destroy(esdm_dataspace_t *dataspace);
 
 esdm_status esdm_dataspace_serialize(esdm_dataspace_t *dataspace, void **out);
 
-uint64_t esdm_dataspace_element_count(esdm_dataspace_t *dataspace);
-
 void esdm_dataspace_print(esdm_dataspace_t *dataspace);
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -706,9 +797,70 @@ esdm_status esdm_fragment_destroy(esdm_fragment_t *fragment);
  * @enduml
  *
  */
-
-
 void esdm_fragment_print(esdm_fragment_t *fragment);
+
+/**
+ * Stream request functionality aims to minimize memory copies by preparing the data buffer while data is
+ * computed.
+
+ * User semantics:
+  write_request req;
+  req_start(& req)
+  foreach of your data elements:
+    compute element
+    req_pack(& req, elem)
+  req_commit(& req)
+
+ * The request functions are not thread-safe at the moment
+ */
+
+esdm_status esdm_write_req_start(esdm_write_request_t ** req_out, esdm_dataset_t * dset, esdm_dataspace_t * file_space);
+
+/*
+ * Completes the write operation and cleans the request if needed
+ */
+esdm_status esdm_write_req_commit(esdm_write_request_t * req);
+
+/*
+ * Commit a temporary buffer, this is an internal function used by esdm_write_req_pack_*
+ * Users should not use this function.
+ */
+void esdm_write_req_submit_buffer(esdm_write_request_t * req);
+
+// Public structures and supportive functions
+struct esdm_write_request_t {
+  esdm_dataset_t * dset;
+  esdm_dataspace_t * file_space;
+  uint64_t to_transfer; // amount of bytes still to transfer
+  int proc_size; // the number of bytes to batch together before starting processing
+
+  char * buffer;
+  char * bpos;   // position in the buffer
+  char * end_buff; // end position in the buffer
+
+  esdm_write_request_internal_t * ri;
+};
+
+// Macro set to generate variadic request pack function
+
+#define TYPES TYPE(int8_t) TYPE(uint8_t) TYPE(int16_t) TYPE(uint16_t) TYPE(int32_t) TYPE(uint32_t) TYPE(int64_t) TYPE(uint64_t) TYPE(float) TYPE(double)
+
+#define TYPE(typ) \
+static inline void esdm_write_req_pack_##typ(esdm_write_request_t *rq, typ data){ \
+    do { \
+    assert(rq->buffer != NULL); \
+    assert(rq->bpos <= (rq->end_buff - sizeof(typ))); \
+    *((typ*) rq->bpos) = data; \
+    rq->bpos += sizeof(typ); \
+    if(rq->bpos == rq->end_buff){ \
+      esdm_write_req_submit_buffer(rq);\
+    } \
+  } while(0);\
+}
+
+TYPES
+#undef TYPE
+
 
 #ifdef __cplusplus
 }

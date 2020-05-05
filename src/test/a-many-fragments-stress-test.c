@@ -220,15 +220,14 @@ void runTestWithConfig(int64_t length, int64_t readCount, const char* configStri
   esdm_loglevel(ESDM_LOGLEVEL_INFO);
 
   // define dataspace
-  esdm_dataspace_t *dataspace;
-  ret = esdm_dataspace_create(1, &length, SMD_DTYPE_UINT8, &dataspace);
-  eassert(ret == ESDM_SUCCESS);
+  esdm_simple_dspace_t dataspace = esdm_dataspace_1d(length, SMD_DTYPE_UINT8);
+  eassert(dataspace.ptr);
   esdm_container_t *container;
   ret = esdm_container_create("mycontainer", 1, &container);
   eassert(ret == ESDM_SUCCESS);
 
   esdm_dataset_t *dataset;
-  ret = esdm_dataset_create(container, "dataset", dataspace, &dataset);
+  ret = esdm_dataset_create(container, "dataset", dataspace.ptr, &dataset);
   eassert(ret == ESDM_SUCCESS);
   ret = esdm_dataset_commit(dataset);
   eassert(ret == ESDM_SUCCESS);
@@ -239,18 +238,16 @@ void runTestWithConfig(int64_t length, int64_t readCount, const char* configStri
   uint8_t* data = malloc(length*sizeof(*data));
   initData(length, data);
 
-  writeData(dataset, dataspace, length, data);
+  writeData(dataset, dataspace.ptr, length, data);
 
   ea_start_timer(&myTimer);
-  for(int64_t i = 0; i < readCount; i++) readRandomFragment(dataset, dataspace, length, data);
+  for(int64_t i = 0; i < readCount; i++) readRandomFragment(dataset, dataspace.ptr, length, data);
   double readTime = ea_stop_timer(myTimer);
   printf("read %"PRId64" random fragments: %.3fms\n", readCount, 1000*readTime);
   totalReadTime += readTime;
   eassert(dataIsCorrect(length, data));
 
   free(data);
-  ret = esdm_dataspace_destroy(dataspace);
-  eassert(ret == ESDM_SUCCESS);
   ret = esdm_dataset_close(dataset);
   eassert(ret == ESDM_SUCCESS);
   ret = esdm_container_close(container);

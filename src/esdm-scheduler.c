@@ -500,6 +500,7 @@ static esdmI_hypercubeSet_t* makeSplitRecommendation_balancedDims(esdm_dataspace
     }
     if(updateDim < 0) break;
   }
+  esdmI_hypercube_destroy(curCube);
   return result;
 }
 
@@ -711,7 +712,6 @@ esdm_status esdm_scheduler_enqueue_write(esdm_instance_t *esdm, io_request_statu
   ea_start_timer(&myTimer);
   double startTime; //reused for the different individual measurements
 
-  GError *error;
   //Gather I/O recommendations
   //esdm_performance_recommendation(esdm, NULL, NULL);    // e.g., split, merge, replication?
   //esdm_layout_recommendation(esdm, NULL, NULL);		  // e.g., merge, split, transform?
@@ -723,58 +723,61 @@ esdm_status esdm_scheduler_enqueue_write(esdm_instance_t *esdm, io_request_statu
   gWriteTimes.backendDistribution += startTime = ea_stop_timer(myTimer);
   for(int64_t backendIndex = 0; backendIndex < backendCount; backendIndex++) {
     esdmI_hypercube_t* curExtends = backendExtends[backendIndex];
-    if(curExtends) {
-      esdm_backend_t* curBackend = backends[backendIndex];
+    if(! curExtends) {
+      continue;
+    }
+    esdm_backend_t* curBackend = backends[backendIndex];
 
-      //get a list of hypercubes to write to this backend
-      esdm_dataspace_t* backendSpace;
-      esdm_status ret = esdmI_dataspace_createFromHypercube(curExtends, esdm_dataspace_get_type(space), &backendSpace);
+    //get a list of hypercubes to write to this backend
+    esdm_dataspace_t* backendSpace;
+    esdm_status ret = esdmI_dataspace_createFromHypercube(curExtends, esdm_dataspace_get_type(space), &backendSpace);
+    eassert(ret == ESDM_SUCCESS);
+    ret = esdm_dataspace_copyDatalayout(backendSpace, space);
+    eassert(ret == ESDM_SUCCESS);
+    esdmI_hypercubeSet_t* cubes = esdm_scheduler_makeSplitRecommendation(backendSpace, curBackend);
+    esdmI_hypercubeList_t* cubeList = esdmI_hypercubeSet_list(cubes);
+    esdm_dataspace_destroy(backendSpace);
+
+    //create a fragment and task for each of the hypercubes in the list
+    int64_t dim[space->dims], offset[space->dims];
+    atomic_fetch_add(& status->pending_ops, cubeList->count);
+
+    for(int64_t i = 0; i < cubeList->count; i++) {
+
+      esdmI_hypercube_getOffsetAndSize(cubeList->cubes[i], offset, dim);
+
+      esdm_dataspace_t* subspace;
+      esdm_status ret = esdmI_dataspace_createFromHypercube(cubeList->cubes[i], esdm_dataspace_get_type(space), &subspace);
       eassert(ret == ESDM_SUCCESS);
-      ret = esdm_dataspace_copyDatalayout(backendSpace, space);
+      ret = esdm_dataspace_copyDatalayout(subspace, space);
       eassert(ret == ESDM_SUCCESS);
-      esdmI_hypercubeSet_t* cubes = esdm_scheduler_makeSplitRecommendation(backendSpace, curBackend);
-      esdmI_hypercubeList_t* cubeList = esdmI_hypercubeSet_list(cubes);
-      esdm_dataspace_destroy(backendSpace);
+      esdm_fragment_t* fragment;
+      ret = esdmI_fragment_create(dataset, subspace, (char*)buf + esdm_dataspace_elementOffset(space, offset), &fragment);
+      eassert(ret == ESDM_SUCCESS);
+      fragment->backend = curBackend;
 
-      //create a fragment and task for each of the hypercubes in the list
-      int64_t dim[space->dims], offset[space->dims];
-      for(int64_t i = 0; i < cubeList->count; i++) {
-        atomic_fetch_add(&status->pending_ops, 1);
+      io_work_t* task = malloc(sizeof(*task));
+      *task = (io_work_t){
+        .fragment = fragment,
+        .op = ESDM_OP_WRITE,
+        .return_code = ESDM_SUCCESS,
+        .parent = status,
+        .callback = buffer_cleanup_callback,
+        .data = {NULL, NULL}
+      };
 
-        esdmI_hypercube_getOffsetAndSize(cubeList->cubes[i], offset, dim);
-
-        esdm_dataspace_t* subspace;
-        esdm_status ret = esdmI_dataspace_createFromHypercube(cubeList->cubes[i], esdm_dataspace_get_type(space), &subspace);
-        eassert(ret == ESDM_SUCCESS);
-        ret = esdm_dataspace_copyDatalayout(subspace, space);
-        eassert(ret == ESDM_SUCCESS);
-        esdm_fragment_t* fragment;
-        ret = esdmI_fragment_create(dataset, subspace, (char*)buf + esdm_dataspace_elementOffset(space, offset), &fragment);
-        eassert(ret == ESDM_SUCCESS);
-        fragment->backend = curBackend;
-
-        io_work_t* task = malloc(sizeof(*task));
-        *task = (io_work_t){
-          .fragment = fragment,
-          .op = ESDM_OP_WRITE,
-          .return_code = ESDM_SUCCESS,
-          .parent = status,
-          .callback = buffer_cleanup_callback,
-          .data = {NULL, NULL}
-        };
-
-        if (curBackend->threads == 0) {
-          backend_thread(task, curBackend);
-        } else {
-          g_thread_pool_push(curBackend->threadPool, task, &error);
-        }
-
-        updateIoStats(&esdm->writeStats, 1, esdm_dataspace_total_bytes(subspace)); //update the statistics
+      if (curBackend->threads == 0) {
+        backend_thread(task, curBackend);
+      } else {
+        GError *error;
+        g_thread_pool_push(curBackend->threadPool, task, &error);
       }
 
-      esdmI_hypercubeSet_destroy(cubes);
-      esdmI_hypercube_destroy(curExtends);
+      updateIoStats(&esdm->writeStats, 1, esdm_dataspace_total_bytes(subspace)); //update the statistics
     }
+
+    esdmI_hypercubeSet_destroy(cubes);
+    esdmI_hypercube_destroy(curExtends);
   }
   gWriteTimes.backendDispatch += ea_stop_timer(myTimer) - startTime;
 

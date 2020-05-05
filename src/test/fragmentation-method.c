@@ -117,8 +117,16 @@ void testMain(int64_t dims, int64_t* dimSizes, int64_t threads, int64_t nodeThre
   printf("fragments read = %"PRId64" (expected %"PRId64")\n", after.fragments - before.fragments, expectedFragmentCount);
   eassert(after.fragments - before.fragments == expectedFragmentCount);
 
+  esdm_dataspace_destroy(dataspace);
+  ret = esdm_dataset_close(dataset);
+  eassert(ret == ESDM_SUCCESS);
+  ret = esdm_container_close(container);
+  eassert(ret == ESDM_SUCCESS);
+
   ret = esdm_finalize();
   eassert(ret == ESDM_SUCCESS);
+
+  free(config);
 }
 
 int main() {

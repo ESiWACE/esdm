@@ -71,11 +71,15 @@ int main(int argc, char const *argv[]) {
   }
 
   //write a subregion
-  esdm_dataspace_t* subspace;
-  ret = esdm_dataspace_subspace(dataspace, dims, subspaceSize, subspaceOffset, &subspace);
-  eassert(ret == ESDM_SUCCESS);
-  ret = esdm_write(dataset, writeBuffer, subspace);
-  eassert(ret == ESDM_SUCCESS);
+  {
+    esdm_dataspace_t* subspace;
+    ret = esdm_dataspace_subspace(dataspace, dims, subspaceSize, subspaceOffset, &subspace);
+    eassert(ret == ESDM_SUCCESS);
+    ret = esdm_write(dataset, writeBuffer, subspace);
+    eassert(ret == ESDM_SUCCESS);
+    ret = esdm_dataspace_destroy(subspace);
+    eassert(ret == ESDM_SUCCESS);
+  }
 
   //commit and close stuff
   ret = esdm_dataset_commit(dataset);
@@ -161,9 +165,17 @@ int main(int argc, char const *argv[]) {
 
   //close down
   esdmI_hypercubeSet_destroy(fillRegion);
+  esdmI_hypercube_destroy(dataRegion);
+  esdmI_hypercube_destroy(fullRegion);
+  ret = esdm_dataspace_destroy(dataspace);
+  eassert(ret == ESDM_SUCCESS);
   ret = esdm_dataset_commit(dataset);
   eassert(ret == ESDM_SUCCESS);
+  ret = esdm_dataset_close(dataset);
+  eassert(ret == ESDM_SUCCESS);
   ret = esdm_container_commit(container);
+  eassert(ret == ESDM_SUCCESS);
+  ret = esdm_container_close(container);
   eassert(ret == ESDM_SUCCESS);
 
   ret = esdm_finalize();

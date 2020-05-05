@@ -95,15 +95,17 @@ int main(int argc, char const *argv[]) {
   status = esdm_dataset_open(container, "mydataset",ESDM_MODE_FLAG_READ, &dataset);
   eassert(status == ESDM_SUCCESS);
 
-  int64_t size[] = {10, 20};
-  esdm_dataspace_t *space;
-
   //failing input tests are in write.c
-  status = esdm_dataspace_create(2, size, SMD_DTYPE_UINT64, &space);
-  eassert(status == ESDM_SUCCESS);
+  esdm_simple_dspace_t space = esdm_dataspace_2d(10, 20, SMD_DTYPE_UINT64);
+  eassert(space.ptr);
 
   my_user_data_t user_data = {0, 0, buf_w};
-  status = esdm_read_stream(dataset, space, & user_data, stream_func, reduce_func);
+  status = esdm_read_stream(dataset, space.ptr, & user_data, stream_func, reduce_func);
+  eassert(status == ESDM_SUCCESS);
+
+  status = esdm_dataset_close(dataset);
+  eassert(status == ESDM_SUCCESS);
+  status = esdm_container_close(container);
   eassert(status == ESDM_SUCCESS);
 
   status = esdm_finalize();

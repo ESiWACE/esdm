@@ -9,6 +9,15 @@
 #include <esdm-datatypes.h>
 #include <smd-datatype.h>
 
+#ifdef HAVE_SCIL
+#include <scil.h>
+#else
+// fake definition of hints
+struct scil_user_hints_t{
+  int missing;
+};
+#endif
+
 enum { ESDM_ID_LENGTH = 23 }; //= strlen(id), to allocate the buffers, add one byte for the termination
 
 enum esdm_data_status_e {
@@ -59,6 +68,7 @@ struct esdm_dataset_t {
   int refcount;
   esdm_data_status_e status;
   int mode_flags; // set via esdm_mode_flags_e
+  scil_user_hints_t * chints; // compression hints from SCIL, NULL if none available
 };
 
 struct esdm_fragment_t {
@@ -69,18 +79,11 @@ struct esdm_fragment_t {
   void * backend_md; // backend-specific metadata if set
   void *buf;
   size_t elements;
-  size_t bytes;
+  size_t bytes; // expected size in bytes
+  size_t actual_bytes; // actual size, can differ from actual size due to compression
   //int direct_io;
   esdm_data_status_e status;
   bool ownsBuf; //If true, the fragment is responsible to free the buffer when it's destructed or unloaded. Otherwise, `buf` is just a reference for zero copy writing.
-};
-
-struct esdm_dataspace_t {
-  esdm_type_t type;
-  int64_t dims;
-  int64_t *size;
-  int64_t *offset;
-  int64_t *stride;  //may be NULL, in this case contiguous storage in C order is assumed
 };
 
 // MODULES ////////////////////////////////////////////////////////////////////
@@ -443,5 +446,11 @@ struct esdm_writeTimes_t {
   double completion;  //the time spent waiting for background tasks to complete
   double total; //sum of all the times above and other small things like taking times...
 };
+
+struct esdm_write_request_internal_t{
+  io_request_status_t status;
+};
+
+
 
 #endif
