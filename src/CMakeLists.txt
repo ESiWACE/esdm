@@ -15,6 +15,14 @@ set_package_properties(JANSSON PROPERTIES
 )
 include_directories(${JANSSON_INCLUDE_DIRS})
 
+pkg_search_module(SCIL scil)
+set_package_properties(SCIL PROPERTIES
+	DESCRIPTION "Library for compression."
+	URL "https://github.com/JulianKunkel/scil"
+	TYPE OPTIONAL
+	PURPOSE "Support for SCIL compression."
+)
+
 find_package (Threads)
 
 # Optional
@@ -54,6 +62,18 @@ message(STATUS "JANSSON_INCLUDE_DIRS   ${JANSSON_INCLUDE_DIRS}")
 message(STATUS "JANSSON_CFLAGS   ${JANSSON_CFLAGS}")
 message(STATUS "JANSSON_CFLAGS_OTHER   ${JANSSON_CFLAGS_OTHER}")
 
+if(SCIL_FOUND)
+  set (CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -DHAVE_SCIL ${SCIL_CFLAGS}")
+endif(SCIL_FOUND)
+
+message(STATUS "SCIL_FOUND   ${SCIL_FOUND}")
+message(STATUS "SCIL_LIBRARIES   ${SCIL_LIBRARIES}")
+message(STATUS "SCIL_LIBRARY_DIR   ${SCIL_LIBRARY_DIR}")
+message(STATUS "SCIL_LDFLAGS   ${SCIL_LDFLAGS}")
+message(STATUS "SCIL_LDFLAGS_OTHER   ${SCIL_LDFLAGS_OTHER}")
+message(STATUS "SCIL_INCLUDE_DIRS   ${SCIL_INCLUDE_DIRS}")
+message(STATUS "SCIL_CFLAGS   ${SCIL_CFLAGS}")
+message(STATUS "SCIL_CFLAGS_OTHER   ${SCIL_CFLAGS_OTHER}")
 
 
 
@@ -79,7 +99,6 @@ option(ENABLE_HDF5 "Compile Plugin for HDF5 Virtual Object Layer?" OFF)
 set(ESDM_INCLUDE_DIRS "${CMAKE_SOURCE_DIR}/src/include;${GLIB_INCLUDE_DIRS};${JANSSON_INCLUDE_DIRS};${SMD_INCLUDES}")
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}/)
 
-
 add_subdirectory(backends-metadata)
 add_subdirectory(utils)
 add_subdirectory(test)
@@ -89,18 +108,18 @@ add_subdirectory(tools)
 
 
 # Include directories for all target in this CMakeLists.txt
-include_directories(${CMAKE_BINARY_DIR} ${ESDM_INCLUDE_DIRS} ${GLIB_INCLUDE_DIRS} ${JANSSON_INCLUDE_DIRS} ${SMD_INCLUDES})
+include_directories(${CMAKE_BINARY_DIR} ${ESDM_INCLUDE_DIRS} ${GLIB_INCLUDE_DIRS} ${JANSSON_INCLUDE_DIRS} ${SMD_INCLUDES} ${SCIL_INCLUDE_DIRS})
 
 
 # ESDM Utils and Database Library
-add_library(esdmutils SHARED esdm.c esdm-attributes.c esdm-datatypes.c  esdm-layout.c  esdm-performancemodel.c esdm-config.c  hypercube.c hypercube-neighbour-manager.c utils/debug.c utils/auxiliary.c)
-target_link_libraries(esdmutils ${GLIB_LDFLAGS} ${JANSSON_LDFLAGS} smd ${CMAKE_THREAD_LIBS_INIT} m)
+add_library(esdmutils SHARED esdm.c estream.c esdm-attributes.c esdm-datatypes.c  esdm-layout.c  esdm-performancemodel.c esdm-config.c  hypercube.c hypercube-neighbour-manager.c utils/debug.c utils/auxiliary.c)
+target_link_libraries(esdmutils ${GLIB_LDFLAGS} ${SCIL_LDFLAGS} ${JANSSON_LDFLAGS} smd ${CMAKE_THREAD_LIBS_INIT} m)
 install(TARGETS esdmutils LIBRARY DESTINATION lib)
 
 
 # ESDM Middleware Library
 add_library(esdm SHARED esdm.c  esdm-scheduler.c fragments.c  esdm-modules.c backends-data/init.c)
-target_link_libraries(esdm ${GLIB_LDFLAGS} ${JANSSON_LDFLAGS} esdmutils esdmposix esdmdummy esdm-mdposix)
+target_link_libraries(esdm ${GLIB_LDFLAGS} ${JANSSON_LDFLAGS} ${SCIL_LDFLAGS} esdmutils esdmposix esdmdummy esdm-mdposix)
 if(BACKEND_MONGODB)
     target_link_libraries(esdm esdmmongodb)
 endif()

@@ -30,6 +30,10 @@
 #include <stdlib.h>
 #include <string.h>
 
+#ifdef HAVE_SCIL
+#include <scil.h>
+#endif
+
 #define DEBUG_ENTER ESDM_DEBUG_COM_FMT("DATATYPES", "", "")
 #define DEBUG(fmt, ...) ESDM_DEBUG_COM_FMT("DATATYPES", fmt, __VA_ARGS__)
 
@@ -638,15 +642,9 @@ esdm_status esdm_fragment_destroy(esdm_fragment_t *frag) {
 
 void esdm_dataset_init(esdm_container_t *c, const char *name, esdm_dataspace_t *dspace, esdm_dataset_t **out_dataset){
   esdm_dataset_t *d = (esdm_dataset_t *)malloc(sizeof(esdm_dataset_t));
-
-  d->dims_dset_id = NULL;
+  memset(d, 0, sizeof(esdm_dataset_t));
   d->name = strdup(name);
-  d->id = NULL; // to be filled by the metadata backend
-  d->fill_value = NULL;
-  d->refcount = 0;
   d->container = c;
-  d->dataspace = NULL;
-  d->actual_size = NULL;
   if(dspace){
     esdm_dataspace_copy(dspace, &d->dataspace);
     // check for unlimited dims
@@ -696,6 +694,22 @@ esdm_status esdm_dataset_create(esdm_container_t *c, const char *name, esdm_data
   *out_dataset = dset;
 
   return ESDM_SUCCESS;
+}
+
+esdm_status esdm_dataset_set_compression_hint(esdm_dataset_t * dset, scil_user_hints_t const * hints){
+  eassert(dset);
+#ifdef HAVE_SCIL
+  if(dset->chints){ // can only set compression hints once
+    return ESDM_ERROR;
+  }
+  if(hints){
+    dset->chints = malloc(sizeof(scil_user_hints_t));
+    scil_user_hints_copy(dset->chints, hints);
+  }
+  return ESDM_SUCCESS;
+#else
+  return ESDM_ERROR;
+#endif
 }
 
 esdm_status esdm_dataset_open_md_load(esdm_dataset_t *dset, char ** out_md, int * out_size){
@@ -1126,6 +1140,7 @@ esdm_status esdmI_dataset_destroy(esdm_dataset_t *dset) {
   free(dset->id);
   free(dset->dims_dset_id);
   free(dset->actual_size);
+  if(dset->chints) free(dset->chints);
 
   free(dset);
   return ESDM_SUCCESS;

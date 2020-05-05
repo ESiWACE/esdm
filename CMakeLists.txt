@@ -17,6 +17,8 @@ include(CTest)
 include(FeatureSummary)
 include(CheckCSourceCompiles)
 
+# set(CMAKE_BUILD_WITH_INSTALL_RPATH ON)
+
 #
 # USEFUL PROJECT VARIABLES
 # _____________________________________________________________________________

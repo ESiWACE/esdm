@@ -29,6 +29,7 @@ function help(){
   echo "--enable-kdsa-dummy      : compile the KDSA dummy backend"
 	echo "--with-boost=<file>      : path to boost library used for WOS"
 	echo "--enable-wos=<file>      : path to WOS library"
+  echo "--with-esdm=<dir>        : path to SCIL library (optional)"
 	echo
 }
 
@@ -46,7 +47,7 @@ function reconfigure(){
 	exit $?
 }
 
-set -- `getopt -u -l "help,version,debug,reconfigure,prefix:,with-cc:,with-cxx:,enable-hdf5,enable-netcdf4,with-mpicc:,with-mpicxx:,verbose,build-dir:,enable-wos:,with-ime-lib:,with-ime-include:,with-kdsa-lib:,with-kdsa-include:,enable-kdsa-dummy" -o "h" -- "$@"`
+set -- `getopt -u -l "help,version,debug,reconfigure,prefix:,with-cc:,with-cxx:,enable-hdf5,enable-netcdf4,with-mpicc:,with-mpicxx:,verbose,build-dir:,enable-wos:,with-ime-lib:,with-ime-include:,with-kdsa-lib:,with-kdsa-include:,enable-kdsa-dummy,with-scil:" -o "h" -- "$@"`
 test $# -lt 1  && exit 1
 while test $# -gt 0
 do
@@ -62,6 +63,7 @@ do
     --with-ime-lib) ime_lib="$2"; shift;;
     --with-kdsa-include) kdsa_include="$2"; shift;;
     --with-kdsa-lib) kdsa_lib="$2"; shift;;
+    --with-scil) scil_lib="$2"; shift;;
     --enable-kdsa-dummy) kdsa_dummy="YES"; shift;;
 		--with-cc) ccbin="$2"; shift;;
 		--with-cxx) cxxbin="$2"; shift;;
@@ -124,6 +126,9 @@ fi
 if test -n "$kdsa_include"; then
 	CMAKEFLAGS="$CMAKEFLAGS -DBACKEND_KDSA=ON -DKDSA_INCLUDE_DIR:FILEPATH=$kdsa_include"
 fi
+if test -n "$scil_lib"; then
+	export PKG_CONFIG_PATH="$PKG_CONFIG_PATH:$scil_lib/lib/pkgconfig/"
+fi
 if test -n "$kdsa_dummy"; then
   CMAKEFLAGS="$CMAKEFLAGS -DBACKEND_KDSA_DUMMY=ON"
 fi
@@ -140,8 +145,8 @@ if test -n "$boost"; then
 	CMAKEFLAGS="$CMAKEFLAGS -DBOOST_boost_LIBRARY_RELEASE:PATH=$boost/lib/libboost_system.so -DBOOST_C_INCLUDE_DIR:PATH=$boost/include"
 fi
 
-
-COMMAND="mkdir -p $buildDIR && cd $buildDIR && echo $PARAMETERS > configure.log ; rm CMakeCache.txt 2>/dev/null; cmake $CMAKEFLAGS $SRCDIR"
+echo PKG_CONFIG_PATH="$PKG_CONFIG_PATH"
+COMMAND="mkdir -p $buildDIR && echo $PARAMETERS > $buildDIR/configure.log && cd $buildDIR && echo $PARAMETERS > configure.log ; rm CMakeCache.txt 2>/dev/null; cmake $CMAKEFLAGS $SRCDIR"
 
 echo $COMMAND
 

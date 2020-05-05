@@ -19,6 +19,11 @@ Or to initialize the submodules after the cloning:
  * glib2
  * a variant of MPI (for parallel support with ESDM and HDF5)
 
+#### Installation of SCIL (optional)
+
+    $ git clone https://github.com/JulianKunkel/scil
+
+  See the README.md for the installation instructions.
 
 #### Installation for Ubuntu/Debian Systems
 
