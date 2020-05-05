@@ -9,7 +9,7 @@ foreach(TESTFILE ${TESTFILES})
 	# Build, link and add as test
     add_executable(${TESTNAME} ${TESTFILE})
    	target_link_libraries(${TESTNAME} esdm ${MPI_LIBRARIES} -lrt)
-    target_include_directories(${TESTNAME} SYSTEM PRIVATE ${MPI_INCLUDE_PATH} ${CMAKE_BINARY_DIR} ${ESDM_INCLUDE_DIRS} ${GLIB_INCLUDE_DIRS})
+    target_include_directories(${TESTNAME} PRIVATE ${MPI_INCLUDE_PATH} ${CMAKE_BINARY_DIR} ${ESDM_INCLUDE_DIRS} ${GLIB_INCLUDE_DIRS})
 
     add_test(${TESTNAME} ./${TESTNAME})
   endif()
