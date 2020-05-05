@@ -132,8 +132,14 @@ struct esdm_backend_t_callbacks_t {
   void* (*fragment_metadata_load)(esdm_backend_t * b, esdm_fragment_t *fragment, json_t *metadata);
   int (*fragment_metadata_free) (esdm_backend_t * b, void * options);
 
-  int (*mkfs)(esdm_backend_t *, int format_flags);
-  int (*fsck)(esdm_backend_t*);
+  int (*mkfs)(esdm_backend_t * b, int format_flags);
+  int (*fsck)(esdm_backend_t * b);
+
+  // write streaming functions
+  /**
+   * the expected blocksize for streaming is stored inside the backend configuration
+   */
+  int (*fragment_write_stream_blocksize)(esdm_backend_t * b, esdm_fragment_t *fragment, void * cur_buf, size_t cur_offset, uint32_t cur_size);
 };
 
 struct esdm_md_backend_callbacks_t {
@@ -178,7 +184,7 @@ struct esdm_backend_t {
   esdm_module_type_t type;
   char *version; // 0.0.0
   void *data;    /* backend-specific data. */
-  uint32_t blocksize; /* any io must be multiple of 'blocksize' and aligned. */
+  //uint32_t blocksize; /* any io must be multiple of 'blocksize' and aligned. */
   esdm_backend_t_callbacks_t callbacks;
   int threads;
   GThreadPool *threadPool;
@@ -237,6 +243,7 @@ struct esdm_config_backend_t {
   uint64_t max_fragment_size; //this is a soft limit that may be exceeded anytime
   esdmI_fragmentation_method_t fragmentation_method;
   data_accessibility_t data_accessibility;
+  uint32_t write_stream_blocksize; /* size in bytes for enabling write streaming, 0 if disabled */
 
   json_t *performance_model;
   json_t *esdm;
