@@ -518,4 +518,8 @@ int64_t* esdmI_hypercubeNeighbourManager_getNeighbours(esdmI_hypercubeNeighbourM
 
 void esdmI_hypercubeNeighbourManager_destroy(esdmI_hypercubeNeighbourManager_t* me);
 
+#ifdef HAVE_SCIL
+SCIL_Datatype_t ea_esdm_datatype_to_scil(smd_basic_type_t type);
+#endif
+
 #endif

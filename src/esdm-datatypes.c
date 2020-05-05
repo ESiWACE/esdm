@@ -425,6 +425,7 @@ esdm_status esdmI_fragment_create(esdm_dataset_t *d, esdm_dataspace_t *sspace, v
     .ownsBuf = false,
     .elements = elements,
     .bytes = bytes,
+    .actual_bytes = -1,
     .status = buf ? ESDM_DATA_DIRTY : ESDM_DATA_NOT_LOADED,
     .backend = NULL
   };
@@ -514,7 +515,11 @@ void esdm_fragment_metadata_create(esdm_fragment_t *f, smd_string_stream_t * str
     smd_string_stream_printf(stream, ",%ld", d->size[i]);
   }
 
-  smd_string_stream_printf(stream, "],\"offset\":[");
+  if(f->actual_bytes != -1){
+    smd_string_stream_printf(stream, "],\"act-size\":%ld,\"offset\":[", f->actual_bytes);
+  }else{
+    smd_string_stream_printf(stream, "],\"offset\":[");
+  }
   smd_string_stream_printf(stream, "%ld", d->offset[0]);
   for (int i = 1; i < d->dims; i++) {
     smd_string_stream_printf(stream, ",%ld", d->offset[i]);
@@ -777,6 +782,13 @@ esdm_status esdmI_create_fragment_from_metadata(esdm_dataset_t *dset, json_t * j
     size[i] = json_integer_value(json_array_get(elem, i));
   }
   esdm_dataspace_t * space;
+
+  elem = json_object_get(json, "act-size"); // if it is compressed the actual size may differ
+  if(elem){
+    f->actual_bytes = json_integer_value(elem);
+  }else{
+    f->actual_bytes = -1;
+  }
 
   elem = json_object_get(json, "stride");
   bool haveStride = (elem != NULL);
