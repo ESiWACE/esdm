@@ -18,6 +18,8 @@ struct scil_user_hints_t{
 };
 #endif
 
+typedef struct estream_write_t estream_write_t;
+
 enum { ESDM_ID_LENGTH = 23 }; //= strlen(id), to allocate the buffers, add one byte for the termination
 
 enum esdm_data_status_e {
@@ -77,7 +79,7 @@ struct esdm_fragment_t {
   esdm_dataspace_t *dataspace;
   esdm_backend_t *backend;
   void * backend_md; // backend-specific metadata if set
-  void *buf;
+  void * buf;
   size_t elements;
   size_t bytes; // expected size in bytes
   size_t actual_bytes; // actual size, can differ from actual size due to compression
@@ -139,7 +141,7 @@ struct esdm_backend_t_callbacks_t {
   /**
    * the expected blocksize for streaming is stored inside the backend configuration
    */
-  int (*fragment_write_stream_blocksize)(esdm_backend_t * b, esdm_fragment_t *fragment, void * cur_buf, size_t cur_offset, uint32_t cur_size);
+  int (*fragment_write_stream_blocksize)(esdm_backend_t * b, estream_write_t * state, void * cur_buf, size_t cur_offset, uint32_t cur_size);
 };
 
 struct esdm_md_backend_callbacks_t {

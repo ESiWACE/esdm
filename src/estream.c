@@ -11,7 +11,7 @@
 #include <string.h>
 
 #include <esdm-internal.h>
-
+#include <esdm-stream.h>
 
 #ifdef HAVE_SCIL
 SCIL_Datatype_t ea_esdm_datatype_to_scil(smd_basic_type_t type){

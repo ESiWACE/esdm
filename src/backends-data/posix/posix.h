@@ -23,7 +23,6 @@
 // Internal functions used by this backend.
 typedef struct {
   esdm_config_backend_t *config;
-  const char *target;
   esdm_perf_model_lat_thp_t perf_model;
 } posix_backend_data_t;
 

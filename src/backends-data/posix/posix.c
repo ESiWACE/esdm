@@ -97,7 +97,7 @@ static int fragment_delete(esdm_backend_t * backend, esdm_fragment_t *f){
   DEBUG_ENTER;
 
   posix_backend_data_t *data = (posix_backend_data_t *)backend->data;
-  const char *tgt = data->target;
+  const char *tgt = data->config->target;
 
   char path[PATH_MAX];
   if(f->id == NULL){
@@ -123,9 +123,9 @@ static int fragment_delete(esdm_backend_t * backend, esdm_fragment_t *f){
 static int mkfs(esdm_backend_t *backend, int format_flags) {
   posix_backend_data_t *data = (posix_backend_data_t *)backend->data;
 
-  DEBUG("mkfs: backend->(void*)data->target = %s\n", data->target);
+  DEBUG("mkfs: backend->(void*)data->config->target = %s\n", data->config->target);
 
-  const char *tgt = data->target;
+  const char *tgt = data->config->target;
   if (strlen(tgt) < 6) {
     WARNS("safety, tgt directory shall be longer than 6 chars");
     return ESDM_ERROR;
@@ -198,7 +198,7 @@ static int fragment_retrieve(esdm_backend_t *backend, esdm_fragment_t *f) {
 
   // set data, options and tgt for convienience
   posix_backend_data_t *data = (posix_backend_data_t *)backend->data;
-  const char *tgt = data->target;
+  const char *tgt = data->config->target;
 
   // determine path to fragment
   char path[PATH_MAX];
@@ -256,12 +256,89 @@ static int fragment_retrieve(esdm_backend_t *backend, esdm_fragment_t *f) {
   return ret;
 }
 
+static int create_posix_id(esdm_fragment_t * f, const char *tgt, int * out_fd){
+  char path[PATH_MAX];
+  f->id = malloc(ESDM_ID_LENGTH + 1);
+  eassert(f->id);
+  // ensure that the fragment with the ID doesn't exist, yet
+  while(1){
+    ea_generate_id(f->id, ESDM_ID_LENGTH);
+    struct stat sb;
+    sprintfFragmentDir(path, f);
+    if (stat(path, &sb) == -1) {
+      if (mkdir_recursive(path) != 0 && errno != EEXIST) {
+        WARN("error on creating directory \"%s\": %s", path, strerror(errno));
+        return ESDM_ERROR;
+      }
+    }
+    sprintfFragmentPath(path, f);
+    int fd = open(path, O_WRONLY | O_CREAT | O_EXCL, S_IWUSR | S_IRUSR | S_IWGRP | S_IRGRP | S_IROTH);
+    if(fd < 0){
+      if(errno == EEXIST){
+        continue;
+      }
+      WARN("error on creating file \"%s\": %s", path, strerror(errno));
+      return ESDM_ERROR;
+    }
+    *out_fd = fd;
+    return ESDM_SUCCESS;
+  }
+}
+
+typedef struct{
+  int fd;
+} posix_stream_t;
+
+static int fragment_write_stream_blocksize(esdm_backend_t * b, estream_write_t * state, void * c_buf, size_t c_off, uint32_t c_size){
+  int ret;
+  esdm_fragment_t * f = state->fragment;
+  posix_backend_data_t *data = (posix_backend_data_t *) b->data;
+  const char *tgt = data->config->target;
+  posix_stream_t * s = (posix_stream_t*) state->backend_state;
+
+  if(c_off == 0){
+    // start stream
+    s = malloc(sizeof(posix_stream_t));
+    // lazy assignment of ID
+    if(f->id != NULL){
+      char path[PATH_MAX];
+      sprintfFragmentPath(path, f);
+      DEBUG("path: %s\n", path);
+      s->fd = open(path, O_WRONLY | O_TRUNC, S_IWUSR | S_IRUSR | S_IWGRP | S_IRGRP | S_IROTH);
+      if(s->fd < 0){
+        WARN("error on opening file: %s", strerror(errno));
+        return ESDM_ERROR;
+      }
+    } else {
+      ret = create_posix_id(f, tgt, & s->fd);
+      if(ret != ESDM_SUCCESS){
+        free(s);
+        return ret;
+      }
+    }
+    state->backend_state = s;
+  }
+
+  assert(c_off + c_size <= f->bytes);
+
+  //write the data
+  ret = ea_write_check(s->fd, c_buf, c_size);
+
+  if(c_off + c_size == f->bytes){
+    // done with streaming
+    close(s->fd);
+    free(s);
+  }
+  return ESDM_SUCCESS;
+}
+
+
 static int fragment_update(esdm_backend_t *backend, esdm_fragment_t *f) {
   DEBUG_ENTER;
 
   // set data, options and tgt for convenience
   posix_backend_data_t *data = (posix_backend_data_t *)backend->data;
-  const char *tgt = data->target;
+  const char *tgt = data->config->target;
   int ret = ESDM_SUCCESS;
 
   //ensure that we have the data contiguously in memory
@@ -307,42 +384,20 @@ static int fragment_update(esdm_backend_t *backend, esdm_fragment_t *f) {
 #endif
   }
 
-  char path[PATH_MAX];
   // lazy assignment of ID
   if(f->id != NULL){
+    char path[PATH_MAX];
     sprintfFragmentPath(path, f);
     DEBUG("path: %s\n", path);
     // create data
     ret = entry_update(path, writeBuffer, bytes_to_write, 1);
   } else {
-    f->id = malloc(ESDM_ID_LENGTH + 1);
-    eassert(f->id);
-    // ensure that the fragment with the ID doesn't exist, yet
-    while(1){
-      ea_generate_id(f->id, ESDM_ID_LENGTH);
-      struct stat sb;
-      sprintfFragmentDir(path, f);
-      if (stat(path, &sb) == -1) {
-        if (mkdir_recursive(path) != 0 && errno != EEXIST) {
-          WARN("error on creating directory \"%s\": %s", path, strerror(errno));
-          ret = ESDM_ERROR;
-          break;
-        }
-      }
-      sprintfFragmentPath(path, f);
-      int fd = open(path, O_WRONLY | O_CREAT | O_EXCL, S_IWUSR | S_IRUSR | S_IWGRP | S_IRGRP | S_IROTH);
-      if(fd < 0){
-        if(errno == EEXIST){
-          continue;
-        }
-        WARN("error on creating file \"%s\": %s", path, strerror(errno));
-        ret = ESDM_ERROR;
-        break;
-      }
+    int fd;
+    ret = create_posix_id(f, tgt, & fd);
+    if(ret == ESDM_SUCCESS){
       //write the data
       ret = ea_write_check(fd, writeBuffer, bytes_to_write);
       close(fd);
-      break;
     }
   }
 
@@ -409,6 +464,7 @@ static esdm_backend_t backend_template = {
     .fragment_metadata_free = NULL,
     .mkfs = mkfs,
     .fsck = fsck,
+    .fragment_write_stream_blocksize = fragment_write_stream_blocksize
   },
 };
 
@@ -438,11 +494,7 @@ esdm_backend_t *posix_backend_init(esdm_config_backend_t *config) {
 
   // configure backend instance
   data->config = config;
-  json_t *elem;
-  elem = json_object_get(config->backend, "target");
-  data->target = json_string_value(elem);
-
-  DEBUG("Backend config: target=%s\n", data->target);
+  DEBUG("Backend config: target=%s\n", config->target);
 
   return backend;
 }

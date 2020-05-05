@@ -12,6 +12,7 @@
 #include <inttypes.h>
 
 #include <esdm-datatypes-internal.h>
+#include <esdm-stream.h>
 #include <esdm-debug.h>
 #include <esdm.h>
 
