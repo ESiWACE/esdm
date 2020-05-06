@@ -207,52 +207,14 @@ static int fragment_retrieve(esdm_backend_t *backend, esdm_fragment_t *f) {
   sprintfFragmentPath(path, f);
   DEBUG("path_fragment: %s", path);
 
-  //ensure that we have a contiguous read buffer
   void* readBuffer;
+  size_t size;
   int ret;
-
-  if(f->actual_bytes != -1){
-    // need to decompress
-#ifdef HAVE_SCIL
-    byte * scil_buf = NULL;
-    SCIL_Datatype_t scil_t = ea_esdm_datatype_to_scil(f->dataspace->type->type);
-    scil_dims_t scil_dims;
-    scil_dims_initialize_array(& scil_dims, f->dataspace->dims, (size_t*) f->dataspace->size);
-
-    size_t buf_size = scil_get_compressed_data_size_limit(& scil_dims, scil_t);
-    scil_buf = malloc(buf_size);
-
-    readBuffer = malloc(f->actual_bytes);
-    ret = entry_retrieve(path, readBuffer, f->actual_bytes);
-    if(ret != ESDM_SUCCESS) return ret;
-
-    if(f->dataspace->stride){
-      ret = scil_decompress(scil_t, scil_buf, & scil_dims, readBuffer, f->actual_bytes, scil_buf);
-    }else{
-      ret = scil_decompress(scil_t, f->buf, & scil_dims, readBuffer, f->actual_bytes, scil_buf);
-    }
-    ret = (ret == SCIL_NO_ERR) ? ESDM_SUCCESS : ESDM_ERROR;
-    free(readBuffer);
-    if(! f->dataspace->stride){
-      return ret;
-    }
-    readBuffer = scil_buf;
-#else
-    ESDM_WARN("Use ESDM trying to decompress but compiled without SCIL support.");
-    return ESDM_ERROR;
-#endif
-  }
-
-  readBuffer = f->dataspace->stride ? malloc(f->bytes) : f->buf;
-  ret = entry_retrieve(path, readBuffer, f->bytes);
-
-  if(f->dataspace->stride) {
-    //data is not necessarily supposed to be contiguous in memory -> copy from contiguous dataspace
-    esdm_dataspace_t* contiguousSpace;
-    esdm_dataspace_makeContiguous(f->dataspace, &contiguousSpace);
-    esdm_dataspace_copy_data(contiguousSpace, readBuffer, f->dataspace, f->buf);
-    esdm_dataspace_destroy(contiguousSpace);
-    free(readBuffer);
+  bool needUnpack = estream_mem_unpack_fragment_param(f, & readBuffer, & size);
+  ret = entry_retrieve(path, readBuffer, size);
+  if(ret != ESDM_SUCCESS) return ret;
+  if(needUnpack){
+    ret = estream_mem_unpack_fragment(f, readBuffer, size);
   }
 
   return ret;

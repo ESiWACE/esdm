@@ -47,6 +47,67 @@ SCIL_Datatype_t ea_esdm_datatype_to_scil(smd_basic_type_t type){
 }
 #endif
 
+bool estream_mem_unpack_fragment_param(esdm_fragment_t *f, void ** out_buf, size_t * out_size){
+  if(f->actual_bytes != -1){
+    *out_size = f->actual_bytes;
+    *out_buf = malloc(f->actual_bytes);
+    return TRUE;
+  }else{
+    *out_size = f->bytes;
+  }
+  if(f->dataspace->stride) {
+    *out_buf = malloc(f->bytes);
+    return TRUE;
+  }
+  *out_buf = f->buf;
+  return FALSE;
+}
+
+int estream_mem_unpack_fragment(esdm_fragment_t *f, void * rbuff, size_t size){
+  if(f->actual_bytes != -1){
+    // need to decompress
+#ifdef HAVE_SCIL
+    SCIL_Datatype_t scil_t = ea_esdm_datatype_to_scil(f->dataspace->type->type);
+    scil_dims_t scil_dims;
+    scil_dims_initialize_array(& scil_dims, f->dataspace->dims, (size_t*) f->dataspace->size);
+
+    size_t buf_size = scil_get_compressed_data_size_limit(& scil_dims, scil_t);
+    byte * scil_buf = malloc(buf_size);
+    int ret;
+
+    if(f->dataspace->stride){
+      ret = scil_decompress(scil_t, scil_buf, & scil_dims, rbuff, size, scil_buf);
+      free(rbuff);
+      if (ret != SCIL_NO_ERR){
+        free(scil_buf);
+        return ESDM_ERROR;
+      }
+      rbuff = scil_buf;
+    }else{
+      ret = scil_decompress(scil_t, f->buf, & scil_dims, rbuff, size, scil_buf);
+      free(scil_buf);
+      free(rbuff);
+      return (ret == SCIL_NO_ERR) ? ESDM_SUCCESS : ESDM_ERROR;
+    }
+#else
+    ESDM_WARN("Use ESDM trying to decompress but compiled without SCIL support.");
+    return ESDM_ERROR;
+#endif
+  }
+
+  if(f->dataspace->stride) {
+    //data is not necessarily supposed to be contiguous in memory
+    // -> copy from contiguous dataspace
+    esdm_dataspace_t* contiguousSpace;
+    esdm_dataspace_makeContiguous(f->dataspace, &contiguousSpace);
+    esdm_dataspace_copy_data(contiguousSpace, rbuff, f->dataspace, f->buf);
+    esdm_dataspace_destroy(contiguousSpace);
+    free(rbuff);
+  }
+  return ESDM_SUCCESS;
+}
+
+
 int estream_mem_pack_fragment(esdm_fragment_t *f, void ** in_out_buff, size_t * out_size){
   int last_phase = 0;
 
@@ -54,9 +115,11 @@ int estream_mem_pack_fragment(esdm_fragment_t *f, void ** in_out_buff, size_t * 
     last_phase = 1;
   }
 
+#ifdef HAVE_SCIL
   if(f->dataset->chints && f->dataspace->dims <= 5){
     last_phase = 2;
   }
+#endif
 
   if(last_phase == 0){
     *out_size = f->bytes;
@@ -124,14 +187,17 @@ int estream_mem_pack_fragment(esdm_fragment_t *f, void ** in_out_buff, size_t * 
       if(allocBuff) free(allocBuff);
       allocBuff = outBuff;
     }
+
+    inBuff = outBuff;
+    outBuff = NULL;
 #endif
   }
 
   *out_size = bytes;
   if(*in_out_buff == NULL){
-    *in_out_buff = outBuff;
+    *in_out_buff = inBuff;
   }
-  assert(*in_out_buff == outBuff);
+  assert(*in_out_buff == inBuff);
 
   return ESDM_SUCCESS;
 }

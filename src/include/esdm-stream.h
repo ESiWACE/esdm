@@ -16,4 +16,11 @@ struct estream_write_t {
  */
 int estream_mem_pack_fragment(esdm_fragment_t *f, void ** in_out_buff, size_t * out_size);
 
+
+bool estream_mem_unpack_fragment_param(esdm_fragment_t *f, void ** out_buf, size_t * out_size);
+/*
+ * Reverse function, takes the read buffer and stuffs the data into the output buffer
+ */
+int estream_mem_unpack_fragment(esdm_fragment_t *f, void * rbuff, size_t size);
+
 #endif
