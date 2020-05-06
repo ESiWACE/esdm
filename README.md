@@ -28,6 +28,7 @@ Or to initialize the submodules after the cloning:
 #### Installation for Ubuntu/Debian Systems
 
   * apt-get install libglib2 libglib2.0-dev libjansson4 libjansson-dev
+  * apt-get install libtool libtool-bin automake cmake doxygen subversion
 
 #### Installation for Fedora/CentOS/RHEL Systems
 
