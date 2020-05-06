@@ -36,6 +36,8 @@
 #include <sys/types.h>
 #include <unistd.h>
 
+#include <esdm-stream.h>
+
 #include "posix.h"
 #define DEBUG_ENTER ESDM_DEBUG_COM_FMT("POSIX", "", "")
 #define DEBUG(fmt, ...) ESDM_DEBUG_COM_FMT("POSIX", fmt, __VA_ARGS__)
@@ -341,48 +343,10 @@ static int fragment_update(esdm_backend_t *backend, esdm_fragment_t *f) {
   const char *tgt = data->config->target;
   int ret = ESDM_SUCCESS;
 
-  //ensure that we have the data contiguously in memory
-  void* writeBuffer = f->buf;
-  void* newBuff = NULL;
-  if(f->dataspace->stride) {
-    //data is not necessarily contiguous in memory -> copy to contiguous dataspace
-    writeBuffer = malloc(f->bytes);
-    newBuff = writeBuffer;
-    esdm_dataspace_t* contiguousSpace;
-    esdm_dataspace_makeContiguous(f->dataspace, &contiguousSpace);
-    esdm_dataspace_copy_data(f->dataspace, f->buf, contiguousSpace, writeBuffer);
-    esdm_dataspace_destroy(contiguousSpace);
-  }
-
-  size_t bytes_to_write = f->bytes;
-
-  char * scil_buf = NULL;
-  if(f->dataset->chints && f->dataspace->dims <= 5){
-#ifdef HAVE_SCIL
-    scil_context_t *ctx;
-    // TODO handle special values...  int special_values_count, scil_value_t *special_values
-    SCIL_Datatype_t scil_t = ea_esdm_datatype_to_scil(f->dataspace->type->type);
-    scil_dims_t scil_dims;
-    scil_dims_initialize_array(& scil_dims, f->dataspace->dims, (size_t*) f->dataspace->size);
-
-    int ret = scil_context_create(& ctx, scil_t, 0, NULL, f->dataset->chints);
-
-    size_t buf_size = scil_get_compressed_data_size_limit(& scil_dims, scil_t);
-    scil_buf = malloc(buf_size);
-    size_t out_size = 0;
-
-    ret = scil_compress((byte*)scil_buf, buf_size, writeBuffer, & scil_dims, & out_size, ctx);
-    ret = scil_destroy_context(ctx);
-    DEBUG("SCIL compressed: %ld => %ld\n", f->bytes, out_size);
-    if(out_size < f->bytes){
-      // no need to use bigger data
-      f->actual_bytes = out_size;
-      // update data to write
-      bytes_to_write = out_size;
-      writeBuffer = scil_buf;
-    }
-#endif
-  }
+  void * buff = NULL;
+  size_t buff_size;
+  ret = estream_mem_pack_fragment(f, & buff, & buff_size);
+  if(ret != ESDM_SUCCESS) return ret;
 
   // lazy assignment of ID
   if(f->id != NULL){
@@ -390,20 +354,20 @@ static int fragment_update(esdm_backend_t *backend, esdm_fragment_t *f) {
     sprintfFragmentPath(path, f);
     DEBUG("path: %s\n", path);
     // create data
-    ret = entry_update(path, writeBuffer, bytes_to_write, 1);
+    ret = entry_update(path, buff, buff_size, 1);
   } else {
     int fd;
     ret = create_posix_id(f, tgt, & fd);
     if(ret == ESDM_SUCCESS){
       //write the data
-      ret = ea_write_check(fd, writeBuffer, bytes_to_write);
+      ret = ea_write_check(fd, buff, buff_size);
       close(fd);
     }
   }
 
-  //cleanup
-  if(newBuff) free(newBuff);
-  if(scil_buf) free(scil_buf);
+  // cleanup of estream
+  if(buff != f->buf) free(buff);
+
   return ret;
 }
 
