@@ -279,6 +279,10 @@ esdm_status esdm_write_req_start(esdm_write_request_t ** req_out, esdm_dataset_t
   req->dset = dset;
   req->file_space = file_space;
   req->proc_size = 10240; // TODO should come from the configuration file: architecture dependent, backend dependent
+                          // NH: I believe that this should be set with respect to the actual shape of the memspace:
+                          //     The data that fits into the buffer should always occupy a full hypercube.
+                          //     For instance, if the memspace has a size of (70, 80, 90, 100, 110) and the max. buffer size is 65536,
+                          //     then the actual buffer size should be chosen as 55000, yielding a shape of the data within the buffer of (1, 1, 5, 100, 110).
   req->buffer = (char*) malloc(req->proc_size);
   assert(req->buffer);
   req->bpos = req->buffer;
@@ -304,6 +308,10 @@ void esdm_write_req_submit_buffer(esdm_write_request_t * req){
 
   // FIXME
   // ret = esdm_scheduler_enqueue_write(esdm, &status, req->dset, req->buffer, req->file_space, requestIsInternal);
+  //
+  // Well, that won't work well: We don't want to drown in a multitude of small fragments.
+  // We need some mechanic to register a large fragment for the entire write request, or a number of suitably sized fragments,
+  // and then stream the data to the fragment(s) bit by bit.
 }
 
 
