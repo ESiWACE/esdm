@@ -1,3 +1,5 @@
+#include <esdm-datatypes.h>
+
 typedef struct esdm_wstream_metadata_t esdm_wstream_metadata_t;
 
 #define defineStreamType(streamType, elementType) typedef struct streamType { \
