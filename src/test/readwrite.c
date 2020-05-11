@@ -22,10 +22,10 @@
 #include <esdm.h>
 #include <stdio.h>
 #include <stdlib.h>
-
+#include <sys/time.h>
 #include <esdm-internal.h>
 
-#define HEIGHT 2
+#define HEIGHT 32
 #define WIDTH  4096
 #define COUNT  10
 
@@ -46,10 +46,33 @@ int verify_data(uint64_t *a, uint64_t *b) {
   return mismatches;
 }
 
+/** Calculate bandwidth in bytes / sec. Print KiB/s */
+static uint64_t calc_bw(const char *tag, uint64_t bytes, struct timeval tv_begin)
+{
+        struct timeval tv_end;
+	uint64_t ms_total;
+        uint64_t bw;
+
+	gettimeofday(&tv_end, NULL);
+        ms_total = tv_end.tv_sec   * 1000000 + tv_end.tv_usec   -
+		   tv_begin.tv_sec * 1000000 - tv_begin.tv_usec;
+
+        if (ms_total == 0)
+                return -1;
+        bw = bytes * 1000000 / ms_total;
+
+        fprintf(stderr, "%s %8"PRIu64" KiB BW %8"PRIu64" KiB/s\n",
+			tag,
+                        bytes >> 10,
+                        bw    >> 10);
+        return bw;
+}
+
 int main(int argc, char const *argv[]) {
   // prepare data
   uint64_t *buf_w = (uint64_t *)malloc(HEIGHT * WIDTH * sizeof(uint64_t));
   uint64_t *buf_r = (uint64_t *)malloc(HEIGHT * WIDTH * sizeof(uint64_t));
+  struct timeval tv_origin;
 
   for (int y = 0; y < HEIGHT; y++) {
     for (int x = 0; x < WIDTH; x++) {
@@ -86,22 +109,28 @@ int main(int argc, char const *argv[]) {
   ret = esdm_container_commit(container);
   eassert(ret == ESDM_SUCCESS);
 
+  gettimeofday(&tv_origin, NULL);
   for (int n = 0 ; n < COUNT; n++) {
+    struct timeval tv_begin;
     // define subspace
     esdm_simple_dspace_t subspace = esdm_dataspace_2do(0, HEIGHT, n*WIDTH, WIDTH, SMD_DTYPE_UINT64);
     eassert(subspace.ptr);
 
+    gettimeofday(&tv_begin, NULL);
     // Write the data to the dataset
     ret = esdm_write(dataset, buf_w, subspace.ptr);
     eassert(ret == ESDM_SUCCESS);
 
     ret = esdm_dataset_commit(dataset);
     eassert(ret == ESDM_SUCCESS);
+    calc_bw("Write", HEIGHT * WIDTH * 8, tv_begin);
 
     memset(buf_r, 0, HEIGHT * WIDTH * sizeof(uint64_t));
     // Read the data to the dataset
+    gettimeofday(&tv_begin, NULL);
     ret = esdm_read(dataset, buf_r, subspace.ptr);
     eassert(ret == ESDM_SUCCESS);
+    calc_bw("Read ", HEIGHT * WIDTH * 8, tv_begin);
 
     // TODO: write subset
     // TODO: read subset -> subspace reconstruction
@@ -116,6 +145,7 @@ int main(int argc, char const *argv[]) {
     }
     eassert(mismatches == 0);
   }
+  calc_bw("Total", HEIGHT * WIDTH * COUNT * 2 * 8, tv_origin);
 
   ret = esdm_dataset_close(dataset);
   eassert(ret == ESDM_SUCCESS);
