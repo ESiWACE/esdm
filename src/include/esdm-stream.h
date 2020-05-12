@@ -14,8 +14,8 @@ defineStreamType(esdm_wstream_int8_t, int8_t);
 defineStreamType(esdm_wstream_int16_t, int16_t);
 defineStreamType(esdm_wstream_int32_t, int32_t);
 defineStreamType(esdm_wstream_int64_t, int64_t);
-defineStreamType(esdm_wstream_float_t, float_t);
-defineStreamType(esdm_wstream_double_t, double_t);
+defineStreamType(esdm_wstream_float_t, float);
+defineStreamType(esdm_wstream_double_t, double);
 #undef defineStreamType
 
 //We could use `gcc`'s typeof extension, but that's not portable.

@@ -118,7 +118,7 @@ install(TARGETS esdmutils LIBRARY DESTINATION lib)
 
 
 # ESDM Middleware Library
-add_library(esdm SHARED esdm.c  esdm-scheduler.c fragments.c  esdm-modules.c backends-data/init.c)
+add_library(esdm SHARED esdm.c  esdm-scheduler.c esdm-stream.c fragments.c  esdm-modules.c backends-data/init.c)
 target_link_libraries(esdm ${GLIB_LDFLAGS} ${JANSSON_LDFLAGS} ${SCIL_LDFLAGS} esdmutils esdmposix esdmdummy esdm-mdposix)
 if(BACKEND_MONGODB)
     target_link_libraries(esdm esdmmongodb)
