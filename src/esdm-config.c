@@ -238,6 +238,13 @@ esdm_config_backends_t *esdm_config_get_backends(esdm_instance_t *esdm) {
           backends[i]->max_threads_per_node = json_integer_value(elem);
         }
 
+        elem = json_object_get(backend, "write-stream-blocksize");
+        if (elem == NULL) {
+          backends[i]->write_stream_blocksize = 0;
+        } else {
+          backends[i]->write_stream_blocksize = json_integer_value(elem);
+        }
+
         elem = json_object_get(backend, "max-global-threads");
         if (elem == NULL) {
           backends[i]->max_global_threads = 0;

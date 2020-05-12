@@ -36,6 +36,8 @@
 #include <sys/types.h>
 #include <unistd.h>
 
+#include <esdm-stream.h>
+
 #include "posix.h"
 #define DEBUG_ENTER ESDM_DEBUG_COM_FMT("POSIX", "", "")
 #define DEBUG(fmt, ...) ESDM_DEBUG_COM_FMT("POSIX", fmt, __VA_ARGS__)
@@ -97,7 +99,7 @@ static int fragment_delete(esdm_backend_t * backend, esdm_fragment_t *f){
   DEBUG_ENTER;
 
   posix_backend_data_t *data = (posix_backend_data_t *)backend->data;
-  const char *tgt = data->target;
+  const char *tgt = data->config->target;
 
   char path[PATH_MAX];
   if(f->id == NULL){
@@ -123,9 +125,9 @@ static int fragment_delete(esdm_backend_t * backend, esdm_fragment_t *f){
 static int mkfs(esdm_backend_t *backend, int format_flags) {
   posix_backend_data_t *data = (posix_backend_data_t *)backend->data;
 
-  DEBUG("mkfs: backend->(void*)data->target = %s\n", data->target);
+  DEBUG("mkfs: backend->(void*)data->config->target = %s\n", data->config->target);
 
-  const char *tgt = data->target;
+  const char *tgt = data->config->target;
   if (strlen(tgt) < 6) {
     WARNS("safety, tgt directory shall be longer than 6 chars");
     return ESDM_ERROR;
@@ -198,157 +200,136 @@ static int fragment_retrieve(esdm_backend_t *backend, esdm_fragment_t *f) {
 
   // set data, options and tgt for convienience
   posix_backend_data_t *data = (posix_backend_data_t *)backend->data;
-  const char *tgt = data->target;
+  const char *tgt = data->config->target;
 
   // determine path to fragment
   char path[PATH_MAX];
   sprintfFragmentPath(path, f);
   DEBUG("path_fragment: %s", path);
 
-  //ensure that we have a contiguous read buffer
   void* readBuffer;
+  size_t size;
   int ret;
-
-  if(f->actual_bytes != -1){
-    // need to decompress
-#ifdef HAVE_SCIL
-    byte * scil_buf = NULL;
-    SCIL_Datatype_t scil_t = ea_esdm_datatype_to_scil(f->dataspace->type->type);
-    scil_dims_t scil_dims;
-    scil_dims_initialize_array(& scil_dims, f->dataspace->dims, (size_t*) f->dataspace->size);
-
-    size_t buf_size = scil_get_compressed_data_size_limit(& scil_dims, scil_t);
-    scil_buf = malloc(buf_size);
-
-    readBuffer = malloc(f->actual_bytes);
-    ret = entry_retrieve(path, readBuffer, f->actual_bytes);
-    if(ret != ESDM_SUCCESS) return ret;
-
-    if(f->dataspace->stride){
-      ret = scil_decompress(scil_t, scil_buf, & scil_dims, readBuffer, f->actual_bytes, scil_buf);
-    }else{
-      ret = scil_decompress(scil_t, f->buf, & scil_dims, readBuffer, f->actual_bytes, scil_buf);
-    }
-    ret = (ret == SCIL_NO_ERR) ? ESDM_SUCCESS : ESDM_ERROR;
-    free(readBuffer);
-    if(! f->dataspace->stride){
-      return ret;
-    }
-    readBuffer = scil_buf;
-#else
-    ESDM_WARN("Use ESDM trying to decompress but compiled without SCIL support.");
-    return ESDM_ERROR;
-#endif
-  }
-
-  readBuffer = f->dataspace->stride ? malloc(f->bytes) : f->buf;
-  ret = entry_retrieve(path, readBuffer, f->bytes);
-
-  if(f->dataspace->stride) {
-    //data is not necessarily supposed to be contiguous in memory -> copy from contiguous dataspace
-    esdm_dataspace_t* contiguousSpace;
-    esdm_dataspace_makeContiguous(f->dataspace, &contiguousSpace);
-    esdm_dataspace_copy_data(contiguousSpace, readBuffer, f->dataspace, f->buf);
-    esdm_dataspace_destroy(contiguousSpace);
-    free(readBuffer);
+  bool needUnpack = estream_mem_unpack_fragment_param(f, & readBuffer, & size);
+  ret = entry_retrieve(path, readBuffer, size);
+  if(ret != ESDM_SUCCESS) return ret;
+  if(needUnpack){
+    ret = estream_mem_unpack_fragment(f, readBuffer, size);
   }
 
   return ret;
 }
+
+static int create_posix_id(esdm_fragment_t * f, const char *tgt, int * out_fd){
+  char path[PATH_MAX];
+  f->id = malloc(ESDM_ID_LENGTH + 1);
+  eassert(f->id);
+  // ensure that the fragment with the ID doesn't exist, yet
+  while(1){
+    ea_generate_id(f->id, ESDM_ID_LENGTH);
+    struct stat sb;
+    sprintfFragmentDir(path, f);
+    if (stat(path, &sb) == -1) {
+      if (mkdir_recursive(path) != 0 && errno != EEXIST) {
+        WARN("error on creating directory \"%s\": %s", path, strerror(errno));
+        return ESDM_ERROR;
+      }
+    }
+    sprintfFragmentPath(path, f);
+    int fd = open(path, O_WRONLY | O_CREAT | O_EXCL, S_IWUSR | S_IRUSR | S_IWGRP | S_IRGRP | S_IROTH);
+    if(fd < 0){
+      if(errno == EEXIST){
+        continue;
+      }
+      WARN("error on creating file \"%s\": %s", path, strerror(errno));
+      return ESDM_ERROR;
+    }
+    *out_fd = fd;
+    return ESDM_SUCCESS;
+  }
+}
+
+typedef struct{
+  int fd;
+} posix_stream_t;
+
+static int fragment_write_stream_blocksize(esdm_backend_t * b, estream_write_t * state, void * c_buf, size_t c_off, uint32_t c_size){
+  int ret;
+  esdm_fragment_t * f = state->fragment;
+  posix_backend_data_t *data = (posix_backend_data_t *) b->data;
+  const char *tgt = data->config->target;
+  posix_stream_t * s = (posix_stream_t*) state->backend_state;
+
+  if(c_off == 0){
+    // start stream
+    s = malloc(sizeof(posix_stream_t));
+    // lazy assignment of ID
+    if(f->id != NULL){
+      char path[PATH_MAX];
+      sprintfFragmentPath(path, f);
+      DEBUG("path: %s\n", path);
+      s->fd = open(path, O_WRONLY | O_TRUNC, S_IWUSR | S_IRUSR | S_IWGRP | S_IRGRP | S_IROTH);
+      if(s->fd < 0){
+        WARN("error on opening file: %s", strerror(errno));
+        return ESDM_ERROR;
+      }
+    } else {
+      ret = create_posix_id(f, tgt, & s->fd);
+      if(ret != ESDM_SUCCESS){
+        free(s);
+        return ret;
+      }
+    }
+    state->backend_state = s;
+  }
+
+  assert(c_off + c_size <= f->bytes);
+
+  //write the data
+  ret = ea_write_check(s->fd, c_buf, c_size);
+
+  if(c_off + c_size == f->bytes){
+    // done with streaming
+    close(s->fd);
+    free(s);
+  }
+  return ESDM_SUCCESS;
+}
+
 
 static int fragment_update(esdm_backend_t *backend, esdm_fragment_t *f) {
   DEBUG_ENTER;
 
   // set data, options and tgt for convenience
   posix_backend_data_t *data = (posix_backend_data_t *)backend->data;
-  const char *tgt = data->target;
+  const char *tgt = data->config->target;
   int ret = ESDM_SUCCESS;
 
-  //ensure that we have the data contiguously in memory
-  void* writeBuffer = f->buf;
-  void* newBuff = NULL;
-  if(f->dataspace->stride) {
-    //data is not necessarily contiguous in memory -> copy to contiguous dataspace
-    writeBuffer = malloc(f->bytes);
-    newBuff = writeBuffer;
-    esdm_dataspace_t* contiguousSpace;
-    esdm_dataspace_makeContiguous(f->dataspace, &contiguousSpace);
-    esdm_dataspace_copy_data(f->dataspace, f->buf, contiguousSpace, writeBuffer);
-    esdm_dataspace_destroy(contiguousSpace);
-  }
+  void * buff = NULL;
+  size_t buff_size;
+  ret = estream_mem_pack_fragment(f, & buff, & buff_size);
+  if(ret != ESDM_SUCCESS) return ret;
 
-  size_t bytes_to_write = f->bytes;
-
-  char * scil_buf = NULL;
-  if(f->dataset->chints && f->dataspace->dims <= 5){
-#ifdef HAVE_SCIL
-    scil_context_t *ctx;
-    // TODO handle special values...  int special_values_count, scil_value_t *special_values
-    SCIL_Datatype_t scil_t = ea_esdm_datatype_to_scil(f->dataspace->type->type);
-    scil_dims_t scil_dims;
-    scil_dims_initialize_array(& scil_dims, f->dataspace->dims, (size_t*) f->dataspace->size);
-
-    int ret = scil_context_create(& ctx, scil_t, 0, NULL, f->dataset->chints);
-
-    size_t buf_size = scil_get_compressed_data_size_limit(& scil_dims, scil_t);
-    scil_buf = malloc(buf_size);
-    size_t out_size = 0;
-
-    ret = scil_compress((byte*)scil_buf, buf_size, writeBuffer, & scil_dims, & out_size, ctx);
-    ret = scil_destroy_context(ctx);
-    DEBUG("SCIL compressed: %ld => %ld\n", f->bytes, out_size);
-    if(out_size < f->bytes){
-      // no need to use bigger data
-      f->actual_bytes = out_size;
-      // update data to write
-      bytes_to_write = out_size;
-      writeBuffer = scil_buf;
-    }
-#endif
-  }
-
-  char path[PATH_MAX];
   // lazy assignment of ID
   if(f->id != NULL){
+    char path[PATH_MAX];
     sprintfFragmentPath(path, f);
     DEBUG("path: %s\n", path);
     // create data
-    ret = entry_update(path, writeBuffer, bytes_to_write, 1);
+    ret = entry_update(path, buff, buff_size, 1);
   } else {
-    f->id = malloc(ESDM_ID_LENGTH + 1);
-    eassert(f->id);
-    // ensure that the fragment with the ID doesn't exist, yet
-    while(1){
-      ea_generate_id(f->id, ESDM_ID_LENGTH);
-      struct stat sb;
-      sprintfFragmentDir(path, f);
-      if (stat(path, &sb) == -1) {
-        if (mkdir_recursive(path) != 0 && errno != EEXIST) {
-          WARN("error on creating directory \"%s\": %s", path, strerror(errno));
-          ret = ESDM_ERROR;
-          break;
-        }
-      }
-      sprintfFragmentPath(path, f);
-      int fd = open(path, O_WRONLY | O_CREAT | O_EXCL, S_IWUSR | S_IRUSR | S_IWGRP | S_IRGRP | S_IROTH);
-      if(fd < 0){
-        if(errno == EEXIST){
-          continue;
-        }
-        WARN("error on creating file \"%s\": %s", path, strerror(errno));
-        ret = ESDM_ERROR;
-        break;
-      }
+    int fd;
+    ret = create_posix_id(f, tgt, & fd);
+    if(ret == ESDM_SUCCESS){
       //write the data
-      ret = ea_write_check(fd, writeBuffer, bytes_to_write);
+      ret = ea_write_check(fd, buff, buff_size);
       close(fd);
-      break;
     }
   }
 
-  //cleanup
-  if(newBuff) free(newBuff);
-  if(scil_buf) free(scil_buf);
+  // cleanup of estream
+  if(buff != f->buf) free(buff);
+
   return ret;
 }
 
@@ -409,6 +390,7 @@ static esdm_backend_t backend_template = {
     .fragment_metadata_free = NULL,
     .mkfs = mkfs,
     .fsck = fsck,
+    .fragment_write_stream_blocksize = fragment_write_stream_blocksize
   },
 };
 
@@ -438,11 +420,7 @@ esdm_backend_t *posix_backend_init(esdm_config_backend_t *config) {
 
   // configure backend instance
   data->config = config;
-  json_t *elem;
-  elem = json_object_get(config->backend, "target");
-  data->target = json_string_value(elem);
-
-  DEBUG("Backend config: target=%s\n", data->target);
+  DEBUG("Backend config: target=%s\n", config->target);
 
   return backend;
 }

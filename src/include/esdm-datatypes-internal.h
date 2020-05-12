@@ -18,6 +18,8 @@ struct scil_user_hints_t{
 };
 #endif
 
+typedef struct estream_write_t estream_write_t;
+
 enum { ESDM_ID_LENGTH = 23 }; //= strlen(id), to allocate the buffers, add one byte for the termination
 
 enum esdm_data_status_e {
@@ -77,7 +79,7 @@ struct esdm_fragment_t {
   esdm_dataspace_t *dataspace;
   esdm_backend_t *backend;
   void * backend_md; // backend-specific metadata if set
-  void *buf;
+  void * buf;
   size_t elements;
   size_t bytes; // expected size in bytes
   size_t actual_bytes; // actual size, can differ from actual size due to compression
@@ -132,8 +134,14 @@ struct esdm_backend_t_callbacks_t {
   void* (*fragment_metadata_load)(esdm_backend_t * b, esdm_fragment_t *fragment, json_t *metadata);
   int (*fragment_metadata_free) (esdm_backend_t * b, void * options);
 
-  int (*mkfs)(esdm_backend_t *, int format_flags);
-  int (*fsck)(esdm_backend_t*);
+  int (*mkfs)(esdm_backend_t * b, int format_flags);
+  int (*fsck)(esdm_backend_t * b);
+
+  // write streaming functions
+  /**
+   * the expected blocksize for streaming is stored inside the backend configuration
+   */
+  int (*fragment_write_stream_blocksize)(esdm_backend_t * b, estream_write_t * state, void * cur_buf, size_t cur_offset, uint32_t cur_size);
 };
 
 struct esdm_md_backend_callbacks_t {
@@ -178,7 +186,7 @@ struct esdm_backend_t {
   esdm_module_type_t type;
   char *version; // 0.0.0
   void *data;    /* backend-specific data. */
-  uint32_t blocksize; /* any io must be multiple of 'blocksize' and aligned. */
+  //uint32_t blocksize; /* any io must be multiple of 'blocksize' and aligned. */
   esdm_backend_t_callbacks_t callbacks;
   int threads;
   GThreadPool *threadPool;
@@ -237,6 +245,7 @@ struct esdm_config_backend_t {
   uint64_t max_fragment_size; //this is a soft limit that may be exceeded anytime
   esdmI_fragmentation_method_t fragmentation_method;
   data_accessibility_t data_accessibility;
+  uint32_t write_stream_blocksize; /* size in bytes for enabling write streaming, 0 if disabled */
 
   json_t *performance_model;
   json_t *esdm;

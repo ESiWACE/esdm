@@ -37,7 +37,7 @@ int main(int argc, char *argv[]) {
 
 	printf("Test Mero/Clovis data-backend for ESDM\n");
 
-	printf("bs = %llu\n", (unsigned long long)eb->blocksize);
+	//printf("bs = %llu\n", (unsigned long long)eb->blocksize);
 
 	rc = esdm_backend_t_clovis.ebm_ops.esdm_backend_t_init(conf, eb);
 	if (rc != 0) {
