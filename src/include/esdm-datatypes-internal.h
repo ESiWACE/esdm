@@ -139,8 +139,20 @@ struct esdm_backend_t_callbacks_t {
 
   // write streaming functions
   /**
+   * Write a fragment by streaming it piecemeal.
+   *
+   * @param[in] backend the backend object
+   * @param[inout] state the caller sets the `fragment` member, and then reuses the state object for further calls unchanged
+   * @param[in] cur_buf pointer to the first byte that is to be written by this call
+   * @param[in] cur_offset logical offset to the first byte in `cur_buf` within the fragment, this is used to select whether the stream is being set up, streamed to, or torn down
+   * @param[in] cur_size count of bytes to be streamed by this call
+   *
+   * For proper operation, `cur_offset` must be `0` on the first call, and `cur_offset + cur_size` must be equal the size of the fragment on the last call.
+   * Intermediate call must satisfy neither condition.
+   *
    * the expected blocksize for streaming is stored inside the backend configuration
    */
+  //TODO: I find the semantics of `cur_buf` and `cur_offset` surprising. Imho, we should redesign this call, possibly splitting it into two or three functions.
   int (*fragment_write_stream_blocksize)(esdm_backend_t * b, estream_write_t * state, void * cur_buf, size_t cur_offset, uint32_t cur_size);
 };
 
