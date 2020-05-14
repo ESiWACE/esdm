@@ -48,7 +48,7 @@ static void initCounts(int64_t dimCount, int64_t elementSize, int64_t maxObjectS
 
 esdm_wstream_metadata_t* esdm_wstream_metadata_create(esdm_dataset_t* dataset, int64_t dimCount, int64_t* offset, int64_t* size, esdm_type_t type) {
   eassert(dataset->dataspace->dims == dimCount);
-  esdm_wstream_metadata_t* result = malloc(sizeof*result);
+  esdm_wstream_metadata_t* result = ea_checked_malloc(sizeof*result);
   *result = (esdm_wstream_metadata_t){
     .dataset = dataset,
 
@@ -56,10 +56,10 @@ esdm_wstream_metadata_t* esdm_wstream_metadata_create(esdm_dataset_t* dataset, i
     .fragmentationDim = 0,
     .chunkingDim = 0,
     .maxChunkWidth = dimCount ? size[0] : 1,
-    .fragmentCounts = malloc(dimCount*sizeof*result->fragmentCounts),
-    .chunkCounts = malloc(dimCount*sizeof*result->chunkCounts),
-    .cumulativeFragmentCounts = malloc((dimCount + 1)*sizeof*result->cumulativeFragmentCounts),
-    .cumulativeChunkCounts = malloc((dimCount + 1)*sizeof*result->cumulativeChunkCounts),
+    .fragmentCounts = ea_checked_malloc(dimCount*sizeof*result->fragmentCounts),
+    .chunkCounts = ea_checked_malloc(dimCount*sizeof*result->chunkCounts),
+    .cumulativeFragmentCounts = ea_checked_malloc((dimCount + 1)*sizeof*result->cumulativeFragmentCounts),
+    .cumulativeChunkCounts = ea_checked_malloc((dimCount + 1)*sizeof*result->cumulativeChunkCounts),
 
     .curFragment = 0,
     .nextChunk = 0

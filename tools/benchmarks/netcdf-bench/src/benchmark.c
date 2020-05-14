@@ -71,15 +71,15 @@ void benchmark_init(benchmark_t *bm) {
   int len = 0;
   char processor[80];
   MPI_Get_processor_name(processor, &len);
-  bm->processor = (char *)malloc(sizeof(*bm->processor) * len + 1);
+  bm->processor = ea_checked_malloc(sizeof(*bm->processor) * len + 1);
   strcpy(bm->processor, processor);
-  bm->testfn = malloc(0);
-  bm->block = malloc(0);
+  bm->testfn = ea_checked_malloc(0);
+  bm->block = ea_checked_malloc(0);
   bm->duration.open = -1;
   bm->duration.io = -1;
   bm->duration.close = -1;
   bm->mssize = 0;
-  bm->ms = malloc(0);
+  bm->ms = ea_checked_malloc(0);
   bm->ndims = 0;
 }
 
@@ -138,16 +138,16 @@ void benchmark_setup(benchmark_t *bm, const procs_t procs, const size_t ndims, c
 
   // Testfile
   bm->io_mode = io_mode;
-  bm->testfn = (char *)realloc(bm->testfn, sizeof(char *) * strlen(testfn) + 1);
+  bm->testfn = ea_checked_realloc(bm->testfn, sizeof(char *) * strlen(testfn) + 1);
   strcpy(bm->testfn, testfn);
 
   // Memory allocation for measurements
   bm->mssize = bm->dgeom[DT] / bm->bgeom[DT];
-  bm->ms = (measurement_t *)realloc(bm->ms, sizeof(*bm->ms) * bm->mssize);
+  bm->ms = ea_checked_realloc(bm->ms, sizeof(*bm->ms) * bm->mssize);
 
   // Memory allocation and initialization of block
   bm->block_size = bm->bgeom[DT] * bm->bgeom[DX] * bm->bgeom[DY] * bm->bgeom[DZ] * sizeof(DATATYPE);
-  bm->block = (DATATYPE *)realloc(bm->block, bm->block_size);
+  bm->block = ea_checked_realloc(bm->block, bm->block_size);
   if (bm->block == NULL) {
     DEBUG_MESSAGE("Could not allocate> %lu\n", bm->block_size);
     exit(1);

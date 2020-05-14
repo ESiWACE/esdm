@@ -11,7 +11,7 @@ extern esdm_instance_t esdm;
 int main() {
   esdm_status ret;
 
-  esdm_config_backend_t * cfg = malloc(sizeof(esdm_config_backend_t));
+  esdm_config_backend_t * cfg = ea_checked_malloc(sizeof(esdm_config_backend_t));
   esdm_config_backend_t orig = {
     .type = "POSIX",
     .target = "./posix"};
@@ -28,7 +28,7 @@ int main() {
   esdm_fragment_t frag = { .dataset = & dset, .id = NULL, .dataspace = dspace.ptr,
     .bytes = 10*1024, ESDM_DATA_DIRTY, .backend = b };
 
-  void * buff = malloc(1024);
+  void * buff = ea_checked_malloc(1024);
   for(int i=0; i < 1024; i++){
     ((uint8_t*) buff)[i] = (uint8_t) (i % 256);
   }

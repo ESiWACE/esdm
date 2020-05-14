@@ -13,7 +13,7 @@
 #include <unistd.h>
 
 int lfs_mpi_open(lfs_mpi_file_p *fd_p, char *df, int flags, mode_t mode, MPI_Comm com) {
-  *fd_p = (lfs_mpi_file_p)malloc(sizeof(struct lfs_file));
+  *fd_p = ea_checked_malloc(sizeof(struct lfs_file));
 
   lfs_mpi_file_p fd = *fd_p;
   int ret, rank; //, size;
@@ -21,7 +21,7 @@ int lfs_mpi_open(lfs_mpi_file_p *fd_p, char *df, int flags, mode_t mode, MPI_Com
   MPI_Comm_rank(com, &rank);
 
   char *lfsfilename;
-  lfsfilename = malloc((strlen(df) + 100) * sizeof(char));
+  lfsfilename = ea_checked_malloc((strlen(df) + 100) * sizeof(char));
   sprintf(lfsfilename, "%s%d.log", df, rank);
   fd->filename = strdup(lfsfilename);
   fd->filename[strlen(fd->filename) - 4] = 0;
@@ -127,7 +127,7 @@ int read_record(struct lfs_record **rec, FILE *fd, int depth) {
   fileLen = ftell(fd);
   fseek(fd, 0, SEEK_SET);
   int record_count = fileLen / sizeof(lfs_record_on_disk);
-  lfs_record *records = (lfs_record *)malloc(sizeof(lfs_record) * record_count);
+  lfs_record *records = ea_checked_malloc(sizeof(lfs_record) * record_count);
   size_t file_position = 0;
   // printf("here rec_count: %d\n", record_count);
   // filling the created array with the values inside the metadata file
@@ -155,7 +155,7 @@ int read_record(struct lfs_record **rec, FILE *fd, int depth) {
     } // end of IF
   }   // end of FOR
       //      printf("begin: %d, end: %d\n", begin, end);
-  *rec = (lfs_record *)malloc(sizeof(lfs_record) * (end - begin));
+  *rec = ea_checked_malloc(sizeof(lfs_record) * (end - begin));
   memcpy(*rec, &records[begin + 1], sizeof(lfs_record) * (end - begin)); // why memcpy here? why is there the need for begin & end?
   free(records);
   return end - begin;
@@ -249,9 +249,9 @@ off_t main_addr) {
   off_t offset1; //= offset;
   size_t ret;
   struct lfs_record temp;
-  chunks_stack = (lfs_record *)malloc(sizeof(lfs_record) * 1001);
+  chunks_stack = ea_checked_malloc(sizeof(lfs_record) * 1001);
   int ch_s = 1;
-  *missing_chunks = (lfs_record *)malloc(sizeof(lfs_record) * 1001);
+  *missing_chunks = ea_checked_malloc(sizeof(lfs_record) * 1001);
   //      printf("internal_read: allocations are done, q_index is %d\n", *q_index - 1);
   for (int i = 0; i < (*q_index - 1); i++) {
     temp = (*query)[i];
@@ -313,7 +313,7 @@ size_t lfs_mpi_read(lfs_mpi_file_p fd, char *buf, size_t count, off_t offset) {
   temp.size = count;
   temp.pos = 0;
   // filling the query stack with the main query information.
-  query = (lfs_record *)malloc(sizeof(lfs_record) * 1001);
+  query = ea_checked_malloc(sizeof(lfs_record) * 1001);
   lfs_vec_add(&query, &query_index, temp);
   for (int i = 0; i <= fd->current_epoch && missing_count > 0; i++) {
     // get the records log with the epoch depth of i for the main file.
@@ -355,10 +355,10 @@ size_t lfs_mpi_read(lfs_mpi_file_p fd, char *buf, size_t count, off_t offset) {
       // check if it's not the same main file that belongs to this process.
       if (fd->proc_rank != i) {
         // prepare the name of the data and log files for the selected proc_size.
-        lfsfilename2 = malloc((strlen(fd->mother_file) + 100) * sizeof(char));
+        lfsfilename2 = ea_checked_malloc((strlen(fd->mother_file) + 100) * sizeof(char));
         sprintf(lfsfilename2, "%s%d.log", fd->mother_file, fd->proc_rank);
 
-        filename2 = malloc((strlen(fd->mother_file) + 10) * sizeof(char));
+        filename2 = ea_checked_malloc((strlen(fd->mother_file) + 10) * sizeof(char));
         sprintf(filename2, "%s%d", fd->mother_file, fd->proc_rank);
 
         printf("%s %s\n", filename2, lfsfilename2);
@@ -417,7 +417,7 @@ void lfs_vec_add(struct lfs_record **chunks_stack, int *size, struct lfs_record 
     //struct lfs_record* temp;
     int rtd = *size + 1000;
     //printf("allocating %d size\n", rtd);
-    new_stack = (lfs_record *)realloc(*chunks_stack, sizeof(lfs_record) * rtd);
+    new_stack = ea_checked_realloc(*chunks_stack, sizeof(lfs_record) * rtd);
     if (new_stack == NULL) {
       printf("MEMORY ALLOCATION ERROR IN LFS STACK!!!\n");
     }

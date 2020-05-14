@@ -50,7 +50,7 @@ esdm_modules_t *esdm_modules_init(esdm_instance_t *esdm) {
   esdm_modules_t *modules = NULL;
   esdm_backend_t *backend = NULL;
 
-  modules = (esdm_modules_t *)malloc(sizeof(esdm_modules_t));
+  modules = ea_checked_malloc(sizeof(esdm_modules_t));
 
   esdm_config_backends_t *config_backends = esdm_config_get_backends(esdm);
   esdm_config_backend_t *b = NULL;
@@ -73,7 +73,7 @@ esdm_modules_t *esdm_modules_init(esdm_instance_t *esdm) {
 
   // Register data backends
   modules->data_backend_count = config_backends->count;
-  modules->data_backends = malloc(config_backends->count * sizeof(esdm_backend_t *));
+  modules->data_backends = ea_checked_malloc(config_backends->count * sizeof(esdm_backend_t *));
 
   for (int i = 0; i < config_backends->count; i++) {
     b = config_backends->backends[i];

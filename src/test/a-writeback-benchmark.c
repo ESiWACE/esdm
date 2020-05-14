@@ -219,7 +219,7 @@ void runTestWithConfig(int height, int width, const char* configString) {
   eassert(ret == ESDM_SUCCESS);
 
   // perform the transposition test
-  uint64_t (*data)[width] = malloc(height*sizeof(*data));
+  uint64_t (*data)[width] = ea_checked_malloc(height*sizeof(*data));
   initData(height, width, data);
 
   timer myTimer;

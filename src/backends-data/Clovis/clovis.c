@@ -141,7 +141,7 @@ static bool convert_pthread_to_mero_thread(esdm_backend_t *backend)
 	tls = m0_thread_tls();
 	eassert(tls == NULL);
 
-	mthread = malloc(sizeof(struct m0_thread));
+	mthread = ea_checked_malloc(sizeof(struct m0_thread));
 	eassert(mthread != NULL);
 
 	memset(mthread, 0, sizeof(struct m0_thread));
@@ -404,7 +404,7 @@ esdm_backend_t_clovis_open(esdm_backend_t *eb,
 	/* convert from json string to object id. */
 	object_id_decode(object_id, &obj_id);
 
-	obj = malloc(sizeof (struct m0_clovis_obj));
+	obj = ea_checked_malloc(sizeof (struct m0_clovis_obj));
 	if (obj == NULL) {
 		rc = -ENOMEM;
 		DEBUG_LEAVE(rc);
@@ -699,7 +699,7 @@ mapping_get(esdm_backend_t *backend, struct m0_fid *index_fid,
 		if (rc == 0) {
 			/* malloc & copy & setting trailing zero. */
 			int datalen = val.ov_vec.v_count[0];
-			char *res = malloc(datalen + 1);
+			char *res = ea_checked_malloc(datalen + 1);
 			if (res != NULL) {
 				memcpy(res, val.ov_buf[0], datalen);
 				res[datalen] = 0;
@@ -871,7 +871,7 @@ con_map_new_locked(const char *container_dataset, const char *obj_id, m0_bindex_
 	eassert(m0_mutex_is_locked(&con_map_lock));
 
 	/* create an in-memory pair and link it into map */
-	pair = (struct con_dataset_obj_pair *)malloc(sizeof (struct con_dataset_obj_pair));
+	pair = ea_checked_malloc(sizeof (struct con_dataset_obj_pair));
 	eassert(pair != NULL);
 
 	memset(pair, 0, sizeof(struct con_dataset_obj_pair));
@@ -964,7 +964,7 @@ esdm_backend_t_clovis_fragment_retrieve(esdm_backend_t  *backend,
 			 * The data is not contiguous in memory.
 			 * Let's allocate contiguous memory to retrieve data.
 			 */
-			readBuffer = malloc(fragment->bytes);
+			readBuffer = ea_checked_malloc(fragment->bytes);
 			eassert(readBuffer);
 		} else {
 			readBuffer = fragment->buf;
@@ -1042,7 +1042,7 @@ esdm_backend_t_clovis_fragment_update(esdm_backend_t  *backend,
 		 * The fragment appears to have a non-trivial stride.
 		 * Linearize the fragment's data before writing.
 		 */
-		writeBuffer = malloc(fragment->bytes);
+		writeBuffer = ea_checked_malloc(fragment->bytes);
 		eassert(writeBuffer != NULL);
 		esdm_dataspace_t* contiguousSpace;
 		esdm_dataspace_makeContiguous(fragment->dataspace,
@@ -1297,7 +1297,7 @@ clovis_backend_init(esdm_config_backend_t *config)
 		DEBUG("Wrong configuration\n");
 		return NULL;
 	}
-	ceb = malloc(sizeof esdm_backend_t_clovis);
+	ceb = ea_checked_malloc(sizeof esdm_backend_t_clovis);
 	memcpy(ceb, &esdm_backend_t_clovis, sizeof(esdm_backend_t_clovis));
 
 	DEBUG_FMT("backend type   = %s\n", config->type);

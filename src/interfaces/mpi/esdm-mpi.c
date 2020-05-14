@@ -48,7 +48,7 @@ esdm_status esdm_mpi_distribute_config_file(char *config_filename) {
   } else {
     int len = 0;
     MPI_Bcast(&len, 1, MPI_INT, 0, MPI_COMM_WORLD);
-    config = (char *)malloc(len);
+    config = ea_checked_malloc(len);
     MPI_Bcast(config, len, MPI_CHAR, 0, MPI_COMM_WORLD);
   }
   esdm_load_config_str(config);
@@ -146,7 +146,7 @@ esdm_status esdm_mpi_container_open(MPI_Comm com, const char *name, int allow_ov
       esdmI_container_destroy(c);
       return ESDM_ERROR;
     }
-    buff = (char*) malloc(size);
+    buff = ea_checked_malloc(size);
 
     ret = MPI_Bcast(buff, size, MPI_CHAR, 0, com);
     eassert(ret == MPI_SUCCESS);
@@ -262,7 +262,7 @@ esdm_status esdm_mpi_dataset_ref(MPI_Comm com, esdm_dataset_t * d){
       return ESDM_ERROR;
     }
 
-    buff = (char*) malloc(size);
+    buff = ea_checked_malloc(size);
 
     ret = MPI_Bcast(buff, size, MPI_CHAR, 0, com);
     eassert(ret == MPI_SUCCESS);
@@ -307,7 +307,7 @@ esdm_status esdm_mpi_dataset_commit(MPI_Comm com, esdm_dataset_t *d){
     int procCount;
     ret = MPI_Comm_size(com, & procCount);
     int max_len = 10000000;
-    char * buff = malloc(max_len);
+    char * buff = ea_checked_malloc(max_len);
     for(int p = 1 ; p < procCount; p++){
       int size = max_len;
       MPI_Status mstatus;

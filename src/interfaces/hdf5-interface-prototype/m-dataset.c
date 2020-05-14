@@ -84,8 +84,8 @@ static void *memvol_dataset_create(void *obj, H5VL_loc_params_t loc_params, cons
   // #10 0x0000000000400b69 in ?? ()
 
   // allocate resoources
-  object = (memvol_object_t *)malloc(sizeof(memvol_object_t));
-  dataset = (memvol_dataset_t *)malloc(sizeof(memvol_dataset_t));
+  object = ea_checked_malloc(sizeof(memvol_object_t));
+  dataset = ea_checked_malloc(sizeof(memvol_dataset_t));
 
   object->type = MEMVOL_DATASET;
   object->object = dataset;
@@ -364,8 +364,8 @@ static herr_t memvol_dataset_specific(void *obj, H5VL_dataset_specific_t specifi
       int rank;
       rank = H5Sget_simple_extent_ndims(dataset->dataspace);
 
-      hsize_t *dims = (hsize_t *)malloc(rank * sizeof(hsize_t));
-      hsize_t *max = (hsize_t *)malloc(rank * sizeof(hsize_t));
+      hsize_t *dims = ea_checked_malloc(rank * sizeof(hsize_t));
+      hsize_t *max = ea_checked_malloc(rank * sizeof(hsize_t));
 
       for (int i = 0; i < rank; i++) {
         debugI("%s: rank[i]=%d, dims=%lld, max=%lld   =>   size=%lld\n", __func__, i, dims[i], max[i], size[i]);

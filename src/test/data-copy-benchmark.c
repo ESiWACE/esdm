@@ -31,7 +31,7 @@
 int main() {
   timer myTimer;
   ea_start_timer(&myTimer);
-  int64_t (*referenceData)[kDimSize][kDimSize] = malloc(kDimSize*sizeof(*referenceData));
+  int64_t (*referenceData)[kDimSize][kDimSize] = ea_checked_malloc(kDimSize*sizeof(*referenceData));
   for(int64_t z = 0, value = 0; z < kDimSize; z++) {
       for(int64_t y = 0; y < kDimSize; y++) {
         for(int64_t x = 0; x < kDimSize; x++) {
@@ -42,7 +42,7 @@ int main() {
   printf("referenceData initialization: %.3fms\n", 1000*ea_stop_timer(myTimer));
 
   ea_start_timer(&myTimer);
-  int64_t (*data)[kDimSize][kDimSize] = malloc(kDimSize*sizeof(*data));
+  int64_t (*data)[kDimSize][kDimSize] = ea_checked_malloc(kDimSize*sizeof(*data));
   memcpy(data, referenceData, kDimSize*sizeof(*data));
   printf("memcopy to new buffer (forcing mapping of memory pages): %.3fms\n", 1000*ea_stop_timer(myTimer));
 

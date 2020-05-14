@@ -56,7 +56,7 @@ static void boundArray_construct(esdmI_boundArray_t* me) {
     .count = 0,
     .allocatedCount = 16
   };
-  me->entries = malloc(me->allocatedCount*sizeof(*me->entries));
+  me->entries = ea_checked_malloc(me->allocatedCount*sizeof(*me->entries));
   eassert(me->entries);
 }
 
@@ -84,7 +84,7 @@ static void boundArray_add(esdmI_boundArray_t* me, int64_t bound, bool isStart, 
   //make sure we have enough space
   if(me->count == me->allocatedCount) {
     me->allocatedCount *= 2;
-    me->entries = realloc(me->entries, me->allocatedCount*sizeof(*me->entries));
+    me->entries = ea_checked_realloc(me->entries, me->allocatedCount*sizeof(*me->entries));
     eassert(me->entries);
   }
   eassert(me->allocatedCount > me->count);
@@ -188,8 +188,8 @@ static void boundTree_splitNode_internal(esdmI_boundTree_t* me) {
   eassert(me->entryCount == BOUND_TREE_MAX_ENTRY_COUNT);
   if(DEBUG_BOUND_TREE) boundTree_checkTree(me);
 
-  esdmI_boundTree_t* left = malloc(sizeof(*left));
-  esdmI_boundTree_t* right = malloc(sizeof(*right));
+  esdmI_boundTree_t* left = ea_checked_malloc(sizeof(*left));
+  esdmI_boundTree_t* right = ea_checked_malloc(sizeof(*right));
   const int splitIndex = BOUND_TREE_MAX_ENTRY_COUNT/2;
 
   *left = (esdmI_boundTree_t){
@@ -374,12 +374,12 @@ static esdmI_boundList_t* boundList_create() {
       ESDM_WARN("configuration parameter boundListImplementation has an illegal value, continuing with B-tree implementation");
       //fallthrough
     case BOUND_LIST_IMPLEMENTATION_BTREE: {
-      esdmI_boundTree_t* result = malloc(sizeof(*result));
+      esdmI_boundTree_t* result = ea_checked_malloc(sizeof(*result));
       boundTree_construct(result);
       return &result->super;
     }
     case BOUND_LIST_IMPLEMENTATION_ARRAY: {
-      esdmI_boundArray_t* result = malloc(sizeof(*result));
+      esdmI_boundArray_t* result = ea_checked_malloc(sizeof(*result));
       boundArray_construct(result);
       return &result->super;
     }
@@ -394,12 +394,12 @@ static void neighbourList_construct(esdmI_neighbourList_t* me) {
     .allocatedCount = 8,
     .neighbourIndices = NULL
   };
-  me->neighbourIndices = malloc(me->allocatedCount*sizeof(*me->neighbourIndices));
+  me->neighbourIndices = ea_checked_malloc(me->allocatedCount*sizeof(*me->neighbourIndices));
 }
 
 static void neighbourList_add(esdmI_neighbourList_t* me, int64_t index) {
   if(me->neighbourCount == me->allocatedCount) {
-    me->neighbourIndices = realloc(me->neighbourIndices, (me->allocatedCount *= 2)*sizeof(*me->neighbourIndices));
+    me->neighbourIndices = ea_checked_realloc(me->neighbourIndices, (me->allocatedCount *= 2)*sizeof(*me->neighbourIndices));
   }
   eassert(me->neighbourCount < me->allocatedCount);
   me->neighbourIndices[me->neighbourCount++] = index;
@@ -418,7 +418,7 @@ static void neighbourList_destruct(esdmI_neighbourList_t* me) {
 // esdmI_hypercubeNeighbourManager_t ///////////////////////////////////////////////////////////////
 
 esdmI_hypercubeNeighbourManager_t* esdmI_hypercubeNeighbourManager_make(int64_t dimensions) {
-  esdmI_hypercubeNeighbourManager_t* result = malloc(sizeof(*result) + dimensions*sizeof(*result->boundLists));
+  esdmI_hypercubeNeighbourManager_t* result = ea_checked_malloc(sizeof(*result) + dimensions*sizeof(*result->boundLists));
   *result = (esdmI_hypercubeNeighbourManager_t){
     .list = {
       .cubes = NULL,
@@ -428,8 +428,8 @@ esdmI_hypercubeNeighbourManager_t* esdmI_hypercubeNeighbourManager_make(int64_t 
     .dims = dimensions,
     .neighbourLists = NULL
   };
-  result->list.cubes = malloc(result->allocatedCount*sizeof(*result->list.cubes));
-  result->neighbourLists = malloc(result->allocatedCount*sizeof(*result->neighbourLists));
+  result->list.cubes = ea_checked_malloc(result->allocatedCount*sizeof(*result->list.cubes));
+  result->neighbourLists = ea_checked_malloc(result->allocatedCount*sizeof(*result->neighbourLists));
   for(int64_t i = 0; i < dimensions; i++) result->boundLists[i] = boundList_create();
   return result;
 }
@@ -444,9 +444,9 @@ void esdmI_hypercubeNeighbourManager_pushBack(esdmI_hypercubeNeighbourManager_t*
   //assert enough space
   if(me->list.count == me->allocatedCount) {
     me->allocatedCount *= 2;
-    me->list.cubes = realloc(me->list.cubes, me->allocatedCount*sizeof(*me->list.cubes));
+    me->list.cubes = ea_checked_realloc(me->list.cubes, me->allocatedCount*sizeof(*me->list.cubes));
     eassert(me->list.cubes);
-    me->neighbourLists = realloc(me->neighbourLists, me->allocatedCount*sizeof(*me->neighbourLists));
+    me->neighbourLists = ea_checked_realloc(me->neighbourLists, me->allocatedCount*sizeof(*me->neighbourLists));
     eassert(me->neighbourLists);
   }
 

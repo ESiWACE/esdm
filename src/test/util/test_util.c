@@ -15,6 +15,7 @@
  */
 
 #include <esdm-debug.h>
+#include <esdm-internal.h>
 #include <fcntl.h>
 #include <stdint.h>
 #include <stdio.h>
@@ -31,7 +32,7 @@ void etest_gen_buffer(int dims, int64_t bounds[], uint64_t ** out_buff){
     cnt *= bounds[d];
   }
 
-  uint64_t *buf_w = (uint64_t *)malloc(cnt * sizeof(uint64_t));
+  uint64_t *buf_w = ea_checked_malloc(cnt * sizeof(uint64_t));
   eassert(buf_w);
   *out_buff = buf_w;
 

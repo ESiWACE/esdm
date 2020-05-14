@@ -151,7 +151,7 @@ int ea_read_file(char *filepath, char **buf) {
   off_t fsize = lseek(fd, 0, SEEK_END);
   lseek(fd, 0, SEEK_SET);
 
-  char *string = malloc(fsize + 1);
+  char *string = ea_checked_malloc(fsize + 1);
   int ret = ea_read_check(fd, string, fsize);
   close(fd);
 
@@ -296,8 +296,35 @@ void ea_generate_id(char* str, size_t length) {
   str[length] = 0;  //termination
 }
 
-void* ea_memdup(void* data, size_t size) {
+void* ea_checked_malloc(size_t size) {
   void* result = malloc(size);
+  if(!result) {
+    fprintf(stderr, "out-of-memory error: could not allocate a block of %zd bytes, aborting...\n", size);
+    abort();
+  }
+  return result;
+}
+
+void* ea_checked_calloc(size_t nmemb, size_t size) {
+  void* result = calloc(nmemb, size);
+  if(!result) {
+    fprintf(stderr, "out-of-memory error: could not allocate a block for %zd objects of %zd bytes, aborting...\n", nmemb, size);
+    abort();
+  }
+  return result;
+}
+
+void* ea_checked_realloc(void* ptr, size_t size) {
+  void* result = realloc(ptr, size);
+  if(!result && size) {
+    fprintf(stderr, "out-of-memory error: could not reallocate a block to a size of %zd bytes, aborting...\n", size);
+    abort();
+  }
+  return result;
+}
+
+void* ea_memdup(void* data, size_t size) {
+  void* result = ea_checked_malloc(size);
   memcpy(result, data, size);
   return result;
 }

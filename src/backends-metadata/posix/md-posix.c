@@ -286,7 +286,7 @@ static int container_retrieve(esdm_md_backend_t *backend, esdm_container_t *cont
 
   int fd = open(path_metadata, O_RDONLY);
   if (fd < 0) return ESDM_ERROR;
-  char * json = (char *)malloc(len);
+  char * json = ea_checked_malloc(len);
   ret = ea_read_check(fd, json, statbuf.st_size);
   close(fd);
   json[statbuf.st_size] = 0;
@@ -311,7 +311,7 @@ static int dataset_create(esdm_md_backend_t * backend, esdm_dataset_t *d){
 
   metadummy_backend_options_t *options = (metadummy_backend_options_t *)backend->data;
   const char *tgt = options->target;
-  d->id = malloc(ESDM_ID_LENGTH + 1);
+  d->id = ea_checked_malloc(ESDM_ID_LENGTH + 1);
   eassert(d->id);
 
   while(1){
@@ -373,7 +373,7 @@ static int dataset_retrieve(esdm_md_backend_t *backend, esdm_dataset_t *d, char 
 
   int fd = open(path_metadata, O_RDONLY);
   if (fd < 0) return ESDM_ERROR;
-  char * json = (char *)malloc(len);
+  char * json = ea_checked_malloc(len);
   ret = ea_read_check(fd, json, statbuf.st_size);
   close(fd);
   json[statbuf.st_size] = 0;
@@ -439,10 +439,10 @@ static esdm_md_backend_t backend_template = {
 esdm_md_backend_t *metadummy_backend_init(esdm_config_backend_t *config) {
   DEBUG_ENTER;
 
-  esdm_md_backend_t *backend = (esdm_md_backend_t *)malloc(sizeof(esdm_md_backend_t));
+  esdm_md_backend_t *backend = ea_checked_malloc(sizeof(esdm_md_backend_t));
   memcpy(backend, &backend_template, sizeof(esdm_md_backend_t));
 
-  metadummy_backend_options_t *data = (metadummy_backend_options_t *)malloc(sizeof(metadummy_backend_options_t));
+  metadummy_backend_options_t *data = ea_checked_malloc(sizeof(metadummy_backend_options_t));
 
   data->target = config->target;
   backend->data = data;

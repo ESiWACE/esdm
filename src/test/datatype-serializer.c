@@ -8,9 +8,9 @@ int main() {
   int64_t dim[2] = {10, 20}; // dim order highest first: (y, x)
   int64_t dim2[2] = {5, 20};
 
-  float *p = malloc(sizeof(float) * dim[0] * dim[1] * 2);
-  float **data = malloc(sizeof(float *) * dim[1]);
-  float **data_out = malloc(sizeof(float *) * dim[1]);
+  float *p = ea_checked_malloc(sizeof(float) * dim[0] * dim[1] * 2);
+  float **data = ea_checked_malloc(sizeof(float *) * dim[1]);
+  float **data_out = ea_checked_malloc(sizeof(float *) * dim[1]);
 
   // prepare test data
   float *c = p;

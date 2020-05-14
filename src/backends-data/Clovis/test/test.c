@@ -23,7 +23,7 @@ int main(int argc, char *argv[]) {
 	esdm_backend_t_clovis_t *ceb;
 	esdm_backend_t *eb;
 
-	ceb = malloc(sizeof esdm_backend_t_clovis);
+	ceb = ea_checked_malloc(sizeof esdm_backend_t_clovis);
 	memcpy(ceb, &esdm_backend_t_clovis, sizeof(esdm_backend_t_clovis));
 	eb = &ceb->ebm_base;
 

@@ -62,31 +62,31 @@ static void benchmark_receive(benchmark_t **bm, const int tag) {
       t = tag;
       MPI_Recv(bm[i], sizeof(benchmark_t), MPI_BYTE, i, t, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
       // !!! Attention: All pointers are invalid !!!
-      bm[i]->processor = malloc(0);
-      bm[i]->testfn = malloc(0);
-      bm[i]->block = malloc(0);
-      bm[i]->ms = malloc(0);
+      bm[i]->processor = ea_checked_malloc(0);
+      bm[i]->testfn = ea_checked_malloc(0);
+      bm[i]->block = ea_checked_malloc(0);
+      bm[i]->ms = ea_checked_malloc(0);
       // !!! END Attention: All pointers are invalid !!!
 
       // Get processor
       ++t;
       MPI_Probe(i, t, MPI_COMM_WORLD, &status);
       MPI_Get_count(&status, MPI_CHAR, &count);
-      bm[i]->processor = realloc(bm[i]->processor, count);
+      bm[i]->processor = ea_checked_realloc(bm[i]->processor, count);
       MPI_Recv(bm[i]->processor, count, MPI_CHAR, i, t, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
 
       // Get test filename
       ++t;
       MPI_Probe(i, t, MPI_COMM_WORLD, &status);
       MPI_Get_count(&status, MPI_CHAR, &count);
-      bm[i]->testfn = realloc(bm[i]->testfn, count);
+      bm[i]->testfn = ea_checked_realloc(bm[i]->testfn, count);
       MPI_Recv(bm[i]->testfn, count, MPI_CHAR, i, t, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
 
       // Get measurements
       ++t;
       MPI_Probe(i, t, MPI_COMM_WORLD, &status);
       MPI_Get_count(&status, MPI_BYTE, &count);
-      bm[i]->ms = realloc(bm[i]->ms, count);
+      bm[i]->ms = ea_checked_realloc(bm[i]->ms, count);
       MPI_Recv(bm[i]->ms, count, MPI_BYTE, i, t, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
     }
   }
@@ -109,23 +109,23 @@ static void table_write_entry(table_t *table, const size_t nrows, const size_t n
   table_t tab = *table;
 
   size_t nlen = strlen(name);
-  tab[pos][0] = (char *)malloc(sizeof(char *) * nlen + 1);
+  tab[pos][0] = ea_checked_malloc(sizeof(char *) * nlen + 1);
   strcpy(tab[pos][0], name);
 
   size_t tlen = strlen(type);
-  tab[pos][1] = (char *)malloc(sizeof(char *) * tlen + 1);
+  tab[pos][1] = ea_checked_malloc(sizeof(char *) * tlen + 1);
   strcpy(tab[pos][1], type);
 
   size_t qlen = strlen(quantity);
-  tab[pos][2] = (char *)malloc(sizeof(char *) * qlen + 1);
+  tab[pos][2] = ea_checked_malloc(sizeof(char *) * qlen + 1);
   strcpy(tab[pos][2], quantity);
 
   size_t ulen = strlen(unit);
-  tab[pos][3] = (char *)malloc(sizeof(char *) * ulen + 1);
+  tab[pos][3] = ea_checked_malloc(sizeof(char *) * ulen + 1);
   strcpy(tab[pos][3], unit);
 
   size_t vlen = strlen(value);
-  tab[pos][4] = (char *)malloc(sizeof(char *) * vlen + 1);
+  tab[pos][4] = ea_checked_malloc(sizeof(char *) * vlen + 1);
   strcpy(tab[pos][4], value);
 }
 
@@ -150,7 +150,7 @@ static void append_string(char **buf, size_t *buf_size, const char *vb) {
   char *new_buf;
   while (vb_len + buf_len + 1 > *buf_size) {
     new_buf_size = *buf_size * 2;
-    new_buf = (char *)malloc(sizeof(*new_buf) * new_buf_size);
+    new_buf = ea_checked_malloc(sizeof(*new_buf) * new_buf_size);
     strcpy(new_buf, *buf);
     free(*buf);
     *buf_size = new_buf_size;
@@ -246,7 +246,7 @@ static double *create_bm_array(const benchmark_t **bms, size_t size, get_bm_valu
 }
 
 static void compute_stat(mam_t *mam, const benchmark_t **bms, const size_t bms_size, get_bm_value_t get_bm_value) {
-  double *array = (double *)malloc(sizeof(double) * bms_size);
+  double *array = ea_checked_malloc(sizeof(double) * bms_size);
   mam->min = min(create_bm_array(bms, bms_size, get_bm_value, array), bms_size);
   mam->avg = avg(create_bm_array(bms, bms_size, get_bm_value, array), bms_size);
   mam->max = max(create_bm_array(bms, bms_size, get_bm_value, array), bms_size);
@@ -270,9 +270,9 @@ void report_print(const report_t *report, const report_type_t type) {
   benchmark_t **benchmarks = NULL;
 
   if (0 == rank) {
-    benchmarks = (benchmark_t **)malloc(sizeof(benchmark_t *) * nranks);
+    benchmarks = ea_checked_malloc(sizeof(benchmark_t *) * nranks);
     for (int i = 1; i < nranks; ++i) {
-      benchmarks[i] = malloc(sizeof(benchmark_t));
+      benchmarks[i] = ea_checked_malloc(sizeof(benchmark_t));
       benchmark_init(benchmarks[i]);
     }
     benchmarks[0] = report->bm;

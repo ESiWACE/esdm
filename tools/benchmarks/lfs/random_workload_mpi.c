@@ -60,19 +60,19 @@ int main(int argc, char *argv[]) {
   size_t seq_io = 800;
   if (my_id == 0) {
     lfs_mpi_next_epoch(myfd);
-    char *fill_file = (char *)malloc(seq_io);
+    char *fill_file = ea_checked_malloc(seq_io);
     memset(fill_file, 1, seq_io);
     lfs_mpi_write(myfd, fill_file, seq_io, 0);
   }
   if (my_id == 1) {
-    char *fill_file = (char *)malloc(seq_io);
+    char *fill_file = ea_checked_malloc(seq_io);
     memset(fill_file, 2, seq_io);
     lfs_mpi_write(myfd, fill_file, seq_io, 800);
     lfs_mpi_next_epoch(myfd);
   }
   if (my_id == 2) {
     sleep(1);
-    char *fill_file = (char *)malloc(seq_io);
+    char *fill_file = ea_checked_malloc(seq_io);
     memset(fill_file, 3, seq_io);
     lfs_mpi_write(myfd, fill_file, seq_io, 400);
     lfs_mpi_next_epoch(myfd);
@@ -81,7 +81,7 @@ int main(int argc, char *argv[]) {
 
   ret = lfs_mpi_open(&myfd, "MP.data", O_RDONLY, S_IRUSR | S_IWUSR, MPI_COMM_WORLD);
   if (my_id == 2) {
-    char *test_read = (char *)malloc(seq_io * 2);
+    char *test_read = ea_checked_malloc(seq_io * 2);
     lfs_mpi_read(myfd, test_read, seq_io * 2, 0);
     FILE *res = fopen("mpi-result", "a+");
     fwrite(test_read, sizeof(char), (seq_io * 2) / sizeof(char), res);

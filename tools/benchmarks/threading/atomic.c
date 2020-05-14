@@ -19,7 +19,7 @@ void backend_thread(gpointer data_p, gpointer backend_id);
  * Each backend may have its own number of threads it works best
  */
 void register_backends(int backend_count, int threads_per_backend) {
-  pools = (GThreadPool **)malloc(sizeof(GThreadPool *) * backend_count);
+  pools = ea_checked_malloc(sizeof(GThreadPool *) * backend_count);
   GError *error;
   for (int i = 0; i < backend_count; i++) {
     pools[i] = g_thread_pool_new(backend_thread, (gpointer)(size_t)i, threads_per_backend, 1, &error);
@@ -79,7 +79,7 @@ void startIO(long work, io_request_status_t *status) {
 
   // now enqueue the operations
   for (int i = 0; i < backend_count; i++) {
-    io_work_t *task = (io_work_t *)malloc(sizeof(io_work_t));
+    io_work_t *task = ea_checked_malloc(sizeof(io_work_t));
     task->num = i;
     task->parent = status;
     g_thread_pool_push(pools[i], task, &error);

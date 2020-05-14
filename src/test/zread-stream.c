@@ -22,6 +22,7 @@
 
 
 #include <esdm.h>
+#include <esdm-internal.h>
 #include <stdio.h>
 #include <stdlib.h>
 
@@ -58,7 +59,7 @@ static void* stream_func(esdm_dataspace_t *space, void * buff, void * user_ptr, 
     }
   }
 
-  my_tmp_result_t * tmp = malloc(sizeof(my_tmp_result_t));
+  my_tmp_result_t * tmp = ea_checked_malloc(sizeof(my_tmp_result_t));
   tmp->mismatches = mismatches;
   tmp->checked = s[0] * s[1];
   return tmp;
@@ -74,7 +75,7 @@ static void reduce_func(esdm_dataspace_t *space, void * user_ptr, void * stream_
 
 int main(int argc, char const *argv[]) {
   // prepare data
-  uint64_t *buf_w = (uint64_t *)malloc(10 * 20 * sizeof(uint64_t));
+  uint64_t *buf_w = ea_checked_malloc(10 * 20 * sizeof(uint64_t));
 
   for (int x = 0; x < 10; x++) {
     for (int y = 0; y < 20; y++) {

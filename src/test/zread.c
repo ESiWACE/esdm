@@ -22,6 +22,7 @@
 
 
 #include <esdm.h>
+#include <esdm-internal.h>
 #include <stdio.h>
 #include <stdlib.h>
 
@@ -45,8 +46,8 @@ int verify_data(uint64_t *a, uint64_t *b) {
 
 int main(int argc, char const *argv[]) {
   // prepare data
-  uint64_t *buf_w = (uint64_t *)malloc(10 * 20 * sizeof(uint64_t));
-  uint64_t *buf_r = (uint64_t *)malloc(10 * 20 * sizeof(uint64_t));
+  uint64_t *buf_w = ea_checked_malloc(10 * 20 * sizeof(uint64_t));
+  uint64_t *buf_r = ea_checked_malloc(10 * 20 * sizeof(uint64_t));
   memset(buf_r, -1, 10 * 20 * sizeof(uint64_t));
 
   for (int x = 0; x < 10; x++) {

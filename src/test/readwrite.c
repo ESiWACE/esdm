@@ -70,8 +70,8 @@ static uint64_t calc_bw(const char *tag, uint64_t bytes, struct timeval tv_begin
 
 int main(int argc, char const *argv[]) {
   // prepare data
-  uint64_t *buf_w = (uint64_t *)malloc(HEIGHT * WIDTH * sizeof(uint64_t));
-  uint64_t *buf_r = (uint64_t *)malloc(HEIGHT * WIDTH * sizeof(uint64_t));
+  uint64_t *buf_w = ea_checked_malloc(HEIGHT * WIDTH * sizeof(uint64_t));
+  uint64_t *buf_r = ea_checked_malloc(HEIGHT * WIDTH * sizeof(uint64_t));
   struct timeval tv_origin;
 
   for (int y = 0; y < HEIGHT; y++) {

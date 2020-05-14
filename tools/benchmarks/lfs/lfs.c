@@ -20,7 +20,7 @@ int current_index = 0;
 
 int lfs_open(char *df, int flags, mode_t mode) {
   filename = strdup(df);
-  char *metafile = (char *)malloc((strlen(df) + 4) * sizeof(char));
+  char *metafile = ea_checked_malloc((strlen(df) + 4) * sizeof(char));
   strcpy(metafile, df);
   strcat(metafile, ".log");
   //printf("filename: %s\n", filename);
@@ -73,7 +73,7 @@ lfs_record *read_record(int fd) {
   //eassert(ret == 0);
   int record_count = fileLen / sizeof(lfs_record_on_disk);
   //printf("this is size %d\n",record_count);
-  lfs_record *records = (lfs_record *)malloc(sizeof(lfs_record) * record_count);
+  lfs_record *records = ea_checked_malloc(sizeof(lfs_record) * record_count);
   size_t file_position = 0;
 
   // filling the created array with the values inside the metadata file
@@ -175,7 +175,7 @@ size_t lfs_read(int fd, char *buf, size_t count, off_t offset) {
 
   // create the vector that acts like a stack for our finding chunks recursive function
   struct lfs_record *chunks_stack;
-  chunks_stack = (lfs_record *)malloc(sizeof(lfs_record) * 1001);
+  chunks_stack = ea_checked_malloc(sizeof(lfs_record) * 1001);
   int ch_s = 1;
   // find the length of the log array
   //struct stat stats;
@@ -219,7 +219,7 @@ void lfs_vec_add(struct lfs_record **chunks_stack, int *size, struct lfs_record 
     //struct lfs_record* temp;
     int rtd = *size + 1000;
     //printf("allocating %d size\n", rtd);
-    new_stack = (lfs_record *)realloc(*chunks_stack, sizeof(lfs_record) * rtd);
+    new_stack = ea_checked_realloc(*chunks_stack, sizeof(lfs_record) * rtd);
     if (new_stack == NULL)
       printf("MEMORY ALLOCATION ERROR IN LFS STACK!!!\n");
     /*for(int i=0; i < *size - 1; i++){

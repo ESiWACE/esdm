@@ -278,8 +278,8 @@ int esdm_backend_t_wos_alloc(esdm_backend_t *eb, int n_dims, int *dims_size, esd
   //rc = wos_metaobj_create(&ebm->wos_meta_obj, md1, md2);        /* To be completed */
 
   /* Reserve oids for storing data objects - null terminated array */
-  ebm->oid_list = (t_WosOID **)calloc(obj_num + 1, sizeof(t_WosOID *));
-  ebm->size_list = (uint64_t *)calloc(obj_num + 1, sizeof(uint64_t));
+  ebm->oid_list = ea_checked_calloc(obj_num + 1, sizeof(t_WosOID *));
+  ebm->size_list = ea_checked_calloc(obj_num + 1, sizeof(uint64_t));
 
   for (i = 0; i < obj_num; i++) {
     ebm->oid_list[i] = CreateWoid();
@@ -443,7 +443,7 @@ int esdm_backend_t_wos_write(esdm_backend_t *eb, void *obj_handle, uint64_t star
     return ESDM_ERROR;
   }
 
-  void *buffer = calloc(obj_size, sizeof(char));
+  void *buffer = ea_checked_calloc(obj_size, sizeof(char));
   if (!buffer) {
     DEBUG("Memory error");
     return ESDM_ERROR;
@@ -599,8 +599,8 @@ int wos_backend_performance_check(esdm_backend_t *eb, int data_size, float *out_
   char *object_meta = NULL;
   void *object_handle = NULL;
 
-  char *data_w = (char *)malloc(data_size * sizeof(char));
-  char *data_r = (char *)malloc(data_size * sizeof(char));
+  char *data_w = ea_checked_malloc(data_size * sizeof(char));
+  char *data_r = ea_checked_malloc(data_size * sizeof(char));
 
   if (!data_w || !data_r)
     return ESDM_ERROR;
@@ -923,11 +923,11 @@ esdm_backend_t *wos_backend_init(esdm_config_backend_t *config) {
     return NULL;
   }
 
-  esdm_backend_t *backend = (esdm_backend_t *)malloc(sizeof(esdm_backend_t));
+  esdm_backend_t *backend = ea_checked_malloc(sizeof(esdm_backend_t));
   memcpy(backend, &backend_template, sizeof(esdm_backend_t));
 
   // allocate memory for backend instance
-  backend->data = (void *)malloc(sizeof(wos_backend_data_t));
+  backend->data = ea_checked_malloc(sizeof(wos_backend_data_t));
   wos_backend_data_t *data = (wos_backend_data_t *)backend->data;
   if (!data)
     return NULL;

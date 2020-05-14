@@ -50,13 +50,13 @@ SCIL_Datatype_t ea_esdm_datatype_to_scil(smd_basic_type_t type){
 bool estream_mem_unpack_fragment_param(esdm_fragment_t *f, void ** out_buf, size_t * out_size){
   if(f->actual_bytes != -1){
     *out_size = f->actual_bytes;
-    *out_buf = malloc(f->actual_bytes);
+    *out_buf = ea_checked_malloc(f->actual_bytes);
     return TRUE;
   }else{
     *out_size = f->bytes;
   }
   if(f->dataspace->stride) {
-    *out_buf = malloc(f->bytes);
+    *out_buf = ea_checked_malloc(f->bytes);
     return TRUE;
   }
   *out_buf = f->buf;
@@ -72,7 +72,7 @@ int estream_mem_unpack_fragment(esdm_fragment_t *f, void * rbuff, size_t size){
     scil_dims_initialize_array(& scil_dims, f->dataspace->dims, (size_t*) f->dataspace->size);
 
     size_t buf_size = scil_get_compressed_data_size_limit(& scil_dims, scil_t);
-    byte * scil_buf = malloc(buf_size);
+    byte * scil_buf = ea_checked_malloc(buf_size);
     int ret;
 
     if(f->dataspace->stride){
@@ -143,7 +143,7 @@ int estream_mem_pack_fragment(esdm_fragment_t *f, void ** in_out_buff, size_t * 
     if(*in_out_buff != NULL && last_phase == 1){
       outBuff = *in_out_buff; // output buffer
     }else{
-      outBuff = malloc(f->bytes);
+      outBuff = ea_checked_malloc(f->bytes);
       allocBuff = outBuff;
     }
     esdm_dataspace_t* contiguousSpace;
@@ -172,7 +172,7 @@ int estream_mem_pack_fragment(esdm_fragment_t *f, void ** in_out_buff, size_t * 
     if(*in_out_buff != NULL && last_phase == 2){
       outBuff = *in_out_buff; // output buffer
     }else{
-      outBuff = malloc(buf_size);
+      outBuff = ea_checked_malloc(buf_size);
     }
     size_t out_size = 0;
     ret = scil_compress((byte*)outBuff, buf_size, inBuff, & scil_dims, & out_size, ctx);
@@ -214,7 +214,7 @@ int estream_mem_pack_fragment(esdm_fragment_t *f, void ** in_out_buff, size_t * 
     int ret = scil_context_create(& ctx, scil_t, 0, NULL, f->dataset->chints);
 
     size_t buf_size = scil_get_compressed_data_size_limit(& scil_dims, scil_t);
-    scil_buf = malloc(buf_size);
+    scil_buf = ea_checked_malloc(buf_size);
     size_t out_size = 0;
 
     ret = scil_compress((byte*)scil_buf, buf_size, writeBuffer, & scil_dims, & out_size, ctx);
