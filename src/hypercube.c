@@ -45,7 +45,7 @@ void esdmI_range_print(esdmI_range_t range, FILE* stream) {
 esdmI_hypercube_t* esdmI_hypercube_makeDefault(int64_t dimensions) {
   eassert(dimensions >= 0);
 
-  esdmI_hypercube_t* result = malloc(sizeof(*result) + dimensions*sizeof(*result->ranges));
+  esdmI_hypercube_t* result = ea_checked_malloc(sizeof(*result) + dimensions*sizeof(*result->ranges));
   result->dims = dimensions;
   for(int64_t i = 0; i < dimensions; i++) {
     result->ranges[i] = (esdmI_range_t){
@@ -60,7 +60,7 @@ esdmI_hypercube_t* esdmI_hypercube_make(int64_t dimensions, int64_t* offset, int
   eassert(offset);
   eassert(size);
 
-  esdmI_hypercube_t* result = malloc(sizeof(*result) + dimensions*sizeof(*result->ranges));
+  esdmI_hypercube_t* result = ea_checked_malloc(sizeof(*result) + dimensions*sizeof(*result->ranges));
   result->dims = dimensions;
   for(int64_t i = 0; i < dimensions; i++) {
     result->ranges[i] = (esdmI_range_t){
@@ -73,7 +73,7 @@ esdmI_hypercube_t* esdmI_hypercube_make(int64_t dimensions, int64_t* offset, int
 
 esdmI_hypercube_t* esdmI_hypercube_makeCopy(esdmI_hypercube_t* original) {
   int64_t size = sizeof(*original) + original->dims*sizeof(*original->ranges);
-  esdmI_hypercube_t* result = malloc(size);
+  esdmI_hypercube_t* result = ea_checked_malloc(size);
   memcpy(result, original, size);
   return result;
 }
@@ -84,7 +84,7 @@ esdmI_hypercube_t* esdmI_hypercube_makeIntersection(esdmI_hypercube_t* a, esdmI_
   eassert(a->dims == b->dims);
   int64_t dimensions = a->dims;
 
-  esdmI_hypercube_t* result = malloc(sizeof(*result) + dimensions*sizeof(*result->ranges));
+  esdmI_hypercube_t* result = ea_checked_malloc(sizeof(*result) + dimensions*sizeof(*result->ranges));
   result->dims = dimensions;
   for(int64_t i = 0; i < dimensions; i++) {
     result->ranges[i] = esdmI_range_intersection(a->ranges[i], b->ranges[i]);
@@ -222,7 +222,7 @@ void esdmI_hypercube_destroy(esdmI_hypercube_t* cube) {
 }
 
 esdmI_hypercubeSet_t* esdmI_hypercubeSet_make() {
-  esdmI_hypercubeSet_t* me = malloc(sizeof(*me));
+  esdmI_hypercubeSet_t* me = ea_checked_malloc(sizeof(*me));
   esdmI_hypercubeSet_construct(me);
   return me;
 }
@@ -232,7 +232,7 @@ void esdmI_hypercubeSet_construct(esdmI_hypercubeSet_t* me) {
     .list = {.cubes = NULL, .count = 0},
     .allocatedCount = 8
   };
-  me->list.cubes = malloc(me->allocatedCount*sizeof(*me->list.cubes));
+  me->list.cubes = ea_checked_malloc(me->allocatedCount*sizeof(*me->list.cubes));
   eassert(me->list.cubes);
 }
 
@@ -264,7 +264,7 @@ void esdmI_hypercubeSet_add(esdmI_hypercubeSet_t* me, esdmI_hypercube_t* cube) {
   //grow the buffer if necessary
   if(me->list.count == me->allocatedCount) {
     me->allocatedCount <<= 1;
-    me->list.cubes = realloc(me->list.cubes, me->allocatedCount*sizeof(*me->list.cubes));
+    me->list.cubes = ea_checked_realloc(me->list.cubes, me->allocatedCount*sizeof(*me->list.cubes));
     eassert(me->list.cubes);
   }
   eassert(me->allocatedCount > me->list.count);
@@ -350,8 +350,8 @@ static void makeIntersectionMatrix_internal(esdmI_hypercubeList_t* list, int64_t
   eassert(out_intersectionMatrix);
   eassert(out_intersectionSizes);
 
-  esdmI_hypercube_t* (*intersectionMatrix)[count] = malloc(count*sizeof(*intersectionMatrix));
-  int64_t (*intersectionSizes)[count] = malloc(count*sizeof(*intersectionSizes));
+  esdmI_hypercube_t* (*intersectionMatrix)[count] = ea_checked_malloc(count*sizeof(*intersectionMatrix));
+  int64_t (*intersectionSizes)[count] = ea_checked_malloc(count*sizeof(*intersectionSizes));
 
   for(int64_t i = 0; i < count; i++) {
     intersectionMatrix[i][i] = NULL;  //The algorithms relying on the intersection matrix work better when the self intersection is NULL.
@@ -448,7 +448,7 @@ void esdmI_hypercubeList_nonredundantSubsets_internal(esdmI_hypercubeList_t* lis
   esdmI_hypercube_t* (*intersectionMatrix)[list->count];
   int64_t (*intersectionSizes)[list->count];
   makeIntersectionMatrix(list, &intersectionMatrix, &intersectionSizes);
-  uint8_t* requiredCubes = malloc(list->count*sizeof(*requiredCubes));
+  uint8_t* requiredCubes = ea_checked_malloc(list->count*sizeof(*requiredCubes));
   for(int64_t i = 0; i < list->count; i++) {
     int64_t coverage = 0;
     for(int64_t j = 0; j < list->count; j++) coverage += intersectionSizes[i][j];
@@ -476,7 +476,7 @@ void esdmI_hypercubeList_nonredundantSubsets_internal(esdmI_hypercubeList_t* lis
 
 bool esdmI_hypercubeList_doesCoverFully(esdmI_hypercubeList_t* list, esdmI_hypercube_t* cube) {
   //make a list of the cubes in the set that actually intersect with cube, this avoids unnecessary splitting and reduces the total workload of this algorithm
-  esdmI_hypercube_t** intersectingCubes = malloc(list->count*sizeof(*intersectingCubes));
+  esdmI_hypercube_t** intersectingCubes = ea_checked_malloc(list->count*sizeof(*intersectingCubes));
   int64_t intersectingCubesCount = 0;
   for(int64_t i = 0; i < list->count; i++) {
     if(esdmI_hypercube_doesIntersect(list->cubes[i], cube)) {

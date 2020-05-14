@@ -36,7 +36,7 @@ int64_t totalSize(int64_t dims, int64_t* dimSizes) {
 }
 
 void fakeData(int64_t dims, int64_t* dimSizes, uint64_t** out_data) {
-  *out_data = malloc(totalSize(dims, dimSizes));
+  *out_data = ea_checked_malloc(totalSize(dims, dimSizes));
   for(int64_t i = totalElements(dims, dimSizes); i--; ) (*out_data)[i] = i;
 }
 
@@ -57,7 +57,7 @@ void writeData(int64_t dims, int64_t* dimSizes, esdm_dataset_t* dataset, esdm_da
 }
 
 void readAndCheckData(int64_t dims, int64_t* dimSizes, esdm_dataset_t* dataset, esdm_dataspace_t* dataspace) {
-  uint64_t* data = malloc(totalSize(dims, dimSizes));
+  uint64_t* data = ea_checked_malloc(totalSize(dims, dimSizes));
   esdm_status ret = esdm_read(dataset, data, dataspace);
   eassert(ret == ESDM_SUCCESS);
   eassert(dataIsCorrect(dims, dimSizes, data));

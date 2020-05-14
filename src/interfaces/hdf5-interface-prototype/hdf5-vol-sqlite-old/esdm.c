@@ -59,7 +59,7 @@ char *esdm_suggest_tier(h5sqlite_fapl_t *fapl, int mpi_size, size_t total_bytes)
   printf("[ESDM] Considering %d policies.\n", num_policies);
 
   // Multifile
-  //char* fname = malloc(strlen(fapl->data_fn) + strlen(rank_buf) + 1);
+  //char* fname = ea_checked_malloc(strlen(fapl->data_fn) + strlen(rank_buf) + 1);
   //strcpy(fname, fapl->data_fn);
   //strcat(fname, rank_buf);
 
@@ -103,20 +103,20 @@ char *esdm_suggest_tier(h5sqlite_fapl_t *fapl, int mpi_size, size_t total_bytes)
   char *tiername = NULL;
   switch (tierid) {
     case ESDM_TIER_SHM:
-      tiername = malloc(strlen("/dev/shm/nc_esdmtier") + strlen(rank_buf) + 1);
+      tiername = ea_checked_malloc(strlen("/dev/shm/nc_esdmtier") + strlen(rank_buf) + 1);
       strcpy(tiername, "/dev/shm/nc_esdmtier");
       strcat(tiername, rank_buf);
       break;
 
     case ESDM_TIER_SSD:
-      tiername = malloc(strlen("/tmp/nc_esdmtier") + strlen(rank_buf) + 1);
+      tiername = ea_checked_malloc(strlen("/tmp/nc_esdmtier") + strlen(rank_buf) + 1);
       strcpy(tiername, "/tmp/nc_esdmtier");
       strcat(tiername, rank_buf);
       break;
 
     case ESDM_TIER_LUSTRE:
     default:
-      tiername = malloc(strlen("/mnt/lustre02/work/k20200/k202107/nc_esdmtierfile") + strlen(rank_buf) + 1);
+      tiername = ea_checked_malloc(strlen("/mnt/lustre02/work/k20200/k202107/nc_esdmtierfile") + strlen(rank_buf) + 1);
       strcpy(tiername, "/mnt/lustre02/work/k20200/k202107/nc_esdmtierfile");
       strcat(tiername, rank_buf);
   }

@@ -135,7 +135,7 @@ void attr_create_database(const char *attr_name, const char *obj_name, const cha
 
   size_t space_size;
   H5Sencode(space_id, NULL, &space_size);
-  unsigned char *space_buf = (unsigned char *)malloc(space_size);
+  unsigned char *space_buf = ea_checked_malloc(space_size);
   H5Sencode(space_id, space_buf, &space_size);
 
   const char *paramValues[7] = {attr_name, obj_name, obj_type, location, type_buf, space_buf, (char *)&data_size};
@@ -314,7 +314,7 @@ void attr_read_database(const char *location, /*OUT*/ void *buf, PGconn *conn) {
   for (int i = 0; i < PQntuples(res); i++) {
     size_t data_size;
     char *data_size_buf = PQunescapeBytea(PQgetvalue(res, i, 0), &data_size);
-    buf = malloc(data_size);
+    buf = ea_checked_malloc(data_size);
     memcpy(buf, data_size_buf, data_size);
     PQfreemem(data_size_buf);
   }
@@ -407,7 +407,7 @@ void attr_read_database(const char *location, /*OUT*/ void *buf, PGconn *conn) {
 
     size_t space_size;
     H5Sencode(space_id, NULL, &space_size);
-    unsigned char *space_buf = (unsigned char *)malloc(space_size);
+    unsigned char *space_buf = ea_checked_malloc(space_size);
     H5Sencode(space_id, space_buf, &space_size);
 
     const char *paramValues[7] = {
@@ -463,7 +463,7 @@ void attr_read_database(const char *location, /*OUT*/ void *buf, PGconn *conn) {
     for (int i = 0; i < PQntuples(res); i++) {
       size_t field_size;
       char *source_buf = PQunescapeBytea(PQgetvalue(res, i, 0), &field_size);
-      char *target_buf = malloc(field_size);
+      char *target_buf = ea_checked_malloc(field_size);
       memcpy(target_buf, source_buf, field_size);
       PQfreemem(source_buf);
     }

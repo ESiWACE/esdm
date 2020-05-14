@@ -256,7 +256,7 @@ esdm_status esdm_read_stream(esdm_dataset_t *d, esdm_dataspace_t *space, void * 
 {
   // TODO emulation function for now.
   uint64_t size = esdm_dataspace_total_bytes(space);
-  void * buf = malloc(size);
+  void * buf = ea_checked_malloc(size);
   esdm_status ret = esdmI_readWithFillRegion(d, buf, space, NULL);
   void * intermediate = stream_func(space, buf, user_ptr, d->fill_value);
   if(reduce_func){
@@ -274,12 +274,12 @@ esdm_statistics_t esdm_write_stats() { return esdm.writeStats; }
 esdm_config_t* esdmI_getConfig() { return esdm.config; }
 
 esdm_status esdm_write_req_start(esdm_write_request_t ** req_out, esdm_dataset_t * dset, esdm_dataspace_t * file_space){
-  esdm_write_request_t * req = (esdm_write_request_t*) malloc(sizeof(esdm_write_request_t) + sizeof(esdm_write_request_internal_t));
+  esdm_write_request_t * req = ea_checked_malloc(sizeof(esdm_write_request_t) + sizeof(esdm_write_request_internal_t));
   req->ri = (esdm_write_request_internal_t*) (req + 1);
   req->dset = dset;
   req->file_space = file_space;
   req->proc_size = 10240; // TODO should come from the configuration file: architecture dependent, backend dependent
-  req->buffer = (char*) malloc(req->proc_size);
+  req->buffer = ea_checked_malloc(req->proc_size);
   assert(req->buffer);
   req->bpos = req->buffer;
   uint64_t total_size = esdm_dataspace_total_bytes(file_space);

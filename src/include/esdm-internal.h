@@ -348,6 +348,21 @@ esdm_backend_t * esdmI_get_backend(char const * plugin_id);
 void ea_generate_id(char *str, size_t length);
 
 /**
+ * Wrapper for malloc() that checks the result for a null-pointer.
+ */
+void* ea_checked_malloc(size_t size) __attribute__((alloc_size(1), malloc));
+
+/**
+ * Wrapper for calloc() that checks the result for a null-pointer.
+ */
+void* ea_checked_calloc(size_t nmemb, size_t size) __attribute__((alloc_size(1, 2), malloc));
+
+/**
+ * Wrapper for realloc() that checks the result for a null-pointer.
+ */
+void* ea_checked_realloc(void* ptr, size_t size) __attribute__((alloc_size(2), malloc));
+
+/**
  * Create a copy of an arbitrary memory buffer.
  * This is essentially a strdup() for non-string data.
  *

@@ -26,6 +26,7 @@
 #include <smd.h>
 #include <esdm.h>
 #include <esdm-debug.h>
+#include <esdm-internal.h>
 
 int main(){
   //Test  smd_attr_new
@@ -80,7 +81,7 @@ int main(){
 
 
   //for array
-  int32_t * value_copy2 = (int32_t *)malloc(sizeof(int32_t) * 3);
+  int32_t * value_copy2 = ea_checked_malloc(sizeof(int32_t) * 3);
   smd_attr_copy_value(attr2,value_copy2);
   for(int i = 0;i < 3;i++){
     eassert(value2[i] == attr2_value[i]);

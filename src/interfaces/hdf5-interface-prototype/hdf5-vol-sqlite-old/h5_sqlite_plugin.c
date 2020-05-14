@@ -242,7 +242,7 @@ static void SQO_init_info(H5O_info_t *info) {
 
 static void *H5VL_extlog_fapl_copy(const void *info) {
   const h5sqlite_fapl_t *fapl_source = (h5sqlite_fapl_t *)info;
-  h5sqlite_fapl_t *fapl_target = (h5sqlite_fapl_t *)malloc(sizeof(*fapl_target));
+  h5sqlite_fapl_t *fapl_target = ea_checked_malloc(sizeof(*fapl_target));
   memcpy(fapl_target, fapl_source, sizeof(fapl_source));
   fapl_target->fn = strdup(fapl_source->fn);
   fapl_target->db_fn = strdup(fapl_source->db_fn);
@@ -288,7 +288,7 @@ print_property(hid_t id, const char *name, void *iter_data) {
 
 static void *H5VL_extlog_attr_create(void *obj, H5VL_loc_params_t loc_params, const char *attr_name, hid_t acpl_id, hid_t aapl_id, hid_t dxpl_id, void **req) {
   TRACEMSG("");
-  SQA_t *attribute = (SQA_t *)malloc(sizeof(*attribute));
+  SQA_t *attribute = ea_checked_malloc(sizeof(*attribute));
   hid_t space_id;
   H5Pget(acpl_id, "attr_space_id", &space_id);
   int ndims = H5Sget_simple_extent_ndims(space_id);
@@ -384,7 +384,7 @@ static void *H5VL_extlog_attr_create(void *obj, H5VL_loc_params_t loc_params, co
 static void *
 H5VL_extlog_attr_open(void *obj, H5VL_loc_params_t loc_params, const char *attr_name, hid_t aapl_id, hid_t dxpl_id, void **req) {
   TRACEMSG("");
-  SQA_t *attribute = (SQA_t *)malloc(sizeof(*attribute));
+  SQA_t *attribute = ea_checked_malloc(sizeof(*attribute));
   SQO_t *sqo = (SQO_t *)obj;
 
   switch (loc_params.obj_type) {
@@ -553,12 +553,12 @@ static herr_t SQA_iterate(SQO_t *obj, H5VL_loc_params_t loc_params, H5_index_t i
 
   switch (loc_params.obj_type) {
     case H5I_GROUP: {
-      SQG_t *sqg = (SQG_t *)malloc(sizeof(*sqg));
+      SQG_t *sqg = ea_checked_malloc(sizeof(*sqg));
       memcpy(sqg, obj, sizeof(SQG_t));
       obj2 = (SQO_t *)sqg;
     } break;
     case H5I_DATASET: {
-      SQD_t *sqd = (SQD_t *)malloc(sizeof(*sqd));
+      SQD_t *sqd = ea_checked_malloc(sizeof(*sqd));
       memcpy(sqd, obj, sizeof(SQD_t));
       obj2 = (SQO_t *)sqd;
     } break;
@@ -703,7 +703,7 @@ static herr_t H5VL_extlog_attr_close(void *attr, hid_t dxpl_id, void **req) {
 char *real_filename_create(h5sqlite_fapl_t *fapl) {
   char rank_buf[50];
   sprintf(rank_buf, "%d", fapl->mpi_rank);
-  char *fname = malloc(strlen(fapl->data_fn) + strlen(rank_buf) + 1);
+  char *fname = ea_checked_malloc(strlen(fapl->data_fn) + strlen(rank_buf) + 1);
   strcpy(fname, fapl->data_fn);
   strcat(fname, rank_buf);
   return fname;
@@ -718,7 +718,7 @@ static void *H5VL_extlog_file_create(const char *fname, unsigned flags, hid_t fc
   TRACEMSG("");
 
   int err;
-  SQF_t *file = (SQF_t *)malloc(sizeof(*file));
+  SQF_t *file = ea_checked_malloc(sizeof(*file));
   h5sqlite_fapl_t *fapl = (h5sqlite_fapl_t *)H5VL_extlog_fapl_copy(H5Pget_vol_info(fapl_id));
 
   MPI_Comm_rank(MPI_COMM_WORLD, &fapl->mpi_rank);
@@ -814,7 +814,7 @@ static void *H5VL_extlog_file_create(const char *fname, unsigned flags, hid_t fc
 static void *H5VL_extlog_file_open(const char *fname, unsigned flags, hid_t fapl_id, hid_t dxpl_id, void **req) {
   TRACEMSG("");
   SQF_t *file;
-  file = (SQF_t *)calloc(1, sizeof(SQF_t));
+  file = ea_checked_calloc(1, sizeof(SQF_t));
 
   h5sqlite_fapl_t *info = (h5sqlite_fapl_t *)H5VL_extlog_fapl_copy(H5Pget_vol_info(fapl_id));
   MPI_Comm_rank(MPI_COMM_WORLD, &info->mpi_rank);
@@ -936,7 +936,7 @@ static herr_t H5VL_extlog_file_specific(void *obj, H5VL_file_specific_t specific
 static void *H5VL_extlog_group_create(void *obj, H5VL_loc_params_t loc_params, const char *name, hid_t gcpl_id, hid_t gapl_id, hid_t dxpl_id, void **req) {
   TRACEMSG("");
   SQG_t *group = NULL;
-  group = (SQG_t *)malloc(sizeof(*group));
+  group = ea_checked_malloc(sizeof(*group));
 
   switch (loc_params.obj_type) {
     case H5I_FILE:
@@ -988,7 +988,7 @@ static void *H5VL_extlog_group_create(void *obj, H5VL_loc_params_t loc_params, c
 
 static void *H5VL_extlog_group_open(void *obj, H5VL_loc_params_t loc_params, const char *name, hid_t gapl_id, hid_t dxpl_id, void **req) {
   TRACEMSG("");
-  SQG_t *group = (SQG_t *)malloc(sizeof(*group));
+  SQG_t *group = ea_checked_malloc(sizeof(*group));
 
   switch (loc_params.obj_type) {
     case H5I_FILE:
@@ -1115,7 +1115,7 @@ static herr_t H5VL_extlog_type_close(void *dt, hid_t dxpl_id, void **req) {
 static void *H5VL_extlog_dataset_create(void *obj, H5VL_loc_params_t loc_params, const char *name, hid_t dcpl_id, hid_t dapl_id, hid_t dxpl_id, void **req) {
   DEBUGMSG("%s", name);
   SQD_t *dset = NULL;
-  dset = (SQD_t *)malloc(sizeof(*dset));
+  dset = ea_checked_malloc(sizeof(*dset));
 
   hid_t space_id;
   H5Pget(dcpl_id, "dataset_space_id", &space_id);
@@ -1199,7 +1199,7 @@ static void *H5VL_extlog_dataset_create(void *obj, H5VL_loc_params_t loc_params,
 
 static void *H5VL_extlog_dataset_open(void *obj, H5VL_loc_params_t loc_params, const char *name, hid_t dapl_id, hid_t dxpl_id, void **req) {
   DEBUGMSG("%s", name);
-  SQD_t *dset = (SQD_t *)malloc(sizeof(*dset));
+  SQD_t *dset = ea_checked_malloc(sizeof(*dset));
 
   switch (loc_params.obj_type) {
     case H5I_FILE:
@@ -1493,7 +1493,7 @@ static herr_t H5VL_extlog_link_get(void *obj, H5VL_loc_params_t loc_params, H5VL
 }
 
 static herr_t H5VL_extlog_link_specific(void *obj, H5VL_loc_params_t loc_params, H5VL_link_specific_t specific_type, hid_t dxpl_id, void **req, va_list arguments) {
-  SQG_t *sqg = (SQG_t *)malloc(sizeof(*sqg));
+  SQG_t *sqg = ea_checked_malloc(sizeof(*sqg));
   memcpy(sqg, obj, sizeof(*sqg));
   SQO_t *obj2 = (SQO_t *)sqg;
 
@@ -1528,7 +1528,7 @@ static herr_t H5VL_extlog_link_specific(void *obj, H5VL_loc_params_t loc_params,
         case H5_INDEX_NAME:
           switch (order) {
             case H5_ITER_INC: {
-              H5L_info_t *link_info = (H5L_info_t *)malloc(sizeof(*link_info));
+              H5L_info_t *link_info = ea_checked_malloc(sizeof(*link_info));
               link_info->type = H5L_TYPE_HARD;
               link_info->corder_valid = false;
               link_info->corder = 0;
@@ -1588,7 +1588,7 @@ static void *H5VL_extlog_object_open(void *obj, H5VL_loc_params_t loc_params, H5
           int entry_exists = false;
           DB_entry_exists(obj, "DATASETS", loc_params.loc_data.loc_by_name.name, &entry_exists);
           if (entry_exists) {
-            ret_obj = (SQD_t *)malloc(sizeof(SQD_t));
+            ret_obj = ea_checked_malloc(sizeof(SQD_t));
             DBD_open(obj, loc_params, loc_params.loc_data.loc_by_name.name, ret_obj);
             *opened_type = H5I_DATASET;
           } else {

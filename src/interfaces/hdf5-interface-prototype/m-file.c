@@ -159,8 +159,8 @@ static void *memvol_file_create(const char *name, unsigned flags, hid_t fcpl_id,
   // create the file if not already existent
   if (file == NULL) {
     // allocate resources
-    object = (memvol_object_t *)malloc(sizeof(memvol_object_t));
-    file = (memvol_file_t *)malloc(sizeof(memvol_file_t));
+    object = ea_checked_malloc(sizeof(memvol_object_t));
+    file = ea_checked_malloc(sizeof(memvol_file_t));
 
     // populate file and object data strutures
     memvol_group_init(&file->root_grp);

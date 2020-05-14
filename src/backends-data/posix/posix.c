@@ -222,7 +222,7 @@ static int fragment_retrieve(esdm_backend_t *backend, esdm_fragment_t *f) {
 
 static int create_posix_id(esdm_fragment_t * f, const char *tgt, int * out_fd){
   char path[PATH_MAX];
-  f->id = malloc(ESDM_ID_LENGTH + 1);
+  f->id = ea_checked_malloc(ESDM_ID_LENGTH + 1);
   eassert(f->id);
   // ensure that the fragment with the ID doesn't exist, yet
   while(1){
@@ -262,7 +262,7 @@ static int fragment_write_stream_blocksize(esdm_backend_t * b, estream_write_t *
 
   if(c_off == 0){
     // start stream
-    s = malloc(sizeof(posix_stream_t));
+    s = ea_checked_malloc(sizeof(posix_stream_t));
     // lazy assignment of ID
     if(f->id != NULL){
       char path[PATH_MAX];
@@ -406,11 +406,11 @@ esdm_backend_t *posix_backend_init(esdm_config_backend_t *config) {
     return NULL;
   }
 
-  esdm_backend_t *backend = (esdm_backend_t *)malloc(sizeof(esdm_backend_t));
+  esdm_backend_t *backend = ea_checked_malloc(sizeof(esdm_backend_t));
   memcpy(backend, &backend_template, sizeof(esdm_backend_t));
 
   // allocate memory for backend instance
-  posix_backend_data_t *data = malloc(sizeof(*data));
+  posix_backend_data_t *data = ea_checked_malloc(sizeof(*data));
   backend->data = data;
 
   if (data && config->performance_model)

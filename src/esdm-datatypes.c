@@ -97,7 +97,7 @@ void esdmI_container_register_dataset(esdm_container_t * c, esdm_dataset_t *dset
 	esdm_datasets_t * d = & c->dsets;
 	if (d->buff_size == d->count){
 		d->buff_size = d->buff_size * 2 + 5;
-		d->dset = (esdm_dataset_t**) realloc(d->dset, sizeof(void*) * d->buff_size);
+		d->dset = ea_checked_realloc(d->dset, sizeof(void*) * d->buff_size);
 		eassert(d->dset != NULL);
 	}
 	d->dset[d->count] = dset;
@@ -107,7 +107,7 @@ void esdmI_container_register_dataset(esdm_container_t * c, esdm_dataset_t *dset
 }
 
 void esdmI_container_init(char const * name, esdm_container_t **out_container){
-  esdm_container_t *c = (esdm_container_t *)malloc(sizeof(esdm_container_t));
+  esdm_container_t *c = ea_checked_malloc(sizeof(esdm_container_t));
   c->name = strdup(name);
   c->refcount = 1;
   c->status = ESDM_DATA_DIRTY;
@@ -153,7 +153,7 @@ esdm_status esdm_container_open_md_parse(esdm_container_t *c, char * md, int siz
 	esdm_datasets_t * d = & c->dsets;
 	d->count = arrsize;
 	d->buff_size = arrsize;
-	d->dset = (esdm_dataset_t **) malloc(arrsize*sizeof(void*));
+	d->dset = ea_checked_malloc(arrsize*sizeof(void*));
 
 	for (int i = 0; i < arrsize; i++) {
 		json_t * djson = json_array_get(elem, i);
@@ -403,7 +403,7 @@ int64_t const* esdm_dataspace_get_offset(esdm_dataspace_t * d){
 esdm_status esdmI_fragment_create(esdm_dataset_t *d, esdm_dataspace_t *sspace, void *buf, esdm_fragment_t **out_fragment) {
   eassert(d);
   ESDM_DEBUG(__func__);
-  esdm_fragment_t *f = (esdm_fragment_t *)malloc(sizeof(esdm_fragment_t));
+  esdm_fragment_t *f = ea_checked_malloc(sizeof(esdm_fragment_t));
 
   int64_t i;
   for (i = 0; i < sspace->dims; i++) {
@@ -453,7 +453,7 @@ esdm_status esdm_fragment_retrieve(esdm_fragment_t *fragment) {
         }
         eassert(!fragment->dataspace->stride);
 
-        fragment->buf = malloc(esdm_dataspace_total_bytes(fragment->dataspace));  //ensure that we have a buffer to write to
+        fragment->buf = ea_checked_malloc(esdm_dataspace_total_bytes(fragment->dataspace));  //ensure that we have a buffer to write to
         fragment->ownsBuf = true;
       }
       esdm_backend_t *backend = fragment->backend;
@@ -646,7 +646,7 @@ esdm_status esdm_fragment_destroy(esdm_fragment_t *frag) {
 
 
 void esdm_dataset_init(esdm_container_t *c, const char *name, esdm_dataspace_t *dspace, esdm_dataset_t **out_dataset){
-  esdm_dataset_t *d = (esdm_dataset_t *)malloc(sizeof(esdm_dataset_t));
+  esdm_dataset_t *d = ea_checked_malloc(sizeof(esdm_dataset_t));
   memset(d, 0, sizeof(esdm_dataset_t));
   d->name = strdup(name);
   d->container = c;
@@ -655,7 +655,7 @@ void esdm_dataset_init(esdm_container_t *c, const char *name, esdm_dataspace_t *
     // check for unlimited dims
     for(int i=0; i < dspace->dims; i++){
       if(dspace->size[i] == 0){
-        d->actual_size = malloc(sizeof(*d->actual_size) * dspace->dims);
+        d->actual_size = ea_checked_malloc(sizeof(*d->actual_size) * dspace->dims);
         memcpy(d->actual_size, dspace->size, sizeof(*d->actual_size) * dspace->dims);
         break;
       }
@@ -708,7 +708,7 @@ esdm_status esdm_dataset_set_compression_hint(esdm_dataset_t * dset, scil_user_h
     return ESDM_ERROR;
   }
   if(hints){
-    dset->chints = malloc(sizeof(scil_user_hints_t));
+    dset->chints = ea_checked_malloc(sizeof(scil_user_hints_t));
     scil_user_hints_copy(dset->chints, hints);
   }
   return ESDM_SUCCESS;
@@ -750,7 +750,7 @@ esdm_status esdmI_create_fragment_from_metadata(esdm_dataset_t *dset, json_t * j
 
   int ret;
   esdm_fragment_t *f;
-  f = malloc(sizeof(esdm_fragment_t));
+  f = ea_checked_malloc(sizeof(esdm_fragment_t));
 
   json_t *elem;
   elem = json_object_get(json, "pid");
@@ -843,7 +843,7 @@ static void ensureStrideBuffer(esdm_dataspace_t* space) {
   if((space->stride = space->strideBacking)) return;
 
   //Case 2: It's a normal dataspace that lives on the heap, allowing us to dynamically allocate the stride buffer.
-  space->stride = malloc(space->dims * sizeof *space->stride);
+  space->stride = ea_checked_malloc(space->dims * sizeof *space->stride);
 }
 
 static void removeStrideBuffer(esdm_dataspace_t* space) {
@@ -945,7 +945,7 @@ esdm_status esdm_dataset_open_md_parse(esdm_dataset_t *d, char * md, int size){
     return ret;
   }
   if(has_ulim_dim){
-    d->actual_size = malloc(sizeof(*d->actual_size) * dims);
+    d->actual_size = ea_checked_malloc(sizeof(*d->actual_size) * dims);
     memcpy(d->actual_size, sizes, sizeof(*d->actual_size) * dims);
   }
   elem = json_object_get(root, "dims_dset_id");
@@ -1216,14 +1216,14 @@ esdm_status esdm_dataspace_create_full(int64_t dims, int64_t *sizes, int64_t *of
   eassert(offset);
   eassert(out_dataspace);
 
-  esdm_dataspace_t *dataspace = (esdm_dataspace_t *)malloc(sizeof(esdm_dataspace_t));
+  esdm_dataspace_t *dataspace = ea_checked_malloc(sizeof(esdm_dataspace_t));
 
   dataspace->dims = dims;
   if(dims == 0){
     dims = 1;
   }
-  dataspace->size   = (int64_t *) malloc(sizeof(int64_t) * dims);
-  dataspace->offset = (int64_t *) malloc(sizeof(int64_t) * dims);
+  dataspace->size   = ea_checked_malloc(sizeof(int64_t) * dims);
+  dataspace->offset = ea_checked_malloc(sizeof(int64_t) * dims);
 
   memcpy(dataspace->size, sizes, sizeof(int64_t) * dims);
   memcpy(dataspace->offset, offset, sizeof(int64_t) * dims);
@@ -1243,14 +1243,14 @@ esdm_status esdm_dataspace_create(int64_t dims, int64_t *sizes, esdm_type_t type
   eassert(sizes);
   eassert(out_dataspace);
 
-  esdm_dataspace_t *dataspace = (esdm_dataspace_t *)malloc(sizeof(esdm_dataspace_t));
+  esdm_dataspace_t *dataspace = ea_checked_malloc(sizeof(esdm_dataspace_t));
 
   dataspace->dims = dims;
   if(dims == 0){
     dims = 1;
   }
-  dataspace->size = (int64_t *)malloc(sizeof(int64_t) * dims);
-  dataspace->offset = (int64_t *)malloc(sizeof(int64_t) * dims);
+  dataspace->size = ea_checked_malloc(sizeof(int64_t) * dims);
+  dataspace->offset = ea_checked_malloc(sizeof(int64_t) * dims);
 
   memcpy(dataspace->size, sizes, sizeof(int64_t) * dims);
   memset(dataspace->offset, 0, sizeof(int64_t) * dims);
@@ -1272,12 +1272,12 @@ esdm_status esdmI_dataspace_createFromHypercube(esdmI_hypercube_t* extends, esdm
   int64_t dimensions = esdmI_hypercube_dimensions(extends);
   eassert(dimensions >= 0);
 
-  esdm_dataspace_t* result = malloc(sizeof(*result));
+  esdm_dataspace_t* result = ea_checked_malloc(sizeof(*result));
   *result = (esdm_dataspace_t){
     .type = type,
     .dims = dimensions,
-    .size = malloc(dimensions*sizeof(*result->size)),
-    .offset = malloc(dimensions*sizeof(*result->offset)),
+    .size = ea_checked_malloc(dimensions*sizeof(*result->size)),
+    .offset = ea_checked_malloc(dimensions*sizeof(*result->offset)),
     .strideBacking = NULL,
     .stride = NULL
   };
@@ -1292,7 +1292,7 @@ esdm_status esdm_dataspace_copy(esdm_dataspace_t* orig, esdm_dataspace_t **out_d
   eassert(orig);
   eassert(out_dataspace);
 
-  esdm_dataspace_t* copy = *out_dataspace = malloc(sizeof*copy);
+  esdm_dataspace_t* copy = *out_dataspace = ea_checked_malloc(sizeof*copy);
   *copy = (esdm_dataspace_t){
     .type = orig->type,
     .dims = orig->dims,
@@ -1360,13 +1360,13 @@ esdm_status esdm_dataspace_subspace(esdm_dataspace_t *dataspace, int64_t dims, i
   // perform the actual operation
   if(status == ESDM_SUCCESS) {
     // replicate original space
-    esdm_dataspace_t *subspace = (esdm_dataspace_t *)malloc(sizeof(esdm_dataspace_t));
+    esdm_dataspace_t *subspace = ea_checked_malloc(sizeof(esdm_dataspace_t));
     memcpy(subspace, dataspace, sizeof(esdm_dataspace_t));
 
     // populate subspace members
     subspace->dims = dims;
-    subspace->size = (int64_t *)malloc(sizeof(int64_t) * dims);
-    subspace->offset = (int64_t *)malloc(sizeof(int64_t) * dims);
+    subspace->size = ea_checked_malloc(sizeof(int64_t) * dims);
+    subspace->offset = ea_checked_malloc(sizeof(int64_t) * dims);
     subspace->stride = subspace->strideBacking = NULL;
     subspace->type = dataspace->type;
     smd_type_ref(subspace->type);
@@ -1511,7 +1511,7 @@ esdm_status esdm_dataset_name_dims(esdm_dataset_t *d, char *const *names) {
     }
   }
   void * old = d->dims_dset_id;
-  d->dims_dset_id = (char **)malloc(dims * sizeof(void *) + size);
+  d->dims_dset_id = ea_checked_malloc(dims * sizeof(void *) + size);
   char *posVar = (char *)d->dims_dset_id + dims * sizeof(void *);
   for (int i = 0; i < dims; i++) {
     d->dims_dset_id[i] = posVar;

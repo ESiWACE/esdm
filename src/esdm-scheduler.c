@@ -44,7 +44,7 @@ esdm_scheduler_t *esdm_scheduler_init(esdm_instance_t *esdm) {
   ESDM_DEBUG(__func__);
 
   esdm_scheduler_t *scheduler = NULL;
-  scheduler = (esdm_scheduler_t *)malloc(sizeof(esdm_scheduler_t));
+  scheduler = ea_checked_malloc(sizeof(esdm_scheduler_t));
 
   // create thread pools per device
   // decide how many threads should be used per backend.
@@ -381,7 +381,7 @@ esdm_status esdm_scheduler_enqueue_read(esdm_instance_t *esdm, io_request_status
     esdm_fragment_t *f = read_frag[i];
     esdm_backend_t *backend_to_use = f->backend;
 
-    io_work_t *task = (io_work_t *)malloc(sizeof(io_work_t));
+    io_work_t *task = ea_checked_malloc(sizeof(io_work_t));
     task->parent = status;
     task->op = ESDM_OP_READ;
     task->fragment = f;
@@ -614,7 +614,7 @@ static void splitToBackends(esdm_dataspace_t* space, int64_t backendCount, esdm_
   eassert(out_backendExtends);
 
   //get some input data
-  float* weights = malloc(backendCount*sizeof(*weights));
+  float* weights = ea_checked_malloc(backendCount*sizeof(*weights));
   for (int64_t i = 0; i < backendCount; i++) {
     if (backends[i]->callbacks.estimate_throughput != NULL)
       weights[i] = backends[i]->callbacks.estimate_throughput(backends[i]);
@@ -645,7 +645,7 @@ static void splitToBackends(esdm_dataspace_t* space, int64_t backendCount, esdm_
     //determine the ranges for the different backends
     for(int64_t i = 1; i < backendCount; i++) weights[i] += weights[i-1]; //make weights cumulative
     float totalWeight = weights[backendCount-1];
-    int64_t* bounds = malloc((backendCount + 1)*sizeof(*bounds));
+    int64_t* bounds = ea_checked_malloc((backendCount + 1)*sizeof(*bounds));
     bounds[0] = totalExtends->ranges[bestDim].start;
     bounds[backendCount] = totalExtends->ranges[bestDim].end;
     int64_t size = esdmI_range_size(totalExtends->ranges[bestDim]);
@@ -718,7 +718,7 @@ esdm_status esdm_scheduler_enqueue_write(esdm_instance_t *esdm, io_request_statu
   int64_t backendCount;
   esdm_backend_t** backends = esdm_modules_makeBackendRecommendation(esdm->modules, space, &backendCount, NULL);
   eassert(backends);
-  esdmI_hypercube_t** backendExtends = malloc(backendCount*sizeof(*backendExtends));
+  esdmI_hypercube_t** backendExtends = ea_checked_malloc(backendCount*sizeof(*backendExtends));
   splitToBackends(space, backendCount, backends, backendExtends);
   gWriteTimes.backendDistribution += startTime = ea_stop_timer(myTimer);
   for(int64_t backendIndex = 0; backendIndex < backendCount; backendIndex++) {
@@ -756,7 +756,7 @@ esdm_status esdm_scheduler_enqueue_write(esdm_instance_t *esdm, io_request_statu
       eassert(ret == ESDM_SUCCESS);
       fragment->backend = curBackend;
 
-      io_work_t* task = malloc(sizeof(*task));
+      io_work_t* task = ea_checked_malloc(sizeof(*task));
       *task = (io_work_t){
         .fragment = fragment,
         .op = ESDM_OP_WRITE,

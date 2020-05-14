@@ -235,7 +235,7 @@ void runTestWithConfig(int64_t length, int64_t readCount, const char* configStri
   eassert(ret == ESDM_SUCCESS);
 
   // perform the test
-  uint8_t* data = malloc(length*sizeof(*data));
+  uint8_t* data = ea_checked_malloc(length*sizeof(*data));
   initData(length, data);
 
   writeData(dataset, dataspace.ptr, length, data);

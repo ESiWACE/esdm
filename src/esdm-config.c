@@ -40,7 +40,7 @@ esdm_config_t *esdm_config_init_from_str(const char *config_str) {
   }
 
   esdm_config_t *config;
-  config = (esdm_config_t *)malloc(sizeof(esdm_config_t));
+  config = ea_checked_malloc(sizeof(esdm_config_t));
   config->json = json;
 
   json_t* esdm_e = json_object_get(json, "esdm");
@@ -128,7 +128,7 @@ esdm_config_backend_t *esdm_config_get_metadata_coordinator(esdm_instance_t *esd
     ESDM_ERROR("Configuration: type not set");
   }
 
-  esdm_config_backend_t *config_backend = (esdm_config_backend_t *)malloc(sizeof(esdm_config_backend_t));
+  esdm_config_backend_t *config_backend = ea_checked_malloc(sizeof(esdm_config_backend_t));
   eassert(config_backend);
   config_backend->type = json_string_value(type_e); //FIXME (systematic error): Using the strings from jansson without copying forces us to keep the jansson data around after initialization. Copy the strings, interpret the data, and purge the jansson data from memory.
   config_backend->esdm = root;
@@ -183,14 +183,14 @@ esdm_config_backends_t *esdm_config_get_backends(esdm_instance_t *esdm) {
   if(! elem){
     ESDM_ERROR("Configuration: backends not set");
   }
-  esdm_config_backends_t *config_backends = (esdm_config_backends_t *)malloc(sizeof(esdm_config_backends_t));
+  esdm_config_backends_t *config_backends = ea_checked_malloc(sizeof(esdm_config_backends_t));
 
   if (elem) {
     if (json_typeof(elem) == JSON_ARRAY) {
       // Element is array, therefor may contain valid backend configurations
       size_t size = json_array_size(elem);
 
-      esdm_config_backend_t **backends = malloc(size*sizeof(*backends));
+      esdm_config_backend_t **backends = ea_checked_malloc(size*sizeof(*backends));
 
       //printf("JSON Array of %ld elem%s:\n", size, json_plural(size));
 
@@ -198,7 +198,7 @@ esdm_config_backends_t *esdm_config_get_backends(esdm_instance_t *esdm) {
       for (i = 0; i < size; i++) {
         //print_json_aux(json_array_get(elem, i), 0);
 
-        backends[i] = malloc(sizeof(*backends[i]));
+        backends[i] = ea_checked_malloc(sizeof(*backends[i]));
 
         json_t *backend = json_array_get(elem, i);
         json_t *elem = NULL;

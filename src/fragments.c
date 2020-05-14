@@ -18,7 +18,7 @@ void esdmI_fragments_add(esdm_fragments_t* me, esdm_fragment_t* fragment) {
   if(me->count == me->buff_size) {
     me->buff_size = (me->buff_size ? 2*me->buff_size : 8);
     eassert(me->buff_size > me->count);
-    me->frag = realloc(me->frag, me->buff_size * sizeof(*me->frag));
+    me->frag = ea_checked_realloc(me->frag, me->buff_size * sizeof(*me->frag));
   }
   me->frag[me->count++] = fragment;
 
@@ -68,13 +68,13 @@ esdm_fragment_t** esdmI_fragments_makeSetCoveringRegion(esdm_fragments_t* me, es
   if(me->count) { //We need at least one fragment to know the dimension count, which we need to construct the neighbour manager.
     //Compute the neighbourhood info and check which fragments can be ignored because they do not provide any useful data.
     esdmI_hypercubeList_t* extendsList = esdmI_hypercubeNeighbourManager_list(me->neighbourManager);
-    uint8_t* visited = malloc(me->count*sizeof(*visited));
+    uint8_t* visited = ea_checked_malloc(me->count*sizeof(*visited));
     for(int64_t i = 0; i < me->count; i++) {
       visited[i] = (esdmI_hypercube_doesIntersect(bounds, extendsList->cubes[i]) ? NOT_VISITED : IGNORED);
     }
 
     //Compute the similarities of the fragments with the bounds and cache their extends.
-    double* similarities = malloc(me->count*sizeof(*similarities));
+    double* similarities = ea_checked_malloc(me->count*sizeof(*similarities));
     double bestSimilarity = -1;
     int64_t bestOverlap = -1, bestIndex = -1;
     for(int64_t i = 0; i < me->count; i++) {
@@ -103,7 +103,7 @@ esdm_fragment_t** esdmI_fragments_makeSetCoveringRegion(esdm_fragments_t* me, es
       esdmI_hypercubeSet_construct(&uncovered);
       esdmI_hypercubeSet_add(&uncovered, bounds);
       visited[bestIndex] = IN_FRONT;
-      int64_t* front = malloc(me->count*sizeof(*front));  //the indices of the nodes to visit
+      int64_t* front = ea_checked_malloc(me->count*sizeof(*front));  //the indices of the nodes to visit
       int64_t frontSize = 0, selectedFragmentCount = 0;
       front[frontSize++] = bestIndex;
       while(true) {
@@ -146,7 +146,7 @@ esdm_fragment_t** esdmI_fragments_makeSetCoveringRegion(esdm_fragments_t* me, es
       }
 
       //Filter the list of fragments by the selected subset
-      fragmentSet = malloc(selectedFragmentCount*sizeof(*fragmentSet));
+      fragmentSet = ea_checked_malloc(selectedFragmentCount*sizeof(*fragmentSet));
       for(int64_t i = 0; i < me->count; i++) {
         if(visited[i] == SELECTED) fragmentSet[(*out_fragmentCount)++] = me->frag[i];
       }

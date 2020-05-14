@@ -62,7 +62,7 @@ bool checkedScan_internal(FILE* stream, const char* format, ...) {
 
 //Vector<DimCount> ::= '(' ( <integer> ',' {DimCount-1} <integer> ')'
 void parseVector(FILE* stream, int64_t dimCount, int64_t** out_vector) {
-  int64_t* vector = *out_vector = malloc(dimCount*sizeof*vector);
+  int64_t* vector = *out_vector = ea_checked_malloc(dimCount*sizeof*vector);
   for(int i = 0; i < dimCount; i++) {
     bool success = false;
     switch(2*!i + (i == dimCount - 1)) {  //+2 = open parenthesis is needed, +1 = close parenthesis is needed
@@ -101,7 +101,7 @@ void parseVector(FILE* stream, int64_t dimCount, int64_t** out_vector) {
 //The time specification gives the index of the time dimension (zero based), the corresponding fragment size dimension must be 1.
 instruction_t* parseInstructions(FILE* instructions, size_t* out_instructionCount) {
   size_t instructionCount = 0, allocatedInstructions = 8;
-  instruction_t* instructionList = malloc(allocatedInstructions*sizeof(*instructionList));
+  instruction_t* instructionList = ea_checked_malloc(allocatedInstructions*sizeof(*instructionList));
 
   char* line = NULL;
   size_t bufferSize = 0;
@@ -111,7 +111,7 @@ instruction_t* parseInstructions(FILE* instructions, size_t* out_instructionCoun
     if(!strlen(line)) continue; //ignore empty lines
 
     if(instructionCount == allocatedInstructions) {
-      instructionList = realloc(instructionList, (allocatedInstructions *= 2)*sizeof(*instructionList));
+      instructionList = ea_checked_realloc(instructionList, (allocatedInstructions *= 2)*sizeof(*instructionList));
       eassert(instructionList);
     }
     eassert(instructionCount < allocatedInstructions);
@@ -181,7 +181,7 @@ void generateFragmentList(instruction_t* instruction, int64_t dimCount, int64_t 
   int64_t startFragment = rank*totalFragmentCount/procCount;
   int64_t stopFragment = (rank + 1)*totalFragmentCount/procCount;
   *out_fragmentCount = stopFragment - startFragment;
-  int64_t (*fragmentOffsets)[dimCount] = *out_fragmentOffsets = malloc(*out_fragmentCount*sizeof*fragmentOffsets);
+  int64_t (*fragmentOffsets)[dimCount] = *out_fragmentOffsets = ea_checked_malloc(*out_fragmentCount*sizeof*fragmentOffsets);
 
   //compute the offsets of the fragments
   for(int64_t fragment = stopFragment; fragment-- > startFragment; ) {
@@ -219,7 +219,7 @@ void generateFragmentData(int64_t dimCount, int64_t* offset, int64_t* size, int6
   for(int64_t i = dimCount; i--; ) datapoints *= size[i];
 
   //create the fragment's data
-  int64_t* data = *out_data = malloc(datapoints*sizeof*data);
+  int64_t* data = *out_data = ea_checked_malloc(datapoints*sizeof*data);
   for(int64_t i = datapoints; i--; ) data[i] = localIndex2globalIndex(dimCount, offset, size, globalSize, i);
 }
 
@@ -395,7 +395,7 @@ void readVariableTimestep(instruction_t* instruction, esdm_dataset_t* dataset, e
     getFragmentShape(instruction, fragmentOffsets[i], fragmentSize);
     int64_t datapointCount = 1;
     for(int64_t dim = instruction->dimCount; dim--; ) datapointCount *= fragmentSize[dim];
-    int64_t* data = malloc(datapointCount*sizeof*data);
+    int64_t* data = ea_checked_malloc(datapointCount*sizeof*data);
 
     esdm_dataspace_t *subspace;
     esdm_status ret = esdm_dataspace_subspace(dataspace, instruction->dimCount, fragmentSize, fragmentOffsets[i], &subspace);

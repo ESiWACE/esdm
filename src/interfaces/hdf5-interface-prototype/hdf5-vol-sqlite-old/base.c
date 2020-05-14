@@ -23,7 +23,7 @@ char *create_path(SQO_t *sqo) {
   char *res = NULL;
 
   if (NULL != sqo->location && NULL != sqo->name) {
-    res = (char *)malloc(strlen(sqo->location) + strlen(sep) + strlen(sqo->name) + 1);
+    res = ea_checked_malloc(strlen(sqo->location) + strlen(sep) + strlen(sqo->name) + 1);
     strcpy(res, sqo->location);
     strcat(res, sep);
     strcat(res, sqo->name);

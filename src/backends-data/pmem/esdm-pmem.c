@@ -235,7 +235,7 @@ static int fragment_retrieve(esdm_backend_t *backend, esdm_fragment_t *f) {
   DEBUG("path_fragment: %s", path);
 
   //ensure that we have a contiguous read buffer
-  void* readBuffer = f->dataspace->stride ? malloc(f->bytes) : f->buf;
+  void* readBuffer = f->dataspace->stride ? ea_checked_malloc(f->bytes) : f->buf;
 
   int ret = entry_retrieve(path, readBuffer, f->bytes);
 
@@ -263,7 +263,7 @@ static int fragment_update(esdm_backend_t *backend, esdm_fragment_t *f) {
   void* writeBuffer = f->buf;
   if(f->dataspace->stride) {
     //data is not necessarily contiguous in memory -> copy to contiguous dataspace
-    writeBuffer = malloc(f->bytes);
+    writeBuffer = ea_checked_malloc(f->bytes);
     esdm_dataspace_t* contiguousSpace;
     esdm_dataspace_makeContiguous(f->dataspace, &contiguousSpace);
     esdm_dataspace_copy_data(f->dataspace, f->buf, contiguousSpace, writeBuffer);
@@ -278,7 +278,7 @@ static int fragment_update(esdm_backend_t *backend, esdm_fragment_t *f) {
     // create data
     ret = entry_update(path, writeBuffer, f->bytes, 1);
   } else {
-    f->id = malloc(ESDM_ID_LENGTH + 1);
+    f->id = ea_checked_malloc(ESDM_ID_LENGTH + 1);
     eassert(f->id);
     // ensure that the fragment with the ID doesn't exist, yet
     while(1){
@@ -382,11 +382,11 @@ esdm_backend_t *pmem_backend_init(esdm_config_backend_t *config) {
     return NULL;
   }
 
-  esdm_backend_t *backend = (esdm_backend_t *)malloc(sizeof(esdm_backend_t));
+  esdm_backend_t *backend = ea_checked_malloc(sizeof(esdm_backend_t));
   memcpy(backend, &backend_template, sizeof(esdm_backend_t));
 
   // allocate memory for backend instance
-  backend->data = (void *)malloc(sizeof(pmem_backend_data_t));
+  backend->data = ea_checked_malloc(sizeof(pmem_backend_data_t));
   pmem_backend_data_t *data = (pmem_backend_data_t *)backend->data;
 
   if (data && config->performance_model)
@@ -403,7 +403,7 @@ esdm_backend_t *pmem_backend_init(esdm_config_backend_t *config) {
   int socket;
   int core;
   int ret = GetProcessorAndCore(& socket, & core);
-  data->target = malloc(strlen(tgt) + 3);
+  data->target = ea_checked_malloc(strlen(tgt) + 3);
   sprintf((char*)data->target, "%s%d/esdm", tgt, socket);
   DEBUG("Backend config: socket=%d core=%d target=%s\n", socket, core, data->target);
 

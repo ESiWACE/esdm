@@ -83,7 +83,7 @@ static void parse_dims(const char *s, size_t **dims, size_t *size) {
   const char *seps = ":";
   char sep = seps[0];
   size_t len = strlen(s);
-  char *s_copy = malloc(sizeof(char *) * len + 1);
+  char *s_copy = ea_checked_malloc(sizeof(char *) * len + 1);
   strcpy(s_copy, s);
 
   // Count separators
@@ -94,7 +94,7 @@ static void parse_dims(const char *s, size_t **dims, size_t *size) {
     }
   }
   ++(*size);
-  *dims = (size_t *)malloc(*size * sizeof(*dims));
+  *dims = ea_checked_malloc(*size * sizeof(*dims));
 
   // Get values
   char *pch = strtok(s_copy, seps);
@@ -293,13 +293,13 @@ int main(int argc, char **argv) {
 
   if (NULL == args.testfn) {
     const char *testfn = "./testfn.nc";
-    args.testfn = (char *)malloc(sizeof(*args.testfn) * strlen(testfn) + 1);
+    args.testfn = ea_checked_malloc(sizeof(*args.testfn) * strlen(testfn) + 1);
     strcpy(args.testfn, testfn);
   }
 
   if (NULL == args.dgeom) {
     args.dgeom_size = NDIMS;
-    args.dgeom = (size_t *)malloc(sizeof(*args.dgeom) * args.dgeom_size);
+    args.dgeom = ea_checked_malloc(sizeof(*args.dgeom) * args.dgeom_size);
     args.dgeom[DT] = 100;
     args.dgeom[DX] = args.procs.nn * 100;
     args.dgeom[DY] = args.procs.ppn * 100;
@@ -313,7 +313,7 @@ int main(int argc, char **argv) {
   // Automatic block layout
   if (NULL == args.bgeom) {
     args.bgeom_size = args.dgeom_size;
-    args.bgeom = (size_t *)malloc(sizeof(*args.bgeom) * args.bgeom_size);
+    args.bgeom = ea_checked_malloc(sizeof(*args.bgeom) * args.bgeom_size);
     args.bgeom[DT] = 1;
     args.bgeom[DX] = args.dgeom[DX] / args.procs.nn;
     args.bgeom[DY] = args.dgeom[DY] / args.procs.ppn;
@@ -322,7 +322,7 @@ int main(int argc, char **argv) {
 
   if (cg != NULL && 0 == strcmp(cg, "auto")) {
     args.cgeom_size = args.bgeom_size;
-    args.cgeom = (size_t *)malloc(sizeof(*args.cgeom) * args.cgeom_size);
+    args.cgeom = ea_checked_malloc(sizeof(*args.cgeom) * args.cgeom_size);
     args.cgeom[DT] = 1;
     args.cgeom[DX] = args.bgeom[DX];
     args.cgeom[DY] = args.bgeom[DY];
