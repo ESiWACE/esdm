@@ -171,16 +171,6 @@ esdm_status esdm_write(esdm_dataset_t *dataset, void *buf, esdm_dataspace_t *spa
   eassert(buf);
   eassert(space);
 
-  if(space->dims == 0){
-    // this is a workaround to deal with 0 dimensional data
-    space->dims = 1;
-    space->size[0] = 1;
-    space->offset[0] = 0;
-    int ret = esdm_scheduler_write_blocking(&esdm, dataset, buf, space, false);
-    space->dims = 0;
-    return ret;
-  }
-
   return esdm_scheduler_write_blocking(&esdm, dataset, buf, space, false);
 }
 
@@ -189,16 +179,6 @@ esdm_status esdmI_readWithFillRegion(esdm_dataset_t *dataset, void *buf, esdm_da
   eassert(dataset);
   eassert(buf);
   eassert(space);
-
-  if(space->dims == 0){
-    // this is a workaround to deal with 0 dimensional data
-    space->dims = 1;
-    space->size[0] = 1;
-    space->offset[0] = 0;
-    int ret = esdm_scheduler_read_blocking(&esdm, dataset, buf, space, out_fillRegion, false);
-    space->dims = 0;
-    return ret;
-  }
 
   return esdm_scheduler_read_blocking(&esdm, dataset, buf, space, out_fillRegion, false);
 }

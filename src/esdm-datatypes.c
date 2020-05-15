@@ -510,7 +510,7 @@ void esdm_fragment_metadata_create(esdm_fragment_t *f, smd_string_stream_t * str
   eassert(pid != NULL);
 
   smd_string_stream_printf(stream, "{\"id\":\"%s\",\"pid\":\"%s\",\"size\":[", f->id, pid);
-  smd_string_stream_printf(stream, "%ld", d->size[0]);
+  if(d->dims) smd_string_stream_printf(stream, "%ld", d->size[0]);
   for (int i = 1; i < d->dims; i++) {
     smd_string_stream_printf(stream, ",%ld", d->size[i]);
   }
@@ -520,13 +520,13 @@ void esdm_fragment_metadata_create(esdm_fragment_t *f, smd_string_stream_t * str
   }else{
     smd_string_stream_printf(stream, "],\"offset\":[");
   }
-  smd_string_stream_printf(stream, "%ld", d->offset[0]);
+  if(d->dims) smd_string_stream_printf(stream, "%ld", d->offset[0]);
   for (int i = 1; i < d->dims; i++) {
     smd_string_stream_printf(stream, ",%ld", d->offset[i]);
   }
   if(d->stride) {
     smd_string_stream_printf(stream, "],\"stride\":[");
-    smd_string_stream_printf(stream, "%ld", d->stride[0]);
+    if(d->dims) smd_string_stream_printf(stream, "%ld", d->stride[0]);
     for (int i = 1; i < d->dims; i++) {
       smd_string_stream_printf(stream, ",%ld", d->stride[i]);
     }
@@ -746,7 +746,6 @@ esdm_backend_t * esdmI_get_backend(char const * plugin_id){
 
 esdm_status esdmI_create_fragment_from_metadata(esdm_dataset_t *dset, json_t * json, esdm_fragment_t ** out) {
   int64_t dims = dset->dataspace->dims;
-  if(dims == 0) dims = 1;
 
   int ret;
   esdm_fragment_t *f;
@@ -1216,20 +1215,17 @@ esdm_status esdm_dataspace_create_full(int64_t dims, int64_t *sizes, int64_t *of
   eassert(offset);
   eassert(out_dataspace);
 
-  esdm_dataspace_t *dataspace = ea_checked_malloc(sizeof(esdm_dataspace_t));
+  esdm_dataspace_t *dataspace = ea_checked_malloc(sizeof(*dataspace));
 
-  dataspace->dims = dims;
-  if(dims == 0){
-    dims = 1;
-  }
-  dataspace->size   = ea_checked_malloc(sizeof(int64_t) * dims);
-  dataspace->offset = ea_checked_malloc(sizeof(int64_t) * dims);
+  *dataspace = (esdm_dataspace_t){
+    .dims = dims,
+    .size = ea_memdup(sizes, dims*sizeof*sizes),
+    .offset = ea_memdup(offset, dims*sizeof*offset),
+    .type = type,
+    .strideBacking = NULL,
+    .stride = NULL
+  };
 
-  memcpy(dataspace->size, sizes, sizeof(int64_t) * dims);
-  memcpy(dataspace->offset, offset, sizeof(int64_t) * dims);
-
-  dataspace->type = type;
-  dataspace->stride = dataspace->strideBacking = NULL;
   DEBUG("New dataspace: dims=%d\n", dataspace->dims);
 
   *out_dataspace = dataspace;
@@ -1240,28 +1236,9 @@ esdm_status esdm_dataspace_create_full(int64_t dims, int64_t *sizes, int64_t *of
 esdm_status esdm_dataspace_create(int64_t dims, int64_t *sizes, esdm_type_t type, esdm_dataspace_t **out_dataspace) {
   ESDM_DEBUG(__func__);
   eassert(dims >= 0);
-  eassert(sizes);
-  eassert(out_dataspace);
-
-  esdm_dataspace_t *dataspace = ea_checked_malloc(sizeof(esdm_dataspace_t));
-
-  dataspace->dims = dims;
-  if(dims == 0){
-    dims = 1;
-  }
-  dataspace->size = ea_checked_malloc(sizeof(int64_t) * dims);
-  dataspace->offset = ea_checked_malloc(sizeof(int64_t) * dims);
-
-  memcpy(dataspace->size, sizes, sizeof(int64_t) * dims);
-  memset(dataspace->offset, 0, sizeof(int64_t) * dims);
-
-  dataspace->type = type;
-  dataspace->stride = dataspace->strideBacking = NULL;
-  DEBUG("New dataspace: dims=%d\n", dataspace->dims);
-
-  *out_dataspace = dataspace;
-
-  return ESDM_SUCCESS;
+  int64_t offset[dims];
+  memset(offset, 0, sizeof(offset));
+  return esdm_dataspace_create_full(dims, sizes, offset, type, out_dataspace);
 }
 
 esdm_status esdmI_dataspace_createFromHypercube(esdmI_hypercube_t* extends, esdm_type_t type, esdm_dataspace_t** out_space) {
@@ -1336,7 +1313,10 @@ esdm_status esdm_dataspace_subspace(esdm_dataspace_t *dataspace, int64_t dims, i
 
   // check for any inconsistencies between the given subspace and the dataspace
   esdm_status status = ESDM_SUCCESS;
-  if(dims == dataspace->dims) {
+  if(dims != dataspace->dims) {
+    ESDM_LOG_FMT(ESDM_LOGLEVEL_DEBUG, "invalid dimension count argument to `%s()` detected: `dims == %"PRId64"` does not match `dataspace->dims == %"PRId64"`\n", __func__, dims, dataspace->dims);
+    status = ESDM_INVALID_ARGUMENT_ERROR;
+  } else {
     for (int64_t i = 0; i < dims; i++) {
       if(size[i] <= 0) {
         ESDM_LOG_FMT(ESDM_LOGLEVEL_DEBUG, "invalid size argument to `%s()` detected: `size[%"PRId64"]` is not positive (%"PRId64")\n", __func__, i, size[i]);
@@ -1365,15 +1345,11 @@ esdm_status esdm_dataspace_subspace(esdm_dataspace_t *dataspace, int64_t dims, i
 
     // populate subspace members
     subspace->dims = dims;
-    subspace->size = ea_checked_malloc(sizeof(int64_t) * dims);
-    subspace->offset = ea_checked_malloc(sizeof(int64_t) * dims);
+    subspace->size = ea_memdup(size, dims*sizeof*size);
+    subspace->offset = ea_memdup(offset, dims*sizeof*offset);
     subspace->stride = subspace->strideBacking = NULL;
     subspace->type = dataspace->type;
-    smd_type_ref(subspace->type);
-
-    // make copies where necessary
-    memcpy(subspace->size, size, sizeof(int64_t) * dims);
-    memcpy(subspace->offset, offset, sizeof(int64_t) * dims);
+    smd_type_ref(subspace->type); //FIXME: This is inconsistent with the other esdm_dataspace_create*() functions which do not call smd_type_ref(). I guess the other assignments need to be fixed.
 
     *out_dataspace = subspace;
   }
@@ -1389,18 +1365,19 @@ esdm_status esdm_dataspace_makeContiguous(esdm_dataspace_t *dataspace, esdm_data
 }
 
 void esdm_dataspace_print(esdm_dataspace_t *d) {
-  printf("DATASPACE(size(%ld", d->size[0]);
+  printf("DATASPACE(size(");
+  if(d->dims) printf("%ld", d->size[0]);
   for (int64_t i = 1; i < d->dims; i++) {
     printf("x%ld", d->size[i]);
   }
   printf("),off(");
-  printf("%ld", d->offset[0]);
+  if(d->dims) printf("%ld", d->offset[0]);
   for (int64_t i = 1; i < d->dims; i++) {
     printf("x%ld", d->offset[i]);
   }
   if(d->stride) {
     printf("),stride(");
-    printf("%ld", d->stride[0]);
+    if(d->dims) printf("%ld", d->stride[0]);
     for (int64_t i = 1; i < d->dims; i++) {
       printf(", %ld", d->stride[i]);
     }
@@ -1488,8 +1465,8 @@ esdm_status esdm_dataspace_deserialize(void *serialized_dataspace, esdm_dataspac
 uint64_t esdm_dataspace_element_count(esdm_dataspace_t *subspace) {
   eassert(subspace->size != NULL);
   // calculate subspace element count
-  uint64_t size = subspace->size[0];
-  for (int i = 1; i < subspace->dims; i++) {
+  uint64_t size = 1;
+  for (int i = 0; i < subspace->dims; i++) {
     size *= subspace->size[i];
   }
   return size;
