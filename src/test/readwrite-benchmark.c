@@ -376,10 +376,10 @@ void benchmarkWrite(size_t instructionCount, instruction_t* instructions) {
   ret = esdm_container_close(container);
   eassert(ret == ESDM_SUCCESS);
   MPI_Barrier(MPI_COMM_WORLD);
-  time = ea_stop_timer(times.t);
-  times.metadataSync += time;
+  times.metadataSync += ea_stop_timer(times.t);
 
   //determine our performance
+  time = times.io + times.cleanup + times.metadataSync;
   double total_time;
   MPI_Reduce((void *)&time, &total_time, 1, MPI_DOUBLE, MPI_MAX, 0, MPI_COMM_WORLD);
   int64_t globalBytes;
@@ -509,10 +509,10 @@ void benchmarkRead(size_t instructionCount, instruction_t* instructions) {
   ret = esdm_container_close(container);
   eassert(ret == ESDM_SUCCESS);
   MPI_Barrier(MPI_COMM_WORLD);
-  time = ea_stop_timer(times.t);
-  times.metadataSync += time;
+  times.metadataSync += ea_stop_timer(times.t);
 
   //determine our performance
+  time = times.io + times.cleanup + times.metadataSync;
   double total_time;
   MPI_Reduce((void *)&time, &total_time, 1, MPI_DOUBLE, MPI_MAX, 0, MPI_COMM_WORLD);
   int64_t globalBytes;
