@@ -299,7 +299,7 @@ void writeTimestep(size_t instructionCount, instruction_t* instructions, esdm_da
 
 void benchmarkWrite(size_t instructionCount, instruction_t* instructions) {
   //determine the count of time steps to write
-  int64_t timeLimit = 0;
+  int64_t timeLimit = 1;       //we always handle a timestep 0 to accomodate the non-time variables
   for(size_t i = instructionCount; i--; ) {
     if(instructions[i].timeDim >= 0) {
       int64_t limit = instructions[i].offset[instructions[i].timeDim] + instructions[i].size[instructions[i].timeDim];
@@ -426,7 +426,7 @@ void readTimestep(size_t instructionCount, instruction_t* instructions, esdm_dat
 
 void benchmarkRead(size_t instructionCount, instruction_t* instructions) {
   //determine the count of time steps to read
-  int64_t timeLimit = 0;
+  int64_t timeLimit = 1;       //we always handle a timestep 0 to accomodate the non-time variables
   for(size_t i = instructionCount; i--; ) {
     if(instructions[i].timeDim >= 0) {
       int64_t limit = instructions[i].offset[instructions[i].timeDim] + instructions[i].size[instructions[i].timeDim];
