@@ -38,7 +38,7 @@ typedef struct {
 
 typedef struct {
   timer t;
-  double dataGeneration, io, cleanup, metadataSync;
+  double dataGeneration, io, cleanup, mpi, metadataSync;
 } ioTimer;
 
 //checkedScan() is a wrapper for fscanf() which returns true if, and only if the entire format string was matched successfully.
@@ -356,8 +356,11 @@ void benchmarkWrite(size_t instructionCount, instruction_t* instructions) {
   ioTimer times = {0};
   ea_start_timer(&times.t);
   for(int64_t t = 0; t < timeLimit; t++) writeTimestep(instructionCount, instructions, sets, spaces, t, &times);
+  times.mpi = -ea_stop_timer(times.t);
   MPI_Barrier(MPI_COMM_WORLD);
-  times.metadataSync = -ea_stop_timer(times.t);
+  double time = ea_stop_timer(times.t);
+  times.mpi += time;
+  times.metadataSync = -time;
 
   //commit the changes to data to the metadata
   for(size_t i = instructionCount; i--; ) {
@@ -373,7 +376,7 @@ void benchmarkWrite(size_t instructionCount, instruction_t* instructions) {
   ret = esdm_container_close(container);
   eassert(ret == ESDM_SUCCESS);
   MPI_Barrier(MPI_COMM_WORLD);
-  double time = ea_stop_timer(times.t);
+  time = ea_stop_timer(times.t);
   times.metadataSync += time;
 
   //determine our performance
@@ -383,7 +386,7 @@ void benchmarkWrite(size_t instructionCount, instruction_t* instructions) {
   MPI_Reduce(&localBytes, &globalBytes, 1, MPI_INT64_T, MPI_SUM, 0, MPI_COMM_WORLD);
   int rank;
   MPI_Comm_rank(MPI_COMM_WORLD, &rank);
-  printf("proc %d:\tdata generation: %.3fs,\tio: %.3fs,\tcleanup: %.3fs,\tmetadata sync: %.3fs\n", rank, times.dataGeneration, times.io, times.cleanup, times.metadataSync);
+  printf("proc %d:\tdata generation: %.3fs,\tio: %.3fs,\tcleanup: %.3fs,\tmpi: %.3fs,\tmetadata sync: %.3fs\n", rank, times.dataGeneration, times.io, times.cleanup, times.mpi, times.metadataSync);
   if(!rank) {
     printf("Write: %.3fs %.3f MiB/s size:%.0f MiB MDsyncTime: %.3fs\n", total_time, globalBytes / total_time / 1024.0 / 1024, globalBytes / 1024.0 / 1024, times.metadataSync);
   }
@@ -492,8 +495,11 @@ void benchmarkRead(size_t instructionCount, instruction_t* instructions) {
   ioTimer times;
   ea_start_timer(&times.t);
   for(int64_t t = 0; t < timeLimit; t++) readTimestep(instructionCount, instructions, sets, spaces, t, &times);
+  times.mpi = -ea_stop_timer(times.t);
   MPI_Barrier(MPI_COMM_WORLD);
-  times.metadataSync = -ea_stop_timer(times.t);
+  double time = ea_stop_timer(times.t);
+  times.mpi += time;
+  times.metadataSync = -time;
 
   //close the ESDM objects
   for(size_t i = instructionCount; i--; ) {
@@ -503,7 +509,7 @@ void benchmarkRead(size_t instructionCount, instruction_t* instructions) {
   ret = esdm_container_close(container);
   eassert(ret == ESDM_SUCCESS);
   MPI_Barrier(MPI_COMM_WORLD);
-  double time = ea_stop_timer(times.t);
+  time = ea_stop_timer(times.t);
   times.metadataSync += time;
 
   //determine our performance
@@ -513,7 +519,7 @@ void benchmarkRead(size_t instructionCount, instruction_t* instructions) {
   MPI_Reduce(&localBytes, &globalBytes, 1, MPI_INT64_T, MPI_SUM, 0, MPI_COMM_WORLD);
   int rank;
   MPI_Comm_rank(MPI_COMM_WORLD, &rank);
-  printf("proc %d:\tdata generation: %.3fs,\tio: %.3fs,\tcleanup: %.3fs,\tmetadata sync: %.3fs\n", rank, times.dataGeneration, times.io, times.cleanup, times.metadataSync);
+  printf("proc %d:\tdata generation: %.3fs,\tio: %.3fs,\tcleanup: %.3fs,\tmpi: %.3fs,\tmetadata sync: %.3fs\n", rank, times.dataGeneration, times.io, times.cleanup, times.mpi, times.metadataSync);
   if(!rank) {
     printf("Read: %.3fs %.3f MiB/s size:%.0f MiB MDsyncTime: %.3fs\n", total_time, globalBytes / total_time / 1024.0 / 1024, globalBytes / 1024.0 / 1024, times.metadataSync);
   }
