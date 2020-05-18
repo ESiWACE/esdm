@@ -36,6 +36,11 @@ typedef struct {
   int64_t* fragmentSize;
 } instruction_t;
 
+typedef struct {
+  timer t;
+  double dataGeneration, io, cleanup, metadataSync;
+} ioTimer;
+
 //checkedScan() is a wrapper for fscanf() which returns true if, and only if the entire format string was matched successfully.
 #define simpleCheckedScan(stream, format) checkedScan_internal(stream, format "%n", &checkedScan_success)
 #define checkedScan(stream, format, ...) checkedScan_internal(stream, format "%n", __VA_ARGS__, &checkedScan_success)
@@ -248,7 +253,7 @@ bool isOutputTimestep(instruction_t* instruction, int64_t timestep) {
   }
 }
 
-void writeVariableTimestep(instruction_t* instruction, esdm_dataset_t* dataset, esdm_dataspace_t* dataspace, int64_t timestep) {
+void writeVariableTimestep(instruction_t* instruction, esdm_dataset_t* dataset, esdm_dataspace_t* dataspace, int64_t timestep, ioTimer* times) {
   if(!isOutputTimestep(instruction, timestep)) return;
 
   //set the time coord
@@ -267,9 +272,15 @@ void writeVariableTimestep(instruction_t* instruction, esdm_dataset_t* dataset, 
   generateFragmentList(instruction, instruction->dimCount, &fragmentOffsets, &fragmentCount);
 
   for(int64_t i = fragmentCount; i--; ) {
+    times->dataGeneration = -ea_stop_timer(times->t);
+
     int64_t* data = NULL, fragmentSize[instruction->dimCount];
     getFragmentShape(instruction, fragmentOffsets[i], fragmentSize);
     generateFragmentData(instruction->dimCount, fragmentOffsets[i], fragmentSize, instruction->size, &data);
+
+    double curTime = ea_stop_timer(times->t);
+    times->dataGeneration += curTime;
+    times->io -= curTime;
 
     esdm_dataspace_t *subspace;
     esdm_status ret = esdm_dataspace_subspace(dataspace, instruction->dimCount, fragmentSize, fragmentOffsets[i], &subspace);
@@ -277,9 +288,15 @@ void writeVariableTimestep(instruction_t* instruction, esdm_dataset_t* dataset, 
     ret = esdm_write(dataset, data, subspace);
     eassert(ret == ESDM_SUCCESS);
 
+    curTime = ea_stop_timer(times->t);
+    times->io += curTime;
+    times->cleanup -= curTime;
+
     ret = esdm_dataspace_destroy(subspace);
     eassert(ret == ESDM_SUCCESS);
     free(data);
+
+    times->cleanup += ea_stop_timer(times->t);
   }
 
   free(fragmentOffsets);
@@ -291,9 +308,9 @@ void writeVariableTimestep(instruction_t* instruction, esdm_dataset_t* dataset, 
   }
 }
 
-void writeTimestep(size_t instructionCount, instruction_t* instructions, esdm_dataset_t** datasets, esdm_dataspace_t** dataspaces, int64_t timestep) {
+void writeTimestep(size_t instructionCount, instruction_t* instructions, esdm_dataset_t** datasets, esdm_dataspace_t** dataspaces, int64_t timestep, ioTimer* times) {
   for(size_t i = 0; i != instructionCount; i++) {
-    writeVariableTimestep(&instructions[i], datasets[i], dataspaces[i], timestep);
+    writeVariableTimestep(&instructions[i], datasets[i], dataspaces[i], timestep, times);
   }
 }
 
@@ -335,13 +352,12 @@ void benchmarkWrite(size_t instructionCount, instruction_t* instructions) {
   }
 
   //perform the actual writes
-  timer t;
-  double time, md_sync_start;
   MPI_Barrier(MPI_COMM_WORLD);
-  ea_start_timer(&t);
-  for(int64_t t = 0; t < timeLimit; t++) writeTimestep(instructionCount, instructions, sets, spaces, t);
+  ioTimer times = {0};
+  ea_start_timer(&times.t);
+  for(int64_t t = 0; t < timeLimit; t++) writeTimestep(instructionCount, instructions, sets, spaces, t, &times);
   MPI_Barrier(MPI_COMM_WORLD);
-  md_sync_start = ea_stop_timer(t);
+  times.metadataSync = -ea_stop_timer(times.t);
 
   //commit the changes to data to the metadata
   for(size_t i = instructionCount; i--; ) {
@@ -357,22 +373,23 @@ void benchmarkWrite(size_t instructionCount, instruction_t* instructions) {
   ret = esdm_container_close(container);
   eassert(ret == ESDM_SUCCESS);
   MPI_Barrier(MPI_COMM_WORLD);
-  time = ea_stop_timer(t);
+  double time = ea_stop_timer(times.t);
+  times.metadataSync += time;
 
   //determine our performance
   double total_time;
   MPI_Reduce((void *)&time, &total_time, 1, MPI_DOUBLE, MPI_MAX, 0, MPI_COMM_WORLD);
   int64_t globalBytes;
   MPI_Reduce(&localBytes, &globalBytes, 1, MPI_INT64_T, MPI_SUM, 0, MPI_COMM_WORLD);
-  double md_sync_time = total_time - md_sync_start;
   int rank;
   MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+  printf("proc %d:\tdata generation: %.3fs,\tio: %.3fs,\tcleanup: %.3fs,\tmetadata sync: %.3fs\n", rank, times.dataGeneration, times.io, times.cleanup, times.metadataSync);
   if(!rank) {
-    printf("Write: %.3fs %.3f MiB/s size:%.0f MiB MDsyncTime: %.3fs\n", total_time, globalBytes / total_time / 1024.0 / 1024, globalBytes / 1024.0 / 1024, md_sync_time);
+    printf("Write: %.3fs %.3f MiB/s size:%.0f MiB MDsyncTime: %.3fs\n", total_time, globalBytes / total_time / 1024.0 / 1024, globalBytes / 1024.0 / 1024, times.metadataSync);
   }
 }
 
-void readVariableTimestep(instruction_t* instruction, esdm_dataset_t* dataset, esdm_dataspace_t* dataspace, int64_t timestep) {
+void readVariableTimestep(instruction_t* instruction, esdm_dataset_t* dataset, esdm_dataspace_t* dataspace, int64_t timestep, ioTimer* times) {
   if(!isOutputTimestep(instruction, timestep)) return;
 
   //set the time coord
@@ -391,22 +408,39 @@ void readVariableTimestep(instruction_t* instruction, esdm_dataset_t* dataset, e
   generateFragmentList(instruction, instruction->dimCount, &fragmentOffsets, &fragmentCount);
 
   for(int64_t i = fragmentCount; i--; ) {
+    times->dataGeneration = -ea_stop_timer(times->t);
+
     int64_t fragmentSize[instruction->dimCount];
     getFragmentShape(instruction, fragmentOffsets[i], fragmentSize);
     int64_t datapointCount = 1;
     for(int64_t dim = instruction->dimCount; dim--; ) datapointCount *= fragmentSize[dim];
     int64_t* data = ea_checked_malloc(datapointCount*sizeof*data);
 
+    double curTime = ea_stop_timer(times->t);
+    times->dataGeneration += curTime;
+    times->io -= curTime;
+
     esdm_dataspace_t *subspace;
     esdm_status ret = esdm_dataspace_subspace(dataspace, instruction->dimCount, fragmentSize, fragmentOffsets[i], &subspace);
     eassert(ret == ESDM_SUCCESS);
     ret = esdm_read(dataset, data, subspace);
     eassert(ret == ESDM_SUCCESS);
+
+    curTime = ea_stop_timer(times->t);
+    times->io += curTime;
+    times->dataGeneration -= curTime;
+
     checkFragmentData(instruction->dimCount, fragmentOffsets[i], fragmentSize, instruction->size, data);
+
+    curTime = ea_stop_timer(times->t);
+    times->dataGeneration += curTime;
+    times->cleanup -= curTime;
 
     ret = esdm_dataspace_destroy(subspace);
     eassert(ret == ESDM_SUCCESS);
     free(data);
+
+    times->cleanup += ea_stop_timer(times->t);
   }
 
   free(fragmentOffsets);
@@ -418,9 +452,9 @@ void readVariableTimestep(instruction_t* instruction, esdm_dataset_t* dataset, e
   }
 }
 
-void readTimestep(size_t instructionCount, instruction_t* instructions, esdm_dataset_t** datasets, esdm_dataspace_t** dataspaces, int64_t timestep) {
+void readTimestep(size_t instructionCount, instruction_t* instructions, esdm_dataset_t** datasets, esdm_dataspace_t** dataspaces, int64_t timestep, ioTimer* times) {
   for(size_t i = 0; i != instructionCount; i++) {
-    readVariableTimestep(&instructions[i], datasets[i], dataspaces[i], timestep);
+    readVariableTimestep(&instructions[i], datasets[i], dataspaces[i], timestep, times);
   }
 }
 
@@ -454,13 +488,12 @@ void benchmarkRead(size_t instructionCount, instruction_t* instructions) {
   }
 
   //perform the actual reads
-  timer t;
-  double time, md_sync_start;
   MPI_Barrier(MPI_COMM_WORLD);
-  ea_start_timer(&t);
-  for(int64_t t = 0; t < timeLimit; t++) readTimestep(instructionCount, instructions, sets, spaces, t);
+  ioTimer times;
+  ea_start_timer(&times.t);
+  for(int64_t t = 0; t < timeLimit; t++) readTimestep(instructionCount, instructions, sets, spaces, t, &times);
   MPI_Barrier(MPI_COMM_WORLD);
-  md_sync_start = ea_stop_timer(t);
+  times.metadataSync = -ea_stop_timer(times.t);
 
   //close the ESDM objects
   for(size_t i = instructionCount; i--; ) {
@@ -470,18 +503,19 @@ void benchmarkRead(size_t instructionCount, instruction_t* instructions) {
   ret = esdm_container_close(container);
   eassert(ret == ESDM_SUCCESS);
   MPI_Barrier(MPI_COMM_WORLD);
-  time = ea_stop_timer(t);
+  double time = ea_stop_timer(times.t);
+  times.metadataSync += time;
 
   //determine our performance
   double total_time;
   MPI_Reduce((void *)&time, &total_time, 1, MPI_DOUBLE, MPI_MAX, 0, MPI_COMM_WORLD);
   int64_t globalBytes;
   MPI_Reduce(&localBytes, &globalBytes, 1, MPI_INT64_T, MPI_SUM, 0, MPI_COMM_WORLD);
-  double md_sync_time = total_time - md_sync_start;
   int rank;
   MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+  printf("proc %d:\tdata generation: %.3fs,\tio: %.3fs,\tcleanup: %.3fs,\tmetadata sync: %.3fs\n", rank, times.dataGeneration, times.io, times.cleanup, times.metadataSync);
   if(!rank) {
-    printf("Read: %.3fs %.3f MiB/s size:%.0f MiB MDsyncTime: %.3fs\n", total_time, globalBytes / total_time / 1024.0 / 1024, globalBytes / 1024.0 / 1024, md_sync_time);
+    printf("Read: %.3fs %.3f MiB/s size:%.0f MiB MDsyncTime: %.3fs\n", total_time, globalBytes / total_time / 1024.0 / 1024, globalBytes / 1024.0 / 1024, times.metadataSync);
   }
 }
 
