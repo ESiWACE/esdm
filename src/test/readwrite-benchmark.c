@@ -272,7 +272,7 @@ void writeVariableTimestep(instruction_t* instruction, esdm_dataset_t* dataset, 
   generateFragmentList(instruction, instruction->dimCount, &fragmentOffsets, &fragmentCount);
 
   for(int64_t i = fragmentCount; i--; ) {
-    times->dataGeneration = -ea_stop_timer(times->t);
+    times->dataGeneration -= ea_stop_timer(times->t);
 
     int64_t* data = NULL, fragmentSize[instruction->dimCount];
     getFragmentShape(instruction, fragmentOffsets[i], fragmentSize);
@@ -356,11 +356,11 @@ void benchmarkWrite(size_t instructionCount, instruction_t* instructions) {
   ioTimer times = {0};
   ea_start_timer(&times.t);
   for(int64_t t = 0; t < timeLimit; t++) writeTimestep(instructionCount, instructions, sets, spaces, t, &times);
-  times.mpi = -ea_stop_timer(times.t);
+  times.mpi -= ea_stop_timer(times.t);
   MPI_Barrier(MPI_COMM_WORLD);
   double time = ea_stop_timer(times.t);
   times.mpi += time;
-  times.metadataSync = -time;
+  times.metadataSync -= time;
 
   //commit the changes to data to the metadata
   for(size_t i = instructionCount; i--; ) {
@@ -411,7 +411,7 @@ void readVariableTimestep(instruction_t* instruction, esdm_dataset_t* dataset, e
   generateFragmentList(instruction, instruction->dimCount, &fragmentOffsets, &fragmentCount);
 
   for(int64_t i = fragmentCount; i--; ) {
-    times->dataGeneration = -ea_stop_timer(times->t);
+    times->dataGeneration -= ea_stop_timer(times->t);
 
     int64_t fragmentSize[instruction->dimCount];
     getFragmentShape(instruction, fragmentOffsets[i], fragmentSize);
@@ -495,11 +495,11 @@ void benchmarkRead(size_t instructionCount, instruction_t* instructions) {
   ioTimer times;
   ea_start_timer(&times.t);
   for(int64_t t = 0; t < timeLimit; t++) readTimestep(instructionCount, instructions, sets, spaces, t, &times);
-  times.mpi = -ea_stop_timer(times.t);
+  times.mpi -= ea_stop_timer(times.t);
   MPI_Barrier(MPI_COMM_WORLD);
   double time = ea_stop_timer(times.t);
   times.mpi += time;
-  times.metadataSync = -time;
+  times.metadataSync -= time;
 
   //close the ESDM objects
   for(size_t i = instructionCount; i--; ) {
