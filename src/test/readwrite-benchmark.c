@@ -38,7 +38,7 @@ typedef struct {
 
 typedef struct {
   timer t;
-  double dataGeneration, io, cleanup, mpi, metadataSync;
+  double dataHandling, io, cleanup, mpi, metadataSync;
 } ioTimer;
 
 //checkedScan() is a wrapper for fscanf() which returns true if, and only if the entire format string was matched successfully.
@@ -272,14 +272,14 @@ void writeVariableTimestep(instruction_t* instruction, esdm_dataset_t* dataset, 
   generateFragmentList(instruction, instruction->dimCount, &fragmentOffsets, &fragmentCount);
 
   for(int64_t i = fragmentCount; i--; ) {
-    times->dataGeneration -= ea_stop_timer(times->t);
+    times->dataHandling -= ea_stop_timer(times->t);
 
     int64_t* data = NULL, fragmentSize[instruction->dimCount];
     getFragmentShape(instruction, fragmentOffsets[i], fragmentSize);
     generateFragmentData(instruction->dimCount, fragmentOffsets[i], fragmentSize, instruction->size, &data);
 
     double curTime = ea_stop_timer(times->t);
-    times->dataGeneration += curTime;
+    times->dataHandling += curTime;
     times->io -= curTime;
 
     esdm_dataspace_t *subspace;
@@ -314,6 +314,37 @@ void writeTimestep(size_t instructionCount, instruction_t* instructions, esdm_da
   }
 }
 
+void printTimes(ioTimer* times, int64_t totalBytes, const char* operationName, const char* dataHandlingTitle) {
+  int rank, procCount;
+  MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+  MPI_Comm_size(MPI_COMM_WORLD, &procCount);
+
+  //collect the measurement data at the root process
+  ioTimer* collectedTimes = rank ? NULL : malloc(procCount*sizeof*collectedTimes);
+  MPI_Gather(times, sizeof*times, MPI_BYTE, collectedTimes, sizeof*collectedTimes, MPI_BYTE, 0, MPI_COMM_WORLD);
+
+  if(!rank) {
+    //print a table with the raw measurements
+    printf("%s:\n", operationName);
+    //      1234567 | 1234567   1234567   1234567 | 1234567   1234567
+    printf("  proc  |   io      cleanup     sync  |   MPI     %s\n", dataHandlingTitle);
+    printf("--------+-----------------------------+------------------\n");
+    for(int i = 0; i < procCount; i++) {
+      printf("%7d | %6.3fs   %6.3fs   %6.3fs | %6.3fs   %6.3fs\n", i, collectedTimes[i].io, collectedTimes[i].cleanup, collectedTimes[i].metadataSync, collectedTimes[i].mpi, collectedTimes[i].dataHandling);
+    }
+
+    //print the performance summary
+    double totalTime = 0;
+    for(int i = procCount; i--; ) {
+      double procTime = collectedTimes[i].io + collectedTimes[i].cleanup + collectedTimes[i].metadataSync;
+      if(procTime > totalTime) totalTime = procTime;
+    }
+    printf("Performance Summary: I/O of %.0fMiB in %.3fs = %.3f MiB/s\n\n", totalBytes/1024.0/1024, totalTime, totalBytes/1024.0/1024/totalTime);
+  }
+  free(collectedTimes);
+  MPI_Barrier(MPI_COMM_WORLD);
+}
+
 void benchmarkWrite(size_t instructionCount, instruction_t* instructions) {
   //determine the count of time steps to write
   int64_t timeLimit = 1;       //we always handle a timestep 0 to accomodate the non-time variables
@@ -330,7 +361,7 @@ void benchmarkWrite(size_t instructionCount, instruction_t* instructions) {
   eassert(ret == ESDM_SUCCESS);
   esdm_dataspace_t* spaces[instructionCount];
   esdm_dataset_t* sets[instructionCount];
-  int64_t localBytes = 0;
+  int64_t totalBytes = 0;
   for(size_t i = instructionCount; i--; ) {
     int64_t bounds[instructions[i].dimCount]; //unfortunately, we don't have a primitive to directly create a dataspace with an offset
     int64_t datapointCount = 1;
@@ -338,7 +369,7 @@ void benchmarkWrite(size_t instructionCount, instruction_t* instructions) {
       bounds[dim] = instructions[i].offset[dim] + instructions[i].size[dim];
       datapointCount *= instructions[i].size[dim];
     }
-    localBytes += datapointCount*sizeof(int64_t);
+    totalBytes += datapointCount*sizeof(int64_t);
 
     esdm_dataspace_t *dummy;
     ret = esdm_dataspace_create(instructions[i].dimCount, bounds, SMD_DTYPE_UINT64, &dummy);
@@ -379,17 +410,7 @@ void benchmarkWrite(size_t instructionCount, instruction_t* instructions) {
   times.metadataSync += ea_stop_timer(times.t);
 
   //determine our performance
-  time = times.io + times.cleanup + times.metadataSync;
-  double total_time;
-  MPI_Reduce((void *)&time, &total_time, 1, MPI_DOUBLE, MPI_MAX, 0, MPI_COMM_WORLD);
-  int64_t globalBytes;
-  MPI_Reduce(&localBytes, &globalBytes, 1, MPI_INT64_T, MPI_SUM, 0, MPI_COMM_WORLD);
-  int rank;
-  MPI_Comm_rank(MPI_COMM_WORLD, &rank);
-  printf("proc %d:\tdata generation: %.3fs,\tio: %.3fs,\tcleanup: %.3fs,\tmpi: %.3fs,\tmetadata sync: %.3fs\n", rank, times.dataGeneration, times.io, times.cleanup, times.mpi, times.metadataSync);
-  if(!rank) {
-    printf("Write: %.3fs %.3f MiB/s size:%.0f MiB MDsyncTime: %.3fs\n", total_time, globalBytes / total_time / 1024.0 / 1024, globalBytes / 1024.0 / 1024, times.metadataSync);
-  }
+  printTimes(&times, totalBytes, "Write", "data generation");
 }
 
 void readVariableTimestep(instruction_t* instruction, esdm_dataset_t* dataset, esdm_dataspace_t* dataspace, int64_t timestep, ioTimer* times) {
@@ -411,7 +432,7 @@ void readVariableTimestep(instruction_t* instruction, esdm_dataset_t* dataset, e
   generateFragmentList(instruction, instruction->dimCount, &fragmentOffsets, &fragmentCount);
 
   for(int64_t i = fragmentCount; i--; ) {
-    times->dataGeneration -= ea_stop_timer(times->t);
+    times->dataHandling -= ea_stop_timer(times->t);
 
     int64_t fragmentSize[instruction->dimCount];
     getFragmentShape(instruction, fragmentOffsets[i], fragmentSize);
@@ -420,7 +441,7 @@ void readVariableTimestep(instruction_t* instruction, esdm_dataset_t* dataset, e
     int64_t* data = ea_checked_malloc(datapointCount*sizeof*data);
 
     double curTime = ea_stop_timer(times->t);
-    times->dataGeneration += curTime;
+    times->dataHandling += curTime;
     times->io -= curTime;
 
     esdm_dataspace_t *subspace;
@@ -431,12 +452,12 @@ void readVariableTimestep(instruction_t* instruction, esdm_dataset_t* dataset, e
 
     curTime = ea_stop_timer(times->t);
     times->io += curTime;
-    times->dataGeneration -= curTime;
+    times->dataHandling -= curTime;
 
     checkFragmentData(instruction->dimCount, fragmentOffsets[i], fragmentSize, instruction->size, data);
 
     curTime = ea_stop_timer(times->t);
-    times->dataGeneration += curTime;
+    times->dataHandling += curTime;
     times->cleanup -= curTime;
 
     ret = esdm_dataspace_destroy(subspace);
@@ -478,11 +499,11 @@ void benchmarkRead(size_t instructionCount, instruction_t* instructions) {
 
   esdm_dataspace_t* spaces[instructionCount];
   esdm_dataset_t* sets[instructionCount];
-  int64_t localBytes = 0;
+  int64_t totalBytes = 0;
   for(size_t i = instructionCount; i--; ) {
     int64_t datapointCount = 1;
     for(int64_t dim = instructions[i].dimCount; dim--; ) datapointCount *= instructions[i].size[dim];
-    localBytes += datapointCount*sizeof(int64_t);
+    totalBytes += datapointCount*sizeof(int64_t);
 
     ret = esdm_mpi_dataset_open(MPI_COMM_WORLD, container, instructions[i].varname, &sets[i]);
     eassert(ret == ESDM_SUCCESS);
@@ -492,7 +513,7 @@ void benchmarkRead(size_t instructionCount, instruction_t* instructions) {
 
   //perform the actual reads
   MPI_Barrier(MPI_COMM_WORLD);
-  ioTimer times;
+  ioTimer times = {0};
   ea_start_timer(&times.t);
   for(int64_t t = 0; t < timeLimit; t++) readTimestep(instructionCount, instructions, sets, spaces, t, &times);
   times.mpi -= ea_stop_timer(times.t);
@@ -512,17 +533,7 @@ void benchmarkRead(size_t instructionCount, instruction_t* instructions) {
   times.metadataSync += ea_stop_timer(times.t);
 
   //determine our performance
-  time = times.io + times.cleanup + times.metadataSync;
-  double total_time;
-  MPI_Reduce((void *)&time, &total_time, 1, MPI_DOUBLE, MPI_MAX, 0, MPI_COMM_WORLD);
-  int64_t globalBytes;
-  MPI_Reduce(&localBytes, &globalBytes, 1, MPI_INT64_T, MPI_SUM, 0, MPI_COMM_WORLD);
-  int rank;
-  MPI_Comm_rank(MPI_COMM_WORLD, &rank);
-  printf("proc %d:\tdata generation: %.3fs,\tio: %.3fs,\tcleanup: %.3fs,\tmpi: %.3fs,\tmetadata sync: %.3fs\n", rank, times.dataGeneration, times.io, times.cleanup, times.mpi, times.metadataSync);
-  if(!rank) {
-    printf("Read: %.3fs %.3f MiB/s size:%.0f MiB MDsyncTime: %.3fs\n", total_time, globalBytes / total_time / 1024.0 / 1024, globalBytes / 1024.0 / 1024, times.metadataSync);
-  }
+  printTimes(&times, totalBytes, "Read", "data checking");
 }
 
 __attribute__((noreturn))
