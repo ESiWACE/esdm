@@ -166,7 +166,7 @@ __attribute__((unused)) static void boundTree_print(esdmI_boundTree_t* me, FILE*
 
 //For debugging purposes.
 static void boundTree_printNode(FILE* stream, esdmI_boundTree_t* me) {
-  fprintf(stream, "%p: {\n", me);
+  fprintf(stream, "%p: {\n", (void*)me);
   fprintf(stream, "\t.super = {\n");
   fprintf(stream, "\t},\n");
   fprintf(stream, "\t.entryCount = %"PRId64"\n", me->entryCount);
@@ -176,16 +176,16 @@ static void boundTree_printNode(FILE* stream, esdmI_boundTree_t* me) {
   }
   fprintf(stream, "],\n\t.children = [");
   for(int i = 0; i <= me->entryCount; i++) {
-    fprintf(stream, "%s%p", i ? ", " : "", me->children[i]);
+    fprintf(stream, "%s%p", i ? ", " : "", (void*)me->children[i]);
   }
-  fprintf(stream, "],\n\t.parent = %p\n", me->parent);
+  fprintf(stream, "],\n\t.parent = %p\n", (void*)me->parent);
   fprintf(stream, "}\n");
 }
 
 //For debugging purposes.
 static bool boundTree_checkTree_internal(esdmI_boundTree_t* me) {
   if(me->entryCount > BOUND_TREE_MAX_ENTRY_COUNT || me->entryCount < 0) {
-    fprintf(stderr, "assertion failed: entry count %"PRId64" of node at %p is out of bounds [0, %d]\nparent chain:\n", me->entryCount, me, BOUND_TREE_MAX_ENTRY_COUNT);
+    fprintf(stderr, "assertion failed: entry count %"PRId64" of node at %p is out of bounds [0, %d]\nparent chain:\n", me->entryCount, (void*)me, BOUND_TREE_MAX_ENTRY_COUNT);
     return true;
   }
   for(int64_t i = 0; i <= me->entryCount; i++) {
