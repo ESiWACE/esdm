@@ -165,12 +165,52 @@ __attribute__((unused)) static void boundTree_print(esdmI_boundTree_t* me, FILE*
 }
 
 //For debugging purposes.
-static void boundTree_checkTree(esdmI_boundTree_t* me) {
+static void boundTree_printNode(FILE* stream, esdmI_boundTree_t* me) {
+  fprintf(stream, "%p: {\n", me);
+  fprintf(stream, "\t.super = {\n");
+  fprintf(stream, "\t},\n");
+  fprintf(stream, "\t.entryCount = %"PRId64"\n", me->entryCount);
+  fprintf(stream, "\t.bounds = [");
+  for(int i = 0; i < me->entryCount; i++) {
+    fprintf(stream, "%s%"PRId64, i ? ", " : "", me->bounds[i].bakedBound);
+  }
+  fprintf(stream, "],\n\t.children = [");
+  for(int i = 0; i <= me->entryCount; i++) {
+    fprintf(stream, "%s%p", i ? ", " : "", me->children[i]);
+  }
+  fprintf(stream, "],\n\t.parent = %p\n", me->parent);
+  fprintf(stream, "}\n");
+}
+
+//For debugging purposes.
+static bool boundTree_checkTree_internal(esdmI_boundTree_t* me) {
+  if(me->entryCount > BOUND_TREE_MAX_ENTRY_COUNT || me->entryCount < 0) {
+    fprintf(stderr, "assertion failed: entry count %"PRId64" of node at %p is out of bounds [0, %d]\nparent chain:\n", me->entryCount, me, BOUND_TREE_MAX_ENTRY_COUNT);
+    return true;
+  }
   for(int64_t i = 0; i <= me->entryCount; i++) {
+    bool error = false;
     if(me->children[i]) {
-      eassert(me->children[i]->parent == me);
-      boundTree_checkTree(me->children[i]);
+      if(me->children[i]->parent == me) {
+        error = boundTree_checkTree_internal(me->children[i]);
+      } else {
+        fprintf(stderr, "assertion failed: node is not the parent of its child\nparent chain:\n");
+        error = true;
+      }
+      if(error) {
+        boundTree_printNode(stderr, me);
+        return true;
+      }
     }
+  }
+  return false;
+}
+
+//For debugging purposes.
+__attribute__((unused)) static void boundTree_checkTree(esdmI_boundTree_t* me, int callerLine) {
+  if(boundTree_checkTree_internal(me)) {
+    fprintf(stderr, __FILE__":%d: call to boundTree_checkTree() failed\n", callerLine);
+    abort();
   }
 }
 
@@ -186,7 +226,7 @@ static void boundTree_fixRelations(esdmI_boundTree_t* me) {
 //Split a full node into two new nodes, reducing this node to an `entryCount == 1` node.
 static void boundTree_splitNode_internal(esdmI_boundTree_t* me) {
   eassert(me->entryCount == BOUND_TREE_MAX_ENTRY_COUNT);
-  if(DEBUG_BOUND_TREE) boundTree_checkTree(me);
+  if(DEBUG_BOUND_TREE) boundTree_checkTree(me, __LINE__);
 
   esdmI_boundTree_t* left = ea_checked_malloc(sizeof(*left));
   esdmI_boundTree_t* right = ea_checked_malloc(sizeof(*right));
@@ -212,7 +252,7 @@ static void boundTree_splitNode_internal(esdmI_boundTree_t* me) {
   me->bounds[0] = me->bounds[splitIndex];
   me->children[0] = left;
   me->children[1] = right;
-  if(DEBUG_BOUND_TREE) boundTree_checkTree(me);
+  if(DEBUG_BOUND_TREE) boundTree_checkTree(me, __LINE__);
 }
 
 //Returns the first position with a greater bakedBound than the given entry, i.e. the location where the newEntry should be inserted.
@@ -278,9 +318,9 @@ static esdmI_boundTree_t* boundTree_add_internal(esdmI_boundTree_t* me, esdmI_bo
 }
 
 static void boundTree_add(esdmI_boundTree_t* me, int64_t bound, bool isStart, int64_t cubeIndex) {
-  if(DEBUG_BOUND_TREE) boundTree_checkTree(me);
+  if(DEBUG_BOUND_TREE) boundTree_checkTree(me, __LINE__);
   boundTree_add_internal(me, (esdmI_boundListEntry_t){ .bakedBound = bakeBound(bound, isStart), .cubeIndex = cubeIndex});
-  if(DEBUG_BOUND_TREE) boundTree_checkTree(me);
+  if(DEBUG_BOUND_TREE) boundTree_checkTree(me, __LINE__);
 }
 
 static int boundTree_findPositionInParent(esdmI_boundTree_t* me, esdmI_boundTree_t** out_parent) {
@@ -318,14 +358,14 @@ static esdmI_boundListEntry_t* boundTree_findFirst_internal(esdmI_boundTree_t* m
 }
 
 static esdmI_boundListEntry_t*  boundTree_findFirst(esdmI_boundTree_t* me, int64_t bound, bool isStart, esdmI_boundIterator_t* out_iterator) {
-  if(DEBUG_BOUND_TREE) boundTree_checkTree(me);
+  if(DEBUG_BOUND_TREE) boundTree_checkTree(me, __LINE__);
   return boundTree_findFirst_internal(me, bakeBound(bound, isStart), out_iterator);
 }
 
 static esdmI_boundListEntry_t* boundTree_nextEntry(esdmI_boundTree_t* me, esdmI_boundIterator_t* inout_iterator) {
   eassert(inout_iterator);
   eassert(inout_iterator->treeIterator.node);
-  if(DEBUG_BOUND_TREE) boundTree_checkTree(me);
+  if(DEBUG_BOUND_TREE) boundTree_checkTree(me, __LINE__);
 
   //get the info from the iterator and advance the entry position
   me = inout_iterator->treeIterator.node;
