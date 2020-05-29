@@ -320,7 +320,7 @@ void printTimes(ioTimer* times, int64_t totalBytes, const char* operationName, c
   MPI_Comm_size(MPI_COMM_WORLD, &procCount);
 
   //collect the measurement data at the root process
-  ioTimer* collectedTimes = rank ? NULL : malloc(procCount*sizeof*collectedTimes);
+  ioTimer* collectedTimes = rank ? NULL : ea_checked_malloc(procCount*sizeof*collectedTimes);
   MPI_Gather(times, sizeof*times, MPI_BYTE, collectedTimes, sizeof*collectedTimes, MPI_BYTE, 0, MPI_COMM_WORLD);
 
   if(!rank) {
