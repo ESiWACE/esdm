@@ -58,7 +58,14 @@ esdm_config_backend_t *esdm_config_get_metadata_coordinator(esdm_instance_t *esd
 // Modules /////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////
 
+esdm_modules_t* esdm_get_modules();
+
 esdm_modules_t *esdm_modules_init(esdm_instance_t *esdm);
+
+/**
+ * Get a pointer to the backend with the highest estimated throughput.
+ */
+esdm_backend_t* esdm_modules_fastestBackend(esdm_modules_t* modules);
 
 esdm_status esdm_modules_finalize();
 

@@ -121,6 +121,14 @@ esdm_status esdm_init() {
   return ESDM_SUCCESS;
 }
 
+esdm_modules_t* esdm_get_modules() {
+  if(!is_initialized) {
+    fprintf(stderr, "error: attempt to access ESDM modules while ESDM is not initialized\nMake sure to call esdm_init() before any other ESDM function.\n");
+    abort();
+  }
+  return esdm.modules;
+}
+
 esdm_status esdm_mkfs(int format_flags, data_accessibility_t target) {
   if (!is_initialized) {
     return ESDM_ERROR;
