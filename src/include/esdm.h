@@ -799,69 +799,6 @@ esdm_status esdm_fragment_destroy(esdm_fragment_t *fragment);
  */
 void esdm_fragment_print(esdm_fragment_t *fragment);
 
-/**
- * Stream request functionality aims to minimize memory copies by preparing the data buffer while data is
- * computed.
-
- * User semantics:
-  write_request req;
-  req_start(& req)
-  foreach of your data elements:
-    compute element
-    req_pack(& req, elem)
-  req_commit(& req)
-
- * The request functions are not thread-safe at the moment
- */
-
-esdm_status esdm_write_req_start(esdm_write_request_t ** req_out, esdm_dataset_t * dset, esdm_dataspace_t * file_space);
-
-/*
- * Completes the write operation and cleans the request if needed
- */
-esdm_status esdm_write_req_commit(esdm_write_request_t * req);
-
-/*
- * Commit a temporary buffer, this is an internal function used by esdm_write_req_pack_*
- * Users should not use this function.
- */
-void esdm_write_req_submit_buffer(esdm_write_request_t * req);
-
-// Public structures and supportive functions
-struct esdm_write_request_t {
-  esdm_dataset_t * dset;
-  esdm_dataspace_t * file_space;
-  uint64_t to_transfer; // amount of bytes still to transfer
-  int proc_size; // the number of bytes to batch together before starting processing
-
-  char * buffer;
-  char * bpos;   // position in the buffer
-  char * end_buff; // end position in the buffer
-
-  esdm_write_request_internal_t * ri;
-};
-
-// Macro set to generate variadic request pack function
-
-#define TYPES TYPE(int8_t) TYPE(uint8_t) TYPE(int16_t) TYPE(uint16_t) TYPE(int32_t) TYPE(uint32_t) TYPE(int64_t) TYPE(uint64_t) TYPE(float) TYPE(double)
-
-#define TYPE(typ) \
-static inline void esdm_write_req_pack_##typ(esdm_write_request_t *rq, typ data){ \
-    do { \
-    assert(rq->buffer != NULL); \
-    assert(rq->bpos <= (rq->end_buff - sizeof(typ))); \
-    *((typ*) rq->bpos) = data; \
-    rq->bpos += sizeof(typ); \
-    if(rq->bpos == rq->end_buff){ \
-      esdm_write_req_submit_buffer(rq);\
-    } \
-  } while(0);\
-}
-
-TYPES
-#undef TYPE
-
-
 #ifdef __cplusplus
 }
 #endif

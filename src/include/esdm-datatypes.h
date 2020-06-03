@@ -86,9 +86,6 @@ typedef struct esdm_simple_dspace_t {
 
 typedef struct scil_user_hints_t scil_user_hints_t;
 
-typedef struct esdm_write_request_t  esdm_write_request_t;
-typedef struct esdm_write_request_internal_t esdm_write_request_internal_t;
-
 /**
  * This POD struct is used to return a bunch of statistics to the user.
  */
