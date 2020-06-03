@@ -166,11 +166,6 @@ void esdm_wstream_flush(esdm_wstream_metadata_t* metadata, void* buffer, void* b
     metadata->nextChunk = 0;
     metadata->curFragment++;
 
-    esdm_status ret = esdm_fragment_destroy(metadata->backendState.fragment);
-    if(ret != ESDM_SUCCESS) {
-      fprintf(stderr, "esdm_wstream_flush(): unexpected error while destructing fragment object\naborting\n");
-      abort();
-    }
     metadata->backendState.fragment = NULL;
 
     if(isFinished(metadata)) return;  //all data has been streamed, nothing more to do
