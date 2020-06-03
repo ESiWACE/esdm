@@ -82,6 +82,8 @@ esdm_wstream_metadata_t* esdm_wstream_metadata_create(esdm_dataset_t* dataset, i
   //Find the parameters for splitting the dataspace into fragments, and splitting fragments into chunks.
   initCounts(dimCount, esdm_sizeof(type), kMaxChunkSize, size, &result->chunkingDim, &result->maxChunkWidth, result->chunkCounts, result->cumulativeChunkCounts);
   initCounts(dimCount, esdm_sizeof(type), kMaxFragmentSize, size, &result->fragmentationDim, NULL, result->fragmentCounts, result->cumulativeFragmentCounts);
+
+  return result;
 }
 
 static esdmI_range_t getBounds(esdm_dataspace_t* dataspace, int64_t dim, int64_t* cumulativeCounts, int64_t objectIndex) {
@@ -142,9 +144,10 @@ void esdm_wstream_flush(esdm_wstream_metadata_t* metadata, void* buffer, void* b
       fprintf(stderr, "esdm_wstream_flush(): error creating fragment\nWhat dataspace/dataset was passed to esdm_wstream_start()?\naborting\n");
       abort();
     }
+    metadata->backendState.fragment->backend = metadata->backend;
   }
 
-  int64_t curChunkSize = (char*)buffer - (char*)bufferEnd;
+  int64_t curChunkSize = (char*)bufferEnd - (char*)buffer;
   int ret = metadata->backend->callbacks.fragment_write_stream_blocksize(metadata->backend, &metadata->backendState, buffer, metadata->chunkOffset, curChunkSize);
   if(ret != ESDM_SUCCESS) {
     //TODO: Handle this error condition

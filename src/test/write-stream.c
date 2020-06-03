@@ -38,9 +38,9 @@ int main(int argc, char const *argv[]) {
 
   // define dataspace
   esdm_dataspace_t *dataspace;
-  int64_t bounds[] = {10, 20};
+  int64_t offset[2] = {0, 0}, size[2] = {10, 20};
 
-  status = esdm_dataspace_create(2, bounds, SMD_DTYPE_UINT64, &dataspace);
+  status = esdm_dataspace_create(2, size, SMD_DTYPE_UINT64, &dataspace);
   eassert(status == ESDM_SUCCESS);
   status = esdm_container_create("mycontainer", 1, &container);
   eassert(status == ESDM_SUCCESS);
@@ -49,17 +49,15 @@ int main(int argc, char const *argv[]) {
   status = esdm_dataset_commit(dataset);
   eassert(status == ESDM_SUCCESS);
 
-  esdm_write_request_t * req;
-  status = esdm_write_req_start(& req, dataset, dataspace);
-  eassert(status == ESDM_SUCCESS);
+  esdm_wstream_uint64_t stream;
+  esdm_wstream_start(&stream, dataset, 2, offset, size);
 
   for (int x = 0; x < 10; x++) {
     for (int y = 0; y < 20; y++) {
-      esdm_write_req_pack_uint64_t(req, (y)*10 + x + 1);
+      esdm_wstream_pack(stream, (y)*10 + x + 1);
     }
   }
-  status = esdm_write_req_commit(req);
-  eassert(status == ESDM_SUCCESS);
+  esdm_wstream_commit(stream);
   status = esdm_container_commit(container);
   eassert(status == ESDM_SUCCESS);
   status = esdm_dataset_commit(dataset);

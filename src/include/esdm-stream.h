@@ -22,30 +22,6 @@ defineStreamType(esdm_wstream_float_t, float);
 defineStreamType(esdm_wstream_double_t, double);
 #undef defineStreamType
 
-//We could use `gcc`'s typeof extension, but that's not portable.
-//So we define our own variant just for our own types.
-#define esdm_typeof(type) _Generic(type, \
-  esdm_wstream_uint8_t : esdm_wstream_uint8_t , \
-  esdm_wstream_uint16_t: esdm_wstream_uint16_t, \
-  esdm_wstream_uint32_t: esdm_wstream_uint32_t, \
-  esdm_wstream_uint64_t: esdm_wstream_uint64_t, \
-  esdm_wstream_int8_t  : esdm_wstream_int8_t  , \
-  esdm_wstream_int16_t : esdm_wstream_int16_t , \
-  esdm_wstream_int32_t : esdm_wstream_int32_t , \
-  esdm_wstream_int64_t : esdm_wstream_int64_t , \
-  esdm_wstream_float_t : esdm_wstream_float_t , \
-  esdm_wstream_double_t: esdm_wstream_double_t, \
-  uint8_t : uint8_t , \
-  uint16_t: uint16_t, \
-  uint32_t: uint32_t, \
-  uint64_t: uint64_t, \
-  int8_t  : int8_t  , \
-  int16_t : int16_t , \
-  int32_t : int32_t , \
-  int64_t : int64_t , \
-  float   : float   , \
-  double  : double)
-
 /**
  * Setup a stream for writing data to a dataset.
  *
@@ -66,18 +42,22 @@ defineStreamType(esdm_wstream_double_t, double);
  *     }
  *     esdm_wstream_commit(stream);
  */
+//XXX: Unfortunately, `_Generic()` can only return an expression, not a type.
+//     That is why we cannot implement a portable `esdm_typeof()` macro based on `_Generic()`.
+//     As such, we need to rely on compiler extensions instead.
+//     Currently, this is only implemented for `gcc`, but we should add some preprocessor magic to work with any compiler that offers some kind of a `typeof()` implementation.
 #define esdm_wstream_start(stream, dataset, dimCount, offset, size) do { \
-  esdm_typeof(stream)* const esdm_internal_stream_ptr = &(stream); /*avoid multiple evaluation*/ \
+  typeof(*stream)* const esdm_internal_stream_ptr = (stream); /*avoid multiple evaluation*/ \
   esdm_wstream_metadata_t* esdm_internal_stream_metadata = esdm_wstream_metadata_create(dataset, dimCount, offset, size, smd_c_to_smd_type(*esdm_internal_stream_ptr->buffer)); \
   int64_t esdm_internal_element_count = esdm_wstream_metadata_max_chunk_size(esdm_internal_stream_metadata); \
-  esdm_typeof(*stream->buffer) esdm_internal_buffer = malloc(esdm_internal_element_count*sizeof*esdm_internal_stream_ptr->buffer); \
-  *esdm_internal_stream_ptr = (esdm_typeof(*stream)){ \
+  typeof(*stream.buffer) esdm_internal_buffer = malloc(esdm_internal_element_count*sizeof*esdm_internal_stream_ptr->buffer); \
+  *esdm_internal_stream_ptr = (typeof(*stream)){ \
     .buffer = esdm_internal_buffer, \
     .bufferEnd = esdm_internal_buffer + esdm_internal_element_count, \
     .iter = esdm_internal_buffer, \
     .iterEnd = esdm_internal_buffer + esdm_wstream_metadata_next_chunk_size(esdm_internal_stream_metadata), \
     .metadata = esdm_internal_stream_metadata \
-  } \
+  }; \
 } while(0)
 
 /**
@@ -90,7 +70,7 @@ defineStreamType(esdm_wstream_double_t, double);
  * See `esdm_wstream_start()` for a usage example.
  */
 #define esdm_wstream_pack(stream, value) do { \
-  esdm_typeof(stream)* const esdm_internal_stream_ptr = &(stream); /*avoid multiple evaluation*/ \
+  typeof(stream)* const esdm_internal_stream_ptr = &(stream); /*avoid multiple evaluation*/ \
   if(esdm_internal_stream_ptr->iter >= esdm_internal_stream_ptr->iterEnd) { \
     fprintf(stderr, "attempt to push more data into a stream than defined at stream creation\n"); \
     abort(); \
@@ -99,9 +79,9 @@ defineStreamType(esdm_wstream_double_t, double);
   if(esdm_internal_stream_ptr->iter == esdm_internal_stream_ptr->iterEnd) { \
     esdm_wstream_flush(esdm_internal_stream_ptr->metadata, esdm_internal_stream_ptr->buffer, esdm_internal_stream_ptr->iter); \
     esdm_internal_stream_ptr->iter = esdm_internal_stream_ptr->buffer; \
-    esdm_internal_stream_ptr->iterEnd = esdm_internal_stream_ptr->buffer + esdm_wstream_metadata_next_chunk_size(esdm_internal_stream_metadata); \
+    esdm_internal_stream_ptr->iterEnd = esdm_internal_stream_ptr->buffer + esdm_wstream_metadata_next_chunk_size(esdm_internal_stream_ptr->metadata); \
   } \
-}
+} while(0)
 
 /**
  * Signal the end of the streaming and perform any required cleanup.
@@ -112,7 +92,7 @@ defineStreamType(esdm_wstream_double_t, double);
  * See `esdm_wstream_start()` for a usage example.
  */
 #define esdm_wstream_commit(stream) do { \
-  esdm_typeof(stream)* const esdm_internal_stream_ptr = &(stream); /*avoid multiple evaluation*/ \
+  typeof(stream)* const esdm_internal_stream_ptr = &(stream); /*avoid multiple evaluation*/ \
   if(esdm_internal_stream_ptr->iterEnd != esdm_internal_stream_ptr->buffer) { \
     fprintf(stderr, "preliminary commit of a stream: too few calls to esdm_wstream_pack()\n"); \
     abort(); \
@@ -120,7 +100,7 @@ defineStreamType(esdm_wstream_double_t, double);
   /*since `esdm_wstream_pack()` flushes the stream *after* adding the last value, we only need to perform local cleanup*/ \
   esdm_wstream_metadata_destroy(esdm_internal_stream_ptr->metadata); \
   free(esdm_internal_stream_ptr->buffer); \
-  *esdm_internal_stream_ptr = (esdm_typeof(*stream)){0}; \
+  *esdm_internal_stream_ptr = (typeof(stream)){0}; \
 } while(0)
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
