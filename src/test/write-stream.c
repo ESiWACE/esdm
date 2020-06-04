@@ -52,9 +52,9 @@ int main(int argc, char const *argv[]) {
   esdm_wstream_uint64_t stream;
   esdm_wstream_start(&stream, dataset, 2, offset, size);
 
-  for (int x = 0; x < 10; x++) {
-    for (int y = 0; y < 20; y++) {
-      esdm_wstream_pack(stream, (y)*10 + x + 1);
+  for (int x = 0; x < size[0]; x++) {
+    for (int y = 0; y < size[1]; y++) {
+      esdm_wstream_pack(stream, (x)*size[1] + y);
     }
   }
   esdm_wstream_commit(stream);
@@ -62,6 +62,23 @@ int main(int argc, char const *argv[]) {
   eassert(status == ESDM_SUCCESS);
   status = esdm_dataset_commit(dataset);
   eassert(status == ESDM_SUCCESS);
+
+  // read back the data and check that it's ok
+  uint64_t (*data)[size[1]] = malloc(size[0]*sizeof*data);
+  status = esdm_read(dataset, data, dataspace);
+  eassert(status == ESDM_SUCCESS);
+  printf("data after read-back:\n");
+  for (int x = 0; x < size[0]; x++) {
+    for (int y = 0; y < size[1]; y++) {
+      printf("%s%"PRId64, y ? ", " : "\t", data[x][y]);
+    }
+    printf("\n");
+  }
+  for (int x = 0; x < size[0]; x++) {
+    for (int y = 0; y < size[1]; y++) {
+      eassert(data[x][y] == (x)*size[1] + y);
+    }
+  }
 
   status = esdm_finalize();
   eassert(status == ESDM_SUCCESS);
