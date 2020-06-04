@@ -24,6 +24,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+//TODO: Expand this into a benchmark.
 int main(int argc, char const *argv[]) {
   // Interaction with ESDM
   esdm_container_t *container = NULL;
