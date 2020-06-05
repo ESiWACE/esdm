@@ -22,6 +22,7 @@
  */
 
 #include <errno.h>
+#include <esdm-datatypes.h>
 #include <esdm-internal.h>
 #include <fcntl.h>
 #include <glib.h>
@@ -381,3 +382,77 @@ double ea_stop_timer(timer t1) {
 }
 
 #endif
+
+////////////////////////////////////////////////////////////////////////////////////////////////////
+// data conversion /////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////////////////////////
+
+//define the converter functions
+
+#define defineConverter(destType, sourceType) \
+  void* convert_from_##sourceType##_to_##destType(void* vdest, const void* vsource, size_t sourceBytes) { \
+    sourceType const* source = vsource; \
+    destType* dest = vdest; \
+    size_t elementCount = sourceBytes/sizeof*source; \
+    eassert(elementCount*sizeof(sourceType) == sourceBytes); \
+    for(size_t i = 0; i < elementCount; i++) dest[i] = (destType)source[i]; \
+    return dest; \
+  }
+
+#define defineConvertersForSourceType(sourceType) \
+  defineConverter(int8_t, sourceType) \
+  defineConverter(int16_t, sourceType) \
+  defineConverter(int32_t, sourceType) \
+  defineConverter(int64_t, sourceType) \
+  defineConverter(uint8_t, sourceType) \
+  defineConverter(uint16_t, sourceType) \
+  defineConverter(uint32_t, sourceType) \
+  defineConverter(uint64_t, sourceType) \
+  defineConverter(float, sourceType) \
+  defineConverter(double, sourceType)
+
+defineConvertersForSourceType(int8_t)
+defineConvertersForSourceType(int16_t)
+defineConvertersForSourceType(int32_t)
+defineConvertersForSourceType(int64_t)
+defineConvertersForSourceType(uint8_t)
+defineConvertersForSourceType(uint16_t)
+defineConvertersForSourceType(uint32_t)
+defineConvertersForSourceType(uint64_t)
+defineConvertersForSourceType(float)
+defineConvertersForSourceType(double)
+
+//define the selector function
+ea_datatype_converter ea_converter_for_types(esdm_type_t requestDestType, esdm_type_t requestSourceType) {
+  if(requestDestType == requestSourceType) return memcpy; //fast path for all noop conversions
+
+  #define selectConverterForDest(destType, esdmDestType, sourceType) \
+    if(esdmDestType == requestDestType) return convert_from_##sourceType##_to_##destType;
+
+  #define selectConvertersForSource(sourceType, esdmSourceType) \
+    if(esdmSourceType == requestSourceType) { \
+      selectConverterForDest(int8_t, SMD_DTYPE_INT8, sourceType) \
+      selectConverterForDest(int16_t, SMD_DTYPE_INT16, sourceType) \
+      selectConverterForDest(int32_t, SMD_DTYPE_INT32, sourceType) \
+      selectConverterForDest(int64_t, SMD_DTYPE_INT64, sourceType) \
+      selectConverterForDest(uint8_t, SMD_DTYPE_UINT8, sourceType) \
+      selectConverterForDest(uint16_t, SMD_DTYPE_UINT16, sourceType) \
+      selectConverterForDest(uint32_t, SMD_DTYPE_UINT32, sourceType) \
+      selectConverterForDest(uint64_t, SMD_DTYPE_UINT64, sourceType) \
+      selectConverterForDest(float, SMD_DTYPE_FLOAT, sourceType) \
+      selectConverterForDest(double, SMD_DTYPE_DOUBLE, sourceType) \
+      return NULL; \
+    }
+
+  selectConvertersForSource(int8_t, SMD_DTYPE_INT8)
+  selectConvertersForSource(int16_t, SMD_DTYPE_INT16)
+  selectConvertersForSource(int32_t, SMD_DTYPE_INT32)
+  selectConvertersForSource(int64_t, SMD_DTYPE_INT64)
+  selectConvertersForSource(uint8_t, SMD_DTYPE_UINT8)
+  selectConvertersForSource(uint16_t, SMD_DTYPE_UINT16)
+  selectConvertersForSource(uint32_t, SMD_DTYPE_UINT32)
+  selectConvertersForSource(uint64_t, SMD_DTYPE_UINT64)
+  selectConvertersForSource(float, SMD_DTYPE_FLOAT)
+  selectConvertersForSource(double, SMD_DTYPE_DOUBLE)
+  return NULL;
+}

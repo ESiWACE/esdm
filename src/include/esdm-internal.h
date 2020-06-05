@@ -393,6 +393,22 @@ void ea_start_timer(timer *t1);
 double ea_stop_timer(timer t1);
 double ea_timer_subtract(timer number, timer subtract);
 
+//data conversion
+typedef void* (*ea_datatype_converter)(void* dest, const void* source, size_t sourceBytes);
+
+/**
+ * Return a memcpy()-like function that converts an array of sourceType into an array of destType.
+ * The individual values are converted as with the respective C cast, preserving values where possible,
+ * but possibly also wrapping around or losing precision if the original values cannot be represented exactly.
+ *
+ * Works only for some selected datatypes (noop conversions (`memcpy()`), `int8_t` through `uint64_t`, as well as `float` and `double`),
+ * so be sure to check the return value against NULL and handle the error condition appropriately.
+ *
+ * Be aware that some conversions involve UB.
+ * Especially out-of-range float/double conversion to integers can yield surprising results.
+ */
+ea_datatype_converter ea_converter_for_types(esdm_type_t destType, esdm_type_t sourceType);
+
 ///////////////////////////////////////////////////////////////////////////////
 // esdmI_range_t //////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////
