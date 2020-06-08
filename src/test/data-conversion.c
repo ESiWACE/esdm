@@ -1,7 +1,7 @@
 #include <esdm-internal.h>
 #include <stdbool.h>
 
-int main() {
+void testConvertersDirectly() {
   const int64_t ref_int64[] = {0, 1, 0x7f, 0xff, 0x7fff, 0xffff, 0x7fffffff, 0xffffffff, 0x7fffffffffffffff, -0x8000000000000000, -0x80000000, -0x8000, -0x80, -1};
   const int32_t ref_int32[] = {0, 1, 0x7f, 0xff, 0x7fff, 0xffff, 0x7fffffff, -0x80000000, -0x8000, -0x80, -1};
   const int16_t ref_int16[] = {0, 1, 0x7f, 0xff, 0x7fff, -0x8000, -0x80, -1};
@@ -60,10 +60,59 @@ int main() {
   checkConversionsFromSourceToFloat(ref_float, float, "%g", double)
   checkConversionsFromSourceToFloat(ref_double, double, "%g", double)
 
-  if(success) {
-    printf("OK\n");
-  } else {
-    fprintf(stderr, "FAILED\n");
+  if(!success) {
+    fprintf(stderr, "direct converter test: FAILED\n");
     abort();
   }
+}
+
+void testDataCopy() {
+  uint8_t source[2][3][4] = {
+    {
+      { 0, 1, 2, 3 },
+      { 4, 5, 6, 7 },
+      { 8, 9, 10, 11 }
+    }, {
+      { 12, 13, 14, 15 },
+      { 16, 17, 18, 19 },
+      { 20, 21, 22, 23 }
+    }
+  };
+  int64_t sourceOffset[3] = {0}, sourceSize[3] = { 3, 4, 2 }, sourceStride[3] = { 4, 1, 12 };
+
+  uint64_t dest[3][2][4] = {0};
+  uint64_t destRef[3][2][4] = {
+    {
+      { 0, 0, 0, 0 },
+      { 0, 0, 0, 0 }
+    }, {
+      { 4, 5, 6, 7 },
+      { 8, 9, 10, 11 }
+    }, {
+      { 16, 17, 18, 19 },
+      { 20, 21, 22, 23 }
+    }
+  };
+  int64_t destOffset[3] = {1, 0, -1}, destSize[3] = { 2, 4, 3 }, destStride[3] = { 4, 1, 8 };
+
+  esdm_dataspace_t* sourceSpace, *destSpace;
+  esdm_status ret = esdm_dataspace_create_full(3, sourceSize, sourceOffset, SMD_DTYPE_UINT8, &sourceSpace);
+  eassert(ret == ESDM_SUCCESS);
+  ret = esdm_dataspace_set_stride(sourceSpace, sourceStride);
+  eassert(ret == ESDM_SUCCESS);
+
+  ret = esdm_dataspace_create_full(3, destSize, destOffset, SMD_DTYPE_UINT8, &destSpace);
+  eassert(ret == ESDM_SUCCESS);
+  ret = esdm_dataspace_set_stride(destSpace, destStride);
+  eassert(ret == ESDM_SUCCESS);
+
+  ret = esdm_dataspace_copy_data(sourceSpace, source, destSpace, dest);
+  eassert(ret == ESDM_SUCCESS);
+}
+
+int main() {
+  testConvertersDirectly();
+  testDataCopy();
+
+  printf("OK\n");
 }
