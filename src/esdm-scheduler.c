@@ -303,7 +303,6 @@ static void esdmI_dataspace_copy_instructions(
 
 esdm_status esdm_dataspace_copy_data(esdm_dataspace_t* sourceSpace, void *voidPtrSource, esdm_dataspace_t* destSpace, void *voidPtrDest) {
   eassert(sourceSpace->dims == destSpace->dims);
-  eassert(sourceSpace->type == destSpace->type);
 
   char* sourceData = voidPtrSource;
   char* destData = voidPtrDest;

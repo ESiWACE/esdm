@@ -101,13 +101,48 @@ void testDataCopy() {
   ret = esdm_dataspace_set_stride(sourceSpace, sourceStride);
   eassert(ret == ESDM_SUCCESS);
 
-  ret = esdm_dataspace_create_full(3, destSize, destOffset, SMD_DTYPE_UINT8, &destSpace);
+  ret = esdm_dataspace_create_full(3, destSize, destOffset, SMD_DTYPE_UINT64, &destSpace);
   eassert(ret == ESDM_SUCCESS);
   ret = esdm_dataspace_set_stride(destSpace, destStride);
   eassert(ret == ESDM_SUCCESS);
 
   ret = esdm_dataspace_copy_data(sourceSpace, source, destSpace, dest);
   eassert(ret == ESDM_SUCCESS);
+
+  bool dataIsGood = true;
+  for(int z = 3; z--; ) {
+    for(int y = 2; y--; ) {
+      for(int x = 4; x--; ) {
+        dataIsGood &= dest[z][y][x] == destRef[z][y][x];
+      }
+    }
+  }
+
+  if(!dataIsGood) {
+    fprintf(stderr, "data conversion error detected\n\nexpected data:\n");
+    for(int z = 0; z < 3; z++) {
+      fprintf(stderr, "\n");
+      for(int y = 0; z < 2; y++) {
+        fprintf(stderr, "\n");
+        for(int x = 0; z < 4; x++) {
+          fprintf(stderr, "\t%"PRId64, destRef[z][y][x]);
+        }
+      }
+    }
+
+    fprintf(stderr, "\n\nerroneous data:\n");
+    for(int z = 0; z < 3; z++) {
+      fprintf(stderr, "\n");
+      for(int y = 0; z < 2; y++) {
+        fprintf(stderr, "\n");
+        for(int x = 0; z < 4; x++) {
+          fprintf(stderr, "\t%"PRId64, dest[z][y][x]);
+        }
+      }
+    }
+
+    abort();
+  }
 }
 
 int main() {
