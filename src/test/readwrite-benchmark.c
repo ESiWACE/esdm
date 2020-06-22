@@ -33,6 +33,7 @@ typedef struct {
   int64_t dimCount, timeDim;
   int64_t* offset;
   int64_t* size;
+  int64_t* timestepSize;
   int64_t* fragmentSize;
 } instruction_t;
 
@@ -145,9 +146,12 @@ instruction_t* parseInstructions(FILE* instructions, size_t* out_instructionCoun
     parseVector(lineStream, newInstruction->dimCount, &newInstruction->offset);
     parseVector(lineStream, newInstruction->dimCount, &newInstruction->size);
     parseVector(lineStream, newInstruction->dimCount, &newInstruction->fragmentSize);
+    newInstruction->timestepSize = ea_checked_malloc(newInstruction->dimCount*sizeof*newInstruction->timestepSize);
+    memcpy(newInstruction->timestepSize, newInstruction->size, newInstruction->dimCount*sizeof*newInstruction->timestepSize);
 
-    //the fragment size must be 1 in the time dimension (if present)
+    //adjust the timestepSize and check that the fragment size is 1 in the time dimension (if present)
     if(newInstruction->timeDim >= 0) {
+      newInstruction->timestepSize[newInstruction->timeDim] = 1;
       if(newInstruction->fragmentSize[newInstruction->timeDim] != 1) {
         fprintf(stderr, "error: the fragment size of the time dimension (%"PRId64" of variable %s is not 1\n", newInstruction->timeDim, newInstruction->varname);
         abort();
@@ -166,6 +170,7 @@ void deleteInstructions(size_t instructionCount, instruction_t* instructions) {
     free(instructions[i].varname);
     free(instructions[i].offset);
     free(instructions[i].size);
+    free(instructions[i].timestepSize);
     free(instructions[i].fragmentSize);
   }
   free(instructions);
@@ -175,7 +180,7 @@ void generateFragmentList(instruction_t* instruction, int64_t dimCount, int64_t 
   //determine the total count of fragments
   int64_t totalFragmentCount = 1, fragmentCounts[dimCount];
   for(int64_t i = dimCount; i--;) {
-    fragmentCounts[i] = (instruction->size[i] + instruction->fragmentSize[i] - 1)/instruction->fragmentSize[i];
+    fragmentCounts[i] = (instruction->timestepSize[i] + instruction->fragmentSize[i] - 1)/instruction->fragmentSize[i];
     totalFragmentCount *= fragmentCounts[i];
   }
 
@@ -204,7 +209,7 @@ void generateFragmentList(instruction_t* instruction, int64_t dimCount, int64_t 
 void getFragmentShape(instruction_t* instruction, int64_t* fragmentOffset, int64_t* out_size) {
   for(int64_t i = instruction->dimCount; i--; ) {
     int64_t limit = fragmentOffset[i] + instruction->fragmentSize[i];
-    if(limit > instruction->offset[i] + instruction->size[i]) limit = instruction->offset[i] + instruction->size[i];
+    if(limit > instruction->offset[i] + instruction->timestepSize[i]) limit = instruction->offset[i] + instruction->timestepSize[i];
     out_size[i] = limit - fragmentOffset[i];
   }
 }
@@ -216,6 +221,13 @@ int64_t localIndex2globalIndex(int64_t dimCount, int64_t* offset, int64_t *size,
     globalIndex += factor*coord;  //... and reencode into a global index.
   }
   return globalIndex;
+}
+
+__attribute__((unused))
+void printVector(FILE* stream, int64_t dimCount, int64_t* vector) {
+  fprintf(stream, "(");
+  for(int64_t i = 0; i < dimCount; i++) fprintf(stream, "%s%"PRId64, i ? ", " : "", vector[i]);
+  fprintf(stream, ")");
 }
 
 void generateFragmentData(int64_t dimCount, int64_t* offset, int64_t* size, int64_t *globalSize, int64_t **out_data) {
@@ -261,9 +273,7 @@ void writeVariableTimestep(instruction_t* instruction, esdm_dataset_t* dataset, 
   int64_t savedTimeOffset, savedTimeSize;
   if(haveTime) {
     savedTimeOffset = instruction->offset[instruction->timeDim];
-    savedTimeSize = instruction->size[instruction->timeDim];
     instruction->offset[instruction->timeDim] = timestep;
-    instruction->size[instruction->timeDim] = 1;
   }
 
   //write the data
@@ -304,7 +314,6 @@ void writeVariableTimestep(instruction_t* instruction, esdm_dataset_t* dataset, 
   //restore the time dim
   if(haveTime) {
     instruction->offset[instruction->timeDim] = savedTimeOffset;
-    instruction->size[instruction->timeDim] = savedTimeSize;
   }
 }
 
@@ -421,9 +430,7 @@ void readVariableTimestep(instruction_t* instruction, esdm_dataset_t* dataset, e
   int64_t savedTimeOffset, savedTimeSize;
   if(haveTime) {
     savedTimeOffset = instruction->offset[instruction->timeDim];
-    savedTimeSize = instruction->size[instruction->timeDim];
     instruction->offset[instruction->timeDim] = timestep;
-    instruction->size[instruction->timeDim] = 1;
   }
 
   //read the data
@@ -472,7 +479,6 @@ void readVariableTimestep(instruction_t* instruction, esdm_dataset_t* dataset, e
   //restore the time dim
   if(haveTime) {
     instruction->offset[instruction->timeDim] = savedTimeOffset;
-    instruction->size[instruction->timeDim] = savedTimeSize;
   }
 }
 
@@ -556,9 +562,16 @@ void exitWithUsage(const char* execName, const char* errorMessage, int exitStatu
 void parseCommandlineArgs(int argc, char** argv, char** configFile, FILE** writeInstructionFile, FILE** readInstructionFile) {
   if(argc == 1) {
     //special handling of the zero argument case to ensure that this benchmark plays nicely as a test
-    static char defaultInstructions[] = "mydataset(3, t = 0): (0, 0, 0) (10, 1024, 1024) (1, 256, 1024)\n";
-    *writeInstructionFile = fmemopen(defaultInstructions, sizeof(defaultInstructions) - 1, "r");  //-1 for the length to avoid passing the terminating null byte to getline()
-    *readInstructionFile = fmemopen(defaultInstructions, sizeof(defaultInstructions) - 1, "r");
+    static char defaultInstructionsWrite[] =
+      "mydataset1(3, t = 0): (0, 0, 0) (10, 1024, 1024) (1, 256, 1024)\n"
+      "mydataset2(3, t = 1): (0, 0, 0) (10, 10, 10) (10, 1, 10)\n"
+      "mydataset3(3): (0, 0, 0) (10, 10, 10) (10, 10, 10)\n";
+    static char defaultInstructionsRead[] =
+      "mydataset1(3, t = 0): (0, 0, 0) (10, 1024, 1024) (1, 256, 1024)\n"
+      "mydataset2(3): (0, 0, 0) (10, 10, 10) (10, 10, 10)\n"
+      "mydataset3(3, t = 1): (0, 0, 0) (10, 10, 10) (10, 1, 10)\n";
+    *writeInstructionFile = fmemopen(defaultInstructionsWrite, sizeof(defaultInstructionsWrite) - 1, "r");  //-1 for the length to avoid passing the terminating null byte to getline()
+    *readInstructionFile = fmemopen(defaultInstructionsRead, sizeof(defaultInstructionsRead) - 1, "r");
     return;
   }
 
