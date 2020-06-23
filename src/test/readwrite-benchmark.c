@@ -39,7 +39,7 @@ typedef struct {
 
 typedef struct {
   timer t;
-  double dataHandling, io, cleanup, mpi, metadataSync;
+  double dataHandling, init, io, cleanup, mpi, metadataSync;
 } ioTimer;
 
 //checkedScan() is a wrapper for fscanf() which returns true if, and only if the entire format string was matched successfully.
@@ -337,11 +337,11 @@ void printTimes(ioTimer* times, int64_t totalBytes, const char* operationName, c
   if(!rank) {
     //print a table with the raw measurements
     printf("%s:\n", operationName);
-    //      1234567 | 1234567   1234567   1234567 | 1234567   1234567
-    printf("  proc  |   io      cleanup     sync  |   MPI     %s\n", dataHandlingTitle);
+    //      1234567 | 1234567   1234567   1234567   1234567 | 1234567   1234567
+    printf("  proc  |  init       io      cleanup     sync  |   MPI     %s\n", dataHandlingTitle);
     printf("--------+-----------------------------+------------------\n");
     for(int i = 0; i < procCount; i++) {
-      printf("%7d | %6.3fs   %6.3fs   %6.3fs | %6.3fs   %6.3fs\n", i, collectedTimes[i].io, collectedTimes[i].cleanup, collectedTimes[i].metadataSync, collectedTimes[i].mpi, collectedTimes[i].dataHandling);
+      printf("%7d | %6.3fs   %6.3fs   %6.3fs   %6.3fs | %6.3fs   %6.3fs\n", i, collectedTimes[i].init, collectedTimes[i].io, collectedTimes[i].cleanup, collectedTimes[i].metadataSync, collectedTimes[i].mpi, collectedTimes[i].dataHandling);
     }
 
     //print the performance summary
@@ -367,6 +367,9 @@ void benchmarkWrite(size_t instructionCount, instruction_t* instructions) {
   }
 
   //create the datasets
+  MPI_Barrier(MPI_COMM_WORLD);
+  ioTimer times = {0};
+  ea_start_timer(&times.t);
   esdm_container_t *container = NULL;
   esdm_status ret = esdm_mpi_container_create(MPI_COMM_WORLD, "mycontainer", true, &container);
   eassert(ret == ESDM_SUCCESS);
@@ -392,11 +395,9 @@ void benchmarkWrite(size_t instructionCount, instruction_t* instructions) {
     ret = esdm_mpi_dataset_create(MPI_COMM_WORLD, container, instructions[i].varname, spaces[i], &sets[i]);
     eassert(ret == ESDM_SUCCESS);
   }
+  times.init = ea_stop_timer(times.t);
 
   //perform the actual writes
-  MPI_Barrier(MPI_COMM_WORLD);
-  ioTimer times = {0};
-  ea_start_timer(&times.t);
   for(int64_t t = 0; t < timeLimit; t++) writeTimestep(instructionCount, instructions, sets, spaces, t, &times);
   times.mpi -= ea_stop_timer(times.t);
   MPI_Barrier(MPI_COMM_WORLD);
@@ -501,6 +502,9 @@ void benchmarkRead(size_t instructionCount, instruction_t* instructions) {
   }
 
   //open the datasets
+  MPI_Barrier(MPI_COMM_WORLD);
+  ioTimer times = {0};
+  ea_start_timer(&times.t);
   esdm_container_t *container = NULL;
   esdm_status ret = esdm_mpi_container_open(MPI_COMM_WORLD, "mycontainer", false, &container);
   eassert(ret == ESDM_SUCCESS);
@@ -513,16 +517,16 @@ void benchmarkRead(size_t instructionCount, instruction_t* instructions) {
     for(int64_t dim = instructions[i].dimCount; dim--; ) datapointCount *= instructions[i].size[dim];
     totalBytes += datapointCount*sizeof(int64_t);
 
+    //FIXME: The execution time of this call is totally dominated by the rebuilding of the fragments list from metadata.
+    //       Save the fragment neighbourhood information to disk for fast loading.
     ret = esdm_mpi_dataset_open(MPI_COMM_WORLD, container, instructions[i].varname, &sets[i]);
     eassert(ret == ESDM_SUCCESS);
     ret = esdm_dataset_get_dataspace(sets[i], &spaces[i]);
     eassert(ret == ESDM_SUCCESS);
   }
+  times.init = ea_stop_timer(times.t);
 
   //perform the actual reads
-  MPI_Barrier(MPI_COMM_WORLD);
-  ioTimer times = {0};
-  ea_start_timer(&times.t);
   for(int64_t t = 0; t < timeLimit; t++) readTimestep(instructionCount, instructions, sets, spaces, t, &times);
   times.mpi -= ea_stop_timer(times.t);
   MPI_Barrier(MPI_COMM_WORLD);
