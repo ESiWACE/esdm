@@ -214,13 +214,15 @@ void getFragmentShape(instruction_t* instruction, int64_t* fragmentOffset, int64
   }
 }
 
-int64_t localIndex2globalIndex(int64_t dimCount, int64_t* offset, int64_t *size, int64_t *globalSize, int64_t localIndex) {
-  int64_t globalIndex = 0;
-  for(int64_t dim = dimCount, factor = 1; dim--; localIndex /= size[dim], factor *= globalSize[dim]) {
+int64_t encodeCoords(int64_t dimCount, int64_t* offset, int64_t *size, int64_t localIndex) {
+  int64_t encodedValue = 0;
+  //We encode the coords into fixed width bitfields of size 8.
+  //That way, the result is independent of the overall shape of the dataset, we retain a decent collision resistance, and we retain a certain human interpretability of the resulting data.
+  for(int64_t dim = dimCount; dim--; localIndex /= size[dim]) {
     int64_t coord = localIndex%size[dim] + offset[dim];  //Extract the value of this coordinate from the localIndex ...
-    globalIndex += factor*coord;  //... and reencode into a global index.
+    encodedValue = (encodedValue << 8) | (coord & 0xff);
   }
-  return globalIndex;
+  return encodedValue;
 }
 
 __attribute__((unused))
@@ -237,7 +239,7 @@ void generateFragmentData(int64_t dimCount, int64_t* offset, int64_t* size, int6
 
   //create the fragment's data
   int64_t* data = *out_data = ea_checked_malloc(datapoints*sizeof*data);
-  for(int64_t i = datapoints; i--; ) data[i] = localIndex2globalIndex(dimCount, offset, size, globalSize, i);
+  for(int64_t i = datapoints; i--; ) data[i] = encodeCoords(dimCount, offset, size, i);
 }
 
 void checkFragmentData(int64_t dimCount, int64_t* offset, int64_t* size, int64_t *globalSize, int64_t *data) {
@@ -247,7 +249,7 @@ void checkFragmentData(int64_t dimCount, int64_t* offset, int64_t* size, int64_t
 
   //check the fragment's data
   for(int64_t i = datapoints; i--; ) {
-    if(data[i] != localIndex2globalIndex(dimCount, offset, size, globalSize, i)) {
+    if(data[i] != encodeCoords(dimCount, offset, size, i)) {
       fprintf(stderr, "wrong data detected\n");
       abort();
     }
