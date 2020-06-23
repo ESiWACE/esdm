@@ -301,8 +301,14 @@ static void esdmI_dataspace_copy_instructions(
   *out_destOffset = (destIndex - dataPointerOffset)*destElementSize;
 }
 
+static esdm_copyTimes_t gCopyTimes = {0};
+esdm_copyTimes_t esdmI_performance_copy() { return gCopyTimes; }
+
 esdm_status esdm_dataspace_copy_data(esdm_dataspace_t* sourceSpace, void *voidPtrSource, esdm_dataspace_t* destSpace, void *voidPtrDest) {
   eassert(sourceSpace->dims == destSpace->dims);
+
+  timer myTimer;
+  ea_start_timer(&myTimer);
 
   char* sourceData = voidPtrSource;
   char* destData = voidPtrDest;
@@ -316,6 +322,10 @@ esdm_status esdm_dataspace_copy_data(esdm_dataspace_t* sourceSpace, void *voidPt
   //get the instructions on how to copy the data
   int64_t instructionDims, chunkSize, sourceOffset, destOffset, size[dimensions], relSourceStride[dimensions], relDestStride[dimensions];
   esdmI_dataspace_copy_instructions(sourceSpace, destSpace, &instructionDims, &chunkSize, &sourceOffset, &destOffset, size, relSourceStride, relDestStride);
+
+  double workStartTime = ea_stop_timer(myTimer);
+  gCopyTimes.planning += workStartTime;
+  gCopyTimes.total += workStartTime;
 
   //execute the instructions
   if(instructionDims < 0) return ESDM_SUCCESS;  //nothing to do
@@ -335,6 +345,10 @@ esdm_status esdm_dataspace_copy_data(esdm_dataspace_t* sourceSpace, void *voidPt
     }
     if(i == -1) break;
   }
+
+  double workEndTime = ea_stop_timer(myTimer);
+  gCopyTimes.execution += workEndTime - workStartTime;
+  gCopyTimes.total += workEndTime - workStartTime;
 
   return ESDM_SUCCESS;
 }

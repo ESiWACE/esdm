@@ -42,6 +42,7 @@ typedef struct {
   double dataHandling, init, io, cleanup, mpi, metadataSync;
   esdm_readTimes_t readTimesStart, readTimesEnd;
   esdm_writeTimes_t writeTimesStart, writeTimesEnd;
+  esdm_copyTimes_t copyTimesStart, copyTimesEnd;
 } ioTimer;
 
 //checkedScan() is a wrapper for fscanf() which returns true if, and only if the entire format string was matched successfully.
@@ -335,6 +336,7 @@ void printTimes(ioTimer* times, int64_t totalBytes, const char* operationName, c
   //collect the measurement data at the root process
   times->readTimesEnd = esdmI_performance_read();
   times->writeTimesEnd = esdmI_performance_write();
+  times->copyTimesEnd = esdmI_performance_copy();
   ioTimer* collectedTimes = rank ? NULL : ea_checked_malloc(procCount*sizeof*collectedTimes);
   MPI_Gather(times, sizeof*times, MPI_BYTE, collectedTimes, sizeof*collectedTimes, MPI_BYTE, 0, MPI_COMM_WORLD);
 
@@ -352,6 +354,7 @@ void printTimes(ioTimer* times, int64_t totalBytes, const char* operationName, c
     double totalTime = 0;
     esdm_readTimes_t esdmTimesRead = {0};
     esdm_writeTimes_t esdmTimesWrite = {0};
+    esdm_copyTimes_t esdmTimesCopy = {0};
     for(int i = procCount; i--; ) {
       double procTime = collectedTimes[i].io + collectedTimes[i].cleanup + collectedTimes[i].metadataSync;
       if(procTime > totalTime) totalTime = procTime;
@@ -367,6 +370,10 @@ void printTimes(ioTimer* times, int64_t totalBytes, const char* operationName, c
       esdmTimesRead.completion += collectedTimes[i].readTimesEnd.completion - collectedTimes[i].readTimesStart.completion;
       esdmTimesRead.writeback += collectedTimes[i].readTimesEnd.writeback - collectedTimes[i].readTimesStart.writeback;
       esdmTimesRead.total += collectedTimes[i].readTimesEnd.total - collectedTimes[i].readTimesStart.total;
+
+      esdmTimesCopy.planning += collectedTimes[i].copyTimesEnd.planning - collectedTimes[i].copyTimesStart.planning;
+      esdmTimesCopy.execution += collectedTimes[i].copyTimesEnd.execution - collectedTimes[i].copyTimesStart.execution;
+      esdmTimesCopy.total += collectedTimes[i].copyTimesEnd.total - collectedTimes[i].copyTimesStart.total;
     }
 
     printf("\nESDM internal measurements:\n");
@@ -385,6 +392,12 @@ void printTimes(ioTimer* times, int64_t totalBytes, const char* operationName, c
       printf("\t\tcompletion: %.3fs\n", esdmTimesRead.completion);
       printf("\t\twriteback: %.3fs\n", esdmTimesRead.writeback);
       printf("\t\ttotal: %.3fs\n", esdmTimesRead.total);
+    }
+    if(esdmTimesCopy.total > 0.0) {
+      printf("\tcopy:\n");
+      printf("\t\tplanning: %.3fs\n", esdmTimesCopy.planning);
+      printf("\t\texecution: %.3fs\n", esdmTimesCopy.execution);
+      printf("\t\ttotal: %.3fs\n", esdmTimesCopy.total);
     }
 
     printf("\nPerformance Summary: I/O of %.0fMiB in %.3fs = %.3f MiB/s\n\n", totalBytes/1024.0/1024, totalTime, totalBytes/1024.0/1024/totalTime);
@@ -407,7 +420,8 @@ void benchmarkWrite(size_t instructionCount, instruction_t* instructions) {
   MPI_Barrier(MPI_COMM_WORLD);
   ioTimer times = {
     .readTimesStart = esdmI_performance_read(),
-    .writeTimesStart = esdmI_performance_write()
+    .writeTimesStart = esdmI_performance_write(),
+    .copyTimesStart = esdmI_performance_copy()
   };
   ea_start_timer(&times.t);
   esdm_container_t *container = NULL;
@@ -545,7 +559,8 @@ void benchmarkRead(size_t instructionCount, instruction_t* instructions) {
   MPI_Barrier(MPI_COMM_WORLD);
   ioTimer times = {
     .readTimesStart = esdmI_performance_read(),
-    .writeTimesStart = esdmI_performance_write()
+    .writeTimesStart = esdmI_performance_write(),
+    .copyTimesStart = esdmI_performance_copy()
   };
   ea_start_timer(&times.t);
   esdm_container_t *container = NULL;

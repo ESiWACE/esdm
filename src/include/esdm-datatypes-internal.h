@@ -468,6 +468,14 @@ struct esdm_writeTimes_t {
   double total; //sum of all the times above and other small things like taking times...
 };
 
+/// time measurements for esdm_dataspace_copy_data(), including invocation both by users and ESDM itself
+typedef struct esdm_copyTimes_t esdm_copyTimes_t;
+struct esdm_copyTimes_t {
+  double planning;  //the time spent analysing the dataspaces to determine what needs to be done
+  double execution; //the time spent to actually move the data
+  double total; //sum of all the times above and other small things like taking times...
+};
+
 
 
 #endif

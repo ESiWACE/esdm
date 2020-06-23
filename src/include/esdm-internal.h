@@ -149,6 +149,7 @@ esdm_status esdm_performance_finalize();
 
 esdm_readTimes_t esdmI_performance_read();
 esdm_writeTimes_t esdmI_performance_write();
+esdm_copyTimes_t esdmI_performance_copy();
 
 double esdmI_backendOutputTime();
 double esdmI_backendInputTime();
