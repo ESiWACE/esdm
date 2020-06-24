@@ -476,6 +476,24 @@ struct esdm_copyTimes_t {
   double total; //sum of all the times above and other small things like taking times...
 };
 
+//timers for each of the different backend interface functions
+typedef struct esdm_backendTimes_t esdm_backendTimes_t;
+struct esdm_backendTimes_t {
+  double finalize;
+  double performance_estimate;
+  double estimate_throughput;
+  double fragment_create;
+  double fragment_retrieve;
+  double fragment_update;
+  double fragment_delete;
+  double fragment_metadata_create;
+  double fragment_metadata_load;
+  double fragment_metadata_free;
+  double mkfs;
+  double fsck;
+  double fragment_write_stream_blocksize;
+};
+
 
 
 #endif

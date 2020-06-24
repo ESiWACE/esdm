@@ -43,6 +43,7 @@ typedef struct {
   esdm_readTimes_t readTimesStart, readTimesEnd;
   esdm_writeTimes_t writeTimesStart, writeTimesEnd;
   esdm_copyTimes_t copyTimesStart, copyTimesEnd;
+  esdm_backendTimes_t backendTimesStart, backendTimesEnd;
 } ioTimer;
 
 //checkedScan() is a wrapper for fscanf() which returns true if, and only if the entire format string was matched successfully.
@@ -337,6 +338,7 @@ void printTimes(ioTimer* times, int64_t totalBytes, const char* operationName, c
   times->readTimesEnd = esdmI_performance_read();
   times->writeTimesEnd = esdmI_performance_write();
   times->copyTimesEnd = esdmI_performance_copy();
+  times->backendTimesEnd = esdmI_performance_backend();
   ioTimer* collectedTimes = rank ? NULL : ea_checked_malloc(procCount*sizeof*collectedTimes);
   MPI_Gather(times, sizeof*times, MPI_BYTE, collectedTimes, sizeof*collectedTimes, MPI_BYTE, 0, MPI_COMM_WORLD);
 
@@ -355,50 +357,29 @@ void printTimes(ioTimer* times, int64_t totalBytes, const char* operationName, c
     esdm_readTimes_t esdmTimesRead = {0};
     esdm_writeTimes_t esdmTimesWrite = {0};
     esdm_copyTimes_t esdmTimesCopy = {0};
+    esdm_backendTimes_t esdmTimesBackend = {0};
     for(int i = procCount; i--; ) {
       double procTime = collectedTimes[i].io + collectedTimes[i].cleanup + collectedTimes[i].metadataSync;
       if(procTime > totalTime) totalTime = procTime;
 
-      esdmTimesWrite.backendDistribution += collectedTimes[i].writeTimesEnd.backendDistribution - collectedTimes[i].writeTimesStart.backendDistribution;
-      esdmTimesWrite.backendDispatch += collectedTimes[i].writeTimesEnd.backendDispatch - collectedTimes[i].writeTimesStart.backendDispatch;
-      esdmTimesWrite.completion += collectedTimes[i].writeTimesEnd.completion - collectedTimes[i].writeTimesStart.completion;
-      esdmTimesWrite.total += collectedTimes[i].writeTimesEnd.total - collectedTimes[i].writeTimesStart.total;
+      esdm_readTimes_t curReadTimes = esdmI_performance_read_sub(&collectedTimes[i].readTimesEnd, &collectedTimes[i].readTimesStart);
+      esdmTimesRead = esdmI_performance_read_add(&esdmTimesRead, &curReadTimes);
 
-      esdmTimesRead.makeSet += collectedTimes[i].readTimesEnd.makeSet - collectedTimes[i].readTimesStart.makeSet;
-      esdmTimesRead.coverageCheck += collectedTimes[i].readTimesEnd.coverageCheck - collectedTimes[i].readTimesStart.coverageCheck;
-      esdmTimesRead.enqueue += collectedTimes[i].readTimesEnd.enqueue - collectedTimes[i].readTimesStart.enqueue;
-      esdmTimesRead.completion += collectedTimes[i].readTimesEnd.completion - collectedTimes[i].readTimesStart.completion;
-      esdmTimesRead.writeback += collectedTimes[i].readTimesEnd.writeback - collectedTimes[i].readTimesStart.writeback;
-      esdmTimesRead.total += collectedTimes[i].readTimesEnd.total - collectedTimes[i].readTimesStart.total;
+      esdm_writeTimes_t curWriteTimes = esdmI_performance_write_sub(&collectedTimes[i].writeTimesEnd, &collectedTimes[i].writeTimesStart);
+      esdmTimesWrite = esdmI_performance_write_add(&esdmTimesWrite, &curWriteTimes);
 
-      esdmTimesCopy.planning += collectedTimes[i].copyTimesEnd.planning - collectedTimes[i].copyTimesStart.planning;
-      esdmTimesCopy.execution += collectedTimes[i].copyTimesEnd.execution - collectedTimes[i].copyTimesStart.execution;
-      esdmTimesCopy.total += collectedTimes[i].copyTimesEnd.total - collectedTimes[i].copyTimesStart.total;
+      esdm_copyTimes_t curCopyTimes = esdmI_performance_copy_sub(&collectedTimes[i].copyTimesEnd, &collectedTimes[i].copyTimesStart);
+      esdmTimesCopy = esdmI_performance_copy_add(&esdmTimesCopy, &curCopyTimes);
+
+      esdm_backendTimes_t curBackendTimes = esdmI_performance_backend_sub(&collectedTimes[i].backendTimesEnd, &collectedTimes[i].backendTimesStart);
+      esdmTimesBackend = esdmI_performance_backend_add(&esdmTimesBackend, &curBackendTimes);
     }
 
     printf("\nESDM internal measurements:\n");
-    if(esdmTimesWrite.total > 0.0) {
-      printf("\twrite:\n");
-      printf("\t\tbackendDistribution: %.3fs\n", esdmTimesWrite.backendDistribution);
-      printf("\t\tbackendDispatch: %.3fs\n", esdmTimesWrite.backendDispatch);
-      printf("\t\tcompletion: %.3fs\n", esdmTimesWrite.completion);
-      printf("\t\ttotal: %.3fs\n", esdmTimesWrite.total);
-    }
-    if(esdmTimesRead.total > 0.0) {
-      printf("\tread:\n");
-      printf("\t\tmakeSet: %.3fs\n", esdmTimesRead.makeSet);
-      printf("\t\tcoverageCheck: %.3fs\n", esdmTimesRead.coverageCheck);
-      printf("\t\tenqueue: %.3fs\n", esdmTimesRead.enqueue);
-      printf("\t\tcompletion: %.3fs\n", esdmTimesRead.completion);
-      printf("\t\twriteback: %.3fs\n", esdmTimesRead.writeback);
-      printf("\t\ttotal: %.3fs\n", esdmTimesRead.total);
-    }
-    if(esdmTimesCopy.total > 0.0) {
-      printf("\tcopy:\n");
-      printf("\t\tplanning: %.3fs\n", esdmTimesCopy.planning);
-      printf("\t\texecution: %.3fs\n", esdmTimesCopy.execution);
-      printf("\t\ttotal: %.3fs\n", esdmTimesCopy.total);
-    }
+    esdmI_performance_write_print(stdout, NULL, &esdmTimesWrite);
+    esdmI_performance_read_print(stdout, NULL, &esdmTimesRead);
+    esdmI_performance_copy_print(stdout, NULL, &esdmTimesCopy);
+    esdmI_performance_backend_print(stdout, NULL, &esdmTimesBackend);
 
     printf("\nPerformance Summary: I/O of %.0fMiB in %.3fs = %.3f MiB/s\n\n", totalBytes/1024.0/1024, totalTime, totalBytes/1024.0/1024/totalTime);
   }
@@ -421,7 +402,8 @@ void benchmarkWrite(size_t instructionCount, instruction_t* instructions) {
   ioTimer times = {
     .readTimesStart = esdmI_performance_read(),
     .writeTimesStart = esdmI_performance_write(),
-    .copyTimesStart = esdmI_performance_copy()
+    .copyTimesStart = esdmI_performance_copy(),
+    .backendTimesStart = esdmI_performance_backend()
   };
   ea_start_timer(&times.t);
   esdm_container_t *container = NULL;
@@ -560,7 +542,8 @@ void benchmarkRead(size_t instructionCount, instruction_t* instructions) {
   ioTimer times = {
     .readTimesStart = esdmI_performance_read(),
     .writeTimesStart = esdmI_performance_write(),
-    .copyTimesStart = esdmI_performance_copy()
+    .copyTimesStart = esdmI_performance_copy(),
+    .backendTimesStart = esdmI_performance_backend()
   };
   ea_start_timer(&times.t);
   esdm_container_t *container = NULL;
