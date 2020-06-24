@@ -114,8 +114,114 @@ void esdmI_performance_copy_print(FILE* stream, const esdm_copyTimes_t* start, c
   }
 }
 
+static esdm_backendTimes_t gBackendTimes = {0};
+
+int esdmI_backend_finalize(esdm_backend_t * b) {
+  timer clock;
+  ea_start_timer(&clock);
+  int result = b->callbacks.finalize(b);
+  gBackendTimes.finalize += ea_stop_timer(clock);
+  return result;
+}
+
+int esdmI_backend_performance_estimate(esdm_backend_t * b, esdm_fragment_t *fragment, float *out_time) {
+  timer clock;
+  ea_start_timer(&clock);
+  int result = b->callbacks.performance_estimate(b, fragment, out_time);
+  gBackendTimes.performance_estimate += ea_stop_timer(clock);
+  return result;
+}
+
+float esdmI_backend_estimate_throughput (esdm_backend_t * b) {
+  timer clock;
+  ea_start_timer(&clock);
+  float result = b->callbacks.estimate_throughput (b);
+  gBackendTimes.estimate_throughput += ea_stop_timer(clock);
+  return result;
+}
+
+int esdmI_backend_fragment_create (esdm_backend_t * b, esdm_fragment_t *fragment) {
+  timer clock;
+  ea_start_timer(&clock);
+  int result = b->callbacks.fragment_create (b, fragment);
+  gBackendTimes.fragment_create += ea_stop_timer(clock);
+  return result;
+}
+
+int esdmI_backend_fragment_retrieve(esdm_backend_t * b, esdm_fragment_t *fragment) {
+  timer clock;
+  ea_start_timer(&clock);
+  int result = b->callbacks.fragment_retrieve(b, fragment);
+  gBackendTimes.fragment_retrieve += ea_stop_timer(clock);
+  return result;
+}
+
+int esdmI_backend_fragment_update (esdm_backend_t * b, esdm_fragment_t *fragment) {
+  timer clock;
+  ea_start_timer(&clock);
+  int result = b->callbacks.fragment_update (b, fragment);
+  gBackendTimes.fragment_update += ea_stop_timer(clock);
+  return result;
+}
+
+int esdmI_backend_fragment_delete (esdm_backend_t * b, esdm_fragment_t *fragment) {
+  timer clock;
+  ea_start_timer(&clock);
+  int result = b->callbacks.fragment_delete (b, fragment);
+  gBackendTimes.fragment_delete += ea_stop_timer(clock);
+  return result;
+}
+
+int esdmI_backend_fragment_metadata_create(esdm_backend_t * b, esdm_fragment_t *fragment, smd_string_stream_t* stream) {
+  timer clock;
+  ea_start_timer(&clock);
+  int result = b->callbacks.fragment_metadata_create(b, fragment,  stream);
+  gBackendTimes.fragment_metadata_create += ea_stop_timer(clock);
+  return result;
+}
+
+void* esdmI_backend_fragment_metadata_load(esdm_backend_t * b, esdm_fragment_t *fragment, json_t *metadata) {
+  timer clock;
+  ea_start_timer(&clock);
+  void* result = b->callbacks.fragment_metadata_load(b, fragment, metadata);
+  gBackendTimes.fragment_metadata_load += ea_stop_timer(clock);
+  return result;
+}
+
+int esdmI_backend_fragment_metadata_free (esdm_backend_t * b, void * options) {
+  timer clock;
+  ea_start_timer(&clock);
+  int result = b->callbacks.fragment_metadata_free (b, options);
+  gBackendTimes.fragment_metadata_free += ea_stop_timer(clock);
+  return result;
+}
+
+int esdmI_backend_mkfs(esdm_backend_t * b, int format_flags) {
+  timer clock;
+  ea_start_timer(&clock);
+  int result = b->callbacks.mkfs(b, format_flags);
+  gBackendTimes.mkfs += ea_stop_timer(clock);
+  return result;
+}
+
+int esdmI_backend_fsck(esdm_backend_t * b) {
+  timer clock;
+  ea_start_timer(&clock);
+  int result = b->callbacks.fsck(b);
+  gBackendTimes.fsck += ea_stop_timer(clock);
+  return result;
+}
+
+int esdmI_backend_fragment_write_stream_blocksize(esdm_backend_t * b, estream_write_t * state, void * cur_buf, size_t cur_offset, uint32_t cur_size) {
+  timer clock;
+  ea_start_timer(&clock);
+  int result = b->callbacks.fragment_write_stream_blocksize(b, state, cur_buf, cur_offset, cur_size);
+  gBackendTimes.fragment_write_stream_blocksize += ea_stop_timer(clock);
+  return result;
+}
+
 esdm_backendTimes_t esdmI_performance_backend() {
-  return (esdm_backendTimes_t){0};
+  return gBackendTimes;
 }
 
 esdm_backendTimes_t esdmI_performance_backend_add(const esdm_backendTimes_t* a, const esdm_backendTimes_t* b) {

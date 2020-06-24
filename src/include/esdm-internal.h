@@ -167,6 +167,21 @@ esdm_backendTimes_t esdmI_performance_backend_add(const esdm_backendTimes_t* a, 
 esdm_backendTimes_t esdmI_performance_backend_sub(const esdm_backendTimes_t* minuend, const esdm_backendTimes_t* subtrahend);
 void esdmI_performance_backend_print(FILE* stream, const esdm_backendTimes_t* start, const esdm_backendTimes_t* end);  //start may be NULL
 
+//wrappers for the backend API functions that perform the time measurement to be retrieved via esdmI_performance_backend()
+int esdmI_backend_finalize(esdm_backend_t * b);
+int esdmI_backend_performance_estimate(esdm_backend_t * b, esdm_fragment_t *fragment, float *out_time);
+float esdmI_backend_estimate_throughput (esdm_backend_t * b);
+int esdmI_backend_fragment_create (esdm_backend_t * b, esdm_fragment_t *fragment);
+int esdmI_backend_fragment_retrieve(esdm_backend_t * b, esdm_fragment_t *fragment);
+int esdmI_backend_fragment_update (esdm_backend_t * b, esdm_fragment_t *fragment);
+int esdmI_backend_fragment_delete (esdm_backend_t * b, esdm_fragment_t *fragment);
+int esdmI_backend_fragment_metadata_create(esdm_backend_t * b, esdm_fragment_t *fragment, smd_string_stream_t* stream);
+void* esdmI_backend_fragment_metadata_load(esdm_backend_t * b, esdm_fragment_t *fragment, json_t *metadata);
+int esdmI_backend_fragment_metadata_free (esdm_backend_t * b, void * options);
+int esdmI_backend_mkfs(esdm_backend_t * b, int format_flags);
+int esdmI_backend_fsck(esdm_backend_t * b);
+int esdmI_backend_fragment_write_stream_blocksize(esdm_backend_t * b, estream_write_t * state, void * cur_buf, size_t cur_offset, uint32_t cur_size);
+
 double esdmI_backendOutputTime();
 double esdmI_backendInputTime();
 void esdmI_resetBackendIoTimes();

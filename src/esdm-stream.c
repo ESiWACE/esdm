@@ -148,7 +148,7 @@ void esdm_wstream_flush(esdm_wstream_metadata_t* metadata, void* buffer, void* b
   }
 
   int64_t curChunkSize = (char*)bufferEnd - (char*)buffer;
-  int ret = metadata->backend->callbacks.fragment_write_stream_blocksize(metadata->backend, &metadata->backendState, buffer, metadata->chunkOffset, curChunkSize);
+  int ret = esdmI_backend_fragment_write_stream_blocksize(metadata->backend, &metadata->backendState, buffer, metadata->chunkOffset, curChunkSize);
   if(ret != ESDM_SUCCESS) {
     //TODO: Handle this error condition
     fprintf(stderr, "backend returned an error while flushing data from a write stream\naborting...\n");

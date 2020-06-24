@@ -72,13 +72,13 @@ int main() {
     eassert(ret == ESDM_SUCCESS);
   }
 
-  //ret = b->callbacks.fragment_update(b, f1);
+  //ret = esdmI_backend_fragment_update(b, f1);
   //eassert(ret == ESDM_SUCCESS);
-  //ret = b->callbacks.fragment_update(b, f2);
+  //ret = esdmI_backend_fragment_update(b, f2);
   //eassert(ret == ESDM_SUCCESS);
-  //ret = b->callbacks.fragment_update(b, f3);
+  //ret = esdmI_backend_fragment_update(b, f3);
   //eassert(ret == ESDM_SUCCESS);
-  //ret = b->callbacks.fragment_update(b, f4);
+  //ret = esdmI_backend_fragment_update(b, f4);
   //eassert(ret == ESDM_SUCCESS);
 
   //{

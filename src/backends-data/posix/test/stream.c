@@ -20,7 +20,7 @@ int main() {
   esdm_backend_t * b = posix_backend_init(cfg);
   assert(b);
 
-  b->callbacks.mkfs(b, ESDM_FORMAT_CREATE|ESDM_FORMAT_DELETE|ESDM_FORMAT_IGNORE_ERRORS);
+  esdmI_backend_mkfs(b, ESDM_FORMAT_CREATE|ESDM_FORMAT_DELETE|ESDM_FORMAT_IGNORE_ERRORS);
 
   esdm_simple_dspace_t dspace = esdm_dataspace_2d(1024, 10, SMD_DTYPE_UINT8);
 
@@ -35,7 +35,7 @@ int main() {
 
   estream_write_t state = { .fragment = & frag };
   for(int i=0; i < 10; i++){
-    ret = b->callbacks.fragment_write_stream_blocksize(b, & state, buff, 1024*i, 1024);
+    ret = esdmI_backend_fragment_write_stream_blocksize(b, & state, buff, 1024*i, 1024);
     assert(ret == ESDM_SUCCESS);
   }
 
