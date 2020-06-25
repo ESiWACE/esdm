@@ -144,7 +144,7 @@ esdm_status esdm_mkfs(int format_flags, data_accessibility_t target) {
 
   for (int i = 0; i < esdm.modules->data_backend_count; i++) {
     if (esdm.modules->data_backends[i]->config->data_accessibility == target) {
-      ret = esdm.modules->data_backends[i]->callbacks.mkfs(esdm.modules->data_backends[i], format_flags);
+      ret = esdmI_backend_mkfs(esdm.modules->data_backends[i], format_flags);
       if (ret != ESDM_SUCCESS) {
         ret_final = ret;
       }

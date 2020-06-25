@@ -192,7 +192,7 @@ static void esdmI_dataspace_copy_instructions(
     esdm_dataspace_t* sourceSpace,
     esdm_dataspace_t* destSpace,
     int64_t* out_instructionDims,
-    int64_t* out_chunkSize,
+    int64_t* out_sourceChunkBytes,
     int64_t* out_sourceOffset,
     int64_t* out_destOffset,
     int64_t* out_size,  //actually an array of size `*out_instructionDims`, may be NULL
@@ -200,9 +200,8 @@ static void esdmI_dataspace_copy_instructions(
     int64_t* out_relDestStride  //actually an array of size `*out_instructionDims`, may be NULL
 ) {
   eassert(sourceSpace->dims == destSpace->dims);
-  eassert(sourceSpace->type == destSpace->type);
   eassert(out_instructionDims);
-  eassert(out_chunkSize);
+  eassert(out_sourceChunkBytes);
   eassert(out_sourceOffset);
   eassert(out_destOffset);
 
@@ -230,22 +229,22 @@ static void esdmI_dataspace_copy_instructions(
   esdm_dataspace_getEffectiveStride(destSpace, destStride);
 
   //determine how much data we can move with memcpy() at a time
-  int64_t dataPointerOffset = 0, memcpySize = 1;  //both are counts of fundamental elements, not bytes
+  int64_t dataPointerOffset = 0, chunkSize = 1;  //both are counts of fundamental elements, not bytes
   bool memcpyDims[dimensions];
   memset(memcpyDims, 0, sizeof(memcpyDims));
   while(true) {
-    //search for a dimension with a stride that matches our current memcpySize
+    //search for a dimension with a stride that matches our current chunkSize
     int64_t curDim;
     for(curDim = dimensions; curDim--; ) {
       if(!memcpyDims[curDim] && sourceStride[curDim] == destStride[curDim]) {
-        if(abs_int64(sourceStride[curDim]) == memcpySize) break;
+        if(abs_int64(sourceStride[curDim]) == chunkSize) break;
       }
     }
     if(curDim >= 0) {
       //found a fitting dimension, update our parameters
       memcpyDims[curDim] = true;  //remember not to loop over this dimension when copying the data
-      if(sourceStride[curDim] < 0) dataPointerOffset += memcpySize*(overlapSize[curDim] - 1); //When the stride is negative, the first byte belongs to the last slice of this dimension, not the first one. Remember that.
-      memcpySize *= overlapSize[curDim];
+      if(sourceStride[curDim] < 0) dataPointerOffset += chunkSize*(overlapSize[curDim] - 1); //When the stride is negative, the first byte belongs to the last slice of this dimension, not the first one. Remember that.
+      chunkSize *= overlapSize[curDim];
       if(overlapSize[curDim] != sourceSpace->size[curDim] || overlapSize[curDim] != destSpace->size[curDim]) break; //cannot fuse other dimensions in a memcpy() call if this dimensions does not have a perfect match between the dataspaces
     } else break; //didn't find another suitable dimension for fusing memcpy() calls
   }
@@ -279,39 +278,54 @@ static void esdmI_dataspace_copy_instructions(
   if(!out_size) out_size = trashSize;
   if(!out_relSourceStride) out_relSourceStride = trashRelSourceStride;
   if(!out_relDestStride) out_relDestStride = trashRelDestStride;
-  uint64_t elementSize = esdm_sizeof(sourceSpace->type);
+  uint64_t sourceElementSize = esdm_sizeof(sourceSpace->type);
+  uint64_t destElementSize = esdm_sizeof(destSpace->type);
   for(int64_t memcpyDim = 0; memcpyDim < *out_instructionDims; memcpyDim++) {
     int64_t logicalDim = memcpyDim2LogicalDim[memcpyDim];
     out_size[memcpyDim] = overlapSize[logicalDim];
-    out_relSourceStride[memcpyDim] = sourceStride[logicalDim]*elementSize;
-    out_relDestStride[memcpyDim] = destStride[logicalDim]*elementSize;
+    out_relSourceStride[memcpyDim] = sourceStride[logicalDim]*sourceElementSize;
+    out_relDestStride[memcpyDim] = destStride[logicalDim]*destElementSize;
     if(memcpyDim) {
       //make the previous stride relative to this stride
       out_relSourceStride[memcpyDim-1] -= out_size[memcpyDim]*out_relSourceStride[memcpyDim];
       out_relDestStride[memcpyDim-1] -= out_size[memcpyDim]*out_relDestStride[memcpyDim];
     }
   }
-  *out_chunkSize = memcpySize*elementSize;
+  *out_sourceChunkBytes = chunkSize*sourceElementSize;
   int64_t sourceIndex = 0, destIndex = 0;
   for(int64_t i = 0; i < dimensions; i++) {
     sourceIndex += (overlapOffset[i] - sourceSpace->offset[i])*sourceStride[i];
     destIndex += (overlapOffset[i] - destSpace->offset[i])*destStride[i];
   }
-  *out_sourceOffset = (sourceIndex - dataPointerOffset)*elementSize;
-  *out_destOffset = (destIndex - dataPointerOffset)*elementSize;
+  *out_sourceOffset = (sourceIndex - dataPointerOffset)*sourceElementSize;
+  *out_destOffset = (destIndex - dataPointerOffset)*destElementSize;
 }
+
+static esdm_copyTimes_t gCopyTimes = {0};
+esdm_copyTimes_t esdmI_performance_copy() { return gCopyTimes; }
 
 esdm_status esdm_dataspace_copy_data(esdm_dataspace_t* sourceSpace, void *voidPtrSource, esdm_dataspace_t* destSpace, void *voidPtrDest) {
   eassert(sourceSpace->dims == destSpace->dims);
-  eassert(sourceSpace->type == destSpace->type);  //TODO: remove this restriction
+
+  timer myTimer;
+  ea_start_timer(&myTimer);
 
   char* sourceData = voidPtrSource;
   char* destData = voidPtrDest;
   uint64_t dimensions = sourceSpace->dims;
+  ea_datatype_converter converter = ea_converter_for_types(destSpace->type, sourceSpace->type);
+  if(!converter) {
+    ESDM_WARN("unable to convert the given datatypes");
+    return ESDM_ERROR;
+  }
 
   //get the instructions on how to copy the data
   int64_t instructionDims, chunkSize, sourceOffset, destOffset, size[dimensions], relSourceStride[dimensions], relDestStride[dimensions];
   esdmI_dataspace_copy_instructions(sourceSpace, destSpace, &instructionDims, &chunkSize, &sourceOffset, &destOffset, size, relSourceStride, relDestStride);
+
+  double workStartTime = ea_stop_timer(myTimer);
+  gCopyTimes.planning += workStartTime;
+  gCopyTimes.total += workStartTime;
 
   //execute the instructions
   if(instructionDims < 0) return ESDM_SUCCESS;  //nothing to do
@@ -320,7 +334,7 @@ esdm_status esdm_dataspace_copy_data(esdm_dataspace_t* sourceSpace, void *voidPt
   int64_t counters[instructionDims];
   memset(counters, 0, sizeof(counters));
   while(true) {
-    memcpy(destData, sourceData, chunkSize);
+    converter(destData, sourceData, chunkSize);
 
     int64_t i;
     for(i = instructionDims; i--; ) {
@@ -331,6 +345,10 @@ esdm_status esdm_dataspace_copy_data(esdm_dataspace_t* sourceSpace, void *voidPt
     }
     if(i == -1) break;
   }
+
+  double workEndTime = ea_stop_timer(myTimer);
+  gCopyTimes.execution += workEndTime - workStartTime;
+  gCopyTimes.total += workEndTime - workStartTime;
 
   return ESDM_SUCCESS;
 }
@@ -617,7 +635,7 @@ static void splitToBackends(esdm_dataspace_t* space, int64_t backendCount, esdm_
   float* weights = ea_checked_malloc(backendCount*sizeof(*weights));
   for (int64_t i = 0; i < backendCount; i++) {
     if (backends[i]->callbacks.estimate_throughput != NULL)
-      weights[i] = backends[i]->callbacks.estimate_throughput(backends[i]);
+      weights[i] = esdmI_backend_estimate_throughput(backends[i]);
   }
 
   int64_t dims = esdm_dataspace_get_dims(space);

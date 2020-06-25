@@ -468,6 +468,32 @@ struct esdm_writeTimes_t {
   double total; //sum of all the times above and other small things like taking times...
 };
 
+/// time measurements for esdm_dataspace_copy_data(), including invocation both by users and ESDM itself
+typedef struct esdm_copyTimes_t esdm_copyTimes_t;
+struct esdm_copyTimes_t {
+  double planning;  //the time spent analysing the dataspaces to determine what needs to be done
+  double execution; //the time spent to actually move the data
+  double total; //sum of all the times above and other small things like taking times...
+};
+
+//timers for each of the different backend interface functions
+typedef struct esdm_backendTimes_t esdm_backendTimes_t;
+struct esdm_backendTimes_t {
+  double finalize;
+  double performance_estimate;
+  double estimate_throughput;
+  double fragment_create;
+  double fragment_retrieve;
+  double fragment_update;
+  double fragment_delete;
+  double fragment_metadata_create;
+  double fragment_metadata_load;
+  double fragment_metadata_free;
+  double mkfs;
+  double fsck;
+  double fragment_write_stream_blocksize;
+};
+
 
 
 #endif

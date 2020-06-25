@@ -148,7 +148,39 @@ esdm_status esdm_performance_recommendation(esdm_instance_t *esdm, esdm_fragment
 esdm_status esdm_performance_finalize();
 
 esdm_readTimes_t esdmI_performance_read();
+esdm_readTimes_t esdmI_performance_read_add(const esdm_readTimes_t* a, const esdm_readTimes_t* b);
+esdm_readTimes_t esdmI_performance_read_sub(const esdm_readTimes_t* minuend, const esdm_readTimes_t* subtrahend);
+void esdmI_performance_read_print(FILE* stream, const esdm_readTimes_t* start, const esdm_readTimes_t* end);  //start may be NULL
+
 esdm_writeTimes_t esdmI_performance_write();
+esdm_writeTimes_t esdmI_performance_write_add(const esdm_writeTimes_t* a, const esdm_writeTimes_t* b);
+esdm_writeTimes_t esdmI_performance_write_sub(const esdm_writeTimes_t* minuend, const esdm_writeTimes_t* subtrahend);
+void esdmI_performance_write_print(FILE* stream, const esdm_writeTimes_t* start, const esdm_writeTimes_t* end);  //start may be NULL
+
+esdm_copyTimes_t esdmI_performance_copy();
+esdm_copyTimes_t esdmI_performance_copy_add(const esdm_copyTimes_t* a, const esdm_copyTimes_t* b);
+esdm_copyTimes_t esdmI_performance_copy_sub(const esdm_copyTimes_t* minuend, const esdm_copyTimes_t* subtrahend);
+void esdmI_performance_copy_print(FILE* stream, const esdm_copyTimes_t* start, const esdm_copyTimes_t* end);  //start may be NULL
+
+esdm_backendTimes_t esdmI_performance_backend();
+esdm_backendTimes_t esdmI_performance_backend_add(const esdm_backendTimes_t* a, const esdm_backendTimes_t* b);
+esdm_backendTimes_t esdmI_performance_backend_sub(const esdm_backendTimes_t* minuend, const esdm_backendTimes_t* subtrahend);
+void esdmI_performance_backend_print(FILE* stream, const esdm_backendTimes_t* start, const esdm_backendTimes_t* end);  //start may be NULL
+
+//wrappers for the backend API functions that perform the time measurement to be retrieved via esdmI_performance_backend()
+int esdmI_backend_finalize(esdm_backend_t * b);
+int esdmI_backend_performance_estimate(esdm_backend_t * b, esdm_fragment_t *fragment, float *out_time);
+float esdmI_backend_estimate_throughput (esdm_backend_t * b);
+int esdmI_backend_fragment_create (esdm_backend_t * b, esdm_fragment_t *fragment);
+int esdmI_backend_fragment_retrieve(esdm_backend_t * b, esdm_fragment_t *fragment);
+int esdmI_backend_fragment_update (esdm_backend_t * b, esdm_fragment_t *fragment);
+int esdmI_backend_fragment_delete (esdm_backend_t * b, esdm_fragment_t *fragment);
+int esdmI_backend_fragment_metadata_create(esdm_backend_t * b, esdm_fragment_t *fragment, smd_string_stream_t* stream);
+void* esdmI_backend_fragment_metadata_load(esdm_backend_t * b, esdm_fragment_t *fragment, json_t *metadata);
+int esdmI_backend_fragment_metadata_free (esdm_backend_t * b, void * options);
+int esdmI_backend_mkfs(esdm_backend_t * b, int format_flags);
+int esdmI_backend_fsck(esdm_backend_t * b);
+int esdmI_backend_fragment_write_stream_blocksize(esdm_backend_t * b, estream_write_t * state, void * cur_buf, size_t cur_offset, uint32_t cur_size);
 
 double esdmI_backendOutputTime();
 double esdmI_backendInputTime();
@@ -392,6 +424,22 @@ typedef struct timespec timer;
 void ea_start_timer(timer *t1);
 double ea_stop_timer(timer t1);
 double ea_timer_subtract(timer number, timer subtract);
+
+//data conversion
+typedef void* (*ea_datatype_converter)(void* dest, const void* source, size_t sourceBytes);
+
+/**
+ * Return a memcpy()-like function that converts an array of sourceType into an array of destType.
+ * The individual values are converted as with the respective C cast, preserving values where possible,
+ * but possibly also wrapping around or losing precision if the original values cannot be represented exactly.
+ *
+ * Works only for some selected datatypes (noop conversions (`memcpy()`), `int8_t` through `uint64_t`, as well as `float` and `double`),
+ * so be sure to check the return value against NULL and handle the error condition appropriately.
+ *
+ * Be aware that some conversions involve UB.
+ * Especially out-of-range float/double conversion to integers can yield surprising results.
+ */
+ea_datatype_converter ea_converter_for_types(esdm_type_t destType, esdm_type_t sourceType);
 
 ///////////////////////////////////////////////////////////////////////////////
 // esdmI_range_t //////////////////////////////////////////////////////////////

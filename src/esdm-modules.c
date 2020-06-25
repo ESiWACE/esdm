@@ -104,7 +104,7 @@ esdm_status esdm_modules_finalize(esdm_instance_t *esdm) {
     for(int i = esdm->modules->data_backend_count - 1 ; i >= 0; i--){
       esdm_backend_t *backend =esdm->modules->data_backends[i];
       if(backend->callbacks.finalize){
-        backend->callbacks.finalize(backend);
+        esdmI_backend_finalize(backend);
       }
     }
     free(esdm->modules->data_backends);
@@ -142,7 +142,7 @@ esdm_backend_t* esdm_modules_fastestBackend(esdm_modules_t* modules) {
   esdm_backend_t* bestBackend = NULL;
   float bestThroughput = 0;
   for(int64_t i = 0; i < modules->data_backend_count; i++) {
-    float curThroughput = modules->data_backends[i]->callbacks.estimate_throughput(modules->data_backends[i]);
+    float curThroughput = esdmI_backend_estimate_throughput(modules->data_backends[i]);
     if(curThroughput >= bestThroughput) {
       bestThroughput = curThroughput;
       bestBackend = modules->data_backends[i];

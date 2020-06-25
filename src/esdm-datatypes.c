@@ -457,7 +457,7 @@ esdm_status esdm_fragment_retrieve(esdm_fragment_t *fragment) {
         fragment->ownsBuf = true;
       }
       esdm_backend_t *backend = fragment->backend;
-      int ret = backend->callbacks.fragment_retrieve(backend, fragment);
+      int ret = esdmI_backend_fragment_retrieve(backend, fragment);
       if(ret == ESDM_SUCCESS){
         fragment->status = ESDM_DATA_PERSISTENT;
       }
@@ -533,7 +533,7 @@ void esdm_fragment_metadata_create(esdm_fragment_t *f, smd_string_stream_t * str
   }
   if(f->backend->callbacks.fragment_metadata_create){
     smd_string_stream_printf(stream, "],\"backend\":");
-    f->backend->callbacks.fragment_metadata_create(f->backend, f, stream);
+    esdmI_backend_fragment_metadata_create(f->backend, f, stream);
     smd_string_stream_printf(stream, "}");
   }else{
     smd_string_stream_printf(stream, "]}");
@@ -544,7 +544,7 @@ esdm_status esdm_fragment_commit(esdm_fragment_t *f) {
   ESDM_DEBUG(__func__);
   eassert(f && "fragment argument must not be NULL");
 
-	int ret = f->backend->callbacks.fragment_update(f->backend, f);
+	int ret = esdmI_backend_fragment_update(f->backend, f);
   if(ret == ESDM_SUCCESS) {
     f->status = ESDM_DATA_PERSISTENT;
   }
@@ -597,7 +597,7 @@ esdm_status esdm_dataset_delete(esdm_dataset_t *d){
   esdm_fragment_t** fragments = esdmI_fragments_list(&d->fragments, &fragmentCount);
   for(int i=0; i < fragmentCount; i++){
     esdm_fragment_t * frag = fragments[i];
-    status = frag->backend->callbacks.fragment_delete(frag->backend, frag);
+    status = esdmI_backend_fragment_delete(frag->backend, frag);
     if(status != ESDM_SUCCESS){
       if(i == 0){ //FIXME: This early return means that the caller does not know anything about the state of the dataset in case of an error.
                   //       Ideally, we should perform the action transactionally (either full success or no change at all),
@@ -632,7 +632,7 @@ esdm_status esdm_fragment_destroy(esdm_fragment_t *frag) {
 
   if(frag->backend_md){
     eassert(frag->backend->callbacks.fragment_metadata_free);
-    frag->backend->callbacks.fragment_metadata_free(frag->backend, frag->backend_md);
+    esdmI_backend_fragment_metadata_free(frag->backend, frag->backend_md);
   }
   if(frag->id) free(frag->id);
   if(frag->dataspace) esdm_dataspace_destroy(frag->dataspace);
@@ -823,7 +823,7 @@ esdm_status esdmI_create_fragment_from_metadata(esdm_dataset_t *dset, json_t * j
   // deserialize module specific options
   if(f->backend->callbacks.fragment_metadata_load){
     elem = json_object_get(json, "backend");
-    f->backend_md = f->backend->callbacks.fragment_metadata_load(f->backend, f, elem);
+    f->backend_md = esdmI_backend_fragment_metadata_load(f->backend, f, elem);
   }else{
     f->backend_md = NULL;
   }

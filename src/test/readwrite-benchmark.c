@@ -33,12 +33,17 @@ typedef struct {
   int64_t dimCount, timeDim;
   int64_t* offset;
   int64_t* size;
+  int64_t* timestepSize;
   int64_t* fragmentSize;
 } instruction_t;
 
 typedef struct {
   timer t;
-  double dataHandling, io, cleanup, mpi, metadataSync;
+  double dataHandling, init, io, cleanup, mpi, metadataSync;
+  esdm_readTimes_t readTimesStart, readTimesEnd;
+  esdm_writeTimes_t writeTimesStart, writeTimesEnd;
+  esdm_copyTimes_t copyTimesStart, copyTimesEnd;
+  esdm_backendTimes_t backendTimesStart, backendTimesEnd;
 } ioTimer;
 
 //checkedScan() is a wrapper for fscanf() which returns true if, and only if the entire format string was matched successfully.
@@ -145,9 +150,12 @@ instruction_t* parseInstructions(FILE* instructions, size_t* out_instructionCoun
     parseVector(lineStream, newInstruction->dimCount, &newInstruction->offset);
     parseVector(lineStream, newInstruction->dimCount, &newInstruction->size);
     parseVector(lineStream, newInstruction->dimCount, &newInstruction->fragmentSize);
+    newInstruction->timestepSize = ea_checked_malloc(newInstruction->dimCount*sizeof*newInstruction->timestepSize);
+    memcpy(newInstruction->timestepSize, newInstruction->size, newInstruction->dimCount*sizeof*newInstruction->timestepSize);
 
-    //the fragment size must be 1 in the time dimension (if present)
+    //adjust the timestepSize and check that the fragment size is 1 in the time dimension (if present)
     if(newInstruction->timeDim >= 0) {
+      newInstruction->timestepSize[newInstruction->timeDim] = 1;
       if(newInstruction->fragmentSize[newInstruction->timeDim] != 1) {
         fprintf(stderr, "error: the fragment size of the time dimension (%"PRId64" of variable %s is not 1\n", newInstruction->timeDim, newInstruction->varname);
         abort();
@@ -166,6 +174,7 @@ void deleteInstructions(size_t instructionCount, instruction_t* instructions) {
     free(instructions[i].varname);
     free(instructions[i].offset);
     free(instructions[i].size);
+    free(instructions[i].timestepSize);
     free(instructions[i].fragmentSize);
   }
   free(instructions);
@@ -175,7 +184,7 @@ void generateFragmentList(instruction_t* instruction, int64_t dimCount, int64_t 
   //determine the total count of fragments
   int64_t totalFragmentCount = 1, fragmentCounts[dimCount];
   for(int64_t i = dimCount; i--;) {
-    fragmentCounts[i] = (instruction->size[i] + instruction->fragmentSize[i] - 1)/instruction->fragmentSize[i];
+    fragmentCounts[i] = (instruction->timestepSize[i] + instruction->fragmentSize[i] - 1)/instruction->fragmentSize[i];
     totalFragmentCount *= fragmentCounts[i];
   }
 
@@ -204,18 +213,27 @@ void generateFragmentList(instruction_t* instruction, int64_t dimCount, int64_t 
 void getFragmentShape(instruction_t* instruction, int64_t* fragmentOffset, int64_t* out_size) {
   for(int64_t i = instruction->dimCount; i--; ) {
     int64_t limit = fragmentOffset[i] + instruction->fragmentSize[i];
-    if(limit > instruction->offset[i] + instruction->size[i]) limit = instruction->offset[i] + instruction->size[i];
+    if(limit > instruction->offset[i] + instruction->timestepSize[i]) limit = instruction->offset[i] + instruction->timestepSize[i];
     out_size[i] = limit - fragmentOffset[i];
   }
 }
 
-int64_t localIndex2globalIndex(int64_t dimCount, int64_t* offset, int64_t *size, int64_t *globalSize, int64_t localIndex) {
-  int64_t globalIndex = 0;
-  for(int64_t dim = dimCount, factor = 1; dim--; localIndex /= size[dim], factor *= globalSize[dim]) {
+int64_t encodeCoords(int64_t dimCount, int64_t* offset, int64_t *size, int64_t localIndex) {
+  int64_t encodedValue = 0;
+  //We encode the coords into fixed width bitfields of size 8.
+  //That way, the result is independent of the overall shape of the dataset, we retain a decent collision resistance, and we retain a certain human interpretability of the resulting data.
+  for(int64_t dim = dimCount; dim--; localIndex /= size[dim]) {
     int64_t coord = localIndex%size[dim] + offset[dim];  //Extract the value of this coordinate from the localIndex ...
-    globalIndex += factor*coord;  //... and reencode into a global index.
+    encodedValue = (encodedValue << 8) | (coord & 0xff);
   }
-  return globalIndex;
+  return encodedValue;
+}
+
+__attribute__((unused))
+void printVector(FILE* stream, int64_t dimCount, int64_t* vector) {
+  fprintf(stream, "(");
+  for(int64_t i = 0; i < dimCount; i++) fprintf(stream, "%s%"PRId64, i ? ", " : "", vector[i]);
+  fprintf(stream, ")");
 }
 
 void generateFragmentData(int64_t dimCount, int64_t* offset, int64_t* size, int64_t *globalSize, int64_t **out_data) {
@@ -225,7 +243,7 @@ void generateFragmentData(int64_t dimCount, int64_t* offset, int64_t* size, int6
 
   //create the fragment's data
   int64_t* data = *out_data = ea_checked_malloc(datapoints*sizeof*data);
-  for(int64_t i = datapoints; i--; ) data[i] = localIndex2globalIndex(dimCount, offset, size, globalSize, i);
+  for(int64_t i = datapoints; i--; ) data[i] = encodeCoords(dimCount, offset, size, i);
 }
 
 void checkFragmentData(int64_t dimCount, int64_t* offset, int64_t* size, int64_t *globalSize, int64_t *data) {
@@ -235,7 +253,7 @@ void checkFragmentData(int64_t dimCount, int64_t* offset, int64_t* size, int64_t
 
   //check the fragment's data
   for(int64_t i = datapoints; i--; ) {
-    if(data[i] != localIndex2globalIndex(dimCount, offset, size, globalSize, i)) {
+    if(data[i] != encodeCoords(dimCount, offset, size, i)) {
       fprintf(stderr, "wrong data detected\n");
       abort();
     }
@@ -261,9 +279,7 @@ void writeVariableTimestep(instruction_t* instruction, esdm_dataset_t* dataset, 
   int64_t savedTimeOffset, savedTimeSize;
   if(haveTime) {
     savedTimeOffset = instruction->offset[instruction->timeDim];
-    savedTimeSize = instruction->size[instruction->timeDim];
     instruction->offset[instruction->timeDim] = timestep;
-    instruction->size[instruction->timeDim] = 1;
   }
 
   //write the data
@@ -304,7 +320,6 @@ void writeVariableTimestep(instruction_t* instruction, esdm_dataset_t* dataset, 
   //restore the time dim
   if(haveTime) {
     instruction->offset[instruction->timeDim] = savedTimeOffset;
-    instruction->size[instruction->timeDim] = savedTimeSize;
   }
 }
 
@@ -320,26 +335,53 @@ void printTimes(ioTimer* times, int64_t totalBytes, const char* operationName, c
   MPI_Comm_size(MPI_COMM_WORLD, &procCount);
 
   //collect the measurement data at the root process
+  times->readTimesEnd = esdmI_performance_read();
+  times->writeTimesEnd = esdmI_performance_write();
+  times->copyTimesEnd = esdmI_performance_copy();
+  times->backendTimesEnd = esdmI_performance_backend();
   ioTimer* collectedTimes = rank ? NULL : ea_checked_malloc(procCount*sizeof*collectedTimes);
   MPI_Gather(times, sizeof*times, MPI_BYTE, collectedTimes, sizeof*collectedTimes, MPI_BYTE, 0, MPI_COMM_WORLD);
 
   if(!rank) {
     //print a table with the raw measurements
     printf("%s:\n", operationName);
-    //      1234567 | 1234567   1234567   1234567 | 1234567   1234567
-    printf("  proc  |   io      cleanup     sync  |   MPI     %s\n", dataHandlingTitle);
+    //      1234567 | 1234567   1234567   1234567   1234567 | 1234567   1234567
+    printf("  proc  |  init       io      cleanup     sync  |   MPI     %s\n", dataHandlingTitle);
     printf("--------+-----------------------------+------------------\n");
     for(int i = 0; i < procCount; i++) {
-      printf("%7d | %6.3fs   %6.3fs   %6.3fs | %6.3fs   %6.3fs\n", i, collectedTimes[i].io, collectedTimes[i].cleanup, collectedTimes[i].metadataSync, collectedTimes[i].mpi, collectedTimes[i].dataHandling);
+      printf("%7d | %6.3fs   %6.3fs   %6.3fs   %6.3fs | %6.3fs   %6.3fs\n", i, collectedTimes[i].init, collectedTimes[i].io, collectedTimes[i].cleanup, collectedTimes[i].metadataSync, collectedTimes[i].mpi, collectedTimes[i].dataHandling);
     }
 
     //print the performance summary
     double totalTime = 0;
+    esdm_readTimes_t esdmTimesRead = {0};
+    esdm_writeTimes_t esdmTimesWrite = {0};
+    esdm_copyTimes_t esdmTimesCopy = {0};
+    esdm_backendTimes_t esdmTimesBackend = {0};
     for(int i = procCount; i--; ) {
       double procTime = collectedTimes[i].io + collectedTimes[i].cleanup + collectedTimes[i].metadataSync;
       if(procTime > totalTime) totalTime = procTime;
+
+      esdm_readTimes_t curReadTimes = esdmI_performance_read_sub(&collectedTimes[i].readTimesEnd, &collectedTimes[i].readTimesStart);
+      esdmTimesRead = esdmI_performance_read_add(&esdmTimesRead, &curReadTimes);
+
+      esdm_writeTimes_t curWriteTimes = esdmI_performance_write_sub(&collectedTimes[i].writeTimesEnd, &collectedTimes[i].writeTimesStart);
+      esdmTimesWrite = esdmI_performance_write_add(&esdmTimesWrite, &curWriteTimes);
+
+      esdm_copyTimes_t curCopyTimes = esdmI_performance_copy_sub(&collectedTimes[i].copyTimesEnd, &collectedTimes[i].copyTimesStart);
+      esdmTimesCopy = esdmI_performance_copy_add(&esdmTimesCopy, &curCopyTimes);
+
+      esdm_backendTimes_t curBackendTimes = esdmI_performance_backend_sub(&collectedTimes[i].backendTimesEnd, &collectedTimes[i].backendTimesStart);
+      esdmTimesBackend = esdmI_performance_backend_add(&esdmTimesBackend, &curBackendTimes);
     }
-    printf("Performance Summary: I/O of %.0fMiB in %.3fs = %.3f MiB/s\n\n", totalBytes/1024.0/1024, totalTime, totalBytes/1024.0/1024/totalTime);
+
+    printf("\nESDM internal measurements:\n");
+    esdmI_performance_write_print(stdout, NULL, &esdmTimesWrite);
+    esdmI_performance_read_print(stdout, NULL, &esdmTimesRead);
+    esdmI_performance_copy_print(stdout, NULL, &esdmTimesCopy);
+    esdmI_performance_backend_print(stdout, NULL, &esdmTimesBackend);
+
+    printf("\nPerformance Summary: I/O of %.0fMiB in %.3fs = %.3f MiB/s\n\n", totalBytes/1024.0/1024, totalTime, totalBytes/1024.0/1024/totalTime);
   }
   free(collectedTimes);
   MPI_Barrier(MPI_COMM_WORLD);
@@ -356,6 +398,14 @@ void benchmarkWrite(size_t instructionCount, instruction_t* instructions) {
   }
 
   //create the datasets
+  MPI_Barrier(MPI_COMM_WORLD);
+  ioTimer times = {
+    .readTimesStart = esdmI_performance_read(),
+    .writeTimesStart = esdmI_performance_write(),
+    .copyTimesStart = esdmI_performance_copy(),
+    .backendTimesStart = esdmI_performance_backend()
+  };
+  ea_start_timer(&times.t);
   esdm_container_t *container = NULL;
   esdm_status ret = esdm_mpi_container_create(MPI_COMM_WORLD, "mycontainer", true, &container);
   eassert(ret == ESDM_SUCCESS);
@@ -381,11 +431,9 @@ void benchmarkWrite(size_t instructionCount, instruction_t* instructions) {
     ret = esdm_mpi_dataset_create(MPI_COMM_WORLD, container, instructions[i].varname, spaces[i], &sets[i]);
     eassert(ret == ESDM_SUCCESS);
   }
+  times.init = ea_stop_timer(times.t);
 
   //perform the actual writes
-  MPI_Barrier(MPI_COMM_WORLD);
-  ioTimer times = {0};
-  ea_start_timer(&times.t);
   for(int64_t t = 0; t < timeLimit; t++) writeTimestep(instructionCount, instructions, sets, spaces, t, &times);
   times.mpi -= ea_stop_timer(times.t);
   MPI_Barrier(MPI_COMM_WORLD);
@@ -421,9 +469,7 @@ void readVariableTimestep(instruction_t* instruction, esdm_dataset_t* dataset, e
   int64_t savedTimeOffset, savedTimeSize;
   if(haveTime) {
     savedTimeOffset = instruction->offset[instruction->timeDim];
-    savedTimeSize = instruction->size[instruction->timeDim];
     instruction->offset[instruction->timeDim] = timestep;
-    instruction->size[instruction->timeDim] = 1;
   }
 
   //read the data
@@ -472,7 +518,6 @@ void readVariableTimestep(instruction_t* instruction, esdm_dataset_t* dataset, e
   //restore the time dim
   if(haveTime) {
     instruction->offset[instruction->timeDim] = savedTimeOffset;
-    instruction->size[instruction->timeDim] = savedTimeSize;
   }
 }
 
@@ -493,6 +538,14 @@ void benchmarkRead(size_t instructionCount, instruction_t* instructions) {
   }
 
   //open the datasets
+  MPI_Barrier(MPI_COMM_WORLD);
+  ioTimer times = {
+    .readTimesStart = esdmI_performance_read(),
+    .writeTimesStart = esdmI_performance_write(),
+    .copyTimesStart = esdmI_performance_copy(),
+    .backendTimesStart = esdmI_performance_backend()
+  };
+  ea_start_timer(&times.t);
   esdm_container_t *container = NULL;
   esdm_status ret = esdm_mpi_container_open(MPI_COMM_WORLD, "mycontainer", false, &container);
   eassert(ret == ESDM_SUCCESS);
@@ -505,16 +558,16 @@ void benchmarkRead(size_t instructionCount, instruction_t* instructions) {
     for(int64_t dim = instructions[i].dimCount; dim--; ) datapointCount *= instructions[i].size[dim];
     totalBytes += datapointCount*sizeof(int64_t);
 
+    //FIXME: The execution time of this call is totally dominated by the rebuilding of the fragments list from metadata.
+    //       Save the fragment neighbourhood information to disk for fast loading.
     ret = esdm_mpi_dataset_open(MPI_COMM_WORLD, container, instructions[i].varname, &sets[i]);
     eassert(ret == ESDM_SUCCESS);
     ret = esdm_dataset_get_dataspace(sets[i], &spaces[i]);
     eassert(ret == ESDM_SUCCESS);
   }
+  times.init = ea_stop_timer(times.t);
 
   //perform the actual reads
-  MPI_Barrier(MPI_COMM_WORLD);
-  ioTimer times = {0};
-  ea_start_timer(&times.t);
   for(int64_t t = 0; t < timeLimit; t++) readTimestep(instructionCount, instructions, sets, spaces, t, &times);
   times.mpi -= ea_stop_timer(times.t);
   MPI_Barrier(MPI_COMM_WORLD);
@@ -556,9 +609,16 @@ void exitWithUsage(const char* execName, const char* errorMessage, int exitStatu
 void parseCommandlineArgs(int argc, char** argv, char** configFile, FILE** writeInstructionFile, FILE** readInstructionFile) {
   if(argc == 1) {
     //special handling of the zero argument case to ensure that this benchmark plays nicely as a test
-    static char defaultInstructions[] = "mydataset(3, t = 0): (0, 0, 0) (10, 1024, 1024) (1, 256, 1024)\n";
-    *writeInstructionFile = fmemopen(defaultInstructions, sizeof(defaultInstructions) - 1, "r");  //-1 for the length to avoid passing the terminating null byte to getline()
-    *readInstructionFile = fmemopen(defaultInstructions, sizeof(defaultInstructions) - 1, "r");
+    static char defaultInstructionsWrite[] =
+      "mydataset1(3, t = 0): (0, 0, 0) (10, 1024, 1024) (1, 256, 1024)\n"
+      "mydataset2(3, t = 1): (0, 0, 0) (10, 10, 10) (10, 1, 10)\n"
+      "mydataset3(3): (0, 0, 0) (10, 10, 10) (10, 10, 10)\n";
+    static char defaultInstructionsRead[] =
+      "mydataset1(3, t = 0): (0, 0, 0) (10, 1024, 1024) (1, 256, 1024)\n"
+      "mydataset2(3): (0, 0, 0) (10, 10, 10) (10, 10, 10)\n"
+      "mydataset3(3, t = 1): (0, 0, 0) (10, 10, 10) (10, 1, 10)\n";
+    *writeInstructionFile = fmemopen(defaultInstructionsWrite, sizeof(defaultInstructionsWrite) - 1, "r");  //-1 for the length to avoid passing the terminating null byte to getline()
+    *readInstructionFile = fmemopen(defaultInstructionsRead, sizeof(defaultInstructionsRead) - 1, "r");
     return;
   }
 
