@@ -34,7 +34,7 @@
 #define DEBUG(fmt, ...) ESDM_DEBUG_COM_FMT("CONFIG", fmt, __VA_ARGS__)
 
 esdm_config_t *esdm_config_init_from_str(const char *config_str) {
-  void* json = load_json(config_str); // parse text into JSON structure
+  json_t* json = load_json(config_str); // parse text into JSON structure
   if(! json) {
     ESDM_ERROR_FMT("CONFIG invalid JSON config:\"%s\"", config_str);
   }
@@ -47,7 +47,7 @@ esdm_config_t *esdm_config_init_from_str(const char *config_str) {
   if(! esdm_e) ESDM_ERROR("Configuration: esdm tag not set");
 
   config->boundListImplementation = BOUND_LIST_IMPLEMENTATION_BTREE;  //default
-  json_t* boundListImplementation_e = json_object_get(json, "bound list implementation");
+  json_t* boundListImplementation_e = json_object_get(esdm_e, "bound list implementation");
   if(boundListImplementation_e) {
     const char* selection = json_string_value(boundListImplementation_e);
     if(!selection) {
