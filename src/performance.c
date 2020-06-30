@@ -20,8 +20,12 @@
 
 #include <stdio.h>
 
-#define printTime(stream, timeObject, member) do { \
-  if(timeObject.member > 0.0) fprintf(stream, "\t\t" #member ": %.3fs\n", timeObject.member); \
+#define printTime(stream, linePrefix, indentation, timeObject, member) do { \
+  if(timeObject.member > 0.0) fprintf(stream, "%s%s" #member ": %.3fs\n", linePrefix, indentation, timeObject.member); \
+} while(0)
+
+#define printCountedTime(stream, linePrefix, indentation, object, timeMember, countMember) do { \
+  if(object.countMember > 0) fprintf(stream, "%s%s" #timeMember ": %"PRId64" calls in %.3fs (%.3fms per call)\n", linePrefix, indentation, object.countMember, object.timeMember, object.timeMember*1000/object.countMember); \
 } while(0)
 
 esdm_readTimes_t esdmI_performance_read_add(const esdm_readTimes_t* a, const esdm_readTimes_t* b) {
@@ -46,16 +50,16 @@ esdm_readTimes_t esdmI_performance_read_sub(const esdm_readTimes_t* minuend, con
   };
 }
 
-void esdmI_performance_read_print(FILE* stream, const esdm_readTimes_t* start, const esdm_readTimes_t* end) {
+void esdmI_performance_read_print(FILE* stream, const char* linePrefix, const char* indentation, const esdm_readTimes_t* start, const esdm_readTimes_t* end) {
   esdm_readTimes_t diff = start ? esdmI_performance_read_sub(end, start) : *end;
   if(diff.total > 0.0) {
-    fprintf(stream, "\tread:\n");
-    printTime(stream, diff, makeSet);
-    printTime(stream, diff, coverageCheck);
-    printTime(stream, diff, enqueue);
-    printTime(stream, diff, completion);
-    printTime(stream, diff, writeback);
-    printTime(stream, diff, total);
+    fprintf(stream, "%sread:\n", linePrefix);
+    printTime(stream, linePrefix, indentation, diff, makeSet);
+    printTime(stream, linePrefix, indentation, diff, coverageCheck);
+    printTime(stream, linePrefix, indentation, diff, enqueue);
+    printTime(stream, linePrefix, indentation, diff, completion);
+    printTime(stream, linePrefix, indentation, diff, writeback);
+    printTime(stream, linePrefix, indentation, diff, total);
   }
 }
 
@@ -77,14 +81,14 @@ esdm_writeTimes_t esdmI_performance_write_sub(const esdm_writeTimes_t* minuend, 
   };
 }
 
-void esdmI_performance_write_print(FILE* stream, const esdm_writeTimes_t* start, const esdm_writeTimes_t* end) {
+void esdmI_performance_write_print(FILE* stream, const char* linePrefix, const char* indentation, const esdm_writeTimes_t* start, const esdm_writeTimes_t* end) {
   esdm_writeTimes_t diff = start ? esdmI_performance_write_sub(end, start) : *end;
   if(diff.total > 0.0) {
-    fprintf(stream, "\twrite:\n");
-    printTime(stream, diff, backendDistribution);
-    printTime(stream, diff, backendDispatch);
-    printTime(stream, diff, completion);
-    printTime(stream, diff, total);
+    fprintf(stream, "%swrite:\n", linePrefix);
+    printTime(stream, linePrefix, indentation, diff, backendDistribution);
+    printTime(stream, linePrefix, indentation, diff, backendDispatch);
+    printTime(stream, linePrefix, indentation, diff, completion);
+    printTime(stream, linePrefix, indentation, diff, total);
   }
 }
 
@@ -104,13 +108,13 @@ esdm_copyTimes_t esdmI_performance_copy_sub(const esdm_copyTimes_t* minuend, con
   };
 }
 
-void esdmI_performance_copy_print(FILE* stream, const esdm_copyTimes_t* start, const esdm_copyTimes_t* end) {
+void esdmI_performance_copy_print(FILE* stream, const char* linePrefix, const char* indentation, const esdm_copyTimes_t* start, const esdm_copyTimes_t* end) {
   esdm_copyTimes_t diff = start ? esdmI_performance_copy_sub(end, start) : *end;
   if(diff.total > 0.0) {
-    fprintf(stream, "\tcopy:\n");
-    printTime(stream, diff, planning);
-    printTime(stream, diff, execution);
-    printTime(stream, diff, total);
+    fprintf(stream, "%scopy:\n", linePrefix);
+    printTime(stream, linePrefix, indentation, diff, planning);
+    printTime(stream, linePrefix, indentation, diff, execution);
+    printTime(stream, linePrefix, indentation, diff, total);
   }
 }
 
@@ -260,21 +264,53 @@ esdm_backendTimes_t esdmI_performance_backend_sub(const esdm_backendTimes_t* min
   };
 }
 
-void esdmI_performance_backend_print(FILE* stream, const esdm_backendTimes_t* start, const esdm_backendTimes_t* end) {
+void esdmI_performance_backend_print(FILE* stream, const char* linePrefix, const char* indentation, const esdm_backendTimes_t* start, const esdm_backendTimes_t* end) {
   esdm_backendTimes_t diff = start ? esdmI_performance_backend_sub(end, start) : *end;
 
-  fprintf(stream, "\tbackend:\n");
-  printTime(stream, diff, finalize);
-  printTime(stream, diff, performance_estimate);
-  printTime(stream, diff, estimate_throughput);
-  printTime(stream, diff, fragment_create);
-  printTime(stream, diff, fragment_retrieve);
-  printTime(stream, diff, fragment_update);
-  printTime(stream, diff, fragment_delete);
-  printTime(stream, diff, fragment_metadata_create);
-  printTime(stream, diff, fragment_metadata_load);
-  printTime(stream, diff, fragment_metadata_free);
-  printTime(stream, diff, mkfs);
-  printTime(stream, diff, fsck);
-  printTime(stream, diff, fragment_write_stream_blocksize);
+  fprintf(stream, "%sbackend:\n", linePrefix);
+  printTime(stream, linePrefix, indentation, diff, finalize);
+  printTime(stream, linePrefix, indentation, diff, performance_estimate);
+  printTime(stream, linePrefix, indentation, diff, estimate_throughput);
+  printTime(stream, linePrefix, indentation, diff, fragment_create);
+  printTime(stream, linePrefix, indentation, diff, fragment_retrieve);
+  printTime(stream, linePrefix, indentation, diff, fragment_update);
+  printTime(stream, linePrefix, indentation, diff, fragment_delete);
+  printTime(stream, linePrefix, indentation, diff, fragment_metadata_create);
+  printTime(stream, linePrefix, indentation, diff, fragment_metadata_load);
+  printTime(stream, linePrefix, indentation, diff, fragment_metadata_free);
+  printTime(stream, linePrefix, indentation, diff, mkfs);
+  printTime(stream, linePrefix, indentation, diff, fsck);
+  printTime(stream, linePrefix, indentation, diff, fragment_write_stream_blocksize);
+}
+
+esdm_fragmentsTimes_t esdmI_performance_fragments() {
+  esdm_fragmentsTimes_t result;
+  esdmI_fragments_getStats(&result.fragmentAddCalls, &result.fragmentAdding, &result.setCreationCalls, &result.setCreation);
+  return result;
+}
+
+esdm_fragmentsTimes_t esdmI_performance_fragments_add(const esdm_fragmentsTimes_t* a, const esdm_fragmentsTimes_t* b) {
+  return (esdm_fragmentsTimes_t){
+    .fragmentAdding = a->fragmentAdding + b->fragmentAdding,
+    .setCreation = a->setCreation + b->setCreation,
+    .fragmentAddCalls = a->fragmentAddCalls + b->fragmentAddCalls,
+    .setCreationCalls = a->setCreationCalls + b->setCreationCalls,
+  };
+}
+
+esdm_fragmentsTimes_t esdmI_performance_fragments_sub(const esdm_fragmentsTimes_t* minuend, const esdm_fragmentsTimes_t* subtrahend) {
+  return (esdm_fragmentsTimes_t){
+    .fragmentAdding = minuend->fragmentAdding - subtrahend->fragmentAdding,
+    .setCreation = minuend->setCreation - subtrahend->setCreation,
+    .fragmentAddCalls = minuend->fragmentAddCalls - subtrahend->fragmentAddCalls,
+    .setCreationCalls = minuend->setCreationCalls - subtrahend->setCreationCalls,
+  };
+}
+
+void esdmI_performance_fragments_print(FILE* stream, const char* linePrefix, const char* indentation, const esdm_fragmentsTimes_t* start, const esdm_fragmentsTimes_t* end) {
+  esdm_fragmentsTimes_t diff = start ? esdmI_performance_fragments_sub(end, start) : *end;
+
+  fprintf(stream, "%sfragment handling:\n", linePrefix);
+  printCountedTime(stream, linePrefix, indentation, diff, fragmentAdding, fragmentAddCalls);
+  printCountedTime(stream, linePrefix, indentation, diff, setCreation, setCreationCalls);
 }

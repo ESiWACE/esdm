@@ -494,6 +494,14 @@ struct esdm_backendTimes_t {
   double fragment_write_stream_blocksize;
 };
 
+//statistics for the handling of fragments
+typedef struct esdm_fragmentsTimes_t esdm_fragmentsTimes_t;
+struct esdm_fragmentsTimes_t {
+  double fragmentAdding;
+  double setCreation;
 
+  int64_t fragmentAddCalls;
+  int64_t setCreationCalls;
+};
 
 #endif

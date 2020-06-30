@@ -150,22 +150,27 @@ esdm_status esdm_performance_finalize();
 esdm_readTimes_t esdmI_performance_read();
 esdm_readTimes_t esdmI_performance_read_add(const esdm_readTimes_t* a, const esdm_readTimes_t* b);
 esdm_readTimes_t esdmI_performance_read_sub(const esdm_readTimes_t* minuend, const esdm_readTimes_t* subtrahend);
-void esdmI_performance_read_print(FILE* stream, const esdm_readTimes_t* start, const esdm_readTimes_t* end);  //start may be NULL
+void esdmI_performance_read_print(FILE* stream, const char* linePrefix, const char* indentation, const esdm_readTimes_t* start, const esdm_readTimes_t* end);  //start may be NULL
 
 esdm_writeTimes_t esdmI_performance_write();
 esdm_writeTimes_t esdmI_performance_write_add(const esdm_writeTimes_t* a, const esdm_writeTimes_t* b);
 esdm_writeTimes_t esdmI_performance_write_sub(const esdm_writeTimes_t* minuend, const esdm_writeTimes_t* subtrahend);
-void esdmI_performance_write_print(FILE* stream, const esdm_writeTimes_t* start, const esdm_writeTimes_t* end);  //start may be NULL
+void esdmI_performance_write_print(FILE* stream, const char* linePrefix, const char* indentation, const esdm_writeTimes_t* start, const esdm_writeTimes_t* end);  //start may be NULL
 
 esdm_copyTimes_t esdmI_performance_copy();
 esdm_copyTimes_t esdmI_performance_copy_add(const esdm_copyTimes_t* a, const esdm_copyTimes_t* b);
 esdm_copyTimes_t esdmI_performance_copy_sub(const esdm_copyTimes_t* minuend, const esdm_copyTimes_t* subtrahend);
-void esdmI_performance_copy_print(FILE* stream, const esdm_copyTimes_t* start, const esdm_copyTimes_t* end);  //start may be NULL
+void esdmI_performance_copy_print(FILE* stream, const char* linePrefix, const char* indentation, const esdm_copyTimes_t* start, const esdm_copyTimes_t* end);  //start may be NULL
 
 esdm_backendTimes_t esdmI_performance_backend();
 esdm_backendTimes_t esdmI_performance_backend_add(const esdm_backendTimes_t* a, const esdm_backendTimes_t* b);
 esdm_backendTimes_t esdmI_performance_backend_sub(const esdm_backendTimes_t* minuend, const esdm_backendTimes_t* subtrahend);
-void esdmI_performance_backend_print(FILE* stream, const esdm_backendTimes_t* start, const esdm_backendTimes_t* end);  //start may be NULL
+void esdmI_performance_backend_print(FILE* stream, const char* linePrefix, const char* indentation, const esdm_backendTimes_t* start, const esdm_backendTimes_t* end);  //start may be NULL
+
+esdm_fragmentsTimes_t esdmI_performance_fragments();
+esdm_fragmentsTimes_t esdmI_performance_fragments_add(const esdm_fragmentsTimes_t* a, const esdm_fragmentsTimes_t* b);
+esdm_fragmentsTimes_t esdmI_performance_fragments_sub(const esdm_fragmentsTimes_t* minuend, const esdm_fragmentsTimes_t* subtrahend);
+void esdmI_performance_fragments_print(FILE* stream, const char* linePrefix, const char* indentation, const esdm_fragmentsTimes_t* start, const esdm_fragmentsTimes_t* end);  //start may be NULL
 
 //wrappers for the backend API functions that perform the time measurement to be retrieved via esdmI_performance_backend()
 int esdmI_backend_finalize(esdm_backend_t * b);
@@ -276,11 +281,6 @@ esdm_fragment_t** esdmI_fragments_makeSetCoveringRegion(esdm_fragments_t* me, es
 void esdmI_fragments_metadata_create(esdm_fragments_t* me, smd_string_stream_t* s);
 esdm_status esdmI_fragments_destruct(esdm_fragments_t* me);  //calls `esdm_fragment_destroy()` on its members, but does not invoke the `fragment_delete()` callback of the backend
 void esdmI_fragments_getStats(int64_t* out_addedFragments, double* out_fragmentAddTime, int64_t* out_createdSets, double* out_setCreationTime);
-double esdmI_fragments_getFragmentAddTime();
-int64_t esdmI_fragments_getFragmentAddCount();
-double esdmI_fragments_getSetCreationTime();
-int64_t esdmI_fragments_getSetCreationCount();
-void esdmI_fragments_resetStats();
 
 void esdm_fragment_metadata_create(esdm_fragment_t *f, smd_string_stream_t * stream);
 esdm_status esdmI_create_fragment_from_metadata(esdm_dataset_t *dset, json_t * json, esdm_fragment_t ** out);

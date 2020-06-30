@@ -376,10 +376,10 @@ void printTimes(ioTimer* times, int64_t totalBytes, const char* operationName, c
     }
 
     printf("\nESDM internal measurements:\n");
-    esdmI_performance_write_print(stdout, NULL, &esdmTimesWrite);
-    esdmI_performance_read_print(stdout, NULL, &esdmTimesRead);
-    esdmI_performance_copy_print(stdout, NULL, &esdmTimesCopy);
-    esdmI_performance_backend_print(stdout, NULL, &esdmTimesBackend);
+    esdmI_performance_write_print(stdout, "\t", "\t", NULL, &esdmTimesWrite);
+    esdmI_performance_read_print(stdout, "\t", "\t", NULL, &esdmTimesRead);
+    esdmI_performance_copy_print(stdout, "\t", "\t", NULL, &esdmTimesCopy);
+    esdmI_performance_backend_print(stdout, "\t", "\t", NULL, &esdmTimesBackend);
 
     printf("\nPerformance Summary: I/O of %.0fMiB in %.3fs = %.3f MiB/s\n\n", totalBytes/1024.0/1024, totalTime, totalBytes/1024.0/1024/totalTime);
   }

@@ -193,12 +193,3 @@ void esdmI_fragments_getStats(int64_t* out_addedFragments, double* out_fragmentA
   if(out_createdSets) *out_createdSets = gMakeSetCount;
   if(out_setCreationTime) *out_setCreationTime = gMakeSetTime;
 }
-
-double esdmI_fragments_getFragmentAddTime() { return gFragmentAddTime; }
-int64_t esdmI_fragments_getFragmentAddCount() { return gFragmentAddCount; }
-double esdmI_fragments_getSetCreationTime() { return gMakeSetTime; }
-int64_t esdmI_fragments_getSetCreationCount() { return gMakeSetCount; }
-void esdmI_fragments_resetStats() {
-  gFragmentAddTime = gMakeSetTime = 0;
-  gFragmentAddCount = gMakeSetCount = 0;
-}
