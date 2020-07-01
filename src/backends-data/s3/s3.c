@@ -15,14 +15,91 @@
 #include "s3.h"
 #define DEBUG_ENTER ESDM_DEBUG_COM_FMT("S3", "", "")
 #define DEBUG(fmt, ...) ESDM_DEBUG_COM_FMT("S3", fmt, __VA_ARGS__)
+#define DEBUG_S3(p, status) printf("S3 %d (object: %s) %s", __LINE__, p,  S3_get_status_name(status))
+
 
 #define WARN_ENTER ESDM_WARN_COM_FMT("S3", "", "")
 #define WARN(fmt, ...) ESDM_WARN_COM_FMT("S3", fmt, __VA_ARGS__)
 #define WARNS(fmt) ESDM_WARN_COM_FMT("S3", "%s", fmt)
 
+static S3Status responsePropertiesCallback(const S3ResponseProperties *properties, void *callbackData){
+  //*(int*)callbackData = 1;
+  return S3StatusOK;
+}
+
+static void responseCompleteCallback(S3Status status, const S3ErrorDetails *error, void *callbackData) {
+  *(int*) callbackData = status;
+  if (error != NULL){
+    DEBUG("S3 error: %s", error->message);
+  }
+}
+
+static S3ResponseHandler responseHandler = {  &responsePropertiesCallback, &responseCompleteCallback };
+
+typedef struct {
+  int status; // do not reorder!
+  s3_backend_data_t * o;
+} s3_req;
+
+static S3Status S3RemoveBucketsCallback(const char *ownerId, const char *ownerDisplayName, const char *bucketName, int64_t creationDateSeconds, void *callbackData){
+  s3_req * r = (s3_req*) callbackData;
+  s3_backend_data_t * o = r->o;
+  char const * a = bucketName;
+  char const * b = o->bucket_prefix;
+  // a must be a prefix of b
+  while(*a == *b && *a != 0){
+    a++;
+    b++;
+  }
+  if(*b == 0 && *a != 0){
+    DEBUG("delete \"%s\" (matches bucket-prefix: %s)\n", bucketName, r->o->bucket_prefix);
+    int status;
+    S3_delete_bucket(o->s3_protocol, S3UriStylePath, o->access_key, o->secret_key, NULL, o->host, bucketName, o->authRegion, NULL, o->timeout, & responseHandler, & status);
+    DEBUG_S3(bucketName, status);
+  } // otherwise doesn't match
+  return S3StatusOK;
+}
+
+static S3ListServiceHandler remove_bucket_handler = { {  &responsePropertiesCallback, &responseCompleteCallback }, & S3RemoveBucketsCallback};
 
 static int mkfs(esdm_backend_t *backend, int format_flags) {
-  DEBUG("mkfs: backend dummy\n", "");
+  DEBUG("mkfs: backend S3\n", "");
+  s3_backend_data_t *o = (s3_backend_data_t *)backend->data;
+
+  int const ignore_err = format_flags & ESDM_FORMAT_IGNORE_ERRORS;
+
+  int status = 0;
+  if (format_flags & ESDM_FORMAT_DELETE) {
+    S3_test_bucket(o->s3_protocol, S3UriStylePath, o->access_key, o->secret_key,
+                        NULL, o->host, o->bucket_prefix, o->authRegion, 0, NULL,
+                        NULL, o->timeout, & responseHandler, & status);
+    if (status != S3StatusOK && ! ignore_err){
+      DEBUG_S3(o->bucket_prefix, status);
+      return ESDM_ERROR;
+    }
+    // delete all buckets with the same prefix
+    s3_req req = { 0, o};
+    S3_list_service(o->s3_protocol, o->access_key, o->secret_key, NULL, o->host, o->authRegion, NULL, o->timeout, & remove_bucket_handler, & req);
+    if (req.status != S3StatusOK && ! ignore_err){
+      DEBUG_S3(o->bucket_prefix, req.status);
+      return ESDM_ERROR;
+    }
+    S3_delete_bucket(o->s3_protocol, S3UriStylePath, o->access_key, o->secret_key, NULL, o->host, o->bucket_prefix, o->authRegion, NULL, o->timeout, & responseHandler, & status);
+    if (status != S3StatusOK && ! ignore_err){
+      DEBUG_S3(o->bucket_prefix, status);
+      return ESDM_ERROR;
+    }
+  }
+
+  if(! (format_flags & ESDM_FORMAT_CREATE)){
+    return ESDM_SUCCESS;
+  }
+
+  S3_create_bucket(o->s3_protocol, o->access_key, o->secret_key, NULL, o->host, o->bucket_prefix, o->authRegion, S3CannedAclPrivate, o->locationConstraint, NULL, o->timeout, & responseHandler, & status);
+  if (status != S3StatusOK){
+    DEBUG_S3(o->bucket_prefix, status);
+    return ESDM_ERROR;
+  }
 
   return ESDM_SUCCESS;
 }
@@ -35,12 +112,48 @@ static int fsck(esdm_backend_t* backend) {
 ///////////////////////////////////////////////////////////////////////////////
 // Fragment Handlers //////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////
+typedef struct{
+  int status;
+  int64_t size;
+  char * buf;
+} data_io_t;
+
+static void init_bucket_context(char const * name, S3BucketContext * bucket_context, s3_backend_data_t *o){
+  memset(bucket_context, 0, sizeof(*bucket_context));
+  bucket_context->hostName = o->host;
+  bucket_context->bucketName = name;
+  bucket_context->protocol = o->s3_protocol;
+  bucket_context->uriStyle = S3UriStylePath;
+  bucket_context->accessKeyId = o->access_key;
+  bucket_context->secretAccessKey = o->secret_key;
+}
+
+static S3Status getObjectDataCallback(int bufferSize, const char *buffer,  void *callbackData){
+  data_io_t * dh = (data_io_t*) callbackData;
+  const int64_t size = dh->size > bufferSize ? bufferSize : dh->size;
+  memcpy(dh->buf, buffer, size);
+  dh->buf = dh->buf + size;
+  dh->size -= size;
+
+  return S3StatusOK;
+}
+
+static S3GetObjectHandler getObjectHandler = { {  &responsePropertiesCallback, &responseCompleteCallback }, & getObjectDataCallback };
 
 static int fragment_retrieve(esdm_backend_t *backend, esdm_fragment_t *f) {
   DEBUG_ENTER;
+  s3_backend_data_t *o = (s3_backend_data_t *)backend->data;
   //ensure that we have a contiguous read buffer
   void* readBuffer = f->dataspace->stride ? ea_checked_malloc(f->bytes) : f->buf;
 
+  S3BucketContext bc;
+  init_bucket_context(o->bucket_prefix, & bc, o);
+  data_io_t dh = { .status = 0, .buf = readBuffer, .size = f->bytes };
+  S3_get_object(& bc, f->id, NULL, 0, f->bytes, NULL, o->timeout, &getObjectHandler, & dh);
+  if(dh.status != S3StatusOK){
+    DEBUG_S3(f->id, dh.status);
+    return ESDM_ERROR;
+  }
   if(f->dataspace->stride) {
     //data is not necessarily supposed to be contiguous in memory -> copy from contiguous dataspace
     esdm_dataspace_t* contiguousSpace;
@@ -53,9 +166,24 @@ static int fragment_retrieve(esdm_backend_t *backend, esdm_fragment_t *f) {
   return ESDM_SUCCESS;
 }
 
+static int putObjectDataCallback(int bufferSize, char *buffer, void *callbackData){
+  // may be called with smaller packets
+  data_io_t * dh = (data_io_t *) callbackData;
+  const int64_t size = dh->size > bufferSize ? bufferSize : dh->size;
+  if(size == 0) return 0;
+  memcpy(buffer, dh->buf, size);
+  dh->buf = dh->buf + size;
+  dh->size -= size;
+
+  return size;
+}
+
+static S3PutObjectHandler putObjectHandler = { {  &responsePropertiesCallback, &responseCompleteCallback }, & putObjectDataCallback };
+
+
 static int fragment_update(esdm_backend_t *backend, esdm_fragment_t *f) {
   DEBUG_ENTER;
-
+  s3_backend_data_t *o = (s3_backend_data_t *)backend->data;
   // set data, options and tgt for convenience
   int ret = ESDM_SUCCESS;
   //ensure that we have the data contiguously in memory
@@ -70,11 +198,19 @@ static int fragment_update(esdm_backend_t *backend, esdm_fragment_t *f) {
   }
   // lazy assignment of ID
   if(f->id == NULL){
+    // TODO create unique ID based on size + offset tuple
     f->id = ea_checked_malloc(24);
     eassert(f->id);
     ea_generate_id(f->id, 23);
   }
-
+  S3BucketContext bc;
+  init_bucket_context(o->bucket_prefix, & bc, o);
+  data_io_t dh = { .status = 0, .buf = writeBuffer, .size = f->bytes };
+  S3_put_object(& bc, f->id, f->bytes, NULL, NULL, o->timeout, &putObjectHandler, & dh);
+  if(dh.status != S3StatusOK){
+    DEBUG_S3(f->id, dh.status);
+    ret = ESDM_ERROR;
+  }
   //cleanup
   if(f->dataspace->stride) free(writeBuffer);
   return ret;
@@ -113,6 +249,8 @@ int s3_finalize(esdm_backend_t *backend) {
   free(data);
   free(backend);
 
+  S3_deinitialize();
+
   return 0;
 }
 
@@ -146,6 +284,12 @@ static esdm_backend_t backend_template = {
   },
 };
 
+#define JSON_REQUIRE(what) \
+  j = json_object_get(config->backend, what); \
+  if(! j){ \
+    ESDM_ERROR("Configuration: " what " not set");\
+  }\
+
 esdm_backend_t *s3_backend_init(esdm_config_backend_t *config) {
   DEBUG_ENTER;
 
@@ -166,7 +310,44 @@ esdm_backend_t *s3_backend_init(esdm_config_backend_t *config) {
   else
     esdm_backend_t_reset_perf_model_lat_thp(&data->perf_model);
 
+  json_t * j;
+  JSON_REQUIRE("access-key")
+  data->access_key = json_string_value(j);
+  JSON_REQUIRE("secret-key")
+  data->secret_key = json_string_value(j);
+  j = json_object_get(config->backend, "host");
+  if(j) data->host = json_string_value(j);
+  j = json_object_get(config->backend, "target");
+  if(j) data->bucket_prefix = json_string_value(j);
+  else data->bucket_prefix = "";
+  if(strlen(data->bucket_prefix) < 5){
+    DEBUG("Target must be longer than 5 characters (this is the bucket name prefix). Given: \"%s\"\n", j);
+    return NULL;
+  }
+  j = json_object_get(config->backend, "locationConstraint");
+  if(j) data->locationConstraint = json_string_value(j);
+  j = json_object_get(config->backend, "authRegion");
+  if(j)  data->authRegion = json_string_value(j);
+  j = json_object_get(config->backend, "timeout");
+  if(j) data->timeout = json_integer_value(j);
+  j = json_object_get(config->backend, "s3-compatible");
+  if(j) data->s3_compatible = json_integer_value(j);
+  j = json_object_get(config->backend, "use-ssl");
+  if(j) data->use_ssl = json_integer_value(j);
+
+  if(data->use_ssl){
+    data->s3_protocol = S3ProtocolHTTPS;
+  }else{
+    data->s3_protocol  = S3ProtocolHTTP;
+  }
+
   // configure backend instance
   data->config = config;
+
+  int ret = S3_initialize(NULL, S3_INIT_ALL, data->host);
+  if(ret != S3StatusOK){
+    WARNS("Could not initialize S3 library");
+  }
+
   return backend;
 }
