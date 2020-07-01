@@ -123,9 +123,6 @@ bool esdmI_hypercube_touches(esdmI_hypercube_t* a, esdmI_hypercube_t* b) {
   eassert(a->dims == b->dims);
   int64_t dimensions = a->dims;
 
-  //"touch" means no overlap is allowed
-  if(esdmI_hypercube_doesIntersect(a, b)) return false;
-
   //check that the two cubes share exactly one bound
   bool haveBound = false;
   int64_t boundDim = -1;

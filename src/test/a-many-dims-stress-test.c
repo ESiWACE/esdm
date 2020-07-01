@@ -112,6 +112,8 @@ int main(int argc, char const **argv) {
   ret = esdm_container_commit(container);
   eassert(ret == ESDM_SUCCESS);
 
+  esdm_fragmentsTimes_t startTimes = esdmI_performance_fragments();
+
   //write data
   int64_t fragmentSize[dimCount];
   for(int64_t i = dimCount; i--; ) fragmentSize[i] = 1;
@@ -140,6 +142,8 @@ int main(int argc, char const **argv) {
     }
   }
 
+  esdm_fragmentsTimes_t endTimes = esdmI_performance_fragments();
+
   //cleanup
   free(data);
   ret = esdm_dataset_close(dataset);
@@ -148,4 +152,8 @@ int main(int argc, char const **argv) {
   eassert(ret == ESDM_SUCCESS);
   ret = esdm_finalize();
   eassert(ret == ESDM_SUCCESS);
+
+  //output
+  esdmI_performance_fragments_print(stdout, "", "\t", &startTimes, &endTimes);
+  printf("\nOK\n\n");
 }
