@@ -2,6 +2,12 @@
 
 #include "dummy/dummy.h"
 
+
+#ifdef ESDM_HAS_S3
+#  include "s3/s3.h"
+#  pragma message("Building ESDM with support for S3 backend.")
+#endif
+
 #ifdef ESDM_HAS_POSIX
 #  include "posix/posix.h"
 #  pragma message("Building ESDM with support for generic POSIX backend.")
@@ -64,6 +70,11 @@ esdm_backend_t * esdmI_init_backend(char const * name, esdm_config_backend_t * b
 #ifdef ESDM_HAS_PMEM
   else if (strncmp(b->type, "PMEM", 4) == 0) {
     return pmem_backend_init(b);
+  }
+#endif
+#ifdef ESDM_HAS_S3
+  else if (strncmp(b->type, "S3", 2) == 0){
+    return s3_backend_init(b);
   }
 #endif
   return NULL;

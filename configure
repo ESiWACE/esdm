@@ -26,6 +26,7 @@ function help(){
   echo "--with-ime-lib=<dir>     : path to libim_client.so"
   echo "--with-kdsa-include=<dir>: path to kdsa.h"
   echo "--with-kdsa-lib=<dir>    : path to libkdsa.so"
+  echo "--enable-s3              : enable S3 backend using libs3"
   echo "--enable-kdsa-dummy      : compile the KDSA dummy backend"
 	echo "--with-boost=<file>      : path to boost library used for WOS"
 	echo "--enable-wos=<file>      : path to WOS library"
@@ -47,7 +48,7 @@ function reconfigure(){
 	exit $?
 }
 
-set -- `getopt -u -l "help,version,debug,reconfigure,prefix:,with-cc:,with-cxx:,enable-hdf5,enable-netcdf4,with-mpicc:,with-mpicxx:,verbose,build-dir:,enable-wos:,with-ime-lib:,with-ime-include:,with-kdsa-lib:,with-kdsa-include:,enable-kdsa-dummy,with-scil:" -o "h" -- "$@"`
+set -- `getopt -u -l "help,version,debug,reconfigure,prefix:,with-cc:,with-cxx:,enable-hdf5,enable-netcdf4,with-mpicc:,with-mpicxx:,verbose,build-dir:,enable-wos:,with-ime-lib:,with-ime-include:,with-kdsa-lib:,with-kdsa-include:,enable-kdsa-dummy,with-scil:,enable-s3" -o "h" -- "$@"`
 test $# -lt 1  && exit 1
 while test $# -gt 0
 do
@@ -70,7 +71,7 @@ do
 		--with-mpicc) mpicc="$2"; shift;;
 		--with-mpicxx) mpicxx="$2"; shift;;
 		--with-boost) boost="$2"; shift;;
-		--enable-hdf5) hdf5="YES"; echo "$2"; ;;
+    --enable-s3) s3="YES"; shift;;
 		--enable-netcdf4) netcdf4="YES"; echo "$2"; ;;
 		--enable-lustre) lustre="$2"; shift;;
 		--enable-clovis) clovis="$2"; shift;;
@@ -105,15 +106,12 @@ if test -n "$cxxbin"; then
 	CMAKEFLAGS="$CMAKEFLAGS -DCMAKE_CXX_COMPILER:FILEPATH=$cxxbin"
 fi
 
-
-if test -n "$hdf5"; then
-	#CMAKEFLAGS="$CMAKEFLAGS -DHDF5_HDF5_LIBRARY_RELEASE:PATH=$hdf5/lib/libhdf5.so -DHDF5_C_INCLUDE_DIR:PATH=$hdf5/include -DENABLE_HDF5=ON"
-	CMAKEFLAGS="$CMAKEFLAGS -DINTERFACE_HDF5=ON"
-fi
 if test -n "$netcdf4"; then
 	CMAKEFLAGS="$CMAKEFLAGS -DINTERFACE_NETCDF4=ON"
 fi
-
+if test -n "$s3"; then
+	CMAKEFLAGS="$CMAKEFLAGS -DBACKEND_S3=ON"
+fi
 if test -n "$ime_lib"; then
 	CMAKEFLAGS="$CMAKEFLAGS -DBACKEND_IME=ON -DIME_LIB_DIR:FILEPATH=$ime_lib"
 fi
