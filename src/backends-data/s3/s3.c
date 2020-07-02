@@ -119,10 +119,10 @@ static S3Status S3RemoveBucketsCallback(const char *ownerId, const char *ownerDi
     int status;
     S3BucketContext bucket_context;
     init_bucket_context(bucketName, & bucket_context, o);
-    s3_delete_req req = {0, o, & bucket_context, 1, NULL};
-    while(req.truncated){
-      S3_list_bucket(& bucket_context, req.nextMarker, NULL, NULL, INT_MAX, NULL, o->timeout, & list_delete_handler, & req);
-    }
+    s3_delete_req req = {0, o, & bucket_context, 0, NULL};
+    do{
+      S3_list_bucket(& bucket_context, NULL, req.nextMarker, NULL, INT_MAX, NULL, o->timeout, & list_delete_handler, & req);
+    }while(req.truncated);
 
     S3_delete_bucket(o->s3_protocol, S3UriStylePath, o->access_key, o->secret_key, NULL, o->host, bucketName, o->authRegion, NULL, o->timeout, & responseHandler, & status);
     if( status != S3StatusOK){
