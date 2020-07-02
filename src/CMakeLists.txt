@@ -119,7 +119,7 @@ install(TARGETS esdmutils LIBRARY DESTINATION lib)
 
 # ESDM Middleware Library
 add_library(esdm SHARED esdm.c  esdm-scheduler.c esdm-stream.c fragments.c  esdm-modules.c backends-data/init.c)
-target_link_libraries(esdm ${GLIB_LDFLAGS} ${JANSSON_LDFLAGS} ${SCIL_LDFLAGS} esdmutils esdmposix esdmdummy esdm-mdposix)
+target_link_libraries(esdm ${GLIB_LDFLAGS} ${JANSSON_LDFLAGS} ${SCIL_LDFLAGS} esdmutils esdmdummy esdm-mdposix)
 if(BACKEND_MONGODB)
     target_link_libraries(esdm esdmmongodb)
 endif()
@@ -140,11 +140,24 @@ SUBDIRS(interfaces)
 ### Data backends ###
 SUBDIRS(backends-data/dummy)
 
+option(BACKEND_S3 "Compile backend for S3 support?" OFF)
+if(BACKEND_S3)
+	message(STATUS "WITH_BACKEND_S3")
+	add_definitions(-DESDM_HAS_S3=1)
+	SUBDIRS(backends-data/s3)
+
+  find_path(S3_INCLUDE_DIR libs3.h HINTS ${S3_INCLUDE_DIR})
+  find_library(S3_LIBRARY NAMES s3 HINTS ${S3_LIB_DIR})
+
+  target_link_libraries(esdm esdms3)
+endif()
+
 option(BACKEND_POSIX "Compile backend for POSIX support?" ON)
 if(BACKEND_POSIX)
 	message(STATUS "WITH_BACKEND_POSIX")
 	add_definitions(-DESDM_HAS_POSIX=1)
 	SUBDIRS(backends-data/posix)
+  target_link_libraries(esdm esdmposix)
 endif()
 
 
