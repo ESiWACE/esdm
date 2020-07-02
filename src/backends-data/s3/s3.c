@@ -13,6 +13,18 @@
 #include <unistd.h>
 
 #include "s3.h"
+
+/*
+The mapping works as follows:
+- upon mkfs a bucket with target == bucket-prefix is created
+-- mkfs (format) will cleanup/remove all buckets with the given prefix including all keys in such buckets
+- every dataset created creates one bucket with the name prefix serialized, e.g., user/test-hans is serialized to: <bucket-prefi>user-testhans
+- upon write it is eagerly attempted to write to the bucket, if it doesn't work, the bucket is created
+- theoretically, every fragment could be one key/value tuple with the (offset-size) N-D tuple serialized as "key", problem: if a offset-size tuple is overwritten, then data would be gone.
+-- => Need to add random data to the key.
+ */
+
+
 #define DEBUG_ENTER ESDM_DEBUG_COM_FMT("S3", "", "")
 #define DEBUG(fmt, ...) ESDM_DEBUG_COM_FMT("S3", fmt, __VA_ARGS__)
 #define DEBUG_S3(p, status) printf("S3 %d (object: %s) %s", __LINE__, p,  S3_get_status_name(status))
@@ -21,6 +33,24 @@
 #define WARN_ENTER ESDM_WARN_COM_FMT("S3", "", "")
 #define WARN(fmt, ...) ESDM_WARN_COM_FMT("S3", fmt, __VA_ARGS__)
 #define WARNS(fmt) ESDM_WARN_COM_FMT("S3", "%s", fmt)
+
+static void def_bucket_name(s3_backend_data_t * o, char * out_name, char const * path){
+  out_name += sprintf(out_name, "%s-", o->bucket_prefix);
+  // duplicate path except "/"
+  while(*path != 0){
+    char c = *path;
+    if(((c >= '0' && c <= '9') || (c >= 'a' && c <= 'z') )){
+      *out_name = *path;
+      out_name++;
+    }else if(c >= 'A' && c <= 'Z'){
+      *out_name = *path + ('a' - 'A');
+      out_name++;
+    }
+    path++;
+  }
+  *out_name = '\0';
+}
+
 
 static S3Status responsePropertiesCallback(const S3ResponseProperties *properties, void *callbackData){
   //*(int*)callbackData = 1;
@@ -55,7 +85,9 @@ static S3Status S3RemoveBucketsCallback(const char *ownerId, const char *ownerDi
     DEBUG("delete \"%s\" (matches bucket-prefix: %s)\n", bucketName, r->o->bucket_prefix);
     int status;
     S3_delete_bucket(o->s3_protocol, S3UriStylePath, o->access_key, o->secret_key, NULL, o->host, bucketName, o->authRegion, NULL, o->timeout, & responseHandler, & status);
-    DEBUG_S3(bucketName, status);
+    if( staus != S3StatusOK){
+      DEBUG_S3(bucketName, status);
+    }
   } // otherwise doesn't match
   return S3StatusOK;
 }
@@ -147,7 +179,9 @@ static int fragment_retrieve(esdm_backend_t *backend, esdm_fragment_t *f) {
   void* readBuffer = f->dataspace->stride ? ea_checked_malloc(f->bytes) : f->buf;
 
   S3BucketContext bc;
-  init_bucket_context(o->bucket_prefix, & bc, o);
+  char bucketName[64];
+  def_bucket_name(o, bucketName, f->dataset->id);
+  init_bucket_context(bucketName, & bc, o);
   data_io_t dh = { .status = 0, .buf = readBuffer, .size = f->bytes };
   S3_get_object(& bc, f->id, NULL, 0, f->bytes, NULL, o->timeout, &getObjectHandler, & dh);
   if(dh.status != S3StatusOK){
@@ -180,7 +214,6 @@ static int putObjectDataCallback(int bufferSize, char *buffer, void *callbackDat
 
 static S3PutObjectHandler putObjectHandler = { {  &responsePropertiesCallback, &responseCompleteCallback }, & putObjectDataCallback };
 
-
 static int fragment_update(esdm_backend_t *backend, esdm_fragment_t *f) {
   DEBUG_ENTER;
   s3_backend_data_t *o = (s3_backend_data_t *)backend->data;
@@ -198,20 +231,37 @@ static int fragment_update(esdm_backend_t *backend, esdm_fragment_t *f) {
   }
   // lazy assignment of ID
   if(f->id == NULL){
-    // TODO create unique ID based on size + offset tuple
+    // TODO make more unique, e.g., creating unique ID based on size + offset tuple
     f->id = ea_checked_malloc(24);
     eassert(f->id);
     ea_generate_id(f->id, 23);
   }
   S3BucketContext bc;
-  init_bucket_context(o->bucket_prefix, & bc, o);
+  char bucketName[64];
+  def_bucket_name(o, bucketName, f->dataset->id);
+  init_bucket_context(bucketName, & bc, o);
   data_io_t dh = { .status = 0, .buf = writeBuffer, .size = f->bytes };
   S3_put_object(& bc, f->id, f->bytes, NULL, NULL, o->timeout, &putObjectHandler, & dh);
   if(dh.status != S3StatusOK){
-    DEBUG_S3(f->id, dh.status);
-    ret = ESDM_ERROR;
+    int status;
+    // may need to create bucket
+    S3_create_bucket(o->s3_protocol, o->access_key, o->secret_key, NULL, o->host, bucketName, o->authRegion, S3CannedAclPrivate, o->locationConstraint, NULL, o->timeout, & responseHandler, & status);
+    if (status != S3StatusOK){
+      DEBUG_S3(o->bucket_prefix, status);
+      // another peer may have created the bucket at the same time
+      if ( status != S3StatusErrorBucketAlreadyExists && status != S3StatusErrorBucketAlreadyOwnedByYou){
+        ret = ESDM_ERROR;
+        goto cleanup;
+      }
+    }
+    S3_put_object(& bc, f->id, f->bytes, NULL, NULL, o->timeout, &putObjectHandler, & dh);
+    if(dh.status != S3StatusOK){
+      DEBUG_S3(f->id, dh.status);
+      ret = ESDM_ERROR;
+    }
   }
   //cleanup
+  cleanup:
   if(f->dataspace->stride) free(writeBuffer);
   return ret;
 }
