@@ -383,6 +383,7 @@ esdm_backend_t *s3_backend_init(esdm_config_backend_t *config) {
 
   // allocate memory for backend instance
   s3_backend_data_t *data = ea_checked_malloc(sizeof(*data));
+  memset(data, 0, sizeof(*data));
   backend->data = data;
 
   if (data && config->performance_model)
@@ -414,7 +415,6 @@ esdm_backend_t *s3_backend_init(esdm_config_backend_t *config) {
   if(j) data->s3_compatible = json_integer_value(j);
   j = json_object_get(config->backend, "use-ssl");
   if(j) data->use_ssl = json_integer_value(j);
-
   if(data->use_ssl){
     data->s3_protocol = S3ProtocolHTTPS;
   }else{
