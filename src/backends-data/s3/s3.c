@@ -51,6 +51,15 @@ static void def_bucket_name(s3_backend_data_t * o, char * out_name, char const *
   *out_name = '\0';
 }
 
+static void init_bucket_context(char const * name, S3BucketContext * bucket_context, s3_backend_data_t *o){
+  memset(bucket_context, 0, sizeof(*bucket_context));
+  bucket_context->hostName = o->host;
+  bucket_context->bucketName = name;
+  bucket_context->protocol = o->s3_protocol;
+  bucket_context->uriStyle = S3UriStylePath;
+  bucket_context->accessKeyId = o->access_key;
+  bucket_context->secretAccessKey = o->secret_key;
+}
 
 static S3Status responsePropertiesCallback(const S3ResponseProperties *properties, void *callbackData){
   //*(int*)callbackData = 1;
@@ -71,6 +80,30 @@ typedef struct {
   s3_backend_data_t * o;
 } s3_req;
 
+typedef struct {
+  int status; // do not reorder!
+  s3_backend_data_t * o;
+  S3BucketContext * bucket_context;
+  int truncated;
+  char const *nextMarker;
+} s3_delete_req;
+
+S3Status list_delete_cb(int isTruncated, const char *nextMarker, int contentsCount, const S3ListBucketContent *contents, int commonPrefixesCount, const char **commonPrefixes, void *callbackData){
+  int status;
+  s3_delete_req * req = (s3_delete_req*) callbackData;
+  for(int i=0; i < contentsCount; i++){
+    S3_delete_object(req->bucket_context, contents[i].key, NULL, req->o->timeout, & responseHandler, & status);
+  }
+  req->truncated = isTruncated;
+  if(isTruncated){
+    req->nextMarker = nextMarker;
+  }
+  return S3StatusOK;
+}
+
+static S3ListBucketHandler list_delete_handler = {{&responsePropertiesCallback, &responseCompleteCallback }, list_delete_cb};
+
+
 static S3Status S3RemoveBucketsCallback(const char *ownerId, const char *ownerDisplayName, const char *bucketName, int64_t creationDateSeconds, void *callbackData){
   s3_req * r = (s3_req*) callbackData;
   s3_backend_data_t * o = r->o;
@@ -84,8 +117,15 @@ static S3Status S3RemoveBucketsCallback(const char *ownerId, const char *ownerDi
   if(*b == 0 && *a != 0){
     DEBUG("delete \"%s\" (matches bucket-prefix: %s)\n", bucketName, r->o->bucket_prefix);
     int status;
+    S3BucketContext bucket_context;
+    init_bucket_context(bucketName, & bucket_context, o);
+    s3_delete_req req = {0, o, & bucket_context, 1, NULL};
+    while(req.truncated){
+      S3_list_bucket(& bucket_context, req.nextMarker, NULL, NULL, INT_MAX, NULL, o->timeout, & list_delete_handler, & req);
+    }
+
     S3_delete_bucket(o->s3_protocol, S3UriStylePath, o->access_key, o->secret_key, NULL, o->host, bucketName, o->authRegion, NULL, o->timeout, & responseHandler, & status);
-    if( staus != S3StatusOK){
+    if( status != S3StatusOK){
       DEBUG_S3(bucketName, status);
     }
   } // otherwise doesn't match
@@ -149,16 +189,6 @@ typedef struct{
   int64_t size;
   char * buf;
 } data_io_t;
-
-static void init_bucket_context(char const * name, S3BucketContext * bucket_context, s3_backend_data_t *o){
-  memset(bucket_context, 0, sizeof(*bucket_context));
-  bucket_context->hostName = o->host;
-  bucket_context->bucketName = name;
-  bucket_context->protocol = o->s3_protocol;
-  bucket_context->uriStyle = S3UriStylePath;
-  bucket_context->accessKeyId = o->access_key;
-  bucket_context->secretAccessKey = o->secret_key;
-}
 
 static S3Status getObjectDataCallback(int bufferSize, const char *buffer,  void *callbackData){
   data_io_t * dh = (data_io_t*) callbackData;
