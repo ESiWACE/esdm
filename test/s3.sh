@@ -14,7 +14,10 @@ fi
 export MINIO_ACCESS_KEY=accesskey
 export MINIO_SECRET_KEY=secretkey
 
-$ROOT/minio --quiet server /dev/shm &
+$ROOT/minio --quiet server --address :9000 /dev/shm &
+
+#To run with multiple, use:
+#$ROOT/minio --quiet server --address :9001 /dev/shm &
 
 
 
