@@ -44,7 +44,7 @@ bool ea_is_valid_dataset_name(char const*str) {
   }
   for(char const * p = str; p[0] != 0 ; p++){
     char c = *p;
-    if ((c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') || (c >= '0' && c <= '9') || c=='_' || c=='-'){
+    if ((c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') || (c >= '0' && c <= '9') || c=='_' || c=='-' || c=='%'){
       last = c;
       continue;
     }

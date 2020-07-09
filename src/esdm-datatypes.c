@@ -353,7 +353,9 @@ esdm_status esdmI_container_destroy(esdm_container_t *c) {
   }
   if(ret == ESDM_SUCCESS){
     free(dsets->dset);
-    smd_attr_destroy(c->attr);
+    if(c->attr){ // may be called for not completely loaded containers
+      smd_attr_destroy(c->attr);
+    }
     free(c->name);
     free(c);
   }
