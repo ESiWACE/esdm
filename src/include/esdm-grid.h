@@ -1,7 +1,9 @@
 #ifndef ESDM_GRID_H
 #define ESDM_GRID_H
 
-#include <esdm-datatypes.h>
+#include <esdm-datatypes-internal.h>
+
+#include <stdbool.h>
 
 typedef struct esdm_grid_t esdm_grid_t;
 typedef struct esdm_gridIterator_t esdm_gridIterator_t;
@@ -264,6 +266,9 @@ void esdm_gridIterator_destroy(esdm_gridIterator_t* iterator);
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 // Internal API ////////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////////////////////////
+
+
+void esdmI_dataset_registerGrid(esdm_dataset_t* dataset, esdm_grid_t* grid);
 
 int64_t esdmI_grid_coverRegionSize(const esdm_grid_t* grid, const esdmI_hypercube_t* region);	//returns the total size of the grid cells that intersect the region
 
