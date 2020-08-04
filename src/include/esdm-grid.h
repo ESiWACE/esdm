@@ -4,6 +4,7 @@
 #include <esdm-datatypes.h>
 
 typedef struct esdm_grid_t esdm_grid_t;
+typedef struct esdm_gridIterator_t esdm_gridIterator_t;
 
 /*
  * esdm_grid_create(), esdm_grid_createSimple()
@@ -15,12 +16,12 @@ typedef struct esdm_grid_t esdm_grid_t;
  * The normal use case is to subsequently subdivide one or more axes using either `esdm_grid_subdivideFixed()` or `esdm_grid_subdivideFlexible()` before using the grid in an I/O operation.
  *
  * @param[in] dataset the dataset to which the grid should belong
- * @param[in] dimCount the dimensionality of the grid's domain
+ * @param[in] dimCount the dimensionality of the grid's domain, must match the dimension count of the dataset
  * @param[in] offset an array of `dimCount` elements, contains the starting coordinate of the grid's domain, in the case of `esdm_grid_createSimple()` the origin is assumed
  * @param[in] size an array of `dimCount` elements, contains the count of data points within the domain in each dimension
  * @param[out] out_grid a pointer to the newly constructed grid, or NULL in case of an error
  *
- * The caller acquires a reference to the grid and is responsible to call `esdm_grid_unref()` sometime later.
+ * The grid will be owned by the dataset, it will remain valid until the dataset is closed.
  *
  * @return a status code that identifies the cause of an error
  */
@@ -42,11 +43,11 @@ esdm_status esdm_grid_createSimple(esdm_dataset_t* dataset, int64_t dimCount, in
  *
  * This function is considered an I/O call on the parent grid, further `esdm_grid_subdivide*()` calls on the parent will result in an error.
  *
- * The caller acquires a reference to the grid and is responsible to call `esdm_grid_unref()` sometime later.
+ * The grid will be owned by the dataset, it will remain valid until the dataset is closed.
  *
- * @return `ESDM_SUCCESS` on success, `ESDM_INVALID_STATE` if there is already data associated with the grid cell at `index`.
+ * @return `ESDM_SUCCESS` on success, `ESDM_INVALID_ARGUMENT_ERROR` if the given index does not exist, `ESDM_INVALID_STATE_ERROR` if there is already data associated with the grid cell at `index`.
  */
-esdm_grid_createSubgrid(esdm_grid_t* parent, int64_t* index, esdm_grid_t** out_child);
+esdm_status esdm_grid_createSubgrid(esdm_grid_t* parent, int64_t* index, esdm_grid_t** out_child);
 
 /*
  * esdm_grid_subdivideFixed()
@@ -63,7 +64,7 @@ esdm_grid_createSubgrid(esdm_grid_t* parent, int64_t* index, esdm_grid_t** out_c
  *
  * This function must not be called once the grid has been used in an I/O or MPI call.
  *
- * @return `ESDM_SUCCESS` on success, `ESDM_INVALID_ARGUMENT_ERROR` if the arguments are inconsistent with the given grid, `ESDM_INVALID_STATE` if the grid has already been used in an I/O operation
+ * @return `ESDM_SUCCESS` on success, `ESDM_INVALID_ARGUMENT_ERROR` if the arguments are inconsistent with the given grid, `ESDM_INVALID_STATE_ERROR` if the grid has already been used in an I/O operation
  */
 esdm_status esdm_grid_subdivideFixed(esdm_grid_t* grid, int64_t dim, int64_t size, bool allowIncomplete);
 
@@ -82,9 +83,29 @@ esdm_status esdm_grid_subdivideFixed(esdm_grid_t* grid, int64_t dim, int64_t siz
  *
  * This function must not be called once the grid has been used in an I/O or MPI call.
  *
- * @return `ESDM_SUCCESS` on success, `ESDM_INVALID_ARGUMENT_ERROR` if the arguments are inconsistent with the given grid, `ESDM_INVALID_STATE` if the grid has already been used in an I/O operation
+ * @return `ESDM_SUCCESS` on success, `ESDM_INVALID_ARGUMENT_ERROR` if the arguments are inconsistent with the given grid, `ESDM_INVALID_STATE_ERROR` if the grid has already been used in an I/O operation
  */
 esdm_status esdm_grid_subdivideFlexible(esdm_grid_t* grid, int64_t dim, int64_t count);
+
+/*
+ * esdm_grid_cellSize()
+ *
+ * Inquire the bounding hyperbox of a single grid cell.
+ *
+ * @param[in] grid the grid to inquire
+ * @param[in] cellIndex array of `dimCount` elements that contains the grid coordinates of the cell that is to be inquired
+ * @param[out] out_offset array of `dimCount` elements that will be set to the starting coordinates of the cell
+ * @param[out] out_size array of `dimCount` elements that will be set to the size of the cell
+ *
+ * A grid has two independent sets of coordinates:
+ *   - the domain coordinates which are defined when the grid object is created
+ *   - the grid coordinates which are defined by subsequent calls to `esdm_grid_subdivide_*()`
+ * The later coordinates always put the first grid cell at the origin, and adding/subtracting `1` to/from any coordinate yields the grid coordinates of a neighbouring grid cell.
+ * This functions basically translates the grid coordinates into the domain coordinates of the grid cell's bounding hyperbox.
+ *
+ * @return `ESDM_SUCCESS` on success, `ESDM_INVALID_ARGUMENT_ERROR` if the given grid cell does not exist
+ */
+esdm_status esdm_grid_cellSize(const esdm_grid_t* grid, int64_t* cellIndex, int64_t* out_offset, int64_t* out_size);
 
 /*
  * esdm_grid_cellExtends()
@@ -174,8 +195,7 @@ esdm_status esdm_read_grid(esdm_grid_t* grid, esdm_dataspace_t* memspace, void* 
  * @param[out, optional] out_grids return the pointer to the first element of an array containing the available grids
  *
  * The array that is returned in `*out_grids` is malloc'ed by `esdm_dataset_grids()`, it is the callers responsibility to call `free()` on the array.
- * The grids themselves, however, still only belong to the dataset.
- * If user code wishes to store some grids for future use, it must call `esdm_grid_ref()` on these grids itself.
+ * The grids themselves, however, still belong to the dataset and remain valid until the dataset is closed.
  *
  * All the returned grids will contain data for their entire domain.
  *
@@ -211,7 +231,7 @@ esdm_status esdm_gridIterator_create(esdm_grid_t* grid, esdm_gridIterator_t** ou
  *
  * Obtain a dataspace for a chunk of data.
  *
- * @param[in] iterator the iterator to advance
+ * @param[inout] inout_iterator the iterator to advance
  * @param[in] increment the number of grid cells to advance, must not be negative
  * @param[out] out_dataspace a new dataspace that covers the selected grid cell, ready to be passed to `esdm_read_grid()`, NULL when the iterator has been advanced past the last grid cell
  *
@@ -219,26 +239,27 @@ esdm_status esdm_gridIterator_create(esdm_grid_t* grid, esdm_gridIterator_t** ou
  *
  * The increment argument is useful for parallel applications, as it allows each process to iterate over its own subset of grid cells.
  *
- * After the last grid cell has been returned, `esdm_gridIterator_next()` will return `ESDM_SUCCESS` and set `*out_dataspace` to NULL to signal the condition.
+ * `esdm_gridIterator_next()` may choose to replace the iterator pointer at `*inout_iterator` with a different one (this is intended to support subgrids),
+ * but that is of no importance to the caller.
+ * When such a replacement happens, the `esdm_gridIterator_new()` implementation takes care to do so fully transparently.
+ *
+ * After the last grid cell has been returned, `esdm_gridIterator_next()` will return `ESDM_SUCCESS` and set both `*out_dataspace` and `*inout_iterator` to NULL to signal the condition.
+ * As such, it is not necessary to call `esdm_gridIterator_destroy()` if the iterator is advanced over the end of the grid,
+ * `esdm_gridIterator_destroy()` exists to dispose off incompletely advanced iterators, only.
  *
  * @return `ESDM_SUCCESS` on success
  */
-esdm_status esdm_gridIterator_next(esdm_gridIterator_t* iterator, int64_t increment, esdm_dataspace_t** out_dataspace);
+esdm_status esdm_gridIterator_next(esdm_gridIterator_t** inout_iterator, int64_t increment, esdm_dataspace_t** out_dataspace);
 
 /*
  * esdm_gridIterator_destroy()
  *
+ * @param[in] iterator the iterator to destroy, may be NULL
+ *
  * Destroy and deallocate a grid iterator.
+ * In the case of NULL argument, this is a noop.
  */
 void esdm_gridIterator_destroy(esdm_gridIterator_t* iterator);
-
-/*
- * esdm_grid_ref(), esdm_grid_unref()
- *
- * Lifetime management.
- */
-void esdm_grid_ref(esdm_grid_t* grid);
-void esdm_grid_unref(esdm_grid_t* grid);
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 // Internal API ////////////////////////////////////////////////////////////////////////////////////
@@ -251,5 +272,7 @@ void esdmI_grid_subgridCompleted(esdm_grid_t* grid);	//called by subgrids when t
 //For use by esdm_mpi and storing as metadata.
 void esdmI_grid_serialize(smd_string_stream_t* stream, const esdm_grid_t* grid);
 esdm_status esdmI_grid_createFromString(const char* serializedGrid, esdm_grid_t** out_grid);
+
+void esdmI_grid_destroy(esdm_grid_t* grid);	//must only be called by the owning dataset
 
 #endif
