@@ -37,8 +37,6 @@
 #define DEBUG_ENTER ESDM_DEBUG_COM_FMT("DATATYPES", "", "")
 #define DEBUG(fmt, ...) ESDM_DEBUG_COM_FMT("DATATYPES", fmt, __VA_ARGS__)
 
-extern esdm_instance_t esdm;
-
 // Container //////////////////////////////////////////////////////////////////
 
 esdm_status esdm_container_create(const char *name, int allow_overwrite, esdm_container_t **oc) {
@@ -51,7 +49,8 @@ esdm_status esdm_container_create(const char *name, int allow_overwrite, esdm_co
   esdmI_container_init(name, & c);
   c->mode_flags = ESDM_MODE_FLAG_WRITE;
 
-  int ret = esdm.modules->metadata_backend->callbacks.container_create(esdm.modules->metadata_backend, c, allow_overwrite);
+  esdm_modules_t* modules = esdm_get_modules();
+  int ret = modules->metadata_backend->callbacks.container_create(modules->metadata_backend, c, allow_overwrite);
 
   if(ret == ESDM_SUCCESS){
     *oc = c;
@@ -175,7 +174,8 @@ esdm_status esdm_container_open_md_parse(esdm_container_t *c, char * md, int siz
 }
 
 esdm_status esdm_container_open_md_load(esdm_container_t *c, char ** out_md, int * out_size){
-	return esdm.modules->metadata_backend->callbacks.container_retrieve(esdm.modules->metadata_backend, c, out_md, out_size);
+  esdm_modules_t* modules = esdm_get_modules();
+	return modules->metadata_backend->callbacks.container_retrieve(modules->metadata_backend, c, out_md, out_size);
 }
 
 esdm_status esdm_container_open(char const *name, int esdm_mode_flags, esdm_container_t **out_container) {
@@ -262,7 +262,8 @@ esdm_status esdm_container_commit(esdm_container_t *c) {
   esdmI_container_metadata_create(c, s);
   char * buff = smd_string_stream_close(s, & md_size);
 
-  esdm_status ret =  esdm.modules->metadata_backend->callbacks.container_commit(esdm.modules->metadata_backend, c, buff, md_size);
+  esdm_modules_t* modules = esdm_get_modules();
+  esdm_status ret =  modules->metadata_backend->callbacks.container_commit(modules->metadata_backend, c, buff, md_size);
 
   // Also commit uncommited datasets of this container: cannot do this as it depends on how we are called
   esdm_datasets_t * dsets = & c->dsets;
@@ -573,7 +574,8 @@ esdm_status esdm_container_delete(esdm_container_t *c){
   c->status = ESDM_DATA_DELETED;
   c->dsets.count = 0;
 
-  status = esdm.modules->metadata_backend->callbacks.container_remove(esdm.modules->metadata_backend, c);
+  esdm_modules_t* modules = esdm_get_modules();
+  status = modules->metadata_backend->callbacks.container_remove(modules->metadata_backend, c);
   if(status != ESDM_SUCCESS){
     ret = status;
   }
@@ -614,7 +616,8 @@ esdm_status esdm_dataset_delete(esdm_dataset_t *d){
   if(status != ESDM_SUCCESS) ret = status;
 
   d->status = ESDM_DATA_DELETED;
-  status = esdm.modules->metadata_backend->callbacks.dataset_remove(esdm.modules->metadata_backend, d);
+  esdm_modules_t* modules = esdm_get_modules();
+  status = modules->metadata_backend->callbacks.dataset_remove(modules->metadata_backend, d);
   if(status != ESDM_SUCCESS){
     ret = status;
   }
@@ -690,7 +693,8 @@ esdm_status esdm_dataset_create(esdm_container_t *c, const char *name, esdm_data
   esdm_dataset_init(c, name, dspace, & dset);
   dset->mode_flags = ESDM_MODE_FLAG_WRITE;
 
-  esdm_status status = esdm.modules->metadata_backend->callbacks.dataset_create(esdm.modules->metadata_backend, dset);
+  esdm_modules_t* modules = esdm_get_modules();
+  esdm_status status = modules->metadata_backend->callbacks.dataset_create(modules->metadata_backend, dset);
   if(status != ESDM_SUCCESS){
     esdmI_dataset_destroy(dset);
     return status;
@@ -724,25 +728,27 @@ esdm_status esdm_dataset_open_md_load(esdm_dataset_t *dset, char ** out_md, int 
   eassert(out_md != NULL);
   eassert(out_size != NULL);
 
-	return esdm.modules->metadata_backend->callbacks.dataset_retrieve(esdm.modules->metadata_backend, dset, out_md, out_size);
+  esdm_modules_t* modules = esdm_get_modules();
+	return modules->metadata_backend->callbacks.dataset_retrieve(modules->metadata_backend, dset, out_md, out_size);
 }
 
 esdm_backend_t * esdmI_get_backend(char const * plugin_id){
-    eassert(plugin_id);
+  eassert(plugin_id);
 
-    // find the backend for the fragment
-    esdm_backend_t *backend_to_use = NULL;
-    for (int x = 0; x < esdm.modules->data_backend_count; x++) {
-      esdm_backend_t *b_tmp = esdm.modules->data_backends[x];
-      if (strcmp(b_tmp->config->id, plugin_id) == 0) {
-        DEBUG("Found plugin %s", plugin_id);
-        backend_to_use = b_tmp;
-        break;
-      }
+  // find the backend for the fragment
+  esdm_backend_t *backend_to_use = NULL;
+  esdm_modules_t* modules = esdm_get_modules();
+  for (int x = 0; x < modules->data_backend_count; x++) {
+    esdm_backend_t *b_tmp = modules->data_backends[x];
+    if (strcmp(b_tmp->config->id, plugin_id) == 0) {
+      DEBUG("Found plugin %s", plugin_id);
+      backend_to_use = b_tmp;
+      break;
     }
-    if (backend_to_use == NULL) {
-      ESDM_ERROR_FMT("Error no backend found for ID: %s", plugin_id);
-    }
+  }
+  if (backend_to_use == NULL) {
+    ESDM_ERROR_FMT("Error no backend found for ID: %s", plugin_id);
+  }
 	return backend_to_use;
 }
 
@@ -1103,7 +1109,8 @@ esdm_status esdm_dataset_commit(esdm_dataset_t *d) {
   // TODO commit each uncommited fragment
 
   // md callback create/update container
-  esdm_status ret = esdm.modules->metadata_backend->callbacks.dataset_commit(esdm.modules->metadata_backend, d, buff, md_size);
+  esdm_modules_t* modules = esdm_get_modules();
+  esdm_status ret = modules->metadata_backend->callbacks.dataset_commit(modules->metadata_backend, d, buff, md_size);
   free(buff);
 
   return ret;
