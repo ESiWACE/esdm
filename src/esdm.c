@@ -33,13 +33,16 @@ static bool is_initialized = false;
   .total_procs = 1,\
   .config = NULL
 
-esdm_instance_t esdm = {ESDM_INSTANCE_INITIALIZERS};
+esdm_instance_t* esdmI_esdm() {
+  static esdm_instance_t instance = {ESDM_INSTANCE_INITIALIZERS};
+  return &instance;
+}
 
 esdm_status esdm_set_procs_per_node(int procs) {
   eassert(procs > 0);
   eassert(!is_initialized);
 
-  esdm.procs_per_node = procs;
+  esdmI_esdm()->procs_per_node = procs;
   return ESDM_SUCCESS;
 }
 
@@ -47,17 +50,19 @@ esdm_status esdm_set_total_procs(int procs) {
   eassert(procs > 0);
   eassert(!is_initialized);
 
-  esdm.total_procs = procs;
+  esdmI_esdm()->total_procs = procs;
   return ESDM_SUCCESS;
 }
 
 esdm_status esdm_load_config_str(const char *str) {
   eassert(str != NULL);
   eassert(!is_initialized);
-  eassert(!esdm.config);
 
-  esdm.config = esdm_config_init_from_str(str);
-  return esdm.config ? ESDM_SUCCESS : ESDM_ERROR;
+  esdm_instance_t* esdm = esdmI_esdm();
+  eassert(!esdm->config);
+
+  esdm->config = esdm_config_init_from_str(str);
+  return esdm->config ? ESDM_SUCCESS : ESDM_ERROR;
 }
 
 esdm_status esdm_dataset_get_dataspace(esdm_dataset_t *dset, esdm_dataspace_t **out_dataspace) {
@@ -92,26 +97,23 @@ esdm_status esdm_init() {
     }
 
     // find configuration
-    if (! esdm.config){
-      if(esdm_config_init(&esdm) == NULL){
+    esdm_instance_t* esdm = esdmI_esdm();
+    if (! esdm->config){
+      if(esdm_config_init(esdm) == NULL){
         return ESDM_ERROR;
       }
     }
 
     // optional modules (e.g. data and metadata backends)
-    esdm_modules_init(&esdm);
+    esdm_modules_init(esdm);
 
     // core components
-    esdm_layout_init(&esdm);
-    esdm_performance_init(&esdm);
-    esdm_scheduler_init(&esdm);
+    esdm_layout_init(esdm);
+    esdm_performance_init(esdm);
+    esdm_scheduler_init(esdm);
 
     ESDM_DEBUG_COM_FMT("ESDM", " esdm = {config = %p, modules = %p, scheduler = %p, layout = %p, performance = %p}\n",
-    (void *)esdm.config,
-    (void *)esdm.modules,
-    (void *)esdm.scheduler,
-    (void *)esdm.layout,
-    (void *)esdm.performance);
+                       esdm->config, esdm->modules, esdm->scheduler, esdm->layout, esdm->performance);
 
     is_initialized = true;
 
@@ -126,7 +128,7 @@ esdm_modules_t* esdm_get_modules() {
     fprintf(stderr, "error: attempt to access ESDM modules while ESDM is not initialized\nMake sure to call esdm_init() before any other ESDM function.\n");
     abort();
   }
-  return esdm.modules;
+  return esdmI_esdm()->modules;
 }
 
 esdm_status esdm_mkfs(int format_flags, data_accessibility_t target) {
@@ -135,16 +137,17 @@ esdm_status esdm_mkfs(int format_flags, data_accessibility_t target) {
   }
   int ret;
   int ret_final = ESDM_SUCCESS;
-  if (esdm.modules->metadata_backend->config->data_accessibility == target) {
-    ret = esdm.modules->metadata_backend->callbacks.mkfs(esdm.modules->metadata_backend, format_flags);
+  esdm_modules_t* modules = esdmI_esdm()->modules;
+  if (modules->metadata_backend->config->data_accessibility == target) {
+    ret = modules->metadata_backend->callbacks.mkfs(modules->metadata_backend, format_flags);
     if (ret != ESDM_SUCCESS) {
       ret_final = ret;
     }
   }
 
-  for (int i = 0; i < esdm.modules->data_backend_count; i++) {
-    if (esdm.modules->data_backends[i]->config->data_accessibility == target) {
-      ret = esdmI_backend_mkfs(esdm.modules->data_backends[i], format_flags);
+  for (int i = 0; i < modules->data_backend_count; i++) {
+    if (modules->data_backends[i]->config->data_accessibility == target) {
+      ret = esdmI_backend_mkfs(modules->data_backends[i], format_flags);
       if (ret != ESDM_SUCCESS) {
         ret_final = ret;
       }
@@ -159,16 +162,18 @@ esdm_status esdm_finalize() {
   // ESDM data data structures that require proper cleanup..
   // in particular this effects data and cache state which is not yet persistent
 
-  esdm_scheduler_finalize(&esdm);
-  esdm_performance_finalize(&esdm);
-  esdm_layout_finalize(&esdm);
-  esdm_modules_finalize(&esdm);
-  esdm_config_finalize(&esdm);
+  esdm_instance_t* esdm = esdmI_esdm();
+
+  esdm_scheduler_finalize(esdm);
+  esdm_performance_finalize(esdm);
+  esdm_layout_finalize(esdm);
+  esdm_modules_finalize(esdm);
+  esdm_config_finalize(esdm);
 
   esdm_log_on_exit(0);
 
-  esdm = (esdm_instance_t){ESDM_INSTANCE_INITIALIZERS};
-  is_initialized = false;
+  *esdm = (esdm_instance_t){ESDM_INSTANCE_INITIALIZERS};
+  is_initialized = false; //TODO: Move this into the esdm instance.
 
   return ESDM_SUCCESS;
 }
@@ -179,7 +184,7 @@ esdm_status esdm_write(esdm_dataset_t *dataset, void *buf, esdm_dataspace_t *spa
   eassert(buf);
   eassert(space);
 
-  return esdm_scheduler_write_blocking(&esdm, dataset, buf, space, false);
+  return esdm_scheduler_write_blocking(esdmI_esdm(), dataset, buf, space, false);
 }
 
 esdm_status esdmI_readWithFillRegion(esdm_dataset_t *dataset, void *buf, esdm_dataspace_t *space, esdmI_hypercubeSet_t** out_fillRegion) {
@@ -188,7 +193,7 @@ esdm_status esdmI_readWithFillRegion(esdm_dataset_t *dataset, void *buf, esdm_da
   eassert(buf);
   eassert(space);
 
-  return esdm_scheduler_read_blocking(&esdm, dataset, buf, space, out_fillRegion, false);
+  return esdm_scheduler_read_blocking(esdmI_esdm(), dataset, buf, space, out_fillRegion, false);
 }
 
 esdm_status esdm_read(esdm_dataset_t *dataset, void *buf, esdm_dataspace_t *space) {
@@ -255,8 +260,8 @@ esdm_status esdm_read_stream(esdm_dataset_t *d, esdm_dataspace_t *space, void * 
   return ESDM_SUCCESS;
 }
 
-esdm_statistics_t esdm_read_stats() { return esdm.readStats; }
+esdm_statistics_t esdm_read_stats() { return esdmI_esdm()->readStats; }
 
-esdm_statistics_t esdm_write_stats() { return esdm.writeStats; }
+esdm_statistics_t esdm_write_stats() { return esdmI_esdm()->writeStats; }
 
-esdm_config_t* esdmI_getConfig() { return esdm.config; }
+esdm_config_t* esdmI_getConfig() { return esdmI_esdm()->config; }

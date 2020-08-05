@@ -53,6 +53,7 @@ esdm_config_backends_t *esdm_config_get_backends(esdm_instance_t *esdm);
 
 esdm_config_backend_t *esdm_config_get_metadata_coordinator(esdm_instance_t *esdm);
 
+esdm_instance_t* esdmI_esdm();
 
 ///////////////////////////////////////////////////////////////////////////////
 // Modules /////////////////////////////////////////////////////////////////////

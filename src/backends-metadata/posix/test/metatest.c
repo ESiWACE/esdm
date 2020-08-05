@@ -5,8 +5,6 @@
 
 #include <backends-metadata/posix/md-posix.h>
 
-extern esdm_instance_t esdm;
-
 int main() {
   esdm_status ret;
   char const * cfg = "{\"esdm\": {\"backends\": ["
@@ -23,7 +21,6 @@ int main() {
     "}";
   esdm_load_config_str(cfg);
   esdm_init();
-  //esdm_md_backend_t *b = esdm.modules->metadata_backend;
 
   ret = esdm_mkfs(ESDM_FORMAT_PURGE_RECREATE, ESDM_ACCESSIBILITY_GLOBAL);
   eassert(ret == ESDM_SUCCESS);

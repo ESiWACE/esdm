@@ -6,8 +6,6 @@
 #include <backends-data/posix/posix.h>
 #include <esdm-stream.h>
 
-extern esdm_instance_t esdm;
-
 int main() {
   esdm_status ret;
 

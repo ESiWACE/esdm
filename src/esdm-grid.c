@@ -269,8 +269,6 @@ static esdm_status esdmI_grid_findCell(esdm_grid_t* grid, esdm_dataspace_t* spac
   return ESDM_SUCCESS;
 }
 
-extern esdm_instance_t esdm;  //TODO: Turn this into a singleton.
-
 esdm_status esdm_write_grid(esdm_grid_t* grid, esdm_dataspace_t* memspace, void* buffer) {
   eassert(grid);
   eassert(memspace);
@@ -303,7 +301,7 @@ esdm_status esdm_write_grid(esdm_grid_t* grid, esdm_dataspace_t* memspace, void*
   }
 
   //Do the actual writing.
-  esdm_status result = esdmI_scheduler_writeSingleFragmentBlocking(&esdm, grid->dataset, buffer, memspace, false, &cell->fragment);
+  esdm_status result = esdmI_scheduler_writeSingleFragmentBlocking(esdmI_esdm(), grid->dataset, buffer, memspace, false, &cell->fragment);
   if(result == ESDM_SUCCESS) esdmI_grid_registerCompletedCell(grid);
   return result;
 }
