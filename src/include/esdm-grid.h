@@ -269,6 +269,7 @@ void esdm_gridIterator_destroy(esdm_gridIterator_t* iterator);
 
 
 void esdmI_dataset_registerGrid(esdm_dataset_t* dataset, esdm_grid_t* grid);
+void esdmI_dataset_registerGridCompletion(esdm_dataset_t* dataset, esdm_grid_t* grid);
 
 int64_t esdmI_grid_coverRegionSize(const esdm_grid_t* grid, const esdmI_hypercube_t* region);	//returns the total size of the grid cells that intersect the region
 

@@ -51,10 +51,10 @@ esdm_status esdm_grid_create_internal(esdm_dataset_t* dataset, esdm_grid_t* pare
 
   for(int64_t i = 0; i < dimCount; i++) {
     result->axes[i] = (esdm_axis_t){
-    	.intervals = 1,
-    	.outerBounds[0] = offset ? offset[i] : 0,
-    	.outerBounds[1] = (offset ? offset[i] : 0) + size[i],
-    	.allBounds = result->axes[i].outerBounds
+      .intervals = 1,
+      .outerBounds[0] = offset ? offset[i] : 0,
+      .outerBounds[1] = (offset ? offset[i] : 0) + size[i],
+      .allBounds = result->axes[i].outerBounds
     };
   };
 
@@ -210,10 +210,30 @@ esdm_status esdm_grid_getBound(const esdm_grid_t* grid, int64_t dim, int64_t ind
   return ESDM_SUCCESS;
 }
 
+static void esdmI_grid_registerCompletedCell(esdm_grid_t* grid) {
+  eassert(grid->emptyCells > 0);
+  if(grid->emptyCells-- == 1) {
+    if(grid->parent) {
+      esdmI_grid_registerCompletedCell(grid->parent);
+    } else {
+      esdmI_dataset_registerGridCompletion(grid->dataset, grid);
+    }
+  }
+}
+
 esdm_status esdm_write_grid(esdm_grid_t* grid, esdm_dataspace_t* memspace, const void* buffer);
 esdm_status esdm_read_grid(esdm_grid_t* grid, esdm_dataspace_t* memspace, void* buffer);
 
-esdm_status esdm_dataset_grids(esdm_dataset_t* dataset, int64_t* out_count, esdm_grid_t** out_grids);
+esdm_status esdm_dataset_grids(esdm_dataset_t* dataset, int64_t* out_count, esdm_grid_t** out_grids) {
+  eassert(dataset);
+  eassert(out_count);
+  eassert(out_grids);
+
+  *out_count = dataset->gridCount;
+  *out_grids = ea_memdup(dataset->grids, dataset->gridCount*sizeof*dataset->grids);
+
+  return ESDM_SUCCESS;
+}
 
 static esdm_gridIterator_t* esdm_gridIterator_create_internal(esdm_grid_t* grid, esdm_gridIterator_t* parent) {
   esdm_gridIterator_t* result = ea_checked_malloc(sizeof*result);
@@ -285,6 +305,28 @@ void esdm_gridIterator_destroy(esdm_gridIterator_t* iterator) {
     free(iterator);
     iterator = parent;
   }
+}
+
+void esdmI_dataset_registerGrid(esdm_dataset_t* dataset, esdm_grid_t* grid) {
+  if(dataset->gridCount + dataset->incompleteGridCount == dataset->gridSlotCount) {
+    dataset->grids = ea_checked_realloc(dataset->grids, (dataset->gridSlotCount *= 2)*sizeof*dataset->grids);
+  }
+  eassert(dataset->gridCount + dataset->incompleteGridCount < dataset->gridSlotCount);
+
+  dataset->grids[dataset->gridCount + dataset->incompleteGridCount++] = grid;
+}
+
+void esdmI_dataset_registerGridCompletion(esdm_dataset_t* dataset, esdm_grid_t* grid) {
+  int64_t index = dataset->gridCount;
+  while(index < dataset->gridCount + dataset->incompleteGridCount) {
+    if(dataset->grids[index++] == grid) break;
+  }
+  eassert(index < dataset->gridCount + dataset->incompleteGridCount && "registerGridCompletion() must be called with an existing incomplete grid");
+
+  esdm_grid_t* temp = dataset->grids[index];
+  dataset->grids[index] = dataset->grids[dataset->gridCount];
+  dataset->grids[dataset->gridCount] = temp;
+  dataset->gridCount++, dataset->incompleteGridCount--;
 }
 
 int64_t esdmI_grid_coverRegionSize(const esdm_grid_t* grid, const esdmI_hypercube_t* region);	//returns the total size of the grid cells that intersect the region

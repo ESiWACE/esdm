@@ -67,6 +67,9 @@ struct esdm_dataset_t {
   smd_attr_t *attr;
   int64_t *actual_size; // used for unlimited dimensions
   esdm_fragments_t fragments;
+  int64_t gridCount, incompleteGridCount, gridSlotCount;
+  esdm_grid_t* grids; //This array first contains the complete grids, then the grids that still lack some subgrids/fragments, and finally some pointers that are allocated but not used.
+                      //When a grid is completed, it is swapped with the first incomplete grid and the grid counts are adjusted accordingly. This should be more efficient than managing two separate arrays.
   int refcount;
   esdm_data_status_e status;
   int mode_flags; // set via esdm_mode_flags_e

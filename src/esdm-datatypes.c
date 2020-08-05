@@ -646,10 +646,20 @@ esdm_status esdm_fragment_destroy(esdm_fragment_t *frag) {
 
 
 void esdm_dataset_init(esdm_container_t *c, const char *name, esdm_dataspace_t *dspace, esdm_dataset_t **out_dataset){
+  const int64_t kInitialGridSlotCount = 8;
+
   esdm_dataset_t *d = ea_checked_malloc(sizeof(esdm_dataset_t));
-  memset(d, 0, sizeof(esdm_dataset_t));
-  d->name = strdup(name);
-  d->container = c;
+  *d = (esdm_dataset_t) {
+    .name = strdup(name),
+    .container = c,
+    .status = ESDM_DATA_DIRTY,
+    .attr = smd_attr_new("Variables", SMD_DTYPE_EMPTY, NULL),
+    .gridCount = 0,
+    .incompleteGridCount = 0,
+    .gridSlotCount = kInitialGridSlotCount,
+    .grids = ea_checked_malloc(kInitialGridSlotCount*sizeof*d->grids)
+  };
+
   if(dspace){
     esdm_dataspace_copy(dspace, &d->dataspace);
     // check for unlimited dims
@@ -661,9 +671,7 @@ void esdm_dataset_init(esdm_container_t *c, const char *name, esdm_dataspace_t *
       }
     }
   }
-  d->status = ESDM_DATA_DIRTY;
   esdmI_fragments_construct(&d->fragments);
-  d->attr = smd_attr_new("Variables", SMD_DTYPE_EMPTY, NULL);
 
   *out_dataset = d;
 }
