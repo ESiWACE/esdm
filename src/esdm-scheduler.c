@@ -807,6 +807,69 @@ esdm_status esdm_scheduler_enqueue_write(esdm_instance_t *esdm, io_request_statu
   return ESDM_SUCCESS;
 }
 
+static esdm_status esdmI_scheduler_enqueueSingleFragmentWrite(esdm_instance_t *esdm, io_request_status_t *status, esdm_dataset_t *dataset, void *buf, esdm_dataspace_t *space, bool requestIsInternal, esdm_fragment_t** out_fragment) {
+  timer myTimer;
+  ea_start_timer(&myTimer);
+
+  esdm_status ret = esdmI_fragment_create(dataset, space, buf, out_fragment);
+  eassert(ret == ESDM_SUCCESS);
+  esdm_backend_t* backend = esdm_modules_fastestBackend(esdm_get_modules());
+  (*out_fragment)->backend = backend;
+
+  io_work_t* task = ea_checked_malloc(sizeof(*task));
+  *task = (io_work_t){
+    .fragment = *out_fragment,
+    .op = ESDM_OP_WRITE,
+    .return_code = ESDM_SUCCESS,
+    .parent = status,
+    .callback = buffer_cleanup_callback,
+    .data = {NULL, NULL}
+  };
+
+  //TODO: factor out the registration of the task
+  if (backend->threads == 0) {
+    backend_thread(task, backend);
+  } else {
+    GError *error;
+    g_thread_pool_push(backend->threadPool, task, &error);
+  }
+
+  updateIoStats(&esdm->writeStats, 1, esdm_dataspace_total_bytes(space)); //update the statistics
+  gWriteTimes.backendDispatch += ea_stop_timer(myTimer);
+  updateRequestStats(&esdm->writeStats, 1, esdm_dataspace_total_bytes(space), requestIsInternal); //update the statistics
+
+  return ESDM_SUCCESS;
+}
+
+esdm_status esdmI_scheduler_writeSingleFragmentBlocking(esdm_instance_t *esdm, esdm_dataset_t *dataset, void *buf, esdm_dataspace_t *subspace, bool requestIsInternal, esdm_fragment_t** out_fragment) {
+  ESDM_DEBUG(__func__);
+
+  timer myTimer;
+  ea_start_timer(&myTimer);
+
+  io_request_status_t status;
+  esdm_status ret = esdm_scheduler_status_init(&status);
+  eassert(ret == ESDM_SUCCESS);
+
+  ret = esdmI_scheduler_enqueueSingleFragmentWrite(esdm, &status, dataset, buf, subspace, requestIsInternal, out_fragment); //This function does its own internal time measurements.
+  if( ret != ESDM_SUCCESS){
+    return ret;
+  }
+  double syncStartTime = ea_stop_timer(myTimer);
+
+  ret = esdm_scheduler_wait(&status);
+  eassert(ret == ESDM_SUCCESS);
+
+  ret = esdm_scheduler_status_finalize(&status);
+  eassert(ret == ESDM_SUCCESS);
+  double endTime = ea_stop_timer(myTimer);
+
+  gWriteTimes.completion += endTime - syncStartTime;
+  gWriteTimes.total += endTime;
+
+  return status.return_code;
+}
+
 esdm_status esdm_scheduler_status_init(io_request_status_t *status) {
   g_mutex_init(&status->mutex);
   g_cond_init(&status->done_condition);

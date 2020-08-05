@@ -221,7 +221,93 @@ static void esdmI_grid_registerCompletedCell(esdm_grid_t* grid) {
   }
 }
 
-esdm_status esdm_write_grid(esdm_grid_t* grid, esdm_dataspace_t* memspace, const void* buffer);
+//Finds the interval index along a single axis.
+//If the `start`/`end` spans more than a single axis interval, returns -1,
+//if the axis interval is longer than `end-start`, `*out_isShort` is set to true.
+//Otherwise, `*out_isShort` is left untouched.
+static int64_t esdmI_axis_findInterval(esdm_axis_t* axis, int64_t start, int64_t end, bool* out_isShort) {
+  if(start >= end) return -1;
+  if(start < axis->outerBounds[0] || end > axis->outerBounds[1]) return -1;
+
+  int64_t startIndex = 0, endIndex = axis->intervals;
+  while(startIndex + 1 < endIndex) {
+    //find an index with a bound that likely close to the start
+    int64_t midIndex = startIndex + (endIndex - startIndex)*(start - axis->allBounds[startIndex])/(axis->allBounds[endIndex] - axis->allBounds[startIndex]);
+
+    //ensure progress
+    //because endIndex is at least startIndex+2, this ensures that the midIndex is neither the startIndex nor the endIndex
+    if(midIndex == startIndex) {
+      midIndex++;
+    } else if(midIndex == endIndex) {
+      midIndex--;
+    }
+
+    //select subinterval
+    if(axis->allBounds[midIndex] > start) {
+      endIndex = midIndex;
+    } else {
+      startIndex = midIndex;
+    }
+  }
+  eassert(startIndex + 1 == endIndex);
+
+  if(end > axis->allBounds[endIndex]) return -1;
+  if(start > axis->allBounds[startIndex] || end < axis->allBounds[endIndex]) *out_isShort = true;
+  return startIndex;
+}
+
+//This will throw an error if the dataspace is bigger than the grid cell.
+//In the opposite case (dataspace too small), no error is produced,
+//but the condition is signalled back to the caller via the out_spaceTooSmall argument.
+static esdm_status esdmI_grid_findCell(esdm_grid_t* grid, esdm_dataspace_t* space, int64_t* out_index, bool* out_spaceTooSmall) {
+  *out_spaceTooSmall = false;
+  for(int64_t dim = 0; dim < grid->dimCount; dim++) {
+    int64_t curIndex = esdmI_axis_findInterval(&grid->axes[dim], space->offset[dim], space->offset[dim] + space->size[dim], out_spaceTooSmall);
+    if(curIndex < 0) return ESDM_ERROR;
+    out_index[dim] = curIndex;
+  }
+  return ESDM_SUCCESS;
+}
+
+extern esdm_instance_t esdm;  //TODO: Turn this into a singleton.
+
+esdm_status esdm_write_grid(esdm_grid_t* grid, esdm_dataspace_t* memspace, void* buffer) {
+  eassert(grid);
+  eassert(memspace);
+  eassert(buffer);
+
+  if(grid->dimCount != memspace->dims) return ESDM_INVALID_ARGUMENT_ERROR;
+
+  //Find the grid cell that matches the memspace.
+  //This may replace the grid with one of its transitive subgrids.
+  esdm_gridEntry_t* cell = NULL;
+  while(true) {
+    //Determine the indices of the grid cell we are supposed to manipulate.
+    int64_t index[grid->dimCount];
+    bool memspaceIsTooSmall;
+    esdm_status result = esdmI_grid_findCell(grid, memspace, index, &memspaceIsTooSmall);
+    if(result != ESDM_SUCCESS) return ESDM_INVALID_ARGUMENT_ERROR; //if the memspace is bigger than a cell
+    int64_t linearIndex = esdm_grid_linearIndex(grid, index);
+    eassert(linearIndex >= 0 && "esdmI_grid_findCell() must return a valid index");
+    if(!grid->grid && memspaceIsTooSmall) return ESDM_INVALID_ARGUMENT_ERROR; //no grid allocated -> no subgrids present -> memspace must match a cell exactly
+
+    //Check the grid cell itself and descend the grid tree if necessary.
+    esdm_grid_ensureGrid(grid);
+    cell = &grid->grid[linearIndex];
+    if(!cell->subgrid) {
+      if(memspaceIsTooSmall) return ESDM_INVALID_ARGUMENT_ERROR;  //no subgrid -> memspace must match the cell exactly
+      if(cell->fragment) return ESDM_SUCCESS; //we already have data for this grid cell -> nothing to be done
+      break;  //got the cell that fits the memspace exactly, and it is empty -> proceed with the write
+    }
+    grid = cell->subgrid;
+  }
+
+  //Do the actual writing.
+  esdm_status result = esdmI_scheduler_writeSingleFragmentBlocking(&esdm, grid->dataset, buffer, memspace, false, &cell->fragment);
+  if(result == ESDM_SUCCESS) esdmI_grid_registerCompletedCell(grid);
+  return result;
+}
+
 esdm_status esdm_read_grid(esdm_grid_t* grid, esdm_dataspace_t* memspace, void* buffer);
 
 esdm_status esdm_dataset_grids(esdm_dataset_t* dataset, int64_t* out_count, esdm_grid_t** out_grids) {

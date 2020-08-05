@@ -5,9 +5,6 @@
 
 #include <stdbool.h>
 
-typedef struct esdm_grid_t esdm_grid_t;
-typedef struct esdm_gridIterator_t esdm_gridIterator_t;
-
 /*
  * esdm_grid_create(), esdm_grid_createSimple()
  *
@@ -161,7 +158,7 @@ esdm_status esdm_grid_getBound(const esdm_grid_t* grid, int64_t dim, int64_t ind
  *
  * @return `ESDM_SUCCESS` on success, `ESDM_INVALID_ARGUMENT_ERROR` if the `memspace` does not correspond to a single cell exactly, `ESDM_INVALID_STATE_ERROR` if the grid cell contains a subgrid
  */
-esdm_status esdm_write_grid(esdm_grid_t* grid, esdm_dataspace_t* memspace, const void* buffer);
+esdm_status esdm_write_grid(esdm_grid_t* grid, esdm_dataspace_t* memspace, void* buffer);
 
 /*
  * esdm_read_grid()
