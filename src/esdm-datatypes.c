@@ -22,6 +22,7 @@
 #define _GNU_SOURCE /* See feature_test_macros(7) */
 
 #include <esdm-internal.h>
+#include <esdm-grid.h>
 #include <esdm.h>
 #include <inttypes.h>
 #include <smd.h>
@@ -1160,6 +1161,11 @@ esdm_status esdmI_dataset_destroy(esdm_dataset_t *dset) {
 
   esdm_status ret = esdmI_fragments_destruct(&dset->fragments);
   if (ret != ESDM_SUCCESS) return ret;  // free dataset only if all fragments can be destroyed/are not longer in use
+
+  for(int64_t i = dset->gridCount + dset->incompleteGridCount; i--; ) {
+    esdmI_grid_destroy(dset->grids[i]);
+  }
+  free(dset->grids);
 
   if(dset->attr) smd_attr_destroy(dset->attr); // maybe unref?
   if(dset->fill_value) smd_attr_destroy(dset->fill_value);
