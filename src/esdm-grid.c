@@ -269,6 +269,38 @@ static esdm_status esdmI_grid_findCell(esdm_grid_t* grid, esdm_dataspace_t* spac
   return ESDM_SUCCESS;
 }
 
+//This is the recursive version of `esdm_grid_findCell()`.
+//Returns a grid cell that fits the dataspace exactly, and that does not contain a subgrid.
+//The `*inout_grid` argument will be updated to the subgrid that actually contains the cell.
+static esdm_status esdm_grid_findCellInHierarchy(esdm_grid_t** inout_grid, esdm_dataspace_t* space, esdm_gridEntry_t** out_cell) {
+  //Find the grid cell that matches the memspace.
+  //This may replace the grid with one of its transitive subgrids.
+  esdm_grid_t* grid = *inout_grid;
+  esdm_gridEntry_t* cell = NULL;
+  while(true) {
+    //Determine the indices of the grid cell we are supposed to manipulate.
+    int64_t index[grid->dimCount];
+    bool spaceIsTooSmall;
+    esdm_status result = esdmI_grid_findCell(grid, space, index, &spaceIsTooSmall);
+    if(result != ESDM_SUCCESS) return ESDM_INVALID_ARGUMENT_ERROR; //if the space is bigger than a cell
+    int64_t linearIndex = esdm_grid_linearIndex(grid, index);
+    eassert(linearIndex >= 0 && "esdmI_grid_findCell() must return a valid index");
+    if(!grid->grid && spaceIsTooSmall) return ESDM_INVALID_ARGUMENT_ERROR; //no grid allocated -> no subgrids present -> space must match a cell exactly
+
+    //Check the grid cell itself and descend the grid tree if necessary.
+    esdm_grid_ensureGrid(grid);
+    cell = &grid->grid[linearIndex];
+    if(!cell->subgrid) {
+      if(spaceIsTooSmall) return ESDM_INVALID_ARGUMENT_ERROR;  //no subgrid -> space must match the cell exactly
+      break;  //got the cell that fits the space exactly
+    }
+    grid = cell->subgrid;
+  }
+  *inout_grid = grid;
+  *out_cell = cell;
+  return ESDM_SUCCESS;
+}
+
 esdm_status esdm_write_grid(esdm_grid_t* grid, esdm_dataspace_t* memspace, void* buffer) {
   eassert(grid);
   eassert(memspace);
@@ -278,35 +310,35 @@ esdm_status esdm_write_grid(esdm_grid_t* grid, esdm_dataspace_t* memspace, void*
 
   //Find the grid cell that matches the memspace.
   //This may replace the grid with one of its transitive subgrids.
-  esdm_gridEntry_t* cell = NULL;
-  while(true) {
-    //Determine the indices of the grid cell we are supposed to manipulate.
-    int64_t index[grid->dimCount];
-    bool memspaceIsTooSmall;
-    esdm_status result = esdmI_grid_findCell(grid, memspace, index, &memspaceIsTooSmall);
-    if(result != ESDM_SUCCESS) return ESDM_INVALID_ARGUMENT_ERROR; //if the memspace is bigger than a cell
-    int64_t linearIndex = esdm_grid_linearIndex(grid, index);
-    eassert(linearIndex >= 0 && "esdmI_grid_findCell() must return a valid index");
-    if(!grid->grid && memspaceIsTooSmall) return ESDM_INVALID_ARGUMENT_ERROR; //no grid allocated -> no subgrids present -> memspace must match a cell exactly
-
-    //Check the grid cell itself and descend the grid tree if necessary.
-    esdm_grid_ensureGrid(grid);
-    cell = &grid->grid[linearIndex];
-    if(!cell->subgrid) {
-      if(memspaceIsTooSmall) return ESDM_INVALID_ARGUMENT_ERROR;  //no subgrid -> memspace must match the cell exactly
-      if(cell->fragment) return ESDM_SUCCESS; //we already have data for this grid cell -> nothing to be done
-      break;  //got the cell that fits the memspace exactly, and it is empty -> proceed with the write
-    }
-    grid = cell->subgrid;
-  }
+  esdm_gridEntry_t* cell;
+  esdm_status result = esdm_grid_findCellInHierarchy(&grid, memspace, &cell);
+  if(result != ESDM_SUCCESS) return result;
+  if(cell->fragment) return ESDM_SUCCESS; //we already have data for this grid cell -> nothing to be done
 
   //Do the actual writing.
-  esdm_status result = esdmI_scheduler_writeSingleFragmentBlocking(esdmI_esdm(), grid->dataset, buffer, memspace, false, &cell->fragment);
+  result = esdmI_scheduler_writeSingleFragmentBlocking(esdmI_esdm(), grid->dataset, buffer, memspace, false, &cell->fragment);
   if(result == ESDM_SUCCESS) esdmI_grid_registerCompletedCell(grid);
   return result;
 }
 
-esdm_status esdm_read_grid(esdm_grid_t* grid, esdm_dataspace_t* memspace, void* buffer);
+esdm_status esdm_read_grid(esdm_grid_t* grid, esdm_dataspace_t* memspace, void* buffer) {
+  eassert(grid);
+  eassert(memspace);
+  eassert(buffer);
+
+  if(grid->dimCount != memspace->dims) return ESDM_INVALID_ARGUMENT_ERROR;
+
+  //Find the grid cell that matches the memspace.
+  //This may replace the grid with one of its transitive subgrids.
+  esdm_gridEntry_t* cell;
+  esdm_status result = esdm_grid_findCellInHierarchy(&grid, memspace, &cell);
+  if(result != ESDM_SUCCESS) return result;
+  if(!cell->fragment) return ESDM_INCOMPLETE_DATA;
+
+  //Do the actual reading.
+  result = esdmI_scheduler_readSingleFragmentBlocking(esdmI_esdm(), grid->dataset, buffer, memspace, cell->fragment);
+  return result;
+}
 
 esdm_status esdm_dataset_grids(esdm_dataset_t* dataset, int64_t* out_count, esdm_grid_t** out_grids) {
   eassert(dataset);

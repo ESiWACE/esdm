@@ -112,6 +112,7 @@ esdm_status esdm_scheduler_read_blocking(esdm_instance_t *esdm, esdm_dataset_t *
 esdm_status esdm_scheduler_write_blocking(esdm_instance_t *esdm, esdm_dataset_t *dataset, void *buf, esdm_dataspace_t *memspace, bool requestIsInternal);
 
 esdm_status esdmI_scheduler_writeSingleFragmentBlocking(esdm_instance_t *esdm, esdm_dataset_t *dataset, void *buf, esdm_dataspace_t *subspace, bool requestIsInternal, esdm_fragment_t** out_fragment);
+esdm_status esdmI_scheduler_readSingleFragmentBlocking(esdm_instance_t* esdm, esdm_dataset_t* dataset, void* buffer, esdm_dataspace_t* memspace, esdm_fragment_t* fragment);
 
 esdm_status esdm_scheduler_enqueue(esdm_instance_t *esdm, io_request_status_t *status, io_operation_t type, esdm_dataset_t *dataset, void *buf, esdm_dataspace_t *memspace);
 

@@ -421,6 +421,58 @@ esdm_status esdm_scheduler_enqueue_read(esdm_instance_t *esdm, io_request_status
   return ESDM_SUCCESS;
 }
 
+//Not a sensible abstraction in itself, but it completes the updateRequestStats() function.
+static void updateIoStats(esdm_statistics_t* stats, uint64_t fragmentCount, uint64_t byteCount) {
+  stats->fragments += fragmentCount;
+  stats->bytesIo += byteCount;
+}
+
+static void updateRequestStats(esdm_statistics_t* stats, uint64_t requestCount, uint64_t byteCount, bool requestIsInternal) {
+  if(requestIsInternal) {
+    stats->internalRequests += requestCount;
+    stats->bytesInternal += byteCount;
+  } else {
+    stats->requests += requestCount;
+    stats->bytesUser += byteCount;
+  }
+}
+
+esdm_status esdmI_scheduler_readSingleFragmentBlocking(esdm_instance_t* esdm, esdm_dataset_t* dataset, void* buffer, esdm_dataspace_t* memspace, esdm_fragment_t* fragment) {
+  timer myTimer;
+  ea_start_timer(&myTimer);
+  esdm_readTimes_t myTimes = {0};
+  double startTime = ea_stop_timer(myTimer);
+
+  io_request_status_t status;
+  esdm_status ret = esdm_scheduler_status_init(&status);
+  if(ret != ESDM_SUCCESS) return ret;
+
+  ret = esdm_scheduler_enqueue_read(esdm, &status, 1, &fragment, buffer, memspace);
+  eassert(ret == ESDM_SUCCESS);
+  myTimes.enqueue = ea_stop_timer(myTimer) - startTime;
+
+  startTime = ea_stop_timer(myTimer);
+  ret = esdm_scheduler_wait(&status);
+  eassert(ret == ESDM_SUCCESS);
+
+  ret = esdm_scheduler_status_finalize(&status);
+  eassert(ret == ESDM_SUCCESS);
+  myTimes.completion = ea_stop_timer(myTimer) - startTime;
+
+  ret = status.return_code;
+
+  //update the statistics
+  int64_t requestBytes = esdm_dataspace_total_bytes(memspace);
+  updateIoStats(&esdm->readStats, 1, requestBytes);
+  updateRequestStats(&esdm->readStats, 1, requestBytes, false);
+
+  gReadTimes.enqueue += myTimes.enqueue;
+  gReadTimes.completion += myTimes.completion;
+  gReadTimes.total += ea_stop_timer(myTimer);
+
+  return ret;
+}
+
 static esdm_status esdm_scheduler_enqueue_fill(esdm_instance_t* esdm, io_request_status_t* status, void* fillValue, void* buf, esdm_dataspace_t* bufSpace, esdmI_hypercubeList_t* fillRegion) {
   //I would really love to make the fill operation asynchronous.
   //However, it does not make any sense to use one of our backend threads, because the backends are concerned with storage, not with pure in-memory operations.
@@ -707,22 +759,6 @@ static void splitToBackends(esdm_dataspace_t* space, int64_t backendCount, esdm_
   //cleanup
   free(weights);
   if(totalExtends) esdmI_hypercube_destroy(totalExtends);
-}
-
-//Not a sensible abstraction in itself, but it completes the updateRequestStats() function.
-static void updateIoStats(esdm_statistics_t* stats, uint64_t fragmentCount, uint64_t byteCount) {
-  stats->fragments += fragmentCount;
-  stats->bytesIo += byteCount;
-}
-
-static void updateRequestStats(esdm_statistics_t* stats, uint64_t requestCount, uint64_t byteCount, bool requestIsInternal) {
-  if(requestIsInternal) {
-    stats->internalRequests += requestCount;
-    stats->bytesInternal += byteCount;
-  } else {
-    stats->requests += requestCount;
-    stats->bytesUser += byteCount;
-  }
 }
 
 esdm_status esdm_scheduler_enqueue_write(esdm_instance_t *esdm, io_request_status_t *status, esdm_dataset_t *dataset, void *buf, esdm_dataspace_t *space, bool requestIsInternal) {
