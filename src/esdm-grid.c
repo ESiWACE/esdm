@@ -174,6 +174,34 @@ esdm_status esdm_grid_subdivideFlexible(esdm_grid_t* grid, int64_t dim, int64_t 
   return ESDM_SUCCESS;
 }
 
+esdm_status esdm_grid_subdivide(esdm_grid_t* grid, int64_t dim, int64_t count, int64_t* bounds) {
+  eassert(grid);
+  eassert(count > 0);
+  eassert(bounds);
+
+  if(dim < 0 || dim >= grid->dimCount) return ESDM_INVALID_ARGUMENT_ERROR;
+  if(grid->grid) return ESDM_INVALID_STATE_ERROR;
+
+  //sanity check of the given bounds
+  esdm_axis_t* axis = &grid->axes[dim];
+  if(bounds[0] != axis->outerBounds[0]) return ESDM_INVALID_ARGUMENT_ERROR;
+  if(bounds[count] != axis->outerBounds[1]) return ESDM_INVALID_ARGUMENT_ERROR;
+  for(int64_t i = 0; i < count; i++) {
+    if(bounds[i] >= bounds[i+1]) return ESDM_INVALID_ARGUMENT_ERROR;
+  }
+
+  //input is ok, commit the change
+  if(axis->intervals != 1) free(axis->allBounds);
+  axis->intervals = count;
+  axis->allBounds = count == 1
+                  ? axis->outerBounds
+                  : ea_memdup(bounds, (count + 1)*sizeof*bounds);
+  _Static_assert(sizeof*bounds == sizeof*axis->allBounds, "types must match");
+
+  return ESDM_SUCCESS;
+}
+
+
 esdm_status esdm_grid_cellSize(const esdm_grid_t* grid, int64_t* cellIndex, int64_t* out_offset, int64_t* out_size) {
   eassert(grid);
   eassert(cellIndex);

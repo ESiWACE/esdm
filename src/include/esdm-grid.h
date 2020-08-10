@@ -5,7 +5,7 @@
 
 #include <stdbool.h>
 
-/*
+/**
  * esdm_grid_create(), esdm_grid_createSimple()
  *
  * Create a grid object.
@@ -27,7 +27,7 @@
 esdm_status esdm_grid_create(esdm_dataset_t* dataset, int64_t dimCount, int64_t* offset, int64_t* size, esdm_grid_t** out_grid);
 esdm_status esdm_grid_createSimple(esdm_dataset_t* dataset, int64_t dimCount, int64_t* size, esdm_grid_t** out_grid);
 
-/*
+/**
  * esdm_grid_createSubgrid()
  *
  * Subdivide a single cell of the parent grid, building a hierarchy of grids.
@@ -48,7 +48,7 @@ esdm_status esdm_grid_createSimple(esdm_dataset_t* dataset, int64_t dimCount, in
  */
 esdm_status esdm_grid_createSubgrid(esdm_grid_t* parent, int64_t* index, esdm_grid_t** out_child);
 
-/*
+/**
  * esdm_grid_subdivideFixed()
  *
  * Subdivide a dimension into slices of a fixed size.
@@ -67,7 +67,7 @@ esdm_status esdm_grid_createSubgrid(esdm_grid_t* parent, int64_t* index, esdm_gr
  */
 esdm_status esdm_grid_subdivideFixed(esdm_grid_t* grid, int64_t dim, int64_t size, bool allowIncomplete);
 
-/*
+/**
  * esdm_grid_subdivideFlexible()
  *
  * Subdivide a dimension into a given number of slices.
@@ -86,7 +86,29 @@ esdm_status esdm_grid_subdivideFixed(esdm_grid_t* grid, int64_t dim, int64_t siz
  */
 esdm_status esdm_grid_subdivideFlexible(esdm_grid_t* grid, int64_t dim, int64_t count);
 
-/*
+/**
+ * esdm_grid_subdivide()
+ *
+ * Subdivide a dimension with a given list of bounds.
+ *
+ * @param[inout] grid the grid object to modify
+ * @param[in] dim index of the dimension that is to be subdivided
+ * @param[in] count number of slices to create
+ * @param[in] bounds array of `count + 1` bounds, this includes the outer bounds of the grid
+ *
+ * This is the big gun among the `esdm_grid_subdivide*()` methods, allowing the caller to specify exactly which bounds are to be used.
+ * Use this when the regular subdivision done by the other two methods does not cut it.
+ *
+ * The contents of the `bounds` array must satisfy the following conditions:
+ *   * `bounds[0]` must equal the starting bound of the grid in the given dimension
+ *   * `bounds[count]` must equal the ending bound of the grid in the given dimension (this bound has exclusive semantics)
+ *   * `bounds[i+1] > `bounds[i]`
+ *
+ * @return `ESDM_SUCCESS` on success, `ESDM_INVALID_ARGUMENT_ERROR` if the bounds array does not satisfy one of the conditions above, or if the `dim` value is illegal, `ESDM_INVALID_STATE_ERROR` if the grid has already been used in an I/O operation
+ */
+esdm_status esdm_grid_subdivide(esdm_grid_t* grid, int64_t dim, int64_t count, int64_t* bounds);
+
+/**
  * esdm_grid_cellSize()
  *
  * Inquire the bounding hyperbox of a single grid cell.
@@ -106,7 +128,7 @@ esdm_status esdm_grid_subdivideFlexible(esdm_grid_t* grid, int64_t dim, int64_t 
  */
 esdm_status esdm_grid_cellSize(const esdm_grid_t* grid, int64_t* cellIndex, int64_t* out_offset, int64_t* out_size);
 
-/*
+/**
  * esdm_grid_cellExtends()
  *
  * Inquire the bounding hyperbox of a single grid cell.
@@ -125,7 +147,7 @@ esdm_status esdm_grid_cellSize(const esdm_grid_t* grid, int64_t* cellIndex, int6
  */
 esdm_status esdm_grid_cellExtends(const esdm_grid_t* grid, int64_t* cellIndex, esdmI_hypercube_t** out_extends);
 
-/*
+/**
  * esdm_grid_getBound()
  *
  * Inquire a single bound from the grid.
@@ -143,7 +165,7 @@ esdm_status esdm_grid_cellExtends(const esdm_grid_t* grid, int64_t* cellIndex, e
  */
 esdm_status esdm_grid_getBound(const esdm_grid_t* grid, int64_t dim, int64_t index, int64_t* out_bound);
 
-/*
+/**
  * esdm_write_grid()
  *
  * Provide the data for a grid cell.
@@ -160,7 +182,7 @@ esdm_status esdm_grid_getBound(const esdm_grid_t* grid, int64_t dim, int64_t ind
  */
 esdm_status esdm_write_grid(esdm_grid_t* grid, esdm_dataspace_t* memspace, void* buffer);
 
-/*
+/**
  * esdm_read_grid()
  *
  * Read data from a single grid cell into memory.
@@ -182,7 +204,7 @@ esdm_status esdm_write_grid(esdm_grid_t* grid, esdm_dataspace_t* memspace, void*
 //TODO: Specify under which conditions the data is written back.
 esdm_status esdm_read_grid(esdm_grid_t* grid, esdm_dataspace_t* memspace, void* buffer);
 
-/*
+/**
  * esdm_dataset_grids()
  *
  * Inquire the available grids from a dataset.
@@ -205,7 +227,7 @@ esdm_status esdm_read_grid(esdm_grid_t* grid, esdm_dataspace_t* memspace, void* 
  */
 esdm_status esdm_dataset_grids(esdm_dataset_t* dataset, int64_t* out_count, esdm_grid_t*** out_grids);
 
-/*
+/**
  * esdm_gridIterator_create()
  *
  * Obtain an iterator that will recursively walk all cells in the grid.
@@ -225,7 +247,7 @@ esdm_status esdm_dataset_grids(esdm_dataset_t* dataset, int64_t* out_count, esdm
  */
 esdm_status esdm_gridIterator_create(esdm_grid_t* grid, esdm_gridIterator_t** out_iterator);
 
-/*
+/**
  * esdm_gridIterator_next()
  *
  * Obtain a dataspace for a chunk of data.
@@ -250,7 +272,7 @@ esdm_status esdm_gridIterator_create(esdm_grid_t* grid, esdm_gridIterator_t** ou
  */
 esdm_status esdm_gridIterator_next(esdm_gridIterator_t** inout_iterator, int64_t increment, esdm_dataspace_t** out_dataspace);
 
-/*
+/**
  * esdm_gridIterator_destroy()
  *
  * @param[in] iterator the iterator to destroy, may be NULL
