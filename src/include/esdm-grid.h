@@ -191,7 +191,7 @@ esdm_status esdm_read_grid(esdm_grid_t* grid, esdm_dataspace_t* memspace, void* 
  *
  * @param[in] dataset the dataset to query
  * @param[out] out_count the number of available grids
- * @param[out, optional] out_grids return the pointer to the first element of an array containing the available grids
+ * @param[out, optional] out_grids returns an array of pointers to the available grids
  *
  * The array that is returned in `*out_grids` is malloc'ed by `esdm_dataset_grids()`, it is the callers responsibility to call `free()` on the array.
  * The grids themselves, however, still belong to the dataset and remain valid until the dataset is closed.
@@ -203,7 +203,7 @@ esdm_status esdm_read_grid(esdm_grid_t* grid, esdm_dataspace_t* memspace, void* 
  *
  * @return `ESDM_SUCCESS` on success
  */
-esdm_status esdm_dataset_grids(esdm_dataset_t* dataset, int64_t* out_count, esdm_grid_t** out_grids);
+esdm_status esdm_dataset_grids(esdm_dataset_t* dataset, int64_t* out_count, esdm_grid_t*** out_grids);
 
 /*
  * esdm_gridIterator_create()

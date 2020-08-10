@@ -93,7 +93,7 @@ static int64_t esdm_grid_linearIndex(esdm_grid_t* grid, int64_t* index) {
   int64_t result = 0;
   for(int64_t i = 0; i < grid->dimCount; i++) {
     if(index[i] < 0 || index[i] >= grid->axes[i].intervals) return -1;
-    result = result*grid->axes[i].intervals + i;
+    result = result*grid->axes[i].intervals + index[i];
   }
   return result;
 }
@@ -123,8 +123,9 @@ esdm_status esdm_grid_createSubgrid(esdm_grid_t* parent, int64_t* index, esdm_gr
   esdm_status result = esdm_grid_cellSize(parent, index, offset, size);
   if(result != ESDM_SUCCESS) return result;
 
-  result = esdm_grid_create_internal(parent->dataset, parent, parent->dimCount, offset, size, &parent->grid[linearIndex].subgrid);
-  if(result == ESDM_SUCCESS) parent->emptyCells--;
+  esdm_grid_t* subgrid;
+  result = esdm_grid_create_internal(parent->dataset, parent, parent->dimCount, offset, size, &subgrid);
+  if(result == ESDM_SUCCESS) *out_child = parent->grid[linearIndex].subgrid = subgrid;
   return result;
 }
 
@@ -233,6 +234,7 @@ static int64_t esdmI_axis_findInterval(esdm_axis_t* axis, int64_t start, int64_t
   while(startIndex + 1 < endIndex) {
     //find an index with a bound that likely close to the start
     int64_t midIndex = startIndex + (endIndex - startIndex)*(start - axis->allBounds[startIndex])/(axis->allBounds[endIndex] - axis->allBounds[startIndex]);
+    eassert(startIndex <= midIndex && midIndex <= endIndex);
 
     //ensure progress
     //because endIndex is at least startIndex+2, this ensures that the midIndex is neither the startIndex nor the endIndex
@@ -241,6 +243,7 @@ static int64_t esdmI_axis_findInterval(esdm_axis_t* axis, int64_t start, int64_t
     } else if(midIndex == endIndex) {
       midIndex--;
     }
+    eassert(startIndex < midIndex && midIndex < endIndex);
 
     //select subinterval
     if(axis->allBounds[midIndex] > start) {
@@ -316,7 +319,9 @@ esdm_status esdm_write_grid(esdm_grid_t* grid, esdm_dataspace_t* memspace, void*
   if(cell->fragment) return ESDM_SUCCESS; //we already have data for this grid cell -> nothing to be done
 
   //Do the actual writing.
-  result = esdmI_scheduler_writeSingleFragmentBlocking(esdmI_esdm(), grid->dataset, buffer, memspace, false, &cell->fragment);
+  esdm_dataspace_t* fragmentSpace;
+  result = esdm_dataspace_copy(memspace, &fragmentSpace);
+  if(result == ESDM_SUCCESS) result = esdmI_scheduler_writeSingleFragmentBlocking(esdmI_esdm(), grid->dataset, buffer, fragmentSpace, false, &cell->fragment);
   if(result == ESDM_SUCCESS) esdmI_grid_registerCompletedCell(grid);
   return result;
 }
@@ -340,13 +345,12 @@ esdm_status esdm_read_grid(esdm_grid_t* grid, esdm_dataspace_t* memspace, void* 
   return result;
 }
 
-esdm_status esdm_dataset_grids(esdm_dataset_t* dataset, int64_t* out_count, esdm_grid_t** out_grids) {
+esdm_status esdm_dataset_grids(esdm_dataset_t* dataset, int64_t* out_count, esdm_grid_t*** out_grids) {
   eassert(dataset);
   eassert(out_count);
-  eassert(out_grids);
 
   *out_count = dataset->gridCount;
-  *out_grids = ea_memdup(dataset->grids, dataset->gridCount*sizeof*dataset->grids);
+  if(out_grids) *out_grids = ea_memdup(dataset->grids, dataset->gridCount*sizeof*dataset->grids);
 
   return ESDM_SUCCESS;
 }
@@ -435,7 +439,8 @@ void esdmI_dataset_registerGrid(esdm_dataset_t* dataset, esdm_grid_t* grid) {
 void esdmI_dataset_registerGridCompletion(esdm_dataset_t* dataset, esdm_grid_t* grid) {
   int64_t index = dataset->gridCount;
   while(index < dataset->gridCount + dataset->incompleteGridCount) {
-    if(dataset->grids[index++] == grid) break;
+    if(dataset->grids[index] == grid) break;
+    index++;
   }
   eassert(index < dataset->gridCount + dataset->incompleteGridCount && "registerGridCompletion() must be called with an existing incomplete grid");
 

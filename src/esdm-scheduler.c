@@ -863,6 +863,7 @@ static esdm_status esdmI_scheduler_enqueueSingleFragmentWrite(esdm_instance_t *e
   };
 
   //TODO: factor out the registration of the task
+  atomic_fetch_add(&status->pending_ops, 1);
   if (backend->threads == 0) {
     backend_thread(task, backend);
   } else {
