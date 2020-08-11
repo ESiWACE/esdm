@@ -184,7 +184,7 @@ double esdmI_hypercube_shapeSimilarity(esdmI_hypercube_t* a, esdmI_hypercube_t* 
   return similarity;
 }
 
-void esdmI_hypercube_getOffsetAndSize(esdmI_hypercube_t* cube, int64_t* out_offset, int64_t* out_size) {
+void esdmI_hypercube_getOffsetAndSize(const esdmI_hypercube_t* cube, int64_t* out_offset, int64_t* out_size) {
   eassert(out_offset);
   eassert(out_size);
 

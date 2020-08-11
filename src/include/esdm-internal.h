@@ -504,7 +504,7 @@ bool esdmI_hypercube_equal(esdmI_hypercube_t* a, esdmI_hypercube_t* b);
 //A return value of 1.0 means that the two hypercubes are identical modulo translation, a value of 0.0 is only achieved if one of the hypercubes is empty.
 double esdmI_hypercube_shapeSimilarity(esdmI_hypercube_t* a, esdmI_hypercube_t* b);
 
-static inline int64_t esdmI_hypercube_dimensions(esdmI_hypercube_t* cube) { return cube->dims; }
+static inline int64_t esdmI_hypercube_dimensions(const esdmI_hypercube_t* cube) { return cube->dims; }
 
 /**
  * Return the shape of the hypercube as an offset and a size vector.
@@ -513,7 +513,7 @@ static inline int64_t esdmI_hypercube_dimensions(esdmI_hypercube_t* cube) { retu
  * @param [out] out_offset array of size cube->dims that will be filled with the offset vector components
  * @param [out] out_size array of size cube->dims that will be filled with the size vector components
  */
-void esdmI_hypercube_getOffsetAndSize(esdmI_hypercube_t* cube, int64_t* out_offset, int64_t* out_size);
+void esdmI_hypercube_getOffsetAndSize(const esdmI_hypercube_t* cube, int64_t* out_offset, int64_t* out_size);
 
 int64_t esdmI_hypercube_size(esdmI_hypercube_t* cube);
 
