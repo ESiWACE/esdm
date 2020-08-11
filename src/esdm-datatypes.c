@@ -1130,6 +1130,57 @@ esdm_status esdm_dataset_update(esdm_dataset_t *dataset) {
   return ESDM_SUCCESS;
 }
 
+static bool fragmentsCoverRegion(esdmI_hypercube_t* region, int64_t fragmentCount, esdm_fragment_t** fragments, esdmI_hypercubeSet_t** out_uncoveredRegion) {
+  eassert(region);
+  eassert(out_uncoveredRegion);
+
+  *out_uncoveredRegion = esdmI_hypercubeSet_make();
+  esdmI_hypercubeSet_add(*out_uncoveredRegion, region);
+
+  if(fragmentCount == 0){
+    return false;
+  }
+
+  for(int64_t i = 0; i < fragmentCount; i++) {
+    esdmI_hypercube_t* curCube;
+    esdmI_dataspace_getExtends(fragments[i]->dataspace, &curCube);
+    esdmI_hypercubeSet_subtract(*out_uncoveredRegion, curCube);
+    esdmI_hypercube_destroy(curCube);
+  }
+
+  return esdmI_hypercubeSet_isEmpty(*out_uncoveredRegion);
+}
+
+static esdm_grid_t* esdmI_dataset_gridCoveringRegion(esdm_dataset_t* dataset, esdmI_hypercube_t* region) {
+  esdm_grid_t* bestGrid = NULL;
+  int64_t regionSize = esdmI_hypercube_size(region);
+  int64_t smallestOverhead = 0x7fffffffffffffff;
+  for(int64_t i = 0; i < dataset->gridCount; i++) {
+    int64_t coverage = esdmI_grid_coverRegionSize(dataset->grids[i], region);
+    if(coverage == regionSize) {
+      int64_t overhead = esdmI_grid_coverRegionOverhead(dataset->grids[i], region);
+      if(overhead <= smallestOverhead) {
+        smallestOverhead = overhead;
+        bestGrid = dataset->grids[i];
+      }
+    }
+  }
+  return bestGrid;
+}
+
+esdm_status esdmI_dataset_fragmentsCoveringRegion(esdm_dataset_t* dataset, esdmI_hypercube_t* region, int64_t* out_count, esdm_fragment_t*** out_fragments, esdmI_hypercubeSet_t** out_uncovered, bool* out_fullyCovered) {
+  esdm_grid_t* grid = esdmI_dataset_gridCoveringRegion(dataset, region);
+  if(grid) {
+    esdm_status result = esdmI_grid_fragmentsInRegion(grid, region, out_count, out_fragments);
+    *out_uncovered = esdmI_hypercubeSet_make();
+    *out_fullyCovered = true;
+  } else {
+    *out_fragments = esdmI_fragments_makeSetCoveringRegion(&dataset->fragments, region, out_count);
+    *out_fullyCovered = fragmentsCoverRegion(region, *out_count, *out_fragments, out_uncovered);
+  }
+  return ESDM_SUCCESS;
+}
+
 esdm_status esdm_dataset_close(esdm_dataset_t *dset) {
   ESDM_DEBUG(__func__);
   eassert(dset);

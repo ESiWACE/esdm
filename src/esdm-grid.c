@@ -250,18 +250,16 @@ static void esdmI_grid_registerCompletedCell(esdm_grid_t* grid) {
   }
 }
 
-//Finds the interval index along a single axis.
-//If the `start`/`end` spans more than a single axis interval, returns -1,
-//if the axis interval is longer than `end-start`, `*out_isShort` is set to true.
-//Otherwise, `*out_isShort` is left untouched.
-static int64_t esdmI_axis_findInterval(esdm_axis_t* axis, int64_t start, int64_t end, bool* out_isShort) {
-  if(start >= end) return -1;
-  if(start < axis->outerBounds[0] || end > axis->outerBounds[1]) return -1;
+//Optimized binary search for the interval that contains the given location.
+//The result is either -1 if the location is out of bounds, or in the inclusive range [0, intervals-1].
+//The value `intervals` is never returned because `outerBounds[1]` only marks the end of the last interval but is not part of any interval itself.
+static int64_t esdmI_axis_findInterval(esdm_axis_t* axis, int64_t location) {
+  if(location < axis->outerBounds[0] || location >= axis->outerBounds[1]) return -1;
 
   int64_t startIndex = 0, endIndex = axis->intervals;
   while(startIndex + 1 < endIndex) {
-    //find an index with a bound that likely close to the start
-    int64_t midIndex = startIndex + (endIndex - startIndex)*(start - axis->allBounds[startIndex])/(axis->allBounds[endIndex] - axis->allBounds[startIndex]);
+    //find an index with a bound that is likely close to the requested location
+    int64_t midIndex = startIndex + (endIndex - startIndex)*(location - axis->allBounds[startIndex])/(axis->allBounds[endIndex] - axis->allBounds[startIndex]);
     eassert(startIndex <= midIndex && midIndex <= endIndex);
 
     //ensure progress
@@ -274,7 +272,7 @@ static int64_t esdmI_axis_findInterval(esdm_axis_t* axis, int64_t start, int64_t
     eassert(startIndex < midIndex && midIndex < endIndex);
 
     //select subinterval
-    if(axis->allBounds[midIndex] > start) {
+    if(axis->allBounds[midIndex] > location) {
       endIndex = midIndex;
     } else {
       startIndex = midIndex;
@@ -282,9 +280,32 @@ static int64_t esdmI_axis_findInterval(esdm_axis_t* axis, int64_t start, int64_t
   }
   eassert(startIndex + 1 == endIndex);
 
-  if(end > axis->allBounds[endIndex]) return -1;
-  if(start > axis->allBounds[startIndex] || end < axis->allBounds[endIndex]) *out_isShort = true;
   return startIndex;
+}
+
+//Translate logical coordinates into the index of the enclosing cell.
+//Does not recurs into subgrids.
+//The given coordinates must be within the grid domain.
+static void esdmI_grid_logicalToCellIndex(esdm_grid_t* grid, int64_t* logicalCoords, int64_t* out_cellIndex) {
+  for(int64_t i = grid->dimCount; i--; ) out_cellIndex[i] = esdmI_axis_findInterval(&grid->axes[i], logicalCoords[i]);
+}
+
+//Match the given interval against the intervals on the axis.
+//If the `start`/`end` spans more than a single axis interval, returns -1,
+//otherwise the index of the axis interval containing the given interval is returned.
+//If the axis interval is longer than `end-start`, `*out_isShort` is set to true,
+//otherwise, `*out_isShort` is left untouched.
+static int64_t esdmI_axis_matchInterval(esdm_axis_t* axis, int64_t start, int64_t end, bool* out_isShort) {
+  if(start >= end) return -1;
+  if(start < axis->outerBounds[0] || end > axis->outerBounds[1]) return -1;
+
+  int64_t intervalIndex = esdmI_axis_findInterval(axis, start);
+  eassert(intervalIndex < axis->intervals);
+  if(intervalIndex < 0) return -1;
+
+  if(end > axis->allBounds[intervalIndex + 1]) return -1;
+  if(start > axis->allBounds[intervalIndex] || end < axis->allBounds[intervalIndex + 1]) *out_isShort = true;
+  return intervalIndex;
 }
 
 //This will throw an error if the dataspace is bigger than the grid cell.
@@ -293,7 +314,7 @@ static int64_t esdmI_axis_findInterval(esdm_axis_t* axis, int64_t start, int64_t
 static esdm_status esdmI_grid_findCell(esdm_grid_t* grid, esdm_dataspace_t* space, int64_t* out_index, bool* out_spaceTooSmall) {
   *out_spaceTooSmall = false;
   for(int64_t dim = 0; dim < grid->dimCount; dim++) {
-    int64_t curIndex = esdmI_axis_findInterval(&grid->axes[dim], space->offset[dim], space->offset[dim] + space->size[dim], out_spaceTooSmall);
+    int64_t curIndex = esdmI_axis_matchInterval(&grid->axes[dim], space->offset[dim], space->offset[dim] + space->size[dim], out_spaceTooSmall);
     if(curIndex < 0) return ESDM_ERROR;
     out_index[dim] = curIndex;
   }
@@ -478,8 +499,145 @@ void esdmI_dataset_registerGridCompletion(esdm_dataset_t* dataset, esdm_grid_t* 
   dataset->gridCount++, dataset->incompleteGridCount--;
 }
 
-int64_t esdmI_grid_coverRegionSize(const esdm_grid_t* grid, const esdmI_hypercube_t* region);	//returns the total size of the grid cells that intersect the region
-void esdmI_grid_subgridCompleted(esdm_grid_t* grid);	//called by subgrids when their last cell is filled
+#define min(x, y) (x < y ? x : y)
+#define max(x, y) (x > y ? x : y)
+
+int64_t esdmI_grid_coverRegionSize(const esdm_grid_t* grid, const esdmI_hypercube_t* region) {
+  int64_t dimCount = esdmI_hypercube_dimensions(region);
+  eassert(dimCount == grid->dimCount);
+
+  int64_t offset[dimCount], size[dimCount];
+  esdmI_hypercube_getOffsetAndSize(region, offset, size);
+  int64_t result = 1;
+  for(int64_t dim = 0; dim < dimCount; dim++) {
+    const esdm_axis_t* axis = &grid->axes[dim];
+    int64_t start = max(offset[dim], axis->outerBounds[0]);
+    int64_t end = min(offset[dim] + size[dim], axis->outerBounds[1]);
+    result *= max(0, end - start);
+  }
+
+  return result;
+}
+
+int64_t esdmI_grid_coverRegionOverhead(esdm_grid_t* grid, esdmI_hypercube_t* region) {
+  int64_t dimCount = esdmI_hypercube_dimensions(region);
+  eassert(dimCount == grid->dimCount);
+
+  int64_t offset[dimCount], size[dimCount];
+  esdmI_hypercube_getOffsetAndSize(region, offset, size);
+  int64_t coverRegionSize = 1, fetchedRegionSize = 1;
+  for(int64_t dim = 0; dim < dimCount; dim++) {
+    //Copy-pasta from esdmI_grid_coverRegionSize() to avoid the two separate passes over the axes that a call to `esdmI_grid_coverRegionSize()` would have caused.
+    esdm_axis_t* axis = &grid->axes[dim];
+    int64_t start = max(offset[dim], axis->outerBounds[0]);
+    int64_t end = min(offset[dim] + size[dim], axis->outerBounds[1]);
+    coverRegionSize *= max(0, end - start);
+
+    int64_t startInterval = esdmI_axis_findInterval(axis, start);
+    eassert(startInterval >= 0);
+    int64_t endInterval = esdmI_axis_findInterval(axis, end - 1); //-1 to get the interval that actually contains the last location within the region
+    eassert(endInterval >= 0);
+    fetchedRegionSize *= axis->allBounds[endInterval + 1] - axis->allBounds[startInterval];
+  }
+
+  return fetchedRegionSize - coverRegionSize;
+}
+
+typedef struct esdmI_grid_fragmentsInRegion_state_t {
+  int64_t fragmentCount, bufferSize;
+  esdm_fragment_t** fragments;
+} esdmI_grid_fragmentsInRegion_state_t;
+
+static void esdmI_grid_fragmentsInRegion_addFragment(esdmI_grid_fragmentsInRegion_state_t* state, esdm_fragment_t* fragment) {
+  if(state->fragmentCount == state->bufferSize) {
+    state->fragments = ea_checked_realloc(state->fragments, (state->bufferSize *= 2)*sizeof*state->fragments);
+  }
+  eassert(state->fragmentCount < state->bufferSize);
+
+  state->fragments[state->fragmentCount++] = fragment;
+}
+
+//Compute the range of cell indices that overlaps with the given region.
+//`out_startIndex` and `out_endIndex` are arrays of size grid->dimCount.
+static void esdmI_grid_indexRange(esdm_grid_t* grid, esdmI_hypercube_t* region, int64_t* out_startIndex, int64_t* out_endIndex) {
+  int64_t dimCount = esdmI_hypercube_dimensions(region);
+  eassert(grid->dimCount == dimCount);
+
+  int64_t start[dimCount], size[dimCount], end[dimCount];
+  esdmI_hypercube_getOffsetAndSize(region, start, size);
+  for(int64_t i = 0; i < dimCount; i++) {
+    end[i] = start[i] + size[i];
+
+    //start and end may be outside the grid domain. Clip them to the domain.
+    //If the entire region happens to be outside the grid domain, this will yield an empty coordinate range.
+    int64_t firstBound = grid->axes[i].outerBounds[0], lastBound = grid->axes[i].outerBounds[1];
+    start[i] = max(start[i], firstBound);
+    start[i] = min(start[i], lastBound);
+    end[i] = max(end[i], firstBound);
+    end[i] = min(end[i], lastBound);
+
+    end[i]--; //turn it into an inclusive end coordinate, this is important for `esdmI_grid_logicalToCellIndex()` to yield the correct result in all cases
+  }
+
+  esdmI_grid_logicalToCellIndex(grid, start, out_startIndex);
+  esdmI_grid_logicalToCellIndex(grid, end, out_endIndex);
+  for(int64_t i = 0; i < dimCount; i++) out_endIndex[i]++;  //back to an exclusive end index
+}
+
+static esdm_status esdmI_grid_fragmentsInRegion_internal(esdm_grid_t* grid, esdmI_hypercube_t* region, esdmI_grid_fragmentsInRegion_state_t* state) {
+  int64_t startIndex[grid->dimCount], endIndex[grid->dimCount];
+  esdmI_grid_indexRange(grid, region, startIndex, endIndex);
+  eassert(memcmp(startIndex, endIndex, sizeof(startIndex)));
+
+  int64_t curIndex[grid->dimCount], linearIndex = esdm_grid_linearIndex(grid, startIndex);
+  eassert(linearIndex >= 0);
+  memcpy(curIndex, startIndex, sizeof(curIndex));
+  while(true) {
+    if(grid->grid[linearIndex].fragment) {
+      esdmI_grid_fragmentsInRegion_addFragment(state, grid->grid[linearIndex].fragment);
+    } else if(grid->grid[linearIndex].subgrid) {
+      esdm_status result = esdmI_grid_fragmentsInRegion_internal(grid->grid[linearIndex].subgrid, region, state);
+      if(result != ESDM_SUCCESS) return result;
+    } else {
+      return ESDM_INVALID_STATE_ERROR;
+    }
+
+    int64_t increment = 1;
+    bool indexIncremented = false;
+    for(int64_t dim = grid->dimCount; !indexIncremented && dim--; increment *= grid->axes[dim].intervals) {
+      linearIndex += increment;
+      if(++curIndex[dim] != endIndex[dim]) {
+        indexIncremented = true;
+      } else {
+        linearIndex -= (curIndex[dim] - startIndex[dim])*increment;
+        curIndex[dim] = startIndex[dim];
+      }
+    }
+    if(!indexIncremented) break;  //done if we couldn't increment the index
+  }
+
+  return ESDM_SUCCESS;
+}
+
+esdm_status esdmI_grid_fragmentsInRegion(esdm_grid_t* grid, esdmI_hypercube_t* region, int64_t* out_fragmentCount, esdm_fragment_t*** out_fragments) {
+  eassert(grid->grid);
+
+  esdmI_grid_fragmentsInRegion_state_t state = {
+    .fragmentCount = 0,
+    .bufferSize = 8,
+    .fragments = ea_checked_malloc(8*sizeof*state.fragments)
+  };
+  esdm_status result = esdmI_grid_fragmentsInRegion_internal(grid, region, &state);
+
+  if(result == ESDM_SUCCESS) {
+    *out_fragmentCount = state.fragmentCount;
+    *out_fragments = state.fragments;
+  } else {
+    free(state.fragments);
+  }
+
+  return result;
+}
 
 void esdmI_grid_serialize(smd_string_stream_t* stream, const esdm_grid_t* grid);
 esdm_status esdmI_grid_createFromString(const char* serializedGrid, esdm_grid_t** out_grid);

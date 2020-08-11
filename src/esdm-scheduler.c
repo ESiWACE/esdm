@@ -930,30 +930,6 @@ esdm_status esdm_scheduler_wait(io_request_status_t *status) {
   return ESDM_SUCCESS;
 }
 
-static bool fragmentsCoverSpace(esdm_dataspace_t* space, int64_t fragmentCount, esdm_fragment_t** fragments, esdmI_hypercubeSet_t** out_uncoveredRegion) {
-  eassert(space);
-  eassert(out_uncoveredRegion);
-
-  esdmI_hypercube_t* curCube;
-  *out_uncoveredRegion = esdmI_hypercubeSet_make();
-
-  esdmI_dataspace_getExtends(space, &curCube);
-  esdmI_hypercubeSet_add(*out_uncoveredRegion, curCube);
-  esdmI_hypercube_destroy(curCube);
-
-  if(fragmentCount == 0){
-    return FALSE;
-  }
-
-  for(int64_t i = 0; i < fragmentCount; i++) {
-    esdmI_dataspace_getExtends(fragments[i]->dataspace, &curCube);
-    esdmI_hypercubeSet_subtract(*out_uncoveredRegion, curCube);
-    esdmI_hypercube_destroy(curCube);
-  }
-
-  return esdmI_hypercubeSet_isEmpty(*out_uncoveredRegion);
-}
-
 esdm_status esdm_scheduler_write_blocking(esdm_instance_t *esdm, esdm_dataset_t *dataset, void *buf, esdm_dataspace_t *subspace, bool requestIsInternal) {
   ESDM_DEBUG(__func__);
 
@@ -999,10 +975,12 @@ esdm_status esdm_scheduler_read_blocking(esdm_instance_t *esdm, esdm_dataset_t *
   startTime = ea_stop_timer(myTimer);
   int64_t frag_count;
   esdm_fragment_t** read_frag;
+  esdmI_hypercubeSet_t* uncovered;
+  bool dataIsComplete;
   {
     esdmI_hypercube_t* readExtends;
     esdmI_dataspace_getExtends(subspace, &readExtends);
-    read_frag = esdmI_fragments_makeSetCoveringRegion(&dataset->fragments, readExtends, &frag_count);
+    esdmI_dataset_fragmentsCoveringRegion(dataset, readExtends, &frag_count, &read_frag, &uncovered, &dataIsComplete);
     esdmI_hypercube_destroy(readExtends);
     DEBUG("fragments to read: %d", frag_count);
   }
@@ -1010,8 +988,6 @@ esdm_status esdm_scheduler_read_blocking(esdm_instance_t *esdm, esdm_dataset_t *
 
   //check whether we have all the requested data
   startTime = ea_stop_timer(myTimer);
-  esdmI_hypercubeSet_t* uncovered;
-  bool dataIsComplete = fragmentsCoverSpace(subspace, frag_count, read_frag, &uncovered);
   if(!dataIsComplete) {
     esdm_type_t type = esdm_dataspace_get_type(subspace);
     eassert(type == esdm_dataset_get_type(dataset));  //TODO handle the case that the two types don't match

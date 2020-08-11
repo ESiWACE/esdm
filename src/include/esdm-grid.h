@@ -290,9 +290,17 @@ void esdm_gridIterator_destroy(esdm_gridIterator_t* iterator);
 void esdmI_dataset_registerGrid(esdm_dataset_t* dataset, esdm_grid_t* grid);
 void esdmI_dataset_registerGridCompletion(esdm_dataset_t* dataset, esdm_grid_t* grid);
 
-int64_t esdmI_grid_coverRegionSize(const esdm_grid_t* grid, const esdmI_hypercube_t* region);	//returns the total size of the grid cells that intersect the region
+//Compute the total size of the grid cells that intersect the region.
+//This assumes that the grid is complete, i.e. it does not waste time checking presence of fragments and subgrids.
+int64_t esdmI_grid_coverRegionSize(const esdm_grid_t* grid, const esdmI_hypercube_t* region);
 
-void esdmI_grid_subgridCompleted(esdm_grid_t* grid);	//called by subgrids when their last cell is filled
+//Compute the total size of data that would need to be fetched to cover the region, minus the cover region size.
+//TODO: Make this recurs into subgrids to get a precise result, currently this may overestimate the overhead.
+int64_t esdmI_grid_coverRegionOverhead(esdm_grid_t* grid, esdmI_hypercube_t* region);
+
+//Recursively list all fragments in the grid that intersect with the given region.
+//There must be no empty cells within the provided region, and there must be an overlap with the region.
+esdm_status esdmI_grid_fragmentsInRegion(esdm_grid_t* grid, esdmI_hypercube_t* region, int64_t* out_fragmentCount, esdm_fragment_t*** out_fragments);
 
 //For use by esdm_mpi and storing as metadata.
 void esdmI_grid_serialize(smd_string_stream_t* stream, const esdm_grid_t* grid);

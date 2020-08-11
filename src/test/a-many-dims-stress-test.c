@@ -20,6 +20,7 @@
 
 
 #include <esdm.h>
+#include <esdm-grid.h>
 #include <esdm-internal.h>
 #include <test/util/test_util.h>
 
@@ -112,6 +113,15 @@ int main(int argc, char const **argv) {
   ret = esdm_container_commit(container);
   eassert(ret == ESDM_SUCCESS);
 
+  //define the grid
+  esdm_grid_t* grid;
+  ret = esdm_grid_createSimple(dataset, dimCount, size, &grid);
+  eassert(ret == ESDM_SUCCESS);
+  for(int64_t dim = dimCount; dim--; ) {
+    ret = esdm_grid_subdivideFlexible(grid, dim, 2);
+    eassert(ret == ESDM_SUCCESS);
+  }
+
   esdm_fragmentsTimes_t startTimes = esdmI_performance_fragments();
 
   //write data
@@ -123,7 +133,7 @@ int main(int argc, char const **argv) {
     esdm_dataspace_t* subspace;
     ret = esdm_dataspace_subspace(dataspace, dimCount, fragmentSize, offset, &subspace);
     eassert(ret == ESDM_SUCCESS);
-    ret = esdm_write(dataset, &i, subspace);
+    ret = esdm_write_grid(grid, subspace, &i);
     eassert(ret == ESDM_SUCCESS);
     ret = esdm_dataspace_destroy(subspace);
     eassert(ret == ESDM_SUCCESS);
