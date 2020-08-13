@@ -650,10 +650,9 @@ esdm_status esdm_fragment_destroy(esdm_fragment_t *frag) {
 
 // Dataset ////////////////////////////////////////////////////////////////////
 
+const int64_t kInitialGridSlotCount = 8;
 
 void esdm_dataset_init(esdm_container_t *c, const char *name, esdm_dataspace_t *dspace, esdm_dataset_t **out_dataset){
-  const int64_t kInitialGridSlotCount = 8;
-
   esdm_dataset_t *d = ea_checked_malloc(sizeof(esdm_dataset_t));
   *d = (esdm_dataset_t) {
     .name = strdup(name),
@@ -908,6 +907,7 @@ esdm_status esdm_dataspace_copyDatalayout(esdm_dataspace_t* space, esdm_dataspac
   return ESDM_SUCCESS;
 }
 
+//FIXME: Error handling in this method leaks memory.
 esdm_status esdm_dataset_open_md_parse(esdm_dataset_t *d, char * md, int size){
   esdm_status ret;
   char * js = md;
@@ -994,6 +994,30 @@ esdm_status esdm_dataset_open_md_parse(esdm_dataset_t *d, char * md, int size){
       esdmI_dataset_update_actual_size(d, frag);
     }
   }
+
+  elem = json_object_get(root, "grids");
+  if(!elem || !json_is_array(elem)) {
+    json_decref(root);
+    return ESDM_ERROR;
+  }
+  arrsize = json_array_size(elem);
+  d->gridSlotCount = kInitialGridSlotCount > arrsize ? kInitialGridSlotCount : arrsize;
+  d->gridCount = arrsize;
+  d->incompleteGridCount = 0;
+  d->grids = ea_checked_malloc(d->gridSlotCount*sizeof*d->grids);
+  for(int64_t i = 0; i < arrsize; i++) {
+    json_t* gridDescription = json_array_get(elem, i);
+    if(!gridDescription) {
+      json_decref(root);
+      return ESDM_ERROR;
+    }
+    esdm_status ret = esdmI_grid_createFromJson(gridDescription, d, NULL, &d->grids[i]);
+    if(ret != ESDM_SUCCESS) {
+      json_decref(root);
+      return ret;
+    }
+  }
+
   json_decref(root);
 
   d->status = ESDM_DATA_PERSISTENT;
@@ -1096,9 +1120,14 @@ void esdmI_dataset_metadata_create(esdm_dataset_t *d, smd_string_stream_t*s){
     }
     smd_string_stream_printf(s, "]");
   }
-	smd_string_stream_printf(s, ",\"fragments\":");
+  smd_string_stream_printf(s, ",\"fragments\":");
   esdmI_fragments_metadata_create(&d->fragments, s);
-  smd_string_stream_printf(s, "}");
+  smd_string_stream_printf(s, ",\"grids\":[");
+  for(int64_t i = 0; i < d->gridCount; i++) {
+    if(i) smd_string_stream_printf(s, ",");
+    esdmI_grid_serialize(s, d->grids[i]);
+  }
+  smd_string_stream_printf(s, "]}");
 }
 
 esdm_status esdm_dataset_commit(esdm_dataset_t *d) {

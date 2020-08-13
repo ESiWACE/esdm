@@ -303,7 +303,8 @@ int64_t esdmI_grid_coverRegionOverhead(esdm_grid_t* grid, esdmI_hypercube_t* reg
 esdm_status esdmI_grid_fragmentsInRegion(esdm_grid_t* grid, esdmI_hypercube_t* region, int64_t* out_fragmentCount, esdm_fragment_t*** out_fragments);
 
 //For use by esdm_mpi and storing as metadata.
-void esdmI_grid_serialize(smd_string_stream_t* stream, const esdm_grid_t* grid);
+void esdmI_grid_serialize(smd_string_stream_t* stream, const esdm_grid_t* grid);  //the resulting stream is in JSON format
+esdm_status esdmI_grid_createFromJson(json_t* json, esdm_dataset_t* dataset, esdm_grid_t* parent, esdm_grid_t** out_grid);
 esdm_status esdmI_grid_createFromString(const char* serializedGrid, esdm_grid_t** out_grid);
 
 void esdmI_grid_destroy(esdm_grid_t* grid);	//must only be called by the owning dataset
