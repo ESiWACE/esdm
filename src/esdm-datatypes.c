@@ -1130,6 +1130,16 @@ esdm_status esdm_dataset_update(esdm_dataset_t *dataset) {
   return ESDM_SUCCESS;
 }
 
+esdm_fragment_t* esdmI_dataset_fragmentById(esdm_dataset_t* dataset, const char* id) {
+  int64_t fragmentCount;
+  esdm_fragment_t** fragments = esdmI_fragments_list(&dataset->fragments, &fragmentCount);
+
+  for(int64_t i = 0; i < fragmentCount; i++) {
+    if(fragments[i]->id && !strcmp(id, fragments[i]->id)) return fragments[i];
+  }
+  return NULL;
+}
+
 static bool fragmentsCoverRegion(esdmI_hypercube_t* region, int64_t fragmentCount, esdm_fragment_t** fragments, esdmI_hypercubeSet_t** out_uncoveredRegion) {
   eassert(region);
   eassert(out_uncoveredRegion);

@@ -73,7 +73,7 @@ esdm_status esdm_grid_createSimple(esdm_dataset_t* dataset, int64_t dimCount, in
   return esdm_grid_create_internal(dataset, NULL, dimCount, NULL, size, out_grid);
 }
 
-static int64_t esdmI_grid_cellCount(esdm_grid_t* grid) {
+static int64_t esdmI_grid_cellCount(const esdm_grid_t* grid) {
   int64_t entryCount = 1;
   for(int64_t i = 0; i < grid->dimCount; i++) {
     entryCount *= grid->axes[i].intervals;
@@ -639,8 +639,145 @@ esdm_status esdmI_grid_fragmentsInRegion(esdm_grid_t* grid, esdmI_hypercube_t* r
   return result;
 }
 
-void esdmI_grid_serialize(smd_string_stream_t* stream, const esdm_grid_t* grid);
+void esdmI_grid_serialize(smd_string_stream_t* stream, const esdm_grid_t* grid) {
+  eassert(stream);
+  eassert(grid);
+  eassert(grid->grid);
+
+  smd_string_stream_printf(stream, "{\"axes\":[");
+  for(int64_t dim = 0; dim < grid->dimCount; dim++) {
+    smd_string_stream_printf(stream, "%s[", dim ? "," : "");
+    const esdm_axis_t* axis = &grid->axes[dim];
+    for(int64_t i = 0; i <= axis->intervals; i++) {
+      smd_string_stream_printf(stream, "%s%"PRId64, (i ? "," : ""), axis->allBounds[i]);
+    }
+    smd_string_stream_printf(stream, "]");
+  }
+  smd_string_stream_printf(stream, "],\"grid\":[");
+  int64_t cellCount = esdmI_grid_cellCount(grid);
+  for(int64_t i = 0; i < cellCount; i++) {
+    const esdm_gridEntry_t* cell = &grid->grid[i];
+    eassert(!cell->subgrid || !cell->fragment);
+
+    if(i) smd_string_stream_printf(stream, ",");
+    if(cell->subgrid) {
+      smd_string_stream_printf(stream, "{\"grid\":");
+      esdmI_grid_serialize(stream, cell->subgrid);
+      smd_string_stream_printf(stream, "}");
+    } else if(cell->fragment) {
+      eassert(cell->fragment->id);
+      smd_string_stream_printf(stream, "{\"fragment\":\"%s\"}", cell->fragment->id);
+    } else {
+      smd_string_stream_printf(stream, "{}");
+    }
+  }
+  smd_string_stream_printf(stream, "]}");
+}
+
 esdm_status esdmI_grid_createFromString(const char* serializedGrid, esdm_grid_t** out_grid);
+
+esdm_status esdmI_grid_createFromJson(json_t* json, esdm_dataset_t* dataset, esdm_grid_t* parent, esdm_grid_t** out_grid) {
+  eassert(json);
+  eassert(dataset);
+
+  //state that's relevant for error cleanup
+  esdm_status result = ESDM_ERROR;
+  esdm_grid_t* grid = NULL;
+  int64_t constructedAxes = 0;
+  int64_t constructedCells = 0;
+
+  //other state that must be forward declared due to the gotos
+  int64_t dimCount, cellCount;
+  json_t* axesArray, *cellArray;
+
+  if(!json_is_object(json)) goto fail;
+
+  axesArray = json_object_get(json, "axes");
+  if(!axesArray) goto fail;
+  if(!json_is_array(axesArray)) goto fail;
+  dimCount = json_array_size(axesArray);
+
+  cellArray = json_object_get(json, "grid");
+  if(!cellArray) goto fail;
+  if(!json_is_array(cellArray)) goto fail;
+  cellCount = json_array_size(cellArray);
+
+  grid = ea_checked_malloc(sizeof*grid + dimCount*sizeof*grid->axes);
+  *grid = (esdm_grid_t){
+    .dimCount = dimCount,
+    .parent = parent,
+    .dataset = dataset,
+    .grid = ea_checked_calloc(cellCount, sizeof*grid->grid)
+  };
+
+  for(; constructedAxes < dimCount; constructedAxes++) {
+    esdm_axis_t* axis = &grid->axes[constructedAxes];
+    json_t* boundsArray = json_array_get(axesArray, constructedAxes);
+    if(!boundsArray) goto fail;
+    if(!json_is_array(boundsArray)) goto fail;
+    int64_t boundCount = json_array_size(boundsArray);
+    axis->intervals = boundCount - 1;
+    if(boundCount < 2) goto fail;
+    axis->allBounds = axis->intervals == 1 ? axis->outerBounds : ea_checked_malloc(boundCount*sizeof*axis->allBounds);
+    for(int64_t i = 0; i < boundCount; i++) {
+      json_t* bound = json_array_get(boundsArray, i);
+      if(!bound) goto fail;
+      if(!json_is_integer(bound)) goto fail;
+      axis->allBounds[i] = json_integer_value(bound);
+    }
+    axis->outerBounds[0] = axis->allBounds[0];
+    axis->outerBounds[1] = axis->allBounds[axis->intervals];
+  }
+  if(cellCount != esdmI_grid_cellCount(grid)) goto fail;
+
+  for(; constructedCells < cellCount; constructedCells++) {
+    esdm_gridEntry_t* cell = &grid->grid[constructedCells];
+    json_t* cellObject = json_array_get(cellArray, constructedCells);
+    if(!cellObject) goto fail;
+    if(!json_is_object(cellObject)) goto fail;
+
+    json_t* element = json_object_get(cellObject, "grid");
+    if(element) {
+      esdm_status ret = esdmI_grid_createFromJson(element, dataset, grid, &cell->subgrid);
+      if(ret != ESDM_SUCCESS) goto fail;
+    }
+
+    element = json_object_get(cellObject, "fragment");
+    if(element) {
+      if(cell->subgrid) {
+        constructedCells++; //ensure cleanup of the subgrid
+        goto fail;
+      }
+      if(!json_is_string(element)) goto fail;
+      cell->fragment = esdmI_dataset_fragmentById(dataset, json_string_value(element));
+      if(!cell->fragment) goto fail;
+    }
+  }
+
+  result = ESDM_SUCCESS;
+  goto done;
+
+fail:
+  while(constructedCells--) {
+    esdm_gridEntry_t* cell = &grid->grid[constructedCells];
+    if(cell->subgrid) esdmI_grid_destroy(cell->subgrid);
+  }
+
+  while(constructedAxes--) {
+    esdm_axis_t* axis = &grid->axes[constructedAxes];
+    if(axis->intervals != 1) free(axis->allBounds);
+  }
+
+  if(grid) {
+    free(grid->grid);
+    free(grid);
+  }
+  grid = NULL;
+
+done:
+  *out_grid = grid;
+  return result;
+}
 
 void esdmI_grid_destroy(esdm_grid_t* grid) {
   if(grid->grid) {

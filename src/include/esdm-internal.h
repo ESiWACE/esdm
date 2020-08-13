@@ -228,6 +228,7 @@ void esdm_dataset_init(esdm_container_t *container, const char *name, esdm_datas
 esdm_status esdm_dataset_open_md_load(esdm_dataset_t *dset, char ** out_md, int * out_size);
 esdm_status esdm_dataset_open_md_parse(esdm_dataset_t *d, char * md, int size);
 
+esdm_fragment_t* esdmI_dataset_fragmentById(esdm_dataset_t* dataset, const char* id);
 esdm_status esdmI_dataset_fragmentsCoveringRegion(esdm_dataset_t* dataset, esdmI_hypercube_t* region, int64_t* out_count, esdm_fragment_t*** out_fragments, esdmI_hypercubeSet_t** out_uncovered, bool* out_fullyCovered);
 
 /**
