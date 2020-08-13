@@ -104,6 +104,16 @@ int main() {
   eassert(gridCount == 1);
   eassert(grids[0] == topGrid);
 
+  //Check that the grid information is actually stored to disk.
+  ret = esdm_dataset_close(dataset);
+  eassert(ret == ESDM_SUCCESS);
+  ret = esdm_dataset_open(container, "mydataset", ESDM_MODE_FLAG_READ, &dataset);
+  eassert(ret == ESDM_SUCCESS);
+  ret = esdm_dataset_grids(dataset, &gridCount, &grids);
+  eassert(ret == ESDM_SUCCESS);
+  eassert(gridCount == 1);
+  topGrid = grids[0];
+
   //Iterate over the grid cells recursively and check the data.
   esdm_gridIterator_t* iterator;
   ret = esdm_gridIterator_create(topGrid, &iterator);
