@@ -113,6 +113,8 @@ esdm_status esdm_scheduler_write_blocking(esdm_instance_t *esdm, esdm_dataset_t 
 
 /**
  * Takes possession of the subspace. Do not modify or destroy the subspace object after the call.
+ *
+ * Does not register the fragment with the dataset. The assumption is, that the fragment will be owned by a grid.
  */
 esdm_status esdmI_scheduler_writeSingleFragmentBlocking(esdm_instance_t *esdm, esdm_dataset_t *dataset, void *buf, esdm_dataspace_t *subspace, bool requestIsInternal, esdm_fragment_t** out_fragment);
 esdm_status esdmI_scheduler_readSingleFragmentBlocking(esdm_instance_t* esdm, esdm_dataset_t* dataset, void* buffer, esdm_dataspace_t* memspace, esdm_fragment_t* fragment);
@@ -299,7 +301,10 @@ esdm_status esdmI_create_fragment_from_metadata(esdm_dataset_t *dset, json_t * j
  * It is the user's responsibility to ensure that the data remains alive as long as the fragment is loaded.
  *
  *  - Allocate process local memory structures.
+ *
  *  - Takes possession of the dataspace. Do not modify or destroy it after calling this function!
+ *
+ *  - Does **not** register the fragment with the dataset. How the fragment will be owned is left to the discretion of the caller.
  *
  *
  *	A fragment is part of a dataset.
@@ -308,6 +313,13 @@ esdm_status esdmI_create_fragment_from_metadata(esdm_dataset_t *dset, json_t * j
  *
  */
 esdm_status esdmI_fragment_create(esdm_dataset_t *dataset, esdm_dataspace_t *memspace, void *buf, esdm_fragment_t **out_fragment);
+
+/**
+ * Inform the dataset of the existence of a new fragment.
+ * If `transitivelyOwned` is false, the dataset will assume ownership of the fragment,
+ * otherwise the caller is considered responsible for destroying the fragment.
+ */
+void esdmI_dataset_register_fragment(esdm_dataset_t *dset, esdm_fragment_t *frag, bool transitivelyOwned);
 
 ///////////////////////////////////////////////////////////////////////////////
 // Dysfunctional stuff ////////////////////////////////////////////////////////

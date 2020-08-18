@@ -808,6 +808,7 @@ esdm_status esdm_scheduler_enqueue_write(esdm_instance_t *esdm, io_request_statu
       esdm_fragment_t* fragment;
       ret = esdmI_fragment_create(dataset, subspace, (char*)buf + esdm_dataspace_elementOffset(space, offset), &fragment);
       eassert(ret == ESDM_SUCCESS);
+      esdmI_dataset_register_fragment(dataset, fragment, false);
       fragment->backend = curBackend;
 
       io_work_t* task = ea_checked_malloc(sizeof(*task));

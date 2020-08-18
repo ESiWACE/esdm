@@ -371,7 +371,10 @@ esdm_status esdm_write_grid(esdm_grid_t* grid, esdm_dataspace_t* memspace, void*
   esdm_dataspace_t* fragmentSpace;
   result = esdm_dataspace_copy(memspace, &fragmentSpace);
   if(result == ESDM_SUCCESS) result = esdmI_scheduler_writeSingleFragmentBlocking(esdmI_esdm(), grid->dataset, buffer, fragmentSpace, false, &cell->fragment);
-  if(result == ESDM_SUCCESS) esdmI_grid_registerCompletedCell(grid);
+  if(result == ESDM_SUCCESS) {
+    esdmI_dataset_register_fragment(grid->dataset, cell->fragment, true);
+    esdmI_grid_registerCompletedCell(grid);
+  }
   return result;
 }
 
@@ -666,7 +669,9 @@ void esdmI_grid_serialize(smd_string_stream_t* stream, const esdm_grid_t* grid) 
       smd_string_stream_printf(stream, "}");
     } else if(cell->fragment) {
       eassert(cell->fragment->id);
-      smd_string_stream_printf(stream, "{\"fragment\":\"%s\"}", cell->fragment->id);
+      smd_string_stream_printf(stream, "{\"fragment\":");
+      esdm_fragment_metadata_create(cell->fragment, stream);
+      smd_string_stream_printf(stream, "}");
     } else {
       smd_string_stream_printf(stream, "{}");
     }
@@ -748,9 +753,9 @@ esdm_status esdmI_grid_createFromJson(json_t* json, esdm_dataset_t* dataset, esd
         constructedCells++; //ensure cleanup of the subgrid
         goto fail;
       }
-      if(!json_is_string(element)) goto fail;
-      cell->fragment = esdmI_dataset_fragmentById(dataset, json_string_value(element));
-      if(!cell->fragment) goto fail;
+      if(!json_is_object(element)) goto fail;
+      esdm_status ret = esdmI_create_fragment_from_metadata(dataset, element, &cell->fragment);
+      if(ret != ESDM_SUCCESS) goto fail;
     }
   }
 
@@ -783,6 +788,7 @@ void esdmI_grid_destroy(esdm_grid_t* grid) {
   if(grid->grid) {
     for(int64_t i = esdmI_grid_cellCount(grid); i--; ) {
       if(grid->grid[i].subgrid) esdmI_grid_destroy(grid->grid[i].subgrid);
+      if(grid->grid[i].fragment) esdm_fragment_destroy(grid->grid[i].fragment);
     }
     free(grid->grid);
   }

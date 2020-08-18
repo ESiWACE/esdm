@@ -119,6 +119,7 @@ int64_t esdm_wstream_metadata_next_chunk_size(esdm_wstream_metadata_t* metadata)
   return chunkSize;
 }
 
+//TODO: Rewrite this to create a grid that will contain the fragments.
 void esdm_wstream_flush(esdm_wstream_metadata_t* metadata, void* buffer, void* bufferEnd) {
   eassert(!isFinished(metadata));
 
@@ -144,6 +145,7 @@ void esdm_wstream_flush(esdm_wstream_metadata_t* metadata, void* buffer, void* b
       fprintf(stderr, "esdm_wstream_flush(): error creating fragment\nWhat dataspace/dataset was passed to esdm_wstream_start()?\naborting\n");
       abort();
     }
+    esdmI_dataset_register_fragment(metadata->dataset, metadata->backendState.fragment, false);
     metadata->backendState.fragment->backend = metadata->backend;
   }
 

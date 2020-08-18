@@ -104,6 +104,8 @@ int main() {
   eassert(gridCount == 1);
   eassert(grids[0] == topGrid);
 
+  esdm_dataset_commit(dataset);
+
   //Check that the grid information is actually stored to disk.
   ret = esdm_dataset_close(dataset);
   eassert(ret == ESDM_SUCCESS);
@@ -142,6 +144,8 @@ int main() {
   ret = esdm_dataset_close(dataset);
   eassert(ret == ESDM_SUCCESS);
   ret = esdm_container_close(container);
+  eassert(ret == ESDM_SUCCESS);
+  ret = esdm_finalize();
   eassert(ret == ESDM_SUCCESS);
 
   printf("\nOK\n\n");

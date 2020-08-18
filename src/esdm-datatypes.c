@@ -365,9 +365,10 @@ esdm_status esdmI_container_destroy(esdm_container_t *c) {
   return ret;
 }
 
-void esdmI_dataset_register_fragment(esdm_dataset_t *dset, esdm_fragment_t *frag){
+//`transitivelyOwned` signals that one of the dataset's grids already owns the fragment
+void esdmI_dataset_register_fragment(esdm_dataset_t *dset, esdm_fragment_t *frag, bool transitivelyOwned){
   ESDM_DEBUG(__func__);
-  esdmI_fragments_add(&dset->fragments, frag);
+  if(!transitivelyOwned) esdmI_fragments_add(&dset->fragments, frag);
   dset->status = ESDM_DATA_DIRTY;
   dset->container->status = ESDM_DATA_DIRTY;
 }
@@ -434,7 +435,6 @@ esdm_status esdmI_fragment_create(esdm_dataset_t *d, esdm_dataspace_t *sspace, v
     .backend = NULL
   };
 
-	esdmI_dataset_register_fragment(d, f);
   esdmI_dataset_update_actual_size(d, f);
 
   *out_fragment = f;
