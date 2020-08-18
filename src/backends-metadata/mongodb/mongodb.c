@@ -376,10 +376,10 @@ static int fragment_update(esdm_backend_t *backend, esdm_fragment_t *fragment) {
   //entry_update()
 
   /*
-	size_t *count = NULL;
-	void *buf = NULL;
-	entry_retrieve(path_fragment, &buf, &count);
-	*/
+  size_t *count = NULL;
+  void *buf = NULL;
+  entry_retrieve(path_fragment, &buf, &count);
+  */
 
   free(path);
   free(path_fragment);

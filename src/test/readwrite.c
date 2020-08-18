@@ -49,23 +49,18 @@ int verify_data(uint64_t *a, uint64_t *b) {
 /** Calculate bandwidth in bytes / sec. Print KiB/s */
 static uint64_t calc_bw(const char *tag, uint64_t bytes, struct timeval tv_begin)
 {
-        struct timeval tv_end;
-	uint64_t ms_total;
-        uint64_t bw;
+  struct timeval tv_end;
+  uint64_t ms_total;
+  uint64_t bw;
 
-	gettimeofday(&tv_end, NULL);
-        ms_total = tv_end.tv_sec   * 1000000 + tv_end.tv_usec   -
-		   tv_begin.tv_sec * 1000000 - tv_begin.tv_usec;
+  gettimeofday(&tv_end, NULL);
+  ms_total = tv_end.tv_sec * 1000000 + tv_end.tv_usec - tv_begin.tv_sec * 1000000 - tv_begin.tv_usec;
 
-        if (ms_total == 0)
-                return -1;
-        bw = bytes * 1000000 / ms_total;
+  if(ms_total == 0) return -1;
+  bw = bytes * 1000000 / ms_total;
 
-        fprintf(stderr, "%s %8"PRIu64" KiB BW %8"PRIu64" KiB/s\n",
-			tag,
-                        bytes >> 10,
-                        bw    >> 10);
-        return bw;
+  fprintf(stderr, "%s %8"PRIu64" KiB BW %8"PRIu64" KiB/s\n", tag, bytes >> 10, bw >> 10);
+  return bw;
 }
 
 int main(int argc, char const *argv[]) {

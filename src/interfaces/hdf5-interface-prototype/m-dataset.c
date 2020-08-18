@@ -232,7 +232,7 @@ static herr_t memvol_dataset_get(void *obj, H5VL_dataset_get_t get_type, hid_t d
                 if((*ret_id = H5D_get_space(dset)) < 0)
                     HGOTO_ERROR(H5E_ARGS, H5E_CANTGET, FAIL, "can't get space ID of dataset")
 
-				*/
+        */
 
       break;
     }
@@ -295,7 +295,7 @@ static herr_t memvol_dataset_get(void *obj, H5VL_dataset_get_t get_type, hid_t d
       /*
                 if((*ret_id = H5D_get_access_plist(dset)) < 0)
                     HGOTO_ERROR(H5E_ARGS, H5E_CANTGET, FAIL, "can't get access property list for dataset")
-				*/
+        */
 
       break;
     }

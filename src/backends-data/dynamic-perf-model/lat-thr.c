@@ -229,9 +229,9 @@ int esdm_backend_t_estimate_dynamic_perf_model_lat_thp(esdm_dynamic_perf_model_l
 
   if (data->throughput > 0) {
     /*
-		// Update current performance estimate
-		esdm_backend_t_update_dynamic_perf_model_lat_thp(data);
-*/
+    // Update current performance estimate
+    esdm_backend_t_update_dynamic_perf_model_lat_thp(data);
+    */
     *out_time = fragment->bytes / data->throughput + data->latency;
 
   } else

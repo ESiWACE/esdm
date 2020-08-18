@@ -124,9 +124,9 @@ esdm_status esdm_mpi_container_open(MPI_Comm com, const char *name, int allow_ov
   esdm_container_t *c = *out_container;
   if(rank == 0){
     esdm_status ret = esdm_container_open_md_load(c, & buff, & size);
-  	if(ret != ESDM_SUCCESS){
-  		size = -1;
-  	}
+    if(ret != ESDM_SUCCESS){
+      size = -1;
+    }
 
     size = size + 1; // broadcast string terminator as well
     ret = MPI_Bcast(& size, 1, MPI_INT, 0, com);
@@ -135,8 +135,8 @@ esdm_status esdm_mpi_container_open(MPI_Comm com, const char *name, int allow_ov
       ret = MPI_Bcast(buff, size, MPI_CHAR, 0, com);
       eassert(ret == MPI_SUCCESS);
     }else{
-  		esdmI_container_destroy(c);
-  		return ESDM_ERROR;
+      esdmI_container_destroy(c);
+      return ESDM_ERROR;
     }
   }else{
     ret = MPI_Bcast(& size, 1, MPI_INT, 0, com);
@@ -151,12 +151,12 @@ esdm_status esdm_mpi_container_open(MPI_Comm com, const char *name, int allow_ov
     ret = MPI_Bcast(buff, size, MPI_CHAR, 0, com);
     eassert(ret == MPI_SUCCESS);
   }
-	ret = esdm_container_open_md_parse(c, buff, size);
-	free(buff);
-	if(ret != ESDM_SUCCESS){
-		esdmI_container_destroy(c);
-		return ret;
-	}
+  ret = esdm_container_open_md_parse(c, buff, size);
+  free(buff);
+  if(ret != ESDM_SUCCESS){
+    esdmI_container_destroy(c);
+    return ret;
+  }
   return ret;
 }
 
@@ -242,9 +242,9 @@ esdm_status esdm_mpi_dataset_ref(MPI_Comm com, esdm_dataset_t * d){
 
   if(rank == 0){
     ret = esdm_dataset_open_md_load(d, & buff, & size);
-  	if(ret != ESDM_SUCCESS){
-  		size = -1;
-  	}
+    if(ret != ESDM_SUCCESS){
+      size = -1;
+    }
     size = size + 1; // broadcast string terminator as well
     ret = MPI_Bcast(& size, 1, MPI_INT, 0, com);
     eassert(ret == MPI_SUCCESS);
@@ -253,7 +253,7 @@ esdm_status esdm_mpi_dataset_ref(MPI_Comm com, esdm_dataset_t * d){
       ret = MPI_Bcast(buff, size, MPI_CHAR, 0, com);
       eassert(ret == MPI_SUCCESS);
     }else{
-  		return ret;
+      return ret;
     }
   }else{
     ret = MPI_Bcast(& size, 1, MPI_INT, 0, com);

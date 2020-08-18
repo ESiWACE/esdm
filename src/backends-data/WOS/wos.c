@@ -349,14 +349,14 @@ int esdm_backend_t_wos_open(esdm_backend_t *eb, char *object_id, void **obj_hand
   SetOID(oid, object_id);
 
   /*
-	Exists_b(wos_status, oid, ebm->wos_cluster);
-	if (GetStatus(wos_status)) {
-		DeleteWosWoid(oid);
-		DeleteWosStatus(wos_status);
-		DEBUG("Unable to find the object");
-		return ESDM_ERROR;
-	}
-*/
+  Exists_b(wos_status, oid, ebm->wos_cluster);
+  if (GetStatus(wos_status)) {
+    DeleteWosWoid(oid);
+    DeleteWosStatus(wos_status);
+    DEBUG("Unable to find the object");
+    return ESDM_ERROR;
+  }
+  */
 
   *obj_handle = (void *)oid;
 
