@@ -262,9 +262,7 @@ static int fragment_update(esdm_backend_t *backend, esdm_fragment_t *f) {
   // lazy assignment of ID
   if(f->id == NULL){
     // TODO make more unique, e.g., creating unique ID based on size + offset tuple
-    f->id = ea_checked_malloc(24);
-    eassert(f->id);
-    ea_generate_id(f->id, 23);
+    f->id = ea_make_id(23);
   }
   S3BucketContext bc;
   char bucketName[64];

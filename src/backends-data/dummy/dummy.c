@@ -93,11 +93,7 @@ static int fragment_update(esdm_backend_t *backend, esdm_fragment_t *f) {
     esdm_dataspace_destroy(contiguousSpace);
   }
   // lazy assignment of ID
-  if(f->id == NULL){
-    f->id = ea_checked_malloc(24);
-    eassert(f->id);
-    ea_generate_id(f->id, 23);
-  }
+  if(f->id == NULL) f->id = ea_make_id(23);
 
   //cleanup
   if(f->dataspace->stride) free(writeBuffer);

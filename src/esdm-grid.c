@@ -654,10 +654,7 @@ void esdmI_grid_serialize(smd_string_stream_t* stream, esdm_grid_t* grid) {
   eassert(grid->grid);
 
   //put the grid into fixed structure state
-  if(!grid->id) {
-    grid->id = malloc(24);
-    ea_generate_id(grid->id, 23);
-  }
+  if(!grid->id) grid->id = ea_make_id(23);
 
   smd_string_stream_printf(stream, "{\"axes\":[");
   for(int64_t dim = 0; dim < grid->dimCount; dim++) {

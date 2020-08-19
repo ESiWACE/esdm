@@ -222,11 +222,9 @@ static int fragment_retrieve(esdm_backend_t *backend, esdm_fragment_t *f) {
 
 static int create_posix_id(esdm_fragment_t * f, const char *tgt, int * out_fd){
   char path[PATH_MAX];
-  f->id = ea_checked_malloc(ESDM_ID_LENGTH + 1);
-  eassert(f->id);
   // ensure that the fragment with the ID doesn't exist, yet
   while(1){
-    ea_generate_id(f->id, ESDM_ID_LENGTH);
+    f->id = ea_make_id(ESDM_ID_LENGTH);
     struct stat sb;
     sprintfFragmentDir(path, f);
     if (stat(path, &sb) == -1) {
@@ -239,6 +237,7 @@ static int create_posix_id(esdm_fragment_t * f, const char *tgt, int * out_fd){
     int fd = open(path, O_WRONLY | O_CREAT | O_EXCL, S_IWUSR | S_IRUSR | S_IWGRP | S_IRGRP | S_IROTH);
     if(fd < 0){
       if(errno == EEXIST){
+        free(f->id);  //we'll make a new ID
         continue;
       }
       WARN("error on creating file \"%s\": %s", path, strerror(errno));

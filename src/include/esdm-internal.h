@@ -404,7 +404,8 @@ json_t *load_json(const char *str);
 
 esdm_backend_t * esdmI_get_backend(char const * plugin_id);
 
-void ea_generate_id(char *str, size_t length);
+void ea_generate_id(char *str, size_t length);  //str is a preexisting buffer with `length + 1` bytes
+char* ea_make_id(size_t length);  //`malloc()`s a buffer for the result and calls through to `ea_generate_id()`
 
 /**
  * Wrapper for malloc() that checks the result for a null-pointer.

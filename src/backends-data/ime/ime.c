@@ -252,11 +252,9 @@ static int fragment_update(esdm_backend_t *backend, esdm_fragment_t *f) {
     // create data
     ret = entry_update(path, writeBuffer, f->bytes, 1);
   } else {
-    f->id = ea_checked_malloc(24);
-    eassert(f->id);
     // ensure that the fragment with the ID doesn't exist, yet
     while(1){
-      ea_generate_id(f->id, 23);
+      f->id = ea_make_id(23);
       struct stat sb;
       sprintfFragmentDir(path, f);
       if (stat(path, &sb) == -1) {
@@ -270,6 +268,7 @@ static int fragment_update(esdm_backend_t *backend, esdm_fragment_t *f) {
       int fd = open(path, O_WRONLY | O_CREAT | O_EXCL, S_IWUSR | S_IRUSR | S_IWGRP | S_IRGRP | S_IROTH);
       if(fd < 0){
         if(errno == EEXIST){
+          free(f->id);  //we'll make a new one
           continue;
         }
         WARN("error on creating file \"%s\": %s", path, strerror(errno));
