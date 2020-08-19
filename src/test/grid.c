@@ -103,6 +103,7 @@ int main() {
   eassert(ret == ESDM_SUCCESS);
   eassert(gridCount == 1);
   eassert(grids[0] == topGrid);
+  free(grids);
 
   esdm_dataset_commit(dataset);
 
@@ -115,6 +116,7 @@ int main() {
   eassert(ret == ESDM_SUCCESS);
   eassert(gridCount == 1);
   topGrid = grids[0];
+  free(grids);
 
   //Iterate over the grid cells recursively and check the data.
   esdm_gridIterator_t* iterator;

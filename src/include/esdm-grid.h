@@ -22,6 +22,26 @@
  *
  * The grid will be owned by the dataset, it will remain valid until the dataset is closed.
  *
+ * Grids are always in one of three possible states:
+ *
+ *  1. Axis definition state.
+ *     This is the initial state, it allows all actions to be performed on the grid, but some actions put the grid in one of the other states.
+ *
+ *  2. Fixed axes state.
+ *     The Axes of the grid are fixed, and all calls to `esdm_grid_subdivide*()` will result in an error.
+ *     However, subgrids may still be added to the grid.
+ *
+ *     This state is entered when a subgrid is created via `esdm_grid_createSubgrid()`.
+ *
+ *  3. Fixed structure state.
+ *     In addition to the axes, the subgrid structure of the grid is fixed.
+ *     All calls to `esdm_grid_createSubgrid()` will result in an error.
+ *
+ *     This state is entered by any call that persists or communicates a grid.
+ *     Committing a dataset will put all grids of the dataset into this state, as will do any call to `esdm_mpi_grid_bcast()`.
+ *
+ * Once a grid has entered a higher state, it is impossible to enter any lower states.
+ *
  * @return a status code that identifies the cause of an error
  */
 esdm_status esdm_grid_create(esdm_dataset_t* dataset, int64_t dimCount, int64_t* offset, int64_t* size, esdm_grid_t** out_grid);
@@ -40,7 +60,8 @@ esdm_status esdm_grid_createSimple(esdm_dataset_t* dataset, int64_t dimCount, in
  * As with `esdm_grid_create()`, the child grid will initially contain a single cell, only.
  * Consequently, a call to `esdm_grid_createSubgrid()` should always be followed by a call to `esdm_grid_subdivide*()` for the child grid.
  *
- * This function is considered an I/O call on the parent grid, further `esdm_grid_subdivide*()` calls on the parent will result in an error.
+ * This puts the parent grid into fixed axis state, further calls to `esdm_grid_subdivide*()` will result in an error.
+ * It is not possible to call this method in fixed structure state.
  *
  * The grid will be owned by the dataset, it will remain valid until the dataset is closed.
  *
@@ -61,7 +82,7 @@ esdm_status esdm_grid_createSubgrid(esdm_grid_t* parent, int64_t* index, esdm_gr
  * If `!allowIncomplete`, it is an error to specify a `size` that does not divide the size of the grid's domain in the given dimension.
  * If `allocIncomplete`, the last slice will be defined smaller than `size` if the given size does not divide the grid's domain in the given dimension.
  *
- * This function must not be called once the grid has been used in an I/O or MPI call.
+ * This method can only be called in axis definition state.
  *
  * @return `ESDM_SUCCESS` on success, `ESDM_INVALID_ARGUMENT_ERROR` if the arguments are inconsistent with the given grid, `ESDM_INVALID_STATE_ERROR` if the grid has already been used in an I/O operation
  */
@@ -80,7 +101,7 @@ esdm_status esdm_grid_subdivideFixed(esdm_grid_t* grid, int64_t dim, int64_t siz
  * in the case that the `count` does not divide the domain's size in the given dimension, some slice sizes will be rounded down while others will be rounded up.
  * Use `esdm_grid_cell_extends()` to inquire the actual size of a grid cell.
  *
- * This function must not be called once the grid has been used in an I/O or MPI call.
+ * This method can only be called in axis definition state.
  *
  * @return `ESDM_SUCCESS` on success, `ESDM_INVALID_ARGUMENT_ERROR` if the arguments are inconsistent with the given grid, `ESDM_INVALID_STATE_ERROR` if the grid has already been used in an I/O operation
  */
@@ -98,6 +119,8 @@ esdm_status esdm_grid_subdivideFlexible(esdm_grid_t* grid, int64_t dim, int64_t 
  *
  * This is the big gun among the `esdm_grid_subdivide*()` methods, allowing the caller to specify exactly which bounds are to be used.
  * Use this when the regular subdivision done by the other two methods does not cut it.
+ *
+ * This method can only be called in axis definition state.
  *
  * The contents of the `bounds` array must satisfy the following conditions:
  *   * `bounds[0]` must equal the starting bound of the grid in the given dimension
@@ -178,6 +201,8 @@ esdm_status esdm_grid_getBound(const esdm_grid_t* grid, int64_t dim, int64_t ind
  * It does not matter whether a parent or child grid is used in this call,
  * `esdm_write_grid()` will determine both the global parent and the local grid cell containing child internally.
  *
+ * This puts the grid into fixed axis state unless the grid is already in a higher state.
+ *
  * @return `ESDM_SUCCESS` on success, `ESDM_INVALID_ARGUMENT_ERROR` if the `memspace` does not correspond to a single cell exactly, `ESDM_INVALID_STATE_ERROR` if the grid cell contains a subgrid
  */
 esdm_status esdm_write_grid(esdm_grid_t* grid, esdm_dataspace_t* memspace, void* buffer);
@@ -199,6 +224,8 @@ esdm_status esdm_write_grid(esdm_grid_t* grid, esdm_dataspace_t* memspace, void*
  * ESDM will read data provided by another grid or gridless write in this case.
  * However, it may fill the grid cell with the resulting data.
  *
+ * If the read operation succeeds, the grid will be at least in fixed axis state.
+ *
  * @return `ESDM_SUCCESS` on success, `ESDM_INVALID_ARGUMENT_ERROR` if the `memspace` does not correspond to a single cell exactly, `ESDM_INVALID_STATE_ERROR` if the grid cell contains a subgrid
  */
 //TODO: Specify under which conditions the data is written back.
@@ -218,7 +245,8 @@ esdm_status esdm_read_grid(esdm_grid_t* grid, esdm_dataspace_t* memspace, void* 
  * The array that is returned in `*out_grids` is malloc'ed by `esdm_dataset_grids()`, it is the callers responsibility to call `free()` on the array.
  * The grids themselves, however, still belong to the dataset and remain valid until the dataset is closed.
  *
- * All the returned grids will contain data for their entire domain.
+ * All the returned grids will contain data for their entire domain,
+ * and they will all be at least in fixed axis state.
  *
  * If `NULL` is passed as the `out_grids` argument, the function will still return the count of grids via the `out_count` parameter.
  * It is a contract violation to pass `NULL` as the `out_count` parameter.
@@ -238,7 +266,8 @@ esdm_status esdm_dataset_grids(esdm_dataset_t* dataset, int64_t* out_count, esdm
  * @param[in] grid the grid to walk
  * @param[out] out_iterator an iterator that can subsequently passed to `esdm_gridIterator_next()`
  *
- * It is an error to call this on a grid that does not have data for its entire domain.
+ * It is an error to call this on a grid that does not have data for its entire domain
+ * (this implies at least fixed axis state).
  * Any grid that has been returned by `esdm_dataset_grids()` will satisfy this condition.
  *
  * The returned object must be disposed off with a call to `esdm_gridIterator_destroy()`.
@@ -303,9 +332,16 @@ int64_t esdmI_grid_coverRegionOverhead(esdm_grid_t* grid, esdmI_hypercube_t* reg
 esdm_status esdmI_grid_fragmentsInRegion(esdm_grid_t* grid, esdmI_hypercube_t* region, int64_t* out_fragmentCount, esdm_fragment_t*** out_fragments);
 
 //For use by esdm_mpi and storing as metadata.
-void esdmI_grid_serialize(smd_string_stream_t* stream, const esdm_grid_t* grid);  //the resulting stream is in JSON format
+//This puts the grid into fixed structure state.
+void esdmI_grid_serialize(smd_string_stream_t* stream, esdm_grid_t* grid);  //the resulting stream is in JSON format
 esdm_status esdmI_grid_createFromJson(json_t* json, esdm_dataset_t* dataset, esdm_grid_t* parent, esdm_grid_t** out_grid);
 esdm_status esdmI_grid_createFromString(const char* serializedGrid, esdm_grid_t** out_grid);
+
+//Access the ID of a grid.
+//Returns NULL if the grid is not in fixed structure state yet (i.e. if it has not been (de-)serialized yet).
+//The returned pointer is owned by the grid, do not modify or deallocate it.
+const char* esdmI_grid_id(esdm_grid_t* grid);
+bool esdmI_grid_matchesId(const esdm_grid_t* grid, const char* id);
 
 void esdmI_grid_destroy(esdm_grid_t* grid);	//must only be called by the owning dataset
 

@@ -19,6 +19,7 @@ struct esdm_grid_t {
   int64_t dimCount;
   esdm_dataset_t* dataset;
   esdm_grid_t* parent;
+  char* id;
 
   int64_t emptyCells;	//will be set by esdm_grid_ensureGrid() when the grid is allocated
   esdm_gridEntry_t* grid;
@@ -31,6 +32,8 @@ struct esdm_gridIterator_t {
   esdm_grid_t* grid;
   int64_t lastIndex, cellCount; //the cell count is local to the grid, subgrid iterators have their own cellCount
 };
+
+////////////////////////////////////////////////////////////////////////////////////////////////////
 
 esdm_status esdm_grid_create_internal(esdm_dataset_t* dataset, esdm_grid_t* parent, int64_t dimCount, int64_t* offset, int64_t* size, esdm_grid_t** out_grid) {
   eassert(dataset);
@@ -45,6 +48,7 @@ esdm_status esdm_grid_create_internal(esdm_dataset_t* dataset, esdm_grid_t* pare
     .dimCount = dimCount,
     .dataset = dataset,
     .parent = parent,
+    .id = NULL,
     .emptyCells = 0,
     .grid = NULL
   };
@@ -111,6 +115,7 @@ esdm_status esdm_grid_createSubgrid(esdm_grid_t* parent, int64_t* index, esdm_gr
   eassert(parent);
   eassert(index);
   eassert(out_child);
+  if(parent->id) return ESDM_INVALID_STATE_ERROR; //the grid is in fixed structure state, and adding a subgrid is changing the structure
 
   *out_child = NULL;
   int64_t linearIndex = esdm_grid_linearIndex(parent, index);
@@ -200,7 +205,6 @@ esdm_status esdm_grid_subdivide(esdm_grid_t* grid, int64_t dim, int64_t count, i
 
   return ESDM_SUCCESS;
 }
-
 
 esdm_status esdm_grid_cellSize(const esdm_grid_t* grid, int64_t* cellIndex, int64_t* out_offset, int64_t* out_size) {
   eassert(grid);
@@ -479,6 +483,7 @@ void esdm_gridIterator_destroy(esdm_gridIterator_t* iterator) {
   }
 }
 
+//TODO: Move this into esdm-datatypes.
 void esdmI_dataset_registerGrid(esdm_dataset_t* dataset, esdm_grid_t* grid) {
   if(dataset->gridCount + dataset->incompleteGridCount == dataset->gridSlotCount) {
     dataset->grids = ea_checked_realloc(dataset->grids, (dataset->gridSlotCount *= 2)*sizeof*dataset->grids);
@@ -488,6 +493,7 @@ void esdmI_dataset_registerGrid(esdm_dataset_t* dataset, esdm_grid_t* grid) {
   dataset->grids[dataset->gridCount + dataset->incompleteGridCount++] = grid;
 }
 
+//TODO: Move this into esdm-datatypes.
 void esdmI_dataset_registerGridCompletion(esdm_dataset_t* dataset, esdm_grid_t* grid) {
   int64_t index = dataset->gridCount;
   while(index < dataset->gridCount + dataset->incompleteGridCount) {
@@ -642,10 +648,16 @@ esdm_status esdmI_grid_fragmentsInRegion(esdm_grid_t* grid, esdmI_hypercube_t* r
   return result;
 }
 
-void esdmI_grid_serialize(smd_string_stream_t* stream, const esdm_grid_t* grid) {
+void esdmI_grid_serialize(smd_string_stream_t* stream, esdm_grid_t* grid) {
   eassert(stream);
   eassert(grid);
   eassert(grid->grid);
+
+  //put the grid into fixed structure state
+  if(!grid->id) {
+    grid->id = malloc(24);
+    ea_generate_id(grid->id, 23);
+  }
 
   smd_string_stream_printf(stream, "{\"axes\":[");
   for(int64_t dim = 0; dim < grid->dimCount; dim++) {
@@ -656,7 +668,9 @@ void esdmI_grid_serialize(smd_string_stream_t* stream, const esdm_grid_t* grid) 
     }
     smd_string_stream_printf(stream, "]");
   }
-  smd_string_stream_printf(stream, "],\"grid\":[");
+
+  smd_string_stream_printf(stream, "],\"id\":\"%s\",\"grid\":[", grid->id);
+
   int64_t cellCount = esdmI_grid_cellCount(grid);
   for(int64_t i = 0; i < cellCount; i++) {
     const esdm_gridEntry_t* cell = &grid->grid[i];
@@ -679,6 +693,7 @@ void esdmI_grid_serialize(smd_string_stream_t* stream, const esdm_grid_t* grid) 
   smd_string_stream_printf(stream, "]}");
 }
 
+//Not implemented yet. Do we really need it?
 esdm_status esdmI_grid_createFromString(const char* serializedGrid, esdm_grid_t** out_grid);
 
 esdm_status esdmI_grid_createFromJson(json_t* json, esdm_dataset_t* dataset, esdm_grid_t* parent, esdm_grid_t** out_grid) {
@@ -693,7 +708,8 @@ esdm_status esdmI_grid_createFromJson(json_t* json, esdm_dataset_t* dataset, esd
 
   //other state that must be forward declared due to the gotos
   int64_t dimCount, cellCount;
-  json_t* axesArray, *cellArray;
+  const char* id;
+  json_t* axesArray, *cellArray, *idString;
 
   if(!json_is_object(json)) goto fail;
 
@@ -707,13 +723,20 @@ esdm_status esdmI_grid_createFromJson(json_t* json, esdm_dataset_t* dataset, esd
   if(!json_is_array(cellArray)) goto fail;
   cellCount = json_array_size(cellArray);
 
+  idString = json_object_get(json, "id");
+  if(!idString) goto fail;
+  if(!json_is_string(idString)) goto fail;
+  id = json_string_value(idString);
+
   grid = ea_checked_malloc(sizeof*grid + dimCount*sizeof*grid->axes);
   *grid = (esdm_grid_t){
     .dimCount = dimCount,
     .parent = parent,
     .dataset = dataset,
+    .id = strdup(id),
     .grid = ea_checked_calloc(cellCount, sizeof*grid->grid)
   };
+  if(!grid->id) goto fail;
 
   for(; constructedAxes < dimCount; constructedAxes++) {
     esdm_axis_t* axis = &grid->axes[constructedAxes];
@@ -774,6 +797,7 @@ fail:
   }
 
   if(grid) {
+    free(grid->id);
     free(grid->grid);
     free(grid);
   }
@@ -783,6 +807,12 @@ done:
   *out_grid = grid;
   return result;
 }
+
+//TODO: Implement this.
+const char* esdmI_grid_id(esdm_grid_t* grid);
+
+//TODO: Implement this.
+bool esdmI_grid_matchesId(const esdm_grid_t* grid, const char* id);
 
 void esdmI_grid_destroy(esdm_grid_t* grid) {
   if(grid->grid) {

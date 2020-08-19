@@ -268,6 +268,7 @@ static const char kCharset[] = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUV
 #define kCharsetBits 6
 _Static_assert(sizeof(kCharset) - 1 == 1 << kCharsetBits, "wrong number of characters in kCharset");
 
+//TODO: Add an allocating variant for this and use it in all places that use a separate allocation for the ID.
 void ea_generate_id(char* str, size_t length) {
   size_t randomBitCount = length*kCharsetBits;
   eassert(randomBitCount >= 128 && "don't try to use less than 128 random bits to avoid possibility of collision");
