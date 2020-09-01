@@ -1,6 +1,8 @@
-#include <esdm-mpi-internal.h>
+#include <esdm-mpi.h>
 
+#include <esdm-debug.h>
 #include <esdm-grid.h>
+#include <esdm-internal.h>
 
 
 static void check_hash_abort(MPI_Comm com, int hash, int rank){
@@ -400,7 +402,7 @@ esdm_status esdm_mpi_grid_bcast(MPI_Comm comm, esdm_grid_t** inout_grid) {
   return globalResult;
 }
 
-esdm_status esdmI_mpi_grid_collect(MPI_Comm comm, esdm_grid_t* grid) {
+esdm_status esdm_mpi_grid_commit(MPI_Comm comm, esdm_grid_t* grid) {
   eassert(grid);
 
   int rank, procCount;
