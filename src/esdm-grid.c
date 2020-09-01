@@ -727,7 +727,7 @@ esdm_status esdmI_grid_createFromJson(json_t* json, esdm_dataset_t* dataset, esd
     .dimCount = dimCount,
     .parent = parent,
     .dataset = dataset,
-    .id = strdup(id),
+    .id = ea_checked_strdup(id),
     .grid = ea_checked_calloc(cellCount, sizeof*grid->grid)
   };
   if(!grid->id) goto fail;

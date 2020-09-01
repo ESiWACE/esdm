@@ -66,10 +66,10 @@ static void *memvol_group_create(void *obj, H5VL_loc_params_t loc_params, const 
       free(group);
       return NULL;
     }
-    g_hash_table_insert(parent->childs_tbl, strdup(name), object);
+    g_hash_table_insert(parent->childs_tbl, ea_checked_strdup(name), object);
     g_array_append_val(parent->childs_ord_by_index_arr, object);
 
-    //g_hash_table_insert(parent->childs_tbl, strdup(name), group);
+    //g_hash_table_insert(parent->childs_tbl, ea_checked_strdup(name), group);
     //g_array_append_val (parent->childs_ord_by_index_arr, group);
   }
 

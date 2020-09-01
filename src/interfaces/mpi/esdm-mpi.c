@@ -219,7 +219,7 @@ esdm_status esdm_mpi_dataset_create(MPI_Comm com, esdm_container_t *c, const cha
     }
 
     esdm_dataset_init(c, name, dataspace, out_dataset);
-    (*out_dataset)->id = strdup(id);
+    (*out_dataset)->id = ea_checked_strdup(id);
     esdmI_container_register_dataset(c, *out_dataset);
 
     return ESDM_SUCCESS;

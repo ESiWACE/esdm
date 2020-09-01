@@ -71,7 +71,7 @@ int wos_get_param(const char *conf, char **output, const char *param) {
   char _output[1 + size];
   strncpy(_output, value, size);
   _output[size] = 0;
-  *output = strdup(_output);
+  *output = ea_checked_strdup(_output);
   if (!*output) {
     DEBUG("Memory error");
     return ESDM_ERROR;
@@ -118,9 +118,9 @@ int wos_object_list_encode(t_WosOID **oid_list, char **out_object_id) {
         char buffer[strlen(*out_object_id) + strlen(current) + 2];
         sprintf(buffer, "%s,%s", *out_object_id, current);
         free(*out_object_id);
-        *out_object_id = strdup(buffer);
+        *out_object_id = ea_checked_strdup(buffer);
       } else
-        *out_object_id = strdup(current);
+        *out_object_id = ea_checked_strdup(current);
       if (!out_object_id) {
         DEBUG("Memory error");
         return ESDM_ERROR;
@@ -674,7 +674,7 @@ int esdm_backend_t_wos_fragment_retrieve(esdm_backend_t *backend, esdm_fragment_
   json_t *value;
   json_object_foreach(metadata, key, value) {
     if (!strcmp(key, WOS_OBJECT_ID)) {
-      obj_id = strdup(json_string_value(value));
+      obj_id = ea_checked_strdup(json_string_value(value));
       break;
     }
   }
@@ -692,7 +692,7 @@ int esdm_backend_t_wos_fragment_retrieve(esdm_backend_t *backend, esdm_fragment_
     end_id = strstr(start_id, "\"");
     if (!end_id)
       break;
-    obj_id = strndup(start_id, end_id - start_id);
+    obj_id = ea_checked_strndup(start_id, end_id - start_id);
     break;
   }
   if (!obj_id) {
@@ -746,7 +746,7 @@ int esdm_backend_t_wos_fragment_update(esdm_backend_t *backend, esdm_fragment_t 
     end_id = strstr(start_id, "\"");
     if (!end_id)
       break;
-    obj_id = strndup(start_id, end_id - start_id);
+    obj_id = ea_checked_strndup(start_id, end_id - start_id);
     break;
   }
 
@@ -818,7 +818,7 @@ int esdm_backend_t_wos_fragment_delete(esdm_backend_t *backend, esdm_fragment_t 
   json_t *value;
   json_object_foreach(metadata, key, value) {
     if (!strcmp(key, WOS_OBJECT_ID)) {
-      obj_id = strdup(json_string_value(value));
+      obj_id = ea_checked_strdup(json_string_value(value));
       break;
     }
   }
@@ -836,7 +836,7 @@ int esdm_backend_t_wos_fragment_delete(esdm_backend_t *backend, esdm_fragment_t 
     end_id = strstr(start_id, "\"");
     if (!end_id)
       break;
-    obj_id = strndup(start_id, end_id - start_id);
+    obj_id = ea_checked_strndup(start_id, end_id - start_id);
     break;
   }
   if (!obj_id) {

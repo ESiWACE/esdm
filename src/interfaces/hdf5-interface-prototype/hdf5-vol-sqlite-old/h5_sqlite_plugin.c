@@ -244,9 +244,9 @@ static void *H5VL_extlog_fapl_copy(const void *info) {
   const h5sqlite_fapl_t *fapl_source = (h5sqlite_fapl_t *)info;
   h5sqlite_fapl_t *fapl_target = ea_checked_malloc(sizeof(*fapl_target));
   memcpy(fapl_target, fapl_source, sizeof(fapl_source));
-  fapl_target->fn = strdup(fapl_source->fn);
-  fapl_target->db_fn = strdup(fapl_source->db_fn);
-  fapl_target->data_fn = strdup(fapl_source->data_fn);
+  fapl_target->fn = ea_checked_strdup(fapl_source->fn);
+  fapl_target->db_fn = ea_checked_strdup(fapl_source->db_fn);
+  fapl_target->data_fn = ea_checked_strdup(fapl_source->data_fn);
   //	fapl_target->offset = fapl_source->offset;
   return (void *)fapl_target;
 }
@@ -313,7 +313,7 @@ static void *H5VL_extlog_attr_create(void *obj, H5VL_loc_params_t loc_params, co
       SQO_t *sqo = (SQO_t *)obj;
       sqo->info.num_attrs++;
       attribute->object.location = create_path(sqo);
-      attribute->object.name = strdup(attr_name);
+      attribute->object.name = ea_checked_strdup(attr_name);
       attribute->object.root = sqo->root;
       attribute->object.fapl = sqo->fapl;
       attribute->data_size = data_size;
@@ -577,8 +577,8 @@ static herr_t SQA_iterate(SQO_t *obj, H5VL_loc_params_t loc_params, H5_index_t i
 
   obj2->fapl = obj->fapl;
   obj2->root = obj->root;
-  obj2->location = strdup(obj->location);
-  obj2->name = strdup(obj->name);
+  obj2->location = ea_checked_strdup(obj->location);
+  obj2->name = ea_checked_strdup(obj->name);
   obj2->info.btime = ++counter_g;
 
   loc_id = H5VLobject_register(obj2, loc_params.obj_type, vol_id);
@@ -747,8 +747,8 @@ static void *H5VL_extlog_file_create(const char *fname, unsigned flags, hid_t fc
   }
   MPI_Barrier(MPI_COMM_WORLD);
 
-  file->object.location = strdup(FILE_DEFAULT_PATH);
-  file->object.name = strdup(basename((char *)fname));
+  file->object.location = ea_checked_strdup(FILE_DEFAULT_PATH);
+  file->object.name = ea_checked_strdup(basename((char *)fname));
   file->object.root = file;
   file->object.fapl = fapl;
 
@@ -796,7 +796,7 @@ static void *H5VL_extlog_file_create(const char *fname, unsigned flags, hid_t fc
   H5VL_loc_params_t loc_params;
   SQG_t group;
   group.object.location = create_path((SQO_t *)file);
-  group.object.name = strdup("/");
+  group.object.name = ea_checked_strdup("/");
   group.object.root = file;
   group.object.fapl = fapl;
   SQO_init_info(&group.object.info);
@@ -849,8 +849,8 @@ static void *H5VL_extlog_file_open(const char *fname, unsigned flags, hid_t fapl
   file->fd = open64(info->data_fn, O_RDWR | O_CREAT, 0666);
 #endif
 
-  file->object.location = strdup(FILE_DEFAULT_PATH);
-  file->object.name = strdup(basename((char *)fname));
+  file->object.location = ea_checked_strdup(FILE_DEFAULT_PATH);
+  file->object.name = ea_checked_strdup(basename((char *)fname));
   file->object.root = file;
   file->object.fapl = info;
   return (void *)file;
@@ -943,7 +943,7 @@ static void *H5VL_extlog_group_create(void *obj, H5VL_loc_params_t loc_params, c
     case H5I_GROUP: {
       SQO_t *sqo = (SQO_t *)obj;
       group->object.location = create_path(sqo);
-      group->object.name = strdup(name);
+      group->object.name = ea_checked_strdup(name);
       group->object.root = sqo->root;
       group->object.fapl = sqo->fapl;
 
@@ -1139,7 +1139,7 @@ static void *H5VL_extlog_dataset_create(void *obj, H5VL_loc_params_t loc_params,
       dset->object.root = sqo->root;
       dset->object.fapl = sqo->fapl;
       dset->object.location = create_path(sqo);
-      dset->object.name = strdup(name);
+      dset->object.name = ea_checked_strdup(name);
       dset->data_size = data_size;
       dset->offset = sqo->root->offset;
 #ifdef MULTIFILE
@@ -1501,8 +1501,8 @@ static herr_t H5VL_extlog_link_specific(void *obj, H5VL_loc_params_t loc_params,
   obj2->root = obj1->root;
   obj2->fapl = obj1->fapl;
   obj2->info = obj1->info;
-  obj2->location = strdup(obj1->location);
-  obj2->name = strdup(obj1->name);
+  obj2->location = ea_checked_strdup(obj1->location);
+  obj2->name = ea_checked_strdup(obj1->name);
 
   hid_t vol_id = H5VLget_plugin_id("extlog");
   eassert(-1 != vol_id);

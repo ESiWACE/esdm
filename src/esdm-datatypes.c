@@ -108,7 +108,7 @@ void esdmI_container_register_dataset(esdm_container_t * c, esdm_dataset_t *dset
 
 void esdmI_container_init(char const * name, esdm_container_t **out_container){
   esdm_container_t *c = ea_checked_malloc(sizeof(esdm_container_t));
-  c->name = strdup(name);
+  c->name = ea_checked_strdup(name);
   c->refcount = 1;
   c->status = ESDM_DATA_DIRTY;
   memset(& c->dsets, 0, sizeof(esdm_datasets_t));
@@ -126,7 +126,7 @@ esdm_status esdmI_create_dataset_from_metadata(esdm_container_t *c, json_t * jso
 
   esdm_dataset_t *d;
   esdm_dataset_init(c, name, NULL, & d);
-  d->id = strdup((char*) id);
+  d->id = ea_checked_strdup((char*) id);
   d->status = ESDM_DATA_NOT_LOADED;
   *out = d;
 
@@ -655,7 +655,7 @@ const int64_t kInitialGridSlotCount = 8;
 void esdm_dataset_init(esdm_container_t *c, const char *name, esdm_dataspace_t *dspace, esdm_dataset_t **out_dataset){
   esdm_dataset_t *d = ea_checked_malloc(sizeof(esdm_dataset_t));
   *d = (esdm_dataset_t) {
-    .name = strdup(name),
+    .name = ea_checked_strdup(name),
     .container = c,
     .status = ESDM_DATA_DIRTY,
     .attr = smd_attr_new("Variables", SMD_DTYPE_EMPTY, NULL),
@@ -775,7 +775,7 @@ esdm_status esdmI_create_fragment_from_metadata(esdm_dataset_t *dset, json_t * j
 
   elem = json_object_get(json, "id");
   char const  * id = json_string_value(elem);
-  f->id = strdup(id);
+  f->id = ea_checked_strdup(id);
 
   elem = json_object_get(json, "offset");
   int cnt = json_array_size(elem);
@@ -934,7 +934,7 @@ esdm_status esdm_dataset_open_md_parse(esdm_dataset_t *d, char * md, int size){
   }
   if(d->id) free(d->id);
   elem = json_object_get(root, "id");
-  d->id = strdup(json_string_value(elem));
+  d->id = ea_checked_strdup(json_string_value(elem));
   elem = json_object_get(root, "dims");
   int dims = json_integer_value(elem);
   elem = json_object_get(root, "size");
@@ -1314,7 +1314,7 @@ esdm_status esdm_dataset_rename(esdm_dataset_t *d, const char *name) {
   }
 
   free(d->name);
-  d->name = strdup(name);
+  d->name = ea_checked_strdup(name);
   d->container->status = ESDM_DATA_DIRTY;
   return ESDM_SUCCESS;
 }

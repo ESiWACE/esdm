@@ -11,21 +11,21 @@
 char *filename;
 char *lfsfilename;
 //std::string temp = "datafile.df";
-//filename = strdup(temp.c_str());
+//filename = ea_checked_strdup(temp.c_str());
 //temp = "metafile.mf";
-//lfsfilename = strdup(temp.c_str());
+//lfsfilename = ea_checked_strdup(temp.c_str());
 
 struct lfs_files lfsfiles[20];
 int current_index = 0;
 
 int lfs_open(char *df, int flags, mode_t mode) {
-  filename = strdup(df);
+  filename = ea_checked_strdup(df);
   char *metafile = ea_checked_malloc((strlen(df) + 4) * sizeof(char));
   strcpy(metafile, df);
   strcat(metafile, ".log");
   //printf("filename: %s\n", filename);
   //printf("lfsfilename: %s\n", metafile);
-  lfsfilename = strdup(metafile);
+  lfsfilename = ea_checked_strdup(metafile);
   lfsfiles[current_index].log_file = fopen(lfsfilename, "a+");
   lfsfiles[current_index].data_file = open(filename, O_CREAT | O_RDWR, S_IRUSR | S_IWUSR);
   current_index++;

@@ -240,7 +240,7 @@ esdm_status esdm_dataset_change_name(esdm_dataset_t *d, char const * new_name){
   eassert(d);
   eassert(new_name);
   //FIXME Memory leak: the old name needs to be freed
-  d->name = strdup(new_name);
+  d->name = ea_checked_strdup(new_name);
   d->status = ESDM_DATA_DIRTY;
   return ESDM_SUCCESS;
 }

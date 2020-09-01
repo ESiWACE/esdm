@@ -118,7 +118,7 @@ static void *H5VL_esdm_attribute_create(void *obj, H5VL_loc_params_t loc_params,
   //				SQO_t* sqo = (SQO_t*) obj;
   //				sqo->info.num_attrs++;
   //				attribute->object.location = create_path(sqo);
-  //				attribute->object.name = strdup(attr_name);
+  //				attribute->object.name = ea_checked_strdup(attr_name);
   //				attribute->object.root = sqo->root;
   //				attribute->object.fapl = sqo->fapl;
   //				attribute->data_size = data_size;
@@ -680,7 +680,7 @@ static void *H5VL_esdm_dataset_create(void *obj, H5VL_loc_params_t loc_params, c
       free(dataset);
       return NULL;
     }
-    g_hash_table_insert(parent->childs_tbl, strdup(name), object);
+    g_hash_table_insert(parent->childs_tbl, ea_checked_strdup(name), object);
     g_array_append_val(parent->childs_ord_by_index_arr, object);
   }
 
@@ -1315,10 +1315,10 @@ static void *H5VL_esdm_file_create(const char *name, unsigned flags, hid_t fcpl_
     object->type = MEMVOL_GROUP;
     object->object = &file->root_grp;
 
-    g_hash_table_insert(file->root_grp.childs_tbl, strdup("/"), object);
-    g_hash_table_insert(files_tbl, strdup(name), object);
+    g_hash_table_insert(file->root_grp.childs_tbl, ea_checked_strdup("/"), object);
+    g_hash_table_insert(files_tbl, ea_checked_strdup(name), object);
 
-    file->name = strdup(name);
+    file->name = ea_checked_strdup(name);
     file->fcpl_id = H5Pcopy(fcpl_id);
   }
 
@@ -1613,7 +1613,7 @@ static void *H5VL_esdm_group_create(void *obj, H5VL_loc_params_t loc_params, con
       free(group);
       return NULL;
     }
-    g_hash_table_insert(parent->childs_tbl, strdup(name), object);
+    g_hash_table_insert(parent->childs_tbl, ea_checked_strdup(name), object);
     g_array_append_val(parent->childs_ord_by_index_arr, object);
   }
 

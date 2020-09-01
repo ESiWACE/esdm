@@ -573,7 +573,7 @@ esdm_backend_t *kdsa_backend_init(esdm_config_backend_t *config) {
   data->config = config;
   json_t *elem;
   elem = json_object_get(config->backend, "target");
-  char * tgt = (char*) strdup(json_string_value(elem));
+  char * tgt = (char*) ea_checked_strdup(json_string_value(elem));
   data->config->target = tgt;
 
   uint64_t blocksize = config->max_fragment_size;

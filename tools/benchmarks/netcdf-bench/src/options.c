@@ -196,7 +196,7 @@ void parseOptions(int argc, char **argv, option_help *args) {
                 break;
               }
               case ('s'): {
-                (*(char **)o->variable) = strdup(arg);
+                (*(char **)o->variable) = ea_checked_strdup(arg);
                 break;
               }
               case ('c'): {

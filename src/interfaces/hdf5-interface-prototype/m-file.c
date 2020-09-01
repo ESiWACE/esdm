@@ -168,10 +168,10 @@ static void *memvol_file_create(const char *name, unsigned flags, hid_t fcpl_id,
     object->type = MEMVOL_GROUP;
     object->object = &file->root_grp;
 
-    g_hash_table_insert(file->root_grp.childs_tbl, strdup("/"), object);
-    g_hash_table_insert(files_tbl, strdup(name), object);
+    g_hash_table_insert(file->root_grp.childs_tbl, ea_checked_strdup("/"), object);
+    g_hash_table_insert(files_tbl, ea_checked_strdup(name), object);
 
-    file->name = strdup(name);
+    file->name = ea_checked_strdup(name);
     file->fcpl_id = H5Pcopy(fcpl_id);
   }
 

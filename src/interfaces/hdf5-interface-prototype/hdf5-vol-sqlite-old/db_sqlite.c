@@ -351,7 +351,7 @@ int DB_create_name_list(SQO_t *parent, H5VL_loc_params_t loc_params, const char 
       *attr_list_size = 0;
       ret = -1;
     } else {
-      (*attr_list)[i] = strdup(sqlite3_column_text(res2, 0));
+      (*attr_list)[i] = ea_checked_strdup(sqlite3_column_text(res2, 0));
     }
   }
 
@@ -466,7 +466,7 @@ int DBA_open(SQO_t *parent, H5VL_loc_params_t loc_params, const char *attr_name,
   }
 
   attr->object.location = create_path(parent);
-  attr->object.name = strdup(attr_name);
+  attr->object.name = ea_checked_strdup(attr_name);
   attr->object.fapl = parent->fapl;
   attr->object.root = parent->root;
 
@@ -531,7 +531,7 @@ int DBA_open_by_idx(SQO_t *obj, H5VL_loc_params_t loc_params, const unsigned int
 
   if (attr_list_size > 0) {
     attr->object.location = create_path(obj);
-    attr->object.name = strdup(attr_list[idx]);
+    attr->object.name = ea_checked_strdup(attr_list[idx]);
     attr->data_size = data_size;
     attr->object.fapl = obj->fapl;
     attr->object.root = obj->root;
@@ -776,7 +776,7 @@ int DBG_open(SQO_t *parent, H5VL_loc_params_t loc_params, const char *group_name
   }
 
   group->object.location = create_path(parent);
-  group->object.name = strdup(group_name);
+  group->object.name = ea_checked_strdup(group_name);
   group->object.fapl = parent->fapl;
   group->object.root = parent->root;
 
@@ -921,7 +921,7 @@ int DBD_open(SQO_t *parent, H5VL_loc_params_t loc_params, const char *name, SQD_
   dset->object.root = parent->root;
   dset->object.fapl = parent->fapl;
   dset->object.location = create_path(parent);
-  dset->object.name = strdup(name);
+  dset->object.name = ea_checked_strdup(name);
 
   char *sql = "SELECT offset, data_size, info FROM DATASETS WHERE path = ? and name = ?;";
 

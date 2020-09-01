@@ -194,7 +194,7 @@ static int container_create(esdm_md_backend_t *backend, esdm_container_t *contai
   // create subdirectory if needed; find the last slash
   for(int i = strlen(container->name) - 1; i > 1; i--){
     if(container->name[i] == '/'){
-      char * dir = strdup(container->name);
+      char * dir = ea_checked_strdup(container->name);
       dir[i] = 0;
       sprintf(path, "%s/containers/%s", tgt, dir);
       free(dir);

@@ -188,7 +188,7 @@ laddr_get()
 			*first_newline = '\0';
 		DEBUG_FMT("local addr = %s\n", screen);
 	}
-	return rc > 0 ? strdup(screen) : NULL;
+	return rc > 0 ? ea_checked_strdup(screen) : NULL;
 }
 
 struct m0_idx_dix_config dix_conf = {.kc_create_meta = false };
@@ -223,20 +223,20 @@ conf_parse(char *conf, esdm_backend_t_clovis_t *ebm)
 		return -EINVAL;
 	ebm->ebm_clovis_conf.cc_local_addr = combined_laddr;
 #else
-	ebm->ebm_clovis_conf.cc_local_addr = strdup(clovis_local_addr);
+	ebm->ebm_clovis_conf.cc_local_addr = ea_checked_strdup(clovis_local_addr);
 #endif
 
 	if ((clovis_ha_addr = strsep(&conf, " ")) == NULL)
 		return -EINVAL;
-	ebm->ebm_clovis_conf.cc_ha_addr = strdup(clovis_ha_addr);
+	ebm->ebm_clovis_conf.cc_ha_addr = ea_checked_strdup(clovis_ha_addr);
 
 	if ((clovis_prof = strsep(&conf, " ")) == NULL)
 		return -EINVAL;
-	ebm->ebm_clovis_conf.cc_profile = strdup(clovis_prof);
+	ebm->ebm_clovis_conf.cc_profile = ea_checked_strdup(clovis_prof);
 
 	if ((clovis_proc_fid = strsep(&conf, " ")) == NULL)
 		return -EINVAL;
-	ebm->ebm_clovis_conf.cc_process_fid = strdup(clovis_proc_fid);
+	ebm->ebm_clovis_conf.cc_process_fid = ea_checked_strdup(clovis_proc_fid);
 
 	ebm->ebm_clovis_conf.cc_is_oostore = true;
 	ebm->ebm_clovis_conf.cc_is_read_verify = false;
@@ -675,7 +675,7 @@ bufvec_fill(const char *value, struct m0_bufvec *vals)
 		return rc;
 
 	if (value != NULL) {
-		vals->ov_buf[0] = strdup(value);
+		vals->ov_buf[0] = ea_checked_strdup(value);
 		vals->ov_vec.v_count[0] = strlen(value);
 	}
 
@@ -875,8 +875,8 @@ con_map_new_locked(const char *container_dataset, const char *obj_id, m0_bindex_
 	eassert(pair != NULL);
 
 	memset(pair, 0, sizeof(struct con_dataset_obj_pair));
-	pair->cdo_container_dataset = strdup(container_dataset);
-	pair->cdo_obj_id            = strdup(obj_id);
+	pair->cdo_container_dataset = ea_checked_strdup(container_dataset);
+	pair->cdo_obj_id            = ea_checked_strdup(obj_id);
 	pair->cdo_last_pos          = last_pos;
 	m0_list_link_init(&pair->cdo_linkage);
 	m0_list_add(&con_map, &pair->cdo_linkage);
@@ -920,7 +920,7 @@ esdm_backend_t_clovis_fragment_retrieve(esdm_backend_t  *backend,
 	rc = 0;
 
 	my_pos = atoll(fragment->id);
-	obj_id = strdup(strchr(fragment->id, '@') + 1);
+	obj_id = ea_checked_strdup(strchr(fragment->id, '@') + 1);
 
 	mthreaded = convert_pthread_to_mero_thread(backend);
 	ebm_lock(backend);
@@ -1131,7 +1131,7 @@ esdm_backend_t_clovis_fragment_update(esdm_backend_t  *backend,
 	// 2. open object with its object_id.
 	rc = 0;
 	if (pair == NULL) {
-		obj_id = strdup(strchr(fragment->id, '@') + 1);
+		obj_id = ea_checked_strdup(strchr(fragment->id, '@') + 1);
 
 		m0_mutex_lock(&con_map_lock);
 		pair = con_map_lookup_locked(container_dataset);
@@ -1309,7 +1309,7 @@ clovis_backend_init(esdm_config_backend_t *config)
 	 * target = ":12345:33:103 172.16.154.130@tcp:12345:34:1 <0x7000000000000001:0> <0x7200000000000001:64>";
 	 * Now please note the local_addr does not include the ipaddr.
 	 */
-	target = strdup(config->target);
+	target = ea_checked_strdup(config->target);
 	if (target == NULL)
 		return NULL;
 

@@ -23,10 +23,10 @@ int lfs_mpi_open(lfs_mpi_file_p *fd_p, char *df, int flags, mode_t mode, MPI_Com
   char *lfsfilename;
   lfsfilename = ea_checked_malloc((strlen(df) + 100) * sizeof(char));
   sprintf(lfsfilename, "%s%d.log", df, rank);
-  fd->filename = strdup(lfsfilename);
+  fd->filename = ea_checked_strdup(lfsfilename);
   fd->filename[strlen(fd->filename) - 4] = 0;
 
-  fd->mother_file = strdup(df);
+  fd->mother_file = ea_checked_strdup(df);
   // TODO work for read-only, write/read workflows, too.
   ret = access(fd->filename, F_OK);
 
