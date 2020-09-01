@@ -32,13 +32,15 @@ typedef enum data_accessibility_t {
  */
 typedef enum esdm_status {
   ESDM_SUCCESS = 0,
+  ESDM_ERROR, //some unspecific error, used when none of the below fits
+
   ESDM_INVALID_ARGUMENT_ERROR,
   ESDM_INVALID_STATE_ERROR, //returned when the state of an object does not allow the attempted operation
+  ESDM_INVALID_DATA_ERROR,  //returned when some input data is in an inconsistent state
   ESDM_INVALID_PERMISSIONS,
   ESDM_INCOMPLETE_DATA, //returned when a read requests data that does not exist and no fill-value is set for the dataset
   ESDM_DIRTY_DATA_ERROR,  //attempt to read data from disk that's been modified in memory, the read would discard the in-memory changes
-  ESDM_DELETED_DATA_ERROR,  //attempt to access data that has been deleted from disk
-  ESDM_ERROR
+  ESDM_DELETED_DATA_ERROR   //attempt to access data that has been deleted from disk
 } esdm_status;
 
 /**

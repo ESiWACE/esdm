@@ -423,6 +423,16 @@ void* ea_checked_calloc(size_t nmemb, size_t size) __attribute__((alloc_size(1, 
 void* ea_checked_realloc(void* ptr, size_t size) __attribute__((alloc_size(2), malloc));
 
 /**
+ * Wrapper for strdup() that checks the result for a null-pointer.
+ */
+char* ea_checked_strdup(const char* string);
+
+/**
+ * Wrapper for strndup() that checks the result for a null-pointer.
+ */
+char* ea_checked_strndup(const char* string, size_t n);
+
+/**
  * Create a copy of an arbitrary memory buffer.
  * This is essentially a strdup() for non-string data.
  *

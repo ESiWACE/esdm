@@ -330,6 +330,24 @@ void* ea_checked_realloc(void* ptr, size_t size) {
   return result;
 }
 
+char* ea_checked_strdup(const char* string) {
+  char* result = strdup(string);
+  if(!result) {
+    fprintf(stderr, "out-of-memory error: could not copy a string of length %zd, aborting...\n", strlen(string));
+    abort();
+  }
+  return result;
+}
+
+char* ea_checked_strndup(const char* string, size_t n) {
+  char* result = strndup(string, n);
+  if(!result) {
+    fprintf(stderr, "out-of-memory error: could not copy a string of length %zd, aborting...\n", strnlen(string, n));
+    abort();
+  }
+  return result;
+}
+
 void* ea_memdup(void* data, size_t size) {
   void* result = ea_checked_malloc(size);
   memcpy(result, data, size);

@@ -336,6 +336,9 @@ esdm_status esdmI_grid_fragmentsInRegion(esdm_grid_t* grid, esdmI_hypercube_t* r
 void esdmI_grid_serialize(smd_string_stream_t* stream, esdm_grid_t* grid);  //the resulting stream is in JSON format
 esdm_status esdmI_grid_createFromJson(json_t* json, esdm_dataset_t* dataset, esdm_grid_t* parent, esdm_grid_t** out_grid);
 esdm_status esdmI_grid_createFromString(const char* serializedGrid, esdm_grid_t** out_grid);
+//These two functions must be called with a string/json that was created from a copy of the grid, i.e. the grid IDs must match.
+esdm_status esdmI_grid_mergeWithJson(esdm_grid_t* grid, json_t* json);
+esdm_status esdmI_grid_mergeWithString(esdm_grid_t* grid, const char* serializedGrid);
 
 //Access the ID of a grid.
 //Returns NULL if the grid is not in fixed structure state yet (i.e. if it has not been (de-)serialized yet).

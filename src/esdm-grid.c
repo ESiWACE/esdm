@@ -690,9 +690,6 @@ void esdmI_grid_serialize(smd_string_stream_t* stream, esdm_grid_t* grid) {
   smd_string_stream_printf(stream, "]}");
 }
 
-//Not implemented yet. Do we really need it?
-esdm_status esdmI_grid_createFromString(const char* serializedGrid, esdm_grid_t** out_grid);
-
 esdm_status esdmI_grid_createFromJson(json_t* json, esdm_dataset_t* dataset, esdm_grid_t* parent, esdm_grid_t** out_grid) {
   eassert(json);
   eassert(dataset);
@@ -805,11 +802,65 @@ done:
   return result;
 }
 
-//TODO: Implement this.
-const char* esdmI_grid_id(esdm_grid_t* grid);
+//Not implemented yet. Do we really need it?
+esdm_status esdmI_grid_createFromString(const char* serializedGrid, esdm_grid_t** out_grid);
 
-//TODO: Implement this.
-bool esdmI_grid_matchesId(const esdm_grid_t* grid, const char* id);
+esdm_status esdmI_grid_mergeWithJson(esdm_grid_t* grid, json_t* json) {
+  eassert(grid);
+  eassert(grid->id);
+  eassert(grid->grid);
+  eassert(json);
+
+  //check that the grid IDs match (i.e. that the serialized grid is actually a copy of this grid)
+  if(!json_is_object(json)) return ESDM_INVALID_DATA_ERROR;
+  json_t* jsonId = json_object_get(json, "id");
+  if(!jsonId || !json_is_string(jsonId)) return ESDM_INVALID_DATA_ERROR;
+  const char* id = json_string_value(jsonId);
+  if(strcmp(grid->id, id)) return ESDM_INVALID_STATE_ERROR;
+
+  //walk the grid cells and fill in any holes with fragments from the serialized grid
+  json_t* jsonGrid = json_object_get(json, "grid");
+  if(!jsonGrid || !json_is_array(jsonGrid)) return ESDM_INVALID_DATA_ERROR;
+  int64_t cellCount = json_array_size(jsonGrid);
+  if(cellCount != esdmI_grid_cellCount(grid)) return ESDM_INVALID_DATA_ERROR;
+  for(int64_t i = 0; i < cellCount; i++) {
+    esdm_gridEntry_t* cell = &grid->grid[i];
+    eassert(!cell->fragment || !cell->subgrid);
+    if(cell->fragment) continue;  //no need to deserialize anything if we have already data for this cell
+    if(cell->subgrid) {
+      if(!cell->subgrid->emptyCells) continue;  //no need to recurs into subgrid if we already have complete data for it
+      json_t* jsonSubgrid = json_array_get(jsonGrid, i);
+      if(!jsonSubgrid || !json_is_object(jsonSubgrid)) return ESDM_INVALID_DATA_ERROR;
+      esdm_status result = esdmI_grid_mergeWithJson(cell->subgrid, jsonSubgrid);
+      if(result != ESDM_SUCCESS) return result;
+    } else {
+      json_t* jsonFragment = json_array_get(jsonGrid, i);
+      if(!jsonFragment || !json_is_object(jsonFragment)) return ESDM_INVALID_DATA_ERROR;
+      esdm_status result = esdmI_create_fragment_from_metadata(grid->dataset, jsonFragment, &cell->fragment);
+      if(result != ESDM_SUCCESS) return result;
+      esdmI_grid_registerCompletedCell(grid);
+    }
+  }
+
+  return ESDM_SUCCESS;
+}
+
+esdm_status esdmI_grid_mergeWithString(esdm_grid_t* grid, const char* serializedGrid) {
+  json_t* json = load_json(serializedGrid);
+  if(!json) return ESDM_ERROR;
+  esdm_status result = esdmI_grid_mergeWithJson(grid, json);
+  json_decref(json);
+  return result;
+}
+
+const char* esdmI_grid_id(esdm_grid_t* grid) {
+  return grid->id;
+}
+
+bool esdmI_grid_matchesId(const esdm_grid_t* grid, const char* id) {
+  if(!grid->id) return false;
+  return 0 == strcmp(grid->id, id);
+}
 
 void esdmI_grid_destroy(esdm_grid_t* grid) {
   if(grid->grid) {
