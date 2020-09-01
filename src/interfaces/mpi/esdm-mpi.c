@@ -1,5 +1,7 @@
 #include <esdm-mpi-internal.h>
 
+#include <esdm-grid.h>
+
 
 static void check_hash_abort(MPI_Comm com, int hash, int rank){
   int ret;
@@ -353,4 +355,99 @@ esdm_status esdm_mpi_dataset_commit(MPI_Comm com, esdm_dataset_t *d){
 
     return ret;
   }
+}
+
+__attribute__((noreturn))
+void panic(const char* operation) {
+  fprintf(stderr, "failed %s, aborting...\n", operation);
+  abort();
+}
+
+esdm_status esdm_mpi_grid_bcast(MPI_Comm comm, esdm_grid_t** inout_grid) {
+  eassert(inout_grid);
+
+  int rank;
+  if(MPI_SUCCESS != MPI_Comm_rank(comm, &rank)) return ESDM_ERROR;
+  int localResult = ESDM_SUCCESS;
+
+  if(!rank) {
+    eassert(*inout_grid && "inout_grid is an input parameter at the root process");
+
+    smd_string_stream_t* stream = smd_string_stream_create();
+    if(!stream) panic("memory allocation");
+    esdmI_grid_serialize(stream, *inout_grid);
+    size_t size;
+    char* serializedGrid = smd_string_stream_close(stream, &size);
+
+    uint64_t mpiSize = size;  //MPI does not have a type for `size_t`
+    if(MPI_SUCCESS != MPI_Bcast(&mpiSize, 1, MPI_UINT64_T, 0, comm)) panic("MPI_Bcast");
+    if(MPI_SUCCESS != MPI_Bcast(serializedGrid, mpiSize + 1, MPI_BYTE, 0, comm)) panic("MPI_Bcast");
+    free(serializedGrid);
+  } else {
+    uint64_t stringSize;
+    if(MPI_SUCCESS != MPI_Bcast(&stringSize, 1, MPI_UINT64_T, 0, comm)) panic("MPI_Bcast");
+    char* string = ea_checked_malloc(stringSize + 1);
+    if(MPI_SUCCESS != MPI_Bcast(string, stringSize + 1, MPI_BYTE, 0, comm)) panic("MPI_Bcast");
+
+    //TODO: Check whether we already have a grid with this ID, and merge the data into that grid in that case.
+    //      This requires that we know about the corresponding dataset here.
+    localResult = esdmI_grid_createFromString(string, inout_grid);
+    free(string);
+  }
+
+  int globalResult;
+  if(MPI_SUCCESS != MPI_Allreduce(&localResult, &globalResult, 1, MPI_INT, MPI_MAX, comm)) panic("MPI_Allreduce");
+  return globalResult;
+}
+
+esdm_status esdmI_mpi_grid_collect(MPI_Comm comm, esdm_grid_t* grid) {
+  eassert(grid);
+
+  int rank, procCount;
+  if(MPI_SUCCESS != MPI_Comm_rank(comm, &rank)) return ESDM_ERROR;
+  if(MPI_SUCCESS != MPI_Comm_size(comm, &procCount)) return ESDM_ERROR;
+  int result = ESDM_SUCCESS;
+
+  if(!rank) {
+    uint64_t* sizes = ea_checked_malloc(procCount*sizeof*sizes), dummy = 0;
+    if(MPI_SUCCESS != MPI_Gather(&dummy, 1, MPI_UINT64_T, sizes, 1, MPI_UINT64_T, 0, comm)) panic("MPI_Gather");
+
+    int* counts = ea_checked_malloc(procCount*sizeof*counts);
+    int* offsets = ea_checked_malloc(procCount*sizeof*offsets);
+    offsets[0] = counts[0] = 0;
+    for(int proc = 1; proc < procCount; proc++) {
+      counts[proc] = sizes[proc];
+      eassert(counts[proc] == sizes[proc] && "`int` must be large enough to hold the sizes of the serialized grids");
+      offsets[proc] = offsets[proc - 1] + counts[proc - 1];
+      eassert(INT_MAX - counts[proc] > offsets[proc] && "`int` must be large enough to hold the total size of the serialized grids");
+    }
+    int totalSize = offsets[procCount - 1] + counts[procCount - 1];
+    char* serializedGrids = ea_checked_malloc(totalSize*sizeof*serializedGrids);
+    if(MPI_SUCCESS != MPI_Gatherv(&dummy, 0, MPI_BYTE, serializedGrids, counts, offsets, MPI_BYTE, 0, comm)) panic("MPI_Gatherv");
+
+    for(int proc = 1; proc < procCount; proc++) {
+      result = esdmI_grid_mergeWithString(grid, serializedGrids + offsets[proc]);
+      if(result != ESDM_SUCCESS) break;
+    }
+
+    free(serializedGrids);
+    free(offsets);
+    free(counts);
+    free(sizes);
+  } else {
+    smd_string_stream_t* stream = smd_string_stream_create();
+    if(!stream) panic("memory allocation");
+    esdmI_grid_serialize(stream, grid);
+    size_t size;
+    char* serializedGrid = smd_string_stream_close(stream, &size);
+
+    uint64_t mpiSize = size + 1, dummy;  //MPI does not have a type for `size_t`, +1 because we want to send the terminating null byte as well
+    if(MPI_SUCCESS != MPI_Gather(&mpiSize, 1, MPI_UINT64_T, &dummy, 1, MPI_UINT64_T, 0, comm)) panic("MPI_Gather");
+    if(MPI_SUCCESS != MPI_Gatherv(serializedGrid, mpiSize, MPI_BYTE, &dummy, NULL, NULL, MPI_BYTE, 0, comm)) panic("MPI_Gatherv");
+
+    free(serializedGrid);
+  }
+
+  if(MPI_SUCCESS != MPI_Bcast(&result, 1, MPI_INT, 0, MPI_COMM_WORLD)) panic("MPI_Bcast");
+  return result;
 }
