@@ -24,6 +24,7 @@
 #include <string.h>
 
 #include <mpi.h>
+#include <esdm-grid.h>
 #include <esdm-internal.h>
 #include <esdm-mpi.h>
 #include "util/test_util.h"
@@ -272,7 +273,8 @@ bool isOutputTimestep(instruction_t* instruction, int64_t timestep) {
   }
 }
 
-void writeVariableTimestep(instruction_t* instruction, esdm_dataset_t* dataset, esdm_dataspace_t* dataspace, int64_t timestep, ioTimer* times) {
+void writeVariableTimestep(instruction_t* instruction, esdm_grid_t* grid, esdm_dataspace_t* dataspace, int64_t timestep, ioTimer* times) {
+  eassert(grid);
   if(!isOutputTimestep(instruction, timestep)) return;
 
   //set the time coord
@@ -299,17 +301,17 @@ void writeVariableTimestep(instruction_t* instruction, esdm_dataset_t* dataset, 
     times->dataHandling += curTime;
     times->io -= curTime;
 
-    esdm_dataspace_t *subspace;
-    esdm_status ret = esdm_dataspace_subspace(dataspace, instruction->dimCount, fragmentSize, fragmentOffsets[i], &subspace);
+    esdm_dataspace_t *memspace;
+    esdm_status ret = esdm_dataspace_subspace(dataspace, instruction->dimCount, fragmentSize, fragmentOffsets[i], &memspace);
     eassert(ret == ESDM_SUCCESS);
-    ret = esdm_write(dataset, data, subspace);
+    ret = esdm_write_grid(grid, memspace, data);
     eassert(ret == ESDM_SUCCESS);
 
     curTime = ea_stop_timer(times->t);
     times->io += curTime;
     times->cleanup -= curTime;
 
-    ret = esdm_dataspace_destroy(subspace);
+    ret = esdm_dataspace_destroy(memspace);
     eassert(ret == ESDM_SUCCESS);
     free(data);
 
@@ -324,9 +326,9 @@ void writeVariableTimestep(instruction_t* instruction, esdm_dataset_t* dataset, 
   }
 }
 
-void writeTimestep(size_t instructionCount, instruction_t* instructions, esdm_dataset_t** datasets, esdm_dataspace_t** dataspaces, int64_t timestep, ioTimer* times) {
+void writeTimestep(size_t instructionCount, instruction_t* instructions, esdm_grid_t** grids, esdm_dataspace_t** dataspaces, int64_t timestep, ioTimer* times) {
   for(size_t i = 0; i != instructionCount; i++) {
-    writeVariableTimestep(&instructions[i], datasets[i], dataspaces[i], timestep, times);
+    writeVariableTimestep(&instructions[i], grids[i], dataspaces[i], timestep, times);
   }
 }
 
@@ -394,6 +396,26 @@ void printTimes(ioTimer* times, int64_t totalBytes, const char* operationName, c
   MPI_Barrier(MPI_COMM_WORLD);
 }
 
+esdm_grid_t* createGrid(instruction_t* instruction, esdm_dataset_t* dataset) {
+  esdm_grid_t* result;
+  int rank;
+  int mpiStatus = MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+  eassert(mpiStatus == MPI_SUCCESS);
+
+  if(!rank) {
+    esdm_status ret = esdm_grid_create(dataset, instruction->dimCount, instruction->offset, instruction->size, &result);
+    eassert(ret == ESDM_SUCCESS);
+    for(int64_t dim = 0; dim < instruction->dimCount; dim++) {
+      ret = esdm_grid_subdivideFixed(result, dim, instruction->fragmentSize[dim], true);
+      eassert(ret == ESDM_SUCCESS);
+    }
+  }
+  esdm_status ret = esdm_mpi_grid_bcast(MPI_COMM_WORLD, &result);
+  eassert(ret == ESDM_SUCCESS);
+
+  return result;
+}
+
 void benchmarkWrite(size_t instructionCount, instruction_t* instructions) {
   //determine the count of time steps to write
   int64_t timeLimit = 1;       //we always handle a timestep 0 to accomodate the non-time variables
@@ -419,6 +441,7 @@ void benchmarkWrite(size_t instructionCount, instruction_t* instructions) {
   eassert(ret == ESDM_SUCCESS);
   esdm_dataspace_t* spaces[instructionCount];
   esdm_dataset_t* sets[instructionCount];
+  esdm_grid_t* grids[instructionCount];
   int64_t totalBytes = 0;
   for(size_t i = instructionCount; i--; ) {
     int64_t bounds[instructions[i].dimCount]; //unfortunately, we don't have a primitive to directly create a dataspace with an offset
@@ -438,11 +461,13 @@ void benchmarkWrite(size_t instructionCount, instruction_t* instructions) {
     eassert(ret == ESDM_SUCCESS);
     ret = esdm_mpi_dataset_create(MPI_COMM_WORLD, container, instructions[i].varname, spaces[i], &sets[i]);
     eassert(ret == ESDM_SUCCESS);
+    grids[i] = createGrid(&instructions[i], sets[i]);
+    eassert(grids[i]);
   }
   times.init = ea_stop_timer(times.t);
 
   //perform the actual writes
-  for(int64_t t = 0; t < timeLimit; t++) writeTimestep(instructionCount, instructions, sets, spaces, t, &times);
+  for(int64_t t = 0; t < timeLimit; t++) writeTimestep(instructionCount, instructions, grids, spaces, t, &times);
   times.mpi -= ea_stop_timer(times.t);
   MPI_Barrier(MPI_COMM_WORLD);
   double time = ea_stop_timer(times.t);
@@ -451,6 +476,8 @@ void benchmarkWrite(size_t instructionCount, instruction_t* instructions) {
 
   //commit the changes to data to the metadata
   for(size_t i = instructionCount; i--; ) {
+    ret = esdm_mpi_grid_commit(MPI_COMM_WORLD, grids[i]);
+    eassert(ret == ESDM_SUCCESS);
     ret = esdm_mpi_dataset_commit(MPI_COMM_WORLD, sets[i]);
     eassert(ret == ESDM_SUCCESS);
     ret = esdm_dataset_close(sets[i]);

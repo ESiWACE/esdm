@@ -651,9 +651,9 @@ esdm_status esdmI_grid_fragmentsInRegion(esdm_grid_t* grid, esdmI_hypercube_t* r
 void esdmI_grid_serialize(smd_string_stream_t* stream, esdm_grid_t* grid) {
   eassert(stream);
   eassert(grid);
-  eassert(grid->grid);
 
   //put the grid into fixed structure state
+  esdm_grid_ensureGrid(grid);
   if(!grid->id) grid->id = ea_make_id(23);
 
   smd_string_stream_printf(stream, "{\"axes\":[");
