@@ -111,15 +111,9 @@ add_subdirectory(tools)
 include_directories(${CMAKE_BINARY_DIR} ${ESDM_INCLUDE_DIRS} ${GLIB_INCLUDE_DIRS} ${JANSSON_INCLUDE_DIRS} ${SMD_INCLUDES} ${SCIL_INCLUDE_DIRS})
 
 
-# ESDM Utils and Database Library
-add_library(esdmutils SHARED esdm.c estream.c esdm-attributes.c esdm-datatypes.c  esdm-layout.c  esdm-performancemodel.c esdm-config.c performance.c hypercube.c hypercube-neighbour-manager.c esdm-grid.c utils/debug.c utils/auxiliary.c)
-target_link_libraries(esdmutils ${GLIB_LDFLAGS} ${SCIL_LDFLAGS} ${JANSSON_LDFLAGS} smd ${CMAKE_THREAD_LIBS_INIT} m)
-install(TARGETS esdmutils LIBRARY DESTINATION lib)
-
-
 # ESDM Middleware Library
-add_library(esdm SHARED esdm.c  esdm-scheduler.c esdm-stream.c fragments.c  esdm-modules.c backends-data/init.c)
-target_link_libraries(esdm ${GLIB_LDFLAGS} ${JANSSON_LDFLAGS} ${SCIL_LDFLAGS} esdmutils esdmdummy esdm-mdposix)
+add_library(esdm SHARED esdm.c esdm-scheduler.c esdm-stream.c fragments.c esdm-modules.c backends-data/init.c estream.c esdm-attributes.c esdm-datatypes.c esdm-layout.c esdm-performancemodel.c esdm-config.c performance.c hypercube.c hypercube-neighbour-manager.c esdm-grid.c utils/debug.c utils/auxiliary.c)
+target_link_libraries(esdm ${GLIB_LDFLAGS} ${JANSSON_LDFLAGS} ${SCIL_LDFLAGS} ${CMAKE_THREAD_LIBS_INIT} esdmdummy esdm-mdposix smd m)
 if(BACKEND_MONGODB)
     target_link_libraries(esdm esdmmongodb)
 endif()
