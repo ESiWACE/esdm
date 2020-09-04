@@ -40,12 +40,13 @@ esdm_status esdm_mpi_dataset_commit(MPI_Comm com, esdm_dataset_t *dataset);
  * Broadcast a grid from rank 0 to all processes.
  *
  * @param comm the MPI communicator that defines the process set and root process
+ * @param dataset the dataset to which the grid belongs, these must be the results of a single collective `esdm_mpi_dataset_create()` or `esdm_mpi_dataset_open()` call
  * @param inout_grid rank 0: input parameter, the grid that is to be communicated;
  *                   other processes: output parameter, receives a pointer to the newly created local copy
  *
- * @return a status code
+ * @return a status code, ESDM_INVALID_ARGUMENT_ERROR if the datasets don't match
  */
-esdm_status esdm_mpi_grid_bcast(MPI_Comm comm, esdm_grid_t** inout_grid);
+esdm_status esdm_mpi_grid_bcast(MPI_Comm comm, esdm_dataset_t* dataset, esdm_grid_t** inout_grid);
 
 /**
  * esdm_mpi_grid_commit()

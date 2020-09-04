@@ -410,7 +410,7 @@ esdm_grid_t* createGrid(instruction_t* instruction, esdm_dataset_t* dataset) {
       eassert(ret == ESDM_SUCCESS);
     }
   }
-  esdm_status ret = esdm_mpi_grid_bcast(MPI_COMM_WORLD, &result);
+  esdm_status ret = esdm_mpi_grid_bcast(MPI_COMM_WORLD, dataset, &result);
   eassert(ret == ESDM_SUCCESS);
 
   return result;

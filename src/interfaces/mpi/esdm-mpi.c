@@ -365,7 +365,9 @@ void panic(const char* operation) {
   abort();
 }
 
-esdm_status esdm_mpi_grid_bcast(MPI_Comm comm, esdm_grid_t** inout_grid) {
+esdm_status esdm_mpi_grid_bcast(MPI_Comm comm, esdm_dataset_t* dataset, esdm_grid_t** inout_grid) {
+  eassert(dataset);
+  eassert(dataset->id);
   eassert(inout_grid);
 
   int rank;
@@ -374,6 +376,10 @@ esdm_status esdm_mpi_grid_bcast(MPI_Comm comm, esdm_grid_t** inout_grid) {
 
   if(!rank) {
     eassert(*inout_grid && "inout_grid is an input parameter at the root process");
+
+    uint64_t datasetIdSize = strlen(dataset->id);
+    if(MPI_SUCCESS != MPI_Bcast(&datasetIdSize, 1, MPI_UINT64_T, 0, comm)) panic("MPI_Bcast");
+    if(MPI_SUCCESS != MPI_Bcast(dataset->id, datasetIdSize + 1, MPI_BYTE, 0, comm)) panic("MPI_Bcast");
 
     smd_string_stream_t* stream = smd_string_stream_create();
     if(!stream) panic("memory allocation");
@@ -386,6 +392,13 @@ esdm_status esdm_mpi_grid_bcast(MPI_Comm comm, esdm_grid_t** inout_grid) {
     if(MPI_SUCCESS != MPI_Bcast(serializedGrid, mpiSize + 1, MPI_BYTE, 0, comm)) panic("MPI_Bcast");
     free(serializedGrid);
   } else {
+    uint64_t rootDatasetIdSize;
+    if(MPI_SUCCESS != MPI_Bcast(&rootDatasetIdSize, 1, MPI_UINT64_T, 0, comm)) panic("MPI_Bcast");
+    char* rootDatasetId = ea_checked_malloc(rootDatasetIdSize + 1);
+    if(MPI_SUCCESS != MPI_Bcast(rootDatasetId, rootDatasetIdSize + 1, MPI_BYTE, 0, comm)) panic("MPI_Bcast");
+    bool datasetIdMatches = !strcmp(rootDatasetId, dataset->id);
+    free(rootDatasetId);
+
     uint64_t stringSize;
     if(MPI_SUCCESS != MPI_Bcast(&stringSize, 1, MPI_UINT64_T, 0, comm)) panic("MPI_Bcast");
     char* string = ea_checked_malloc(stringSize + 1);
@@ -393,7 +406,7 @@ esdm_status esdm_mpi_grid_bcast(MPI_Comm comm, esdm_grid_t** inout_grid) {
 
     //TODO: Check whether we already have a grid with this ID, and merge the data into that grid in that case.
     //      This requires that we know about the corresponding dataset here.
-    localResult = esdmI_grid_createFromString(string, inout_grid);
+    localResult = datasetIdMatches ? esdmI_grid_createFromString(string, dataset, inout_grid) : ESDM_INVALID_ARGUMENT_ERROR;
     free(string);
   }
 

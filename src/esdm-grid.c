@@ -495,6 +495,8 @@ void esdmI_dataset_registerGrid(esdm_dataset_t* dataset, esdm_grid_t* grid) {
 
 //TODO: Move this into esdm-datatypes.
 void esdmI_dataset_registerGridCompletion(esdm_dataset_t* dataset, esdm_grid_t* grid) {
+  eassert(dataset->incompleteGridCount && "there must be an incomplete grid for esdmI_dataset_registerGridCompletion() to be called");
+
   int64_t index = dataset->gridCount;
   while(index < dataset->gridCount + dataset->incompleteGridCount) {
     if(dataset->grids[index] == grid) break;
@@ -727,6 +729,7 @@ esdm_status esdmI_grid_createFromJson(json_t* json, esdm_dataset_t* dataset, esd
     .dimCount = dimCount,
     .parent = parent,
     .dataset = dataset,
+    .emptyCells = 0,
     .id = ea_checked_strdup(id),
     .grid = ea_checked_calloc(cellCount, sizeof*grid->grid)
   };
@@ -758,22 +761,26 @@ esdm_status esdmI_grid_createFromJson(json_t* json, esdm_dataset_t* dataset, esd
     if(!cellObject) goto fail;
     if(!json_is_object(cellObject)) goto fail;
 
-    json_t* element = json_object_get(cellObject, "grid");
-    if(element) {
-      esdm_status ret = esdmI_grid_createFromJson(element, dataset, grid, &cell->subgrid);
+    json_t* gridElement = json_object_get(cellObject, "grid");
+    json_t* fragmentElement = json_object_get(cellObject, "fragment");
+    if(gridElement && fragmentElement) {
+      goto fail;
+    } else if(gridElement) {
+      esdm_status ret = esdmI_grid_createFromJson(gridElement, dataset, grid, &cell->subgrid);
       if(ret != ESDM_SUCCESS) goto fail;
+    } else if(fragmentElement) {
+      if(!json_is_object(fragmentElement)) goto fail;
+      esdm_status ret = esdmI_create_fragment_from_metadata(dataset, fragmentElement, &cell->fragment);
+      if(ret != ESDM_SUCCESS) goto fail;
+    } else {
+      grid->emptyCells++;
     }
+  }
 
-    element = json_object_get(cellObject, "fragment");
-    if(element) {
-      if(cell->subgrid) {
-        constructedCells++; //ensure cleanup of the subgrid
-        goto fail;
-      }
-      if(!json_is_object(element)) goto fail;
-      esdm_status ret = esdmI_create_fragment_from_metadata(dataset, element, &cell->fragment);
-      if(ret != ESDM_SUCCESS) goto fail;
-    }
+  //construction of the grid object was successful, register the grid with the dataset
+  if(!parent) {
+    esdmI_dataset_registerGrid(dataset, grid);
+    if(!grid->emptyCells) esdmI_dataset_registerGridCompletion(dataset, grid);
   }
 
   result = ESDM_SUCCESS;
@@ -802,8 +809,13 @@ done:
   return result;
 }
 
-//Not implemented yet. Do we really need it?
-esdm_status esdmI_grid_createFromString(const char* serializedGrid, esdm_grid_t** out_grid);
+esdm_status esdmI_grid_createFromString(const char* serializedGrid, esdm_dataset_t* dataset, esdm_grid_t** out_grid) {
+  json_t* json = load_json(serializedGrid);
+  if(!json) return ESDM_ERROR;
+  esdm_status result = esdmI_grid_createFromJson(json, dataset, NULL, out_grid);
+  json_decref(json);
+  return result;
+}
 
 esdm_status esdmI_grid_mergeWithJson(esdm_grid_t* grid, json_t* json) {
   eassert(grid);
@@ -829,16 +841,24 @@ esdm_status esdmI_grid_mergeWithJson(esdm_grid_t* grid, json_t* json) {
     if(cell->fragment) continue;  //no need to deserialize anything if we have already data for this cell
     if(cell->subgrid) {
       if(!cell->subgrid->emptyCells) continue;  //no need to recurs into subgrid if we already have complete data for it
-      json_t* jsonSubgrid = json_array_get(jsonGrid, i);
-      if(!jsonSubgrid || !json_is_object(jsonSubgrid)) return ESDM_INVALID_DATA_ERROR;
-      esdm_status result = esdmI_grid_mergeWithJson(cell->subgrid, jsonSubgrid);
-      if(result != ESDM_SUCCESS) return result;
+      json_t* jsonCell = json_array_get(jsonGrid, i);
+      if(!jsonCell || !json_is_object(jsonCell)) return ESDM_INVALID_DATA_ERROR;
+      json_t* jsonSubgrid = json_object_get(jsonCell, "subgrid");
+      if(jsonSubgrid) {
+        if(!json_is_object(jsonSubgrid)) return ESDM_INVALID_DATA_ERROR;
+        esdm_status result = esdmI_grid_mergeWithJson(cell->subgrid, jsonSubgrid);
+        if(result != ESDM_SUCCESS) return result;
+      }
     } else {
-      json_t* jsonFragment = json_array_get(jsonGrid, i);
-      if(!jsonFragment || !json_is_object(jsonFragment)) return ESDM_INVALID_DATA_ERROR;
-      esdm_status result = esdmI_create_fragment_from_metadata(grid->dataset, jsonFragment, &cell->fragment);
-      if(result != ESDM_SUCCESS) return result;
-      esdmI_grid_registerCompletedCell(grid);
+      json_t* jsonCell = json_array_get(jsonGrid, i);
+      if(!jsonCell || !json_is_object(jsonCell)) return ESDM_INVALID_DATA_ERROR;
+      json_t* jsonFragment = json_object_get(jsonCell, "fragment");
+      if(jsonFragment) {
+        if(!json_is_object(jsonFragment)) return ESDM_INVALID_DATA_ERROR;
+        esdm_status result = esdmI_create_fragment_from_metadata(grid->dataset, jsonFragment, &cell->fragment);
+        if(result != ESDM_SUCCESS) return result;
+        esdmI_grid_registerCompletedCell(grid);
+      }
     }
   }
 

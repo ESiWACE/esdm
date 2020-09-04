@@ -1002,8 +1002,7 @@ esdm_status esdm_dataset_open_md_parse(esdm_dataset_t *d, char * md, int size){
   }
   arrsize = json_array_size(elem);
   d->gridSlotCount = kInitialGridSlotCount > arrsize ? kInitialGridSlotCount : arrsize;
-  d->gridCount = arrsize;
-  d->incompleteGridCount = 0;
+  d->gridCount = d->incompleteGridCount = 0;  //esdmI_grid_createFromJson() will register the grids
   d->grids = ea_checked_malloc(d->gridSlotCount*sizeof*d->grids);
   for(int64_t i = 0; i < arrsize; i++) {
     json_t* gridDescription = json_array_get(elem, i);
