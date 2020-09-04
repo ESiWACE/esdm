@@ -273,8 +273,8 @@ bool isOutputTimestep(instruction_t* instruction, int64_t timestep) {
   }
 }
 
-void writeVariableTimestep(instruction_t* instruction, esdm_grid_t* grid, esdm_dataspace_t* dataspace, int64_t timestep, ioTimer* times) {
-  eassert(grid);
+void writeVariableTimestep(instruction_t* instruction, esdm_dataset_t* dataset, esdm_grid_t* grid, esdm_dataspace_t* dataspace, int64_t timestep, ioTimer* times) {
+  eassert(dataset || grid);
   if(!isOutputTimestep(instruction, timestep)) return;
 
   //set the time coord
@@ -304,7 +304,7 @@ void writeVariableTimestep(instruction_t* instruction, esdm_grid_t* grid, esdm_d
     esdm_dataspace_t *memspace;
     esdm_status ret = esdm_dataspace_subspace(dataspace, instruction->dimCount, fragmentSize, fragmentOffsets[i], &memspace);
     eassert(ret == ESDM_SUCCESS);
-    ret = esdm_write_grid(grid, memspace, data);
+    ret = grid ? esdm_write_grid(grid, memspace, data) : esdm_write(dataset, data, memspace);
     eassert(ret == ESDM_SUCCESS);
 
     curTime = ea_stop_timer(times->t);
@@ -326,9 +326,9 @@ void writeVariableTimestep(instruction_t* instruction, esdm_grid_t* grid, esdm_d
   }
 }
 
-void writeTimestep(size_t instructionCount, instruction_t* instructions, esdm_grid_t** grids, esdm_dataspace_t** dataspaces, int64_t timestep, ioTimer* times) {
+void writeTimestep(size_t instructionCount, instruction_t* instructions, esdm_dataset_t** datasets, esdm_grid_t** grids, esdm_dataspace_t** dataspaces, int64_t timestep, ioTimer* times) {
   for(size_t i = 0; i != instructionCount; i++) {
-    writeVariableTimestep(&instructions[i], grids[i], dataspaces[i], timestep, times);
+    writeVariableTimestep(&instructions[i], datasets[i], grids ? grids[i] : NULL, dataspaces[i], timestep, times);
   }
 }
 
@@ -416,7 +416,7 @@ esdm_grid_t* createGrid(instruction_t* instruction, esdm_dataset_t* dataset) {
   return result;
 }
 
-void benchmarkWrite(size_t instructionCount, instruction_t* instructions) {
+void benchmarkWrite(size_t instructionCount, instruction_t* instructions, bool useGrids) {
   //determine the count of time steps to write
   int64_t timeLimit = 1;       //we always handle a timestep 0 to accomodate the non-time variables
   for(size_t i = instructionCount; i--; ) {
@@ -461,13 +461,17 @@ void benchmarkWrite(size_t instructionCount, instruction_t* instructions) {
     eassert(ret == ESDM_SUCCESS);
     ret = esdm_mpi_dataset_create(MPI_COMM_WORLD, container, instructions[i].varname, spaces[i], &sets[i]);
     eassert(ret == ESDM_SUCCESS);
-    grids[i] = createGrid(&instructions[i], sets[i]);
-    eassert(grids[i]);
+    if(useGrids) {
+      grids[i] = createGrid(&instructions[i], sets[i]);
+      eassert(grids[i]);
+    } else {
+      grids[i] = NULL;
+    }
   }
   times.init = ea_stop_timer(times.t);
 
   //perform the actual writes
-  for(int64_t t = 0; t < timeLimit; t++) writeTimestep(instructionCount, instructions, grids, spaces, t, &times);
+  for(int64_t t = 0; t < timeLimit; t++) writeTimestep(instructionCount, instructions, sets, useGrids ? grids : NULL, spaces, t, &times);
   times.mpi -= ea_stop_timer(times.t);
   MPI_Barrier(MPI_COMM_WORLD);
   double time = ea_stop_timer(times.t);
@@ -476,8 +480,10 @@ void benchmarkWrite(size_t instructionCount, instruction_t* instructions) {
 
   //commit the changes to data to the metadata
   for(size_t i = instructionCount; i--; ) {
-    ret = esdm_mpi_grid_commit(MPI_COMM_WORLD, grids[i]);
-    eassert(ret == ESDM_SUCCESS);
+    if(useGrids) {
+      ret = esdm_mpi_grid_commit(MPI_COMM_WORLD, grids[i]);
+      eassert(ret == ESDM_SUCCESS);
+    }
     ret = esdm_mpi_dataset_commit(MPI_COMM_WORLD, sets[i]);
     eassert(ret == ESDM_SUCCESS);
     ret = esdm_dataset_close(sets[i]);
@@ -562,7 +568,7 @@ void readTimestep(size_t instructionCount, instruction_t* instructions, esdm_dat
   }
 }
 
-void benchmarkRead(size_t instructionCount, instruction_t* instructions) {
+void benchmarkRead(size_t instructionCount, instruction_t* instructions, bool useGrids) {
   //determine the count of time steps to read
   int64_t timeLimit = 1;       //we always handle a timestep 0 to accomodate the non-time variables
   for(size_t i = instructionCount; i--; ) {
@@ -628,7 +634,7 @@ void benchmarkRead(size_t instructionCount, instruction_t* instructions) {
 __attribute__((noreturn))
 void exitWithUsage(const char* execName, const char* errorMessage, int exitStatus) {
   if(errorMessage) fprintf(stderr, "%s", errorMessage);
-  printf("usage: %s [(-r | -w | -c | --read | --write | --config) path]...\n", execName);
+  printf("usage: %s <options> ...\n", execName);
   printf("\n");
   printf("\t-r | --read path\n");
   printf("\tPerform the read benchmark with the instructions provided by the file at path.\n");
@@ -638,11 +644,17 @@ void exitWithUsage(const char* execName, const char* errorMessage, int exitStatu
   printf("\n");
   printf("\t-c | --config path\n");
   printf("\tUse the file at path as the ESDM configuration file.\n");
+  printf("\n");
+  printf("\t-g | --grid\n");
+  printf("\tUse grid API (default). This cancels any previous -G option.\n");
+  printf("\n");
+  printf("\t-G | --no-grid\n");
+  printf("\tDo not use grid API. This cancels any previous -g option.\n");
 
   exit(exitStatus);
 }
 
-void parseCommandlineArgs(int argc, char** argv, char** configFile, FILE** writeInstructionFile, FILE** readInstructionFile) {
+void parseCommandlineArgs(int argc, char** argv, char** configFile, FILE** writeInstructionFile, FILE** readInstructionFile, bool* useGrids) {
   if(argc == 1) {
     //special handling of the zero argument case to ensure that this benchmark plays nicely as a test
     static char defaultInstructionsWrite[] =
@@ -671,6 +683,10 @@ void parseCommandlineArgs(int argc, char** argv, char** configFile, FILE** write
     } else if(!strcmp(argv[i], "-c") || !strcmp(argv[i], "--config")) {
       if(++i >= argc) exitWithUsage(argv[0], "error: -c | --config option must have an argument\n", 7);
       *configFile = argv[i];
+    } else if(!strcmp(argv[i], "-g") || !strcmp(argv[i], "--grid")) {
+      *useGrids = true;
+    } else if(!strcmp(argv[i], "-G") || !strcmp(argv[i], "--no-grid")) {
+      *useGrids = false;
     } else if(!strcmp(argv[i], "-h") || !strcmp(argv[i], "-?") || !strcmp(argv[i], "--help")) {
       exitWithUsage(argv[0], NULL, 0);
     } else {
@@ -685,7 +701,8 @@ int main(int argc, char** argv) {
 
   char* configFile = "esdm.conf";
   FILE *writeInstructionFile = NULL, *readInstructionFile = NULL;
-  parseCommandlineArgs(argc, argv, &configFile, &writeInstructionFile, &readInstructionFile);
+  bool useGrids = true;
+  parseCommandlineArgs(argc, argv, &configFile, &writeInstructionFile, &readInstructionFile, &useGrids);
 
   esdm_mpi_init_manual();
   esdm_mpi_distribute_config_file(configFile);
@@ -696,7 +713,7 @@ int main(int argc, char** argv) {
     size_t instructionCount;
     instruction_t* instructions = parseInstructions(writeInstructionFile, &instructionCount);
     fclose(writeInstructionFile);
-    benchmarkWrite(instructionCount, instructions);
+    benchmarkWrite(instructionCount, instructions, useGrids);
     deleteInstructions(instructionCount, instructions);
   }
 
@@ -704,7 +721,7 @@ int main(int argc, char** argv) {
     size_t instructionCount;
     instruction_t* instructions = parseInstructions(readInstructionFile, &instructionCount);
     fclose(readInstructionFile);
-    benchmarkRead(instructionCount, instructions);
+    benchmarkRead(instructionCount, instructions, useGrids);
     deleteInstructions(instructionCount, instructions);
   }
 
