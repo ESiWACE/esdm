@@ -502,7 +502,7 @@ void benchmarkWrite(size_t instructionCount, instruction_t* instructions, bool u
   printTimes(&times, totalBytes, "Write", "data generation");
 }
 
-void readVariableTimestep(instruction_t* instruction, esdm_dataset_t* dataset, esdm_dataspace_t* dataspace, int64_t timestep, ioTimer* times) {
+void readVariableTimestep(instruction_t* instruction, esdm_dataset_t* dataset, esdm_grid_t* grid, esdm_dataspace_t* dataspace, int64_t timestep, ioTimer* times) {
   if(!isOutputTimestep(instruction, timestep)) return;
 
   //set the time coord
@@ -534,7 +534,11 @@ void readVariableTimestep(instruction_t* instruction, esdm_dataset_t* dataset, e
     esdm_dataspace_t *subspace;
     esdm_status ret = esdm_dataspace_subspace(dataspace, instruction->dimCount, fragmentSize, fragmentOffsets[i], &subspace);
     eassert(ret == ESDM_SUCCESS);
-    ret = esdm_read(dataset, data, subspace);
+    if(grid) {
+      ret = esdm_read_grid(grid, subspace, data);
+    } else {
+      ret = esdm_read(dataset, data, subspace);
+    }
     eassert(ret == ESDM_SUCCESS);
 
     curTime = ea_stop_timer(times->t);
@@ -562,9 +566,9 @@ void readVariableTimestep(instruction_t* instruction, esdm_dataset_t* dataset, e
   }
 }
 
-void readTimestep(size_t instructionCount, instruction_t* instructions, esdm_dataset_t** datasets, esdm_dataspace_t** dataspaces, int64_t timestep, ioTimer* times) {
+void readTimestep(size_t instructionCount, instruction_t* instructions, esdm_dataset_t** datasets, esdm_grid_t** grids, esdm_dataspace_t** dataspaces, int64_t timestep, ioTimer* times) {
   for(size_t i = 0; i != instructionCount; i++) {
-    readVariableTimestep(&instructions[i], datasets[i], dataspaces[i], timestep, times);
+    readVariableTimestep(&instructions[i], datasets[i], grids ? grids[i] : NULL, dataspaces[i], timestep, times);
   }
 }
 
@@ -594,6 +598,7 @@ void benchmarkRead(size_t instructionCount, instruction_t* instructions, bool us
 
   esdm_dataspace_t* spaces[instructionCount];
   esdm_dataset_t* sets[instructionCount];
+  esdm_grid_t* grids[instructionCount];
   int64_t totalBytes = 0;
   for(size_t i = instructionCount; i--; ) {
     int64_t datapointCount = 1;
@@ -606,11 +611,17 @@ void benchmarkRead(size_t instructionCount, instruction_t* instructions, bool us
     eassert(ret == ESDM_SUCCESS);
     ret = esdm_dataset_get_dataspace(sets[i], &spaces[i]);
     eassert(ret == ESDM_SUCCESS);
+    if(useGrids) {
+      grids[i] = createGrid(&instructions[i], sets[i]);
+      eassert(grids[i]);
+    } else {
+      grids[i] = NULL;
+    }
   }
   times.init = ea_stop_timer(times.t);
 
   //perform the actual reads
-  for(int64_t t = 0; t < timeLimit; t++) readTimestep(instructionCount, instructions, sets, spaces, t, &times);
+  for(int64_t t = 0; t < timeLimit; t++) readTimestep(instructionCount, instructions, sets, useGrids ? grids : NULL, spaces, t, &times);
   times.mpi -= ea_stop_timer(times.t);
   MPI_Barrier(MPI_COMM_WORLD);
   double time = ea_stop_timer(times.t);
@@ -619,6 +630,10 @@ void benchmarkRead(size_t instructionCount, instruction_t* instructions, bool us
 
   //close the ESDM objects
   for(size_t i = instructionCount; i--; ) {
+    if(useGrids) {
+      ret = esdm_mpi_grid_commit(MPI_COMM_WORLD, grids[i]);
+      eassert(ret == ESDM_SUCCESS);
+    }
     ret = esdm_dataset_close(sets[i]);
     eassert(ret == ESDM_SUCCESS);
   }
