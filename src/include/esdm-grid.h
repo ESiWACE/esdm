@@ -222,13 +222,12 @@ esdm_status esdm_write_grid(esdm_grid_t* grid, esdm_dataspace_t* memspace, void*
  *
  * It is not necessary for the grid cell to actually contain data itself,
  * ESDM will read data provided by another grid or gridless write in this case.
- * However, it may fill the grid cell with the resulting data.
+ * This will have the side effect of writing back a copy of the data to accelerate future reads on the same grid.
  *
  * If the read operation succeeds, the grid will be at least in fixed axis state.
  *
  * @return `ESDM_SUCCESS` on success, `ESDM_INVALID_ARGUMENT_ERROR` if the `memspace` does not correspond to a single cell exactly, `ESDM_INVALID_STATE_ERROR` if the grid cell contains a subgrid
  */
-//TODO: Specify under which conditions the data is written back.
 esdm_status esdm_read_grid(esdm_grid_t* grid, esdm_dataspace_t* memspace, void* buffer);
 
 /**

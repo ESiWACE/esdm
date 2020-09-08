@@ -394,11 +394,19 @@ esdm_status esdm_read_grid(esdm_grid_t* grid, esdm_dataspace_t* memspace, void* 
   esdm_gridEntry_t* cell;
   esdm_status result = esdm_grid_findCellInHierarchy(&grid, memspace, &cell);
   if(result != ESDM_SUCCESS) return result;
-  if(!cell->fragment) return ESDM_INCOMPLETE_DATA;
 
   //Do the actual reading.
-  result = esdmI_scheduler_readSingleFragmentBlocking(esdmI_esdm(), grid->dataset, buffer, memspace, cell->fragment);
-  return result;
+  esdm_instance_t* esdm = esdmI_esdm();
+  if(cell->fragment) {
+    return esdmI_scheduler_readSingleFragmentBlocking(esdm, grid->dataset, buffer, memspace, cell->fragment);
+  } else {
+    result = esdm_scheduler_read_blocking(esdm, grid->dataset, buffer, memspace, NULL, false);
+    if(result != ESDM_SUCCESS) return result;
+    esdm_dataspace_t* fragmentSpace;
+    result = esdm_dataspace_copy(memspace, &fragmentSpace);
+    if(result != ESDM_SUCCESS) return result;
+    return esdmI_scheduler_writeSingleFragmentBlocking(esdm, grid->dataset, buffer, fragmentSpace, true, &cell->fragment);
+  }
 }
 
 esdm_status esdm_dataset_grids(esdm_dataset_t* dataset, int64_t* out_count, esdm_grid_t*** out_grids) {

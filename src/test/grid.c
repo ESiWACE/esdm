@@ -142,6 +142,18 @@ int main() {
   eassert(!iterator);
   esdm_gridIterator_destroy(iterator);  //should be a noop
 
+  //Define a different grid, and read the existing data through that grid.
+  esdm_grid_t* readGrid;
+  ret = esdm_grid_createSimple(dataset, dimCount, &(int64_t){3}, &readGrid);
+  eassert(ret == ESDM_SUCCESS);
+  eassert(readGrid);
+  uint8_t readBuffer[3] = {-1, -1, -1};
+  ret = esdm_read_grid(readGrid, esdm_dataspace_1d(3, SMD_DTYPE_UINT8).ptr, readBuffer);
+  eassert(ret == ESDM_SUCCESS);
+  eassert(readBuffer[0] == 0);
+  eassert(readBuffer[1] == 1);
+  eassert(readBuffer[2] == 2);
+
   //Cleanup.
   ret = esdm_dataset_close(dataset);
   eassert(ret == ESDM_SUCCESS);
