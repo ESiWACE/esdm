@@ -405,7 +405,12 @@ esdm_status esdm_read_grid(esdm_grid_t* grid, esdm_dataspace_t* memspace, void* 
     esdm_dataspace_t* fragmentSpace;
     result = esdm_dataspace_copy(memspace, &fragmentSpace);
     if(result != ESDM_SUCCESS) return result;
-    return esdmI_scheduler_writeSingleFragmentBlocking(esdm, grid->dataset, buffer, fragmentSpace, true, &cell->fragment);
+    result = esdmI_scheduler_writeSingleFragmentBlocking(esdm, grid->dataset, buffer, fragmentSpace, true, &cell->fragment);
+    if(result == ESDM_SUCCESS) {
+      esdmI_dataset_register_fragment(grid->dataset, cell->fragment, true);
+      esdmI_grid_registerCompletedCell(grid);
+    }
+    return result;
   }
 }
 
