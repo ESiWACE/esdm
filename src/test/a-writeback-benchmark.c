@@ -21,6 +21,7 @@
 
 #include <esdm.h>
 #include <esdm-internal.h>
+#include <esdm-grid.h>
 #include <test/util/test_util.h>
 
 #include <stdio.h>
@@ -44,21 +45,26 @@ bool dataIsCorrect(int height, int width, uint64_t (*data)[width]) {
 }
 
 //writes the data in the form of 1D slices of size [1][width]
-void writeData(esdm_dataset_t* dataset, esdm_dataspace_t* dataspace, int height, int width, uint64_t (*data)[width]) {
+void writeData(esdm_dataset_t* dataset, esdm_dataspace_t* dataspace, int height, int width, bool useGrids, uint64_t (*data)[width]) {
   esdm_statistics_t beforeStats = esdm_write_stats();
+  esdm_status ret;
+  esdm_grid_t* grid;
 
-  int ret = ESDM_SUCCESS;
-  int64_t size[2] = {1, width};
+  if(useGrids) {
+    int64_t domainSize[2] = {height, width};
+    ret = esdm_grid_createSimple(dataset, 2, domainSize, &grid);
+    eassert(ret == ESDM_SUCCESS);
+    ret = esdm_grid_subdivideFixed(grid, 0, 1, true);
+    eassert(ret == ESDM_SUCCESS);
+  }
+
   for(int i = 0; i < height; i++) {
-    int64_t offset[2] = {i, 0};
-    esdm_dataspace_t *subspace;
-    ret = esdm_dataspace_subspace(dataspace, 2, size, offset, &subspace);
-    eassert(ret == ESDM_SUCCESS);
-
-    ret = esdm_write(dataset, data[i], subspace);
-    eassert(ret == ESDM_SUCCESS);
-
-    ret = esdm_dataspace_destroy(subspace);
+    esdm_simple_dspace_t space = esdm_dataspace_2do(i, 1, 0, width, SMD_DTYPE_UINT64);
+    if(useGrids) {
+      ret = esdm_write_grid(grid, space.ptr, data[i]);
+    } else {
+      ret = esdm_write(dataset, data[i], space.ptr);
+    }
     eassert(ret == ESDM_SUCCESS);
   }
 
@@ -75,12 +81,23 @@ void writeData(esdm_dataset_t* dataset, esdm_dataspace_t* dataspace, int height,
 
 //fragmentSize is an array of two elements that gives the shape of the fragments to read
 //expectedReadFactor gives the expected factor by which the amount of data that's read from disk is larger than the amount of data requested
-void readData(esdm_dataset_t* dataset, esdm_dataspace_t* dataspace, int height, int width, uint64_t (*data)[width], int64_t* fragmentSize, int64_t expectedReadFactor, int64_t expectedRequestFactor, bool expectWriteBack) {
+void readData(esdm_dataset_t* dataset, esdm_dataspace_t* dataspace, int height, int width, bool useGrids, uint64_t (*data)[width], int64_t* fragmentSize, int64_t expectedReadFactor, int64_t expectedRequestFactor, bool expectWriteBack) {
   eassert(height%fragmentSize[0] == 0 && "if this fails, it's a bug in the test parameterization, not in ESDM itself");
   eassert(width%fragmentSize[1] == 0 && "if this fails, it's a bug in the test parameterization, not in ESDM itself");
 
   esdm_statistics_t beforeStatsRead = esdm_read_stats();
   esdm_statistics_t beforeStatsWrite = esdm_write_stats();
+
+  esdm_grid_t* grid;
+  if(useGrids) {
+    int64_t domainSize[2] = {height, width};
+    esdm_status ret = esdm_grid_createSimple(dataset, 2, domainSize, &grid);
+    eassert(ret == ESDM_SUCCESS);
+    ret = esdm_grid_subdivideFixed(grid, 0, fragmentSize[0], true);
+    eassert(ret == ESDM_SUCCESS);
+    ret = esdm_grid_subdivideFixed(grid, 1, fragmentSize[1], true);
+    eassert(ret == ESDM_SUCCESS);
+  }
 
   //perform the read
   for(int y = 0; y < height; y += fragmentSize[0]) {
@@ -92,7 +109,11 @@ void readData(esdm_dataset_t* dataset, esdm_dataspace_t* dataspace, int height, 
       ret = esdm_dataspace_copyDatalayout(subspace, dataspace);
       eassert(ret == ESDM_SUCCESS);
 
-      ret = esdm_read(dataset, &data[y][x], subspace);
+      if(useGrids) {
+        ret = esdm_read_grid(grid, subspace, &data[y][x]);
+      } else {
+        ret = esdm_read(dataset, &data[y][x], subspace);
+      }
       eassert(ret == ESDM_SUCCESS);
 
       ret = esdm_dataspace_destroy(subspace);
@@ -119,7 +140,7 @@ void readData(esdm_dataset_t* dataset, esdm_dataspace_t* dataspace, int height, 
 
 void printUsage(const char* programPath) {
   printf("Usage:\n");
-  printf("%s [-?|--help] [(-s|--size-exponent) S] [(-w|--width-exponent) W] [(-h|--height-exponent) H]\n", programPath);
+  printf("%s [<option> ...]\n", programPath);
   printf("\n");
   printf("\t-s S, --width-exponent S\n");
   printf("\t\tset the size of the data matrix to 2^Sx2^S\n");
@@ -129,6 +150,15 @@ void printUsage(const char* programPath) {
   printf("\n");
   printf("\t-h H, --height-exponent H\n");
   printf("\t\tset the height of the data matrix to 2^H\n");
+  printf("\n");
+  printf("\t-g, --grid\n");
+  printf("\t\tUse grid API (default). This cancels any previous -G option.\n");
+  printf("\n");
+  printf("\t-G, --no-grid\n");
+  printf("\t\tDo not use grid API. This cancels any previous -g option.\n");
+  printf("\n");
+  printf("\t-?, --help\n");
+  printf("\t\tPrint this help and exit.\n");
 }
 
 //argv[0] is expected to be the option name, argv[1] the integer that we need to parse
@@ -146,7 +176,7 @@ long readIntArg(int argc, char const **argv) {
   return result;
 }
 
-void readArgs(int argc, char const **argv, int* out_height, int* out_width) {
+void readArgs(int argc, char const **argv, int* out_height, int* out_width, bool* out_useGrids) {
   //save the program name
   eassert(argc > 0);
   char const* programPath = *argv++;
@@ -154,6 +184,7 @@ void readArgs(int argc, char const **argv, int* out_height, int* out_width) {
 
   //defaults
   long heightExponent = 8, widthExponent = 8;
+  bool useGrids = true;
 
   for(; argc > 0; argc--, argv++) {
     if(!strcmp(*argv, "-w") || !strcmp(*argv, "--width-exponent")) {
@@ -162,6 +193,10 @@ void readArgs(int argc, char const **argv, int* out_height, int* out_width) {
       heightExponent = readIntArg(argc--, argv++);  //gobble up an additional argument;
     } else if(!strcmp(*argv, "-s") || !strcmp(*argv, "--size-exponent")) {
       widthExponent = heightExponent = readIntArg(argc--, argv++);  //gobble up an additional argument;
+    } else if(!strcmp(*argv, "-g") || !strcmp(*argv, "--grid")) {
+      useGrids = true;
+    } else if(!strcmp(*argv, "-G") || !strcmp(*argv, "--no-grid")) {
+      useGrids = false;
     } else if(!strcmp(*argv, "-?") || !strcmp(*argv, "--help")) {
       printUsage(programPath);
       exit(0);
@@ -174,6 +209,7 @@ void readArgs(int argc, char const **argv, int* out_height, int* out_width) {
 
   *out_height = 1 << heightExponent;
   *out_width = 1 << widthExponent;
+  *out_useGrids = useGrids;
 }
 
 //TODO: Benchmark idea:
@@ -188,7 +224,7 @@ void readArgs(int argc, char const **argv, int* out_height, int* out_width) {
 //      Read as 16xN/16 slices, check statistics (2x read).
 //      ...
 
-void runTestWithConfig(int height, int width, const char* configString) {
+void runTestWithConfig(int height, int width, bool useGrids, const char* configString) {
   esdm_status ret = esdm_load_config_str(configString);
   eassert(ret == ESDM_SUCCESS);
   ret = esdm_init();
@@ -224,24 +260,24 @@ void runTestWithConfig(int height, int width, const char* configString) {
 
   timer myTimer;
   ea_start_timer(&myTimer);
-  writeData(dataset1, dataspace.ptr, height, width, data);
+  writeData(dataset1, dataspace.ptr, height, width, useGrids, data);
   printf("write data (%dx%d) as 1x%d fragments: %.3fms\n", height, width, width, 1000*ea_stop_timer(myTimer));
 
   memset(data, 0, height*sizeof(*data));
   ea_start_timer(&myTimer);
-  readData(dataset1, dataspace.ptr, height, width, data, (int64_t[2]){ 1, width}, 1, 1, false);
+  readData(dataset1, dataspace.ptr, height, width, useGrids, data, (int64_t[2]){ 1, width}, 1, 1, useGrids);
   printf("read data as written: %.3fms\n", 1000*ea_stop_timer(myTimer));
   eassert(dataIsCorrect(height, width, data));
 
   memset(data, 0, height*sizeof(*data));
   ea_start_timer(&myTimer);
-  readData(dataset1, dataspace.ptr, height, width, data, (int64_t[2]){ height, 1}, width, height, true);
+  readData(dataset1, dataspace.ptr, height, width, useGrids, data, (int64_t[2]){ height, 1}, width, height, true);
   printf("read data as %dx1 fragments: %.3fms\n", height, 1000*ea_stop_timer(myTimer));
   eassert(dataIsCorrect(height, width, data));
 
   memset(data, 0, height*sizeof(*data));
   ea_start_timer(&myTimer);
-  readData(dataset1, dataspace.ptr, height, width, data, (int64_t[2]){ height, 1}, 1, 1, false);
+  readData(dataset1, dataspace.ptr, height, width, useGrids, data, (int64_t[2]){ height, 1}, 1, 1, useGrids);
   printf("read data %dx1 fragments repeat: %.3fms\n", height, 1000*ea_stop_timer(myTimer));
   eassert(dataIsCorrect(height, width, data));
 
@@ -260,16 +296,16 @@ void runTestWithConfig(int height, int width, const char* configString) {
   eassert(ret == ESDM_SUCCESS);
 
   ea_start_timer(&myTimer);
-  writeData(dataset2, dataspace.ptr, height, width, data);
+  writeData(dataset2, dataspace.ptr, height, width, useGrids, data);
   printf("write data (%dx%d) as 1x%d fragments: %.3fms\n", height, width, width, 1000*ea_stop_timer(myTimer));
 
   timer outerTimer;
   ea_start_timer(&outerTimer);
   for(int64_t fragmentSize[2] = {1, width}, readFactor = 1; fragmentSize[1] && fragmentSize[0] <= height; fragmentSize[1] /= 2, fragmentSize[0] *=2, readFactor *= 2) {
     memset(data, 0, height*sizeof(*data));
-    bool expectWriteback = readFactor >= 8;
+    bool expectWriteback = useGrids || readFactor >= 8;;
     ea_start_timer(&myTimer);
-    readData(dataset2, dataspace.ptr, height, width, data, fragmentSize, readFactor, readFactor, expectWriteback);
+    readData(dataset2, dataspace.ptr, height, width, useGrids, data, fragmentSize, readFactor, readFactor, expectWriteback);
     printf("read data as %"PRId64"x%"PRId64" fragments: %.3fms%s\n", fragmentSize[0], fragmentSize[1], 1000*ea_stop_timer(myTimer), expectWriteback ? " (writeback)" : "");
     if(expectWriteback) readFactor = 1;
     eassert(dataIsCorrect(height, width, data));
@@ -286,16 +322,17 @@ void runTestWithConfig(int height, int width, const char* configString) {
 
 int main(int argc, char const *argv[]) {
   int height, width;
-  readArgs(argc, argv, &height, &width);
+  bool useGrids;
+  readArgs(argc, argv, &height, &width, &useGrids);
 
   printf("=== array based bound list ===\n\n");
-  runTestWithConfig(height, width, "{ \"esdm\": { \"bound list implementation\": \"array\", \"backends\": [ { \"type\": \"POSIX\", \"id\": \"p1\", \"accessibility\": \"global\", \"target\": \"./_posix1\" } ], \"metadata\": { \"type\": \"metadummy\", \"id\": \"md\", \"target\": \"./_metadummy\" } } }");
+  runTestWithConfig(height, width, useGrids, "{ \"esdm\": { \"bound list implementation\": \"array\", \"backends\": [ { \"type\": \"POSIX\", \"id\": \"p1\", \"accessibility\": \"global\", \"target\": \"./_posix1\" } ], \"metadata\": { \"type\": \"metadummy\", \"id\": \"md\", \"target\": \"./_metadummy\" } } }");
 
   printf("\n\n=== B-tree based bound list ===\n\n");
-  runTestWithConfig(height, width, "{ \"esdm\": { \"bound list implementation\": \"btree\", \"backends\": [ { \"type\": \"POSIX\", \"id\": \"p1\", \"accessibility\": \"global\", \"target\": \"./_posix1\" } ], \"metadata\": { \"type\": \"metadummy\", \"id\": \"md\", \"target\": \"./_metadummy\" } } }");
+  runTestWithConfig(height, width, useGrids, "{ \"esdm\": { \"bound list implementation\": \"btree\", \"backends\": [ { \"type\": \"POSIX\", \"id\": \"p1\", \"accessibility\": \"global\", \"target\": \"./_posix1\" } ], \"metadata\": { \"type\": \"metadummy\", \"id\": \"md\", \"target\": \"./_metadummy\" } } }");
 
   printf("\n\n=== array based bound list (repeat) ===\n\n");
-  runTestWithConfig(height, width, "{ \"esdm\": { \"bound list implementation\": \"array\", \"backends\": [ { \"type\": \"POSIX\", \"id\": \"p1\", \"accessibility\": \"global\", \"target\": \"./_posix1\" } ], \"metadata\": { \"type\": \"metadummy\", \"id\": \"md\", \"target\": \"./_metadummy\" } } }");
+  runTestWithConfig(height, width, useGrids, "{ \"esdm\": { \"bound list implementation\": \"array\", \"backends\": [ { \"type\": \"POSIX\", \"id\": \"p1\", \"accessibility\": \"global\", \"target\": \"./_posix1\" } ], \"metadata\": { \"type\": \"metadummy\", \"id\": \"md\", \"target\": \"./_metadummy\" } } }");
 
   printf("\nOK\n");
 
