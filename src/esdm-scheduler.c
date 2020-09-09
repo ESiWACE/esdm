@@ -961,7 +961,7 @@ esdm_status esdm_scheduler_write_blocking(esdm_instance_t *esdm, esdm_dataset_t 
 }
 
 
-esdm_status esdm_scheduler_read_blocking(esdm_instance_t *esdm, esdm_dataset_t *dataset, void *buf, esdm_dataspace_t *subspace, esdmI_hypercubeSet_t** out_fillRegion, bool requestIsInternal) {
+esdm_status esdm_scheduler_read_blocking(esdm_instance_t *esdm, esdm_dataset_t *dataset, void *buf, esdm_dataspace_t *subspace, esdmI_hypercubeSet_t** out_fillRegion, bool allowWriteback, bool requestIsInternal) {
   ESDM_DEBUG(__func__);
 
   timer myTimer;
@@ -1031,14 +1031,14 @@ esdm_status esdm_scheduler_read_blocking(esdm_instance_t *esdm, esdm_dataset_t *
     updateRequestStats(&esdm->readStats, 1, requestBytes, requestIsInternal);
   }
 
-  startTime = ea_stop_timer(myTimer);
   //reading is done, check whether we want to store the resulting fragment for faster access in the future
-  if(ret == ESDM_SUCCESS && dataIsComplete) { //don't perform write-back of data that contains fill values, we do not want to transform data holes into stored data!
+  if(allowWriteback && ret == ESDM_SUCCESS && dataIsComplete) { //don't perform write-back of data that contains fill values, we do not want to transform data holes into stored data!
     if(ioBytes/(double)requestBytes >= 8) { //TODO Turn this magic number into a proper configuration constant!
+      startTime = ea_stop_timer(myTimer);
       esdm_scheduler_write_blocking(esdm, dataset, buf, subspace, true);  //Ignore return code because this is just an optimization that writes a redundant data copy to disk.
+      myTimes.writeback = ea_stop_timer(myTimer) - startTime;
     }
   }
-  myTimes.writeback = ea_stop_timer(myTimer) - startTime;
 
   //cleanup, must not happen before we wait for the background processes to finish their tasks
   if(out_fillRegion) {  //either return the fill region to the user or destroy it

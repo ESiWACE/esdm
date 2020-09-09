@@ -193,7 +193,7 @@ esdm_status esdmI_readWithFillRegion(esdm_dataset_t *dataset, void *buf, esdm_da
   eassert(buf);
   eassert(space);
 
-  return esdm_scheduler_read_blocking(esdmI_esdm(), dataset, buf, space, out_fillRegion, false);
+  return esdm_scheduler_read_blocking(esdmI_esdm(), dataset, buf, space, out_fillRegion, true, false);
 }
 
 esdm_status esdm_read(esdm_dataset_t *dataset, void *buf, esdm_dataspace_t *space) {

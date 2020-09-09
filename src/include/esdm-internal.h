@@ -107,7 +107,7 @@ esdm_status esdm_scheduler_status_finalize(io_request_status_t *status);
  *                            It's the callers' responsibility to either pass NULL or to destroy the hypercube set themselves.
  */
 
-esdm_status esdm_scheduler_read_blocking(esdm_instance_t *esdm, esdm_dataset_t *dataset, void *buf, esdm_dataspace_t *memspace, esdmI_hypercubeSet_t** out_fillRegion, bool requestIsInternal);
+esdm_status esdm_scheduler_read_blocking(esdm_instance_t *esdm, esdm_dataset_t *dataset, void *buf, esdm_dataspace_t *memspace, esdmI_hypercubeSet_t** out_fillRegion, bool allowWriteback, bool requestIsInternal);
 
 esdm_status esdm_scheduler_write_blocking(esdm_instance_t *esdm, esdm_dataset_t *dataset, void *buf, esdm_dataspace_t *memspace, bool requestIsInternal);
 
