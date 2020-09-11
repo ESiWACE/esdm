@@ -49,3 +49,23 @@ Implementation
       * There are two possible implementations for managing grid proxy objects:
           * The proxy grid's structure data remains valid (axes and cell matrix), the proxy's destructor recursively destructs its subgrid proxies.
           * All existing grids are managed via a flat list of grids within the dataset, and grids that become proxies get their axis and matrix data deleted immediately.
+
+
+
+Roadmap for Implementation
+==========================
+
+ 1. Create a hash function that works on hypercubes and offset/size arrays.
+
+ 2. Centralize the storage of fragments in a hash table.
+    This deduplicates fragments, and takes fragment ownership away from grids.
+    This will break the MPI code.
+
+ 3. Fix the MPI interface by communicating fragment metadata separately from grid metadata.
+
+ 4. Centralize the storage of grids in the dataset.
+    The dataset should have separate lists for complete top-level grids, incomplete top-level grids, and subgrids.
+
+ 5. Implement delegates for grids.
+
+ 6. Implement the grid matching machinery to create the delegates.
