@@ -105,12 +105,16 @@ void checkHypercubes() {
   eassert_crash(esdmI_hypercube_make(3, offsetA, NULL));
   esdmI_hypercube_t* cubeA = esdmI_hypercube_make(3, offsetA, sizeA);
   eassert(cubeA);
+  eassert(esdmI_hypercube_hash(cubeA) == esdmI_hypercube_hashOffsetSize(3, offsetA, sizeA));
   esdmI_hypercube_t* cubeB = esdmI_hypercube_make(3, offsetB, sizeB);
   eassert(cubeB);
+  eassert(esdmI_hypercube_hash(cubeB) == esdmI_hypercube_hashOffsetSize(3, offsetB, sizeB));
   esdmI_hypercube_t* cubeC = esdmI_hypercube_make(3, offsetC, sizeC);
   eassert(cubeC);
+  eassert(esdmI_hypercube_hash(cubeC) == esdmI_hypercube_hashOffsetSize(3, offsetC, sizeC));
   esdmI_hypercube_t* cubeD = esdmI_hypercube_make(3, offsetD, sizeD);
   eassert(cubeD);
+  eassert(esdmI_hypercube_hash(cubeD) == esdmI_hypercube_hashOffsetSize(3, offsetD, sizeD));
 
   eassert_crash(esdmI_hypercube_makeCopy(NULL));
   esdmI_hypercube_t* cubeE = esdmI_hypercube_makeCopy(cubeD);

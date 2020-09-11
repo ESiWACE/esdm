@@ -508,6 +508,13 @@ esdmI_hypercube_t* esdmI_hypercube_makeIntersection(esdmI_hypercube_t* a, esdmI_
 
 bool esdmI_hypercube_isEmpty(esdmI_hypercube_t* cube);
 
+//These two functions implement exactly the same algorithm,
+//i.e. it is guaranteed that both return the same value when given the same shape.
+//
+//This is *not* a cryptographic hash.
+uint32_t esdmI_hypercube_hash(const esdmI_hypercube_t* me);
+uint32_t esdmI_hypercube_hashOffsetSize(int64_t dimCount, const int64_t* offset, const int64_t* size);
+
 bool esdmI_hypercube_doesIntersect(esdmI_hypercube_t* a, esdmI_hypercube_t* b);
 
 //Touch means no overlap is allowed.

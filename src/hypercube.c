@@ -105,6 +105,35 @@ bool esdmI_hypercube_isEmpty(esdmI_hypercube_t* me) {
   return false;
 }
 
+static const uint32_t kRandomPrime = 2146462999;  //Chosen by a fair dice roll. Guaranteed to be random.
+
+//XXX: This function must be implemented with exactly the same algorithm as esdmI_hypercube_hashOffsetSize().
+uint32_t esdmI_hypercube_hash(const esdmI_hypercube_t* me) {
+  eassert(me);
+
+  uint32_t factor = kRandomPrime, result = me->dims*factor;
+  for(int64_t i = 0; i < me->dims; i++) {
+    result += (factor *= kRandomPrime)*me->ranges[i].start;
+    result += (factor *= kRandomPrime)*me->ranges[i].end;
+  }
+  return result;
+}
+
+//XXX: This function must be implemented with exactly the same algorithm as esdmI_hypercube_hash().
+uint32_t esdmI_hypercube_hashOffsetSize(int64_t dimCount, const int64_t* offset, const int64_t* size) {
+  eassert(dimCount >= 0);
+  eassert(offset);
+  eassert(size);
+
+  uint32_t factor = kRandomPrime, result = dimCount*factor;
+  for(int64_t i = 0; i < dimCount; i++) {
+    result += (factor *= kRandomPrime)*(uint32_t)offset[i]; //the cast prevents promotion to the larger signed integer type, which would yield UB on overflow
+    result += (factor *= kRandomPrime)*(uint32_t)(offset[i] + size[i]);
+  }
+  return result;
+}
+
+
 bool esdmI_hypercube_doesIntersect(esdmI_hypercube_t* a, esdmI_hypercube_t* b) {
   eassert(a);
   eassert(b);
