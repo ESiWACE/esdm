@@ -265,7 +265,7 @@ void runTestWithConfig(int height, int width, bool useGrids, const char* configS
 
   memset(data, 0, height*sizeof(*data));
   ea_start_timer(&myTimer);
-  readData(dataset1, dataspace.ptr, height, width, useGrids, data, (int64_t[2]){ 1, width}, 1, 1, useGrids);
+  readData(dataset1, dataspace.ptr, height, width, useGrids, data, (int64_t[2]){ 1, width}, 1, 1, false);
   printf("read data as written: %.3fms\n", 1000*ea_stop_timer(myTimer));
   eassert(dataIsCorrect(height, width, data));
 
@@ -277,7 +277,7 @@ void runTestWithConfig(int height, int width, bool useGrids, const char* configS
 
   memset(data, 0, height*sizeof(*data));
   ea_start_timer(&myTimer);
-  readData(dataset1, dataspace.ptr, height, width, useGrids, data, (int64_t[2]){ height, 1}, 1, 1, useGrids);
+  readData(dataset1, dataspace.ptr, height, width, useGrids, data, (int64_t[2]){ height, 1}, 1, 1, false);
   printf("read data %dx1 fragments repeat: %.3fms\n", height, 1000*ea_stop_timer(myTimer));
   eassert(dataIsCorrect(height, width, data));
 
@@ -301,9 +301,9 @@ void runTestWithConfig(int height, int width, bool useGrids, const char* configS
 
   timer outerTimer;
   ea_start_timer(&outerTimer);
-  for(int64_t fragmentSize[2] = {1, width}, readFactor = 1; fragmentSize[1] && fragmentSize[0] <= height; fragmentSize[1] /= 2, fragmentSize[0] *=2, readFactor *= 2) {
+  for(int64_t fragmentSize[2] = {2, width/2}, readFactor = 2; fragmentSize[1] && fragmentSize[0] <= height; fragmentSize[1] /= 2, fragmentSize[0] *=2, readFactor *= 2) {
     memset(data, 0, height*sizeof(*data));
-    bool expectWriteback = useGrids || readFactor >= 8;;
+    bool expectWriteback = useGrids || readFactor >= 8;
     ea_start_timer(&myTimer);
     readData(dataset2, dataspace.ptr, height, width, useGrids, data, fragmentSize, readFactor, readFactor, expectWriteback);
     printf("read data as %"PRId64"x%"PRId64" fragments: %.3fms%s\n", fragmentSize[0], fragmentSize[1], 1000*ea_stop_timer(myTimer), expectWriteback ? " (writeback)" : "");

@@ -111,12 +111,9 @@ esdm_status esdm_scheduler_read_blocking(esdm_instance_t *esdm, esdm_dataset_t *
 
 esdm_status esdm_scheduler_write_blocking(esdm_instance_t *esdm, esdm_dataset_t *dataset, void *buf, esdm_dataspace_t *memspace, bool requestIsInternal);
 
-/**
- * Takes possession of the subspace. Do not modify or destroy the subspace object after the call.
- *
- * Does not register the fragment with the dataset. The assumption is, that the fragment will be owned by a grid.
- */
-esdm_status esdmI_scheduler_writeSingleFragmentBlocking(esdm_instance_t *esdm, esdm_dataset_t *dataset, void *buf, esdm_dataspace_t *subspace, bool requestIsInternal, esdm_fragment_t** out_fragment);
+esdm_status esdmI_scheduler_writeFragmentBlocking(esdm_instance_t* esdm, esdm_fragment_t* fragment, bool requestIsInternal);
+void esdmI_scheduler_writeFragmentNonblocking(esdm_instance_t* esdm, esdm_fragment_t* fragment, bool requestIsInternal, io_request_status_t* status);
+
 esdm_status esdmI_scheduler_readSingleFragmentBlocking(esdm_instance_t* esdm, esdm_dataset_t* dataset, void* buffer, esdm_dataspace_t* memspace, esdm_fragment_t* fragment);
 
 esdm_status esdm_scheduler_enqueue(esdm_instance_t *esdm, io_request_status_t *status, io_operation_t type, esdm_dataset_t *dataset, void *buf, esdm_dataspace_t *memspace);
@@ -232,6 +229,14 @@ esdm_status esdm_dataset_open_md_parse(esdm_dataset_t *d, char * md, int size);
 
 esdm_status esdmI_dataset_fragmentsCoveringRegion(esdm_dataset_t* dataset, esdmI_hypercube_t* region, int64_t* out_count, esdm_fragment_t*** out_fragments, esdmI_hypercubeSet_t** out_uncovered, bool* out_fullyCovered);
 
+// Creates a fragment or returns an existing one.
+// The dataset will own the fragment.
+// In the case that an existing fragment is returned, the `buf` parameter is ignored.
+// FIXME: check ownership of the memspace that is handed into this function, and define whether it makes a copy for the fragment or not
+esdm_fragment_t* esdmI_dataset_createFragment(esdm_dataset_t* dataset, esdm_dataspace_t* memspace, void *buf, bool* out_newFragment);
+
+esdm_fragment_t* esdmI_dataset_lookupFragmentForShape(esdm_dataset_t* dataset, esdm_dataspace_t* shape);
+
 /**
  * Destruct and free a dataset object.
  *
@@ -284,10 +289,12 @@ esdm_status esdmI_dataspace_setExtends(esdm_dataspace_t* space, esdmI_hypercube_
 ///////////////////////////////////////////////////////////////////////////////
 
 void esdmI_fragments_construct(esdm_fragments_t* me);
-void esdmI_fragments_add(esdm_fragments_t* me, esdm_fragment_t* fragment);  //takes possession of the fragment, eventually calling `esdm_fragment_destroy()` on it when the `esdm_fragments_t` object is destructed
-esdm_fragment_t** esdmI_fragments_list(esdm_fragments_t* me, int64_t* out_fragmentCount); //returns a pointer to internal storage
+esdm_status esdmI_fragments_add(esdm_fragments_t* me, esdm_fragment_t* fragment) __attribute__((warn_unused_result));  //takes possession of the fragment, eventually calling `esdm_fragment_destroy()` on it when the `esdm_fragments_t` object is destructed
+esdm_fragment_t* esdmI_fragments_lookupForShape(esdm_fragments_t* me, esdmI_hypercube_t* shape);
+esdm_status esdmI_fragments_deleteAll(esdm_fragments_t* me);  //calls `esdmI_backend_fragment_delete()` and `esdmI_fragment_destroy()` on all fragments, leaving the fragment list empty on success
 esdm_fragment_t** esdmI_fragments_makeSetCoveringRegion(esdm_fragments_t* me, esdmI_hypercube_t* region, int64_t* out_fragmentCount);  //caller is responsible to free the returned array
 void esdmI_fragments_metadata_create(esdm_fragments_t* me, smd_string_stream_t* s);
+void esdmI_fragments_purge(esdm_fragments_t* me); //this will `esdm_fragment_destroy()` all currently stored fragments
 esdm_status esdmI_fragments_destruct(esdm_fragments_t* me);  //calls `esdm_fragment_destroy()` on its members, but does not invoke the `fragment_delete()` callback of the backend
 void esdmI_fragments_getStats(int64_t* out_addedFragments, double* out_fragmentAddTime, int64_t* out_createdSets, double* out_setCreationTime);
 
@@ -312,13 +319,6 @@ esdm_status esdmI_create_fragment_from_metadata(esdm_dataset_t *dset, json_t * j
  *
  */
 esdm_status esdmI_fragment_create(esdm_dataset_t *dataset, esdm_dataspace_t *memspace, void *buf, esdm_fragment_t **out_fragment);
-
-/**
- * Inform the dataset of the existence of a new fragment.
- * If `transitivelyOwned` is false, the dataset will assume ownership of the fragment,
- * otherwise the caller is considered responsible for destroying the fragment.
- */
-void esdmI_dataset_register_fragment(esdm_dataset_t *dset, esdm_fragment_t *frag, bool transitivelyOwned);
 
 ///////////////////////////////////////////////////////////////////////////////
 // Dysfunctional stuff ////////////////////////////////////////////////////////
@@ -526,7 +526,7 @@ bool esdmI_hypercube_touches(esdmI_hypercube_t* a, esdmI_hypercube_t* b);
 //it avoids the overhead of actually creating the intersection hypercube.
 int64_t esdmI_hypercube_overlap(esdmI_hypercube_t* a, esdmI_hypercube_t* b);
 
-bool esdmI_hypercube_equal(esdmI_hypercube_t* a, esdmI_hypercube_t* b);
+bool esdmI_hypercube_equal(const esdmI_hypercube_t* a, const esdmI_hypercube_t* b);
 
 //Returns a value between 0.0 and 1.0 that is a measure of how similar the shapes of the hypercubes are.
 //The positions of the two cubes are irrelevant, only size and shape matter.

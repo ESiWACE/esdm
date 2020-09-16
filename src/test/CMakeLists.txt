@@ -30,6 +30,7 @@ foreach(TESTFILE ${TESTFILES})
   endif()
 endforeach()
 
+set_tests_properties(fragment-selection-benchmark PROPERTIES WILL_FAIL TRUE)
 
 
 

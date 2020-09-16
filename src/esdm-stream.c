@@ -140,27 +140,29 @@ void esdm_wstream_flush(esdm_wstream_metadata_t* metadata, void* buffer, void* b
       fprintf(stderr, "esdm_wstream_flush(): error creating dataspace for fragment\nWhat dataspace/dataset was passed to esdm_wstream_start()?\naborting\n");
       abort();
     }
-    ret = esdmI_fragment_create(metadata->dataset, memspace, NULL, &metadata->backendState.fragment);
-    if(ret != ESDM_SUCCESS) {
-      fprintf(stderr, "esdm_wstream_flush(): error creating fragment\nWhat dataspace/dataset was passed to esdm_wstream_start()?\naborting\n");
-      abort();
+    bool isNewFragment;
+    metadata->backendState.fragment = esdmI_dataset_createFragment(metadata->dataset, memspace, NULL, &isNewFragment);
+    if(isNewFragment) {
+      metadata->backendState.fragment->backend = metadata->backend;
+    } else {
+      metadata->backendState.fragment = NULL;  //no need to stream anything into an already existing fragment
     }
-    esdmI_dataset_register_fragment(metadata->dataset, metadata->backendState.fragment, false);
-    metadata->backendState.fragment->backend = metadata->backend;
   }
 
   int64_t curChunkSize = (char*)bufferEnd - (char*)buffer;
-  int ret = esdmI_backend_fragment_write_stream_blocksize(metadata->backend, &metadata->backendState, buffer, metadata->chunkOffset, curChunkSize);
-  if(ret != ESDM_SUCCESS) {
-    //TODO: Handle this error condition
-    fprintf(stderr, "backend returned an error while flushing data from a write stream\naborting...\n");
-    abort();
+  if(metadata->backendState.fragment) { //don't stream any data that's already on disk
+    int ret = esdmI_backend_fragment_write_stream_blocksize(metadata->backend, &metadata->backendState, buffer, metadata->chunkOffset, curChunkSize);
+    if(ret != ESDM_SUCCESS) {
+      //TODO: Handle this error condition
+      fprintf(stderr, "backend returned an error while flushing data from a write stream\naborting...\n");
+      abort();
+    }
   }
 
   //advance the iterator status to the next chunk
   metadata->chunkOffset += curChunkSize;
   if(++(metadata->nextChunk) == metadata->cumulativeChunkCounts[0]) {
-    if(metadata->chunkOffset != esdm_dataspace_total_bytes(metadata->backendState.fragment->dataspace)) {
+    if(metadata->backendState.fragment && metadata->chunkOffset != esdm_dataspace_total_bytes(metadata->backendState.fragment->dataspace)) {
       fprintf(stderr, "contract violation in esdm_wstream_flush() call:\nThe size of the streamed data does not match with the expected size.\nThis is either the result of a direct use of esdm_wstream_flush() by user code, or a library version mismatch between the shared object file and the esdm-stream.h header file used. Please ensure that user code only uses the preprocessor macros supplied by the linked library version to interact with streams.\naborting...\n");
       abort();
     }

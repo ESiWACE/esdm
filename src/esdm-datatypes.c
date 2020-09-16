@@ -365,12 +365,14 @@ esdm_status esdmI_container_destroy(esdm_container_t *c) {
   return ret;
 }
 
-//`transitivelyOwned` signals that one of the dataset's grids already owns the fragment
-void esdmI_dataset_register_fragment(esdm_dataset_t *dset, esdm_fragment_t *frag, bool transitivelyOwned){
+__attribute__((warn_unused_result))
+esdm_status esdmI_dataset_register_fragment(esdm_dataset_t *dset, esdm_fragment_t *frag) {
   ESDM_DEBUG(__func__);
-  if(!transitivelyOwned) esdmI_fragments_add(&dset->fragments, frag);
+  esdm_status result = esdmI_fragments_add(&dset->fragments, frag);
+  if(result != ESDM_SUCCESS) return result;
   dset->status = ESDM_DATA_DIRTY;
   dset->container->status = ESDM_DATA_DIRTY;
+  return ESDM_SUCCESS;
 }
 
 
@@ -598,30 +600,15 @@ esdm_status esdm_dataset_delete(esdm_dataset_t *d){
     }
   }
   // TODO check usage of dataset
-  int64_t fragmentCount;
-  esdm_fragment_t** fragments = esdmI_fragments_list(&d->fragments, &fragmentCount);
-  for(int i=0; i < fragmentCount; i++){
-    esdm_fragment_t * frag = fragments[i];
-    status = esdmI_backend_fragment_delete(frag->backend, frag);
-    if(status != ESDM_SUCCESS){
-      if(i == 0){ //FIXME: This early return means that the caller does not know anything about the state of the dataset in case of an error.
-                  //       Ideally, we should perform the action transactionally (either full success or no change at all),
-                  //       or we should try our best to delete as many fragments as possible in case of an error.
-        return status;
-      }
-      ret = status;
-    }
-    esdm_fragment_destroy(frag);
-  }
+  status = esdmI_fragments_deleteAll(&d->fragments);
+  if(status != ESDM_SUCCESS) return status;
   status = esdmI_fragments_destruct(&d->fragments);
-  if(status != ESDM_SUCCESS) ret = status;
+  if(ret == ESDM_SUCCESS) ret = status;
 
   d->status = ESDM_DATA_DELETED;
   esdm_modules_t* modules = esdm_get_modules();
   status = modules->metadata_backend->callbacks.dataset_remove(modules->metadata_backend, d);
-  if(status != ESDM_SUCCESS){
-    ret = status;
-  }
+  if(ret == ESDM_SUCCESS) ret = status;
   esdm_dataset_close(d);
   return ret;
 }
@@ -986,12 +973,19 @@ esdm_status esdm_dataset_open_md_parse(esdm_dataset_t *d, char * md, int size){
   for (int i = 0; i < arrsize; i++) {
     json_t * fjson = json_array_get(elem, i);
     esdm_fragment_t * frag;
-    int status = esdmI_create_fragment_from_metadata(d, fjson, & frag);
+    esdm_status status = esdmI_create_fragment_from_metadata(d, fjson, & frag);
     if (status != ESDM_SUCCESS) {
       ret = status;
     } else {
-      esdmI_fragments_add(&d->fragments, frag);
-      esdmI_dataset_update_actual_size(d, frag);
+      status = esdmI_fragments_add(&d->fragments, frag);
+      if(status == ESDM_INVALID_STATE_ERROR) {
+        esdm_fragment_destroy(frag);  //we already have a fragment with this shape
+      } else if(status == ESDM_SUCCESS) {
+        esdmI_dataset_update_actual_size(d, frag);
+      } else {
+        json_decref(root);
+        return status;
+      }
     }
   }
 
@@ -1209,6 +1203,30 @@ esdm_status esdmI_dataset_fragmentsCoveringRegion(esdm_dataset_t* dataset, esdmI
   return ESDM_SUCCESS;
 }
 
+esdm_fragment_t* esdmI_dataset_createFragment(esdm_dataset_t* dataset, esdm_dataspace_t* memspace, void *buf, bool* out_newFragment) {
+  //check whether there is already a fragment available for the given region
+  *out_newFragment = false;
+  esdm_fragment_t* result = esdmI_dataset_lookupFragmentForShape(dataset, memspace);
+  if(result) return result;
+
+  //ok, no luck with the lookup, create a fragment
+  *out_newFragment = true;
+  esdm_status status = esdmI_fragment_create(dataset, memspace, buf, &result);
+  if(status != ESDM_SUCCESS) return NULL;
+  status = esdmI_dataset_register_fragment(dataset, result);
+  eassert(status == ESDM_SUCCESS);  //since we checked beforehand that there is no fragment for this shape, the register_fragment() call must succeed
+  return result;
+}
+
+esdm_fragment_t* esdmI_dataset_lookupFragmentForShape(esdm_dataset_t* dataset, esdm_dataspace_t* shape) {
+  esdmI_hypercube_t* extends;
+  esdm_status status = esdmI_dataspace_getExtends(shape, &extends);
+  eassert(status == ESDM_SUCCESS);
+  esdm_fragment_t* result = esdmI_fragments_lookupForShape(&dataset->fragments, extends);
+  esdmI_hypercube_destroy(extends);
+  return result;
+}
+
 esdm_status esdm_dataset_close(esdm_dataset_t *dset) {
   ESDM_DEBUG(__func__);
   eassert(dset);
@@ -1231,7 +1249,8 @@ esdm_status esdm_dataset_close(esdm_dataset_t *dset) {
   smd_attr_destroy(dset->attr);
   dset->attr = NULL;
 
-  return esdmI_fragments_destruct(&dset->fragments);
+  esdmI_fragments_purge(&dset->fragments);
+  return ESDM_SUCCESS;
 }
 
 esdm_status esdmI_dataset_destroy(esdm_dataset_t *dset) {

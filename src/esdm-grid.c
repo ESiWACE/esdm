@@ -370,16 +370,22 @@ esdm_status esdm_write_grid(esdm_grid_t* grid, esdm_dataspace_t* memspace, void*
   esdm_status result = esdm_grid_findCellInHierarchy(&grid, memspace, &cell);
   if(result != ESDM_SUCCESS) return result;
   if(cell->fragment) return ESDM_SUCCESS; //we already have data for this grid cell -> nothing to be done
+  cell->fragment = esdmI_dataset_lookupFragmentForShape(grid->dataset, memspace);
+  if(cell->fragment) {
+    esdmI_grid_registerCompletedCell(grid);
+    return ESDM_SUCCESS;  //we already have data for this grid cell -> nothing more to be done
+  }
 
   //Do the actual writing.
   esdm_dataspace_t* fragmentSpace;
   result = esdm_dataspace_copy(memspace, &fragmentSpace);
-  if(result == ESDM_SUCCESS) result = esdmI_scheduler_writeSingleFragmentBlocking(esdmI_esdm(), grid->dataset, buffer, fragmentSpace, false, &cell->fragment);
-  if(result == ESDM_SUCCESS) {
-    esdmI_dataset_register_fragment(grid->dataset, cell->fragment, true);
-    esdmI_grid_registerCompletedCell(grid);
-  }
-  return result;
+  if(result != ESDM_SUCCESS) return result;
+  bool isNewFragment;
+  cell->fragment = esdmI_dataset_createFragment(grid->dataset, fragmentSpace, buffer, &isNewFragment);
+  if(!cell->fragment) return ESDM_ERROR;
+  esdmI_grid_registerCompletedCell(grid);
+  if(!isNewFragment) return ESDM_SUCCESS;
+  return esdmI_scheduler_writeFragmentBlocking(esdmI_esdm(), cell->fragment, false);
 }
 
 esdm_status esdm_read_grid(esdm_grid_t* grid, esdm_dataspace_t* memspace, void* buffer) {
@@ -395,6 +401,12 @@ esdm_status esdm_read_grid(esdm_grid_t* grid, esdm_dataspace_t* memspace, void* 
   esdm_status result = esdm_grid_findCellInHierarchy(&grid, memspace, &cell);
   if(result != ESDM_SUCCESS) return result;
 
+  //In case we don't have a fragment in this cell, check whether there's already one within the dataset.
+  if(!cell->fragment) {
+    cell->fragment = esdmI_dataset_lookupFragmentForShape(grid->dataset, memspace);
+    if(cell->fragment) esdmI_grid_registerCompletedCell(grid);
+  }
+
   //Do the actual reading.
   esdm_instance_t* esdm = esdmI_esdm();
   if(cell->fragment) {
@@ -405,12 +417,13 @@ esdm_status esdm_read_grid(esdm_grid_t* grid, esdm_dataspace_t* memspace, void* 
     esdm_dataspace_t* fragmentSpace;
     result = esdm_dataspace_copy(memspace, &fragmentSpace);
     if(result != ESDM_SUCCESS) return result;
-    result = esdmI_scheduler_writeSingleFragmentBlocking(esdm, grid->dataset, buffer, fragmentSpace, true, &cell->fragment);
-    if(result == ESDM_SUCCESS) {
-      esdmI_dataset_register_fragment(grid->dataset, cell->fragment, true);
-      esdmI_grid_registerCompletedCell(grid);
-    }
-    return result;
+    bool isNewFragment;
+    cell->fragment = esdmI_dataset_createFragment(grid->dataset, fragmentSpace, buffer, &isNewFragment);
+    if(!cell->fragment) return ESDM_ERROR;
+    esdmI_grid_registerCompletedCell(grid);
+    if(!isNewFragment) return ESDM_SUCCESS; //should not happen, but we check it anyways
+    (void)esdmI_scheduler_writeFragmentBlocking(esdmI_esdm(), cell->fragment, true);  //whether the write-back worked is not relevant for the success of the read
+    return ESDM_SUCCESS;
   }
 }
 
@@ -899,7 +912,6 @@ void esdmI_grid_destroy(esdm_grid_t* grid) {
   if(grid->grid) {
     for(int64_t i = esdmI_grid_cellCount(grid); i--; ) {
       if(grid->grid[i].subgrid) esdmI_grid_destroy(grid->grid[i].subgrid);
-      if(grid->grid[i].fragment) esdm_fragment_destroy(grid->grid[i].fragment);
     }
     free(grid->grid);
   }

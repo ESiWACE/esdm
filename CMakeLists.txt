@@ -43,7 +43,7 @@ set(DEPS_DIR "${CMAKE_SOURCE_DIR}/deps")
 set(CMAKE_C_FLAGS_DEBUG "-O0 -g3 -D__FILENAME__='\"$(subst ${CMAKE_SOURCE_DIR}/,,$(abspath $<))\"'" CACHE STRING "C Debug Compiler Flags" FORCE)
 set(CMAKE_C_FLAGS_RELEASE "-DDEBUG_OFF -O3 -D__FILENAME__='\"$(subst ${CMAKE_SOURCE_DIR}/,,$(abspath $<))\"'" CACHE STRING "C Release Compiler Flags" FORCE)
 
-set (CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -std=gnu11 -pedantic -Wall -Wdouble-promotion -Wfloat-equal -flto -fdata-sections -ffunction-sections -Wl,--gc-sections -Wl,--allow-shlib-undefined -Wl,--retain-symbols-file=${CMAKE_SOURCE_DIR}/dev/symbols.txt -pedantic-errors")
+set (CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -std=gnu11 -pedantic -Wall -Wdouble-promotion -Wfloat-equal -Werror=unused-result -flto -fdata-sections -ffunction-sections -Wl,--gc-sections -Wl,--allow-shlib-undefined -Wl,--retain-symbols-file=${CMAKE_SOURCE_DIR}/dev/symbols.txt -pedantic-errors")
 #-fvisibility=hidden -fvisibility-inlines-hidden
 
 

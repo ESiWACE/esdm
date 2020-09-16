@@ -334,7 +334,13 @@ esdm_status esdm_mpi_dataset_commit(MPI_Comm com, esdm_dataset_t *d){
         if (ret != ESDM_SUCCESS){
           MPI_Abort(com, 1);
         }
-        esdmI_fragments_add(&d->fragments, fragment);
+        ret = esdmI_fragments_add(&d->fragments, fragment);
+        if(ret == ESDM_INVALID_STATE_ERROR) {
+          //this happens when there is already a fragment with the exact same shape -> we don't need this fragment at all
+          esdm_fragment_destroy(fragment);
+          ret = ESDM_SUCCESS;
+        }
+        eassert(ret == ESDM_SUCCESS);
       }
       json_decref(elem);
     }

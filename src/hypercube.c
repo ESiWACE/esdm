@@ -184,7 +184,7 @@ int64_t esdmI_hypercube_overlap(esdmI_hypercube_t* a, esdmI_hypercube_t* b) {
   return overlap;
 }
 
-bool esdmI_hypercube_equal(esdmI_hypercube_t* a, esdmI_hypercube_t* b) {
+bool esdmI_hypercube_equal(const esdmI_hypercube_t* a, const esdmI_hypercube_t* b) {
   eassert(a);
   eassert(b);
   eassert(a->dims == b->dims);

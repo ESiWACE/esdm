@@ -794,10 +794,7 @@ esdm_status esdm_scheduler_enqueue_write(esdm_instance_t *esdm, io_request_statu
 
     //create a fragment and task for each of the hypercubes in the list
     int64_t dim[space->dims], offset[space->dims];
-    atomic_fetch_add(& status->pending_ops, cubeList->count);
-
     for(int64_t i = 0; i < cubeList->count; i++) {
-
       esdmI_hypercube_getOffsetAndSize(cubeList->cubes[i], offset, dim);
 
       esdm_dataspace_t* subspace;
@@ -805,30 +802,14 @@ esdm_status esdm_scheduler_enqueue_write(esdm_instance_t *esdm, io_request_statu
       eassert(ret == ESDM_SUCCESS);
       ret = esdm_dataspace_copyDatalayout(subspace, space);
       eassert(ret == ESDM_SUCCESS);
-      esdm_fragment_t* fragment;
-      ret = esdmI_fragment_create(dataset, subspace, (char*)buf + esdm_dataspace_elementOffset(space, offset), &fragment);
-      eassert(ret == ESDM_SUCCESS);
-      esdmI_dataset_register_fragment(dataset, fragment, false);
+      bool isNewFragment;
+      esdm_fragment_t* fragment = esdmI_dataset_createFragment(dataset, subspace, (char*)buf + esdm_dataspace_elementOffset(space, offset), &isNewFragment);
+      eassert(fragment);
+      if(!isNewFragment) continue;
       fragment->backend = curBackend;
+      esdmI_scheduler_writeFragmentNonblocking(esdm, fragment, requestIsInternal, status);
 
-      io_work_t* task = ea_checked_malloc(sizeof(*task));
-      *task = (io_work_t){
-        .fragment = fragment,
-        .op = ESDM_OP_WRITE,
-        .return_code = ESDM_SUCCESS,
-        .parent = status,
-        .callback = buffer_cleanup_callback,
-        .data = {NULL, NULL}
-      };
-
-      if (curBackend->threads == 0) {
-        backend_thread(task, curBackend);
-      } else {
-        GError *error;
-        g_thread_pool_push(curBackend->threadPool, task, &error);
-      }
-
-      updateIoStats(&esdm->writeStats, 1, esdm_dataspace_total_bytes(subspace)); //update the statistics
+      //FIXME: we are leaking the subspace object!
     }
 
     esdmI_hypercubeSet_destroy(cubes);
@@ -836,26 +817,21 @@ esdm_status esdm_scheduler_enqueue_write(esdm_instance_t *esdm, io_request_statu
   }
   gWriteTimes.backendDispatch += ea_stop_timer(myTimer) - startTime;
 
-  updateRequestStats(&esdm->writeStats, 1, esdm_dataspace_total_bytes(space), requestIsInternal); //update the statistics
-
   //cleanup
   free(backendExtends);
   free(backends);
   return ESDM_SUCCESS;
 }
 
-static esdm_status esdmI_scheduler_enqueueSingleFragmentWrite(esdm_instance_t *esdm, io_request_status_t *status, esdm_dataset_t *dataset, void *buf, esdm_dataspace_t *space, bool requestIsInternal, esdm_fragment_t** out_fragment) {
+void esdmI_scheduler_writeFragmentNonblocking(esdm_instance_t* esdm, esdm_fragment_t* fragment, bool requestIsInternal, io_request_status_t* status) {
   timer myTimer;
   ea_start_timer(&myTimer);
 
-  esdm_status ret = esdmI_fragment_create(dataset, space, buf, out_fragment);
-  eassert(ret == ESDM_SUCCESS);
-  esdm_backend_t* backend = esdm_modules_fastestBackend(esdm_get_modules());
-  (*out_fragment)->backend = backend;
-
+  if(!fragment->backend) fragment->backend = esdm_modules_fastestBackend(esdm_get_modules());
+  esdm_backend_t* backend = fragment->backend;
   io_work_t* task = ea_checked_malloc(sizeof(*task));
   *task = (io_work_t){
-    .fragment = *out_fragment,
+    .fragment = fragment,
     .op = ESDM_OP_WRITE,
     .return_code = ESDM_SUCCESS,
     .parent = status,
@@ -863,7 +839,6 @@ static esdm_status esdmI_scheduler_enqueueSingleFragmentWrite(esdm_instance_t *e
     .data = {NULL, NULL}
   };
 
-  //TODO: factor out the registration of the task
   atomic_fetch_add(&status->pending_ops, 1);
   if (backend->threads == 0) {
     backend_thread(task, backend);
@@ -872,37 +847,35 @@ static esdm_status esdmI_scheduler_enqueueSingleFragmentWrite(esdm_instance_t *e
     g_thread_pool_push(backend->threadPool, task, &error);
   }
 
-  updateIoStats(&esdm->writeStats, 1, esdm_dataspace_total_bytes(space)); //update the statistics
-  gWriteTimes.backendDispatch += ea_stop_timer(myTimer);
-  updateRequestStats(&esdm->writeStats, 1, esdm_dataspace_total_bytes(space), requestIsInternal); //update the statistics
+  int64_t byteCount = esdm_dataspace_total_bytes(fragment->dataspace);
+  updateIoStats(&esdm->writeStats, 1, byteCount);
+  updateRequestStats(&esdm->writeStats, 1, byteCount, requestIsInternal);
 
-  return ESDM_SUCCESS;
+  double endTime = ea_stop_timer(myTimer);
+  gWriteTimes.backendDispatch += endTime;
+  gWriteTimes.total += endTime;
 }
 
-esdm_status esdmI_scheduler_writeSingleFragmentBlocking(esdm_instance_t *esdm, esdm_dataset_t *dataset, void *buf, esdm_dataspace_t *subspace, bool requestIsInternal, esdm_fragment_t** out_fragment) {
+esdm_status esdmI_scheduler_writeFragmentBlocking(esdm_instance_t* esdm, esdm_fragment_t* fragment, bool requestIsInternal) {
   ESDM_DEBUG(__func__);
-
-  timer myTimer;
-  ea_start_timer(&myTimer);
 
   io_request_status_t status;
   esdm_status ret = esdm_scheduler_status_init(&status);
   eassert(ret == ESDM_SUCCESS);
 
-  ret = esdmI_scheduler_enqueueSingleFragmentWrite(esdm, &status, dataset, buf, subspace, requestIsInternal, out_fragment); //This function does its own internal time measurements.
-  if( ret != ESDM_SUCCESS){
-    return ret;
-  }
-  double syncStartTime = ea_stop_timer(myTimer);
+  esdmI_scheduler_writeFragmentNonblocking(esdm, fragment, requestIsInternal, &status);
+
+  //esdmI_scheduler_writeFragmentNonblocking() has its own internal time measurement which already adds to the total write time, so it must must be excluded from our time measurement
+  timer myTimer;
+  ea_start_timer(&myTimer);
 
   ret = esdm_scheduler_wait(&status);
   eassert(ret == ESDM_SUCCESS);
-
   ret = esdm_scheduler_status_finalize(&status);
   eassert(ret == ESDM_SUCCESS);
-  double endTime = ea_stop_timer(myTimer);
 
-  gWriteTimes.completion += endTime - syncStartTime;
+  double endTime = ea_stop_timer(myTimer);
+  gWriteTimes.completion += endTime;
   gWriteTimes.total += endTime;
 
   return status.return_code;

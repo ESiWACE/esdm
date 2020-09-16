@@ -30,6 +30,7 @@ int main(int argc, char const *argv[]) {
   esdm_container_t *container = NULL;
   esdm_dataset_t *dataset = NULL;
 
+  esdm_loglevel(ESDM_LOGLEVEL_WARNING); //stop the esdm_mkfs() call from spamming us with infos about deleted objects
   esdm_status status = esdm_init();
   eassert(status == ESDM_SUCCESS);
   status = esdm_mkfs(ESDM_FORMAT_PURGE_RECREATE, ESDM_ACCESSIBILITY_GLOBAL);

@@ -73,6 +73,7 @@ void testMain(int64_t dims, int64_t* dimSizes, int64_t threads, int64_t nodeThre
 
   esdm_status ret = esdm_load_config_str(config);
   eassert(ret == ESDM_SUCCESS);
+  esdm_loglevel(ESDM_LOGLEVEL_WARNING); //stop the esdm_mkfs() call from spamming us with infos about deleted objects
   ret = esdm_init();
   eassert(ret == ESDM_SUCCESS);
 

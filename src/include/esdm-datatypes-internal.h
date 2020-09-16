@@ -48,11 +48,9 @@ struct esdm_container_t {
 };
 
 typedef struct esdmI_hypercubeNeighbourManager_t esdmI_hypercubeNeighbourManager_t;
+
 struct esdm_fragments_t {
-  esdm_fragment_t ** frag;
-  esdmI_hypercubeNeighbourManager_t* neighbourManager;
-  int count;
-  int buff_size;
+  GHashTable* table;
 };
 
 typedef struct esdm_fragments_t esdm_fragments_t;
