@@ -805,11 +805,10 @@ esdm_status esdm_scheduler_enqueue_write(esdm_instance_t *esdm, io_request_statu
       bool isNewFragment;
       esdm_fragment_t* fragment = esdmI_dataset_createFragment(dataset, subspace, (char*)buf + esdm_dataspace_elementOffset(space, offset), &isNewFragment);
       eassert(fragment);
+      esdm_dataspace_destroy(subspace);
       if(!isNewFragment) continue;
       fragment->backend = curBackend;
       esdmI_scheduler_writeFragmentNonblocking(esdm, fragment, requestIsInternal, status);
-
-      //FIXME: we are leaking the subspace object!
     }
 
     esdmI_hypercubeSet_destroy(cubes);

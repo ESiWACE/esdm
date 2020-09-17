@@ -377,11 +377,8 @@ esdm_status esdm_write_grid(esdm_grid_t* grid, esdm_dataspace_t* memspace, void*
   }
 
   //Do the actual writing.
-  esdm_dataspace_t* fragmentSpace;
-  result = esdm_dataspace_copy(memspace, &fragmentSpace);
-  if(result != ESDM_SUCCESS) return result;
   bool isNewFragment;
-  cell->fragment = esdmI_dataset_createFragment(grid->dataset, fragmentSpace, buffer, &isNewFragment);
+  cell->fragment = esdmI_dataset_createFragment(grid->dataset, memspace, buffer, &isNewFragment);
   if(!cell->fragment) return ESDM_ERROR;
   esdmI_grid_registerCompletedCell(grid);
   if(!isNewFragment) return ESDM_SUCCESS;
@@ -414,11 +411,8 @@ esdm_status esdm_read_grid(esdm_grid_t* grid, esdm_dataspace_t* memspace, void* 
   } else {
     result = esdm_scheduler_read_blocking(esdm, grid->dataset, buffer, memspace, NULL, false, false);
     if(result != ESDM_SUCCESS) return result;
-    esdm_dataspace_t* fragmentSpace;
-    result = esdm_dataspace_copy(memspace, &fragmentSpace);
-    if(result != ESDM_SUCCESS) return result;
     bool isNewFragment;
-    cell->fragment = esdmI_dataset_createFragment(grid->dataset, fragmentSpace, buffer, &isNewFragment);
+    cell->fragment = esdmI_dataset_createFragment(grid->dataset, memspace, buffer, &isNewFragment);
     if(!cell->fragment) return ESDM_ERROR;
     esdmI_grid_registerCompletedCell(grid);
     if(!isNewFragment) return ESDM_SUCCESS; //should not happen, but we check it anyways

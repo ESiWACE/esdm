@@ -427,7 +427,7 @@ esdm_status esdmI_fragment_create(esdm_dataset_t *d, esdm_dataspace_t *sspace, v
     .id = NULL,
     .backend_md  = NULL,
     .dataset = d,
-    .dataspace = sspace,
+    .dataspace = NULL,
     .buf = buf, // zero copy?
     .ownsBuf = false,
     .elements = elements,
@@ -436,6 +436,8 @@ esdm_status esdmI_fragment_create(esdm_dataset_t *d, esdm_dataspace_t *sspace, v
     .status = buf ? ESDM_DATA_DIRTY : ESDM_DATA_NOT_LOADED,
     .backend = NULL
   };
+  esdm_status result = esdm_dataspace_copy(sspace, &f->dataspace);
+  eassert(result == ESDM_SUCCESS);
 
   esdmI_dataset_update_actual_size(d, f);
 

@@ -147,6 +147,7 @@ void esdm_wstream_flush(esdm_wstream_metadata_t* metadata, void* buffer, void* b
     } else {
       metadata->backendState.fragment = NULL;  //no need to stream anything into an already existing fragment
     }
+    esdm_dataspace_destroy(memspace);
   }
 
   int64_t curChunkSize = (char*)bufferEnd - (char*)buffer;

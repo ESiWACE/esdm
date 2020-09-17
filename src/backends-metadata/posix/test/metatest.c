@@ -41,31 +41,23 @@ int main() {
   esdm_fragment_t *f1, *f2, *f3, *f4;
 
   {
-    esdm_dataspace_t* space;
-    ret = esdm_dataspace_create_full(2, (int64_t [2]){25, 50}, (int64_t [2]){0, 0}, SMD_DTYPE_UINT64, &space);
-    eassert(ret == ESDM_SUCCESS);
-    ret = esdmI_fragment_create(dataset, space, ea_checked_malloc(esdm_dataspace_total_bytes(space)), &f1);
+    esdm_simple_dspace_t space = esdm_dataspace_2do(0, 25, 0, 50, SMD_DTYPE_UINT64);
+    ret = esdmI_fragment_create(dataset, space.ptr, ea_checked_malloc(esdm_dataspace_total_bytes(space.ptr)), &f1);
     eassert(ret == ESDM_SUCCESS);
   }
   {
-    esdm_dataspace_t* space;
-    ret = esdm_dataspace_create_full(2, (int64_t [2]){25, 50}, (int64_t [2]){25, 0}, SMD_DTYPE_UINT64, &space);
-    eassert(ret == ESDM_SUCCESS);
-    ret = esdmI_fragment_create(dataset, space, ea_checked_malloc(esdm_dataspace_total_bytes(space)), &f2);
+    esdm_simple_dspace_t space = esdm_dataspace_2do(25, 25, 0, 50, SMD_DTYPE_UINT64);
+    ret = esdmI_fragment_create(dataset, space.ptr, ea_checked_malloc(esdm_dataspace_total_bytes(space.ptr)), &f2);
     eassert(ret == ESDM_SUCCESS);
   }
   {
-    esdm_dataspace_t* space;
-    ret = esdm_dataspace_create_full(2, (int64_t [2]){25, 50}, (int64_t [2]){25, 50}, SMD_DTYPE_UINT64, &space);
-    eassert(ret == ESDM_SUCCESS);
-    ret = esdmI_fragment_create(dataset, space, ea_checked_malloc(esdm_dataspace_total_bytes(space)), &f3);
+    esdm_simple_dspace_t space = esdm_dataspace_2do(25, 25, 50, 50, SMD_DTYPE_UINT64);
+    ret = esdmI_fragment_create(dataset, space.ptr, ea_checked_malloc(esdm_dataspace_total_bytes(space.ptr)), &f3);
     eassert(ret == ESDM_SUCCESS);
   }
   {
-    esdm_dataspace_t* space;
-    ret = esdm_dataspace_create_full(2, (int64_t [2]){25, 50}, (int64_t [2]){0, 50}, SMD_DTYPE_UINT64, &space);
-    eassert(ret == ESDM_SUCCESS);
-    ret = esdmI_fragment_create(dataset, space, ea_checked_malloc(esdm_dataspace_total_bytes(space)), &f4);
+    esdm_simple_dspace_t space = esdm_dataspace_2do(0, 25, 50, 50, SMD_DTYPE_UINT64);
+    ret = esdmI_fragment_create(dataset, space.ptr, ea_checked_malloc(esdm_dataspace_total_bytes(space.ptr)), &f4);
     eassert(ret == ESDM_SUCCESS);
   }
 

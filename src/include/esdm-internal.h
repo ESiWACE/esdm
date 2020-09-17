@@ -232,7 +232,6 @@ esdm_status esdmI_dataset_fragmentsCoveringRegion(esdm_dataset_t* dataset, esdmI
 // Creates a fragment or returns an existing one.
 // The dataset will own the fragment.
 // In the case that an existing fragment is returned, the `buf` parameter is ignored.
-// FIXME: check ownership of the memspace that is handed into this function, and define whether it makes a copy for the fragment or not
 esdm_fragment_t* esdmI_dataset_createFragment(esdm_dataset_t* dataset, esdm_dataspace_t* memspace, void *buf, bool* out_newFragment);
 
 esdm_fragment_t* esdmI_dataset_lookupFragmentForShape(esdm_dataset_t* dataset, esdm_dataspace_t* shape);
@@ -307,8 +306,6 @@ esdm_status esdmI_create_fragment_from_metadata(esdm_dataset_t *dset, json_t * j
  * It is the user's responsibility to ensure that the data remains alive as long as the fragment is loaded.
  *
  *  - Allocate process local memory structures.
- *
- *  - Takes possession of the dataspace. Do not modify or destroy it after calling this function!
  *
  *  - Does **not** register the fragment with the dataset. How the fragment will be owned is left to the discretion of the caller.
  *
