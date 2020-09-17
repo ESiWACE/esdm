@@ -4,8 +4,8 @@
 #include <stdlib.h>
 #include <test/util/test_util.h>
 
-static double gFragmentAddTime = 0.0, gMakeSetTime = 0.0;
-static int64_t gFragmentAddCount = 0, gMakeSetCount = 0;
+static esdm_fragmentsTimes_t gStats;
+esdm_fragmentsTimes_t esdmI_performance_fragments() { return gStats; }
 
 static guint esdmI_fragments_hashKey(gconstpointer keyArg) {
   const esdmI_hypercube_t* key = keyArg;
@@ -51,14 +51,22 @@ esdm_status esdmI_fragments_add(esdm_fragments_t* me, esdm_fragment_t* fragment)
     g_hash_table_insert(me->table, key, fragment);
   }
 
-  gFragmentAddCount++;
-  gFragmentAddTime += ea_stop_timer(myTimer);
+  gStats.fragmentAddCalls++;
+  gStats.fragmentAdding += ea_stop_timer(myTimer);
 
   return result;
 }
 
 esdm_fragment_t* esdmI_fragments_lookupForShape(esdm_fragments_t* me, esdmI_hypercube_t* shape) {
-  return g_hash_table_lookup(me->table, shape);
+  timer myTimer;
+  ea_start_timer(&myTimer);
+
+  esdm_fragment_t* result = g_hash_table_lookup(me->table, shape);
+
+  gStats.fragmentLookupCalls++;
+  gStats.fragmentLookup += ea_stop_timer(myTimer);
+
+  return result;
 }
 
 typedef struct deleteFragmentsFromBackendState {
@@ -131,8 +139,8 @@ esdm_fragment_t** esdmI_fragments_makeSetCoveringRegion(esdm_fragments_t* me, es
     result = state.fragments;
   }
 
-  gMakeSetCount++;
-  gMakeSetTime += ea_stop_timer(myTimer);
+  gStats.setCreationCalls++;
+  gStats.setCreation += ea_stop_timer(myTimer);
 
   return result;
 }
@@ -152,6 +160,9 @@ static void esdmI_fragments_createFragmentMetadata(gpointer keyArg, gpointer val
 }
 
 void esdmI_fragments_metadata_create(esdm_fragments_t* me, smd_string_stream_t* stream) {
+  timer myTimer;
+  ea_start_timer(&myTimer);
+
   smd_string_stream_printf(stream, "[");
   createFragmentMetadataState state = {
     .stream = stream,
@@ -159,6 +170,9 @@ void esdmI_fragments_metadata_create(esdm_fragments_t* me, smd_string_stream_t* 
   };
   g_hash_table_foreach(me->table, esdmI_fragments_createFragmentMetadata, &state);
   smd_string_stream_printf(stream, "]");
+
+  gStats.metadataCreationCalls++;
+  gStats.metadataCreation += ea_stop_timer(myTimer);;
 }
 
 void esdmI_fragments_purge(esdm_fragments_t* me) {
@@ -168,11 +182,4 @@ void esdmI_fragments_purge(esdm_fragments_t* me) {
 esdm_status esdmI_fragments_destruct(esdm_fragments_t* me) {
   g_hash_table_destroy(me->table);
   return ESDM_SUCCESS;
-}
-
-void esdmI_fragments_getStats(int64_t* out_addedFragments, double* out_fragmentAddTime, int64_t* out_createdSets, double* out_setCreationTime) {
-  if(out_addedFragments) *out_addedFragments = gFragmentAddCount;
-  if(out_fragmentAddTime) *out_fragmentAddTime = gFragmentAddTime;
-  if(out_createdSets) *out_createdSets = gMakeSetCount;
-  if(out_setCreationTime) *out_setCreationTime = gMakeSetTime;
 }

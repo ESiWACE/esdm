@@ -283,17 +283,15 @@ void esdmI_performance_backend_print(FILE* stream, const char* linePrefix, const
   printTime(stream, linePrefix, indentation, diff, fragment_write_stream_blocksize);
 }
 
-esdm_fragmentsTimes_t esdmI_performance_fragments() {
-  esdm_fragmentsTimes_t result;
-  esdmI_fragments_getStats(&result.fragmentAddCalls, &result.fragmentAdding, &result.setCreationCalls, &result.setCreation);
-  return result;
-}
-
 esdm_fragmentsTimes_t esdmI_performance_fragments_add(const esdm_fragmentsTimes_t* a, const esdm_fragmentsTimes_t* b) {
   return (esdm_fragmentsTimes_t){
     .fragmentAdding = a->fragmentAdding + b->fragmentAdding,
+    .fragmentLookup = a->fragmentLookup + b->fragmentLookup,
+    .metadataCreation = a->metadataCreation + b->metadataCreation,
     .setCreation = a->setCreation + b->setCreation,
     .fragmentAddCalls = a->fragmentAddCalls + b->fragmentAddCalls,
+    .fragmentLookupCalls = a->fragmentLookupCalls + b->fragmentLookupCalls,
+    .metadataCreationCalls = a->metadataCreationCalls + b->metadataCreationCalls,
     .setCreationCalls = a->setCreationCalls + b->setCreationCalls,
   };
 }
@@ -301,8 +299,12 @@ esdm_fragmentsTimes_t esdmI_performance_fragments_add(const esdm_fragmentsTimes_
 esdm_fragmentsTimes_t esdmI_performance_fragments_sub(const esdm_fragmentsTimes_t* minuend, const esdm_fragmentsTimes_t* subtrahend) {
   return (esdm_fragmentsTimes_t){
     .fragmentAdding = minuend->fragmentAdding - subtrahend->fragmentAdding,
+    .fragmentLookup = minuend->fragmentLookup - subtrahend->fragmentLookup,
+    .metadataCreation = minuend->metadataCreation - subtrahend->metadataCreation,
     .setCreation = minuend->setCreation - subtrahend->setCreation,
     .fragmentAddCalls = minuend->fragmentAddCalls - subtrahend->fragmentAddCalls,
+    .fragmentLookupCalls = minuend->fragmentLookupCalls - subtrahend->fragmentLookupCalls,
+    .metadataCreationCalls = minuend->metadataCreationCalls - subtrahend->metadataCreationCalls,
     .setCreationCalls = minuend->setCreationCalls - subtrahend->setCreationCalls,
   };
 }
@@ -312,5 +314,7 @@ void esdmI_performance_fragments_print(FILE* stream, const char* linePrefix, con
 
   fprintf(stream, "%sfragment handling:\n", linePrefix);
   printCountedTime(stream, linePrefix, indentation, diff, fragmentAdding, fragmentAddCalls);
+  printCountedTime(stream, linePrefix, indentation, diff, fragmentLookup, fragmentLookupCalls);
+  printCountedTime(stream, linePrefix, indentation, diff, metadataCreation, metadataCreationCalls);
   printCountedTime(stream, linePrefix, indentation, diff, setCreation, setCreationCalls);
 }

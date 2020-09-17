@@ -499,9 +499,13 @@ struct esdm_backendTimes_t {
 typedef struct esdm_fragmentsTimes_t esdm_fragmentsTimes_t;
 struct esdm_fragmentsTimes_t {
   double fragmentAdding;
+  double fragmentLookup;
+  double metadataCreation;
   double setCreation;
 
   int64_t fragmentAddCalls;
+  int64_t fragmentLookupCalls;
+  int64_t metadataCreationCalls;
   int64_t setCreationCalls;
 };
 

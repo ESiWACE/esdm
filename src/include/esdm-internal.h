@@ -295,7 +295,6 @@ esdm_fragment_t** esdmI_fragments_makeSetCoveringRegion(esdm_fragments_t* me, es
 void esdmI_fragments_metadata_create(esdm_fragments_t* me, smd_string_stream_t* s);
 void esdmI_fragments_purge(esdm_fragments_t* me); //this will `esdm_fragment_destroy()` all currently stored fragments
 esdm_status esdmI_fragments_destruct(esdm_fragments_t* me);  //calls `esdm_fragment_destroy()` on its members, but does not invoke the `fragment_delete()` callback of the backend
-void esdmI_fragments_getStats(int64_t* out_addedFragments, double* out_fragmentAddTime, int64_t* out_createdSets, double* out_setCreationTime);
 
 void esdm_fragment_metadata_create(esdm_fragment_t *f, smd_string_stream_t * stream);
 esdm_status esdmI_create_fragment_from_metadata(esdm_dataset_t *dset, json_t * json, esdm_fragment_t ** out);
