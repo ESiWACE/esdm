@@ -39,15 +39,22 @@ esdm_status esdmI_fragments_add(esdm_fragments_t* me, esdm_fragment_t* fragment)
   eassert(me->table);
   eassert(fragment);
 
+  timer myTimer;
+  ea_start_timer(&myTimer);
+
   esdmI_hypercube_t* key;
   esdm_status result = esdmI_dataspace_getExtends(fragment->dataspace, &key);
   eassert(result == ESDM_SUCCESS);
   if(g_hash_table_contains(me->table, key)) {
-    return ESDM_INVALID_STATE_ERROR;
+    result = ESDM_INVALID_STATE_ERROR;
   } else {
     g_hash_table_insert(me->table, key, fragment);
   }
-  return ESDM_SUCCESS;
+
+  gFragmentAddCount++;
+  gFragmentAddTime += ea_stop_timer(myTimer);
+
+  return result;
 }
 
 esdm_fragment_t* esdmI_fragments_lookupForShape(esdm_fragments_t* me, esdmI_hypercube_t* shape) {
@@ -99,26 +106,35 @@ esdm_fragment_t** esdmI_fragments_makeSetCoveringRegion(esdm_fragments_t* me, es
   eassert(bounds);
   eassert(out_fragmentCount);
 
+  timer myTimer;
+  ea_start_timer(&myTimer);
+
   //try to find an exact match
   esdm_fragment_t* singleFragment = esdmI_fragments_lookupForShape(me, bounds);
+  esdm_fragment_t** result = NULL;
   if(singleFragment) {
     *out_fragmentCount = 1;
-    return ea_memdup(&singleFragment, sizeof(singleFragment));
+    result = ea_memdup(&singleFragment, sizeof(singleFragment));
+  } else {
+    //search the hash table for matching fragments
+    selectFragmentsInRegionState state = {
+      .region = bounds,
+      .fragmentCount = 0,
+      .bufferSize = 8,
+      .fragments = malloc(8*sizeof*state.fragments)
+    };
+    g_hash_table_foreach(me->table, esdmI_fragments_selectFragmentsInRegion, &state);
+
+    //TODO: kick out any fragments that happen to be redundant
+
+    *out_fragmentCount = state.fragmentCount;
+    result = state.fragments;
   }
 
-  //search the hash table for matching fragments
-  selectFragmentsInRegionState state = {
-    .region = bounds,
-    .fragmentCount = 0,
-    .bufferSize = 8,
-    .fragments = malloc(8*sizeof*state.fragments)
-  };
-  g_hash_table_foreach(me->table, esdmI_fragments_selectFragmentsInRegion, &state);
+  gMakeSetCount++;
+  gMakeSetTime += ea_stop_timer(myTimer);
 
-  //TODO: kick out any fragments that happen to be redundant
-
-  *out_fragmentCount = state.fragmentCount;
-  return state.fragments;
+  return result;
 }
 
 typedef struct createFragmentMetadataState {
@@ -155,7 +171,6 @@ esdm_status esdmI_fragments_destruct(esdm_fragments_t* me) {
 }
 
 void esdmI_fragments_getStats(int64_t* out_addedFragments, double* out_fragmentAddTime, int64_t* out_createdSets, double* out_setCreationTime) {
-  //FIXME: Add timer code at the appropriate places
   if(out_addedFragments) *out_addedFragments = gFragmentAddCount;
   if(out_fragmentAddTime) *out_fragmentAddTime = gFragmentAddTime;
   if(out_createdSets) *out_createdSets = gMakeSetCount;
