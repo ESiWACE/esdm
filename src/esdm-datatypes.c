@@ -516,9 +516,8 @@ void esdm_fragment_metadata_create(esdm_fragment_t *f, smd_string_stream_t * str
   eassert(f->id != NULL);
   eassert(pid != NULL);
 
-  smd_string_stream_printf(stream, "{\"id\":\"%s\",\"pid\":\"%s\",\"space\":", f->id, pid);
+  smd_string_stream_printf(stream, "{\"id\":\"%s\",\"pid\":\"%s\",\"act-size\":%ld,\"space\":", f->id, pid, f->actual_bytes);
   esdm_dataspace_serialize(f->dataspace, stream);
-  if(f->actual_bytes != -1) smd_string_stream_printf(stream, ",\"act-size\":%ld", f->actual_bytes);
   if(f->backend->callbacks.fragment_metadata_create){
     smd_string_stream_printf(stream, ",\"backend\":");
     esdmI_backend_fragment_metadata_create(f->backend, f, stream);
@@ -732,50 +731,48 @@ esdm_status esdmI_create_fragment_from_metadata(esdm_dataset_t *dset, json_t * j
   eassert(out_fragment);
 
   esdm_status status = ESDM_INVALID_DATA_ERROR;
-  esdm_fragment_t *result;
-  result = ea_checked_malloc(sizeof(esdm_fragment_t));
-  *result = (esdm_fragment_t){
-    .dataset = dset,
-    .buf = NULL,
-    .ownsBuf = false,
-    .actual_bytes = -1,
-    .status = ESDM_DATA_NOT_LOADED
-  };
-  json_t* elem;
+  esdm_fragment_t *result = NULL;
+  json_t* spaceJson, *backendJson, *idJson, *actualSizeJson;
 
+  //fetch the parts and check their presence and type
   if(!json || !json_is_object(json)) goto fail;
+  spaceJson = json_object_get(json, "space");
+  backendJson = json_object_get(json, "pid");
+  idJson = json_object_get(json, "id");
+  actualSizeJson = json_object_get(json, "act-size"); // if it is compressed the actual size may differ
+  if(!backendJson || !json_is_string(backendJson)) goto fail;
+  if(!idJson || !json_is_string(idJson)) goto fail;
+  if(!actualSizeJson || !json_is_integer(actualSizeJson)) goto fail;
 
-  elem = json_object_get(json, "pid");
-  if(!elem || !json_is_string(elem)) goto fail;
-  result->backend = esdmI_get_backend(json_string_value(elem));
-  if(!result->backend) goto fail;
-
-  elem = json_object_get(json, "id");
-  if(!elem || !json_is_string(elem)) goto fail;
-  result->id = ea_checked_strdup(json_string_value(elem));
-
-  elem = json_object_get(json, "space");
-  esdm_status dataspaceStatus = esdmI_dataspace_createFromJson(elem, dset, &result->dataspace);
+  //decode the dataspace and check for an already existing fragment
+  esdm_dataspace_t* space;
+  esdm_status dataspaceStatus = esdmI_dataspace_createFromJson(spaceJson, dset, &space);
   if(dataspaceStatus != ESDM_SUCCESS) goto fail;
-  result->elements = esdm_dataspace_element_count(result->dataspace);
-  result->bytes = esdm_dataspace_total_bytes(result->dataspace);
-
 //FIXME: Check whether there is already a fragment with the same shape available within the dataset (and do a fast return with it).
 
-  elem = json_object_get(json, "act-size"); // if it is compressed the actual size may differ
-  if(elem) {
-    if(!json_is_integer(elem)) goto fail;
-    result->actual_bytes = json_integer_value(elem);
-  }
+  result = ea_checked_malloc(sizeof(esdm_fragment_t));
+  *result = (esdm_fragment_t){
+    .id = ea_checked_strdup(json_string_value(idJson)),
+    .dataset = dset,
+    .dataspace = space,
+    .elements = esdm_dataspace_element_count(space),
+    .bytes = esdm_dataspace_total_bytes(space),
+    .buf = NULL,
+    .ownsBuf = false,
+    .backend = esdmI_get_backend(json_string_value(backendJson)),
+    .actual_bytes = json_integer_value(actualSizeJson),
+    .status = ESDM_DATA_NOT_LOADED
+  };
 
   // deserialize module specific options
+  if(!result->backend) goto fail;
   if(result->backend->callbacks.fragment_metadata_load) {
     result->backend_md = esdmI_backend_fragment_metadata_load(result->backend, result, json_object_get(json, "backend"));
   }
 
   status = ESDM_SUCCESS;
 fail:
-  if(status != ESDM_SUCCESS) {
+  if(status != ESDM_SUCCESS && result) {
     free(result->id);
     if(result->dataspace) esdm_dataspace_destroy(result->dataspace);
     free(result);
