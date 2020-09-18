@@ -748,7 +748,8 @@ esdm_status esdmI_create_fragment_from_metadata(esdm_dataset_t *dset, json_t * j
   esdm_dataspace_t* space;
   esdm_status dataspaceStatus = esdmI_dataspace_createFromJson(spaceJson, dset, &space);
   if(dataspaceStatus != ESDM_SUCCESS) goto fail;
-//FIXME: Check whether there is already a fragment with the same shape available within the dataset (and do a fast return with it).
+  result = esdmI_dataset_lookupFragmentForShape(dset, space);
+  if(result) goto success;  //fast return in case we already have a fragment that matches the given shape
 
   result = ea_checked_malloc(sizeof(esdm_fragment_t));
   *result = (esdm_fragment_t){
@@ -770,6 +771,7 @@ esdm_status esdmI_create_fragment_from_metadata(esdm_dataset_t *dset, json_t * j
     result->backend_md = esdmI_backend_fragment_metadata_load(result->backend, result, json_object_get(json, "backend"));
   }
 
+success:
   status = ESDM_SUCCESS;
 fail:
   if(status != ESDM_SUCCESS && result) {
