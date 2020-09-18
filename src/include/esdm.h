@@ -614,12 +614,6 @@ int64_t esdm_dataspace_elementOffset(esdm_dataspace_t* space, int64_t* coords);
 
 
 /**
- * Reinstantiate dataspace from serialization.
- */
-
-esdm_status esdm_dataspace_deserialize(void *serialized_dataspace, esdm_dataspace_t **out_dataspace);
-
-/**
  * Specify a non-standard serialization order for a dataspace.
  *
  * This can be used to handle FORTRAN arrays, for example, or do some crazy stuff like inverted dimensions, or to skip over holes.
@@ -721,8 +715,7 @@ esdm_status esdm_dataspace_destroy(esdm_dataspace_t *dataspace);
  *
  * e.g., to store along with fragment
  */
-
-esdm_status esdm_dataspace_serialize(esdm_dataspace_t *dataspace, void **out);
+void esdm_dataspace_serialize(const esdm_dataspace_t *dataspace, smd_string_stream_t* stream);
 
 void esdm_dataspace_print(esdm_dataspace_t *dataspace);
 

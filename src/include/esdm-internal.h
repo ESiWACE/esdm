@@ -263,6 +263,17 @@ esdm_status esdmI_dataset_destroy(esdm_dataset_t *dataset);
 esdm_status esdmI_dataspace_createFromHypercube(esdmI_hypercube_t* extends, esdm_type_t type, esdm_dataspace_t** out_space);
 
 /**
+ * Create a dataspace object from its JSON description (which was produced via a call to esdm_dataspace_serialize()).
+ *
+ * @param [in] json the JSON data describing the dataspace
+ * @param [in] dataset the dataset that is to be linked to the dataspace (this provides the datatype)
+ * @param [out] out_dataspace will point to a valid dataspace object after a successful return
+ *
+ * @return `ESDM_SUCCESS` on success, `ESDM_INVALID_DATA_ERROR` in case of any inconsistencies in the JSON data
+ */
+esdm_status esdmI_dataspace_createFromJson(json_t* json, esdm_dataset_t* dataset, esdm_dataspace_t** out_dataspace);
+
+/**
  * Get the logical extends covered by a dataspace in the form of an `esdmI_hypercube_t`.
  *
  * @param [in] space the dataspace to query

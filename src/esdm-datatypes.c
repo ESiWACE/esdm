@@ -512,40 +512,18 @@ esdm_status esdm_fragment_unload(esdm_fragment_t* fragment) {
 
 void esdm_fragment_metadata_create(esdm_fragment_t *f, smd_string_stream_t * stream){
   eassert(f != NULL);
-  esdm_dataspace_t *d = f->dataspace;
   char const * pid = f->backend->config->id;
   eassert(f->id != NULL);
   eassert(pid != NULL);
 
-  smd_string_stream_printf(stream, "{\"id\":\"%s\",\"pid\":\"%s\",\"size\":[", f->id, pid);
-  if(d->dims) smd_string_stream_printf(stream, "%ld", d->size[0]);
-  for (int i = 1; i < d->dims; i++) {
-    smd_string_stream_printf(stream, ",%ld", d->size[i]);
-  }
-
-  if(f->actual_bytes != -1){
-    smd_string_stream_printf(stream, "],\"act-size\":%ld,\"offset\":[", f->actual_bytes);
-  }else{
-    smd_string_stream_printf(stream, "],\"offset\":[");
-  }
-  if(d->dims) smd_string_stream_printf(stream, "%ld", d->offset[0]);
-  for (int i = 1; i < d->dims; i++) {
-    smd_string_stream_printf(stream, ",%ld", d->offset[i]);
-  }
-  if(d->stride) {
-    smd_string_stream_printf(stream, "],\"stride\":[");
-    if(d->dims) smd_string_stream_printf(stream, "%ld", d->stride[0]);
-    for (int i = 1; i < d->dims; i++) {
-      smd_string_stream_printf(stream, ",%ld", d->stride[i]);
-    }
-  }
+  smd_string_stream_printf(stream, "{\"id\":\"%s\",\"pid\":\"%s\",\"space\":", f->id, pid);
+  esdm_dataspace_serialize(f->dataspace, stream);
+  if(f->actual_bytes != -1) smd_string_stream_printf(stream, ",\"act-size\":%ld", f->actual_bytes);
   if(f->backend->callbacks.fragment_metadata_create){
-    smd_string_stream_printf(stream, "],\"backend\":");
+    smd_string_stream_printf(stream, ",\"backend\":");
     esdmI_backend_fragment_metadata_create(f->backend, f, stream);
-    smd_string_stream_printf(stream, "}");
-  }else{
-    smd_string_stream_printf(stream, "]}");
   }
+  smd_string_stream_printf(stream, "}");
 }
 
 esdm_status esdm_fragment_commit(esdm_fragment_t *f) {
@@ -766,52 +744,18 @@ esdm_status esdmI_create_fragment_from_metadata(esdm_dataset_t *dset, json_t * j
   char const  * id = json_string_value(elem);
   f->id = ea_checked_strdup(id);
 
-  elem = json_object_get(json, "offset");
-  int cnt = json_array_size(elem);
-  if(cnt != dims){
-    return ESDM_ERROR;
-  }
-  int64_t offset[dims];
-  for(int i=0; i < dims; i++){
-    offset[i] = json_integer_value(json_array_get(elem, i));
-  }
+  elem = json_object_get(json, "space");
+  esdm_dataspace_t* space;
+  esdm_status status = esdmI_dataspace_createFromJson(elem, dset, &space);
 
-  elem = json_object_get(json, "size");
-  int cnt2 = json_array_size(elem);
-  if(cnt2 != dims){
-    return ESDM_ERROR;
-  }
-  int64_t size[cnt2];
-  for(int i=0; i < cnt2; i++){
-    size[i] = json_integer_value(json_array_get(elem, i));
-  }
-  esdm_dataspace_t * space;
+//FIXME: Check whether there is already a fragment with the same shape available within the dataset (and do a fast return with it).
+//FIXME: Add proper error handling.
 
   elem = json_object_get(json, "act-size"); // if it is compressed the actual size may differ
   if(elem){
     f->actual_bytes = json_integer_value(elem);
   }else{
     f->actual_bytes = -1;
-  }
-
-  elem = json_object_get(json, "stride");
-  bool haveStride = (elem != NULL);
-  int64_t stride[dims];
-  if(haveStride) {
-    int cnt = json_array_size(elem);
-    if(cnt != dims){
-      return ESDM_ERROR;
-    }
-    for(int i=0; i < dims; i++){
-      stride[i] = json_integer_value(json_array_get(elem, i));
-    }
-  }
-
-  ret = esdm_dataspace_subspace(dset->dataspace, dims, size, offset, & space);
-  eassert(ret == ESDM_SUCCESS);
-
-  if(haveStride) {
-    esdm_dataspace_set_stride(space, stride);
   }
 
   uint64_t elements = esdm_dataspace_element_count(space);
@@ -1510,6 +1454,85 @@ void esdm_dataspace_print(esdm_dataspace_t *d) {
   printf("))");
 }
 
+static void serializeArray(smd_string_stream_t* stream, const char* name, int64_t count, const int64_t* data) {
+  smd_string_stream_printf(stream, "\"%s\":[", name);
+  for (int i = 0; i < count; i++) {
+    smd_string_stream_printf(stream, "%s%ld", i ? "," : "", data[i]);
+  }
+  smd_string_stream_printf(stream, "]");
+}
+
+void esdm_dataspace_serialize(const esdm_dataspace_t* space, smd_string_stream_t* stream) {
+  smd_string_stream_printf(stream, "{");
+  serializeArray(stream, "size", space->dims, space->size);
+  smd_string_stream_printf(stream, ",");
+  serializeArray(stream, "offset", space->dims, space->offset);
+  if(space->stride) {
+    smd_string_stream_printf(stream, ",");
+    serializeArray(stream, "stride", space->dims, space->stride);
+  }
+  smd_string_stream_printf(stream, "}");
+}
+
+esdm_status esdmI_dataspace_createFromJson(json_t* json, esdm_dataset_t* dataset, esdm_dataspace_t** out_dataspace) {
+  eassert(dataset);
+  eassert(out_dataspace);
+
+  esdm_status status = ESDM_INVALID_DATA_ERROR;
+  esdm_dataspace_t* result = ea_checked_malloc(sizeof*result);
+  *result = (esdm_dataspace_t){
+    .dims = dataset->dataspace->dims,
+    .type = dataset->dataspace->type
+  };
+
+  //inquire the top level objects
+  if(!json || !json_is_object(json)) goto fail;
+  json_t* sizeJson = json_object_get(json, "size");
+  if(!sizeJson || !json_is_array(sizeJson)) goto fail;
+  json_t* offsetJson = json_object_get(json, "offset");
+  if(!offsetJson || !json_is_array(offsetJson)) goto fail;
+  json_t* strideJson = json_object_get(json, "stride");
+  if(strideJson && !json_is_array(strideJson)) goto fail;
+
+  //sanity check of the array lengths
+  if(result->dims != json_array_size(sizeJson)) goto fail;
+  if(result->dims != json_array_size(offsetJson)) goto fail;
+  if(strideJson && result->dims != json_array_size(strideJson)) goto fail;
+
+  //parse the coordinates
+  result->size = ea_checked_malloc(result->dims*sizeof*result->size);
+  result->offset = ea_checked_malloc(result->dims*sizeof*result->offset);
+  if(strideJson) result->stride = ea_checked_malloc(result->dims*sizeof*result->stride);
+  for(int i = 0; i < result->dims; i++) {
+    json_t* element = json_array_get(sizeJson, i);
+    if(!element || !json_is_integer(element)) goto fail;
+    result->size[i] = json_integer_value(element);
+
+    element = json_array_get(offsetJson, i);
+    if(!element || !json_is_integer(element)) goto fail;
+    result->offset[i] = json_integer_value(element);
+
+    if(strideJson) {
+      element = json_array_get(strideJson, i);
+      if(!element || !json_is_integer(element)) goto fail;
+      result->stride[i] = json_integer_value(element);
+    }
+  }
+
+  status = ESDM_SUCCESS;
+fail:
+  if(status != ESDM_SUCCESS) {
+    free(result->size);
+    free(result->offset);
+    free(result->stride);
+    free(result);
+    result = NULL;
+  }
+
+  *out_dataspace = result;
+  return status;
+}
+
 void esdm_dataspace_getEffectiveStride(esdm_dataspace_t* space, int64_t* out_stride) {
   if(space->stride) {
     memcpy(out_stride, space->stride, space->dims*sizeof(*space->stride));
@@ -1571,17 +1594,6 @@ esdm_status esdm_dataspace_destroy(esdm_dataspace_t *d) {
   free(d->offset);
   free(d->size);
   free(d);
-  return ESDM_SUCCESS;
-}
-
-esdm_status esdm_dataspace_serialize(esdm_dataspace_t *dataspace, void **out) {
-  ESDM_DEBUG(__func__);
-
-  return ESDM_SUCCESS;
-}
-
-esdm_status esdm_dataspace_deserialize(void *serialized_dataspace, esdm_dataspace_t **out_dataspace) {
-  ESDM_DEBUG(__func__);
   return ESDM_SUCCESS;
 }
 
