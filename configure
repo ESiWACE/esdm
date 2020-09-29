@@ -11,27 +11,36 @@ function help(){
   echo "CMake uses different options than configure, but you can use this script to "
   echo "specify them in the traditional way and get the equivalent cmake command."
   echo "Use the following options to change default paths."
-  echo "--prefix=<dir>           : installation prefix"
   echo
-  echo "Optional:"
+  echo "Options:"
+  echo "--prefix=<dir>           : installation prefix"
   echo "--build-dir=<dir>        : directory in which to build"
+  echo
+  echo "--help                   : print this usage information and exit"
+  echo "--version                : print cmake version and exit"
+  echo "--reconfigure            : run configure again with the parameters used the last time"
+  echo
   echo "--debug                  : build with debug flags"
   echo "--verbose                : output the command but do not execute it"
-  echo "--reconfigure            : run configure again with the parameters used the last time"
+  echo
   echo "--with-cc=<file>         : path to the C compiler"
   echo "--with-cxx=<file>        : path to the C++ compiler"
   echo "--with-mpicc=<file>      : path to the MPI C compiler"
   echo "--with-mpicxx=<file>     : path to the MPI C++ compiler"
+  echo
+  echo "--with-boost=<file>      : path to boost library used for WOS"
+  echo "--with-glib=<path>       : path prefix to the glib library"
+  echo "--with-jansson=<path>    : path prefix to the jansson library"
   echo "--with-ime-include=<dir> : path to ime_native.h"
   echo "--with-ime-lib=<dir>     : path to libim_client.so"
   echo "--with-kdsa-include=<dir>: path to kdsa.h"
   echo "--with-kdsa-lib=<dir>    : path to libkdsa.so"
-  echo "--enable-s3              : enable S3 backend using libs3"
-  echo "--enable-kdsa-dummy      : compile the KDSA dummy backend"
-  echo "--with-boost=<file>      : path to boost library used for WOS"
-  echo "--enable-wos=<file>      : path to WOS library"
-  echo "--with-esdm=<dir>        : path to SCIL library (optional)"
+  echo "--with-scil=<dir>        : path prefix to scil library"
   echo
+  echo "--enable-kdsa-dummy      : compile the KDSA dummy backend"
+  echo "--enable-s3              : enable S3 backend using libs3"
+  echo "--enable-wos=<file>      : path to WOS library"
+  echo "--enable-netcdf4         : compile the NetCDF interface"
 }
 
 # Some defaults
@@ -73,10 +82,7 @@ do
     --with-boost) boost="$2"; shift;;
     --enable-s3) s3="YES"; shift;;
     --enable-netcdf4) netcdf4="YES"; echo "$2"; ;;
-    --enable-lustre) lustre="$2"; shift;;
-    --enable-clovis) clovis="$2"; shift;;
     --enable-wos) wos="$2"; shift;;
-    --enable-mongodb) mongodb="$2"; shift;;
     --build-dir) buildDIR="$2"; shift;;
     --verbose) VERBOSE="YES"; ;;
     --) shift;;
