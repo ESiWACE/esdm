@@ -57,34 +57,42 @@ function reconfigure(){
   exit $?
 }
 
-set -- `getopt -u -l "help,version,debug,reconfigure,prefix:,with-cc:,with-cxx:,enable-hdf5,enable-netcdf4,with-mpicc:,with-mpicxx:,verbose,build-dir:,enable-wos:,with-ime-lib:,with-ime-include:,with-kdsa-lib:,with-kdsa-include:,enable-kdsa-dummy,with-scil:,enable-s3" -o "h" -- "$@"`
+set -- `getopt -u -l "prefix:,build-dir:,help,version,reconfigure,debug,verbose,with-cc:,with-cxx:,with-mpicc:,with-mpicxx:,with-boost:,with-glib:,with-jansson:,with-ime-include:,with-ime-lib:,with-kdsa-include:,with-kdsa-lib:,with-scil:,enable-kdsa-dummy,enable-s3,enable-wos:,enable-netcdf4" -o "h" -- "$@"`
 test $# -lt 1  && exit 1
 while test $# -gt 0
 do
     echo $1 $2
 
   case "$1" in
-    --help) help; exit;;
-    --reconfigure) reconfigure;;
-    --version) cmake --version; exit;;
     --prefix) prefix="$2"; shift;;
+    --build-dir) buildDIR="$2"; shift;;
+
+    --help) help; exit;;
+    --version) cmake --version; exit;;
+    --reconfigure) reconfigure;;
+
     --debug) debug="YES"; ;;
+    --verbose) VERBOSE="YES"; ;;
+
+    --with-cc) ccbin="$2"; shift;;
+    --with-cxx) cxxbin="$2"; shift;;
+    --with-mpicc) mpicc="$2"; shift;;
+    --with-mpicxx) mpicxx="$2"; shift;;
+
+    --with-boost) boost="$2"; shift;;
+    --with-glib) glib="$2"; shift;;
+    --with-jansson) jansson="$2"; shift;;
     --with-ime-include) ime_include="$2"; shift;;
     --with-ime-lib) ime_lib="$2"; shift;;
     --with-kdsa-include) kdsa_include="$2"; shift;;
     --with-kdsa-lib) kdsa_lib="$2"; shift;;
     --with-scil) scil_lib="$2"; shift;;
+
     --enable-kdsa-dummy) kdsa_dummy="YES"; shift;;
-    --with-cc) ccbin="$2"; shift;;
-    --with-cxx) cxxbin="$2"; shift;;
-    --with-mpicc) mpicc="$2"; shift;;
-    --with-mpicxx) mpicxx="$2"; shift;;
-    --with-boost) boost="$2"; shift;;
     --enable-s3) s3="YES"; shift;;
-    --enable-netcdf4) netcdf4="YES"; echo "$2"; ;;
     --enable-wos) wos="$2"; shift;;
-    --build-dir) buildDIR="$2"; shift;;
-    --verbose) VERBOSE="YES"; ;;
+    --enable-netcdf4) netcdf4="YES"; echo "$2"; ;;
+
     --) shift;;
     *) echo "Unknown option $1"; exit 1;;
   esac
@@ -131,7 +139,7 @@ if test -n "$kdsa_include"; then
   CMAKEFLAGS="$CMAKEFLAGS -DBACKEND_KDSA=ON -DKDSA_INCLUDE_DIR:FILEPATH=$kdsa_include"
 fi
 if test -n "$scil_lib"; then
-  export PKG_CONFIG_PATH="$PKG_CONFIG_PATH:$scil_lib/lib/pkgconfig/"
+  export PKG_CONFIG_PATH="$scil_lib/lib/pkgconfig/:$PKG_CONFIG_PATH"
 fi
 if test -n "$kdsa_dummy"; then
   CMAKEFLAGS="$CMAKEFLAGS -DBACKEND_KDSA_DUMMY=ON"
@@ -148,8 +156,16 @@ fi
 if test -n "$boost"; then
   CMAKEFLAGS="$CMAKEFLAGS -DBOOST_boost_LIBRARY_RELEASE:PATH=$boost/lib/libboost_system.so -DBOOST_C_INCLUDE_DIR:PATH=$boost/include"
 fi
+if test -n "$glib"; then
+  export PKG_CONFIG_PATH="$glib/lib/pkgconfig/:$PKG_CONFIG_PATH"
+fi
+if test -n "$jansson"; then
+  export PKG_CONFIG_PATH="$jansson/lib/pkgconfig/:$PKG_CONFIG_PATH"
+fi
 
-echo PKG_CONFIG_PATH="$PKG_CONFIG_PATH"
+echo
+echo PKG_CONFIG_PATH='"'"$PKG_CONFIG_PATH"'"'
+echo
 COMMAND="mkdir -p $buildDIR && echo $PARAMETERS > $buildDIR/configure.log && cd $buildDIR && echo $PARAMETERS > configure.log ; rm CMakeCache.txt 2>/dev/null; cmake $CMAKEFLAGS $SRCDIR"
 
 echo $COMMAND
