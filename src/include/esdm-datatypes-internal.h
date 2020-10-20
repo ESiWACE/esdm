@@ -18,6 +18,7 @@ struct scil_user_hints_t{
 };
 #endif
 
+typedef struct esdm_grid_t esdm_grid_t;
 typedef struct estream_write_t estream_write_t;
 
 enum { ESDM_ID_LENGTH = 23 }; //= strlen(id), to allocate the buffers, add one byte for the termination
