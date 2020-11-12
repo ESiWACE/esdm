@@ -1,7 +1,7 @@
 # Data Model
 
 
-While datatypes introduced by computer architectures and software libraries are important for the data model, they are dicussed seperately in \Cref{sec: viewpoints/logical/datatypes}.
+While datatypes introduced by computer architectures and software libraries are important for the data model, they are discussed separately in \Cref{sec: viewpoints/logical/datatypes}.
 
 
 
