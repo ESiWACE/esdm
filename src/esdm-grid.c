@@ -530,9 +530,6 @@ void esdmI_dataset_registerGridCompletion(esdm_dataset_t* dataset, esdm_grid_t* 
   dataset->gridCount++, dataset->incompleteGridCount--;
 }
 
-#define min(x, y) (x < y ? x : y)
-#define max(x, y) (x > y ? x : y)
-
 int64_t esdmI_grid_coverRegionSize(const esdm_grid_t* grid, const esdmI_hypercube_t* region) {
   int64_t dimCount = esdmI_hypercube_dimensions(region);
   eassert(dimCount == grid->dimCount);
