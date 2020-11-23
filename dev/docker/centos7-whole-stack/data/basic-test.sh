@@ -1,6 +1,8 @@
 #!/bin/bash
 wget https://www.unidata.ucar.edu/software/netcdf/examples/tos_O1_2001-2002.nc
+
 export PATH=$PATH:/data/install/bin
+export LD_LIBRARY_PATH=$PATH:/usr/lib64/mpich/lib/:/usr/local/lib
 
 echo '{"esdm":
 {
