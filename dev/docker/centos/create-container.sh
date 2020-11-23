@@ -1,3 +1,3 @@
 #!/bin/bash
-docker build -t esdm/centos .
+docker build -t esdm/centos7 .
 

@@ -11,26 +11,26 @@ more efficiently organize metadata and data across a variety of storage backends
 
 ## Requirements
 
+A compiler for C99 such as GCC5.0
+
+## Installation
+
 Ensure you cloned the repository with the required submodules:
   * git clone --recurse-submodules
 Or to initialize the submodules after the cloning:
   * git submodule update --init --recursive
 
- * glib2
- * a variant of MPI (for parallel support with ESDM and HDF5)
+The installation instructions for the full stack with ESDM and NetCDF can be found in the Dockerfiles that we use for testing.
 
-#### Installation of SCIL (optional)
+### Ubuntu 20.04
 
-    $ git clone https://github.com/JulianKunkel/scil
+$ grep RUN dev/docker/ubuntu-whole-stack/Dockerfile
 
-  See the README.md for the installation instructions.
+#### Installation for CentOS7
 
-#### Installation for Ubuntu/Debian Systems
+$ grep RUN dev/docker/centos7-whole-stack/Dockerfile
 
-  * apt-get install libglib2 libglib2.0-dev libjansson4 libjansson-dev
-  * apt-get install libtool libtool-bin automake cmake doxygen subversion
-
-#### Installation for Fedora/CentOS/RHEL Systems
+#### Installation for Fedora System
 
   * dnf install glib2 glib2-devel mpi jansson jansson-devel
   * dnf install mpich-3.0 mpich-3.0-devel	OR   dnf install openmpi opemmpi-devel

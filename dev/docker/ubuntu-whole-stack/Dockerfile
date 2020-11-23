@@ -8,7 +8,7 @@ ADD data /data
 WORKDIR "/data"
 #
 RUN git clone --recurse-submodules https://github.com/ESiWACE/esdm.git
-RUN cd esdm && ./configure --prefix=/data/install && cd build && make -j 4 && make -j 4 install
+RUN cd esdm && ./configure --debug --prefix=/data/install && cd build && make -j 4 && make -j 4 install
 
 RUN apt-get install -y libhdf5-openmpi-dev hdf5-tools wget
 RUN git clone --recurse-submodules https://github.com/ESiWACE/esdm-netcdf.git

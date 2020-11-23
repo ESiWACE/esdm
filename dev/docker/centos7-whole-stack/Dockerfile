@@ -11,11 +11,22 @@ RUN git clone --recurse-submodules https://github.com/ESiWACE/esdm.git
 # Install CMAKE (> 2.8)
 RUN wget https://cmake.org/files/v3.12/cmake-3.12.3.tar.gz && tar -zxf cmake-3.* && cd cmake-3.* && ./bootstrap --prefix=/usr/local && make -j4 && make install
 
+# Install HDF5
+RUN wget https://support.hdfgroup.org/ftp/HDF5/current/src/hdf5-1.10.5.tar.gz && tar -xzf hdf5*.gz
+RUN cd hdf5-1.10.5 && PATH=/opt/rh/devtoolset-8/root/usr/bin/:$PATH:/usr/lib64/mpich/bin ./configure --enable-parallel && make -j 4 && make -j 4 install
+
+
 # Install ESDM
 
 RUN cd esdm && PATH=/opt/rh/devtoolset-8/root/usr/bin/:$PATH:/usr/lib64/mpich/bin ./configure --debug --prefix=/data/install && cd build && make -j 4 && make -j 4 install
 
-# ADD data /data
+# Install ESDM NetCDF
+RUN git clone --recurse-submodules https://github.com/ESiWACE/esdm-netcdf.git
+RUN cd esdm-netcdf && autoreconf && cd build && ../configure --prefix=/data/install --with-esdm=/data/install CFLAGS="-I/usr/include/hdf5/openmpi/ -g3" LDFLAGS="-L/usr/lib/x86_64-linux-gnu/hdf5/openmpi/" CC=mpicc  --disable-dap
+RUN cd esdm-netcdf/build && make -j 2 install
+
+
+ADD data /data
 
 # Set some environment variables
 ENV ESDM_SRC_DIR /data
