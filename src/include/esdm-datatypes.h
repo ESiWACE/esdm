@@ -7,6 +7,10 @@
 
 #include <smd.h>
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #define ESDM_MAX_SIZE 1024
 
 typedef smd_dtype_t *esdm_type_t;
@@ -102,5 +106,10 @@ typedef struct esdm_statistics_t {
   uint64_t internalRequests;  //the amount of internal read/write requests that were generated
   uint64_t fragments; //the amount of data object actually read/written from/to storage hardware
 } esdm_statistics_t;
+
+#ifdef __cplusplus
+}
+#endif
+
 
 #endif

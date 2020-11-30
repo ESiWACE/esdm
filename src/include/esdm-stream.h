@@ -4,6 +4,10 @@
 #include <esdm-datatypes.h>
 #include <stdbool.h>
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 typedef struct esdm_wstream_metadata_t esdm_wstream_metadata_t;
 
 #define defineStreamType(streamType, elementType) typedef struct streamType { \
@@ -50,15 +54,16 @@ defineStreamType(esdm_wstream_double_t, double);
   typeof(*stream)* const esdm_internal_stream_ptr = (stream); /*avoid multiple evaluation*/ \
   esdm_wstream_metadata_t* esdm_internal_stream_metadata = esdm_wstream_metadata_create(dataset, dimCount, offset, size, smd_c_to_smd_type(*esdm_internal_stream_ptr->buffer)); \
   int64_t esdm_internal_element_count = esdm_wstream_metadata_max_chunk_size(esdm_internal_stream_metadata); \
-  typeof(*stream.buffer) esdm_internal_buffer = malloc(esdm_internal_element_count*sizeof*esdm_internal_stream_ptr->buffer); \
+  typeof(*stream.buffer) esdm_internal_buffer = (typeof(*stream.buffer)) malloc(esdm_internal_element_count*sizeof*esdm_internal_stream_ptr->buffer); \
   *esdm_internal_stream_ptr = (typeof(*stream)){ \
+    .metadata = esdm_internal_stream_metadata, \
     .buffer = esdm_internal_buffer, \
-    .bufferEnd = esdm_internal_buffer + esdm_internal_element_count, \
     .iter = esdm_internal_buffer, \
     .iterEnd = esdm_internal_buffer + esdm_wstream_metadata_next_chunk_size(esdm_internal_stream_metadata), \
-    .metadata = esdm_internal_stream_metadata \
+    .bufferEnd = esdm_internal_buffer + esdm_internal_element_count \
   }; \
 } while(0)
+
 
 /**
  * Push a single value into stream.
@@ -167,5 +172,9 @@ bool estream_mem_unpack_fragment_param(esdm_fragment_t *f, void ** out_buf, size
  * Reverse function, takes the read buffer and stuffs the data into the output buffer
  */
 int estream_mem_unpack_fragment(esdm_fragment_t *f, void * rbuff, size_t size);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif
