@@ -125,6 +125,7 @@ endif()
 install(TARGETS esdm LIBRARY DESTINATION lib)
 install(FILES "./include/esdm-datatypes.h" DESTINATION include)
 install(FILES "./include/esdm.h" DESTINATION include)
+install(FILES "./include/esdm-stream.h" DESTINATION include)
 install(FILES "./include/esdm-mpi.h" DESTINATION include)
 
 SUBDIRS(interfaces)
