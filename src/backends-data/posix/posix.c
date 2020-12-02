@@ -252,7 +252,7 @@ typedef struct{
   int fd;
 } posix_stream_t;
 
-static int fragment_write_stream_blocksize(esdm_backend_t * b, estream_write_t * state, void * c_buf, size_t c_off, uint32_t c_size){
+static int fragment_write_stream_blocksize(esdm_backend_t * b, estream_write_t * state, void * c_buf, size_t c_off, uint64_t c_size){
   int ret;
   esdm_fragment_t * f = state->fragment;
   posix_backend_data_t *data = (posix_backend_data_t *) b->data;

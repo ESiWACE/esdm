@@ -155,7 +155,7 @@ struct esdm_backend_t_callbacks_t {
    * the expected blocksize for streaming is stored inside the backend configuration
    */
   //TODO: I find the semantics of `cur_buf` and `cur_offset` surprising. Imho, we should redesign this call, possibly splitting it into two or three functions.
-  int (*fragment_write_stream_blocksize)(esdm_backend_t * b, estream_write_t * state, void * cur_buf, size_t cur_offset, uint32_t cur_size);
+  int (*fragment_write_stream_blocksize)(esdm_backend_t * b, estream_write_t * state, void * cur_buf, size_t cur_offset, uint64_t cur_size);
 };
 
 struct esdm_md_backend_callbacks_t {
