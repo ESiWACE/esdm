@@ -27,8 +27,8 @@ struct esdm_wstream_metadata_t {
   int64_t chunkOffset;
 };
 
-static const int64_t kMaxFragmentSize = 16*1024*1024;  //TODO: This should come from configuration.
-static const int64_t kMaxChunkSize = 16*1024;  //TODO: This should come from configuration.
+static const int64_t kMaxFragmentSize = 1000*1024*1024;  //TODO: This should come from configuration.
+static const int64_t kMaxChunkSize = 128*1024;  //TODO: This should come from configuration.
 
 //returns the max. object width
 static void initCounts(int64_t dimCount, int64_t elementSize, int64_t maxObjectSize, int64_t* dataspaceSize, int64_t* out_splittingDim, int64_t* out_maxWidth, int64_t* objectCounts, int64_t* cumulativeCounts) {
