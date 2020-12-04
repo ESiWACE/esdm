@@ -170,10 +170,10 @@ esdm_status esdm_mpi_container_commit(MPI_Comm com, esdm_container_t *c){
   ret = MPI_Comm_rank(com, & rank);
   if(ret != MPI_SUCCESS) return ESDM_ERROR;
 
-  esdm_datasets_t * dsets = & c->dsets;
-  for(int i = 0; i < dsets->count; i++){
-     esdm_mpi_dataset_commit(com, dsets->dset[i]);
-  }
+  //esdm_datasets_t * dsets = & c->dsets;
+  //for(int i = 0; i < dsets->count; i++){
+  //   esdm_mpi_dataset_commit(com, dsets->dset[i]);
+  //}
 
   if(rank == 0){
     ret = esdm_container_commit(c);
@@ -301,10 +301,6 @@ esdm_status esdm_mpi_dataset_commit(MPI_Comm com, esdm_dataset_t *d){
   esdm_status ret;
   int rank;
   ret = MPI_Comm_rank(com, & rank);
-  //if(rank != 0 && d->attr->childs != 0){
-  //  ESDM_ERROR("Only Rank 0 can attach metadata to a dataset");
-  //  return ESDM_ERROR;
-  //}
 
   // retrieve for all fragments the metadata and attach it to the metadata
   if(rank == 0){
