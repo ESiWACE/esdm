@@ -23,12 +23,14 @@ struct esdm_wstream_metadata_t {
                                                               //i.e., `cumulativeCounts[dims] == 1`, `cumulativeCount[dims-1] == counts[dims-1]`, and so on.
 
   //iterator status
+  int64_t fragCapacityRemaining;
   int64_t curFragment, nextChunk;
   int64_t chunkOffset;
 };
 
-static const int64_t kMaxFragmentSize = 1000*1024*1024;  //TODO: This should come from configuration.
-static const int64_t kMaxChunkSize = 128*1024;  //TODO: This should come from configuration.
+static const int64_t kMaxChunkSize = 16*1024;  //TODO: This should come from configuration.
+
+static esdmI_range_t getBounds(esdm_dataspace_t* dataspace, int64_t dim, int64_t* cumulativeCounts, int64_t objectIndex);
 
 //returns the max. object width
 static void initCounts(int64_t dimCount, int64_t elementSize, int64_t maxObjectSize, int64_t* dataspaceSize, int64_t* out_splittingDim, int64_t* out_maxWidth, int64_t* objectCounts, int64_t* cumulativeCounts) {
@@ -47,6 +49,45 @@ static void initCounts(int64_t dimCount, int64_t elementSize, int64_t maxObjectS
 
   cumulativeCounts[dimCount] = 1;
   for(i = dimCount; i-- > 0; ) cumulativeCounts[i] = objectCounts[i]*cumulativeCounts[i + 1];
+
+  //for(int i=0; i <= dimCount; i++){
+  //  printf("%d count: %lld - %lld\n", i, dataspaceSize[i], objectCounts[i]);
+  //}
+}
+
+
+static void wstream_create_newFragment(esdm_wstream_metadata_t* metadata){
+  int64_t dimCount = metadata->dataspace->dims;
+  metadata->curFragment++;
+
+  int64_t offset[dimCount], size[dimCount];
+  int64_t fragCapacityRemaining = esdm_sizeof(metadata->dataspace->type);
+  for(int64_t dim = dimCount; dim--; ) {
+    esdmI_range_t range = getBounds(metadata->dataspace, dim, metadata->cumulativeFragmentCounts, metadata->curFragment);
+    offset[dim] = range.start;
+    size[dim] = range.end - range.start;
+    fragCapacityRemaining *= size[dim];
+    //printf("%d offset: %lld size: %lld \n", dim, range.start, size[dim]);
+  }
+  //printf("Fragment capacity: %"PRIu64"\n", fragCapacityRemaining);
+  metadata->fragCapacityRemaining = fragCapacityRemaining;
+  metadata->chunkOffset = 0;
+
+  esdm_dataspace_t* memspace;
+  esdm_status ret = esdm_dataspace_create_full(dimCount, size, offset, metadata->dataspace->type, &memspace);
+  if(ret != ESDM_SUCCESS) {
+    fprintf(stderr, "esdm_wstream_flush(): error creating dataspace for fragment\nWhat dataspace/dataset was passed to esdm_wstream_start()?\naborting\n");
+    abort();
+  }
+  bool isNewFragment;
+  metadata->backendState.fragment = esdmI_dataset_createFragment(metadata->dataset, memspace, NULL, &isNewFragment);
+  eassert(isNewFragment);
+  //if(isNewFragment) {
+  metadata->backendState.fragment->backend = metadata->backend;
+  //} else {
+  //  metadata->backendState.fragment = NULL;  //no need to stream anything into an already existing fragment
+  //}
+  esdm_dataspace_destroy(memspace);
 }
 
 esdm_wstream_metadata_t* esdm_wstream_metadata_create(esdm_dataset_t* dataset, int64_t dimCount, int64_t* offset, int64_t* size, esdm_type_t type) {
@@ -55,7 +96,7 @@ esdm_wstream_metadata_t* esdm_wstream_metadata_create(esdm_dataset_t* dataset, i
   esdm_wstream_metadata_t* result = ea_checked_malloc(sizeof*result);
   *result = (esdm_wstream_metadata_t){
     .dataset = dataset,
-    .backend = esdm_modules_fastestBackend(esdm_get_modules()),
+    .backend = esdm_modules_randomWeightedBackend(esdm_get_modules()),
     .backendState = {0},
 
     //these are the defaults for the case that the entire stream region fits into a single fragment/chunk
@@ -66,8 +107,8 @@ esdm_wstream_metadata_t* esdm_wstream_metadata_create(esdm_dataset_t* dataset, i
     .chunkCounts = ea_checked_malloc(dimCount*sizeof*result->chunkCounts),
     .cumulativeFragmentCounts = ea_checked_malloc((dimCount + 1)*sizeof*result->cumulativeFragmentCounts),
     .cumulativeChunkCounts = ea_checked_malloc((dimCount + 1)*sizeof*result->cumulativeChunkCounts),
-
-    .curFragment = 0,
+    .fragCapacityRemaining = 0,
+    .curFragment = -1,
     .nextChunk = 0,
     .chunkOffset = 0
   };
@@ -81,13 +122,17 @@ esdm_wstream_metadata_t* esdm_wstream_metadata_create(esdm_dataset_t* dataset, i
 
   //Find the parameters for splitting the dataspace into fragments, and splitting fragments into chunks.
   initCounts(dimCount, esdm_sizeof(type), kMaxChunkSize, size, &result->chunkingDim, &result->maxChunkWidth, result->chunkCounts, result->cumulativeChunkCounts);
-  initCounts(dimCount, esdm_sizeof(type), kMaxFragmentSize, size, &result->fragmentationDim, NULL, result->fragmentCounts, result->cumulativeFragmentCounts);
+  initCounts(dimCount, esdm_sizeof(type), result->backend->config->max_fragment_size, size, &result->fragmentationDim, NULL, result->fragmentCounts, result->cumulativeFragmentCounts);
 
+  wstream_create_newFragment(result);
   return result;
 }
 
 static esdmI_range_t getBounds(esdm_dataspace_t* dataspace, int64_t dim, int64_t* cumulativeCounts, int64_t objectIndex) {
   if(!dataspace->dims) return (esdmI_range_t){ .start = 0, .end = 1 };  //avoid UB when dealing with a scalar dataspace
+
+  //Something bogus here
+  //printf("getBounds: %d dim %d cum count: %lld %lld\n", objectIndex, dim, cumulativeCounts[dim], cumulativeCounts[dim + 1]);
 
   int64_t dimSize = cumulativeCounts[dim]/cumulativeCounts[dim + 1];
   int64_t index = objectIndex / cumulativeCounts[dim + 1] % dimSize; //the one-dim index of the object
@@ -106,52 +151,37 @@ int64_t esdm_wstream_metadata_max_chunk_size(esdm_wstream_metadata_t* metadata) 
 }
 
 static bool isFinished(esdm_wstream_metadata_t* metadata) {
-  return metadata->curFragment == metadata->cumulativeFragmentCounts[0];
+  return metadata->fragCapacityRemaining == 0 && (metadata->curFragment + 1) == metadata->cumulativeFragmentCounts[0];
 }
 
 int64_t esdm_wstream_metadata_next_chunk_size(esdm_wstream_metadata_t* metadata) {
   if(isFinished(metadata)) return 0;  //signal that we expect no more data
-
   int64_t chunkSize = 1;
   for(int64_t i = metadata->dataspace->dims; i--; ) {
     chunkSize *= esdmI_range_size(getBounds(metadata->dataspace, i, metadata->cumulativeChunkCounts, metadata->nextChunk));
   }
+  uint64_t typeSize = esdm_sizeof(metadata->dataspace->type);
+  if(chunkSize > metadata->fragCapacityRemaining / typeSize){
+    // hack as it is broken...
+    chunkSize = metadata->fragCapacityRemaining / typeSize;
+    //printf("esdm_wstream_metadata_next_chunk_size > %lld\n", chunkSize);
+    return chunkSize;
+  }
+
+  //printf("esdm_wstream_metadata_next_chunk_size %lld %lld\n", chunkSize, metadata->fragCapacityRemaining);
   return chunkSize;
 }
 
+
 //TODO: Rewrite this to create a grid that will contain the fragments.
 void esdm_wstream_flush(esdm_wstream_metadata_t* metadata, void* buffer, void* bufferEnd) {
+  //printf("esdm_wstream_flush\n");
   eassert(!isFinished(metadata));
-
-  //check whether we need to create another fragment
-  int64_t dimCount = metadata->dataspace->dims;
-  if(!metadata->nextChunk) {
-    eassert(!metadata->backendState.fragment);
-
-    int64_t offset[dimCount], size[dimCount];
-    for(int64_t dim = dimCount; dim--; ) {
-      esdmI_range_t range = getBounds(metadata->dataspace, dim, metadata->cumulativeFragmentCounts, metadata->curFragment);
-      offset[dim] = range.start;
-      size[dim] = range.end - range.start;
-    }
-    esdm_dataspace_t* memspace;
-    esdm_status ret = esdm_dataspace_create_full(dimCount, size, offset, metadata->dataspace->type, &memspace);
-    if(ret != ESDM_SUCCESS) {
-      fprintf(stderr, "esdm_wstream_flush(): error creating dataspace for fragment\nWhat dataspace/dataset was passed to esdm_wstream_start()?\naborting\n");
-      abort();
-    }
-    bool isNewFragment;
-    metadata->backendState.fragment = esdmI_dataset_createFragment(metadata->dataset, memspace, NULL, &isNewFragment);
-    if(isNewFragment) {
-      metadata->backendState.fragment->backend = metadata->backend;
-    } else {
-      metadata->backendState.fragment = NULL;  //no need to stream anything into an already existing fragment
-    }
-    esdm_dataspace_destroy(memspace);
-  }
-
   int64_t curChunkSize = (char*)bufferEnd - (char*)buffer;
-  if(metadata->backendState.fragment) { //don't stream any data that's already on disk
+
+  eassert(metadata->fragCapacityRemaining >= curChunkSize);
+
+  if(metadata->backendState.fragment){ //don't stream any data that's already on disk
     int ret = esdmI_backend_fragment_write_stream_blocksize(metadata->backend, &metadata->backendState, buffer, metadata->chunkOffset, curChunkSize);
     if(ret != ESDM_SUCCESS) {
       //TODO: Handle this error condition
@@ -159,28 +189,14 @@ void esdm_wstream_flush(esdm_wstream_metadata_t* metadata, void* buffer, void* b
       abort();
     }
   }
-
   //advance the iterator status to the next chunk
   metadata->chunkOffset += curChunkSize;
-  if(++(metadata->nextChunk) == metadata->cumulativeChunkCounts[0]) {
-    if(metadata->backendState.fragment && metadata->chunkOffset != esdm_dataspace_total_bytes(metadata->backendState.fragment->dataspace)) {
-      fprintf(stderr, "contract violation in esdm_wstream_flush() call:\nThe size of the streamed data does not match with the expected size.\nThis is either the result of a direct use of esdm_wstream_flush() by user code, or a library version mismatch between the shared object file and the esdm-stream.h header file used. Please ensure that user code only uses the preprocessor macros supplied by the linked library version to interact with streams.\naborting...\n");
-      abort();
-    }
-    metadata->chunkOffset = 0;
-    metadata->nextChunk = 0;
-    metadata->curFragment++;
+  metadata->nextChunk++;
+  metadata->fragCapacityRemaining -= curChunkSize;
 
-    metadata->backendState.fragment = NULL;
-
-    if(isFinished(metadata)) return;  //all data has been streamed, nothing more to do
-
-    //recalculate the chunk count for the chunking dimension
-    if(dimCount) { //avoid UB in the case of a scalar dataspace
-      int64_t fragmentWidth = esdmI_range_size(getBounds(metadata->dataspace, metadata->chunkingDim, metadata->cumulativeFragmentCounts, metadata->curFragment));
-      metadata->chunkCounts[metadata->chunkingDim] = (fragmentWidth + metadata->maxChunkWidth - 1)/metadata->maxChunkWidth;
-      for(int64_t i = metadata->chunkingDim; i >= 0; i--) metadata->cumulativeChunkCounts[i] = metadata->chunkCounts[i] * metadata->cumulativeChunkCounts[i + 1];
-    }
+  //check whether we need to create another fragment
+  if(metadata->fragCapacityRemaining == 0 && ! isFinished(metadata)){
+    wstream_create_newFragment(metadata);
   }
 }
 

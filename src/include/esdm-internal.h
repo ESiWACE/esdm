@@ -19,7 +19,7 @@
 // ESDM Core //////////////////////////////////////////////////////////////////
 
 #ifndef min
-#define min(x, y) (x < y ? x : y)	
+#define min(x, y) (x < y ? x : y)
 #define max(x, y) (x > y ? x : y)
 #endif
 
@@ -71,6 +71,11 @@ esdm_modules_t *esdm_modules_init(esdm_instance_t *esdm);
  * Get a pointer to the backend with the highest estimated throughput.
  */
 esdm_backend_t* esdm_modules_fastestBackend(esdm_modules_t* modules);
+
+/*
+ * Randomly assign a backend based on their performance
+ */
+esdm_backend_t* esdm_modules_randomWeightedBackend(esdm_modules_t* modules);
 
 esdm_status esdm_modules_finalize();
 

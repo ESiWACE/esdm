@@ -23,12 +23,14 @@
 #include <esdm-internal.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <time.h>
 
 //TODO: Expand this into a benchmark.
 int main(int argc, char const *argv[]) {
   // Interaction with ESDM
   esdm_container_t *container = NULL;
   esdm_dataset_t *dataset = NULL;
+  srand(time(NULL)); // randomize writing to backends
 
   esdm_loglevel(ESDM_LOGLEVEL_WARNING); //stop the esdm_mkfs() call from spamming us with infos about deleted objects
   esdm_status status = esdm_init();
@@ -40,7 +42,7 @@ int main(int argc, char const *argv[]) {
 
   // define dataspace
   esdm_dataspace_t *dataspace;
-  int64_t offset[2] = {0, 0}, size[2] = {10, 20};
+  int64_t offset[2] = {0, 0}, size[2] = {200, 200}; // {20000, 20000};
 
   status = esdm_dataspace_create(2, size, SMD_DTYPE_UINT64, &dataspace);
   eassert(status == ESDM_SUCCESS);
@@ -69,12 +71,12 @@ int main(int argc, char const *argv[]) {
   uint64_t (*data)[size[1]] = malloc(size[0]*sizeof*data);
   status = esdm_read(dataset, data, dataspace);
   eassert(status == ESDM_SUCCESS);
-  printf("data after read-back:\n");
   for (int x = 0; x < size[0]; x++) {
     for (int y = 0; y < size[1]; y++) {
-      printf("%s%"PRId64, y ? ", " : "\t", data[x][y]);
+      if(data[x][y] != (x)*size[1] + y){
+        printf("error %d,%d = %"PRId64"\n", x,y, data[x][y]);
+      }
     }
-    printf("\n");
   }
   for (int x = 0; x < size[0]; x++) {
     for (int y = 0; y < size[1]; y++) {

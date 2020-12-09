@@ -138,6 +138,20 @@ esdm_backend_t** esdm_modules_makeBackendRecommendation(esdm_modules_t* modules,
   return result;
 }
 
+esdm_backend_t* esdm_modules_randomWeightedBackend(esdm_modules_t* modules) {
+  //esdm_backend_t* bestBackend = NULL;
+  // for now just randomly assign the backend
+  //float bestThroughput = 0;
+  //for(int64_t i = 0; i < modules->data_backend_count; i++) {
+  //  float curThroughput = esdmI_backend_estimate_throughput(modules->data_backends[i]);
+  //  if(curThroughput >= bestThroughput) {
+  //    bestThroughput = curThroughput;
+  //    bestBackend = modules->data_backends[i];
+  //  }
+  //}
+  return modules->data_backends[rand() % modules->data_backend_count];
+}
+
 esdm_backend_t* esdm_modules_fastestBackend(esdm_modules_t* modules) {
   esdm_backend_t* bestBackend = NULL;
   float bestThroughput = 0;

@@ -54,7 +54,7 @@ defineStreamType(esdm_wstream_double_t, double);
   typeof(*stream)* const esdm_internal_stream_ptr = (stream); /*avoid multiple evaluation*/ \
   esdm_wstream_metadata_t* esdm_internal_stream_metadata = esdm_wstream_metadata_create(dataset, dimCount, offset, size, smd_c_to_smd_type(*esdm_internal_stream_ptr->buffer)); \
   int64_t esdm_internal_element_count = esdm_wstream_metadata_max_chunk_size(esdm_internal_stream_metadata); \
-  typeof(*stream.buffer) esdm_internal_buffer = (typeof(*stream.buffer)) malloc(esdm_internal_element_count*sizeof*esdm_internal_stream_ptr->buffer); \
+  typeof(*stream.buffer) esdm_internal_buffer = (typeof(*stream.buffer)) malloc(esdm_internal_element_count*sizeof(*esdm_internal_stream_ptr->buffer)); \
   *esdm_internal_stream_ptr = (typeof(*stream)){ \
     .metadata = esdm_internal_stream_metadata, \
     .buffer = esdm_internal_buffer, \
@@ -77,16 +77,18 @@ defineStreamType(esdm_wstream_double_t, double);
 #define esdm_wstream_pack(stream, value) do { \
   typeof(stream)* const esdm_internal_stream_ptr = &(stream); /*avoid multiple evaluation*/ \
   if(esdm_internal_stream_ptr->iter >= esdm_internal_stream_ptr->iterEnd) { \
-    fprintf(stderr, "attempt to push more data into a stream than defined at stream creation\n"); \
+    fprintf(stderr, "wstream attempt to push more data into a stream than defined at stream creation %p %p\n", esdm_internal_stream_ptr->iter, esdm_internal_stream_ptr->iterEnd); \
     abort(); \
   } \
   *esdm_internal_stream_ptr->iter++ = (value); \
   if(esdm_internal_stream_ptr->iter == esdm_internal_stream_ptr->iterEnd) { \
     esdm_wstream_flush(esdm_internal_stream_ptr->metadata, esdm_internal_stream_ptr->buffer, esdm_internal_stream_ptr->iter); \
     esdm_internal_stream_ptr->iter = esdm_internal_stream_ptr->buffer; \
-    esdm_internal_stream_ptr->iterEnd = esdm_internal_stream_ptr->buffer + esdm_wstream_metadata_next_chunk_size(esdm_internal_stream_ptr->metadata); \
+    esdm_internal_stream_ptr->iterEnd = esdm_internal_stream_ptr->iter + esdm_wstream_metadata_next_chunk_size(esdm_internal_stream_ptr->metadata); \
   } \
 } while(0)
+
+//printf("Next iter: %lld %lld\n", esdm_internal_stream_ptr->iter, esdm_internal_stream_ptr->iterEnd);
 
 /**
  * Signal the end of the streaming and perform any required cleanup.
@@ -98,8 +100,8 @@ defineStreamType(esdm_wstream_double_t, double);
  */
 #define esdm_wstream_commit(stream) do { \
   typeof(stream)* const esdm_internal_stream_ptr = &(stream); /*avoid multiple evaluation*/ \
-  if(esdm_internal_stream_ptr->iterEnd != esdm_internal_stream_ptr->buffer) { \
-    fprintf(stderr, "preliminary commit of a stream: too few calls to esdm_wstream_pack()\n"); \
+  if(esdm_internal_stream_ptr->iter != esdm_internal_stream_ptr->buffer) { \
+    fprintf(stderr, "wstream: preliminary commit of a stream: too few calls to esdm_wstream_pack()\n"); \
     abort(); \
   } \
   /*since `esdm_wstream_pack()` flushes the stream *after* adding the last value, we only need to perform local cleanup*/ \
