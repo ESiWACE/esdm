@@ -28,7 +28,6 @@ function help(){
   echo "--with-mpicc=<file>      : path to the MPI C compiler"
   echo "--with-mpicxx=<file>     : path to the MPI C++ compiler"
   echo
-  echo "--with-boost=<file>      : path to boost library used for WOS"
   echo "--with-glib=<path>       : path prefix to the glib library"
   echo "--with-jansson=<path>    : path prefix to the jansson library"
   echo "--with-ime-include=<dir> : path to ime_native.h"
@@ -175,7 +174,9 @@ if [[ "$VERBOSE" == "YES" ]] ; then
   echo "$COMMAND"
   exit 0
 else
+  set -x
   eval "$COMMAND"
+  set +x
   ERROR="$?"
   if [[ "$ERROR" != 0 ]] ; then
     echo "An error occurred during the configuration, aborting!"
