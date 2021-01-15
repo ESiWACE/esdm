@@ -24,7 +24,7 @@
 #endif
 
 #ifdef ESDM_HAS_MOTR
-#  include "Clovis/clovis.h"
+#  include "Motr/clovis.h"
 #  pragma message("Building ESDM with Motr support.")
 #endif
 

@@ -168,7 +168,7 @@ if(BACKEND_MOTR)
 	message(STATUS "WITH_BACKEND_MOTR")
 	add_definitions(-DESDM_HAS_MOTR=1)
   target_link_libraries(esdm esdmclovis)
-	SUBDIRS(backends-data/Clovis)
+	SUBDIRS(backends-data/Motr)
 endif()
 
 option(BACKEND_WOS "Compile backend for WOS support?" OFF)
