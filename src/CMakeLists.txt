@@ -163,7 +163,7 @@ if(BACKEND_LUSTRE)
 	SUBDIRS(backends-data/lustre)
 endif()
 
-option(BACKEND_MOTR "Compile backend for Motr support?" ON)
+option(BACKEND_MOTR "Compile backend for Motr support?" OFF)
 if(BACKEND_MOTR)
 	message(STATUS "WITH_BACKEND_MOTR")
 	add_definitions(-DESDM_HAS_MOTR=1)
