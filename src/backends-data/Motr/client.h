@@ -16,25 +16,25 @@
  * Original author: Huang Hua <hua.huang@seagate.com>
  * Original creation date: 13-Oct-2017
  */
-#ifndef CLOVIS_H
-#define CLOVIS_H
+#ifndef MOTR_CLIENT_H
+#define MOTR_CLIENT_H
 
 #include "esdm.h"
 
 /**
-* Initializes the CLOVIS plugin. In particular this involves:
+* Initializes the MOTR_CLIENT plugin. In particular this involves:
 *
 *    * Load configuration of this backend
 *    * Load and potenitally calibrate performance model
 *
 *    * Connect with support services e.g. for technical metadata
-*    * Setup directory structures used by this CLOVIS specific backend
+*    * Setup directory structures used by this MOTR_CLIENT specific backend
 *
 *    * Poopulate esdm_backend_t struct and callbacks required for registration
 *
 * @return pointer to backend struct
 */
 
-esdm_backend_t *clovis_backend_init (esdm_config_backend_t * config);
+esdm_backend_t *motr_backend_init (esdm_config_backend_t * config);
 
 #endif

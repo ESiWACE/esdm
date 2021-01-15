@@ -16,17 +16,17 @@
  * Original author: Huang Hua <hua.huang@seagate.com>
  * Original creation date: 13-Oct-2017
  */
-#ifndef CLOVIS_INTERNAL_H
-#define CLOVIS_INTERNAL_H
+#ifndef MOTR_CLIENT_INTERNAL_H
+#define MOTR_CLIENT_INTERNAL_H
 
-#include "clovis/clovis.h"
-#include "clovis/clovis_idx.h"
+#include "motr/client.h"
+#include "motr/idx.h"
 #include "lib/memory.h"
 
 struct esdm_backend_t_xxxops {
   /**
 	 * Allocate the backend context and initialise it.
-	 * In this interface, Clovis connects to Mero cluster.
+	 * In this interface, Motr client connects to Motr cluster.
 	 * @param [in] conf, the connection parameters.
 	 * @param [out] eb_out, returned the backend context.
 	 *
@@ -43,7 +43,7 @@ struct esdm_backend_t_xxxops {
   /* object operations start here */
   /**
 	 * Allocate an object or objects in backend and return them
-	 * in @out out_object_id and their internal attributes @out out_mero_metadata.
+	 * in @out out_object_id and their internal attributes @out out_motr_metadata.
 	 * @param [in] eb, the backend pointer.
 	 * @param [in] n_dims, number of dims.
 	 * @param [in] dims_size, dimension array.
@@ -51,7 +51,7 @@ struct esdm_backend_t_xxxops {
 	 * @param [in] md1, metadata.
 	 * @param [in] md2, metadata.
 	 * @param [out] out_object_id, the returned objects.
-	 * @param [out] out_mero_metadata, the returned metadata.
+	 * @param [out] out_motr_metadata, the returned metadata.
 	 */
   int (*esdm_backend_t_obj_alloc) (esdm_backend_t * eb,
 				   int n_dims,
@@ -60,7 +60,7 @@ struct esdm_backend_t_xxxops {
 				   char *md1,
 				   char *md2,
 				   char **out_object_id,
-				   char **out_mero_metadata);
+				   char **out_motr_metadata);
 
   /**
 	 * Open an object for read/write.
@@ -106,19 +106,19 @@ struct esdm_backend_t_xxxops {
 typedef struct {
   esdm_backend_t               ebm_base;
 
-  /* Mero Clovis */
-  struct m0_clovis            *ebm_clovis_instance;
-  struct m0_clovis_container   ebm_clovis_container;
-  struct m0_clovis_config      ebm_clovis_conf;
+  /* Motr Client */
+  struct m0_client            *ebm_m0cl_instance;
+  struct m0_container          ebm_motr_container;
+  struct m0_config             ebm_motr_conf;
 
   struct m0_fid                ebm_last_fid;
   struct m0_mutex              ebm_mutex;
 
   /* for test */
   struct esdm_backend_t_xxxops ebm_ops;
-} esdm_backend_t_clovis_t;
+} esdm_backend_t_motr_t;
 
-extern esdm_backend_t_clovis_t esdm_backend_t_clovis;
+extern esdm_backend_t_motr_t esdm_backend_t_motr;
 extern struct m0_fid index_cdname_to_object;
 extern struct m0_fid index_object_last_pos;
 

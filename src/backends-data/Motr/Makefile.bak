@@ -1,0 +1,26 @@
+MOTR_DIR=/motr/target
+
+AM_CPPFLAGS = -D_REENTRANT -D_GNU_SOURCE -DM0_INTERNAL='' -DM0_EXTERN=extern -iquote ${MOTR_DIR} -iquote '.' -DM0_SRC_DIR=${MOTR_DIR} -I${MOTR_DIR}/include -I${MOTR_DIR}/include/motr -I../../include -fno-common -Wall -Werror -Wno-attributes -fno-strict-aliasing -fno-omit-frame-pointer -g -O2
+
+AM_LDFLAGS = -rdynamic -pthread -Wl,-rpath -Wl,/usr/local/lib
+AM_LIBS = ${MOTR_DIR}/lib/libmotr.so -lm -lpthread -laio -lrt -lyaml -luuid ${MOTR_DIR}/lib/libgf_complete.so -ldl ${MOTR_DIR}/lib/libmotr-ut.so ${MOTR_DIR}/lib/libmotr-net-test.so ${MOTR_DIR}/lib/libmotr-xcode-ff2c.so
+
+HDR = client.h
+SRC = client.c
+OBJ = client.o
+TGT = motr_test
+
+all: ${TGT}
+.PHONY: all
+
+${OBJ}:${SRC} 
+	gcc ${AM_CPPFLAGS} ${AM_CFLAGS} -c -o ${OBJ} ${SRC}
+
+test.o: test/test.c
+	gcc ${AM_CPPFLAGS} ${AM_CFLAGS} -c -o test.o test/test.c
+
+${TGT}:${OBJ} test.o
+	gcc ${AM_CFLAGS} ${AM_LDFLAGS} -o ${TGT} ${OBJ} test.o ${AM_LIBS}
+
+clean:
+	rm -f ${OBJ} ${TGT} test.o m0trace.*
