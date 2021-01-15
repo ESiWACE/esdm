@@ -4,6 +4,7 @@
 #include <esdm-debug.h>
 #include <esdm.h>
 #include <esdm-datatypes-internal.h>
+#include <esdm-internal.h>
 
 #include "../clovis.h"
 #include "../clovis_internal.h"
@@ -20,11 +21,11 @@ int main(int argc, char *argv[]) {
 	int i;
 	int rc;
 
-	esdm_backend_t_clovis_t *ceb;
+	esdm_backend_t_motr_t *ceb;
 	esdm_backend_t *eb;
 
-	ceb = ea_checked_malloc(sizeof esdm_backend_t_clovis);
-	memcpy(ceb, &esdm_backend_t_clovis, sizeof(esdm_backend_t_clovis));
+	ceb = ea_checked_malloc(sizeof esdm_backend_t_motr);
+	memcpy(ceb, &esdm_backend_t_motr, sizeof(esdm_backend_t_motr));
 	eb = &ceb->ebm_base;
 
 	for (i = 0; i < 4; i++) {
@@ -35,64 +36,64 @@ int main(int argc, char *argv[]) {
 	data_w[4096 * 4 - 1] = 0;
 	data_r[4096 * 4 - 1] = 0;
 
-	printf("Test Mero/Clovis data-backend for ESDM\n");
+	printf("Test Motr data-backend for ESDM\n");
 
 	//printf("bs = %llu\n", (unsigned long long)eb->blocksize);
 
-	rc = esdm_backend_t_clovis.ebm_ops.esdm_backend_t_init(conf, eb);
+	rc = esdm_backend_t_motr.ebm_ops.esdm_backend_t_init(conf, eb);
 	if (rc != 0) {
-		printf("esdm_backend_t_clovis.ebm_ops init failed rc=%d\n", rc);
+		printf("esdm_backend_t_motr.ebm_ops init failed rc=%d\n", rc);
 		return rc;
 	}
-	printf("Clovis connection succeeded\n");
-	rc = esdm_backend_t_clovis.ebm_ops.esdm_backend_t_mkfs(eb, 1);
+	printf("Motr Client connection succeeded\n");
+	rc = esdm_backend_t_motr.ebm_ops.esdm_backend_t_mkfs(eb, 1);
 	if (rc != 0) {
-		printf("esdm_backend_t_clovis.ebm_ops mkfs failed rc=%d\n", rc);
+		printf("esdm_backend_t_motr.ebm_ops mkfs failed rc=%d\n", rc);
 		goto fini;
 	}
 
-	rc = esdm_backend_t_clovis.ebm_ops.esdm_backend_t_obj_alloc(eb, 0, NULL, 0, NULL, NULL, &object_id, &object_meta);
+	rc = esdm_backend_t_motr.ebm_ops.esdm_backend_t_obj_alloc(eb, 0, NULL, 0, NULL, NULL, &object_id, &object_meta);
 	if (rc != 0) {
-		printf("esdm_backend_t_clovis.ebm_ops alloc failed rc=%d\n", rc);
+		printf("esdm_backend_t_motr.ebm_ops alloc failed rc=%d\n", rc);
 		goto fini;
 	}
-	printf("Clovis object allocated: %s\n", object_id);
+	printf("Motr object allocated: %s\n", object_id);
 
-	rc = esdm_backend_t_clovis.ebm_ops.esdm_backend_t_obj_open(eb, object_id, &object_handle);
+	rc = esdm_backend_t_motr.ebm_ops.esdm_backend_t_obj_open(eb, object_id, &object_handle);
 	if (rc != 0) {
-		printf("esdm_backend_t_clovis.ebm_ops open failed rc=%d\n", rc);
+		printf("esdm_backend_t_motr.ebm_ops open failed rc=%d\n", rc);
 		goto fini;
 	}
-	printf("Clovis object opened: %s\n", object_id);
+	printf("Motr object opened: %s\n", object_id);
 
-	rc = esdm_backend_t_clovis.ebm_ops.esdm_backend_t_obj_write(eb, object_handle, 0, 4096 * 4, data_w);
+	rc = esdm_backend_t_motr.ebm_ops.esdm_backend_t_obj_write(eb, object_handle, 0, 4096 * 4, data_w);
 	if (rc != 0) {
-		printf("esdm_backend_t_clovis.ebm_ops write failed rc=%d\n", rc);
+		printf("esdm_backend_t_motr.ebm_ops write failed rc=%d\n", rc);
 		goto close;
 	}
-	printf("Clovis object write: %s\n", object_id);
+	printf("Motr object write: %s\n", object_id);
 
-	rc = esdm_backend_t_clovis.ebm_ops.esdm_backend_t_obj_read(eb, object_handle, 0, 4096 * 4, data_r);
+	rc = esdm_backend_t_motr.ebm_ops.esdm_backend_t_obj_read(eb, object_handle, 0, 4096 * 4, data_r);
 	if (rc != 0) {
-		printf("esdm_backend_t_clovis.ebm_ops read failed rc=%d\n", rc);
+		printf("esdm_backend_t_motr.ebm_ops read failed rc=%d\n", rc);
 		goto close;
 	}
-	printf("Clovis object read: %s\n", object_id);
+	printf("Motr object read: %s\n", object_id);
 
 	if (memcmp(data_w, data_r, 4096 * 4) != 0) {
-		printf("esdm_backend_t_clovis.ebm_ops write & read verification failed\n");
+		printf("esdm_backend_t_motr.ebm_ops write & read verification failed\n");
 		printf("write=%s, read=%s\n", data_w, data_r);
 	} else {
-		printf("esdm_backend_t_clovis.ebm_ops write & read verification succeeded\n");
+		printf("esdm_backend_t_motr.ebm_ops write & read verification succeeded\n");
 	}
 
 close:
-	rc = esdm_backend_t_clovis.ebm_ops.esdm_backend_t_obj_close(eb, object_handle);
+	rc = esdm_backend_t_motr.ebm_ops.esdm_backend_t_obj_close(eb, object_handle);
 	if (rc != 0) {
-		printf("esdm_backend_t_clovis.ebm_ops close failed rc=%d\n", rc);
+		printf("esdm_backend_t_motr.ebm_ops close failed rc=%d\n", rc);
 		goto fini;
 	}
-	printf("Clovis object closed: %s\n", object_id);
+	printf("Motr object closed: %s\n", object_id);
 	free(object_meta);
 	free(object_id);
 	object_handle = NULL;
@@ -105,45 +106,45 @@ close:
 	const char *name  = "This is one of my fragments";
 	const char *value = "oid=<0x12345678:0x90abcdef>";
 
-	printf("Clovis mapping insert: '%s' --> '%s'\n", name, value);
-	rc = esdm_backend_t_clovis.ebm_ops.mapping_insert(eb, &index_cdname_to_object, name, value);
+	printf("Motr Client mapping insert: '%s' --> '%s'\n", name, value);
+	rc = esdm_backend_t_motr.ebm_ops.mapping_insert(eb, &index_cdname_to_object, name, value);
 	if (rc != 0) {
-		printf("esdm_backend_t_clovis.ebm_ops mapping_insert failed rc=%d\n", rc);
+		printf("esdm_backend_t_motr.ebm_ops mapping_insert failed rc=%d\n", rc);
 		goto fini;
 	}
-	printf("Clovis mapping insert done\n");
+	printf("Motr Client mapping insert done\n");
 
 	char *new_value = NULL;
-	rc = esdm_backend_t_clovis.ebm_ops.mapping_get(eb, &index_cdname_to_object, name, &new_value);
+	rc = esdm_backend_t_motr.ebm_ops.mapping_get(eb, &index_cdname_to_object, name, &new_value);
 	if (rc != 0) {
-		printf("esdm_backend_t_clovis.ebm_ops mapping_get failed rc=%d\n", rc);
+		printf("esdm_backend_t_motr.ebm_ops mapping_get failed rc=%d\n", rc);
 		goto fini;
 	}
 
-	printf("Clovis mapping got: '%s' --> '%s'\n", name, new_value);
+	printf("Motr Client mapping got: '%s' --> '%s'\n", name, new_value);
 	free(new_value);
 
 	/* try to find non-existent mapping */
 	new_value = NULL;
 	const char *newname = "This my fragments";
-	rc = esdm_backend_t_clovis.ebm_ops.mapping_get(eb, &index_cdname_to_object, newname, &new_value);
+	rc = esdm_backend_t_motr.ebm_ops.mapping_get(eb, &index_cdname_to_object, newname, &new_value);
 	if (rc == 0) {
 		printf("Failure expected, but something wrong happened = %s\n", new_value);
 		goto fini;
 	}
-	printf("Clovis find non-existent mapping passed\n");
+	printf("Motr Client find non-existent mapping passed\n");
 
 fini:
 	free(object_id); /* free(NULL) is OK. */
 	free(object_meta);
 
-	printf("Clovis is about to fini eb = %p\n", eb);
-	rc = esdm_backend_t_clovis.ebm_ops.esdm_backend_t_fini(eb);
+	printf("Motr Client is about to fini eb = %p\n", eb);
+	rc = esdm_backend_t_motr.ebm_ops.esdm_backend_t_fini(eb);
 	if (rc != 0) {
-		printf("esdm_backend_t_clovis.ebm_ops fini failed rc=%d\n", rc);
+		printf("esdm_backend_t_motr.ebm_ops fini failed rc=%d\n", rc);
 		return rc;
 	}
 
-	printf("Clovis disconnection succeeded\n");
+	printf("Motr Client disconnection succeeded\n");
 	return 0;
 }

@@ -23,9 +23,9 @@
 #  pragma message("Building ESDM with Kove XPD KDSA support.")
 #endif
 
-#ifdef ESDM_HAS_CLOVIS
+#ifdef ESDM_HAS_MOTR
 #  include "Clovis/clovis.h"
-#  pragma message("Building ESDM with Clovis support.")
+#  pragma message("Building ESDM with Motr support.")
 #endif
 
 #ifdef ESDM_HAS_WOS
@@ -57,9 +57,9 @@ esdm_backend_t * esdmI_init_backend(char const * name, esdm_config_backend_t * b
     return kdsa_backend_init(b);
   }
 #endif
-#ifdef ESDM_HAS_CLOVIS
-  else if (strncasecmp(b->type, "CLOVIS", 6) == 0) {
-    return clovis_backend_init(b);
+#ifdef ESDM_HAS_MOTR
+  else if (strncasecmp(b->type, "MOTR", 6) == 0) {
+    return motr_backend_init(b);
   }
 #endif
 #ifdef ESDM_HAS_WOS

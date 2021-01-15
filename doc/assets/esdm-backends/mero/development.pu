@@ -4,7 +4,7 @@ node ESDMApp1 {
 	node App1 {
 	control "UserApp"
 	control "ESDM"
-	control "Clovis Instance" as clovis
+	control "MotrClient Instance" as clovis
 	}
 }
 

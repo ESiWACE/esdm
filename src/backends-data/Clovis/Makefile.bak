@@ -1,9 +1,9 @@
-MERO_DIR=/mero/target
+MOTR_DIR=/motr/target
 
-AM_CPPFLAGS = -D_REENTRANT -D_GNU_SOURCE -DM0_INTERNAL='' -DM0_EXTERN=extern -iquote ${MERO_DIR} -iquote '.' -DM0_SRC_DIR=${MERO_DIR} -I${MERO_DIR}/include -I${MERO_DIR}/include/mero -I../../include -fno-common -Wall -Werror -Wno-attributes -fno-strict-aliasing -fno-omit-frame-pointer -g -O2
+AM_CPPFLAGS = -D_REENTRANT -D_GNU_SOURCE -DM0_INTERNAL='' -DM0_EXTERN=extern -iquote ${MOTR_DIR} -iquote '.' -DM0_SRC_DIR=${MOTR_DIR} -I${MOTR_DIR}/include -I${MOTR_DIR}/include/motr -I../../include -fno-common -Wall -Werror -Wno-attributes -fno-strict-aliasing -fno-omit-frame-pointer -g -O2
 
 AM_LDFLAGS = -rdynamic -pthread -Wl,-rpath -Wl,/usr/local/lib
-AM_LIBS = ${MERO_DIR}/lib/libmero.so -lm -lpthread -laio -lrt -lyaml -luuid ${MERO_DIR}/lib/libgf_complete.so -ldl ${MERO_DIR}/lib/libmero-ut.so ${MERO_DIR}/lib/libmero-net-test.so ${MERO_DIR}/lib/libmero-xcode-ff2c.so
+AM_LIBS = ${MOTR_DIR}/lib/libmotr.so -lm -lpthread -laio -lrt -lyaml -luuid ${MOTR_DIR}/lib/libgf_complete.so -ldl ${MOTR_DIR}/lib/libmotr-ut.so ${MOTR_DIR}/lib/libmotr-net-test.so ${MOTR_DIR}/lib/libmotr-xcode-ff2c.so
 
 HDR = clovis.h
 SRC = clovis.c

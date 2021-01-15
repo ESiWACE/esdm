@@ -19,7 +19,7 @@
 
 /**
  * @file
- * @brief A data backend to provide Clovis compatibility.
+ * @brief A data backend to provide Motr compatibility.
  */
 
 #define VERBOSE_DEBUG
@@ -32,9 +32,10 @@
 #include <esdm-debug.h>
 #include <esdm.h>
 #include <esdm-datatypes-internal.h>
+#include <esdm-internal.h>
 
-#include "clovis/clovis.h"
-#include "clovis/clovis_internal.h"
+#include "motr/client.h"
+#include "motr/client_internal.h"
 
 #include "clovis_internal.h"
 
@@ -44,10 +45,10 @@
 #define DEBUG_ENTER         printf(">>>Entering %s:%d\n", __func__, __LINE__)
 #define DEBUG_LEAVE(rc)     printf("<<<Leaving  %s:%d:rc=%d\n", __func__, __LINE__, (rc))
 #else
-#define DEBUG(fmt)          ESDM_DEBUG_COM_FMT("CLOVIS", fmt)
-#define DEBUG_FMT(fmt, ...) ESDM_DEBUG_COM_FMT("CLOVIS", fmt, __VA_ARGS__)
-#define DEBUG_ENTER         ESDM_DEBUG_COM_FMT("CLOVIS", ">>>Entering %s:%d\n", __func__, __LINE__)
-#define DEBUG_LEAVE(rc)     ESDM_DEBUG_COM_FMT("CLOVIS", "<<<Leaving  %s:%d:rc=%d\n", __func__, __LINE__, (rc))
+#define DEBUG(fmt)          ESDM_DEBUG_COM_FMT("MOTR_CLIENT", fmt)
+#define DEBUG_FMT(fmt, ...) ESDM_DEBUG_COM_FMT("MOTR_CLIENT", fmt, __VA_ARGS__)
+#define DEBUG_ENTER         ESDM_DEBUG_COM_FMT("MOTR_CLIENT", ">>>Entering %s:%d\n", __func__, __LINE__)
+#define DEBUG_LEAVE(rc)     ESDM_DEBUG_COM_FMT("MOTR_CLIENT", "<<<Leaving  %s:%d:rc=%d\n", __func__, __LINE__, (rc))
 #endif
 
 #define PAGE_4K (4096ULL)
@@ -67,18 +68,18 @@ struct m0_fid index_object_last_pos =
 
 /**
  * This is the map<"container_name/dataset_name", fid>.
- * Every "container_name/dataset_name" has a Clovis objct identified by <obj_id>
- * in Mero system. This is stored as an internal metadata in a Mero index
+ * Every "container_name/dataset_name" has a Motr objct identified by <obj_id>
+ * in Motr system. This is stored as an internal metadata in a Motr index
  * identified by "index_cdname_to_object".
  *
- * When the container/dataset is accessed, Clovis opens the object and keeps
- * the open handle in this map<obj_id, open_handle>.
+ * When the container/dataset is accessed, Motr client opens the object and
+ * keeps the open handle in this map<obj_id, open_handle>.
  *
  * Fragments belonging to the same dataset are stored in the same object,
  * and its "position" in this object is returned in "fragment->id".
  *
  * The last position (object tail) is stored in map<obj_id, last_pos> and it is
- * stored in a Mero index identified by "index_object_last_pos".
+ * stored in a Motr index identified by "index_object_last_pos".
  */
 struct con_dataset_obj_pair {
 	/* "container_name/dataset_name" string */
@@ -92,7 +93,7 @@ struct con_dataset_obj_pair {
 
 	/* --- memory-only --- */
 	/* the open object handle */
-	struct m0_clovis_obj *cdo_obj_handle;
+	struct m0_obj *cdo_obj_handle;
 
 	/* link into ::con_map */
 	struct m0_list_link   cdo_linkage;
@@ -105,10 +106,10 @@ struct con_dataset_obj_pair {
 static struct m0_list  con_map;
 static struct m0_mutex con_map_lock;
 
-static inline esdm_backend_t_clovis_t *
+static inline esdm_backend_t_motr_t *
 eb2ebm(esdm_backend_t *eb)
 {
-	return container_of(eb, esdm_backend_t_clovis_t, ebm_base);
+	return container_of(eb, esdm_backend_t_motr_t, ebm_base);
 }
 
 /*
@@ -126,13 +127,13 @@ static void ebm_unlock(esdm_backend_t *backend)
 }
 
 /*
- * Convert a normal pthread into a Mero thread.
- * This is needed for Clovis operations if the thread is not created
+ * Convert a normal pthread into a Motr thread.
+ * This is needed for Motr operations if the thread is not created
  * by m0_thread_init();
  */
-static bool convert_pthread_to_mero_thread(esdm_backend_t *backend)
+static bool convert_pthread_to_motr_thread(esdm_backend_t *backend)
 {
-	esdm_backend_t_clovis_t *ebm;
+	esdm_backend_t_motr_t *ebm;
 	struct m0_thread_tls *tls;
 	struct m0_thread     *mthread;
 	DEBUG_ENTER;
@@ -145,13 +146,13 @@ static bool convert_pthread_to_mero_thread(esdm_backend_t *backend)
 	eassert(mthread != NULL);
 
 	memset(mthread, 0, sizeof(struct m0_thread));
-	m0_thread_adopt(mthread, ebm->ebm_clovis_instance->m0c_mero);
+	m0_thread_adopt(mthread, ebm->ebm_m0cl_instance->m0c_motr);
 
 	DEBUG_LEAVE(0);
 	return true;
 }
 
-static void revert_mero_thread_to_pthread()
+static void revert_motr_thread_to_pthread()
 {
 	DEBUG_ENTER;
 	m0_thread_shun();
@@ -172,7 +173,7 @@ laddr_get()
 
 	output =
 		popen
-		("/mero.bin/bin/m0nettest -l | grep NID | egrep -e 'tcp|o2ib' | head -n 1 | awk -e '{print $3}'",
+		("/motr.bin/bin/m0nettest -l | grep NID | egrep -e 'tcp|o2ib' | head -n 1 | awk -e '{print $3}'",
 		 "r");
 	if (output == NULL) {
 		return NULL;
@@ -198,18 +199,18 @@ struct m0_idx_dix_config dix_conf = {.kc_create_meta = false };
  * and actually every client needs its own local address.
  */
 static int
-conf_parse(char *conf, esdm_backend_t_clovis_t *ebm)
+conf_parse(char *conf, esdm_backend_t_motr_t *ebm)
 {
 	/*
-	 * Parse the conf string into ebm->ebm_clovis_conf.
+	 * Parse the conf string into ebm->ebm_motr_conf.
 	 */
-	char *clovis_local_addr;
-	char *clovis_ha_addr;
-	char *clovis_prof;
-	char *clovis_proc_fid;
+	char *m0cl_local_addr;
+	char *m0cl_ha_addr;
+	char *m0cl_prof;
+	char *m0cl_proc_fid;
 	/*char *laddr, *combined_laddr; */
 
-	if ((clovis_local_addr = strsep(&conf, " ")) == NULL)
+	if ((m0cl_local_addr = strsep(&conf, " ")) == NULL)
 		return -EINVAL;
 #if 0
 	/* Temporarily disabled this. */
@@ -217,90 +218,90 @@ conf_parse(char *conf, esdm_backend_t_clovis_t *ebm)
 	if (laddr == NULL)
 		return -EINVAL;
 	/* concatenate the local address and user provided appendix */
-	asprintf(&combined_laddr, "%s%s", laddr, clovis_local_addr);
+	asprintf(&combined_laddr, "%s%s", laddr, m0cl_local_addr);
 	free(laddr);
 	if (combined_laddr == NULL)
 		return -EINVAL;
-	ebm->ebm_clovis_conf.cc_local_addr = combined_laddr;
+	ebm->ebm_motr_conf.mc_local_addr = combined_laddr;
 #else
-	ebm->ebm_clovis_conf.cc_local_addr = ea_checked_strdup(clovis_local_addr);
+	ebm->ebm_motr_conf.mc_local_addr = ea_checked_strdup(m0cl_local_addr);
 #endif
 
-	if ((clovis_ha_addr = strsep(&conf, " ")) == NULL)
+	if ((m0cl_ha_addr = strsep(&conf, " ")) == NULL)
 		return -EINVAL;
-	ebm->ebm_clovis_conf.cc_ha_addr = ea_checked_strdup(clovis_ha_addr);
+	ebm->ebm_motr_conf.mc_ha_addr = ea_checked_strdup(m0cl_ha_addr);
 
-	if ((clovis_prof = strsep(&conf, " ")) == NULL)
+	if ((m0cl_prof = strsep(&conf, " ")) == NULL)
 		return -EINVAL;
-	ebm->ebm_clovis_conf.cc_profile = ea_checked_strdup(clovis_prof);
+	ebm->ebm_motr_conf.mc_profile = ea_checked_strdup(m0cl_prof);
 
-	if ((clovis_proc_fid = strsep(&conf, " ")) == NULL)
+	if ((m0cl_proc_fid = strsep(&conf, " ")) == NULL)
 		return -EINVAL;
-	ebm->ebm_clovis_conf.cc_process_fid = ea_checked_strdup(clovis_proc_fid);
+	ebm->ebm_motr_conf.mc_process_fid = ea_checked_strdup(m0cl_proc_fid);
 
-	ebm->ebm_clovis_conf.cc_is_oostore = true;
-	ebm->ebm_clovis_conf.cc_is_read_verify = false;
-	ebm->ebm_clovis_conf.cc_tm_recv_queue_min_len = M0_NET_TM_RECV_QUEUE_DEF_LEN;
-	ebm->ebm_clovis_conf.cc_max_rpc_msg_size = M0_RPC_DEF_MAX_RPC_MSG_SIZE;
-	ebm->ebm_clovis_conf.cc_layout_id = 0;
+	ebm->ebm_motr_conf.mc_is_oostore = true;
+	ebm->ebm_motr_conf.mc_is_read_verify = false;
+	ebm->ebm_motr_conf.mc_tm_recv_queue_min_len = M0_NET_TM_RECV_QUEUE_DEF_LEN;
+	ebm->ebm_motr_conf.mc_max_rpc_msg_size = M0_RPC_DEF_MAX_RPC_MSG_SIZE;
+	ebm->ebm_motr_conf.mc_layout_id = 0;
 	/* for DIX index type. */
-	ebm->ebm_clovis_conf.cc_idx_service_id = M0_CLOVIS_IDX_DIX;
-	ebm->ebm_clovis_conf.cc_idx_service_conf = &dix_conf;
+	ebm->ebm_motr_conf.mc_idx_service_id = M0_IDX_DIX;
+	ebm->ebm_motr_conf.mc_idx_service_conf = &dix_conf;
 	/* for MOCK index type.
-	ebm->ebm_clovis_conf.cc_idx_service_id = M0_CLOVIS_IDX_MOCK;
-	ebm->ebm_clovis_conf.cc_idx_service_conf = "/tmp";
+	ebm->ebm_motr_conf.mc_idx_service_id = M0_IDX_MOCK;
+	ebm->ebm_motr_conf.mc_idx_service_conf = "/tmp";
 	*/
 
-	DEBUG_FMT("local addr = %s\n", ebm->ebm_clovis_conf.cc_local_addr);
-	DEBUG_FMT("ha addr    = %s\n", ebm->ebm_clovis_conf.cc_ha_addr);
-	DEBUG_FMT("profile    = %s\n", ebm->ebm_clovis_conf.cc_profile);
-	DEBUG_FMT("process id = %s\n", ebm->ebm_clovis_conf.cc_process_fid);
+	DEBUG_FMT("local addr = %s\n", ebm->ebm_motr_conf.mc_local_addr);
+	DEBUG_FMT("ha addr    = %s\n", ebm->ebm_motr_conf.mc_ha_addr);
+	DEBUG_FMT("profile    = %s\n", ebm->ebm_motr_conf.mc_profile);
+	DEBUG_FMT("process id = %s\n", ebm->ebm_motr_conf.mc_process_fid);
 	return 0;
 }
 
 static void
-open_entity(struct m0_clovis_obj *obj)
+open_entity(struct m0_obj *obj)
 {
-	struct m0_clovis_entity *entity = &obj->ob_entity;
-	struct m0_clovis_op *ops[1] = { NULL };
+	struct m0_entity *entity = &obj->ob_entity;
+	struct m0_op *ops[1] = { NULL };
 	DEBUG_ENTER;
 
-	m0_clovis_entity_open(entity, &ops[0]);
-	m0_clovis_op_launch(ops, 1);
-	m0_clovis_op_wait(ops[0], M0_BITS(M0_CLOVIS_OS_FAILED,
-			  M0_CLOVIS_OS_STABLE), M0_TIME_NEVER);	//m0_time_from_now(3,0));
-	m0_clovis_op_fini(ops[0]);
-	m0_clovis_op_free(ops[0]);
+	m0_entity_open(entity, &ops[0]);
+	m0_op_launch(ops, 1);
+	m0_op_wait(ops[0], M0_BITS(M0_OS_FAILED,
+			  M0_OS_STABLE), M0_TIME_NEVER);	//m0_time_from_now(3,0));
+	m0_op_fini(ops[0]);
+	m0_op_free(ops[0]);
 	ops[0] = NULL;
 	DEBUG_LEAVE(0);
 }
 
 static int
-create_object(esdm_backend_t_clovis_t *ebm, struct m0_uint128 id)
+create_object(esdm_backend_t_motr_t *ebm, struct m0_uint128 id)
 {
 	int rc = 0;
-	struct m0_clovis_obj obj;
-	struct m0_clovis_op *ops[1] = { NULL };
+	struct m0_obj obj;
+	struct m0_op *ops[1] = { NULL };
 	DEBUG_ENTER;
 
-	memset(&obj, 0, sizeof(struct m0_clovis_obj));
+	memset(&obj, 0, sizeof(struct m0_obj));
 
-	m0_clovis_obj_init(&obj, &ebm->ebm_clovis_container.co_realm,
+	m0_obj_init(&obj, &ebm->ebm_motr_container.co_realm,
 			   &id,
-			   m0_clovis_layout_id(ebm->ebm_clovis_instance));
+			   m0_client_layout_id(ebm->ebm_m0cl_instance));
 
 	open_entity(&obj);
 
-	m0_clovis_entity_create(NULL, &obj.ob_entity, &ops[0]);
+	m0_entity_create(NULL, &obj.ob_entity, &ops[0]);
 
-	m0_clovis_op_launch(ops, ARRAY_SIZE(ops));
+	m0_op_launch(ops, ARRAY_SIZE(ops));
 
-	rc = m0_clovis_op_wait(ops[0], M0_BITS(M0_CLOVIS_OS_FAILED,
-			       M0_CLOVIS_OS_STABLE), M0_TIME_NEVER);	//m0_time_from_now(3,0));
+	rc = m0_op_wait(ops[0], M0_BITS(M0_OS_FAILED,
+			       M0_OS_STABLE), M0_TIME_NEVER);	//m0_time_from_now(3,0));
 
-	m0_clovis_op_fini(ops[0]);
-	m0_clovis_op_free(ops[0]);
-	m0_clovis_obj_fini(&obj);
+	m0_op_fini(ops[0]);
+	m0_op_free(ops[0]);
+	m0_obj_fini(&obj);
 
 	DEBUG_LEAVE(rc);
 	return rc;
@@ -357,16 +358,16 @@ object_meta_encode(const struct m0_uint128 *obj_id)
 }
 
 static int
-esdm_backend_t_clovis_alloc(esdm_backend_t *eb,
+esdm_backend_t_motr_alloc(esdm_backend_t *eb,
 			    int n_dims,
 			    int *dims_size,
 			    esdm_type_t type,
 			    char *md1,
 			    char *md2,
 			    char **out_object_id,
-			    char **out_mero_metadata)
+			    char **out_motr_metadata)
 {
-	esdm_backend_t_clovis_t *ebm;
+	esdm_backend_t_motr_t *ebm;
 	struct m0_uint128 obj_id;
 	int rc;
 	DEBUG_ENTER;
@@ -382,19 +383,19 @@ esdm_backend_t_clovis_alloc(esdm_backend_t *eb,
 	if (rc == 0) {
 		/* encode this obj_id into string */
 		*out_object_id     = object_id_encode(&obj_id);
-		*out_mero_metadata = object_meta_encode(&obj_id);
+		*out_motr_metadata = object_meta_encode(&obj_id);
 	}
 	DEBUG_LEAVE(rc);
 	return rc;
 }
 
 static int
-esdm_backend_t_clovis_open(esdm_backend_t *eb,
+esdm_backend_t_motr_open(esdm_backend_t *eb,
 			   const char *object_id,
 			   void **obj_handle)
 {
-	esdm_backend_t_clovis_t *ebm;
-	struct m0_clovis_obj *obj;
+	esdm_backend_t_motr_t *ebm;
+	struct m0_obj *obj;
 	struct m0_uint128 obj_id;
 	int rc = 0;
 	DEBUG_ENTER;
@@ -404,18 +405,18 @@ esdm_backend_t_clovis_open(esdm_backend_t *eb,
 	/* convert from json string to object id. */
 	object_id_decode(object_id, &obj_id);
 
-	obj = ea_checked_malloc(sizeof (struct m0_clovis_obj));
+	obj = ea_checked_malloc(sizeof (struct m0_obj));
 	if (obj == NULL) {
 		rc = -ENOMEM;
 		DEBUG_LEAVE(rc);
 		return rc;
 	}
 
-	memset(obj, 0, sizeof(struct m0_clovis_obj));
-	m0_clovis_obj_init(obj,
-			   &ebm->ebm_clovis_container.co_realm,
+	memset(obj, 0, sizeof(struct m0_obj));
+	m0_obj_init(obj,
+			   &ebm->ebm_motr_container.co_realm,
 			   &obj_id,
-			   m0_clovis_layout_id(ebm->ebm_clovis_instance));
+			   m0_client_layout_id(ebm->ebm_m0cl_instance));
 
 	open_entity(obj);
 	*obj_handle = obj;
@@ -425,85 +426,85 @@ esdm_backend_t_clovis_open(esdm_backend_t *eb,
 }
 
 static int
-esdm_backend_t_clovis_rdwr(esdm_backend_t *eb,
+esdm_backend_t_motr_rdwr(esdm_backend_t *eb,
 			   void *obj_handle,
 			   uint64_t start,
 			   uint64_t count,
 			   void *data,
 			   int rdwr_op)
 {
-	struct m0_clovis_obj *obj = (struct m0_clovis_obj *)obj_handle;
+	struct m0_obj *obj = (struct m0_obj *)obj_handle;
 	uint64_t i;
-	struct m0_clovis_op *ops[1] = { NULL };
+	struct m0_op *ops[1] = { NULL };
 	struct m0_indexvec ext;
 	struct m0_bufvec data_buf = { { 0 } };
 	struct m0_bufvec attr_buf = { { 0 } };
-	uint64_t clovis_block_count;
-	uint64_t clovis_block_size;
+	uint64_t m0cl_block_count;
+	uint64_t m0cl_block_size;
 	int rc;
 
 	eassert((start & BLOCKMASK) == 0);
 	eassert(((start + count) & BLOCKMASK) == 0);
-	eassert(rdwr_op == M0_CLOVIS_OC_READ || rdwr_op == M0_CLOVIS_OC_WRITE);
+	eassert(rdwr_op == M0_OC_READ || rdwr_op == M0_OC_WRITE);
 
 	/*
 	 * read the extended region and copy the data from new buffers.
 	 */
 
-	clovis_block_size = BLOCKSIZE;
-	clovis_block_count = count / clovis_block_size;
+	m0cl_block_size = BLOCKSIZE;
+	m0cl_block_count = count / m0cl_block_size;
 
-	/* we want to read <clovis_block_count> from @start of the object */
-	rc = m0_indexvec_alloc(&ext, clovis_block_count);
+	/* we want to read <m0cl_block_count> from @start of the object */
+	rc = m0_indexvec_alloc(&ext, m0cl_block_count);
 	if (rc != 0)
 		return rc;
 
 	/*
-	 * this allocates <clovis_block_count> empty buffers for data.
+	 * this allocates <m0cl_block_count> empty buffers for data.
 	 */
-	rc = m0_bufvec_empty_alloc(&data_buf, clovis_block_count);
+	rc = m0_bufvec_empty_alloc(&data_buf, m0cl_block_count);
 	if (rc != 0) {
 		m0_indexvec_free(&ext);
 		return rc;
 	}
 
-	rc = m0_bufvec_alloc(&attr_buf, clovis_block_count, 1);
+	rc = m0_bufvec_alloc(&attr_buf, m0cl_block_count, 1);
 	if (rc != 0) {
 		m0_indexvec_free(&ext);
 		m0_bufvec_free2(&data_buf);
 		return rc;
 	}
 
-	for (i = 0; i < clovis_block_count; i++) {
-		ext.iv_index[i] = start + clovis_block_size * i;
-		ext.iv_vec.v_count[i] = clovis_block_size;
+	for (i = 0; i < m0cl_block_count; i++) {
+		ext.iv_index[i] = start + m0cl_block_size * i;
+		ext.iv_vec.v_count[i] = m0cl_block_size;
 
-		data_buf.ov_buf[i] = data + clovis_block_size * i;
-		data_buf.ov_vec.v_count[i] = clovis_block_size;
+		data_buf.ov_buf[i] = data + m0cl_block_size * i;
+		data_buf.ov_vec.v_count[i] = m0cl_block_size;
 
 		/* we don't want any attributes */
 		attr_buf.ov_vec.v_count[i] = 0;
 	}
 
 	/* Create the read request */
-	m0_clovis_obj_op(obj, rdwr_op, &ext, &data_buf, &attr_buf, 0, &ops[0]);
+	m0_obj_op(obj, rdwr_op, &ext, &data_buf, &attr_buf, 0, 0, &ops[0]);
 	M0_ASSERT(rc == 0);
 	M0_ASSERT(ops[0] != NULL);
 	M0_ASSERT(ops[0]->op_sm.sm_rc == 0);
 
-	m0_clovis_op_launch(ops, 1);
+	m0_op_launch(ops, 1);
 
 	/* wait */
-	rc = m0_clovis_op_wait(ops[0],
-			 M0_BITS(M0_CLOVIS_OS_FAILED,
-				 M0_CLOVIS_OS_STABLE), M0_TIME_NEVER);
+	rc = m0_op_wait(ops[0],
+			 M0_BITS(M0_OS_FAILED,
+				 M0_OS_STABLE), M0_TIME_NEVER);
 	M0_ASSERT(rc == 0);
-	M0_ASSERT(ops[0]->op_sm.sm_state == M0_CLOVIS_OS_STABLE);
+	M0_ASSERT(ops[0]->op_sm.sm_state == M0_OS_STABLE);
 	M0_ASSERT(ops[0]->op_sm.sm_rc == 0);
 
 	/* fini and release */
-	m0_clovis_op_fini(ops[0]);
-	m0_clovis_op_free(ops[0]);
+	m0_op_fini(ops[0]);
+	m0_op_free(ops[0]);
 
 	m0_indexvec_free(&ext);
 	m0_bufvec_free2(&data_buf);
@@ -513,7 +514,7 @@ esdm_backend_t_clovis_rdwr(esdm_backend_t *eb,
 }
 
 static int
-esdm_backend_t_clovis_write(esdm_backend_t *eb,
+esdm_backend_t_motr_write(esdm_backend_t *eb,
 			    void *obj_handle,
 			    uint64_t start,
 			    uint64_t count,
@@ -522,13 +523,13 @@ esdm_backend_t_clovis_write(esdm_backend_t *eb,
 	int rc;
 	eassert((start & BLOCKMASK) == 0);
 	eassert(((start + count) & BLOCKMASK) == 0);
-	rc = esdm_backend_t_clovis_rdwr(eb, obj_handle, start, count,
-					data, M0_CLOVIS_OC_WRITE);
+	rc = esdm_backend_t_motr_rdwr(eb, obj_handle, start, count,
+					data, M0_OC_WRITE);
 	return rc;
 }
 
 static int
-esdm_backend_t_clovis_read(esdm_backend_t *eb,
+esdm_backend_t_motr_read(esdm_backend_t *eb,
 			   void *obj_handle,
 			   uint64_t start,
 			   uint64_t count,
@@ -537,20 +538,20 @@ esdm_backend_t_clovis_read(esdm_backend_t *eb,
 	int rc;
 	eassert((start & BLOCKMASK) == 0);
 	eassert(((start + count) & BLOCKMASK) == 0);
-	rc = esdm_backend_t_clovis_rdwr(eb, obj_handle, start, count,
-					data, M0_CLOVIS_OC_READ);
+	rc = esdm_backend_t_motr_rdwr(eb, obj_handle, start, count,
+					data, M0_OC_READ);
 	return rc;
 }
 
 static int
-esdm_backend_t_clovis_close(esdm_backend_t *eb, void *obj_handle)
+esdm_backend_t_motr_close(esdm_backend_t *eb, void *obj_handle)
 {
-	struct m0_clovis_obj *obj;
+	struct m0_obj *obj;
 	int rc = 0;
 	DEBUG_ENTER;
 
-	obj = (struct m0_clovis_obj *)obj_handle;
-	m0_clovis_obj_fini(obj);
+	obj = (struct m0_obj *)obj_handle;
+	m0_obj_fini(obj);
 	free(obj);
 
 	DEBUG_LEAVE(rc);
@@ -558,60 +559,60 @@ esdm_backend_t_clovis_close(esdm_backend_t *eb, void *obj_handle)
 }
 
 static int
-index_op_tail(struct m0_clovis_entity *ce, struct m0_clovis_op *op, int rc)
+index_op_tail(struct m0_entity *ce, struct m0_op *op, int rc)
 {
 	if (rc == 0) {
-		m0_clovis_op_launch(&op, 1);
-		rc = m0_clovis_op_wait(op,
-				       M0_BITS(M0_CLOVIS_OS_FAILED,
-				       M0_CLOVIS_OS_STABLE),
+		m0_op_launch(&op, 1);
+		rc = m0_op_wait(op,
+				       M0_BITS(M0_OS_FAILED,
+				       M0_OS_STABLE),
 				       M0_TIME_NEVER);
 		DEBUG_FMT("operation succeeded (op=%d) rc: %i\n", op->op_code, rc);
 	}
 	else
 		DEBUG_FMT("operation failed (op=%d) rc: %i\n", op->op_code, rc);
-	m0_clovis_op_fini(op);
-	m0_clovis_op_free(op);
-	m0_clovis_entity_fini(ce);
+	m0_op_fini(op);
+	m0_op_free(op);
+	m0_entity_fini(ce);
 	return rc;
 }
 
 int
-clovis_index_create(struct m0_clovis_realm *parent, struct m0_fid *fid)
+motr_index_create(struct m0_realm *parent, struct m0_fid *fid)
 {
-	struct m0_clovis_op *op = NULL;
-	struct m0_clovis_idx idx;
+	struct m0_op *op = NULL;
+	struct m0_idx idx;
 	int rc = 0;
 
-	m0_clovis_idx_init(&idx, parent, (struct m0_uint128 *)fid);
-	rc = m0_clovis_entity_create(NULL, &idx.in_entity, &op)?:
+	m0_idx_init(&idx, parent, (struct m0_uint128 *)fid);
+	rc = m0_entity_create(NULL, &idx.in_entity, &op)?:
 		index_op_tail(&idx.in_entity, op, rc);
 	return rc;
 }
 
 int
-clovis_index_delete(struct m0_clovis_realm *parent, struct m0_fid *fid)
+motr_index_delete(struct m0_realm *parent, struct m0_fid *fid)
 {
-	struct m0_clovis_op *op = NULL;
-	struct m0_clovis_idx idx;
+	struct m0_op *op = NULL;
+	struct m0_idx idx;
 	int rc = 0;
 
-	m0_clovis_idx_init(&idx, parent, (struct m0_uint128 *)fid);
-	rc = m0_clovis_entity_open(&idx.in_entity, &op) ?:
-		m0_clovis_entity_delete(&idx.in_entity, &op) ?:
+	m0_idx_init(&idx, parent, (struct m0_uint128 *)fid);
+	rc = m0_entity_open(&idx.in_entity, &op) ?:
+		m0_entity_delete(&idx.in_entity, &op) ?:
 		index_op_tail(&idx.in_entity, op, rc);
 
 	return rc;
 }
 
 static int
-index_op(struct m0_clovis_realm *parent,
+index_op(struct m0_realm *parent,
 	 struct m0_fid *fid,
-	 enum m0_clovis_idx_opcode opcode,
+	 enum m0_idx_opcode opcode,
 	 struct m0_bufvec *keys, struct m0_bufvec *vals)
 {
-	struct m0_clovis_idx idx;
-	struct m0_clovis_op *op = NULL;
+	struct m0_idx idx;
+	struct m0_op *op = NULL;
 	int32_t *rcs;
 	int rc;
 
@@ -620,15 +621,15 @@ index_op(struct m0_clovis_realm *parent,
 	M0_ALLOC_ARR(rcs, keys->ov_vec.v_nr);
 	if (rcs == NULL)
 		return -ENOMEM;
-	m0_clovis_idx_init(&idx, parent, (struct m0_uint128 *)fid);
-	rc = m0_clovis_idx_op(&idx, opcode, keys, vals, rcs, M0_OIF_OVERWRITE, &op);
+	m0_idx_init(&idx, parent, (struct m0_uint128 *)fid);
+	rc = m0_idx_op(&idx, opcode, keys, vals, rcs, M0_OIF_OVERWRITE, &op);
 	rc = index_op_tail(&idx.in_entity, op, rc);
 	m0_free(rcs);
 	return rc;
 }
 
 static int
-clovis_index_put(struct m0_clovis_realm *parent,
+motr_index_put(struct m0_realm *parent,
 		 struct m0_fid *fid,
 		 struct m0_bufvec *keys, struct m0_bufvec *vals)
 {
@@ -638,14 +639,14 @@ clovis_index_put(struct m0_clovis_realm *parent,
 	M0_PRE(keys != NULL);
 	M0_PRE(vals != NULL);
 
-	rc = index_op(parent, fid, M0_CLOVIS_IC_PUT, keys, vals);
+	rc = index_op(parent, fid, M0_IC_PUT, keys, vals);
 	DEBUG_FMT("put done: %i\n", rc);
 
 	return rc;
 }
 
 static int
-clovis_index_get(struct m0_clovis_realm *parent,
+motr_index_get(struct m0_realm *parent,
 		 struct m0_fid *fid,
 		 struct m0_bufvec *keys,
 		 struct m0_bufvec *vals)
@@ -656,7 +657,7 @@ clovis_index_get(struct m0_clovis_realm *parent,
 	M0_PRE(keys != NULL && keys->ov_vec.v_nr == 1);
 	M0_PRE(vals != NULL && vals->ov_vec.v_nr == 1);
 
-	rc = index_op(parent, fid, M0_CLOVIS_IC_GET, keys, vals);
+	rc = index_op(parent, fid, M0_IC_GET, keys, vals);
 	if (rc == 0) {
 		if (vals->ov_buf[0] == NULL)
 			rc = -ENODATA;
@@ -686,7 +687,7 @@ static int
 mapping_get(esdm_backend_t *backend, struct m0_fid *index_fid,
 	    const char *name, char **value)
 {
-	esdm_backend_t_clovis_t *ebm = eb2ebm(backend);
+	esdm_backend_t_motr_t *ebm = eb2ebm(backend);
 	int rc;
 	struct m0_bufvec key = { { 0 } };
 	struct m0_bufvec val = { { 0 } };
@@ -694,7 +695,7 @@ mapping_get(esdm_backend_t *backend, struct m0_fid *index_fid,
 	rc = bufvec_fill(name, &key) ? : bufvec_fill(NULL, &val);
 
 	if (rc == 0) {
-		rc = clovis_index_get(&ebm->ebm_clovis_container.co_realm,
+		rc = motr_index_get(&ebm->ebm_motr_container.co_realm,
 				      index_fid, &key, &val);
 		if (rc == 0) {
 			/* malloc & copy & setting trailing zero. */
@@ -720,7 +721,7 @@ static int
 mapping_insert(esdm_backend_t *backend, struct m0_fid *index_fid,
 	       const char *name, const char *value)
 {
-	esdm_backend_t_clovis_t *ebm = eb2ebm(backend);
+	esdm_backend_t_motr_t *ebm = eb2ebm(backend);
 	int rc;
 	struct m0_bufvec key = { { 0 } };
 	struct m0_bufvec val = { { 0 } };
@@ -728,7 +729,7 @@ mapping_insert(esdm_backend_t *backend, struct m0_fid *index_fid,
 	rc = bufvec_fill(name, &key) ? : bufvec_fill(value, &val);
 
 	if (rc == 0) {
-		rc = clovis_index_put(&ebm->ebm_clovis_container.co_realm,
+		rc = motr_index_put(&ebm->ebm_motr_container.co_realm,
 				      index_fid, &key, &val);
 	}
 
@@ -740,9 +741,9 @@ mapping_insert(esdm_backend_t *backend, struct m0_fid *index_fid,
 }
 
 static int
-esdm_backend_t_clovis_init(char *conf, esdm_backend_t *eb)
+esdm_backend_t_motr_init(char *conf, esdm_backend_t *eb)
 {
-	esdm_backend_t_clovis_t *ebm;
+	esdm_backend_t_motr_t *ebm;
 	time_t t;
 	unsigned int pid;
 	unsigned int r;
@@ -758,20 +759,20 @@ esdm_backend_t_clovis_init(char *conf, esdm_backend_t *eb)
 		return rc;
 	}
 
-	/* Clovis instance */
-	rc = m0_clovis_init(&ebm->ebm_clovis_instance, &ebm->ebm_clovis_conf, true);
+	/* Motr Client instance */
+	rc = m0_client_init(&ebm->ebm_m0cl_instance, &ebm->ebm_motr_conf, true);
 	if (rc != 0) {
 		DEBUG_LEAVE(rc);
-		DEBUG_FMT("Failed to initilise Clovis: %d\n", rc);
+		DEBUG_FMT("Failed to initilise Motr Client: %d\n", rc);
 		return rc;
 	}
 
 	/* And finally, clovis root realm */
-	m0_clovis_container_init(&ebm->ebm_clovis_container,
+	m0_container_init(&ebm->ebm_motr_container,
 				 NULL,
-				 &M0_CLOVIS_UBER_REALM,
-				 ebm->ebm_clovis_instance);
-	rc = ebm->ebm_clovis_container.co_realm.re_entity.en_sm.sm_rc;
+				 &M0_UBER_REALM,
+				 ebm->ebm_m0cl_instance);
+	rc = ebm->ebm_motr_container.co_realm.re_entity.en_sm.sm_rc;
 
 	if (rc != 0) {
 		DEBUG_LEAVE(rc);
@@ -797,9 +798,9 @@ esdm_backend_t_clovis_init(char *conf, esdm_backend_t *eb)
 }
 
 static int
-esdm_backend_t_clovis_fini(esdm_backend_t *eb)
+esdm_backend_t_motr_fini(esdm_backend_t *eb)
 {
-	esdm_backend_t_clovis_t     *ebm;
+	esdm_backend_t_motr_t     *ebm;
 	struct con_dataset_obj_pair *pair;
 	struct m0_list_link         *link;
 	char                        *str_last_pos;
@@ -823,7 +824,7 @@ esdm_backend_t_clovis_fini(esdm_backend_t *eb)
 		free(pair->cdo_container_dataset);
 		free(pair->cdo_obj_id);
 		if (pair->cdo_obj_handle != NULL) {
-			esdm_backend_t_clovis_close(eb, pair->cdo_obj_handle);
+			esdm_backend_t_motr_close(eb, pair->cdo_obj_handle);
 			pair->cdo_obj_handle = NULL;
 		}
 		m0_free(pair);
@@ -834,11 +835,11 @@ esdm_backend_t_clovis_fini(esdm_backend_t *eb)
 	m0_mutex_fini(&con_map_lock);
 
 	ebm = eb2ebm(eb);
-	m0_clovis_fini(ebm->ebm_clovis_instance, true);
-	free((char *)ebm->ebm_clovis_conf.cc_local_addr);
-	free((char *)ebm->ebm_clovis_conf.cc_ha_addr);
-	free((char *)ebm->ebm_clovis_conf.cc_profile);
-	free((char *)ebm->ebm_clovis_conf.cc_process_fid);
+	m0_client_fini(ebm->ebm_m0cl_instance, true);
+	free((char *)ebm->ebm_motr_conf.mc_local_addr);
+	free((char *)ebm->ebm_motr_conf.mc_ha_addr);
+	free((char *)ebm->ebm_motr_conf.mc_profile);
+	free((char *)ebm->ebm_motr_conf.mc_process_fid);
 	free(ebm);
 
 	DEBUG_LEAVE(0);
@@ -885,7 +886,7 @@ con_map_new_locked(const char *container_dataset, const char *obj_id, m0_bindex_
 }
 
 static int
-esdm_backend_t_clovis_fragment_retrieve(esdm_backend_t  *backend,
+esdm_backend_t_motr_fragment_retrieve(esdm_backend_t  *backend,
 					esdm_fragment_t *fragment)
 {
 	struct con_dataset_obj_pair *pair = NULL;
@@ -922,7 +923,7 @@ esdm_backend_t_clovis_fragment_retrieve(esdm_backend_t  *backend,
 	my_pos = atoll(fragment->id);
 	obj_id = ea_checked_strdup(strchr(fragment->id, '@') + 1);
 
-	mthreaded = convert_pthread_to_mero_thread(backend);
+	mthreaded = convert_pthread_to_motr_thread(backend);
 	ebm_lock(backend);
 
 	DEBUG_FMT("Retrieving from f=%p id=%s size=%lu (pos=%lu id=%s)\n",
@@ -949,7 +950,7 @@ esdm_backend_t_clovis_fragment_retrieve(esdm_backend_t  *backend,
 	void *obj_handle = NULL;
 	if (pair->cdo_obj_handle == NULL) {
 		/* object has not been opened. Let's open it and keep it open */
-		rc = esdm_backend_t_clovis_open(backend, obj_id, &obj_handle);
+		rc = esdm_backend_t_motr_open(backend, obj_id, &obj_handle);
 		if (rc == 0)
 			pair->cdo_obj_handle = obj_handle;
 	} else
@@ -970,7 +971,7 @@ esdm_backend_t_clovis_fragment_retrieve(esdm_backend_t  *backend,
 			readBuffer = fragment->buf;
 		}
 		/* 3. read from this object. */
-		rc = esdm_backend_t_clovis_read(backend,
+		rc = esdm_backend_t_motr_read(backend,
 						obj_handle,
 						my_pos,
 						fragment->bytes,
@@ -996,7 +997,7 @@ esdm_backend_t_clovis_fragment_retrieve(esdm_backend_t  *backend,
 err:
 	ebm_unlock(backend);
 	if (mthreaded)
-		revert_mero_thread_to_pthread();
+		revert_motr_thread_to_pthread();
 	free(obj_id);
 	free(container_dataset);
 	DEBUG_LEAVE(rc);
@@ -1004,7 +1005,7 @@ err:
 }
 
 static int
-esdm_backend_t_clovis_fragment_update(esdm_backend_t  *backend,
+esdm_backend_t_motr_fragment_update(esdm_backend_t  *backend,
 				      esdm_fragment_t *fragment)
 {
 	char *obj_id     = NULL;
@@ -1025,7 +1026,7 @@ esdm_backend_t_clovis_fragment_update(esdm_backend_t  *backend,
 		return rc;
 	}
 
-	mthreaded = convert_pthread_to_mero_thread(backend);
+	mthreaded = convert_pthread_to_motr_thread(backend);
 	ebm_lock(backend);
 
 	rc = asprintf(&container_dataset, "%s/%s",
@@ -1086,7 +1087,7 @@ esdm_backend_t_clovis_fragment_update(esdm_backend_t  *backend,
 			if (rc != 0) {
 				/* not found in persistent map */
 				/* Let's create a new object for this c/d" */
-				rc = esdm_backend_t_clovis_alloc(backend,
+				rc = esdm_backend_t_motr_alloc(backend,
 								 fragment->dataspace->dims,
 								 NULL,
 								 0,
@@ -1160,14 +1161,14 @@ esdm_backend_t_clovis_fragment_update(esdm_backend_t  *backend,
 	rc = 0;
 	if (pair->cdo_obj_handle == NULL) {
 		/* object has not been opened. Let's open it and keep it open */
-		rc = esdm_backend_t_clovis_open(backend, pair->cdo_obj_id, &obj_handle);
+		rc = esdm_backend_t_motr_open(backend, pair->cdo_obj_id, &obj_handle);
 		if (rc == 0)
 			pair->cdo_obj_handle = obj_handle;
 	} else
 		obj_handle = pair->cdo_obj_handle;
 	DEBUG_FMT("open obj=%p rc=%d\n", obj_handle, rc);
 	if (rc == 0) {
-		rc = esdm_backend_t_clovis_write(backend,
+		rc = esdm_backend_t_motr_write(backend,
 						 obj_handle,
 						 last_pos,
 						 fragment->bytes,
@@ -1177,7 +1178,7 @@ esdm_backend_t_clovis_fragment_update(esdm_backend_t  *backend,
 err:
 	ebm_unlock(backend);
 	if (mthreaded)
-		revert_mero_thread_to_pthread();
+		revert_motr_thread_to_pthread();
 	free(obj_id);
 	free(obj_meta);
 	free(container_dataset);
@@ -1190,24 +1191,24 @@ err:
 }
 
 static int
-esdm_backend_t_clovis_mkfs(esdm_backend_t *backend, int enforce_format)
+esdm_backend_t_motr_mkfs(esdm_backend_t *backend, int enforce_format)
 {
 	int rc = 0;
-	esdm_backend_t_clovis_t *ebm;
+	esdm_backend_t_motr_t *ebm;
 	DEBUG_ENTER;
 
 	ebm = eb2ebm(backend);
 
-	rc = clovis_index_delete(&ebm->ebm_clovis_container.co_realm,
+	rc = motr_index_delete(&ebm->ebm_motr_container.co_realm,
 				 &index_cdname_to_object);
-	rc = clovis_index_delete(&ebm->ebm_clovis_container.co_realm,
+	rc = motr_index_delete(&ebm->ebm_motr_container.co_realm,
 				 &index_object_last_pos);
 	/* rc is ignored */
 
 	/* create the global mapping index for <object -> last_pos> */
-	rc = clovis_index_create(&ebm->ebm_clovis_container.co_realm,
+	rc = motr_index_create(&ebm->ebm_motr_container.co_realm,
 				 &index_cdname_to_object)?:
-	     clovis_index_create(&ebm->ebm_clovis_container.co_realm,
+	     motr_index_create(&ebm->ebm_motr_container.co_realm,
 				 &index_object_last_pos);
 	DEBUG_LEAVE(rc);
 
@@ -1215,7 +1216,7 @@ esdm_backend_t_clovis_mkfs(esdm_backend_t *backend, int enforce_format)
 }
 
 static int
-esdm_backend_t_clovis_performance_estimate(esdm_backend_t  *b,
+esdm_backend_t_motr_performance_estimate(esdm_backend_t  *b,
 					   esdm_fragment_t *fragment,
 					   float           *out_time)
 {
@@ -1246,59 +1247,59 @@ esdm_backend_t_fragment_create(esdm_backend_t *b, esdm_fragment_t *fragment)
 // ESDM Module Registration ///////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////
 
-esdm_backend_t_clovis_t esdm_backend_t_clovis = {
+esdm_backend_t_motr_t esdm_backend_t_motr = {
 	.ebm_base = {
-		 .name = "CLOVIS",
+		 .name = "MOTR_CLIENT",
 		 .type = ESDM_MODULE_DATA,
 		 .version = "0.0.1",
 		 .data = NULL,
 		 //.blocksize = BLOCKSIZE,
 		 .callbacks = {
-			 .finalize                 = esdm_backend_t_clovis_fini,
-			 .performance_estimate     = esdm_backend_t_clovis_performance_estimate,
+			 .finalize                 = esdm_backend_t_motr_fini,
+			 .performance_estimate     = esdm_backend_t_motr_performance_estimate,
 			 .estimate_throughput      = esdm_backend_t_estimate_throughput,
 			 .fragment_create          = esdm_backend_t_fragment_create,
-			 .fragment_retrieve        = esdm_backend_t_clovis_fragment_retrieve,
-			 .fragment_update          = esdm_backend_t_clovis_fragment_update,
+			 .fragment_retrieve        = esdm_backend_t_motr_fragment_retrieve,
+			 .fragment_update          = esdm_backend_t_motr_fragment_update,
 			 .fragment_delete          = NULL,
 			 .fragment_metadata_create = NULL,
 			 .fragment_metadata_load   = NULL,
 			 .fragment_metadata_free   = NULL,
-			 .mkfs                     = esdm_backend_t_clovis_mkfs,
+			 .mkfs                     = esdm_backend_t_motr_mkfs,
 			 .fsck                     = NULL
 		},
 	},
 	.ebm_ops = {
-		.esdm_backend_t_init      = esdm_backend_t_clovis_init,
-		.esdm_backend_t_fini      = esdm_backend_t_clovis_fini,
+		.esdm_backend_t_init      = esdm_backend_t_motr_init,
+		.esdm_backend_t_fini      = esdm_backend_t_motr_fini,
 
-		.esdm_backend_t_obj_alloc = esdm_backend_t_clovis_alloc,
-		.esdm_backend_t_obj_open  = esdm_backend_t_clovis_open,
-		.esdm_backend_t_obj_write = esdm_backend_t_clovis_write,
-		.esdm_backend_t_obj_read  = esdm_backend_t_clovis_read,
-		.esdm_backend_t_obj_close = esdm_backend_t_clovis_close,
+		.esdm_backend_t_obj_alloc = esdm_backend_t_motr_alloc,
+		.esdm_backend_t_obj_open  = esdm_backend_t_motr_open,
+		.esdm_backend_t_obj_write = esdm_backend_t_motr_write,
+		.esdm_backend_t_obj_read  = esdm_backend_t_motr_read,
+		.esdm_backend_t_obj_close = esdm_backend_t_motr_close,
 		.mapping_get              = mapping_get,
 		.mapping_insert           = mapping_insert,
-		.esdm_backend_t_mkfs      = esdm_backend_t_clovis_mkfs,
+		.esdm_backend_t_mkfs      = esdm_backend_t_motr_mkfs,
 	},
 };
 
 esdm_backend_t *
-clovis_backend_init(esdm_config_backend_t *config)
+motr_backend_init(esdm_config_backend_t *config)
 {
-	esdm_backend_t_clovis_t *ceb;
+	esdm_backend_t_motr_t *ceb;
 	char *target = NULL;
 	int rc;
 
 	DEBUG_ENTER;
 
-	if (!config || !config->type || strcasecmp(config->type, "CLOVIS")
+	if (!config || !config->type || strcasecmp(config->type, "MOTR_CLIENT")
 			|| !config->target) {
 		DEBUG("Wrong configuration\n");
 		return NULL;
 	}
-	ceb = ea_checked_malloc(sizeof esdm_backend_t_clovis);
-	memcpy(ceb, &esdm_backend_t_clovis, sizeof(esdm_backend_t_clovis));
+	ceb = ea_checked_malloc(sizeof esdm_backend_t_motr);
+	memcpy(ceb, &esdm_backend_t_motr, sizeof(esdm_backend_t_motr));
 
 	DEBUG_FMT("backend type   = %s\n", config->type);
 	DEBUG_FMT("backend id     = %s\n", config->id);
@@ -1313,7 +1314,7 @@ clovis_backend_init(esdm_config_backend_t *config)
 	if (target == NULL)
 		return NULL;
 
-	rc = esdm_backend_t_clovis_init(target, &ceb->ebm_base);
+	rc = esdm_backend_t_motr_init(target, &ceb->ebm_base);
 	free(target);
 	m0_mutex_init(&ceb->ebm_mutex);
 
