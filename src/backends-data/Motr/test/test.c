@@ -6,8 +6,8 @@
 #include <esdm-datatypes-internal.h>
 #include <esdm-internal.h>
 
-#include "../clovis.h"
-#include "../clovis_internal.h"
+#include "../client.h"
+#include "../client_internal.h"
 
 int main(int argc, char *argv[]) {
 	//"local_addr ha_addr profile process_fid"

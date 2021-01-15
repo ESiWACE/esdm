@@ -37,7 +37,7 @@
 #include "motr/client.h"
 #include "motr/client_internal.h"
 
-#include "clovis_internal.h"
+#include "client_internal.h"
 
 #ifdef VERBOSE_DEBUG
 #define DEBUG(fmt)          printf(fmt)
@@ -767,7 +767,7 @@ esdm_backend_t_motr_init(char *conf, esdm_backend_t *eb)
 		return rc;
 	}
 
-	/* And finally, clovis root realm */
+	/* And finally, Motr Client root realm */
 	m0_container_init(&ebm->ebm_motr_container,
 				 NULL,
 				 &M0_UBER_REALM,

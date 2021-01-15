@@ -167,7 +167,7 @@ option(BACKEND_MOTR "Compile backend for Motr support?" ON)
 if(BACKEND_MOTR)
 	message(STATUS "WITH_BACKEND_MOTR")
 	add_definitions(-DESDM_HAS_MOTR=1)
-  target_link_libraries(esdm esdmclovis)
+  target_link_libraries(esdm esdmmotr)
 	SUBDIRS(backends-data/Motr)
 endif()
 

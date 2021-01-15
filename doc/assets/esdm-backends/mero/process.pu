@@ -3,35 +3,35 @@
 node App1 {
 	node Proc11 {
 	control "ESDM Progress" as progress11
-	control "ESDM MotrClient Instance" as clovis11
+	control "ESDM MotrClient Instance" as m0client11
 	control "ESDM MotrSrvMgmt" as mgmt11
 	}
 
 	node Proc12 {
 	control "ESDM Progress" as progress12
-	control "ESDM MotrClient Instance" as clovis12
+	control "ESDM MotrClient Instance" as m0client12
 	control "ESDM MotrSrvMgmt" as mgmt12
 	}
 }
 
-progress11 --> clovis11 : use
-progress12 --> clovis12 : use
+progress11 --> m0client11 : use
+progress12 --> m0client12 : use
 
 node App2 {
 	node Proc21 {
 	control "ESDM Progress" as progress21
-	control "ESDM MotrClient Instance" as clovis21
+	control "ESDM MotrClient Instance" as m0client21
 	control "ESDM MotrSrvMgmt" as mgmt21
 	}
 
 	node Proc22 {
 	control "ESDM Progress" as progress22
-	control "ESDM MotrClient Instance" as clovis22
+	control "ESDM MotrClient Instance" as m0client22
 	control "ESDM MotrSrvMgmt" as mgmt22
 	}
 }
-progress21 --> clovis21 : use
-progress22 --> clovis22 : use
+progress21 --> m0client21 : use
+progress22 --> m0client22 : use
 
 storage MotrStorageSystem {
 	control MotrConfd
@@ -39,22 +39,22 @@ storage MotrStorageSystem {
 	control MotrIOS
 }
 
-clovis11 <--> MotrConfd
-clovis11 <--> MotrRMS
-clovis11 <--> MotrIOS
+m0client11 <--> MotrConfd
+m0client11 <--> MotrRMS
+m0client11 <--> MotrIOS
 
-clovis12 <--> MotrConfd
-clovis12 <--> MotrRMS
-clovis12 <--> MotrIOS
+m0client12 <--> MotrConfd
+m0client12 <--> MotrRMS
+m0client12 <--> MotrIOS
 
-clovis21 <--> MotrConfd
-clovis21 <--> MotrRMS
-clovis21 <--> MotrIOS
+m0client21 <--> MotrConfd
+m0client21 <--> MotrRMS
+m0client21 <--> MotrIOS
 
 
-clovis22 <--> MotrConfd
-clovis22 <--> MotrRMS
-clovis22 <--> MotrIOS
+m0client22 <--> MotrConfd
+m0client22 <--> MotrRMS
+m0client22 <--> MotrIOS
 
 mgmt11 --> MotrConfd
 mgmt12 --> MotrConfd
