@@ -4,12 +4,12 @@ node ESDMApp1 {
 	node App1 {
 	control "UserApp"
 	control "ESDM"
-	control "Clovis Instance" as clovis
+	control "MotrClient Instance" as m0client
 	}
 }
 
 UserApp --> ESDM   : use
-ESDM    --> clovis : use
+ESDM    --> m0client : use
 
 
 @enduml
