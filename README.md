@@ -1,3 +1,78 @@
+-   [Earth System Data Middleware](#earth-system-data-middleware)
+    -   [Requirements](#requirements)
+    -   [Installation](#installation)
+        -   [Ubuntu 20.04](#ubuntu-2004)
+    -   [Development](#development)
+        -   [Project directory structure](#project-directory-structure)
+-   [Data Model](#data-model)
+    -   [Conceptual Data Model](#subsec:conceptual_data_model)
+    -   [Logical Data Model](#subsec:logical_data_model)
+    -   [The ESDM Configuration File](#the-esdm-configuration-file)
+        -   [Search Paths](#search-paths)
+        -   [File Format](#file-format)
+        -   [Metadata](#metadata-2)
+-   [Installation Instructions for
+    Mistral](#installation-instructions-for-mistral)
+    -   [Satisfying Requirements](#satisfying-requirements)
+    -   [Download and enable Spack](#download-and-enable-spack)
+    -   [Set a gcc version to be used](#set-a-gcc-version-to-be-used)
+    -   [Install Dependencies](#install-dependencies)
+    -   [Load Dependencies](#load-dependencies)
+        -   [HDF5 with Virtual Object Layer
+            Support](#hdf5-with-virtual-object-layer-support)
+    -   [Ensure environment is aware of dependencies installed using
+        spack and
+        dev-env](#ensure-environment-is-aware-of-dependencies-installed-using-spack-and-dev-env)
+    -   [Download HDF5 with VOL
+        support](#download-hdf5-with-vol-support)
+    -   [Configure and build HDF5](#configure-and-build-hdf5)
+        -   [NetCDF with Support for ESDM VOL
+            Plugin](#netcdf-with-support-for-esdm-vol-plugin)
+    -   [Ensure environment is aware of dependencies installed using
+        spack and
+        dev-env](#ensure-environment-is-aware-of-dependencies-installed-using-spack-and-dev-env-1)
+    -   [Downlaod NetCDF source](#downlaod-netcdf-source)
+    -   [Apply patches to allow enabling/disabling
+        plugin](#apply-patches-to-allow-enablingdisabling-plugin)
+    -   [Configure and build](#configure-and-build)
+        -   [Building ESDM Prototype](#building-esdm-prototype)
+    -   [Ensure environment is aware of dependencies installed using
+        spack and
+        dev-env](#ensure-environment-is-aware-of-dependencies-installed-using-spack-and-dev-env-2)
+    -   [Configure and build ESDM](#configure-and-build-esdm)
+-   [Use Cases](#use-cases)
+    -   [ Workloads in climate and
+        weather](#workloads-in-climate-and-weather)
+        -   [NWP](#nwp)
+        -   [Climate](#climate)
+    -   [Stakeholders and Systems](#stakeholders-and-systems)
+    -   [List of Use-Cases](#list-of-use-cases)
+-   [Styleguide for ESDM development](#styleguide-for-esdm-development)
+    -   [General rules](#general-rules)
+    -   [Naming conventions](#naming-conventions)
+    -   [Example Code](#example-code)
+-   [Developers Guide](#developers-guide)
+    -   [Internal Data Model](#internal-data-model)
+        -   [Dataspace](#dataspace)
+        -   [Dataset](#dataset-1)
+        -   [Container](#container-1)
+        -   [Grid](#grid)
+    -   [Usage Examples](#usage-examples)
+        -   [Basic Writing](#basic-writing)
+        -   [Grid Based Writing](#grid-based-writing)
+        -   [Simple Reading](#simple-reading)
+        -   [Grid Based Reading](#grid-based-reading)
+-   [Callgraph for accessing
+    metadata](#callgraph-for-accessing-metadata)
+    -   [General responsibility](#general-responsibility)
+    -   [Write](#write)
+    -   [Read](#read)
+-   [Grid deduplication](#grid-deduplication)
+    -   [Requirements](#requirements-1)
+    -   [Implementation](#implementation)
+    -   [Roadmap for Implementation](#roadmap-for-implementation)
+-   [Related Work](#related-work)
+
 # Earth System Data Middleware
 
 The middleware for earth system data is a prototype to improve I/O
