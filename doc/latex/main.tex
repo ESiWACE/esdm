@@ -1,0 +1,43 @@
+\documentclass{article}
+
+%\usepackage{hyperref}
+\usepackage{url}
+\usepackage{hyperref}
+\usepackage{cleveref}
+\usepackage{graphicx}
+\usepackage{listings}
+\usepackage{tabularx}
+\usepackage{geometry}
+\geometry{margin=0.5in}
+
+\title{ESDM Documentation}
+\date{}
+\author{}
+
+\begin{document}
+
+\maketitle
+
+\tableofcontents
+
+% INTRO
+\input{intro.tex}
+
+% MODEL
+\input{data-model.tex}
+
+% USER
+\input{design/configuration-file.tex}
+\input{build-for-mistral.tex}
+\input{use-cases.tex}
+
+% DEVELOPER
+\input{design/style-guide.tex}
+\input{user-guides/developers-guide.tex}
+\input{design/call-graph.tex}
+\input{design/grid-deduplication.tex}
+
+% SUMMARY 
+\input{related-work.tex}
+
+\end{document}
