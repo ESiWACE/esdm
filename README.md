@@ -5,8 +5,8 @@
     -   [Development](#development)
         -   [Project directory structure](#project-directory-structure)
 -   [Data Model](#data-model)
-    -   [Conceptual Data Model](#subsec:conceptual_data_model)
-    -   [Logical Data Model](#subsec:logical_data_model)
+    -   [Conceptual Data Model](#conceptual-data-model)
+    -   [Logical Data Model](#logical-data-model)
     -   [The ESDM Configuration File](#the-esdm-configuration-file)
         -   [Search Paths](#search-paths)
         -   [File Format](#file-format)
@@ -81,8 +81,6 @@ applications. ESDM exploits structural information exposed by workflows,
 applications as well as data description formats such as HDF5 and NetCDF
 to more efficiently organize metadata and data across a variety of
 storage backends.
-
-[![image](https://travis-ci.org/ESiWACE/esdm.svg?branch=master)](https://travis-ci.org/ESiWACE/esdm)
 
 ## Requirements
 
@@ -481,7 +479,7 @@ Operations:
     removed.
 
 <figure>
-<img src="data-model.png" id="fig:data-model" style="width:50.0%" alt="Figure 1: Figure 1: Logical Data Model (TODO)" /><figcaption aria-hidden="true">Figure 1: Figure 1: Logical Data Model (TODO)</figcaption>
+<img src="./doc/latex/../figures/data-model.png" id="fig:data-model" style="width:50.0%" alt="Figure 1: Logical Data Model (TODO)" /><figcaption aria-hidden="true">Figure 1: Logical Data Model (TODO)</figcaption>
 </figure>
 
 #### Namespace:
@@ -506,8 +504,6 @@ offering a FUSE client, this feature also enables backwards
 compatibility for legacy POSIX applications.
 
 ## The ESDM Configuration File
-
-Test
 
 ### Search Paths
 
@@ -1365,7 +1361,6 @@ The simplest way to write a grey scale image to ESDM is as follows:
     //assume image data stored in either
     uint16_t imageBuffer[height][width];
     uint16_t (*imageBuffer)[width] = malloc(height*sizeof*imageBuffer);
-
 
     //initialize ESDM
     esdm_status result = esdm_init();
