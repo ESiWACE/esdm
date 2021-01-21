@@ -1,31 +1,39 @@
-.PHONY: all clean
+.PHONY: all clean assets latex
 
-INDIR = ./latex
-MDDIR = ./doxygen
+TEXDIR = ./latex
+MDDIR = ./markdown
 
 FILES = \
-	$(notdir $(wildcard $(INDIR)/*.tex)) \
-	$(addprefix design/, $(notdir $(wildcard $(INDIR)/design/*.tex))) \
-	$(addprefix user-guides/, $(notdir $(wildcard $(INDIR)/user-guides/*.tex)))
+	$(filter-out main.tex, $(notdir $(wildcard $(TEXDIR)/*.tex))) \
+	$(addprefix design/, $(notdir $(wildcard $(TEXDIR)/design/*.tex))) \
+	$(addprefix user-guides/, $(notdir $(wildcard $(TEXDIR)/user-guides/*.tex)))
 
 MDFILES = $(addprefix $(MDDIR)/, $(addsuffix .md, $(basename $(FILES))))
 
-all: README.md $(MDFILES) 
+all: latex assets $(MDFILES) README.md 
 
-#PLANTUML = plantuml -teps
-#$(OUTDIR)/%.eps: $(INDIR)/%.pu
-#  @mkdir -p $(@D)
-#  $(PLANTUML) -o$(shell pwd)/$(dir $@) $^
+assets:
+	$(MAKE) -C assets/esdm-backends/mero
+	$(MAKE) -C assets/esdm-backends/POSIX
+	$(MAKE) -C assets/esdm-backends/WOS
 
 EXTENSIONS=pipe_tables+simple_tables+fenced_code_blocks+fenced_code_attributes
 PANDOC = pandoc --filter pandoc-crossref --citeproc -f latex
 
-$(MDDIR)/main.md: $(INDIR)/main.tex
-	@echo Skip main.tex. Not required for doxygen documentation.	
-
-$(MDDIR)/%.md: $(INDIR)/%.tex
+$(MDFILES) : $(MDDIR)/%.md : $(TEXDIR)/%.tex
 	@mkdir -p $(@D)
 	$(PANDOC) -t markdown+$(EXTENSIONS) $^ -o $@
 
 README.md: latex/main.tex
-	cd latex; $(PANDOC) -t gfm --table-of-contents --toc-depth=3 -f latex -s $(notdir $^) -o ../../README.md
+	cd latex; $(PANDOC) -t gfm --lua-filter=image-path-filter.lua --table-of-contents --toc-depth=3 -f latex -s $(notdir $^) -o ../../README.md
+
+latex:
+	$(MAKE) -C latex
+
+clean:
+	$(MAKE) -C assets/esdm-backends/mero clean
+	$(MAKE) -C assets/esdm-backends/POSIX clean
+	$(MAKE) -C assets/esdm-backends/WOS clean
+	rm ../README.md
+	rm markdown -rf
+	$(MAKE) -C latex clean

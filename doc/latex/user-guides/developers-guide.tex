@@ -1,4 +1,4 @@
-\section{Developers Guide}%
+\section{Developers Guide}
 
 This document aims to give a quick conceptual overview of the API that
 is available to programs which link directly to ESDM. It is not meant to
@@ -12,13 +12,13 @@ based application should read the users guide instead. Unfortunately,
 there is no guide for ESDM backend developers and ESDM core contributors
 yet.
 
-\subsection{Internal Data Model}%
+\subsection{Internal Data Model}
 
 The first thing to understand is the data model that is used by ESDM.
 This data model is very similar to that employed by NetCDF, but it does
 add some abstractions, and is described in this section.
 
-\subsubsection{Dataspace}%
+\subsubsection{Dataspace}
 
 A dataspace describes how data is stored in memory, it is basically a
 mapping of a logical dataspace to sequential bytes in memory. All data
@@ -47,13 +47,13 @@ dimension order of Fortran. The data serialization information
 (`stride') can also achieve unorthodox effects like arrays with holes,
 or to replicate a single 2D slice along a third axis.
 
-\paragraph{Creating and Destroying Dataspaces}%
+\paragraph{Creating and Destroying Dataspaces}
 
 ESDM provides two distinct mechanisms to create a dataspace: A generic
 API which allocates the dataspace on the heap, and an API to quickly
 create a throw-away dataspace on the stack.
 
-\subparagraph{The Generic API}%
+\subparagraph{The Generic API}
 
 The functions used to create dataspaces are:
 
@@ -89,7 +89,7 @@ the same data buffer as the dataspace from which the data layout is
 copied. As such, `esdm\_dataspace\_copyDatalayout()' is very convenient
 for data subseting operations.
 
-\subparagraph{The Simple API}%
+\subparagraph{The Simple API}
 
 For convenience and performance reasons, ESDM provides a set of
 preprocessor macros that allocate a dataspace on the stack. Macros are
@@ -127,7 +127,7 @@ As the esdm\_simple\_dspace\_t lives on the stack, **it must not be
 destroyed with `esdm\_dataspace\_destroy()'**. It simply ceases to
 exists when the surrounding block exits.
 
-\subsubsection{Dataset}%
+\subsubsection{Dataset}
 
 A dataset in ESDM is what a variable is in NetCDF or HDF5. Each dataset
 is associated with a dataspace that describes the logical extends of the
@@ -156,7 +156,7 @@ can also be deleted with a call to `esdm\_dataset\_delete()' which will
 remove its data from the file system, as well as its name and link from
 its container.
 
-\subsubsection{Container}%
+\subsubsection{Container}
 
 Containers provide a means to organize and retrieve datasets. When a
 dataset is created, it is added to a container and associated with a
@@ -169,7 +169,7 @@ like datasets, containers need to be closed with
 Closing a container requires closing all datasets it contains first.
 `esdm\_container\_delete()' removes a container from the file system.
 
-\subsubsection{Grid}%
+\subsubsection{Grid}
 
 The grid abstraction exists for performance reasons only: While it is
 possible to think of a dataset as a set of possibly overlapping chunks
@@ -237,22 +237,22 @@ Grids always remain in possession of their dataspace. Consequently, it
 is not necessary to dispose of them explicitly. However, closing a
 dataspace invalidates all associated (sub-)grids.
 
-\subsection{Usage Examples}%
+\subsection{Usage Examples}
 
 Learning usage of an API is easiest by seeing it in action in concrete
 examples. As such, this section provides four relatively basic examples
 of how the ESDM API is supposed to be used, which nevertheless cover all
 the required core functionality.
 
-\subsubsection{Basic Writing}%
+\subsubsection{Basic Writing}
 
 The simplest way to write a grey scale image to ESDM is as follows:
+
 
 \begin{lstlisting}
 //assume image data stored in either
 uint16_t imageBuffer[height][width];
 uint16_t (*imageBuffer)[width] = malloc(height*sizeof*imageBuffer);
-
 
 //initialize ESDM
 esdm_status result = esdm_init();
@@ -290,7 +290,7 @@ necessary, the dataspaces that are passed to `esdm\_write()' may be
 smaller than the dataset, calling `esdm\_write()' as many times as
 required to write the entire data.
 
-\subsubsection{Grid Based Writing}%
+\subsubsection{Grid Based Writing}
 
 When using grid based writing, the creation of the container and the
 dataset is exactly the same. The creation of the grid, however is added
@@ -339,7 +339,7 @@ for(int64_t z0 = 0, slice = 0, curDepth; z0 < depth; z0 += curDepth, slice++) {
 // will be disposed off when the dataset is closed
 \end{lstlisting}
 
-\subsubsection{Simple Reading}%
+\subsubsection{Simple Reading}
 
 Reading data is very similar to writing it. Nevertheless, a simple
 example is given to read an entire dataset in one piece:
@@ -379,7 +379,7 @@ result = esdm_container_close(container);
 assert(result == ESDM_SUCCESS);
 \end{lstlisting}
 
-\subsubsection{Grid Based Reading}%
+\subsubsection{Grid Based Reading}
 
 Reading an entire dataset as a single chunk is generally a really bad
 idea. Datasets, especially those generated by earth system models, may
