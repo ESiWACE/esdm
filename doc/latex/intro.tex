@@ -113,26 +113,26 @@ First get the recent GCC:
     \begin{lstlisting}
     ./configure --with-hdf5=$PWD/install
     \end{lstlisting}
-  \item \texttt{doc} contains documentation which uses doxygen to build a HTML
-    or a PDF version:
+  %\item \texttt{doc} contains documentation which uses doxygen to build a HTML
+  %  or a PDF version:
 
-    For the HTML Reference use the following commands (assuming
-    ./configure completed successfully):
+  %  For the HTML Reference use the following commands (assuming
+  %  ./configure completed successfully):
 
-    \begin{lstlisting}
-    cd build
-    doxygen
-    build/doc/html/index.html
-    \end{lstlisting}
+  %  \begin{lstlisting}
+  %  cd build
+  %  doxygen
+  %  build/doc/html/index.html
+  %  \end{lstlisting}
 
-    For a PDF Reference (requries LaTeX) run:
+  %  For a PDF Reference (requries LaTeX) run:
 
-    \begin{lstlisting}
-    cd build
-    doxygen
-    cd /doc/latex
-    make
-    \end{lstlisting}
+  %  \begin{lstlisting}
+  %  cd build
+  %  doxygen
+  %  cd /doc/latex
+  %  make
+  %  \end{lstlisting}
   \item \texttt{tools} contains separate programs, e.g., for benchmarking
     HDF5. They should only be loosely coupled with the source code and
     allow to be used with the regular HDF5.
