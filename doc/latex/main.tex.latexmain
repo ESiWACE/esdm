@@ -1,0 +1,4 @@
+set makeprg='make all'
+let g:Tex_CompileRule_pdf='make all'
+
+%let g:Tex_CompileRule_pdf='pdflatex -interaction=nonstopmode -shell-escape -synctex=1 $*'
