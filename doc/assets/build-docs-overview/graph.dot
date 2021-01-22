@@ -1,0 +1,26 @@
+digraph G {
+  latex_source [shape=folder,style=filled,fillcolor="navajowhite",label="Latex Source Files\n(./doc/latex)"];
+  markdown [shape=folder,style=filled,fillcolor="navajowhite",label="Markdown\n(./doc/markdown)"];
+  pdf [shape=note,style=filled,fillcolor="lightblue",label="PDF\n(./doc/latex/main.pdf)"];
+  doxy_latex [shape=note,style=filled,fillcolor="lightblue",label="Latex\n(includes API reference)\n(./build/doc/latex/refman.tex)"];
+  doxy_latex_joint [shape=circle, label=""];
+  doxy_html [shape=note,style=filled,fillcolor="lightblue",label="HTML\n(includes API reference)\n(./build/doc/html/index.html)"];
+  doxy_html_joint [shape=circle,width=0.5,label=""];
+  github [shape=note,style=filled,fillcolor="lightblue",label="Github-Markdown\n(./README.md)"];
+  external [shape=folder,style=filled,fillcolor="navajowhite",label="External Document\n(./(?)"];
+  c_source [shape=folder,style=filled,fillcolor="navajowhite",label="Source files\n{./src}"];
+
+  latex_source -> markdown [label="pandoc --to markdown" ];
+  latex_source -> pdf [label="pdflatex"];
+  latex_source -> github [label="pandoc --to gfm"];
+  latex_source ->  external [label="pandoc --to latex", style=dotted];
+
+  markdown -> doxy_latex_joint;
+  c_source -> doxy_latex_joint;
+  doxy_latex_joint -> doxy_latex [label="doxygen"];
+
+  markdown -> doxy_html_joint;
+  c_source -> doxy_html_joint;
+  doxy_html_joint -> doxy_html [label="doxygen"];
+}
+
