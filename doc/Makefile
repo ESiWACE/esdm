@@ -1,4 +1,4 @@
-.PHONY: all assets gfm_readme latex clean
+.PHONY: all assets gfm_readme latex clean 
 
 TEXDIR = ./latex
 MDDIR = ./markdown
@@ -15,6 +15,7 @@ assets:
 	$(MAKE) -C assets/esdm-backends/mero
 	$(MAKE) -C assets/esdm-backends/POSIX
 	$(MAKE) -C assets/esdm-backends/WOS
+	$(MAKE) -C assets/architecture
 
 EXTENSIONS=pipe_tables+simple_tables+fenced_code_blocks+fenced_code_attributes
 PANDOC = pandoc --filter pandoc-crossref --citeproc -f latex
@@ -33,6 +34,7 @@ clean:
 	$(MAKE) -C assets/esdm-backends/mero clean
 	$(MAKE) -C assets/esdm-backends/POSIX clean
 	$(MAKE) -C assets/esdm-backends/WOS clean
+	$(MAKE) -C assets/architecture clean
 	rm ../README.md
 	rm markdown -rf
 	$(MAKE) -C latex clean
