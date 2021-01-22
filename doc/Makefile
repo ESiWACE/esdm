@@ -1,16 +1,15 @@
-.PHONY: all assets latex clean
+.PHONY: all assets gfm_readme latex clean
 
 TEXDIR = ./latex
 MDDIR = ./markdown
 
 TEXFILES = \
-	$(filter-out main.tex, $(notdir $(wildcard $(TEXDIR)/*.tex))) \
-	$(addprefix design/, $(notdir $(wildcard $(TEXDIR)/design/*.tex))) \
-	$(addprefix user-guides/, $(notdir $(wildcard $(TEXDIR)/user-guides/*.tex)))
+	$(filter-out latex/main.tex, $(wildcard $(TEXDIR)/*.tex)) \
+	$(foreach directory, design user-guides, $(wildcard $(TEXDIR)/$(directory)/*.tex))
 
-MDFILES = $(addprefix $(MDDIR)/, $(addsuffix .md, $(basename $(TEXFILES))))
+MDFILES = $(patsubst $(TEXDIR)/%, $(MDDIR)/%, $(addsuffix .md, $(basename $(TEXFILES))))
 
-all: latex assets $(MDFILES) README.md 
+all: latex assets $(MDFILES) ../README.md 
 
 assets:
 	$(MAKE) -C assets/esdm-backends/mero
@@ -18,14 +17,14 @@ assets:
 	$(MAKE) -C assets/esdm-backends/WOS
 
 EXTENSIONS=pipe_tables+simple_tables+fenced_code_blocks+fenced_code_attributes
-PANDOC = pandoc --filter pandoc-crossref --citeproc -f latex -t markdown+$(EXTENSIONS)
+PANDOC = pandoc --filter pandoc-crossref --citeproc -f latex
 
 $(MDFILES) : $(MDDIR)/%.md : $(TEXDIR)/%.tex
 	@mkdir -p $(@D)
-	$(PANDOC) $^ -o $@
+	$(PANDOC) -t markdown+$(EXTENSIONS) $^ -o $@
 
-README.md: latex/main.tex $(addprefix latex/, $(TEXFILES)) ./figures/*
-	cd latex; $(PANDOC) -t gfm --lua-filter=image-path-filter.lua --table-of-contents --toc-depth=3 -f latex -s $(notdir $^) -o ../../README.md
+../README.md: latex/main.tex $(TEXFILES) ./figures/*
+	cd latex; $(PANDOC) -t gfm --lua-filter=image-path-filter.lua --table-of-contents --toc-depth=3 -s main.tex -o ../$@
 
 latex:
 	$(MAKE) -C latex
