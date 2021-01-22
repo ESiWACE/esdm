@@ -1,7 +1,12 @@
+.PHONY: all
 
-all:
-	plantuml -teps *.pu
+PUFILES = $(wildcard *.pu)
+EPSFILES = $(addsuffix .eps, $(basename $(PUFILES)))
 
+all: $(EPSFILES)
+
+$(EPSFILES) : %.eps : %.pu
+	plantuml -teps $^
 
 clean:
 	rm -rf *.eps
