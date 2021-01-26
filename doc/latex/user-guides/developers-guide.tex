@@ -19,6 +19,7 @@ This data model is very similar to that employed by NetCDF, but it does
 add some abstractions, and is described in this section.
 
 \subsubsection{Dataspace}
+\label{sec:user-guides:data-space}
 
 A dataspace describes how data is stored in memory, it is basically a
 mapping of a logical dataspace to sequential bytes in memory. All data
@@ -128,6 +129,7 @@ destroyed with `esdm\_dataspace\_destroy()'**. It simply ceases to
 exists when the surrounding block exits.
 
 \subsubsection{Dataset}
+\label{sec:user-guides:dataset}
 
 A dataset in ESDM is what a variable is in NetCDF or HDF5. Each dataset
 is associated with a dataspace that describes the logical extends of the
@@ -156,7 +158,8 @@ can also be deleted with a call to `esdm\_dataset\_delete()' which will
 remove its data from the file system, as well as its name and link from
 its container.
 
-\subsubsection{Container}
+\subsubsection{Container}%
+\label{sec:user-guides:container}
 
 Containers provide a means to organize and retrieve datasets. When a
 dataset is created, it is added to a container and associated with a
@@ -169,7 +172,9 @@ like datasets, containers need to be closed with
 Closing a container requires closing all datasets it contains first.
 `esdm\_container\_delete()' removes a container from the file system.
 
-\subsubsection{Grid}
+\subsubsection{Grid}%
+\label{sec:user-guides:grid}
+
 
 The grid abstraction exists for performance reasons only: While it is
 possible to think of a dataset as a set of possibly overlapping chunks
@@ -238,6 +243,7 @@ is not necessary to dispose of them explicitly. However, closing a
 dataspace invalidates all associated (sub-)grids.
 
 \subsection{Usage Examples}
+\label{sec:user-guides:usage-example}
 
 Learning usage of an API is easiest by seeing it in action in concrete
 examples. As such, this section provides four relatively basic examples
