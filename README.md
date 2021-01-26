@@ -181,7 +181,7 @@ First get the recent GCC:
 # Building ESDM documentation
 
 <figure>
-<img src="./doc/latex/../assets/build-docs-overview/graph.png" id="fig:build-docs-overview" alt="Figure 1: Conversion paths." /><figcaption aria-hidden="true">Figure 1: Conversion paths.</figcaption>
+<img src="./doc/latex/../assets/build-docs-overview/graph.png" id="fig:build-docs-overview" style="width:70.0%" alt="Figure 1: Conversion paths." /><figcaption aria-hidden="true">Figure 1: Conversion paths.</figcaption>
 </figure>
 
 The documentation is organized as a set of latex and resource files.
