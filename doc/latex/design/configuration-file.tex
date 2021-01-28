@@ -31,26 +31,30 @@ The backends are organized in the ```backends``` key-value pair as a list.
 \end{lstlisting}
 
 
+\begin{preserve}
 \begin{table}[!h]
   \begin{center}
-    \begin{tabularx}{\textwidth}{llllX}
-      Parameter              & Type    & Default    &          & Description \\
-      \hline
-      type                   & string  & (not set)  & required & Backend name (see \Cref{tab:supported_backends}) \\
-      id                     & string  & (not set)  & required & Unique identifier string \\
-      target                 & string  & (not set)  & required & Connection specification (Bucket name for S3) \\
-      performance-model      & object  & (not set)  & optional & Performance model definition. (see \Cref{tab:dyn_perf_model_conf_params,tab:gen_perf_model_conf_params}) \\
-      max-threads-per-node   & integer & 0          & optional & Maximum number of threads on a node. \\
-      write-stream-blocksize & integer & 0          & optional & TODO. \\
-      max-global-threads     & integer & 0          & optional & Maximum total number of threads. \\
-      accessibility          & string  & global     & optional & TODO. (see \Cref{tab:accessibility}) \\
-      max-fragment-size      & integer & 10485760   & optional & Maximum fragment size in bytes. \\
-      fragmentation-method   & string  & contiguous & optional & Fragmentation methods. (see \Cref{tab:frag_methods}) \\
-    \end{tabularx}
+    \begin{scriptsize}
+      \begin{tabularx}{\textwidth}{llllX}
+        Parameter              & Type    & Default    &          & Description \\
+        \hline
+        type                   & string  & (not set)  & required & Backend name (see \Cref{tab:supported_backends}) \\
+        id                     & string  & (not set)  & required & Unique identifier string \\
+        target                 & string  & (not set)  & required & Connection specification (Bucket name for S3) \\
+        performance-model      & object  & (not set)  & optional & Performance model definition. (see \Cref{tab:dyn_perf_model_conf_params,tab:gen_perf_model_conf_params}) \\
+        max-threads-per-node   & integer & 0          & optional & Maximum number of threads on a node. \\
+        write-stream-blocksize & integer & 0          & optional & TODO. \\
+        max-global-threads     & integer & 0          & optional & Maximum total number of threads. \\
+        accessibility          & string  & global     & optional & TODO. (see \Cref{tab:accessibility}) \\
+        max-fragment-size      & integer & 10485760   & optional & Maximum fragment size in bytes. \\
+        fragmentation-method   & string  & contiguous & optional & Fragmentation methods. (see \Cref{tab:frag_methods}) \\
+      \end{tabularx}
+    \end{scriptsize}
   \end{center}
   \caption{Backend configuration parameters}%
   \label{tab:backend_conf_params}
 \end{table}
+\end{preserve}
 
 
 
@@ -62,6 +66,7 @@ Unique identifier string.
 \paragraph{Parameter: type and target}
 Can take a value of one of the supported backends listed in @tbl:supportedtypes.
 
+\begin{preserve}
 \begin{table}[!h]
   \begin{center}
     \begin{tabular}{ll}
@@ -79,6 +84,7 @@ Can take a value of one of the supported backends listed in @tbl:supportedtypes.
   \caption{Supported backends}%
   \label{tab:supported_backends}
 \end{table}
+\end{preserve}
 
 \subparagraph{type = MOTR}
 
@@ -176,6 +182,7 @@ Path to a directory, e.g., /home/user/data/
 \subparagraph{S3}
 Bucket name prefix (at least 5 characters long)
 
+\begin{preserve}
 \begin{table}[!h]
   \begin{center}
     \begin{tabularx}{\textwidth}{llllX}
@@ -194,6 +201,7 @@ Bucket name prefix (at least 5 characters long)
   \caption{S3 parameters}%
   \label{tab:s3_params}
 \end{table}
+\end{preserve}
 
 TODO example
 
@@ -216,35 +224,39 @@ TODO
 \subparagraph{Parameter: performance-model}
 
 
+\begin{preserve}
 \begin{table}[!ht]
   \begin{center}
     \begin{tabularx}{\textwidth}{lllllX}
       Parameter  & Type  & Default & Domain &          & Description \\ 
       \hline
-      latency    & float & 0.0     & >=0.0  & optional & seconds     \\ 
-      throughput & float & 0.0     & >0.0   & optional & MiB/s       \\ 
+      latency    & float & 0.0     & $>=0.0$  & optional & seconds     \\ 
+      throughput & float & 0.0     & $>0.0$   & optional & MiB/s       \\ 
     \end{tabularx}
   \end{center}
   \caption{Dynamic performance model parameters}%
   \label{tab:dyn_perf_model_conf_params}
 \end{table}
+\end{preserve}
 
 
+\begin{preserve}
 \begin{table}[!ht]
   \begin{center}
     \begin{tabularx}{\textwidth}{lllllX}
-      Parameter  & Type    & Default & Domain &          & Description         \\ 
+      Parameter  & Type    & Default & Domain      &          & Description         \\ 
       \hline
-      latency    & float   & 0.0     & >=0.0  & optional & Latency in seconds  \\ 
-      throughput & float   & 0.0     & >0.0   & optional & Throughput in MiB/s \\ 
-      size       & integer & 0       & >0     & optional & TODO                \\ 
-      period     & float   & 0.0     & >0.0   & optional & TODO                \\ 
-      alpha      & float   & 0.0     & [0.0,  & 1.0)     & optional TODO       \\ 
+      latency    & float   & 0.0     & $>=0.0$     & optional & Latency in seconds  \\ 
+      throughput & float   & 0.0     & $>0.0$      & optional & Throughput in MiB/s \\ 
+      size       & integer & 0       & $>0$        & optional & TODO                \\ 
+      period     & float   & 0.0     & $>0.0$      & optional & TODO                \\ 
+      alpha      & float   & 0.0     & $[0.0,1.0)$ & optional & TODO                \\ 
     \end{tabularx}
   \end{center}
   \caption{Generic performance model parameters}%
   \label{tab:gen_perf_model_conf_params}
 \end{table}
+\end{preserve}
 
 
 
@@ -259,6 +271,7 @@ TODO
 
 \subparagraph{Parameter: accessibility}
 
+\begin{preserve}
 \begin{table}[!ht]
   \begin{center}
     \begin{tabularx}{\textwidth}{lX}
@@ -271,6 +284,7 @@ TODO
   \caption{Accessibility}%
   \label{tab:accessibility}
 \end{table}
+\end{preserve}
 
 \subparagraph{Parameter: max-fragment-size}
 The amount of data that may be written into a single fragment. 
@@ -280,36 +294,29 @@ The amount is given in bytes.
 A string identifying the algorithm to use to split a chunk of data into fragments. 
 Legal values are:
 
+\begin{preserve}
 \begin{table}[!ht]
   \begin{center}
     \begin{tabularx}{\textwidth}{lX}
       Method     & Description \\
       \hline
-      contiguous  & This algorithm tries to form fragments that are 
-      scattered across memory as little as possible. As such, 
-      it is expected to yield the best possible write performance. 
-      However, if a transposition is performed when reading 
-      the data back, performance may be poor.
-      Splitting a dataspace of size (50, 80, 100) into fragments 
-      of 2000 entries results in fragments of size (1, 20, 100). \\
-      equalized   & This algorithm tries to form fragments that have a similar 
-      size in all dimensions. As such, it is expected to perform 
-      equally well with all kinds of read requests, but it tends 
-      to write scattered data to disk which has to be sequentialized 
-      first, imposing a performance penalty on the write side.
-      Splitting a dataspace of size (50, 80, 100) into fragments of at
-      most 2000 entries results in fragments of sizes between 
-      (10, 11, 11) and (10, 12, 12). \\
+      contiguous  & This algorithm tries to form fragments that are scattered across memory as little as possible. As such, it is expected to yield the best possible write performance. 
+      However, if a transposition is performed when reading the data back, performance may be poor.
+      Splitting a dataspace of size (50, 80, 100) into fragments of 2000 entries results in fragments of size (1, 20, 100). \\
+      equalized   & This algorithm tries to form fragments that have a similar size in all dimensions. As such, it is expected to perform equally well with all kinds of read requests, but it tends to write scattered data to disk which has to be sequentialized first, imposing a performance penalty on the write side.
+      Splitting a dataspace of size (50, 80, 100) into fragments of at most 2000 entries results in fragments of sizes between (10, 11, 11) and (10, 12, 12). \\
     \end{tabularx}
   \end{center}
   \caption{Fragmentation methods}%
   \label{tab:frag_methods}
 \end{table}
+\end{preserve}
 
 
 \subsubsection{Metadata}%
 \label{sec:conf-file:metadata}
 
+\begin{preserve}
 \begin{table}[!ht]
   \begin{center}
     \begin{tabularx}{\textwidth}{lllX}
@@ -322,4 +329,5 @@ Legal values are:
   \caption{Metadata parameters}%
   \label{tab:metadata_params}
 \end{table}
+\end{preserve}
 
