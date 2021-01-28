@@ -2,17 +2,13 @@
 \label{installation-instructions-for-mistral}
 
 Mistral (HLRE-3) is the supercomputer installed at DKRZ in 2015/2016.
-This guide documents installation procedures to build prerequisites as
-well as the prototype code base for development purposes.
+This guide documents installation procedures to build prerequisites as well as the prototype code base for development purposes.
 
 \subsection{Satisfying Requirements}%
 \label{satisfying-requirements}
 
-Mistral offers users a number of software packages via the module
-command (man module). While large parts of ESDM will build with the
-standard tools available on the platform, it is still recommended to use
-Spack \url{https://spack.readthedocs.io/en/latest/index.html} to build,
-manage and install dependencies.
+Mistral offers users a number of software packages via the module command (man module). 
+While large parts of ESDM will build with the standard tools available on the platform, it is still recommended to use Spack \url{https://spack.readthedocs.io/en/latest/index.html} to build, manage and install dependencies.
 
 \subsection{Download and enable Spack}%
 \label{download-and-enable-spack}
@@ -53,8 +49,7 @@ spack load -r glib%gcc@$gccver
 \subsubsection{HDF5 with Virtual Object Layer Support}%
 \label{hdf5-with-virtual-object-layer-support}
 
-Assuming all prerequisites have been installed and tested a development
-branch of HDF5 can be build as follows.
+Assuming all prerequisites have been installed and tested a development branch of HDF5 can be build as follows.
 
 \subsection{Ensure environment is aware of dependencies installed using spack and dev-env}%
 \label{ensure-environment-is-aware-of-dependencies-installed-using-spack-and-dev-env}
@@ -87,9 +82,7 @@ make install
 \subsubsection{NetCDF with Support for ESDM VOL Plugin}%
 \label{netcdf-with-support-for-esdm-vol-plugin}
 
-Assuming all prerequisites have been installed and tested a patched
-version of NetCDF to enable/disable ESDM VOL Plugin support can be build
-as follows.
+Assuming all prerequisites have been installed and tested a patched version of NetCDF to enable/disable ESDM VOL Plugin support can be build as follows.
 
 \subsection{Ensure environment is aware of dependencies installed using spack and dev-env}%
 \label{ensure-environment-is-aware-of-dependencies-installed-using-spack-and-dev-env-1}
@@ -131,8 +124,7 @@ make install
 \subsubsection{Building ESDM Prototype}%
 \label{building-esdm-prototype}
 
-Assuming all prerequisites have been installed and tested ESDM can be
-configured and build as follows.
+Assuming all prerequisites have been installed and tested ESDM can be configured and build as follows.
 
 \subsection{Ensure environment is aware of dependencies installed using spack and dev-env}%
 \label{ensure-environment-is-aware-of-dependencies-installed-using-spack-and-dev-env-2}
@@ -148,6 +140,5 @@ cd $ESDM_REPO_ROOT
 ./configure --enable-hdf5 --enable-netcdf4 --debug
 cd build
 make
-
 make test
 \end{lstlisting}
