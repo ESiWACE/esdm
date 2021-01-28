@@ -1,7 +1,7 @@
 \subsection{The ESDM Configuration File}
 
 %\begin{figure}
-%  \centering
+%  \begin{center}
 %  \includegraphics[width=0.9\textwidth]{figures/data-model.png}
 %  \caption{Dummy figure}
 %  \label{fig:dummy}
@@ -32,30 +32,22 @@ The backends are organized in the ```backends``` key-value pair as a list.
 
 
 \begin{table}[!h]
-  \centering
-  \begin{tabularx}{\textwidth}{llllX}
-  Parameter              & Type    & Default    &          & Description \\
-  \hline
-  type                   & string  & (not set)  & required & Backend name (see \Cref{tab:supported_backends}) \\
-  id                     & string  & (not set)  & required & Unique identifier string \\
-  target                 & string  & (not set)  & required & Connection specification (Bucket name for S3) \\
-  performance-model      & object  & (not set)  & optional & Performance model definition. (see \Cref{tab:dyn_perf_model_conf_params,tab:gen_perf_model_conf_params}) \\
-  max-threads-per-node   & integer & 0          & optional & Maximum number of threads on a node. \\
-  write-stream-blocksize & integer & 0          & optional & TODO. \\
-  max-global-threads     & integer & 0          & optional & Maximum total number of threads. \\
-  accessibility          & string  & global     & optional & TODO. (see \Cref{tab:accessibility}) \\
-  max-fragment-size      & integer & 10485760   & optional & Maximum fragment size in bytes. \\
-  fragmentation-method   & string  & contiguous & optional & Fragmentation methods. (see \Cref{tab:frag_methods}) \\
-  % S3 parameters
-  host                   & string  & (not set)  & required & (S3 only) TODO \\
-  secret-key             & string  & (not set)  & required & (S3 only) TODO \\
-  access-key             & string  & (not set)  & required & (S3 only) TODO \\
-  locationConstraint     & string  & (not set)  & required & (S3 only) TODO \\
-  authRegion             & string  & (not set)  & required & (S3 only) TODO \\
-  timeout                & integer & (not set)  & required & (S3 only) TODO \\
-  s3-compatible          & integer & (not set)  & required & (S3 only) TODO \\
-  use-ssl                & integer & 0          & required & (S3 only) TODO \\
-  \end{tabularx}
+  \begin{center}
+    \begin{tabularx}{\textwidth}{llllX}
+      Parameter              & Type    & Default    &          & Description \\
+      \hline
+      type                   & string  & (not set)  & required & Backend name (see \Cref{tab:supported_backends}) \\
+      id                     & string  & (not set)  & required & Unique identifier string \\
+      target                 & string  & (not set)  & required & Connection specification (Bucket name for S3) \\
+      performance-model      & object  & (not set)  & optional & Performance model definition. (see \Cref{tab:dyn_perf_model_conf_params,tab:gen_perf_model_conf_params}) \\
+      max-threads-per-node   & integer & 0          & optional & Maximum number of threads on a node. \\
+      write-stream-blocksize & integer & 0          & optional & TODO. \\
+      max-global-threads     & integer & 0          & optional & Maximum total number of threads. \\
+      accessibility          & string  & global     & optional & TODO. (see \Cref{tab:accessibility}) \\
+      max-fragment-size      & integer & 10485760   & optional & Maximum fragment size in bytes. \\
+      fragmentation-method   & string  & contiguous & optional & Fragmentation methods. (see \Cref{tab:frag_methods}) \\
+    \end{tabularx}
+  \end{center}
   \caption{Backend configuration parameters}%
   \label{tab:backend_conf_params}
 \end{table}
@@ -71,18 +63,19 @@ Unique identifier string.
 Can take a value of one of the supported backends listed in @tbl:supportedtypes.
 
 \begin{table}[!h]
-  \centering
-  \begin{tabular}{ll}
-    Type   & Description                     \\ 
-    \hline
-    CLOVIS & Seagate Object Storage API      \\ 
-    DUMMY  & (Used for development)          \\ 
-    IME    & DDN Infinite Memory Engine      \\ 
-    KDSA   & Kove Direct System Architecture \\ 
-    POSIX  & POSIX interface                 \\ 
-    S3     & Amazon Simple Storage Service   \\ 
-    WOS    & DDN Object Storage              \\ 
-  \end{tabular}
+  \begin{center}
+    \begin{tabular}{ll}
+      Type   & Description                     \\ 
+      \hline
+      CLOVIS & Seagate Object Storage API      \\ 
+      DUMMY  & (Used for development)          \\ 
+      IME    & DDN Infinite Memory Engine      \\ 
+      KDSA   & Kove Direct System Architecture \\ 
+      POSIX  & POSIX interface                 \\ 
+      S3     & Amazon Simple Storage Service   \\ 
+      WOS    & DDN Object Storage              \\ 
+    \end{tabular}
+  \end{center}
   \caption{Supported backends}%
   \label{tab:supported_backends}
 \end{table}
@@ -93,37 +86,37 @@ Can take a value of one of the supported backends listed in @tbl:supportedtypes.
 [local_addr] [ha_addr] [prof] [proc_fid]
 \end{lstlisting}
 
-  where
-  \begin{itemize}
-    \item "local\_addr" is the local address used to connect to Motr service, 
-    \item "ha\_addr" is the hardware address in Motr service, 
-    \item "prof" is the profile FID in the Motr service, and
-    \item "proc\_fid" is the process FID in the Motr service.
-  \end{itemize}
-  
-  \begin{lstlisting} 
-  {
-   "type": "MOTR",
-   "id": "c1",
-   "target": ":12345:33:103 192.168.168.146@tcp:12345:34:1 
-     <0x7000000000000001:0> <0x7200000000000001:64>"
-  }
-  \end{lstlisting}
-        
+where
+\begin{itemize}
+  \item "local\_addr" is the local address used to connect to Motr service, 
+  \item "ha\_addr" is the hardware address in Motr service, 
+  \item "prof" is the profile FID in the Motr service, and
+  \item "proc\_fid" is the process FID in the Motr service.
+\end{itemize}
+
+\begin{lstlisting} 
+{
+  "type": "MOTR",
+  "id": "c1",
+  "target": ":12345:33:103 192.168.168.146@tcp:12345:34:1 
+  <0x7000000000000001:0> <0x7200000000000001:64>"
+}
+\end{lstlisting}
+
 \subparagraph{type = DUMMY}
 
 (Used for development)
 
 \subparagraph{type = IME}
-  TODO
+TODO
 
-  \begin{lstlisting}
-  {
-   "type": "IME",
-   "id": "p1",
-   "target": "./_ime"
-  }
-  \end{lstlisting}
+\begin{lstlisting}
+{
+  "type": "IME",
+  "id": "p1",
+  "target": "./_ime"
+}
+\end{lstlisting}
 
 \subparagraph{type = KDSA}
 
@@ -159,12 +152,12 @@ parameter value.
 
 \begin{lstlisting}
 {
-"type": "KDSA",
-"id": "p1",
-"target": "This is the XPD connection string",
-"max-threads-per-node" : 0,
-"max-fragment-size" : 1048,
-"accessibility" : "global"
+  "type": "KDSA",
+  "id": "p1",
+  "target": "This is the XPD connection string",
+  "max-threads-per-node" : 0,
+  "max-fragment-size" : 1048,
+  "accessibility" : "global"
 }
 \end{lstlisting}
 
@@ -174,9 +167,9 @@ Path to a directory, e.g., /home/user/data/
 
 \begin{lstlisting}
 {
- "type": "POSIX",
- "id": "p2",
- "target": "./_posix2"
+  "type": "POSIX",
+  "id": "p2",
+  "target": "./_posix2"
 }
 \end{lstlisting}
 
@@ -184,19 +177,20 @@ Path to a directory, e.g., /home/user/data/
 Bucket name prefix (at least 5 characters long)
 
 \begin{table}[!h]
-  \centering
-  \begin{tabularx}{\textwidth}{llllX}
-  Parameter              & Type    & Default    &          & Description \\
-  \hline
-  host                   & string  & (not set)  & required & (S3 only) TODO \\
-  secret-key             & string  & (not set)  & required & (S3 only) TODO \\
-  access-key             & string  & (not set)  & required & (S3 only) TODO \\
-  locationConstraint     & string  & (not set)  & required & (S3 only) TODO \\
-  authRegion             & string  & (not set)  & required & (S3 only) TODO \\
-  timeout                & integer & (not set)  & required & (S3 only) TODO \\
-  s3-compatible          & integer & (not set)  & required & (S3 only) TODO \\
-  use-ssl                & integer & 0          & required & (S3 only) TODO \\
-  \end{tabularx}
+  \begin{center}
+    \begin{tabularx}{\textwidth}{llllX}
+      Parameter              & Type    & Default    &          & Description \\
+      \hline
+      host                   & string  & (not set)  & required & (S3 only) TODO \\
+      secret-key             & string  & (not set)  & required & (S3 only) TODO \\
+      access-key             & string  & (not set)  & required & (S3 only) TODO \\
+      locationConstraint     & string  & (not set)  & required & (S3 only) TODO \\
+      authRegion             & string  & (not set)  & required & (S3 only) TODO \\
+      timeout                & integer & (not set)  & required & (S3 only) TODO \\
+      s3-compatible          & integer & (not set)  & required & (S3 only) TODO \\
+      use-ssl                & integer & 0          & required & (S3 only) TODO \\
+    \end{tabularx}
+  \end{center}
   \caption{S3 parameters}%
   \label{tab:s3_params}
 \end{table}
@@ -208,13 +202,13 @@ TODO
 
 \begin{lstlisting}
 {
-"type": "WOS",
-"id": "w1",
-"target": "host=192.168.80.33;policy=test;",
-"max-threads-per-node" : 1,
-"max-fragment-size" : 1073741825,
-"max-global-threads" : 1,
-"accessibility" : "global"
+  "type": "WOS",
+  "id": "w1",
+  "target": "host=192.168.80.33;policy=test;",
+  "max-threads-per-node" : 1,
+  "max-fragment-size" : 1073741825,
+  "max-global-threads" : 1,
+  "accessibility" : "global"
 }
 \end{lstlisting}
 
@@ -223,29 +217,31 @@ TODO
 
 
 \begin{table}[!ht]
-  \centering
-  \begin{tabularx}{\textwidth}{lllllX}
-    Parameter  & Type  & Default & Domain &          & Description \\ 
-    \hline
-    latency    & float & 0.0     & >=0.0  & optional & seconds     \\ 
-    throughput & float & 0.0     & >0.0   & optional & MiB/s       \\ 
-  \end{tabularx}
+  \begin{center}
+    \begin{tabularx}{\textwidth}{lllllX}
+      Parameter  & Type  & Default & Domain &          & Description \\ 
+      \hline
+      latency    & float & 0.0     & >=0.0  & optional & seconds     \\ 
+      throughput & float & 0.0     & >0.0   & optional & MiB/s       \\ 
+    \end{tabularx}
+  \end{center}
   \caption{Dynamic performance model parameters}%
   \label{tab:dyn_perf_model_conf_params}
 \end{table}
 
 
 \begin{table}[!ht]
-  \centering
-  \begin{tabularx}{\textwidth}{lllllX}
-    Parameter  & Type    & Default & Domain &          & Description         \\ 
-    \hline
-    latency    & float   & 0.0     & >=0.0  & optional & Latency in seconds  \\ 
-    throughput & float   & 0.0     & >0.0   & optional & Throughput in MiB/s \\ 
-    size       & integer & 0       & >0     & optional & TODO                \\ 
-    period     & float   & 0.0     & >0.0   & optional & TODO                \\ 
-    alpha      & float   & 0.0     & [0.0,  & 1.0)     & optional TODO       \\ 
-  \end{tabularx}
+  \begin{center}
+    \begin{tabularx}{\textwidth}{lllllX}
+      Parameter  & Type    & Default & Domain &          & Description         \\ 
+      \hline
+      latency    & float   & 0.0     & >=0.0  & optional & Latency in seconds  \\ 
+      throughput & float   & 0.0     & >0.0   & optional & Throughput in MiB/s \\ 
+      size       & integer & 0       & >0     & optional & TODO                \\ 
+      period     & float   & 0.0     & >0.0   & optional & TODO                \\ 
+      alpha      & float   & 0.0     & [0.0,  & 1.0)     & optional TODO       \\ 
+    \end{tabularx}
+  \end{center}
   \caption{Generic performance model parameters}%
   \label{tab:gen_perf_model_conf_params}
 \end{table}
@@ -264,13 +260,14 @@ TODO
 \subparagraph{Parameter: accessibility}
 
 \begin{table}[!ht]
-  \centering
-  \begin{tabularx}{\textwidth}{lX}
-    Method & Description \\ 
-    \hline
-    global & TODO        \\ 
-    local  & TODO        \\ 
-  \end{tabularx}
+  \begin{center}
+    \begin{tabularx}{\textwidth}{lX}
+      Method & Description \\ 
+      \hline
+      global & TODO        \\ 
+      local  & TODO        \\ 
+    \end{tabularx}
+  \end{center}
   \caption{Accessibility}%
   \label{tab:accessibility}
 \end{table}
@@ -284,26 +281,27 @@ A string identifying the algorithm to use to split a chunk of data into fragment
 Legal values are:
 
 \begin{table}[!ht]
-  \centering
-  \begin{tabularx}{\textwidth}{lX}
-Method     & Description \\
-\hline
-contiguous  & This algorithm tries to form fragments that are 
-            scattered across memory as little as possible. As such, 
-            it is expected to yield the best possible write performance. 
-            However, if a transposition is performed when reading 
-            the data back, performance may be poor.
-            Splitting a dataspace of size (50, 80, 100) into fragments 
-            of 2000 entries results in fragments of size (1, 20, 100). \\
-equalized   & This algorithm tries to form fragments that have a similar 
-            size in all dimensions. As such, it is expected to perform 
-            equally well with all kinds of read requests, but it tends 
-            to write scattered data to disk which has to be sequentialized 
-            first, imposing a performance penalty on the write side.
-            Splitting a dataspace of size (50, 80, 100) into fragments of at
-            most 2000 entries results in fragments of sizes between 
-            (10, 11, 11) and (10, 12, 12). \\
-  \end{tabularx}
+  \begin{center}
+    \begin{tabularx}{\textwidth}{lX}
+      Method     & Description \\
+      \hline
+      contiguous  & This algorithm tries to form fragments that are 
+      scattered across memory as little as possible. As such, 
+      it is expected to yield the best possible write performance. 
+      However, if a transposition is performed when reading 
+      the data back, performance may be poor.
+      Splitting a dataspace of size (50, 80, 100) into fragments 
+      of 2000 entries results in fragments of size (1, 20, 100). \\
+      equalized   & This algorithm tries to form fragments that have a similar 
+      size in all dimensions. As such, it is expected to perform 
+      equally well with all kinds of read requests, but it tends 
+      to write scattered data to disk which has to be sequentialized 
+      first, imposing a performance penalty on the write side.
+      Splitting a dataspace of size (50, 80, 100) into fragments of at
+      most 2000 entries results in fragments of sizes between 
+      (10, 11, 11) and (10, 12, 12). \\
+    \end{tabularx}
+  \end{center}
   \caption{Fragmentation methods}%
   \label{tab:frag_methods}
 \end{table}
@@ -313,13 +311,14 @@ equalized   & This algorithm tries to form fragments that have a similar
 \label{sec:conf-file:metadata}
 
 \begin{table}[!ht]
-  \centering
-  \begin{tabularx}{\textwidth}{lllX}
-    Parameter & Type   & Default   & Description     \\ 
-    \hline
-    type      & string & (not set) & required TODO   \\ 
-    id        & string & (not set) & (not used) TODO \\ 
-  \end{tabularx}
+  \begin{center}
+    \begin{tabularx}{\textwidth}{lllX}
+      Parameter & Type   & Default   & Description     \\ 
+      \hline
+      type      & string & (not set) & required TODO   \\ 
+      id        & string & (not set) & (not used) TODO \\ 
+    \end{tabularx}
+  \end{center}
   \caption{Metadata parameters}%
   \label{tab:metadata_params}
 \end{table}
