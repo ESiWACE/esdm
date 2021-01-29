@@ -43,7 +43,7 @@ The backends are organized in the ```backends``` key-value pair as a list.
         target                 & string  & (not set)  & required & Connection specification (Bucket name for S3) \\
         performance-model      & object  & (not set)  & optional & Performance model definition. (see \Cref{tab:dyn_perf_model_conf_params,tab:gen_perf_model_conf_params}) \\
         max-threads-per-node   & integer & 0          & optional & Maximum number of threads on a node. \\
-        write-stream-blocksize & integer & 0          & optional & TODO. \\
+        write-stream-blocksize & integer & 0          & optional & Blocksize used to write fragments. \\
         max-global-threads     & integer & 0          & optional & Maximum total number of threads. \\
         accessibility          & string  & global     & optional & TODO. (see \Cref{tab:accessibility}) \\
         max-fragment-size      & integer & 10485760   & optional & Maximum fragment size in bytes. \\
@@ -60,11 +60,11 @@ The backends are organized in the ```backends``` key-value pair as a list.
 
 
 \paragraph{Parameter: id}
-Unique identifier string.
+Unique alphanumberic identifier string.
 
 
 \paragraph{Parameter: type and target}
-Can take a value of one of the supported backends listed in @tbl:supportedtypes.
+Can take a value of one of the supported backends listed in \Cref{tab:supported_backends}.
 
 \begin{preserve}
 \begin{table}[!h]
@@ -182,28 +182,42 @@ Path to a directory, e.g., /home/user/data/
 \subparagraph{S3}
 Bucket name prefix (at least 5 characters long)
 
+%Amazon Docs
+%https://docs.aws.amazon.com/AmazonS3/latest/API/API_CreateBucket.html
+
 \begin{preserve}
 \begin{table}[!h]
   \begin{center}
+    \begin{scriptsize}
     \begin{tabularx}{\textwidth}{llllX}
       Parameter              & Type    & Default    &          & Description \\
       \hline
-      host                   & string  & (not set)  & required & (S3 only) TODO \\
-      secret-key             & string  & (not set)  & required & (S3 only) TODO \\
-      access-key             & string  & (not set)  & required & (S3 only) TODO \\
-      locationConstraint     & string  & (not set)  & required & (S3 only) TODO \\
-      authRegion             & string  & (not set)  & required & (S3 only) TODO \\
-      timeout                & integer & (not set)  & required & (S3 only) TODO \\
-      s3-compatible          & integer & (not set)  & required & (S3 only) TODO \\
-      use-ssl                & integer & 0          & required & (S3 only) TODO \\
+      host                   & string  & (not set)  & required & A valid endpoint name for the Amazon S3 region provided by the agency. \\
+      secret-key             & string  & (not set)  & required & Secret Access Key for the account. \\
+      access-key             & string  & (not set)  & required & Access key ID for the account. \\
+      locationConstraint     & string  & (not set)  & optional & Specifies the Region where the bucket will be created. If you don't specify a Region, the bucket is created in the US East (N. Virginia) Region (us-east-1). For a list of all the Amazon S3 supported regions, see API Bucket reference (\url{https://docs.aws.amazon.com/AmazonS3/latest/API/API_CreateBucket.html}) \\
+      authRegion             & string  & (not set)  & optional & For a list of all the Amazon S3 supported regions and endpoints, see regions and endpoints in the AWS General Reference (\url{https://docs.aws.amazon.com/general/latest/gr/rande.html\#s3_region}) \\
+      timeout                & integer & (not set)  & optional & Request timeout in milliseconds. \\
+      s3-compatible          & integer & (not set)  & optional & TODO (not used ?) \\
+      use-ssl                & integer & 0          & optional & Use HTTPS for encryption, if enabled. \\
     \end{tabularx}
+  \end{scriptsize}
   \end{center}
   \caption{S3 parameters}%
   \label{tab:s3_params}
 \end{table}
 \end{preserve}
 
-TODO example
+\begin{lstlisting}
+{
+  "type": "S3",
+  "id": "p1",
+  "target": "./_posix1",
+  "access-key" : "",
+  "secret-key" : "",
+  "host" : "localhost:9000"
+}
+\end{lstlisting}
 
 \subparagraph{WOS}
 TODO
