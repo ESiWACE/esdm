@@ -1,7 +1,7 @@
 \section{Data Model}%
 \label{data-model}
 
-While datatypes introduced by computer architectures and software libraries are important for the data model, they are discussed separately in \todo{Reference}.
+While datatypes introduced by computer architectures and software libraries are important for the data model, they are discussed separately in \eb{Reference}.
 
 The data model of a system organizes elements of data, standardizes how they represent data entities and how users can interact with the data.
 The \textbf{model} can be split into three layers:
@@ -20,7 +20,7 @@ The \textbf{model} can be split into three layers:
 
 Our conceptual data model is aligned with the needs of domain scientists from climate and weather. 
 It reuses and extends from concepts introduced in a data model proposed for the Climate and Forecasting conventions for NetCDF data.
-%\footnote{\href{\%22A\%20CF\%20Data\%20Model\%20and\%20Implementation\%22,\%20Hassel\%20et\%20al,\%202017,\%20GMD\%20submitted}{"A CF Data Model and Implementation", Hassel et al, 2017, GMD submitted}}.
+%\footnote{\href{A CF Data Model and Implementation, Hassel et al, 2017, GMD submitted}{"A CF Data Model and Implementation", Hassel et al, 2017, GMD submitted}}.
 
 \paragraph{Variable:}%
 \label{variable}
@@ -64,7 +64,7 @@ Variables must have unique names within a dataset.
 
 Our conceptual model assumes that all variables are scalars, but clearly to make use of these scalars requires more complex interpretation. 
 In particular, we need to know the
-\todo{Fix this}
+\eb{Fix this}
 
 \paragraph{Datatype:}%
 \label{datatype}
@@ -92,7 +92,7 @@ ESDM entities may be linked by ESDM \textbf{reference}s, and a key property whic
 The use of reference counting will ensure this property as well as avoid dangling pointers.
  
 gives an overview of the logical data model.
-\todo{Fix this}
+\eb{Fix this}
 
 
 Each of these entities is now described, along with a list of supported operations:
@@ -179,7 +179,7 @@ Operations:
 \begin{itemize}
   \item Uses can create, read, or delete arbitrary scientific metadata onto variables and containers. A future version of the ESDM may support user scientific metadata for fragments.
   \item Container level metadata is generally not directly associated with variables, but may be retrieved via following references from variables to containers.
-  \item Queries allow to search for arbitrary metadata, e.g., for objects that have (\texttt{experiment=X,\ model=Y,\ time=yesterday}) returning the variables and containers in a list that match. This enables to locate scientific data in an arbitrary namespace.
+  \item Queries allow to search for arbitrary metadata, e.g., for objects that have (\texttt{experiment=X, model=Y, time=yesterday}) returning the variables and containers in a list that match. This enables to locate scientific data in an arbitrary namespace.
 \end{itemize}
 
 \paragraph{Reference:}%
@@ -205,7 +205,7 @@ Operations:
 \label{namespace}
 
 ESDM does not offer a simple hierarchical namespace for the files.
-It provides the elementary functions to navigate data: teleportation and orientation in the following fashion: Queries about semantical data properties (e.g., \texttt{experiment=myExperiment,\ model=myModel,\ date=yesterday}) can be performed returning a list of matching files with their respective metadata.
+It provides the elementary functions to navigate data: teleportation and orientation in the following fashion: Queries about semantical data properties (e.g., \texttt{experiment=myExperiment, model=myModel, date=yesterday}) can be performed returning a list of matching files with their respective metadata.
 Iterating the list (orientation) is similar to listing a directory in a file system.
  
 Note that this reduces the burden to define a hierarchical namespace and for data sharing services based on scientific metadata.

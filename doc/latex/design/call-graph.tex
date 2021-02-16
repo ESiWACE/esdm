@@ -39,14 +39,14 @@ Applies for datasets, containers, fragments:
 Callgraph from user perspective:
 
 \begin{itemize}
-  \item c = container\_create("name")
-  \item d = dataset\_create(c, "dset")
-  \item write(d) creates fragments and attaches the metadata to the dataset
-  \item dataset\_commit(d) =\textgreater{} make the dataset persistent, also write the dataset + fragment metadata
-  \item container\_commit(c) =\textgreater{} makes the container persistent
+  \item \lstinline|c = container_create("name")|
+  \item \lstinline|d = dataset_create(c, "dset")|
+  \item \lstinline|write(d)| creates fragments and attaches the metadata to the dataset
+  \item \lstinline|dataset_commit(d)| =\textgreater{} make the dataset persistent, also write the dataset + fragment metadata
+  \item \lstinline|container_commit(c)| =\textgreater{} makes the container persistent
     TODO: check that the right version of data is linked to it.
-  \item dataset\_destroy(d)
-  \item container\_destroy(c)
+  \item \lstinline|dataset_destroy(d)|
+  \item \lstinline|container_destroy(c)|
 \end{itemize}
 
 \subsection{Read}%
@@ -63,23 +63,23 @@ Applies for datasets, containers, fragments:
 Callgraph from user perspective:
 
 \begin{itemize}
-  \item c = container\_open("name") \textless= here we read the metadata for "name" and generate appropriate structures
-  \item d = dataset\_open("dset") \textless= here we read the metadata for "dset" and generate appropriate structures
-  \item read(d)
-  \item dataset\_destroy(d)
-  \item container\_destroy(c)
+  \item \lstinline|c = container_open("name")| \textless= here we read the metadata for "name" and generate appropriate structures
+  \item \lstinline|d = dataset_open("dset")| \textless= here we read the metadata for "dset" and generate appropriate structures
+  \item \lstinline|read(d)|
+  \item \lstinline|dataset_destroy(d)|
+  \item \lstinline|container_destroy(c)|
 \end{itemize}
 
 Alternative workflow with unkown dsets:
 
 \begin{itemize}
-  \item c = container\_open("name") \textless= here we read the metadata for "name" and generate appropriate structures
-  \item it = dataset\_iterator()
-  \item for x in it:
+  \item \lstinline|c = container_open("name")| \textless= here we read the metadata for "name" and generate appropriate structures
+  \item \lstinline|it = dataset_iterator()|
+  \item \lstinline|for x in it:|
     \begin{itemize}
-      \item dataset\_iterator\_dataset(x)
+      \item \lstinline|dataset_iterator_dataset(x)|
     \end{itemize}
-  \item read(d)
-  \item dataset\_destroy(d)
-  \item container\_destroy(c)
+  \item \lstinline|read(d)|
+  \item \lstinline|dataset_destroy(d)|
+  \item \lstinline|container_destroy(c)|
 \end{itemize}

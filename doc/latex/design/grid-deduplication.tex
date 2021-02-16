@@ -5,20 +5,20 @@
   \item The user must be allowed to create throw-away grids for reading
   \item It must be avoided that there are several fragments with the exact same shape
   \item It must be avoided that there are several grids with the exact same axis and subgrid structure
-  \item $\rightarrow$ deduplication must happen on two distinct levels: the fragment level and the grid level
+  \item[$\rightarrow$] deduplication must happen on two distinct levels: the fragment level and the grid level
   \item It is not possible to reference count grids or fragments, as these objects contain a reference to their owning dataset, and thus must not survive its destruction
     \begin{itemize}
-      \item $\rightarrow$ deduplication must rely on proxy objects that reference the already existing objects
+      \item[$\rightarrow$] deduplication must rely on proxy objects that reference the already existing objects
     \end{itemize}
   \item User code can hold pointers to subgrids
     \begin{itemize}
-      \item $\rightarrow$ grids cannot be replaced with proxy objects, they must be turned into proxy objects
-      \item $\rightarrow$ grids that are turned into proxy objects must retain their subgrid structure to ensure proper destruction
+      \item[$\rightarrow$] grids cannot be replaced with proxy objects, they must be turned into proxy objects
+      \item[$\rightarrow$] grids that are turned into proxy objects must retain their subgrid structure to ensure proper destruction
     \end{itemize}
   \item A fragment cannot be matched with a subgrid, and a subgrid cannot be matched with another subgrid that differs in one of the axes or subgrids
     \begin{itemize}
-      \item $\rightarrow$ deduplication cannot happen while the grid is still in fixed axes state
-      \item $\rightarrow$ esdm\_read\_grid() and esdm\_write\_grid() should be defined to put a grid into fixed structure state, allowing deduplication on their first call
+      \item[$\rightarrow$] deduplication cannot happen while the grid is still in fixed axes state
+      \item[$\rightarrow$] \lstinline|esdm_read_grid()| and \lstinline|esdm_write_grid()| should be defined to put a grid into fixed structure state, allowing deduplication on their first call
     \end{itemize}
 \end{itemize}
 
