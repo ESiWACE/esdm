@@ -49,34 +49,12 @@ The NetCDF compatibility is documented in the report released in \url{https://gi
 
 The Climate Data Operator (CDO) software is a collection of many operators for standard processing of climate and forecast model data. 
 The operators include simple statistical and arithmetic functions, data selection and subsampling tools, and spatial interpolation. 
-CDO was developed to have the same set of processing functions for GRIB [GRIB] and NetCDF [NetCDF] datasets in one package. 
+CDO was developed to have the same set of processing functions for GRIB and NetCDF datasets in one package. 
 The Climate Data Interface [CDI] is used for the fast and file format independent access to GRIB and NetCDF datasets. 
-The local MPI-MET data formats SERVICE, EXTRA and IEG are also supported.
-There are some limitations for GRIB and NetCDF datasets:
-
-GRIB datasets have to be consistent, similar to NetCDF. 
-That means all time steps need to have the same variables, and within a time step each variable may occur only once. 
-Multiple fields in single GRIB2 messages are not supported!
-NetCDF datasets are only supported for the classic data model and arrays up to 4 dimensions. 
-These dimensions should only be used by the horizontal and vertical grid and the time. 
-The NetCDF attributes should follow the GDT, COARDS or CF Conventions.
-
-The main CDO features are:
-\begin{itemize}
-  \item More than 700 operators available
-  \item Modular design and easily extendible with new operators
-  \item Very simple UNIX command line interface
-  \item A dataset can be processed by several operators, without storing the interim results in files
-  \item Most operators handle datasets with missing values
-  \item Fast processing of large datasets
-  \item Support of many different grid types
-  \item Tested on many UNIX/Linux systems, Cygwin, and MacOS-X
-\end{itemize}
-
 To enable ESDM, the files need the \lstinline|esdm://| prefix.
-
 In the  example data is converted from GRIP to NetCDF format and written by ESDM according to the configuration in the \lstinline|esdm.conf| file.
 %#cdo -f nc -copy data.grb esdm://data.nc 
+
 \begin{preserve}
 \lstinputlisting[language=c]{\examplespath/cdo/convert.sh}
 \end{preserve}
@@ -152,38 +130,22 @@ XIOS achieves high performance by asynchronous and parallel I/O.
 
 \subsection{Python}%
 \label{sec:usage-examples:python}
-Python's netcdf4-python module can read and write data to/from NetCDF files.
-
-
-%To add ESDM support to Python we provide a patch for the Python NetCDF module.
-%It is located in the esdm-netcdf/dev folder in the \url{https://github.com/ESiWACE/esdm-netcdf} Git-Repo.
-%The changings in the original patch to include ESDM can be seen in \Cref{fig:python-patch}. 
-%Basically, it adds the flags \lstinline|HAS_ESDM_SUPPORT|, \lstinline|NC_FORMATX_ESDM|, \lstinline|NC_ESDM| and fmt == 'ESDM' (ESDM format).
-%After the patch is applied, the I/O will be redirected to ESDM.
-%No changes to applications are required.
-
-%\begin{figure}
-%  \centering
-%  \includegraphics[width=0.9\textwidth]{python-patch.png}
-%  \caption{Python patch}
-%  \label{fig:python-patch}
-%\end{figure}
-
+The patched NetCDF4-Python module is able to redirect I/O to ESDM if the file name contains the \lstinline|esdm://| prefix, \lstinline|esdm.conf| is located in the search path, and the ESDM directory structure is initialized with the \lstinline|mkfs.esdm| tool.
+The following example illustrates write access to a NetCDF file.
 
 \begin{preserve}
 \lstinputlisting[language=python]{\examplespath/python/netcdf/write.py}
 \end{preserve}
-\begin{preserve}
-%\lstinputlisting[language=python]{\examplespath/python/netcdf/read.py}
-\end{preserve}
 
+%\begin{preserve}
+%\lstinputlisting[language=python]{\examplespath/python/netcdf/read.py}
+%\end{preserve}
 
 \subsection{Dask}%
 \label{sec:usage-examples:dask}
-Dask supports NetCDF and therefore, it supports indirectly ESDM.
-Examples below show how data can be accessed in Dask.
-The data goes from Dask to netcdf4-python, then to esdm-netcdf, then to ESDM library.
-ESDM accesses the data accross storage devices dfined in esdm.conf.
+Dask is able to utilize ESDM by redirection I/O to the patched NetCDF4-Python module.
+By passing the \lstinline|engine=netcdf4| argument to the \lstinline|to_netcdf()| function we can make sure, that the correct engine is used in the background.
+We just have to take care, that \lstinline|esdm.conf| is located in the search path and that the ESDM directory structure is initialized by the \lstinline|mkfs.esdm| tool.
 
 \begin{preserve}
 \lstinputlisting[language=python]{\examplespath/python/dask/write.py}

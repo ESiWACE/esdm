@@ -18,7 +18,7 @@
     -   [HTML and PDF with
         API-Reference](#html-and-pdf-with-api-reference)
     -   [Github-Markdown](#github-markdown)
--   [Build instructions](#installation-instructions-for-mistral)
+-   [Building instructions](#installation-instructions-for-mistral)
     -   [Dependencies (Spack)](#satisfying-requirements)
     -   [ESDM prototype](#esdm-prototype)
     -   [HDF5](#hdf5)
@@ -27,7 +27,8 @@
     -   [Docker](#docker)
 -   [Configuration](#configuration)
     -   [File Format](#file-format)
-    -   [Metadata](#sec:conf-file:metadata)
+    -   [Data Parameters](#data-parameters)
+    -   [Metadata Parameters](#metadata-parameters)
 -   [Usage](#sec:usage-examples:esdm-usage)
     -   [NetCDF](#sec:usage-examples:netcdf)
     -   [CDO](#sec:usage-examples:cdo)
@@ -556,7 +557,7 @@ cd ./doc
 make
 ```
 
-# Build instructions
+# Building instructions
 
 This guide documents installation procedures to build prerequisites as
 well as the prototype code base for development and testing purposes.
@@ -755,6 +756,8 @@ key-value pair as a list.
         }
       }
     }
+
+## Data Parameters
 
 <div class="center">
 
@@ -1086,7 +1089,7 @@ Fragmentation methods
 
 </div>
 
-## Metadata
+## Metadata Parameters
 
 <div class="center">
 
@@ -1240,60 +1243,18 @@ The Climate Data Operator (CDO) software is a collection of many
 operators for standard processing of climate and forecast model data.
 The operators include simple statistical and arithmetic functions, data
 selection and subsampling tools, and spatial interpolation. CDO was
-developed to have the same set of processing functions for GRIB \[GRIB\]
-and NetCDF \[NetCDF\] datasets in one package. The Climate Data
-Interface \[CDI\] is used for the fast and file format independent
-access to GRIB and NetCDF datasets. The local MPI-MET data formats
-SERVICE, EXTRA and IEG are also supported. There are some limitations
-for GRIB and NetCDF datasets:
-
-GRIB datasets have to be consistent, similar to NetCDF. That means all
-time steps need to have the same variables, and within a time step each
-variable may occur only once. Multiple fields in single GRIB2 messages
-are not supported! NetCDF datasets are only supported for the classic
-data model and arrays up to 4 dimensions. These dimensions should only
-be used by the horizontal and vertical grid and the time. The NetCDF
-attributes should follow the GDT, COARDS or CF Conventions.
-
-The main CDO features are:
-
--   More than 700 operators available
-
--   Modular design and easily extendable with new operators
-
--   Very simple UNIX command line interface
-
--   A dataset can be processed by several operators, without storing the
-    interim results in files
-
--   Most operators handle datasets with missing values
-
--   Fast processing of large datasets
-
--   Support of many different grid types
-
--   Tested on many UNIX/Linux systems, Cygwin, and MacOS-X
-
-To enable ESDM, the files need the `esdm://` prefix.
-
-In the first example data is converted from GRIP to NetCDF format und
-written by ESDM accourding to the configuration in the `esdm.conf` file.
+developed to have the same set of processing functions for GRIB and
+NetCDF datasets in one package. The Climate Data Interface \[CDI\] is
+used for the fast and file format independent access to GRIB and NetCDF
+datasets. To enable ESDM, the files need the `esdm://` prefix. In the
+example data is converted from GRIP to NetCDF format and written by ESDM
+according to the configuration in the `esdm.conf` file.
 
 ``` c
 #!/bin/bash
 
 mkfs.esdm -g -l --create  --remove --ignore-errors
 cdo -f nc -copy data.nc esdm://data.nc 
-```
-
-In the second example CDO copies the variable `var1` from `data.nc` in
-`esdm://data_x.nc` container.
-
-``` c
-#!/bin/bash
-
-#mkfs.esdm -g -l --create  --remove --ignore-errors
-cdo -selname,var1 esdm://data.nc data_x.nc 
 ```
 
 ## XIOS
@@ -1360,8 +1321,11 @@ performance by asynchronous and parallel I/O.
 
 ## Python
 
-Python’s netcdf4-python module can read and write data to/from NetCDF
-files.
+The patched NetCDF4-Python module is able to redirect I/O to ESDM if the
+file name contains the `esdm://` prefix, `esdm.conf` is located in the
+search path, and the ESDM directory structure is initialized with the
+`mkfs.esdm` tool. The following example illustrates write access to a
+NetCDF file.
 
 ``` python
 #!/usr/bin/env python3
@@ -1402,30 +1366,26 @@ root_grp.close()
 
 ## Dask
 
-Dask supports NetCDF and therefore, it supports indirectly ESDM.
-Examples below show how data can be accessed in Dask. The data goes from
-Dask to netcdf4-python, then to esdm-netcdf, then to ESDM library. ESDM
-accesses the data accross storage devices dfined in esdm.conf.
+Dask is able to utilize ESDM by redirection I/O to the patched
+NetCDF4-Python module. By passing the `engine=netcdf4` argument to the
+`to_netcdf()` function we can make sure, that the correct engine is used
+in the background. We just have to take care, that `esdm.conf` is
+located in the search path and that the ESDM directory structure is
+initialized by the `mkfs.esdm` tool.
 
 ``` python
 #!/usr/bin/env python
-
-#from dask.distributed import Client
 import xarray as xr
 import numpy as np
 import pandas as pd
-
 ds = xr.Dataset(
    {"var1": [1,2,3,4,5,6]},
 )
-
 ds.to_netcdf(path="esdm://ncfile.nc", format='NETCDF4', engine="netcdf4")
 ```
 
 ``` python
 #!/usr/bin/env python3
-
-#from dask.distributed import Client
 import xarray as xr
 ds = xr.open_dataset('esdm://ncfile.nc', engine='netcdf4')
 print(ds)
