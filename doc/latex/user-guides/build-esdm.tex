@@ -1,0 +1,219 @@
+\section{Building instructions}%
+\label{installation-instructions-for-mistral}
+%Mistral (HLRE-3) is the supercomputer installed at DKRZ in 2015/2016.
+This guide documents installation procedures to build prerequisites as well as the prototype code base for development and testing purposes.
+
+\begin{figure}[!ht]
+  \begin{center}
+    \includegraphics[width=0.6\textwidth]{../assets/deps/graph.png}
+  \end{center}
+  \caption{Dependencies overview}
+  \label{fig:deps}
+\end{figure}
+
+\subsection{Dependencies (Spack)}%
+\label{satisfying-requirements}
+Although, the software trees on supercomputer may provide all the standard tools and libraries required to build ESDM, it is still recommended to build, to install, and to manage dependencies via Spack\footnote{\url{https://spack.readthedocs.io/en/latest/index.html}}.
+The instructions below show how to setup Spack and how to install the ESDM dependencies.
+
+\begin{enumerate}
+  \item Download and enable Spack
+    \begin{lstlisting}
+    git clone --depth=2 https://github.com/spack/spack.git spack
+    . spack/share/spack/setup-env.sh
+    \end{lstlisting}
+  \item Set a \lstinline|gcc| version to be used
+    \begin{lstlisting}
+    gccver=7.3.0
+    \end{lstlisting}
+  \item Install dependencies
+    \begin{lstlisting}
+    spack install gcc@$gccver +binutils
+    spack install autoconf%gcc@$gccver
+    spack install openmpi%gcc@$gccver gettext%gcc@$gccver
+    spack install jansson%gcc@$gccver glib%gcc@$gccver
+    \end{lstlisting}
+  \item Load dependencies
+    \begin{lstlisting}
+    spack load gcc@$gccver
+    spack load -r autoconf%gcc@$gccver
+    spack load -r libtool%gcc@$gccver
+    spack load -r openmpi%gcc@$gccver
+    spack load -r jansson%gcc@$gccver
+    spack load -r glib%gcc@$gccver
+    \end{lstlisting}
+\end{enumerate}
+
+
+\subsection{ESDM prototype}
+Assuming all prerequisites have been installed and tested, ESDM can be configured and build as follows.
+\begin{enumerate}
+  \item Ensure environment is aware of dependencies installed using \lstinline|spack| and \lstinline|dev-env|
+    \begin{lstlisting}
+    git clone https://github.com/ESiWACE/esdm
+    \end{lstlisting}
+  \item Configure and build ESDM
+    \begin{lstlisting}
+    cd esdm
+    ./configure \
+      --prefix=${PREFIX} \
+      --enable-netcdf4
+    cd build
+    make
+    make install
+    \end{lstlisting}
+\end{enumerate}
+
+\subsection{HDF5}%
+\label{hdf5}
+Assuming all prerequisites have been installed and tested, a development branch of HDF5-VOL can be build as follows.
+\begin{enumerate}
+  \item Ensure environment is aware of dependencies installed using \lstinline|spack| and \lstinline|dev-env|
+  \item Checkout HDF5 with VOL support
+    \begin{lstlisting}
+    svn checkout https://svn.hdfgroup.org/hdf5/features/vol/
+    \end{lstlisting}
+  \item Configure and build HDF5-VOL
+    \begin{lstlisting}
+    cd vol
+    ./autogen.sh
+    export CC=mpicc         ### parallel features require mpicc
+    ../configure \
+      --prefix=$prefix \
+      --enable-parallel \
+      --enable-build-mode=debug \
+      --enable-hl \
+      --enable-shared
+    make -j
+    make install
+    \end{lstlisting}
+\end{enumerate}
+
+\subsection{ESDM-NetCDF and ESDM-NetCDF-Python}%
+\begin{enumerate}
+  \item Clone the NetCDF-ESDM repository
+    \begin{lstlisting}
+    git clone https://github.com/ESiWACE/esdm-netcdf
+    \end{lstlisting}
+  \item Configure and build NetCDF-ESDM. (\lstinline|$INSTPATH| is the installation path of ESDM and HDF5-VOL.)
+    \begin{lstlisting}
+    cd esdm-netcdf
+    autoreconf --install --force
+    ./configure \
+      --prefix=$prefix \
+      --with-esdm=$INSTPATH \
+      --with-hdf5=$INSTPATH \
+      LDFLAGS="-L$INSTPATH/lib" \
+      CFLAGS="-I$INSTPATH/include" \
+      CC=mpicc \
+      --disable-dap
+    make -j
+    make install
+    \end{lstlisting}
+  \item If required, install the netcdf4-python module. 
+    Change to the root-directory of the esdm-netcdf repository and install the patched netcdf-python module.
+    \begin{lstlisting}
+    cd dev
+    git clone https://github.com/Unidata/netcdf4-python.git
+    cd netcdf-python
+    patch -s -p1 < ../v1.patch
+    python3 setup.py install --user
+    \end{lstlisting}
+\end{enumerate}
+
+\subsection{Docker}
+For the development of ESDM the directory \lstinline|./dev/docker| contains all requirements to quickly set up a development environment using docker.
+For easy building Dockerfiles for different plattforms are provided in different flavours:
+
+\begin{itemize}
+  \item CentOS/Fedora/RHEL like systems
+  \item Ubuntu/Debian like systems
+\end{itemize}
+
+\subsubsection{Setup}
+
+Assuming the docker service is running you can build the docker images as follows:
+
+\begin{lstlisting}
+cd ./dev/docker
+cd <choose ubuntu/fedora/..>
+sudo docker build -t esdm .
+\end{lstlisting}
+
+After docker is done building an image, you should see the output of the ESDM test suite, which verifies that the development environment is set up correctly. 
+The output should look similar to the following output:
+
+\begin{lstlisting}
+Running tests...
+Test project /data/esdm/build
+Start 1: metadata
+1/2 Test #1: metadata .........................   Passed    0.00 sec
+Start 2: readwrite
+2/2 Test #2: readwrite ........................   Passed    0.00 sec
+
+100% tests passed, 0 tests failed out of 2
+
+Total Test time (real) =   0.01 sec
+\end{lstlisting}
+
+
+\subsubsection{Usage}
+Running the esdm docker container will run the test suite:
+
+\begin{lstlisting}
+sudo docker run esdm  # should display test output
+\end{lstlisting}
+
+You can also explore the development environment interactively:
+
+\begin{lstlisting}
+sudo docker run -it esdm bash
+\end{lstlisting}
+
+\begin{lstlisting}
+docker run dev/docker/ubuntu-whole-stack/Dockerfile
+\end{lstlisting}
+
+
+%\subsubsection{NetCDF with Support for ESDM VOL Plugin}%
+%\label{netcdf-with-support-for-esdm-vol-plugin}
+
+%Assuming all prerequisites have been installed and tested a patched version of NetCDF to enable/disable ESDM VOL Plugin support can be build as follows.
+
+%\subsection{Ensure environment is aware of dependencies installed using spack and dev-env}%
+%\label{ensure-environment-is-aware-of-dependencies-installed-using-spack-and-dev-env-1}
+
+%\subsection{Download NetCDF source}%
+%\label{download-netcdf-source}
+
+%version=4.5.0
+
+%\begin{lstlisting}
+%wget ftp://ftp.unidata.ucar.edu/pub/netcdf/netcdf-$version.tar.gz
+%cd netcdf-$version
+%\end{lstlisting}
+
+%\subsection{Apply patches to allow enabling/disabling plugin}%
+%\label{apply-patches-to-allow-enablingdisabling-plugin}
+
+%\begin{lstlisting}
+%patch -b --verbose $PWD/libsrc4/nc4file.c $ESDM_REPO_ROOT/dev/netcdf4-libsrc4-nc4file-c.patch
+%patch -b --verbose $PWD/include/netcdf.h $ESDM_REPO_ROOT/dev/netcdf4-include-netcdf-h.patch
+%\end{lstlisting}
+
+%\subsection{Configure and build}%
+%\label{configure-and-build}
+
+%\begin{lstlisting}
+%export CC=mpicc
+%mkdir build && cd build
+%cmake \
+%  -DCMAKE_PREFIX_PATH=$prefix \
+%  -DCMAKE_INSTALL_PREFIX:PATH=$prefix \
+%  -DCMAKE_C_FLAGS=-L$prefix/lib/ \
+%  -DENABLE_PARALLEL4=ON ..
+%make -j
+%make test
+%make install
+%\end{lstlisting}
+

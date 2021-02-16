@@ -1,0 +1,194 @@
+\section{Usage}%
+\label{sec:usage-examples:esdm-usage}
+This section illustrated how ESDM can be used with different programming languages and tools.
+The applications with NetCDF support don't need to be changed or recompiled as long as they are linked against the shared netcdf library.
+They can simply use the ESDM-NetCDF version and benefit of ESDM.
+To force them to use the ESDM-NetCDF version, the library can be pre-loaded by \lstinline|LD_PRELOAD| environment variable.
+
+\subsection{NetCDF}%
+\label{sec:usage-examples:netcdf}
+
+NetCDF (Network Common Data Form)~\cite{netcdf2021} is a set of software libraries and machine-independent data formats that support the creation, access, and sharing of array-oriented scientific data. 
+In particular, NetCDF is widely used in climate research.
+
+The following examples write and read data to/from a NetCDF file.
+(For simplicity, we omitted the error handling.)
+
+The write example (\lstinline|./write|) creates a two dimensional variable in the \lstinline|esdm://data.nc| file.
+
+\begin{preserve}
+\lstinputlisting[language=c]{\examplespath/c/netcdf/write.c}
+\end{preserve}
+
+The read example (\lstinline|./read|) reads this variable.
+
+\begin{preserve}
+\lstinputlisting[language=c]{\examplespath/c/netcdf/read.c}
+\end{preserve}
+
+For a successful run ESDM requires three things.
+Firstly, the \lstinline|esdm.conf| file must be located in the search path.
+In this case, it is the current directory.
+Secondly, ESDM requires an initialized ESDM directory structure.
+If not existing, it can be created by the \lstinline|mkfs.esdm| tool.
+Thirdly, files need to be prefixed with \lstinline|esdm://|.
+This prefix is an indicator to the NetCDF library to redirect data to ESDM.
+Otherwise, NetCDF will work as usual and create an \lstinline|*.nc| file.
+
+The following script initialize the ESDM directory structure and runs the two examples.
+\begin{preserve}
+\lstinputlisting[language=c]{\examplespath/c/netcdf/run.sh}
+\end{preserve}
+
+Currently, ESDM does not provide a full compatibility to NetCDF.
+The NetCDF compatibility is documented in the report released in \url{https://github.com/ESiWACE/esdm-netcdf/blob/master/libsrcesdm_test/report/report.pdf}.
+
+
+\subsection{CDO}%
+\label{sec:usage-examples:cdo}
+
+The Climate Data Operator (CDO) software is a collection of many operators for standard processing of climate and forecast model data. 
+The operators include simple statistical and arithmetic functions, data selection and subsampling tools, and spatial interpolation. 
+CDO was developed to have the same set of processing functions for GRIB [GRIB] and NetCDF [NetCDF] datasets in one package. 
+The Climate Data Interface [CDI] is used for the fast and file format independent access to GRIB and NetCDF datasets. 
+The local MPI-MET data formats SERVICE, EXTRA and IEG are also supported.
+There are some limitations for GRIB and NetCDF datasets:
+
+GRIB datasets have to be consistent, similar to NetCDF. 
+That means all time steps need to have the same variables, and within a time step each variable may occur only once. 
+Multiple fields in single GRIB2 messages are not supported!
+NetCDF datasets are only supported for the classic data model and arrays up to 4 dimensions. 
+These dimensions should only be used by the horizontal and vertical grid and the time. 
+The NetCDF attributes should follow the GDT, COARDS or CF Conventions.
+
+The main CDO features are:
+\begin{itemize}
+  \item More than 700 operators available
+  \item Modular design and easily extendible with new operators
+  \item Very simple UNIX command line interface
+  \item A dataset can be processed by several operators, without storing the interim results in files
+  \item Most operators handle datasets with missing values
+  \item Fast processing of large datasets
+  \item Support of many different grid types
+  \item Tested on many UNIX/Linux systems, Cygwin, and MacOS-X
+\end{itemize}
+
+To enable ESDM, the files need the \lstinline|esdm://| prefix.
+
+In the  example data is converted from GRIP to NetCDF format and written by ESDM according to the configuration in the \lstinline|esdm.conf| file.
+%#cdo -f nc -copy data.grb esdm://data.nc 
+\begin{preserve}
+\lstinputlisting[language=c]{\examplespath/cdo/convert.sh}
+\end{preserve}
+
+%%cdo -selname,var1 data.nc esdm://data_x.nc
+%In the second example CDO copies the variable \lstinline|var1| from \lstinline|data.nc| in \lstinline|esdm://data_x.nc| container.
+%\begin{preserve}
+%\lstinputlisting[language=c]{\examplespath/cdo/selection.sh}
+%\end{preserve}
+
+\subsection{XIOS}%
+\label{sec:usage-examples:xios}
+XIOS~\cite{xios2021}, standing for XML-IO-Server, is a library dedicated to I/O management, primarily designed to manage NetCDF outputs of climate models.
+Its main features are management of output diagnostics and history files, temporal post-processing operations, (e.g., average, min, max) and spatial post-processing operations (e.g,. arithmetic operations, re-griding).
+XIOS simplifies I/O management, by reducing the number of I/O operations and arguments in the source code.
+The output definitions are outsourced into XML files, which can be changed without re-compilation of the source code.
+XIOS achieves high performance by asynchronous and parallel I/O.
+
+\begin{enumerate}
+  \item Prerequisites
+    \begin{itemize}
+      \item Install ESDM
+      \item Install ESDM-NetCDF
+      \item Install NetCDF-Fortran interface
+    \end{itemize}
+  \item Checkout XIOS code
+    \begin{lstlisting}
+    svn checkout http://forge.ipsl.jussieu.fr/ioserver/svn/XIOS/trunk
+    \end{lstlisting}
+  \item Add to \lstinline|bld.cfg|
+    \begin{lstlisting}
+    bld::tool::cflags the ESDM include directory of the installation
+    bld::tool::ldflags the ESDM lib directory and add it also as rpath -Wl,--rpath=<ESDM lib directory>
+    \end{lstlisting}
+  \item Modify \lstinline|arch.env|. Change the NetCDF directory to the ESDM dir
+  \item On some Linux distribution \lstinline|gmake| may be not available.
+    Fortunately, \lstinline|make| provides the necessary functionality.
+    \begin{lstlisting}
+    sudo ln -s /usr/bin/make /usr/bin/gmake
+    ./make_xios --dev --arch GCC_LINUX
+    \end{lstlisting}
+  \item Check that the proper NetCDF library was linked. 
+    This should output the NetCDF library created from ESDM.
+    \begin{lstlisting}
+    ldd bin/test_client.exe |grep netcdf
+    \end{lstlisting}
+  \item Fix \lstinline|iodef.xml| file:
+    \begin{lstlisting}
+    cp inputs/iodef.xml .
+    Change  <file id="output" name="esdm://output" enabled=".TRUE.">
+    \end{lstlisting}
+  \item Create ESDM configuration file in the local directory
+    \begin{lstlisting}
+    cp <ESDM install directory>/src/test/esdm.conf .
+    \end{lstlisting}
+  \item Create ESDM data directories
+    \begin{lstlisting}
+    export PATH=<ESDM install directory>/bin/:$PATH
+    mkfs.esdm -g -l --create  --remove --ignore-errors
+    \end{lstlisting}
+  \item Run XIOS MPMD with OpenMPI:
+    \begin{lstlisting}
+    mpiexec -np 2 bin/xios_server.exe : -np 3 bin/test_client.exe
+    \end{lstlisting}
+\end{enumerate}
+
+%\begin{lstlisting}[language=xml]
+%<file_definition format="netcdf4" time_counter="instant" type="one_file" >
+%      <file id="output_ens" name="esdm://ens_test_512" output_freq="1h">
+%        <field field_ref="u" name="ui" grid_ref="grid_ens_in" operation="instant" />
+%      </file>
+%</file_definition>
+
+\subsection{Python}%
+\label{sec:usage-examples:python}
+Python's netcdf4-python module can read and write data to/from NetCDF files.
+
+
+%To add ESDM support to Python we provide a patch for the Python NetCDF module.
+%It is located in the esdm-netcdf/dev folder in the \url{https://github.com/ESiWACE/esdm-netcdf} Git-Repo.
+%The changings in the original patch to include ESDM can be seen in \Cref{fig:python-patch}. 
+%Basically, it adds the flags \lstinline|HAS_ESDM_SUPPORT|, \lstinline|NC_FORMATX_ESDM|, \lstinline|NC_ESDM| and fmt == 'ESDM' (ESDM format).
+%After the patch is applied, the I/O will be redirected to ESDM.
+%No changes to applications are required.
+
+%\begin{figure}
+%  \centering
+%  \includegraphics[width=0.9\textwidth]{python-patch.png}
+%  \caption{Python patch}
+%  \label{fig:python-patch}
+%\end{figure}
+
+
+\begin{preserve}
+\lstinputlisting[language=python]{\examplespath/python/netcdf/write.py}
+\end{preserve}
+\begin{preserve}
+%\lstinputlisting[language=python]{\examplespath/python/netcdf/read.py}
+\end{preserve}
+
+
+\subsection{Dask}%
+\label{sec:usage-examples:dask}
+Dask supports NetCDF and therefore, it supports indirectly ESDM.
+Examples below show how data can be accessed in Dask.
+The data goes from Dask to netcdf4-python, then to esdm-netcdf, then to ESDM library.
+ESDM accesses the data accross storage devices dfined in esdm.conf.
+
+\begin{preserve}
+\lstinputlisting[language=python]{\examplespath/python/dask/write.py}
+\end{preserve}
+\begin{preserve}
+\lstinputlisting[language=python]{\examplespath/python/dask/read.py}
+\end{preserve}
+

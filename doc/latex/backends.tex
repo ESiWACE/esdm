@@ -1,0 +1,62 @@
+\section{Supported data backends}
+\subsection{DDN Web Object Scaler (WOS)}
+%DDN (Data Direct Network) WOS (Web object scaler)4 represents an object storage solution able to manage files as “objects”.
+%It offers a simple and effective way to manage data stored in the cloud through an ease administration interface and IP based direct connection to the nodes. 
+%WOS architecture is natively geographically agnostic, and this represents one of the main features of the product: nodes can be deployed anywhere, and the access to data which they host is guaranteed by Internet Protocol (IP) connectivity. 
+%In this sense, all the nodes which form the cloud work together to create an aggregated pool of storage space.
+
+Web Object Scaler or WOS is a distributed system with objects managed on nodes that are servers running the custom software with attached disk storage. 
+The nodes can be geographically dispersed but present a common pool for object storage. 
+A custom API over HTTP/REST is supported along with WebDAV, Swift, and S3. 
+A file interface for NFS and CIFS/SMB is supported as well with a WOS file system gateway. 
+WOS is delivered as a complete hardware and software system or WOS software for integration with other hardware.
+As the name implies, WOS was designed for the high capacity, large number of data elements required for web or cloud environments. 
+Scaling to petabytes of unstructured data with geographic dispersion is the typical usage for WOS. 
+Nodes are self-contained systems with CPU, memory, and storage. 
+Configured in a federation with Ethernet interfaces, nodes can have different capabilities and performance. 
+Each node is active in the configuration and objects are dispersed in the global namespace according to algorithms in the WOS policy engine to provide availability and durability.
+Distributed performance is enabled by a feature called the WOS-Library that runs on application servers accessing the WOS cloud as a client. 
+The WOS-Library uses a callback style API to WOS and maintains a map of the topology. 
+WOS-Library also makes routing decisions about where to store data as part of load balancing. 
+Object ID lookup in the topology map is fast because the map is kept in memory.
+
+\subsection{Seagate Motr (MOTR)}
+Motr is an Exascale ready Object Store system developed by Seagate and built from the ground up to remove the performance limitations typically found in other designs. 
+Unlike similar storage systems (e.g. Ceph and DAOS) Motr does not rely on any other file system or raid software to work. 
+Instead, Motr can directly access raw block storage devices and provide consistency, durability and availability of data through dedicated core components.
+Motr offers two types of objects: (1) A common object which is an array of fixed-size of blocks. 
+Data can be read from and written to these objects. (2) An index for a key-value store. 
+Key-value records can be put to and get from an index. So Motr can be used to store raw data, as well as metadata.
+Motr provides C language interfaces, i.e. Clovis, to applications. 
+ESD middleware will use Clovis and link with Clovis to manage and access Motr storage cluster.
+
+\subsection{DDN Infinite Memory Engine (IME)}
+IME is software with a server and a client component. 
+Rather than issuing I/O to a parallel file system client, the IME client intercepts the I/O fragments and issues these to the IME server layer which manages the NVM media and stores and protects the data.
+Prior to synchronizing the data to the backing file system, IME coalesces and aligns the I/O optimally for the file system. 
+The read case works in the reverse: file data is ingested into the cache efficiently in parallel across the
+IME server layer and will satisfy reads from here in fragments according to the read request. 
+IME manages at-scale flash to eliminate file system bottlenecks and the burden of creating and maintaining application-specific optimizations. 
+It delivers:
+
+\begin{itemize}
+  \item New levels of I/O performance for predictable job completion in even the most demanding and complex high-performance environments.
+  \item Performance scaling independent of storage capacity for system designs with order of magnitude reductions in hardware.
+  \item Application transparency that eliminates the need to create and maintain application-specific optimizations.
+\end{itemize}
+
+\subsection{Portable Operating System Interface (POSIX)}
+The Portable Operating System Interface (POSIX) is a family of standards specified by the IEEE Computer Society for maintaining compatibility between operating systems.
+POSIX defines the application programming interface (API), along with command line shells and utility interfaces, for software compatibility with variants of Unix and other operating systems.
+
+\subsection{Kove Direct System Architecture (KDSA)}
+Kove External Memory~\cite{10.1007/978-3-319-67630-2_48} allows the CPU access to unlimited memory right below the CPU cache. 
+Any data set can live in memory, close to the core, reducing processing time.
+The KDSA API is a low-level API that allows to access data on external memory by utilizing RDMA. 
+Data can be transferred synchronously or asynchronously, additionally, memory can be pre-registered for use with the Infiniband HCA. 
+Since registration of memory is time consuming, for unregistered memory regions the system may either use an internal (pre-registered) buffer and copy the user’s data to the buffer, or for larger accesses it registers the memory, performs an RDMA data transfer and then unregisters the memory again.
+
+\subsection{Amazon Simple Storage Service (S3)} 
+Amazon Simple Storage Service (S3) is a scalable, web-based, high-speed cloud storage service with a simple-to-use API.
+The service allows saving and archiving of data reliably in the Amazon Web Services (AWS) of all sizes.
+It is suitable for use cases, like backup, archives, big-data, IoT devices, websites and much more.
