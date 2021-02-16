@@ -1,0 +1,28 @@
+digraph G {
+  dispatcher [shape=diamond];
+  storage0 [shape=ellipse, style=filled, fillcolor="white", label="StorageA"];
+  storage1 [shape=ellipse, style=filled, fillcolor="white", label="StorageB"];
+  storage2 [shape=ellipse, style=filled, fillcolor="white", label="StorageC"];
+  hdf5 [shape=box,style=filled,fillcolor="navajowhite",label="HDF5"];
+  esdm [shape=box,style=filled,fillcolor="navajowhite",label="ESDM"];
+  esdm_netcdf[shape=box,style=filled,fillcolor="navajowhite",label="ESDM-NetCDF"];
+  python_netcdf[shape=box,style=filled,fillcolor="navajowhite",label="ESDM-NetCDF-Python"];
+  cdo[shape=box,style=filled,fillcolor="lightblue",label="CDO"];
+  xios[shape=box,style=filled,fillcolor="lightblue",label="XIOS"];
+  dusk[shape=box,style=filled,fillcolor="lightblue",label="Dusk\n(Python module)"];
+  python_script[shape=box,style=filled,fillcolor="lightblue",label="NetCDF4\n(Python module)"];
+
+  storage0 -> esdm;
+  storage1 -> esdm;
+  storage2 -> esdm;
+  esdm -> dispatcher[label="esdm://data.nc"];
+  hdf5 -> dispatcher[label="data.nc"];
+  dispatcher -> esdm_netcdf;
+  storage0 -> hdf5; 
+  esdm_netcdf -> python_netcdf;
+  esdm_netcdf -> cdo;
+  esdm_netcdf -> xios;
+  python_netcdf -> python_script;
+  python_netcdf -> dusk;
+}
+
