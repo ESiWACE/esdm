@@ -726,17 +726,17 @@ esdm_status esdmI_grid_createFromJson(json_t* json, esdm_dataset_t* dataset, esd
 
   if(!json_is_object(json)) goto fail;
 
-  axesArray = json_object_get(json, "axes");
+  axesArray = jansson_object_get(json, "axes");
   if(!axesArray) goto fail;
   if(!json_is_array(axesArray)) goto fail;
   dimCount = json_array_size(axesArray);
 
-  cellArray = json_object_get(json, "grid");
+  cellArray = jansson_object_get(json, "grid");
   if(!cellArray) goto fail;
   if(!json_is_array(cellArray)) goto fail;
   cellCount = json_array_size(cellArray);
 
-  idString = json_object_get(json, "id");
+  idString = jansson_object_get(json, "id");
   if(!idString) goto fail;
   if(!json_is_string(idString)) goto fail;
   id = json_string_value(idString);
@@ -778,8 +778,8 @@ esdm_status esdmI_grid_createFromJson(json_t* json, esdm_dataset_t* dataset, esd
     if(!cellObject) goto fail;
     if(!json_is_object(cellObject)) goto fail;
 
-    json_t* gridElement = json_object_get(cellObject, "grid");
-    json_t* fragmentElement = json_object_get(cellObject, "fragment");
+    json_t* gridElement = jansson_object_get(cellObject, "grid");
+    json_t* fragmentElement = jansson_object_get(cellObject, "fragment");
     if(gridElement && fragmentElement) {
       goto fail;
     } else if(gridElement) {
@@ -842,13 +842,13 @@ esdm_status esdmI_grid_mergeWithJson(esdm_grid_t* grid, json_t* json) {
 
   //check that the grid IDs match (i.e. that the serialized grid is actually a copy of this grid)
   if(!json_is_object(json)) return ESDM_INVALID_DATA_ERROR;
-  json_t* jsonId = json_object_get(json, "id");
+  json_t* jsonId = jansson_object_get(json, "id");
   if(!jsonId || !json_is_string(jsonId)) return ESDM_INVALID_DATA_ERROR;
   const char* id = json_string_value(jsonId);
   if(strcmp(grid->id, id)) return ESDM_INVALID_STATE_ERROR;
 
   //walk the grid cells and fill in any holes with fragments from the serialized grid
-  json_t* jsonGrid = json_object_get(json, "grid");
+  json_t* jsonGrid = jansson_object_get(json, "grid");
   if(!jsonGrid || !json_is_array(jsonGrid)) return ESDM_INVALID_DATA_ERROR;
   int64_t cellCount = json_array_size(jsonGrid);
   if(cellCount != esdmI_grid_cellCount(grid)) return ESDM_INVALID_DATA_ERROR;
@@ -860,7 +860,7 @@ esdm_status esdmI_grid_mergeWithJson(esdm_grid_t* grid, json_t* json) {
       if(!cell->subgrid->emptyCells) continue;  //no need to recurs into subgrid if we already have complete data for it
       json_t* jsonCell = json_array_get(jsonGrid, i);
       if(!jsonCell || !json_is_object(jsonCell)) return ESDM_INVALID_DATA_ERROR;
-      json_t* jsonSubgrid = json_object_get(jsonCell, "subgrid");
+      json_t* jsonSubgrid = jansson_object_get(jsonCell, "subgrid");
       if(jsonSubgrid) {
         if(!json_is_object(jsonSubgrid)) return ESDM_INVALID_DATA_ERROR;
         esdm_status result = esdmI_grid_mergeWithJson(cell->subgrid, jsonSubgrid);
@@ -869,7 +869,7 @@ esdm_status esdmI_grid_mergeWithJson(esdm_grid_t* grid, json_t* json) {
     } else {
       json_t* jsonCell = json_array_get(jsonGrid, i);
       if(!jsonCell || !json_is_object(jsonCell)) return ESDM_INVALID_DATA_ERROR;
-      json_t* jsonFragment = json_object_get(jsonCell, "fragment");
+      json_t* jsonFragment = jansson_object_get(jsonCell, "fragment");
       if(jsonFragment) {
         if(!json_is_object(jsonFragment)) return ESDM_INVALID_DATA_ERROR;
         esdm_status result = esdmI_create_fragment_from_metadata(grid->dataset, jsonFragment, &cell->fragment);

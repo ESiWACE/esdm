@@ -11,7 +11,7 @@ RUN git clone --recurse-submodules https://github.com/ESiWACE/esdm.git
 RUN cd esdm && ./configure --debug --prefix=/data/install && cd build && make -j 4 && make -j 4 install
 
 RUN apt-get install -y libhdf5-openmpi-dev hdf5-tools wget
-RUN git clone --recurse-submodules https://github.com/ESiWACE/esdm-netcdf.git
+RUN git clone --recurse-submodules https://github.com/ESiWACE/esdm-netcdf-c.git
 RUN cd esdm-netcdf && autoreconf && cd build && ../configure --prefix=/data/install --with-esdm=/data/install CFLAGS="-I/usr/include/hdf5/openmpi/ -g3" LDFLAGS="-L/usr/lib/x86_64-linux-gnu/hdf5/openmpi/" CC=mpicc  --disable-dap
 RUN cd esdm-netcdf/build && make -j 2 install
 

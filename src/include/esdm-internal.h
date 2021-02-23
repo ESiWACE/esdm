@@ -415,6 +415,7 @@ int ea_read_check(int fd, char *buf, size_t len);
 int ea_write_check(int fd, char *buf, size_t len);
 
 
+json_t *jansson_object_get(const json_t *object, const char *key);
 json_t *load_json(const char *str);
 
 esdm_backend_t * esdmI_get_backend(char const * plugin_id);

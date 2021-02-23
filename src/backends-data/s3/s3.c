@@ -363,7 +363,7 @@ static esdm_backend_t backend_template = {
 };
 
 #define JSON_REQUIRE(what) \
-  j = json_object_get(config->backend, what); \
+  j = jansson_object_get(config->backend, what); \
   if(! j){ \
     ESDM_ERROR("Configuration: " what " not set");\
   }\
@@ -394,24 +394,24 @@ esdm_backend_t *s3_backend_init(esdm_config_backend_t *config) {
   data->access_key = json_string_value(j);
   JSON_REQUIRE("secret-key")
   data->secret_key = json_string_value(j);
-  j = json_object_get(config->backend, "host");
+  j = jansson_object_get(config->backend, "host");
   if(j) data->host = json_string_value(j);
-  j = json_object_get(config->backend, "target");
+  j = jansson_object_get(config->backend, "target");
   if(j) data->bucket_prefix = json_string_value(j);
   else data->bucket_prefix = "";
   if(strlen(data->bucket_prefix) < 5){
     DEBUG("Target must be longer than 5 characters (this is the bucket name prefix). Given: \"%s\"\n", j);
     return NULL;
   }
-  j = json_object_get(config->backend, "locationConstraint");
+  j = jansson_object_get(config->backend, "locationConstraint");
   if(j) data->locationConstraint = json_string_value(j);
-  j = json_object_get(config->backend, "authRegion");
+  j = jansson_object_get(config->backend, "authRegion");
   if(j)  data->authRegion = json_string_value(j);
-  j = json_object_get(config->backend, "timeout");
+  j = jansson_object_get(config->backend, "timeout");
   if(j) data->timeout = json_integer_value(j);
-  j = json_object_get(config->backend, "s3-compatible");
+  j = jansson_object_get(config->backend, "s3-compatible");
   if(j) data->s3_compatible = json_integer_value(j);
-  j = json_object_get(config->backend, "use-ssl");
+  j = jansson_object_get(config->backend, "use-ssl");
   if(j) data->use_ssl = json_integer_value(j);
   if(data->use_ssl){
     data->s3_protocol = S3ProtocolHTTPS;

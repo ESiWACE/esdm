@@ -230,6 +230,15 @@ void print_stat(struct stat sb) {
   printf("\n");
 }
 
+/* Fix conflict with libjson-c */
+json_t *jansson_object_get(const json_t *object, const char *key){
+  void * iter = json_object_iter_at(object, key);
+  if(! iter){
+    return NULL;
+  }
+  return json_object_iter_value(iter);
+}
+
 // use json_decref() to free it
 json_t *load_json(const char *str) {
   json_error_t error;

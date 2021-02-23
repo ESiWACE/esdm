@@ -112,21 +112,21 @@ int esdm_backend_t_parse_dynamic_perf_model_lat_thp(json_t *str, esdm_dynamic_pe
     return -1;
 
   json_t *elem = NULL;
-  elem = json_object_get(str, "latency");
+  elem = jansson_object_get(str, "latency");
   if (elem != NULL) {
     data->latency = json_real_value(elem);
     eassert(data->latency >= 0.0);
   } else
     data->latency = 0.0;
 
-  elem = json_object_get(str, "throughput");
+  elem = jansson_object_get(str, "throughput");
   if (elem != NULL) {
     data->throughput = json_real_value(elem) * 1024 * 1024;
     eassert(data->throughput > 0.0);
   } else
     data->throughput = 0.0;
 
-  elem = json_object_get(str, "size");
+  elem = jansson_object_get(str, "size");
   if (elem != NULL) {
     data->size = json_integer_value(elem);
     eassert(data->size > 0);
@@ -135,14 +135,14 @@ int esdm_backend_t_parse_dynamic_perf_model_lat_thp(json_t *str, esdm_dynamic_pe
 
 #ifdef ESDM_BACKENDS_DYNAMIC_PERF_MODEL_WITH_THREAD
 
-  elem = json_object_get(str, "period");
+  elem = jansson_object_get(str, "period");
   if (elem != NULL) {
     data->period = json_real_value(elem);
     eassert(data->period > 0.0);
   } else
     data->period = 0.0;
 
-  elem = json_object_get(str, "alpha");
+  elem = jansson_object_get(str, "alpha");
   if (elem != NULL) {
     data->alpha = json_real_value(elem);
     eassert(data->alpha >= 0.0);
