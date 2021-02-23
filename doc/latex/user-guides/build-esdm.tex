@@ -55,6 +55,9 @@ Assuming all prerequisites have been installed and tested, ESDM can be configure
   \item Configure and build ESDM
     \begin{lstlisting}
     cd esdm
+    pushd deps
+    ./prepare.sh
+    popd
     ./configure \
       --prefix=${PREFIX} \
       --enable-netcdf4
