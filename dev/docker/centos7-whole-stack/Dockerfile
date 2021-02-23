@@ -24,7 +24,7 @@ RUN scl enable devtoolset-8 -- bash
 RUN cd esdm && export PATH=/opt/rh/devtoolset-8/root/usr/bin/:$PATH:/usr/lib64/mpich/bin && gcc -v && ./configure --debug --prefix=/data/install && cd build && make -j 4 && make -j 4 install
 
 # Install ESDM NetCDF
-RUN git clone --recurse-submodules https://github.com/ESiWACE/esdm-netcdf.git
+RUN git clone --recurse-submodules https://github.com/ESiWACE/esdm-netcdf-c.git
 RUN cd esdm-netcdf && autoreconf && export PATH=/opt/rh/devtoolset-8/root/usr/bin/:$PATH:/usr/lib64/mpich/bin && cd build && ../configure --prefix=/data/install --with-esdm=/data/install CFLAGS="-I/usr/include/hdf5/openmpi/ -g3" LDFLAGS="-L/usr/lib/x86_64-linux-gnu/hdf5/openmpi/" CC=mpicc  --disable-dap && make -j 4 install
 
 
