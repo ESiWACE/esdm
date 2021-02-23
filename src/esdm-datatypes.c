@@ -118,10 +118,10 @@ void esdmI_container_init(char const * name, esdm_container_t **out_container){
 
 esdm_status esdmI_create_dataset_from_metadata(esdm_container_t *c, json_t * json, esdm_dataset_t ** out){
   json_t *elem;
-  elem = json_object_get(json, "id");
+  elem = jansson_object_get(json, "id");
   char const * id = json_string_value(elem);
 
-  elem = json_object_get(json, "name");
+  elem = jansson_object_get(json, "name");
   char const * name = json_string_value(elem);
 
   esdm_dataset_t *d;
@@ -145,7 +145,7 @@ esdm_status esdm_container_open_md_parse(esdm_container_t *c, char * md, int siz
   // for the rest we use JANSSON
   json_t *root = load_json(js);
   json_t *elem;
-  elem = json_object_get(root, "dsets");
+  elem = jansson_object_get(root, "dsets");
   if(! elem) {
     return ESDM_ERROR;
   }
@@ -736,10 +736,10 @@ esdm_status esdmI_create_fragment_from_metadata(esdm_dataset_t *dset, json_t * j
 
   //fetch the parts and check their presence and type
   if(!json || !json_is_object(json)) goto fail;
-  spaceJson = json_object_get(json, "space");
-  backendJson = json_object_get(json, "pid");
-  idJson = json_object_get(json, "id");
-  actualSizeJson = json_object_get(json, "act-size"); // if it is compressed the actual size may differ
+  spaceJson = jansson_object_get(json, "space");
+  backendJson = jansson_object_get(json, "pid");
+  idJson = jansson_object_get(json, "id");
+  actualSizeJson = jansson_object_get(json, "act-size"); // if it is compressed the actual size may differ
   if(!backendJson || !json_is_string(backendJson)) goto fail;
   if(!idJson || !json_is_string(idJson)) goto fail;
   if(!actualSizeJson || !json_is_integer(actualSizeJson)) goto fail;
@@ -768,7 +768,7 @@ esdm_status esdmI_create_fragment_from_metadata(esdm_dataset_t *dset, json_t * j
   // deserialize module specific options
   if(!result->backend) goto fail;
   if(result->backend->callbacks.fragment_metadata_load) {
-    result->backend_md = esdmI_backend_fragment_metadata_load(result->backend, result, json_object_get(json, "backend"));
+    result->backend_md = esdmI_backend_fragment_metadata_load(result->backend, result, jansson_object_get(json, "backend"));
   }
 
 success:
@@ -862,7 +862,7 @@ esdm_status esdm_dataset_open_md_parse(esdm_dataset_t *d, char * md, int size){
   // for the rest we use JANSSON
   json_t *root = load_json(js);
   json_t *elem;
-  elem = json_object_get(root, "typ");
+  elem = jansson_object_get(root, "typ");
   char *str = (char *)json_string_value(elem);
   smd_dtype_t *type = smd_type_from_ser(str);
   if (type == NULL) {
@@ -870,11 +870,11 @@ esdm_status esdm_dataset_open_md_parse(esdm_dataset_t *d, char * md, int size){
     return ESDM_ERROR;
   }
   if(d->id) free(d->id);
-  elem = json_object_get(root, "id");
+  elem = jansson_object_get(root, "id");
   d->id = ea_checked_strdup(json_string_value(elem));
-  elem = json_object_get(root, "dims");
+  elem = jansson_object_get(root, "dims");
   int dims = json_integer_value(elem);
-  elem = json_object_get(root, "size");
+  elem = jansson_object_get(root, "size");
   int64_t sizes[dims];
   size_t arrsize;
   bool has_ulim_dim = FALSE; // if true, then we must reconstruct the domain!
@@ -901,7 +901,7 @@ esdm_status esdm_dataset_open_md_parse(esdm_dataset_t *d, char * md, int size){
     d->actual_size = ea_checked_malloc(sizeof(*d->actual_size) * dims);
     memcpy(d->actual_size, sizes, sizeof(*d->actual_size) * dims);
   }
-  elem = json_object_get(root, "dims_dset_id");
+  elem = jansson_object_get(root, "dims_dset_id");
   if (elem){
     arrsize = json_array_size(elem);
     if (dims != arrsize) {
@@ -914,7 +914,7 @@ esdm_status esdm_dataset_open_md_parse(esdm_dataset_t *d, char * md, int size){
     esdm_dataset_name_dims(d, strs);
   }
 
-  elem = json_object_get(root, "fragments");
+  elem = jansson_object_get(root, "fragments");
   if(! elem) {
     json_decref(root);
     return ESDM_ERROR;
@@ -939,7 +939,7 @@ esdm_status esdm_dataset_open_md_parse(esdm_dataset_t *d, char * md, int size){
     }
   }
 
-  elem = json_object_get(root, "grids");
+  elem = jansson_object_get(root, "grids");
   if(!elem || !json_is_array(elem)) {
     json_decref(root);
     return ESDM_ERROR;
@@ -1491,11 +1491,11 @@ esdm_status esdmI_dataspace_createFromJson(json_t* json, esdm_dataset_t* dataset
 
   //inquire the top level objects
   if(!json || !json_is_object(json)) goto fail;
-  json_t* sizeJson = json_object_get(json, "size");
+  json_t* sizeJson = jansson_object_get(json, "size");
   if(!sizeJson || !json_is_array(sizeJson)) goto fail;
-  json_t* offsetJson = json_object_get(json, "offset");
+  json_t* offsetJson = jansson_object_get(json, "offset");
   if(!offsetJson || !json_is_array(offsetJson)) goto fail;
-  json_t* strideJson = json_object_get(json, "stride");
+  json_t* strideJson = jansson_object_get(json, "stride");
   if(strideJson && !json_is_array(strideJson)) goto fail;
 
   //sanity check of the array lengths

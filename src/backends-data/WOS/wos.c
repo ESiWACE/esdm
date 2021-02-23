@@ -945,7 +945,7 @@ esdm_backend_t *wos_backend_init(esdm_config_backend_t *config) {
   // configure backend instance
   data->config = config;
   json_t *elem;
-  elem = json_object_get(config->backend, "target");
+  elem = jansson_object_get(config->backend, "target");
   data->target = json_string_value(elem);
 
   return backend;

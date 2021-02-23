@@ -396,7 +396,7 @@ esdm_backend_t *pmem_backend_init(esdm_config_backend_t *config) {
   // configure backend instance
   data->config = config;
   json_t *elem;
-  elem = json_object_get(config->backend, "target");
+  elem = jansson_object_get(config->backend, "target");
   char const * tgt = json_string_value(elem);
 
   int socket;
