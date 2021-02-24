@@ -370,8 +370,10 @@ static void buffer_cleanup_callback(io_work_t *work) {
 }
 
 bool esdmI_scheduler_try_direct_io(esdm_fragment_t *f, void * buf, esdm_dataspace_t * da){
+  if(f->dataspace->type != da->type){
+    return FALSE;
+  }
   eassert(f->dataspace->dims == da->dims);
-  eassert(f->dataspace->type == da->type);
 
   int64_t instructionDims, chunkSize, sourceOffset, destOffset;
   esdmI_dataspace_copy_instructions(f->dataspace, da, &instructionDims, &chunkSize, &sourceOffset, &destOffset, NULL, NULL, NULL);
