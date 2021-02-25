@@ -29,6 +29,7 @@ The instructions below show how to setup Spack and how to install the ESDM depen
   \item Install dependencies
     \begin{lstlisting}
     spack install gcc@$gccver +binutils
+    spack compiler find
     spack install autoconf%gcc@$gccver
     spack install openmpi%gcc@$gccver gettext%gcc@$gccver
     spack install jansson%gcc@$gccver glib%gcc@$gccver
@@ -96,16 +97,15 @@ Assuming all prerequisites have been installed and tested, a development branch 
 \begin{enumerate}
   \item Clone the NetCDF-ESDM repository
     \begin{lstlisting}
-    git clone https://github.com/ESiWACE/esdm-netcdf
+    git clone https://github.com/ESiWACE/esdm-netcdf-c
     \end{lstlisting}
   \item Configure and build NetCDF-ESDM. (\lstinline|$INSTPATH| is the installation path of ESDM and HDF5-VOL.)
     \begin{lstlisting}
-    cd esdm-netcdf
-    autoreconf --install --force
+    cd esdm-netcdf-c
+    /bootstrap
     ./configure \
       --prefix=$prefix \
       --with-esdm=$INSTPATH \
-      --with-hdf5=$INSTPATH \
       LDFLAGS="-L$INSTPATH/lib" \
       CFLAGS="-I$INSTPATH/include" \
       CC=mpicc \
@@ -126,6 +126,7 @@ Assuming all prerequisites have been installed and tested, a development branch 
 
 \subsection{Docker}
 For the development of ESDM the directory \lstinline|./dev/docker| contains all requirements to quickly set up a development environment using docker.
+The Dockerfiles contain ESDM installation instructions for different distributions.
 For easy building Dockerfiles for different plattforms are provided in different flavours:
 
 \begin{itemize}
