@@ -35,6 +35,8 @@
     -   [XIOS](#sec:usage-examples:xios)
     -   [Python](#sec:usage-examples:python)
     -   [Dask](#sec:usage-examples:dask)
+    -   [NetCDF-Bench](#netcdf-bench)
+    -   [Paraview](#paraview)
 -   [Developers guide](#developers-guide)
     -   [Internal Data Model](#internal-data-model)
     -   [Usage Examples](#sec:user-guides:usage-example)
@@ -590,6 +592,7 @@ install the ESDM dependencies.
 3.  Install dependencies
 
             spack install gcc@$gccver +binutils
+            spack compiler find
             spack install autoconf%gcc@$gccver
             spack install openmpi%gcc@$gccver gettext%gcc@$gccver
             spack install jansson%gcc@$gccver glib%gcc@$gccver
@@ -616,6 +619,9 @@ configured and build as follows.
 2.  Configure and build ESDM
 
             cd esdm
+            pushd deps
+            ./prepare.sh
+            popd
             ./configure \
               --prefix=${PREFIX} \
               --enable-netcdf4
@@ -653,17 +659,16 @@ branch of HDF5-VOL can be build as follows.
 
 1.  Clone the NetCDF-ESDM repository
 
-            git clone https://github.com/ESiWACE/esdm-netcdf
+            git clone https://github.com/ESiWACE/esdm-netcdf-c
 
 2.  Configure and build NetCDF-ESDM. (`$INSTPATH` is the installation
     path of ESDM and HDF5-VOL.)
 
-            cd esdm-netcdf
-            autoreconf --install --force
+            cd esdm-netcdf-c
+            /bootstrap
             ./configure \
               --prefix=$prefix \
               --with-esdm=$INSTPATH \
-              --with-hdf5=$INSTPATH \
               LDFLAGS="-L$INSTPATH/lib" \
               CFLAGS="-I$INSTPATH/include" \
               CC=mpicc \
@@ -685,8 +690,9 @@ branch of HDF5-VOL can be build as follows.
 
 For the development of ESDM the directory `./dev/docker` contains all
 requirements to quickly set up a development environment using docker.
-For easy building Dockerfiles for different plattforms are provided in
-different flavours:
+The Dockerfiles contain ESDM installation instructions for different
+distributions. For easy building Dockerfiles for different plattforms
+are provided in different flavours:
 
 -   CentOS/Fedora/RHEL like systems
 
@@ -1390,6 +1396,36 @@ import xarray as xr
 ds = xr.open_dataset('esdm://ncfile.nc', engine='netcdf4')
 print(ds)
 ```
+
+## NetCDF-Bench
+
+NetCDF Performance Benchmark Tool (NetCDF-Bench) was developed to
+measure NetCDF I/O performance on devices ranging from notebooks to
+large HPC systems. It mimics the typical I/O behavior of scientific
+climate applications and captures the performance on each node/process.
+In the end, it aggregates the data to the human-readable summary.
+
+Initialize ESDM directory structure by means of `mkfs.esdm` and make
+sure `esdm.conf` is located in the search path. The benchmark can be run
+by the following script.
+
+    #!/bin/bash
+    mkfs.esdm -g -l --create  --remove --ignore-errors
+    benchtool -r -w -f=esdm://data.nc
+
+## Paraview
+
+We could successfully import ESDM files with NetCDF Reader Plugin.
+
+    LD_PRELOAD=$INSTPATH/libnetcdf.so paraview
+
+<div class="center">
+
+<figure>
+<img src="./doc/latex/../figures/paraview.png" alt="Paraview" /><figcaption aria-hidden="true">Paraview</figcaption>
+</figure>
+
+</div>
 
 # Developers guide
 
