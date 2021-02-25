@@ -154,3 +154,49 @@ We just have to take care, that \lstinline|esdm.conf| is located in the search p
 \lstinputlisting[language=python]{\examplespath/python/dask/read.py}
 \end{preserve}
 
+\subsection{NetCDF-Bench}
+NetCDF Performance Benchmark Tool (NetCDF-Bench) was developed to measure NetCDF I/O performance on devices ranging from notebooks to large HPC systems. 
+It mimics the typical I/O behavior of scientific climate applications and captures the performance on each node/process. 
+In the end, it aggregates the data to the human-readable summary. 
+
+Initialize ESDM directory structure by means of \lstinline|mkfs.esdm| and make sure \lstinline|esdm.conf| is located in the search path.
+The benchmark can be run by the following script.
+
+\begin{lstlisting}
+#!/bin/bash
+mkfs.esdm -g -l --create  --remove --ignore-errors
+benchtool -r -w -f=esdm://data.nc
+\end{lstlisting}
+
+\subsection{Paraview}
+%Tested with Paraview 5.8.1 and QT 5.15.2.
+%On lower versions you can get an error message like "Cannot open data file " test.nc:esdm ""
+ParaView is an open-source, multi-platform data analysis and visualization application. 
+It can load a variety of different data formats, visualize the data and analyse it by qualitative and quantitative techniques.
+In particular, Paraview supports the NetCDF data format and different grid types, and is often used in climate and earth science.
+The data import capabilities in Paraview are implemented as plugins.
+The NetCDF Plugin is able to load NetCDF files with CF conventions and the CDI Reader Plugin is able to load ICON data \cite{https://doi.org/10.1029/2017MS001233}.
+We could successfully test both them.
+
+The ESDM-NetCDF library need to be linked to Paraview.
+On Linux this can be done by \lstinline|LD_PRELOAD| feature, like shown in the following script.
+The \lstinline|$INSTPATH| variable show to the ESDM-NetCDF library location.
+
+\begin{lstlisting}
+LD_PRELOAD=$INSTPATH/libnetcdf.so paraview
+\end{lstlisting}
+
+A NetCDF file was converted to ESDM representation and loaded in Paraview via the NetCDF plugin.
+Loading data works slightly different compared to ordinary NetCDF files.
+If the pseudo ESDM file (an empty file with the \lstinline|:esdm| suffix) exists, then it can be selected in the open dialog as usual.
+Otherwise, the user have to know the file name and must enter it manually.
+Another difference is that on the left side in the GUI (see \Cref{fig:paraview}) the data set is labeled by the \lstinline|:esdm| suffix.
+Once data is loaded, other steps can be done as usual.
+
+\begin{figure}
+  \begin{center}
+    \includegraphics[width=\textwidth]{../figures/paraview.png}
+  \end{center}
+  \caption{Visualization of ice data set in Paraview. Data source is an ESDM file.}
+  \label{fig:paraview}
+\end{figure}
