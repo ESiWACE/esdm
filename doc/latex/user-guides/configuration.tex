@@ -1,6 +1,16 @@
 \section{Configuration}
-%\subsection{Search Paths}
-%\eb{Search paths}
+
+ESDM can store metadata and data separately.
+Furthermore, the data can be distributed over multiple storage media.
+How exactly the data is distributed can be specified in the configuration file.
+This section describes the file structure, the metadata and supported storage backends configuration and provides examples.
+
+\subsection{Search Paths}
+
+The current implemention reads \lstinline|esdm.conf| file in the current directory.
+In the next ESDM versions it is planned to support other common paths as well, like \lstinline|/etc/esdm/esdm.conf|, \lstinline|~/.config/esdm/esdm.conf|, \lstinline|~/.esdm.conf|, \lstinline|./esdm.conf|.
+In addition, the configuration should also be possible via the environment variable and arguments.
+
 
 \subsection{File Format}
 The configuration file format is based on JSON, i.e. all configuration files must be valid JSON files.
@@ -36,6 +46,7 @@ The backends are organized in the \lstinline|"backends":[]| key-value pair as a 
 }
 \end{lstlisting}
 
+\lstinputlisting{../examples/conf/esdm.conf}
 
 \subsection{Data Parameters}
 
@@ -308,7 +319,7 @@ The \lstinline|policy| name is that one, that was set up on the DDN WOS console.
 \vspace{\gapsize}
 
 
-\subparagraph{Parameter: performance-model}
+\paragraph{Parameter: performance-model}
 
 \begin{preserve}
 \begin{table}[!ht]
@@ -348,7 +359,7 @@ The \lstinline|policy| name is that one, that was set up on the DDN WOS console.
 \vspace{\gapsize}
 
 
-\subparagraph{Parameter: max-threads-per-node}
+\paragraph{Parameter: max-threads-per-node}
 Maximum number of threads on a node.
 If \lstinline|max-threads-per-node=0|, then the ESDM scheduler estimates an optimal value.
 
@@ -363,7 +374,7 @@ If \lstinline|max-threads-per-node=0|, then the ESDM scheduler estimates an opti
 \FloatBarrier
 \vspace{\gapsize}
 
-\subparagraph{Parameter: write-stream-blocksize}
+\paragraph{Parameter: write-stream-blocksize}
 Block size in bytes used to read/write fragments.
 If \lstinline|write-stream-blocksize=0|, then ESDM estimates optimal block size for each storage type individually.
 
@@ -378,7 +389,7 @@ If \lstinline|write-stream-blocksize=0|, then ESDM estimates optimal block size 
 \FloatBarrier
 \vspace{\gapsize}
 
-\subparagraph{Parameter: max-global-threads}
+\paragraph{Parameter: max-global-threads}
 Maximum total number of threads.
 If \lstinline|max-global-threads=0|, then the ESDM scheduler estimates an optimal value.
 
@@ -393,7 +404,7 @@ If \lstinline|max-global-threads=0|, then the ESDM scheduler estimates an optima
 \FloatBarrier
 \vspace{\gapsize}
 
-\subparagraph{Parameter: accessibility}
+\paragraph{Parameter: accessibility}
 Data access permission rights.
 
 \begin{preserve}
@@ -422,7 +433,7 @@ Data access permission rights.
 \FloatBarrier
 \vspace{\gapsize}
 
-\subparagraph{Parameter: max-fragment-size}
+\paragraph{Parameter: max-fragment-size}
 The amount of data that may be written into a single fragment. 
 The amount is given in bytes.
 
@@ -438,7 +449,7 @@ The amount is given in bytes.
 \vspace{\gapsize}
 
 
-\subparagraph{Parameter: fragmentation-method}
+\paragraph{Parameter: fragmentation-method}
 A string identifying the algorithm to use to split a chunk of data into fragments. 
 
 \begin{preserve}
@@ -530,3 +541,4 @@ Path to the metadata folder.
 \end{preserve}
 \FloatBarrier
 \vspace{\gapsize}
+

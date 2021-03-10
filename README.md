@@ -4,9 +4,9 @@
     -   [Logical Data Model](#logical-data-model)
 -   [Supported data backends](#supported-data-backends)
     -   [DDN Web Object Scaler (WOS)](#ddn-web-object-scaler-wos)
-    -   [Seagate Motr (MOTR)](#seagate-motr-motr)
     -   [DDN Infinite Memory Engine
         (IME)](#ddn-infinite-memory-engine-ime)
+    -   [Seagate Motr (MOTR)](#seagate-motr-motr)
     -   [Portable Operating System Interface
         (POSIX)](#portable-operating-system-interface-posix)
     -   [Kove Direct System Architecture
@@ -41,7 +41,7 @@
     -   [Internal Data Model](#internal-data-model)
     -   [Usage Examples](#sec:user-guides:usage-example)
 -   [Use Cases](#use-cases)
-    -   [ Workloads in climate and
+    -   [Workloads in climate and
         weather](#workloads-in-climate-and-weather)
     -   [Stakeholders and Systems](#stakeholders-and-systems)
     -   [List of Use-Cases](#list-of-use-cases)
@@ -70,10 +70,6 @@ to more efficiently organize metadata and data across a variety of
 storage backends.
 
 # Data Model
-
-While datatypes introduced by computer architectures and software
-libraries are important for the data model, they are discussed
-separately in .
 
 The data model of a system organizes elements of data, standardizes how
 they represent data entities and how users can interact with the data.
@@ -166,13 +162,13 @@ unique names within a dataset.
 
 Our conceptual model assumes that all variables are scalars, but clearly
 to make use of these scalars requires more complex interpretation. In
-particular, we need to know the
+particular, we need to know the datype and operators.
 
 #### Datatype:
 
-which defines the types of values that are valid and the operations that
-can be conducted. While we are mostly dealing with scalars, they may not
-be amenable to interpretation as simple numbers. For example, a variable
+defines the types of values that are valid and the operations that can
+be conducted. While we are mostly dealing with scalars, they may not be
+amenable to interpretation as simple numbers. For example, a variable
 may be storing an integer which points into a taxonomy of categories of
 land-surface-types. More complex structures could include complex data
 types such as vectors, compressed ensemble values, or structures within
@@ -182,13 +178,13 @@ simple data types plus arbitrary length blocks of bits.
 
 #### Operators:
 
-Define the manipulations possible on the conceptual entities. The
+define the manipulations possible on the conceptual entities. The
 simplest operators will include creation, read, update and delete
 applied to an entity as a whole, or to a subset, however even these
 simple operators will come with constraints, for example, it should not
 be possible to delete a coordinate variable without deleting the parent
 variable as well. There will need to be a separation of concerns between
-operators which can be handled *within* the ESDM subsystem, and those
+operators which can be handled within the ESDM subsystem, and those
 which require external logic. Operators which might require external
 logic could include subsetting — it will be seen that the ESDM will
 support simple subsetting using simple coordinates — but complex subsets
@@ -208,8 +204,6 @@ linked by ESDM **reference**s, and a key property which emerges from the
 use of references is that no ESDM entity instance may be deleted while
 references to it still exist. The use of reference counting will ensure
 this property as well as avoid dangling pointers.
-
-gives an overview of the logical data model.
 
 Each of these entities is now described, along with a list of supported
 operations:
@@ -381,45 +375,13 @@ compatibility for legacy POSIX applications.
 
 ## DDN Web Object Scaler (WOS)
 
-Web Object Scaler or WOS is a distributed system with objects managed on
-nodes that are servers running the custom software with attached disk
-storage. The nodes can be geographically dispersed but present a common
-pool for object storage. A custom API over HTTP/REST is supported along
-with WebDAV, Swift, and S3. A file interface for NFS and CIFS/SMB is
-supported as well with a WOS file system gateway. WOS is delivered as a
-complete hardware and software system or WOS software for integration
-with other hardware. As the name implies, WOS was designed for the high
-capacity, large number of data elements required for web or cloud
-environments. Scaling to petabytes of unstructured data with geographic
-dispersion is the typical usage for WOS. Nodes are self-contained
-systems with CPU, memory, and storage. Configured in a federation with
-Ethernet interfaces, nodes can have different capabilities and
-performance. Each node is active in the configuration and objects are
-dispersed in the global namespace according to algorithms in the WOS
-policy engine to provide availability and durability. Distributed
-performance is enabled by a feature called the WOS-Library that runs on
-application servers accessing the WOS cloud as a client. The WOS-Library
-uses a callback style API to WOS and maintains a map of the topology.
-WOS-Library also makes routing decisions about where to store data as
-part of load balancing. Object ID lookup in the topology map is fast
-because the map is kept in memory.
-
-## Seagate Motr (MOTR)
-
-Motr is an Exascale ready Object Store system developed by Seagate and
-built from the ground up to remove the performance limitations typically
-found in other designs. Unlike similar storage systems (e.g. Ceph and
-DAOS) Motr does not rely on any other file system or raid software to
-work. Instead, Motr can directly access raw block storage devices and
-provide consistency, durability and availability of data through
-dedicated core components. Motr offers two types of objects: (1) A
-common object which is an array of fixed-size of blocks. Data can be
-read from and written to these objects. (2) An index for a key-value
-store. Key-value records can be put to and get from an index. So Motr
-can be used to store raw data, as well as metadata. Motr provides C
-language interfaces, i.e. Clovis, to applications. ESD middleware will
-use Clovis and link with Clovis to manage and access Motr storage
-cluster.
+DDN’s Web Object Scaler or WOS is a distributed object storage system
+designed for extremely large data. It is available as a complete
+hardware/software solution or can be deployed on third-party hardware.
+Although, the nodes can be geographically distributed, they present a
+shared pool for object storage. The data can be accessed over HTTP/REST,
+WebDAV, Swift, and S3 interfaces. Additionally, the pools can be mounted
+via NFS and CIFS/SMB.
 
 ## DDN Infinite Memory Engine (IME)
 
@@ -443,6 +405,20 @@ application-specific optimizations. It delivers:
 
 -   Application transparency that eliminates the need to create and
     maintain application-specific optimizations.
+
+## Seagate Motr (MOTR)
+
+Motr is an object storage system developed by Seagate to overcome
+typical limitations of traditional storage systems. In contrast to
+similar I/O storage system (e.g. Ceph and DAOS) Motr assesses raw block
+devices directly.
+
+The design of Motr supports raw data and metadata. To achieve that it
+offers two types of objects: (1) A common object which is an array of
+fixed-size of blocks. Data can be read from and written to these
+objects. (2) An index for a key-value store. Key-value records can be
+put to and get from an index. At the moment, Motr provides a C
+interface.
 
 ## Portable Operating System Interface (POSIX)
 
@@ -1415,14 +1391,35 @@ by the following script.
 
 ## Paraview
 
-We could successfully import ESDM files with NetCDF Reader Plugin.
+ParaView is an open-source, multi-platform data analysis and
+visualization application. It can load a variety of different data
+formats, visualize the data and analyse it by qualitative and
+quantitative techniques. In particular, Paraview supports the NetCDF
+data format and different grid types, and is often used in climate and
+earth science. The data import capabilities in Paraview are implemented
+as plugins. The NetCDF Plugin is able to load NetCDF files with CF
+conventions and the CDI Reader Plugin is able to load ICON data (Crueger
+et al. 2018). We could successfully test both them.
+
+The ESDM-NetCDF library need to be linked to Paraview. On Linux this can
+be done by `LD_PRELOAD` feature, like shown in the following script. The
+`$INSTPATH` variable show to the ESDM-NetCDF library location.
 
     LD_PRELOAD=$INSTPATH/libnetcdf.so paraview
+
+A NetCDF file was converted to ESDM representation and loaded in
+Paraview via the NetCDF plugin. Loading data works slightly different
+compared to ordinary NetCDF files. If the pseudo ESDM file (an empty
+file with the `:esdm` suffix) exists, then it can be selected in the
+open dialog as usual. Otherwise, the user have to know the file name and
+must enter it manually. Another difference is that on the left side in
+the GUI (see ) the data set is labeled by the `:esdm` suffix. Once data
+is loaded, other steps can be done as usual.
 
 <div class="center">
 
 <figure>
-<img src="./doc/latex/../figures/paraview.png" alt="Paraview" /><figcaption aria-hidden="true">Paraview</figcaption>
+<img src="./doc/latex/../figures/paraview.png" id="fig:paraview" alt="Figure 3: Visualization of ice data set in Paraview. Data source is an ESDM file." /><figcaption aria-hidden="true">Figure 3: Visualization of ice data set in Paraview. Data source is an ESDM file.</figcaption>
 </figure>
 
 </div>
@@ -1443,53 +1440,53 @@ yet.
 
 ## Internal Data Model
 
-The first thing to understand is the data model that is used by ESDM.
-This data model is very similar to that employed by NetCDF, but it does
-add some abstractions, and is described in this section.
+The first thing to understand is the data model used by ESDM. This data
+model is very similar to that employed by NetCDF, but it adds some
+abstractions. This section describes the model.
 
 ### Dataspace
 
-A dataspace describes how data is stored in memory, it is basically a
-mapping of a logical dataspace to sequential bytes in memory. All data
-handled by ESDM is associated with a dataspace, mostly the dataspaces
-are user provided. Several copies of the same data may use distinct
-dataspaces, and ESDM allows users to transform data from one layout to
-another by providing a source and a destination dataspace
-(`esdm_dataspace_copy_data()`). User code needs to provide a dataspace
-when it defines a variable (here the data layout part is irrelevant),
+A data space describes the layout of data in memory. It is a mapping of
+logical data space to sequential bytes in memory. All data handled by
+ESDM is associated with a data space. Mostly the data spaces are
+user-provided. Several copies of the same data may use distinct datas
+paces. In this case, ESDM allows users to transform data from one layout
+to another by providing a source and a destination data space
+(`esdm_dataspace_copy_data()`). User code needs to provide a data space
+when it defines a variable (here, the data layout part is irrelevant),
 when it stores data, and when it reads data.
 
-The logical dataspace is always a multidimensional, axis aligned box in
-ESDM. As such, a dataspace consists of the following information:
+The logical data space is always a multidimensional, axis-aligned box in
+ESDM. As such, a data space consists of the following information:
 
 -   the dimension count
 
 -   start and end coordinates for each axis
 
--   a datatype describing a single value within the multidimensional
+-   a data type describing a single value within the multidimensional
     array
 
 -   (data serialization information)
 
-The data serialization information is usually implicit, ESDM will simply
-assume C multidimensional array layout. Fortran programs will need to
-set the data serialization information explicitly to match the inverse
-dimension order of Fortran. The data serialization information
-(‘stride’) can also achieve unorthodox effects like arrays with holes,
-or to replicate a single 2D slice along a third axis.
+The data serialization information is usually implicit. By default, ESDM
+assumes a C multidimensional array layout. Fortran programs will need to
+set explicitly the data serialization information to match Fortran’s
+inverse dimension order. The data serialization information (`stride`)
+can also achieve unorthodox effects like arrays with holes or
+replicating a single 2D slice along a third axis.
 
 #### Creating and Destroying Dataspaces
 
-ESDM provides two distinct mechanisms to create a dataspace: A generic
-API which allocates the dataspace on the heap, and an API to quickly
-create a throw-away dataspace on the stack.
+ESDM provides two distinct mechanisms to create a data space: A generic
+API that allocates the data space on the heap and an API to create a
+throw-away data space on the stack quickly.
 
 ##### The Generic API
 
 The functions used to create dataspaces are:
 
--   `esdm_dataspace_create()` Constructs a dataspace with a given
-    dimension count, size and datatype. This assumes that the hypercube
+-   `esdm_dataspace_create()` Construct a data space with a given
+    dimension count, size, and datatype. It assumes that the hypercube
     starts at (0, 0, ..., 0) and C data layout.
 
 -   `esdm_dataspace_create_full()` Like `esdm_dataspace_create()`, but
@@ -1497,35 +1494,35 @@ The functions used to create dataspaces are:
 
 -   `esdm_dataspace_copy()` Copy constructor.
 
--   `esdm_dataspace_subspace()` Create a dataspace that contains a
-    subset of the logical space of its parent dataspace. This copies the
-    datatype and assumes C data layout for the subspace. If this is not
-    desireable, follow up with a call to
+-   `esdm_dataspace_subspace()` Create a data space that contains a
+    subset of the logical data space of its parent data space. It copies
+    the datatype and assumes the C data layout for the subspace. If this
+    is not desireable, follow up with a call to
     `esdm_dataspace_copyDatalayout()`.
 
--   `esdm_dataspace_makeContiguous()` Create a dataspace with the same
+-   `esdm_dataspace_makeContiguous()` Create a data space with the same
     logical space and datatype, but which uses the C data layout.
 
-All these functions return a pointer to a new dataspace **which must be
+All these functions return a pointer to a new data space **which must be
 destroyed with a call to `esdm_dataspace_destroy()`**.
 
-Data layout can only be set explicitly after a dataspace has been
+Data layout can only be set explicitly after a data space has been
 created. This is done by a call to `esdm_dataspace_set_stride()` or to
 `esdm_dataspace_copyDatalayout()`. The first allows the user to specify
-any regular data layout, including, but not limited to Fortran data
-layout. The later assumes that the dataspace will be used to access the
-same data buffer as the dataspace from which the data layout iscopied.
-As such, `esdm_dataspace_copyDatalayout()` is very convenient for data
-subseting operations.
+any standard data layout, including but not limited to Fortran’s data
+layout. The latter assumes that the data space will access the same data
+buffer as the data space from which the data layout is copied. As such,
+`esdm_dataspace_copyDatalayout()` is very convenient for data subseting
+operations.
 
 ##### The Simple API
 
-For convenience and performance reasons, ESDM provides a set of
-preprocessor macros that allocate a dataspace on the stack. Macros are
-provided for 1D, 2D and 3D dataspaces, and come in variants that either
-assume start coordinates at the origin of the coordinate system, or
-allow the offset to be specified explicitly. The macros without explicit
-start coordinates are:
+For convenience and performance reasons, ESDM provides preprocessor
+macros that allocate a data space on the stack. Macros are provided for
+1D, 2D, and 3D data spaces and come in variants that either assume start
+coordinates at the origin of the coordinate system, or allow the offset
+to be specified explicitly. The macros without explicit start
+coordinates are:
 
     esdm_dataspace_1d()
     esdm_dataspace_2d()
@@ -1538,37 +1535,37 @@ the name:
     esdm_dataspace_2do()
     esdm_dataspace_3do()
 
-The result of these macros is a value of type `esdm_simple_dspace_t`
-which is a struct containing a single member `ptr` which contains the
+The result of these macros is a value of type `esdm_simple_dspace_t`,
+which is a struct containing a single member `ptr` which includes the
 pointer value that can subsequently be used in all ESDM calls that
-require a dataspace. I.e, a typical usage might be:
+require a data space, i.e., a typical usage might be:
 
     esdm_simple_dspace_t region = esdm_dataspace_2do(x, width, y, height, type);
     esdm_read(dataset, buffer, region.ptr);
 
 As the `esdm_simple_dspace_t` lives on the stack, **it must not be
-destroyed with `esdm_dataspace_destroy()`**. It simply ceases to exists
-when the surrounding block exits.
+destroyed with `esdm_dataspace_destroy()`**. It ceases to exist when the
+surrounding block exits.
 
 ### Dataset
 
-A dataset in ESDM is what a variable is in NetCDF or HDF5. Each dataset
-is associated with a dataspace that describes the logical extends of the
-data, and it acts as a container for data that is written into this
-logical space.
+A dataset in ESDM is what a variable is in NetCDF or HDF5. Each data set
+is associated with a data space that describes the logical extends of
+the data, and it acts as a container for data written into this logical
+space.
 
 There is no requirement to fill the entire logical space with data.
-Normally, reading nonexistent data results in an error. However, a
+Usually, reading nonexistent data results in an error. However, a
 dataset can also be associated with a fill value to handle data with
 holes seamlessly.
 
-There is also no requirement to write non-overlapping data. When writes
-overlap, ESDM will assume that both writes place the same data in the
-overlapping area. If this condition does not hold, there is no guarantee
-which data will be returned on a read.
+There is also no requirement to write non-overlapping data. When write
+accesses overlap, ESDM will assume that both accesses place the same
+data in the overlapping area. If this condition does not hold, there is
+no guarantee which data will be returned on a read.
 
 In addition to the data and the logical space, datasets can also contain
-a number of attributes. Like attributes in NetCDF, these are meant to
+several attributes. Like attributes in NetCDF, these are meant to
 associate metadata with a dataset.
 
 User code can either create a dataset with `esdm_dataset_create()` or
@@ -1585,88 +1582,89 @@ dataset is created, it is added to a container and associated with a
 name for later retrieval.
 
 Like datasets, containers are created with `esdm_container_create()` or
-looked up from the file system with `esdm_container_open()`. Also like
-datasets, containers need to be closed with `esdm_container_close()`
-when their reference is not needed anymore. Closing a container requires
-closing all datasets it contains first. `esdm_container_delete()`
-removes a container from the file system.
+looked up from the file system with `esdm_container_open()` and need to
+be closed with `esdm_container_close()` when their reference is not
+required anymore. Closing a container requires closing all datasets it
+contains first. `esdm_container_delete()` removes a container from the
+file system.
 
 ### Grid
 
 The grid abstraction exists for performance reasons only: While it is
-possible to think of a dataset as a set of possibly overlapping chunks
+possible to think of a data set as a set of possibly overlapping chunks
 of data, it is surprisingly hard to determine minimal sets of chunks to
-satisfy a read request. User code, on the other hand, generally does not
+satisfy a read request. On the other hand, user code generally does not
 use overlapping chunks of data. Instead, user code can be assumed to
 work on (semi-)regular non-overlapping chunks of data. Passing this
-chunking information to ESDM allows the library to make good decisions
-much faster.
+chunking information to ESDM allows the library to make the right
+decisions faster.
 
 Grids also allow user code to inquire how the data is available on disk,
 allowing consumer code to iterate over complete and non-overlapping sets
 of data chunks in the most efficient fashion. To work with grids, the
 header `esdm-grid.h` must be included.
 
-Like a dataspace, a grid covers an axis aligned hyperbox in the logical
-space. This space is called the grid’s domain, and it is defined when a
-grid is created with `esdm_grid_create()`, `esdm_grid_createSimple()`
-allows omitting the start coordinates to use the origin as one corner of
-the hyperbox.
+Like a data space, a grid covers an axis-aligned hyper box in the
+logical space. This space is called the grid’s domain, and it is defined
+when a grid is created with `esdm_grid_create()`,
+`esdm_grid_createSimple()` allows omitting the start coordinates to use
+the origin as one corner of the hyper box.
 
 Once a grid has been created, its axes can be subdivided individually by
-calls to `esdm_grid_subdivide()`. This allows the user to specify all
-the bounds for an axis explicitly. In many contexts, however, it will be
+calls to `esdm_grid_subdivide()`. It allows the user to specify all the
+bounds for an axis explicitly. In many contexts, however, it will be
 simpler to use `esdm_grid_subdivideFixed()` or
 `esdm_grid_subdivideFlexible()` which instruct ESDM to generate bounds
-in a regular way. Fixed subdivision will produce intervals of a given
-size, flexible subdivision instructs ESDM to generate a specific number
-of intervals of similar size.
+in a regular way. The fixed subdivision will produce intervals of a
+given size. Flexible subdivision instructs ESDM to generate a specific
+number of similar size intervals.
 
-After the axis of a grid have been defined, individual grid cells may be
+After the grid axis has been defined, individual grid cells may be
 turned into subgrids via `esdm_grid_createSubgrid()`. After this, the
-axes of the parent grid are fixed and the subdivision calls cannot be
-used anymore. The subgrid, on the other hand, is a newly created grid
-with the parent grids cell bounds as its domain. Usually, user code will
-follow up with calls to `esdm_grid_subdivide*()` on the subgrid to
-define its axes. Subgrids may be constructed recursively to any depth.
+parent grid axes are fixed, and the subdivision calls cannot be used
+anymore. On the other hand, the subrid is a newly created grid with the
+parent grid’s cell bounds as its domain. Usually, user code will follow
+up with calls to `esdm_grid_subdivide*()` on the subgrid to define its
+axes. Subgrids may be constructed recursively to any depth.
 
 This subgrid feature is useful to define grids with semi-regular
 decompositions: For instance, an image may be decomposed into stripes,
 which are themselves decomposed into rectangles, but the rectangle
 bounds of one stripe do not match those of another stripe. Such
-semi-regular decompositions are a common result of load balancing of
+semi-regular decompositions are a typical result of load balancing of
 earth system simulations.
 
 Once a grids structure has been defined fully, it can be used to
 read/write data via `esdm_read_grid()` and `esdm_write_grid()`. Parallel
 applications will want to distribute the grid to all involved processes
 first by calling `esdm_mpi_grid_bcast()` (include `esdm-mpi.h` for
-this). Both, using a grid for input/output and communicating it over MPI
-will fix the grids structure, prohibiting future calls to subdivide axes
-or create subgrids.
+this). Both use a grid for input/output, and communicating it over MPI
+will fix the grid’s structure, prohibiting future calls to subdivide
+axes or create subgrids.
 
 It is possible to iterate over all (sub-)cells of a grid. This is done
 using an iterator, the three relevant functions are
 `esdm_gridIterator_create()`, `esdm_gridIterator_next()` and
-`esdm_gridIterator_destroy()`. This is meant to be used by readers which
-inquire an available grid from a dataset using `esdm_dataset_grids()`.
-This method of reading avoids any cropping or stitching together of data
-chunks within ESDM, delivering the best possible performance.
+`esdm_gridIterator_destroy()`. This is meant to be used by readers who
+inquire about an available grid from a dataset using
+`esdm_dataset_grids()`. This method of reading avoids any cropping or
+stitching together of data chunks within ESDM, delivering the best
+possible performance.
 
-Grids always remain in possession of their dataspace. Consequently, it
-is not necessary to dispose of them explicitly. However, closing a
-dataspace invalidates all associated (sub-)grids.
+Grids always remain in possession of their data space. Consequently, it
+is not necessary to dispose of them explicitly. However, closing a data
+space invalidates all associated (sub-)grids.
 
 ## Usage Examples
 
 Learning usage of an API is easiest by seeing it in action in concrete
 examples. As such, this section provides four relatively basic examples
 of how the ESDM API is supposed to be used, which nevertheless cover all
-the required core functionality.
+the necessary core functionality.
 
 ### Basic Writing
 
-The simplest way to write a grey scale image to ESDM is as follows:
+The simplest way to write a greyscale image to ESDM is as follows:
 
     //assume image data stored in either
     uint16_t imageBuffer[height][width];
@@ -1701,19 +1699,19 @@ The simplest way to write a grey scale image to ESDM is as follows:
     result = esdm_finalize();
     assert(result == ESDM_SUCCESS);
 
-In this example, the same dataspace is used to create the dataset and to
-write the data, writing all the data in one large piece. This is not
-necessary, the dataspaces that are passed to `esdm_write()` may be
-smaller than the dataset, calling `esdm_write()` as many times as
+In this example, the same dataspace is used to create the dataset and
+write the data, writing all the data in one large piece. Although it is
+not necessary, the data spaces that are passed to `esdm_write()` may be
+smaller than the data set, calling `esdm_write()` as many times as
 required to write the entire data.
 
 ### Grid Based Writing
 
-When using grid based writing, the creation of the container and the
-dataset is exactly the same. The creation of the grid, however is added
-explicitly. In this case, we are going slice a 3D dataspace into 10
-slices of similar size along the z axis, and into rows of 256 lines
-along the y axis:
+When using grid-based writing, creating of the container and the dataset
+is the same. The creation of the grid, however, is added explicitly. In
+this case, we are going to slice a 3D data space into ten slices of
+similar size along the z-axis and into rows of 256 lines along the y
+axis:
 
     // define the grid
     esdm_grid_t* grid;
@@ -1794,16 +1792,16 @@ example is given to read an entire dataset in one piece:
 
 ### Grid Based Reading
 
-Reading an entire dataset as a single chunk is generally a really bad
-idea. Datasets, especially those generated by earth system models, may
-be huge, many times larger than the available main memory. Reading a
-dataset in the form of reader defined chunks is possible with
+Reading an entire dataset as a single chunk is generally a terrible
+idea. Data sets, especially those generated by earth system models, can
+be massive, many times larger than the available main memory. Reading a
+dataset in the form of reader-defined chunks is possible with
 `esdm_read()`, but not necessarily efficient. The chunks on disk may not
 match those which are used to read, requiring `esdm_read()` to
 
 -   read multiple chunks from disk and stitch them together,
 
--   and to read more data from disk than is actually required.
+-   and to read more data from disk than is required.
 
 If the dataset has been written using a grid, this grid can be recovered
 to inform the reading process of the actual data layout on disk:
@@ -1862,57 +1860,55 @@ to inform the reading process of the actual data layout on disk:
 
 # Use Cases
 
-This part of the documenation presents a number of use-cases for a
-middleware to handle earth system data. The description is organized as
-follows:
+This part of the documentation presents several use-cases for middleware
+to handle earth system data. The description is organized as follows:
 
--   common workloads in climate and weather forecasts (anchor link)
+-   typical workloads in climate and weather forecasts
 
--   involved stakeholders/actors and systems (anchor link)
+-   involved stakeholders/actors and systems
 
--   and the actual use cases (anchor link)
+-   and the actual use cases
 
-The ese cases can extend each other, and are generally constructed in a
-way that they are not limited to the ESDM but also apply to similar
-middleware. The use of backends is kept abstract where possible, so that
-in principle implementations can be swapped with only minor semantic
+The use cases can extend each other and are generally constructed so
+that they are not limited to the ESDM and apply to similar middleware.
+The use of backends is kept abstract where possible so that, in
+principle, implementations can be swapped with only minor semantic
 changes to the sequence of events.
 
-##  Workloads in climate and weather
+## Workloads in climate and weather
 
-The climate and weather forecast communities have their characteristic
-workflows and objectives, but also share a variety of methods and tools
-(e.g., the ICON model is used and developed together by climate and
-weather scientists). This section briefly collects and groups the
-data-related high-level use-cases by community and the motivation for
-them.
+The climate and weather forecast communities have their typical
+workflows and objectives and share various methods and tools (e.g., the
+ICON model is used and developed together by climate and weather
+scientists). This section briefly collects and groups the data-related
+high-level use-cases by the community and their motivation.
 
-Numerical weather prediction focuses on the production of a short-time
-forecast based on initial sensor (satellite) data and generates derived
-data products for certain end users (e.g., weather forecast for the
+Numerical weather prediction focuses on producing a short-time forecast
+based on initial sensor (satellite) data and generates derived data
+products for specific end-users (e.g., the weather forecast for the
 general public or military). As the compute capabilities and
-requirements for users increase, new services are added or existing
-services are adapted. Climate predictions run for long time periods and
+requirements for users increase, new services are added, or existing
+services are adapted. Climate predictions run for long-time periods and
 may involve complex workflows to compute derived information such as
-monthly mean or to identify certain patterns in the forecasted data such
+monthly mean or identify specific patterns in the forecasted data such
 as tsunamis.
 
-In the following, a list of characteristic high-level workloads and
-use-cases that are typically performed per community is given. These
+A list of characteristic high-level workloads and use-cases that are
+typically performed per community is given in the following, These
 use-cases resemble what a user/scientist usually has in mind when
 dealing with NWP and climate simulation; there are several supportive
-use-cases from the perspective of the data center that will be discussed
+use-cases from the data center’s perspective that will be discussed
 later.
 
 ### NWP
 
 -   Data ingestion: Store incoming stream of observations from
-    satellites, radar, weather stations and ships.
+    satellites, radar, weather stations, and ships.
 
--   Pre-Processing: Cleans, adjusts observation data and then transforms
-    it to the data format used as initial condition for the prediction.
-    For example, insufficient sampling makes pre-processing necessary so
-    models can be initialized correctly.
+-   Pre-Processing: Cleans adjusts observation data and then transforms
+    it to the data format used as an initial condition for the
+    prediction. For example, insufficient sampling makes pre-processing
+    necessary so models can be initialized correctly.
 
 -   Now Casting (0-6h): Precise prediction of the weather in the near
     future. Uses satellite data and data from weather stations,
@@ -1921,14 +1917,14 @@ later.
 -   Numeric Model Forecasts (0-10+ Days): Run a numerical model to
     predict the weather for the next few days. Typically, multiple
     models (ensembles) are run with some perturbed input data. The model
-    proceeds usually as follows: 1) Read-Phase to initialize
-    simulation; 2) create a periodic snapshots (write) for the model
-    time, e.g., every hour.
+    usually proceeds as follows: 1) Read-Phase to initialize
+    simulation; 2) create periodic snapshots (write) for the model time,
+    e.g., every hour.
 
 -   Post-Processing: create data products that may be used for multiple
     purposes.
 
-    -   for Now Casting: multi sensor integration, classification,
+    -   for Now Casting: multi-sensor integration, classification,
         ensembles, impact models
 
     -   for Numeric Model Forecasts: statistical interpretation of
@@ -1956,9 +1952,9 @@ Many use cases in climate are very similar:
 -   Post-Processing: create data products that are useful, e.g., run
     CDOs (Climate Data Operations) to generate averages for certain
     regions. The performed post-processing depends on the task the
-    scientist has in mind. While at runtime of the model some products
-    are clear and may be used to diagnose the simulation run itself,
-    later scientists might be interested to run additional
+    scientist has in mind. While some products are straightforward and
+    may be used to diagnose the simulation run itself at the model’s
+    runtime, later scientists might be interested in running additional
     post-processing to look for new phenomena.
 
 -   Dynamic visualization: use interactive tools to search for
@@ -1966,9 +1962,9 @@ Many use cases in climate are very similar:
 
 -   Archive data: The model results are stored on a long-term archive.
     They may be used for later analysis – often at other sites and by
-    another user, e.g., to search for some interesting pattern, or to
-    serve as input data for localized higher-resolution models. Also it
-    supports reproduceability of research.
+    another user, e.g., to search for some exciting pattern or to serve
+    as input data for localized higher-resolution models. Also, it
+    supports the reproducibility of research.
 
 ## Stakeholders and Systems
 
@@ -2280,6 +2276,16 @@ VOL in general
 -   <https://svn.hdfgroup.org/hdf5doc/trunk/RFCs/HDF5/VOL/developer_guide/main.pdf>
 
 <div id="refs" class="references csl-bib-body hanging-indent">
+
+<div id="ref-https://doi.org/10.1029/2017MS001233" class="csl-entry">
+
+Crueger, T., M. A. Giorgetta, R. Brokopf, M. Esch, S. Fiedler, C.
+Hohenegger, L. Kornblueh, et al. 2018. “ICON-a, the Atmosphere Component
+of the ICON Earth System Model: II. Model Evaluation.” *Journal of
+Advances in Modeling Earth Systems* 10 (7): 1638–62.
+https://doi.org/<https://doi.org/10.1029/2017MS001233>.
+
+</div>
 
 <div id="ref-10.1007/978-3-319-67630-2_48" class="csl-entry">
 

@@ -68,30 +68,6 @@ Assuming all prerequisites have been installed and tested, ESDM can be configure
     \end{lstlisting}
 \end{enumerate}
 
-\subsection{HDF5}%
-\label{hdf5}
-Assuming all prerequisites have been installed and tested, a development branch of HDF5-VOL can be build as follows.
-\begin{enumerate}
-  \item Ensure environment is aware of dependencies installed using \lstinline|spack| and \lstinline|dev-env|
-  \item Checkout HDF5 with VOL support
-    \begin{lstlisting}
-    svn checkout https://svn.hdfgroup.org/hdf5/features/vol/
-    \end{lstlisting}
-  \item Configure and build HDF5-VOL
-    \begin{lstlisting}
-    cd vol
-    ./autogen.sh
-    export CC=mpicc         ### parallel features require mpicc
-    ../configure \
-      --prefix=$prefix \
-      --enable-parallel \
-      --enable-build-mode=debug \
-      --enable-hl \
-      --enable-shared
-    make -j
-    make install
-    \end{lstlisting}
-\end{enumerate}
 
 \subsection{ESDM-NetCDF and ESDM-NetCDF-Python}%
 \begin{enumerate}
@@ -99,7 +75,7 @@ Assuming all prerequisites have been installed and tested, a development branch 
     \begin{lstlisting}
     git clone https://github.com/ESiWACE/esdm-netcdf-c
     \end{lstlisting}
-  \item Configure and build NetCDF-ESDM. (\lstinline|$INSTPATH| is the installation path of ESDM and HDF5-VOL.)
+  \item Configure and build NetCDF-ESDM. (\lstinline|$INSTPATH| is the installation path of ESDM.)
     \begin{lstlisting}
     cd esdm-netcdf-c
     /bootstrap
@@ -119,7 +95,7 @@ Assuming all prerequisites have been installed and tested, a development branch 
     cd dev
     git clone https://github.com/Unidata/netcdf4-python.git
     cd netcdf-python
-    patch -s -p1 < ../v1.patch
+    patch -s -p1 < ../v2.patch
     python3 setup.py install --user
     \end{lstlisting}
 \end{enumerate}

@@ -1,7 +1,6 @@
 \section{Data Model}%
 \label{data-model}
-
-While datatypes introduced by computer architectures and software libraries are important for the data model, they are discussed separately in \eb{Reference}.
+%While datatypes introduced by computer architectures and software libraries are important for the data model, they are discussed separately in \eb{Reference}.
 
 The data model of a system organizes elements of data, standardizes how they represent data entities and how users can interact with the data.
 The \textbf{model} can be split into three layers:
@@ -59,17 +58,18 @@ grid).
 \paragraph{Dataset:}%
 \label{dataset}
 
-Variables can be aggregated into datasets. A dataset contains multiple variables that logically belong together, and should be associated with metadata describing the reason for the aggregation. 
+Variables can be aggregated into datasets. 
+A dataset contains multiple variables that logically belong together, and should be associated with metadata describing the reason for the aggregation. 
 Variables must have unique names within a dataset.
 
 Our conceptual model assumes that all variables are scalars, but clearly to make use of these scalars requires more complex interpretation. 
-In particular, we need to know the
-\eb{Fix this}
+In particular, we need to know the datype and operators.
+%\eb{Fix this}
 
 \paragraph{Datatype:}%
 \label{datatype}
 
-which defines the types of values that are valid and the operations that can be conducted. 
+defines the types of values that are valid and the operations that can be conducted. 
 While we are mostly dealing with scalars, they may not be amenable to interpretation as simple numbers. 
 For example, a variable may be storing an integer which points into a taxonomy of categories of land-surface-types. 
 More complex structures could include complex data types such as vectors, compressed ensemble values, or structures within this system, provided such interpretation is handled outside of the ESDM, and documented in metadata. 
@@ -78,9 +78,9 @@ This allows us to limit ourselves to simple data types plus arbitrary length blo
 \paragraph{Operators:}%
 \label{operators}
 
-Define the manipulations possible on the conceptual entities.
+define the manipulations possible on the conceptual entities.
 The simplest operators will include creation, read, update and delete applied to an entity as a whole, or to a subset, however even these simple operators will come with constraints, for example, it should not be possible to delete a coordinate variable without deleting the parent variable as well.
-There will need to be a separation of concerns between operators which can be handled \emph{within} the ESDM subsystem, and those which require external logic.
+There will need to be a separation of concerns between operators which can be handled within the ESDM subsystem, and those which require external logic.
 Operators which might require external logic could include subsetting --- it will be seen that the ESDM will support simple subsetting using simple coordinates --- but complex subsets such as finding a region in real space from dimensions spanned using an algorithm or coordinate variable, may require knowledge of how such algorithms or variables are specified.
 Such knowledge is embedded in conventions such as the CF NetCDF conventions, and this knowledge could only be provided to the ESDM via appropriate operator plugins.
  
@@ -91,9 +91,8 @@ There are four first class entities in the ESDM logical data model: \textbf{vari
 ESDM entities may be linked by ESDM \textbf{reference}s, and a key property which emerges from the use of references is that no ESDM entity instance may be deleted while references to it still exist.
 The use of reference counting will ensure this property as well as avoid dangling pointers.
  
-gives an overview of the logical data model.
-\eb{Fix this}
-
+%gives an overview of the logical data model.
+%\eb{Fix this}
 
 Each of these entities is now described, along with a list of supported operations:
 
@@ -111,7 +110,6 @@ A key part of the variable definition is the list of fragments associated with i
 Users may choose to submit code pieces that are then run within the I/O-path (not part within ESiWACE implementation), such an operation covers the typical filter, map and reduce operations of the data flow programming paradigm.
  
 Fragments are created by the backend while appending/modifying data to a variable.
-
 
 Operations:
 
