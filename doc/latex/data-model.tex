@@ -1,4 +1,4 @@
-\section{Data Model}%
+\section{Data model}%
 \label{data-model}
 %While datatypes introduced by computer architectures and software libraries are important for the data model, they are discussed separately in \eb{Reference}.
 
@@ -15,7 +15,7 @@ The \textbf{model} can be split into three layers:
     The physical data model is partly covered by the backends of ESDM, therefore, the descriptions will stop at that abstraction level.
 \end{itemize}
 
-\subsection{Conceptual Data Model}
+\subsection{Conceptual data model}
 
 Our conceptual data model is aligned with the needs of domain scientists from climate and weather. 
 It reuses and extends from concepts introduced in a data model proposed for the Climate and Forecasting conventions for NetCDF data.
@@ -84,7 +84,7 @@ There will need to be a separation of concerns between operators which can be ha
 Operators which might require external logic could include subsetting --- it will be seen that the ESDM will support simple subsetting using simple coordinates --- but complex subsets such as finding a region in real space from dimensions spanned using an algorithm or coordinate variable, may require knowledge of how such algorithms or variables are specified.
 Such knowledge is embedded in conventions such as the CF NetCDF conventions, and this knowledge could only be provided to the ESDM via appropriate operator plugins.
  
-\subsection{Logical Data Model}
+\subsection{Logical data model}
 
 The logical data model describes how data is represented inside ESDM, the operations to interact with the data and their semantics.
 There are four first class entities in the ESDM logical data model: \textbf{variable}s, \textbf{fragment}s, \textbf{container}s, and \textbf{metadata}.
@@ -177,7 +177,7 @@ Operations:
 \begin{itemize}
   \item Uses can create, read, or delete arbitrary scientific metadata onto variables and containers. A future version of the ESDM may support user scientific metadata for fragments.
   \item Container level metadata is generally not directly associated with variables, but may be retrieved via following references from variables to containers.
-  \item Queries allow to search for arbitrary metadata, e.g., for objects that have (\texttt{experiment=X, model=Y, time=yesterday}) returning the variables and containers in a list that match. This enables to locate scientific data in an arbitrary namespace.
+  \item Queries allow to search for arbitrary metadata, e.g., for objects that have (\texttt{experiment=X}, \texttt{model=Y}, \texttt{time=yesterday}) returning the variables and containers in a list that match. This enables to locate scientific data in an arbitrary namespace.
 \end{itemize}
 
 \paragraph{Reference:}%
@@ -203,7 +203,7 @@ Operations:
 \label{namespace}
 
 ESDM does not offer a simple hierarchical namespace for the files.
-It provides the elementary functions to navigate data: teleportation and orientation in the following fashion: Queries about semantical data properties (e.g., \texttt{experiment=myExperiment, model=myModel, date=yesterday}) can be performed returning a list of matching files with their respective metadata.
+It provides the elementary functions to navigate data: teleportation and orientation in the following fashion: Queries about semantical data properties (e.g., \texttt{experiment=myExperiment}, \texttt{model=myModel}, \texttt{date=yesterday}) can be performed returning a list of matching files with their respective metadata.
 Iterating the list (orientation) is similar to listing a directory in a file system.
  
 Note that this reduces the burden to define a hierarchical namespace and for data sharing services based on scientific metadata.

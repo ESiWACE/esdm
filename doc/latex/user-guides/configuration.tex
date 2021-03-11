@@ -5,14 +5,14 @@ Furthermore, the data can be distributed over multiple storage media.
 How exactly the data is distributed can be specified in the configuration file.
 This section describes the file structure, the metadata and supported storage backends configuration and provides examples.
 
-\subsection{Search Paths}
+\subsection{Search paths}
 
 The current implemention reads \lstinline|esdm.conf| file in the current directory.
 In the next ESDM versions it is planned to support other common paths as well, like \lstinline|/etc/esdm/esdm.conf|, \lstinline|~/.config/esdm/esdm.conf|, \lstinline|~/.esdm.conf|, \lstinline|./esdm.conf|.
 In addition, the configuration should also be possible via the environment variable and arguments.
 
 
-\subsection{File Format}
+\subsection{File format}
 The configuration file format is based on JSON, i.e. all configuration files must be valid JSON files.
 However, ESDM places some restrictions on what keys are recognized and which types are expected.
 The tables summarize parameters that can be used in the configuration file.
@@ -48,7 +48,7 @@ The backends are organized in the \lstinline|"backends":[]| key-value pair as a 
 
 \lstinputlisting{../examples/conf/esdm.conf}
 
-\subsection{Data Parameters}
+\subsection{Data parameters}
 
 \begin{preserve}
 \begin{table}[!h]
@@ -483,7 +483,7 @@ Legal values are:
 \FloatBarrier
 \vspace{\gapsize}
 
-\subsection{Metadata Parameters}
+\subsection{Metadata parameters}
 
 \begin{preserve}
 \begin{table}[!ht]

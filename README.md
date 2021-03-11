@@ -1,7 +1,7 @@
 -   [Earth System Data Middleware](#earth-system-data-middleware)
--   [Data Model](#data-model)
-    -   [Conceptual Data Model](#conceptual-data-model)
-    -   [Logical Data Model](#logical-data-model)
+-   [Data model](#data-model)
+    -   [Conceptual data model](#conceptual-data-model)
+    -   [Logical data model](#logical-data-model)
 -   [Supported data backends](#supported-data-backends)
     -   [DDN Web Object Scaler (WOS)](#ddn-web-object-scaler-wos)
     -   [DDN Infinite Memory Engine
@@ -15,20 +15,20 @@
         (S3)](#amazon-simple-storage-service-s3)
 -   [Documentation](#documentation)
     -   [PDF](#pdf)
-    -   [HTML and PDF with
-        API-Reference](#html-and-pdf-with-api-reference)
+    -   [HTML and PDF with API
+        reference](#html-and-pdf-with-api-reference)
     -   [Github-Markdown](#github-markdown)
 -   [Building instructions](#installation-instructions-for-mistral)
     -   [Dependencies (Spack)](#satisfying-requirements)
     -   [ESDM prototype](#esdm-prototype)
-    -   [HDF5](#hdf5)
     -   [ESDM-NetCDF and
         ESDM-NetCDF-Python](#esdm-netcdf-and-esdm-netcdf-python)
     -   [Docker](#docker)
 -   [Configuration](#configuration)
-    -   [File Format](#file-format)
-    -   [Data Parameters](#data-parameters)
-    -   [Metadata Parameters](#metadata-parameters)
+    -   [Search paths](#search-paths)
+    -   [File format](#file-format)
+    -   [Data parameters](#data-parameters)
+    -   [Metadata parameters](#metadata-parameters)
 -   [Usage](#sec:usage-examples:esdm-usage)
     -   [NetCDF](#sec:usage-examples:netcdf)
     -   [CDO](#sec:usage-examples:cdo)
@@ -38,8 +38,8 @@
     -   [NetCDF-Bench](#netcdf-bench)
     -   [Paraview](#paraview)
 -   [Developers guide](#developers-guide)
-    -   [Internal Data Model](#internal-data-model)
-    -   [Usage Examples](#sec:user-guides:usage-example)
+    -   [Internal data model](#internal-data-model)
+    -   [Usage examples](#sec:user-guides:usage-example)
 -   [Use Cases](#use-cases)
     -   [Workloads in climate and
         weather](#workloads-in-climate-and-weather)
@@ -58,7 +58,6 @@
     -   [Requirements](#requirements)
     -   [Implementation](#implementation)
     -   [Roadmap for Implementation](#roadmap-for-implementation)
--   [Related Work](#related-work)
 
 # Earth System Data Middleware
 
@@ -69,7 +68,7 @@ applications as well as data description formats such as HDF5 and NetCDF
 to more efficiently organize metadata and data across a variety of
 storage backends.
 
-# Data Model
+# Data model
 
 The data model of a system organizes elements of data, standardizes how
 they represent data entities and how users can interact with the data.
@@ -95,7 +94,7 @@ The **model** can be split into three layers:
     physical data model is partly covered by the backends of ESDM,
     therefore, the descriptions will stop at that abstraction level.
 
-## Conceptual Data Model
+## Conceptual data model
 
 Our conceptual data model is aligned with the needs of domain scientists
 from climate and weather. It reuses and extends from concepts introduced
@@ -194,7 +193,7 @@ algorithms or variables are specified. Such knowledge is embedded in
 conventions such as the CF NetCDF conventions, and this knowledge could
 only be provided to the ESDM via appropriate operator plugins.
 
-## Logical Data Model
+## Logical data model
 
 The logical data model describes how data is represented inside ESDM,
 the operations to interact with the data and their semantics. There are
@@ -334,8 +333,8 @@ Operations:
     variables to containers.
 
 -   Queries allow to search for arbitrary metadata, e.g., for objects
-    that have (`experiment=X, model=Y, time=yesterday`) returning the
-    variables and containers in a list that match. This enables to
+    that have (`experiment=X`, `model=Y`, `time=yesterday`) returning
+    the variables and containers in a list that match. This enables to
     locate scientific data in an arbitrary namespace.
 
 #### Reference:
@@ -355,11 +354,10 @@ Operations:
 ESDM does not offer a simple hierarchical namespace for the files. It
 provides the elementary functions to navigate data: teleportation and
 orientation in the following fashion: Queries about semantical data
-properties (e.g.,
-`experiment=myExperiment, model=myModel, date=yesterday`) can be
-performed returning a list of matching files with their respective
-metadata. Iterating the list (orientation) is similar to listing a
-directory in a file system.
+properties (e.g., `experiment=myExperiment`, `model=myModel`,
+`date=yesterday`) can be performed returning a list of matching files
+with their respective metadata. Iterating the list (orientation) is
+similar to listing a directory in a file system.
 
 Note that this reduces the burden to define a hierarchical namespace and
 for data sharing services based on scientific metadata. An input/output
@@ -372,6 +370,9 @@ offering a FUSE client, this feature also enables backwards
 compatibility for legacy POSIX applications.
 
 # Supported data backends
+
+ESDM uses at least one storage backends but can use multiple to store
+the data and exactly one metadata backend.
 
 ## DDN Web Object Scaler (WOS)
 
@@ -490,7 +491,7 @@ cd ./doc
 make
 ```
 
-## HTML and PDF with API-Reference
+## HTML and PDF with API reference
 
 Doxygen depends a set of auto-generated markdown files, which should
 never be modified manually, because all changes will be overwritten by
@@ -605,32 +606,6 @@ configured and build as follows.
             make
             make install
 
-## HDF5
-
-Assuming all prerequisites have been installed and tested, a development
-branch of HDF5-VOL can be build as follows.
-
-1.  Ensure environment is aware of dependencies installed using `spack`
-    and `dev-env`
-
-2.  Checkout HDF5 with VOL support
-
-            svn checkout https://svn.hdfgroup.org/hdf5/features/vol/
-
-3.  Configure and build HDF5-VOL
-
-            cd vol
-            ./autogen.sh
-            export CC=mpicc         ### parallel features require mpicc
-            ../configure \
-              --prefix=$prefix \
-              --enable-parallel \
-              --enable-build-mode=debug \
-              --enable-hl \
-              --enable-shared
-            make -j
-            make install
-
 ## ESDM-NetCDF and ESDM-NetCDF-Python
 
 1.  Clone the NetCDF-ESDM repository
@@ -638,7 +613,7 @@ branch of HDF5-VOL can be build as follows.
             git clone https://github.com/ESiWACE/esdm-netcdf-c
 
 2.  Configure and build NetCDF-ESDM. (`$INSTPATH` is the installation
-    path of ESDM and HDF5-VOL.)
+    path of ESDM.)
 
             cd esdm-netcdf-c
             /bootstrap
@@ -659,7 +634,7 @@ branch of HDF5-VOL can be build as follows.
             cd dev
             git clone https://github.com/Unidata/netcdf4-python.git
             cd netcdf-python
-            patch -s -p1 < ../v1.patch
+            patch -s -p1 < ../v2.patch
             python3 setup.py install --user
 
 ## Docker
@@ -712,7 +687,22 @@ You can also explore the development environment interactively:
 
 # Configuration
 
-## File Format
+ESDM can store metadata and data separately. Furthermore, the data can
+be distributed over multiple storage media. How exactly the data is
+distributed can be specified in the configuration file. This section
+describes the file structure, the metadata and supported storage
+backends configuration and provides examples.
+
+## Search paths
+
+The current implemention reads `esdm.conf` file in the current
+directory. In the next ESDM versions it is planned to support other
+common paths as well, like `/etc/esdm/esdm.conf`,
+`~/.config/esdm/esdm.conf`, `~/.esdm.conf`, `./esdm.conf`. In addition,
+the configuration should also be possible via the environment variable
+and arguments.
+
+## File format
 
 The configuration file format is based on JSON, i.e. all configuration
 files must be valid JSON files. However, ESDM places some restrictions
@@ -739,9 +729,32 @@ key-value pair as a list.
       }
     }
 
-## Data Parameters
+    {
+    	"esdm":	{
+    		"backends": [
+    			{
+    				"type": "POSIX",
+    				"id": "p1",
+    				"target": "./_posix1",
+    			},
+    			{
+    				"type": "POSIX",
+    				"id": "p2",
+    				"target": "./_posix2",
+    			}
+    		],
+    		"metadata": {
+    			"type": "metadummy",
+    			"id": "md",			"target": "./_metadummy"
+    		}
+    	}
+    }
+
+## Data parameters
 
 <div class="center">
+
+<div class="scriptsize">
 
 <div id="tab:backend_conf_params">
 
@@ -759,6 +772,8 @@ key-value pair as a list.
 | fragmentation-method   | string  | contiguous | optional | Fragmentation methods.                        |
 
 Backend configuration parameters overview
+
+</div>
 
 </div>
 
@@ -912,6 +927,8 @@ The target string is a bucket name with at least a 5 characters. A
 proper S3 configuration requires at three additional parameters: `host`,
 `secret-key` and `access-key`. Other parameters are optional.
 
+<div class="scriptsize">
+
 | Parameter          | Type    | Default   |          | Description                                                                                                                                                                                                                                                                                                        |
 |:-------------------|:--------|:----------|:---------|:-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
 | host               | string  | (not set) | required | A valid endpoint name for the Amazon S3 region provided by the agency.                                                                                                                                                                                                                                             |
@@ -922,6 +939,8 @@ proper S3 configuration requires at three additional parameters: `host`,
 | timeout            | integer | (not set) | optional | Request timeout in milliseconds.                                                                                                                                                                                                                                                                                   |
 | s3-compatible      | integer | (not set) | optional | TODO (not used ?)                                                                                                                                                                                                                                                                                                  |
 | use-ssl            | integer | 0         | optional | Use HTTPS for encryption, if enabled.                                                                                                                                                                                                                                                                              |
+
+</div>
 
     {
       "type": "S3",
@@ -944,7 +963,7 @@ was set up on the DDN WOS console.
       "target": "host=192.168.80.33;policy=test;",
     }
 
-##### Parameter: performance-model
+#### Parameter: performance-model
 
 <div class="center">
 
@@ -979,7 +998,7 @@ Generic performance model parameters
 
 </div>
 
-##### Parameter: max-threads-per-node
+#### Parameter: max-threads-per-node
 
 Maximum number of threads on a node. If `max-threads-per-node=0`, then
 the ESDM scheduler estimates an optimal value.
@@ -990,7 +1009,7 @@ the ESDM scheduler estimates an optimal value.
 | Default  | 0       |
 | Required | no      |
 
-##### Parameter: write-stream-blocksize
+#### Parameter: write-stream-blocksize
 
 Block size in bytes used to read/write fragments. If
 `write-stream-blocksize=0`, then ESDM estimates optimal block size for
@@ -1002,7 +1021,7 @@ each storage type individually.
 | Default  | 0       |
 | Required | no      |
 
-##### Parameter: max-global-threads
+#### Parameter: max-global-threads
 
 Maximum total number of threads. If `max-global-threads=0`, then the
 ESDM scheduler estimates an optimal value.
@@ -1013,7 +1032,7 @@ ESDM scheduler estimates an optimal value.
 | Default  | 0       |
 | Required | no      |
 
-##### Parameter: accessibility
+#### Parameter: accessibility
 
 Data access permission rights.
 
@@ -1032,7 +1051,7 @@ Data access permission rights.
 
 </div>
 
-##### Parameter: max-fragment-size
+#### Parameter: max-fragment-size
 
 The amount of data that may be written into a single fragment. The
 amount is given in bytes.
@@ -1043,7 +1062,7 @@ amount is given in bytes.
 | Default  | 10485760 |
 | Required | no       |
 
-##### Parameter: fragmentation-method
+#### Parameter: fragmentation-method
 
 A string identifying the algorithm to use to split a chunk of data into
 fragments.
@@ -1071,7 +1090,7 @@ Fragmentation methods
 
 </div>
 
-## Metadata Parameters
+## Metadata parameters
 
 <div class="center">
 
@@ -1438,7 +1457,7 @@ based application should read the users guide instead. Unfortunately,
 there is no guide for ESDM backend developers and ESDM core contributors
 yet.
 
-## Internal Data Model
+## Internal data model
 
 The first thing to understand is the data model used by ESDM. This data
 model is very similar to that employed by NetCDF, but it adds some
@@ -1475,13 +1494,13 @@ inverse dimension order. The data serialization information (`stride`)
 can also achieve unorthodox effects like arrays with holes or
 replicating a single 2D slice along a third axis.
 
-#### Creating and Destroying Dataspaces
+#### Creating and destroying dataspaces
 
 ESDM provides two distinct mechanisms to create a data space: A generic
 API that allocates the data space on the heap and an API to create a
 throw-away data space on the stack quickly.
 
-##### The Generic API
+##### The generic API
 
 The functions used to create dataspaces are:
 
@@ -1515,7 +1534,7 @@ buffer as the data space from which the data layout is copied. As such,
 `esdm_dataspace_copyDatalayout()` is very convenient for data subseting
 operations.
 
-##### The Simple API
+##### The simple API
 
 For convenience and performance reasons, ESDM provides preprocessor
 macros that allocate a data space on the stack. Macros are provided for
@@ -1655,14 +1674,14 @@ Grids always remain in possession of their data space. Consequently, it
 is not necessary to dispose of them explicitly. However, closing a data
 space invalidates all associated (sub-)grids.
 
-## Usage Examples
+## Usage examples
 
 Learning usage of an API is easiest by seeing it in action in concrete
 examples. As such, this section provides four relatively basic examples
 of how the ESDM API is supposed to be used, which nevertheless cover all
 the necessary core functionality.
 
-### Basic Writing
+### Basic writing
 
 The simplest way to write a greyscale image to ESDM is as follows:
 
@@ -1705,7 +1724,7 @@ not necessary, the data spaces that are passed to `esdm_write()` may be
 smaller than the data set, calling `esdm_write()` as many times as
 required to write the entire data.
 
-### Grid Based Writing
+### Grid-based writing
 
 When using grid-based writing, creating of the container and the dataset
 is the same. The creation of the grid, however, is added explicitly. In
@@ -1752,7 +1771,7 @@ axis:
     // no need to cleanup the grid, it belongs to the dataset and 
     // will be disposed off when the dataset is closed
 
-### Simple Reading
+### Simple reading
 
 Reading data is very similar to writing it. Nevertheless, a simple
 example is given to read an entire dataset in one piece:
@@ -1790,7 +1809,7 @@ example is given to read an entire dataset in one piece:
     result = esdm_container_close(container);
     assert(result == ESDM_SUCCESS);
 
-### Grid Based Reading
+### Grid-based reading
 
 Reading an entire dataset as a single chunk is generally a terrible
 idea. Data sets, especially those generated by earth system models, can
@@ -2264,16 +2283,6 @@ Alternative workflow with unkown dsets:
 5.  Implement delegates for grids.
 
 6.  Implement the grid matching machinery to create the delegates.
-
-# Related Work
-
-VOL in general
-
--   <https://svn.hdfgroup.org/hdf5doc/trunk/RFCs/HDF5/VOL/RFC/RFC_VOL.pdf>
-
--   <https://svn.hdfgroup.org/hdf5doc/trunk/RFCs/HDF5/VOL/user_guide/main.pdf>
-
--   <https://svn.hdfgroup.org/hdf5doc/trunk/RFCs/HDF5/VOL/developer_guide/main.pdf>
 
 <div id="refs" class="references csl-bib-body hanging-indent">
 
