@@ -1,7 +1,7 @@
 \section{Building instructions}%
 \label{installation-instructions-for-mistral}
 %Mistral (HLRE-3) is the supercomputer installed at DKRZ in 2015/2016.
-This guide documents installation procedures to build prerequisites as well as the prototype code base for development and testing purposes.
+This guide documents installation procedures to build prerequisites as well as the prototype codebase for development and testing purposes.
 
 \begin{figure}[!ht]
   \begin{center}
@@ -13,8 +13,8 @@ This guide documents installation procedures to build prerequisites as well as t
 
 \subsection{Dependencies (Spack)}%
 \label{satisfying-requirements}
-Although, the software trees on supercomputer may provide all the standard tools and libraries required to build ESDM, it is still recommended to build, to install, and to manage dependencies via Spack\footnote{\url{https://spack.readthedocs.io/en/latest/index.html}}.
-The instructions below show how to setup Spack and how to install the ESDM dependencies.
+Although the software trees on supercomputer may provide all the standard tools and libraries required to build ESDM, it is still recommended to build, install, and manage dependencies via Spack\footnote{\url{https://spack.readthedocs.io/en/latest/index.html}}.
+The instructions below show how to setup Spack and install the ESDM dependencies.
 
 \begin{enumerate}
   \item Download and enable Spack
@@ -90,7 +90,7 @@ Assuming all prerequisites have been installed and tested, ESDM can be configure
     make install
     \end{lstlisting}
   \item If required, install the netcdf4-python module. 
-    Change to the root-directory of the esdm-netcdf repository and install the patched netcdf-python module.
+    Change to the ESDM-NetCDF repository's root directory and install the patched NetCDF-Python module.
     \begin{lstlisting}
     cd dev
     git clone https://github.com/Unidata/netcdf4-python.git
@@ -101,9 +101,9 @@ Assuming all prerequisites have been installed and tested, ESDM can be configure
 \end{enumerate}
 
 \subsection{Docker}
-For the development of ESDM the directory \lstinline|./dev/docker| contains all requirements to quickly set up a development environment using docker.
-The Dockerfiles contain ESDM installation instructions for different distributions.
-For easy building Dockerfiles for different plattforms are provided in different flavours:
+For the development of ESDM, the directory \lstinline|./dev/docker| contains all requirements to set up a development environment using docker quickly.
+The Docker files contain ESDM installation instructions for different distributions.
+For easy building Docker files for different platforms are provided in different flavours:
 
 \begin{itemize}
   \item CentOS/Fedora/RHEL like systems
@@ -120,7 +120,7 @@ cd <choose ubuntu/fedora/..>
 sudo docker build -t esdm .
 \end{lstlisting}
 
-After docker is done building an image, you should see the output of the ESDM test suite, which verifies that the development environment is set up correctly. 
+After docker is done building an image, you should see the ESMD test suite's output, which verifies that the development environment is set up correctly. 
 The output should look similar to the following output:
 
 \begin{lstlisting}
@@ -138,7 +138,7 @@ Total Test time (real) =   0.01 sec
 
 
 \subsubsection{Usage}
-Running the esdm docker container will run the test suite:
+Running the ESDM Docker container will run the test suite:
 
 \begin{lstlisting}
 sudo docker run esdm  # should display test output
@@ -153,47 +153,3 @@ sudo docker run -it esdm bash
 \begin{lstlisting}
 docker run dev/docker/ubuntu-whole-stack/Dockerfile
 \end{lstlisting}
-
-
-%\subsubsection{NetCDF with Support for ESDM VOL Plugin}%
-%\label{netcdf-with-support-for-esdm-vol-plugin}
-
-%Assuming all prerequisites have been installed and tested a patched version of NetCDF to enable/disable ESDM VOL Plugin support can be build as follows.
-
-%\subsection{Ensure environment is aware of dependencies installed using spack and dev-env}%
-%\label{ensure-environment-is-aware-of-dependencies-installed-using-spack-and-dev-env-1}
-
-%\subsection{Download NetCDF source}%
-%\label{download-netcdf-source}
-
-%version=4.5.0
-
-%\begin{lstlisting}
-%wget ftp://ftp.unidata.ucar.edu/pub/netcdf/netcdf-$version.tar.gz
-%cd netcdf-$version
-%\end{lstlisting}
-
-%\subsection{Apply patches to allow enabling/disabling plugin}%
-%\label{apply-patches-to-allow-enablingdisabling-plugin}
-
-%\begin{lstlisting}
-%patch -b --verbose $PWD/libsrc4/nc4file.c $ESDM_REPO_ROOT/dev/netcdf4-libsrc4-nc4file-c.patch
-%patch -b --verbose $PWD/include/netcdf.h $ESDM_REPO_ROOT/dev/netcdf4-include-netcdf-h.patch
-%\end{lstlisting}
-
-%\subsection{Configure and build}%
-%\label{configure-and-build}
-
-%\begin{lstlisting}
-%export CC=mpicc
-%mkdir build && cd build
-%cmake \
-%  -DCMAKE_PREFIX_PATH=$prefix \
-%  -DCMAKE_INSTALL_PREFIX:PATH=$prefix \
-%  -DCMAKE_C_FLAGS=-L$prefix/lib/ \
-%  -DENABLE_PARALLEL4=ON ..
-%make -j
-%make test
-%make install
-%\end{lstlisting}
-

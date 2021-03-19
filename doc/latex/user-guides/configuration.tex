@@ -53,7 +53,7 @@ The backends are organized in the \lstinline|"backends":[]| key-value pair as a 
 \begin{preserve}
 \begin{table}[!h]
   \begin{center}
-    \begin{scriptsize}
+    %\begin{scriptsize}
       \begin{tabularx}{\textwidth}{llllX}
         Parameter              & Type    & Default    &          & Description \\
         \hline
@@ -68,7 +68,7 @@ The backends are organized in the \lstinline|"backends":[]| key-value pair as a 
         max-fragment-size      & integer & 10485760   & optional & Maximum fragment size in bytes. \\
         fragmentation-method   & string  & contiguous & optional & Fragmentation methods.\\
       \end{tabularx}
-    \end{scriptsize}
+    %\end{scriptsize}
   \end{center}
   \caption{Backend configuration parameters overview}%
   \label{tab:backend_conf_params}
@@ -320,40 +320,54 @@ The \lstinline|policy| name is that one, that was set up on the DDN WOS console.
 
 
 \paragraph{Parameter: performance-model}
+The performance model estimates expected performance of backends and can affect the choice of backend.
 
 \begin{preserve}
-\begin{table}[!ht]
+  \noindent
+  \begin{tabular}{ll}
+    Type     & object \\ 
+    Default  & (not set)       \\ 
+    Required & no      \\ 
+  \end{tabular}
+\end{preserve}
+
+Dynamic performance model parameters.
+
+%\begin{preserve}
+%\begin{table}[!ht]
   \begin{center}
     \begin{tabularx}{\textwidth}{lllllX}
       Parameter  & Type  & Default & Domain &          & Description \\ 
       \hline
-      latency    & float & 0.0     & $>=0.0$  & optional & seconds     \\ 
-      throughput & float & 0.0     & $>0.0$   & optional & MiB/s       \\ 
+      latency    & float & 0.0     & $>=0.0$  & optional & Latency in seconds     \\ 
+      throughput & float & 0.0     & $>0.0$   & optional & Throughput in MiB/s       \\ 
     \end{tabularx}
   \end{center}
-  \caption{Dynamic performance model parameters}%
-  \label{tab:dyn_perf_model_conf_params}
-\end{table}
-\end{preserve}
+  %\caption{Dynamic performance model parameters}%
+  %\label{tab:dyn_perf_model_conf_params}
+%\end{table}
+%\end{preserve}
 
-
-\begin{preserve}
-\begin{table}[!ht]
-  \begin{center}
+  Generic performance model parameters.
+  The proximity coefficient determines how fast the performance model reacts to backend performance fluctuations.
+  The higher the value, the faster the performance estimation.
+%\begin{preserve}
+%\begin{table}[!ht]
+  %\begin{center}
     \begin{tabularx}{\textwidth}{lllllX}
-      Parameter  & Type    & Default & Domain      &          & Description         \\ 
+      Parameter  & Type    & Default & Domain      &          & Description               \\ 
       \hline
-      latency    & float   & 0.0     & $>=0.0$     & optional & Latency in seconds  \\ 
-      throughput & float   & 0.0     & $>0.0$      & optional & Throughput in MiB/s \\ 
-      size       & integer & 0       & $>0$        & optional & TODO                \\ 
-      period     & float   & 0.0     & $>0.0$      & optional & TODO                \\ 
-      alpha      & float   & 0.0     & $[0.0,1.0)$ & optional & TODO                \\ 
+      latency    & float   & 0.0     & $>=0.0$     & optional & Latency in seconds        \\ 
+      throughput & float   & 0.0     & $>0.0$      & optional & Throughput in MiB/s       \\ 
+      size       & integer & 0       & $>0$        & optional & Test buffer size in bytes \\ 
+      period     & float   & 0.0     & $>0.0$      & optional & Test period in seconds    \\ 
+      alpha      & float   & 0.0     & $[0.0,1.0)$ & optional & Adaption rate             \\ 
     \end{tabularx}
-  \end{center}
-  \caption{Generic performance model parameters}%
-  \label{tab:gen_perf_model_conf_params}
-\end{table}
-\end{preserve}
+  %\end{center}
+  %\caption{Generic performance model parameters}%
+  %\label{tab:gen_perf_model_conf_params}
+%\end{table}
+%\end{preserve}
 
 \FloatBarrier
 \vspace{\gapsize}
@@ -489,10 +503,11 @@ Legal values are:
 \begin{table}[!ht]
   \begin{center}
     \begin{tabularx}{\textwidth}{llllX}
-      Parameter & Type   & Default   & Required   & Description                     \\ 
+      Parameter & Type   & Default   & Required   & Description                             \\ 
       \hline
-      id        & string & (not set) & (not used) & Unique alpha-numeric identifier \\ 
-      type      & string & (not set) & yes        & (?)                             \\ 
+      id        & string & (not set) & (not used) & Unique alpha-numeric identifier.        \\ 
+      type      & string & (not set) & yes        & Metadata type. Reserved for future use. \\ 
+      target    & string & (not set) & yes        & Path to metadata folder                 \\ 
     \end{tabularx}
   \end{center}
   \caption{Metadata parameters overview}%

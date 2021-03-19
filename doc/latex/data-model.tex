@@ -7,7 +7,7 @@ The \textbf{model} can be split into three layers:
 
 \begin{itemize}
   \item The \textbf{conceptual data} model describes the entities and the semantics of the domain that are represented by the data model and the typical operations to manipulate the data. 
-    In our case, the scientific domain is NWP/climate.
+    In our case, the scientific domain is numerical weather prediction and climate.
   \item The \textbf{logical data model} describes the abstraction level provided by the system, how domain entities are mapped to objects provided by the system\footnote{A entity of the domain model such as a car could be mapped to one or several objects.}, and the supported operations to access and manipulate these objects are defined.
     Importantly, the \textbf{logical data model} defines the semantics when using the operations to access and manipulate the system objects.
     For example, a system object of a relational model is a table -- representing attributes of a set of objects -- and a row of a table representing attributes of a single object.
@@ -18,13 +18,12 @@ The \textbf{model} can be split into three layers:
 \subsection{Conceptual data model}
 
 Our conceptual data model is aligned with the needs of domain scientists from climate and weather. 
-It reuses and extends from concepts introduced in a data model proposed for the Climate and Forecasting conventions for NetCDF data.
-%\footnote{\href{A CF Data Model and Implementation, Hassel et al, 2017, GMD submitted}{"A CF Data Model and Implementation", Hassel et al, 2017, GMD submitted}}.
+It reuses and extends from concepts introduced in a data model proposed for the Climate and Forecasting conventions for NetCDF data~\cite{gmd-10-4619-2017}.
 
 \paragraph{Variable:}%
 \label{variable}
 
-A variable, \(V\), defines a set of data representing a discrete (generally scalar) quantity discretised within a ``sampling'' domain, \(d\). It is accompanied by
+A variable, \(V\), defines a set of data representing a discrete (generally scalar) quantity discretised within a ``sampling'' domain, \(d\). It is accompanied by metadata.
 
 \paragraph{Metadata:}%
 \label{metadata}
@@ -37,7 +36,7 @@ Additional metadata is also required for all the other entities described below.
 \paragraph{Dimension:}%
 \label{dimension}
 
-The sampling domain \(d\) is defined by Dimensions which define an a coordinate axis. 
+The sampling domain \(d\) is defined by dimensions which define an a coordinate axis. 
 Dimensions will also include metadata, which must again, include at a minimum a name (e.g.~height, time), but may also include information about directionality, units (e.g.~degrees, months, days-since-a-particular-time-using-a-particular-calendar), or details of how to construct an algorithm to find the actual sampling coordinates, perhaps using a well known algorithm such as an ISO 8601 time.
 
 \paragraph{Coordinate:}%
@@ -102,8 +101,8 @@ Each of these entities is now described, along with a list of supported operatio
 In the logical data model, the variable corresponds directly to a variable in the conceptual data model.
 Each element of the variable sampled across the dimensions contains data with a prescribed \textbf{DataType}.
 Variables are associated with both \textbf{Scientific Metadata} and \textbf{Technical Metadata}.
-Variables are partitioned into \textbf{fragments} each of which can be stored on one or more ``storage backend.
-'' A variable definition includes internal information about the domain (bounding box in some coordinate system) and dimensionality (size and shape), while the detailed information about which coordinate variables are needed to span the dimensions and how they are defined is held in the technical metadata.
+Variables are partitioned into \textbf{fragments} each of which can be stored on one or more ``storage backend''.
+A variable definition includes internal information about the domain (bounding box in some coordinate system) and dimensionality (size and shape), while the detailed information about which coordinate variables are needed to span the dimensions and how they are defined is held in the technical metadata.
 Similarly, where a variable is itself a coordinate variable, a link to the parent variable for which it is used is held in the technical metadata.
 The ESDM will not allow an attempt to delete a variable to succeed while any such references exist (see references).
 A key part of the variable definition is the list of fragments associated with it, and if possible, how they are organised to span the domain.
@@ -147,7 +146,7 @@ Operations:
 A container is a virtual entity providing views on collections of variables, allowing multiple different datasets (as defined in the conceptual model) to be realised over the variables visible to the ESDM.
 Each container provides a hierarchical namespace holding references to one or multiple variables together with metadata.
 Variables cannot be deleted while they are referenced by a container.
-The use of these dynamic containers provides support for much more flexible organisation of data than provided by a regular file system semantics --- and efficiently support high level applications such as the Data Reference Syntax\footnote{Taylor et al (2012): CMIP5 Data Reference Syntax (DRS) and Controlled Vocabularies.}.
+The use of these dynamic containers provides support for much more flexible organisation of data than provided by a regular file system semantics --- and efficiently support high level applications such as the Data Reference Syntax~\cite{drs2012}.
  
 A container provides the ESDM storage abstraction which is analogous to an external file.
 Because many scientific metadata conventions are based on semantic structures which span variables within a file in ways that may be opaque to the ESDM without the use of a plugin, the use of a container can indicate to the ESDM that these variables are linked even though the ESDM does not understand why, and so they cannot be independently deleted.
@@ -175,7 +174,7 @@ The implementation may embed (simple) metadata into fragments of original data (
 Operations:
 
 \begin{itemize}
-  \item Uses can create, read, or delete arbitrary scientific metadata onto variables and containers. A future version of the ESDM may support user scientific metadata for fragments.
+  \item Users can create, read, or delete arbitrary scientific metadata onto variables and containers. A future version of the ESDM may support user scientific metadata for fragments.
   \item Container level metadata is generally not directly associated with variables, but may be retrieved via following references from variables to containers.
   \item Queries allow to search for arbitrary metadata, e.g., for objects that have (\texttt{experiment=X}, \texttt{model=Y}, \texttt{time=yesterday}) returning the variables and containers in a list that match. This enables to locate scientific data in an arbitrary namespace.
 \end{itemize}
@@ -207,7 +206,7 @@ It provides the elementary functions to navigate data: teleportation and orienta
 Iterating the list (orientation) is similar to listing a directory in a file system.
  
 Note that this reduces the burden to define a hierarchical namespace and for data sharing services based on scientific metadata.
-An input/output container for an application can be assembled on the fly by using queries and name the resulting entities.
+An input/output container for an application can be assembled on-the-fly by using queries and name the resulting entities.
 As a container provides a hierachical namespace, by harnessing this capability one can search for relevant variables and map them into the local file system tree, accessing these variables as if they would be, e.g., NetCDF files.
 By offering a FUSE client, this feature also enables backwards compatibility for legacy POSIX applications.
  
