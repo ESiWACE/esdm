@@ -40,6 +40,20 @@
 
 // Container //////////////////////////////////////////////////////////////////
 
+int esdm_container_probe(const char *name){
+  esdm_status ret;
+  esdm_container_t * c;
+  ret = esdm_container_open(name, 0, & c);
+  if(ret != ESDM_SUCCESS){
+    return 0;
+  }
+  
+  int counts = c->dsets.count;
+  esdm_container_close(c);
+  return counts > 0;
+}
+
+
 esdm_status esdm_container_create(const char *name, int allow_overwrite, esdm_container_t **oc) {
   ESDM_DEBUG(__func__);
   eassert(name);

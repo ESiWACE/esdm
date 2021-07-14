@@ -193,8 +193,18 @@ esdm_statistics_t esdm_write_stats();
  * @return status
  *
  */
-
 esdm_status esdm_container_create(const char *name, int allow_overwrite, esdm_container_t **out_container);
+
+
+/**
+ * Check if a container with the given name was successfully created and is valid.
+ *
+ * @param [in] name string to identify the container, must not be empty
+ *
+ * @return 1 if the container exists and is valid, otherwise return 0
+ *
+ */
+int esdm_container_probe(const char *name);
 
 /**
  * Open an existing container.
