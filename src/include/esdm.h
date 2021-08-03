@@ -266,6 +266,17 @@ esdm_status esdm_container_close(esdm_container_t *container);
  */
 bool esdm_container_dataset_exists(esdm_container_t * container, char const * name);
 
+/**
+ * Check if a dataset with the given name was successfully created and is valid.
+ *
+ * @param [in] name string to identify the container, must not be empty
+ * @param [in] name string to identify the dataset, must not be empty
+ *
+ * @return 1 if the dataset exists and is valid, otherwise return 0
+ *
+ */
+int esdm_dataset_probe(const char *container_name, const char *dataset_name);
+
 /*
  * Return the number of datasets in the container.
  *

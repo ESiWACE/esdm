@@ -632,6 +632,18 @@ esdm_status esdm_fragment_destroy(esdm_fragment_t *frag) {
 
 const int64_t kInitialGridSlotCount = 8;
 
+int esdm_dataset_probe(const char *container_name, const char *dataset_name) {
+  esdm_status ret;
+  esdm_container_t * c;
+  ret = esdm_container_open(container_name, 0, & c);
+  if(ret != ESDM_SUCCESS) {
+    return 0;
+  }
+  int exist = (int)esdm_container_dataset_exists(c, dataset_name);
+  esdm_container_close(c);
+  return exist;
+}
+
 void esdm_dataset_init(esdm_container_t *c, const char *name, esdm_dataspace_t *dspace, esdm_dataset_t **out_dataset){
   esdm_dataset_t *d = ea_checked_malloc(sizeof(esdm_dataset_t));
   *d = (esdm_dataset_t) {
