@@ -278,6 +278,11 @@ bool esdm_container_dataset_exists(esdm_container_t * container, char const * na
 int esdm_dataset_probe(const char *container_name, const char *dataset_name);
 
 /*
+ * Check if there exists any data point from the region exists in the specified container name and dataset
+ */
+int esdm_dataset_probe_region(const char *container_name, const char *dataset_name, esdm_dataspace_t * region);
+
+/*
  * Return the number of datasets in the container.
  *
  * @param [in] container an existing container to query

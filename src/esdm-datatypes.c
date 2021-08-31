@@ -644,6 +644,44 @@ int esdm_dataset_probe(const char *container_name, const char *dataset_name) {
   return exist;
 }
 
+static gboolean is_point_overlapping(gpointer key, gpointer valueArg, gpointer user_data){
+  esdm_dataspace_t * s = user_data; // the search
+  esdm_fragment_t  * fragment = valueArg;
+  esdm_dataspace_t * e = fragment->dataspace;
+  for(int d=0; d < s->dims; d++){
+    // check if the two boxes of the two points overlap
+    if(
+      (s->offset[d]              > e->size[d] + e->offset[d] ) || 
+      (s->size[d] + s->offset[d] < e->offset[d] )
+      ) {
+      return false;
+    }
+  }
+  return true;
+}
+
+
+int esdm_dataset_probe_region(const char *container_name, const char *dataset_name, esdm_dataspace_t * point){
+  esdm_status ret;
+  esdm_container_t * c;
+  ret = esdm_container_open(container_name, 0, & c);
+  if(ret != ESDM_SUCCESS) {
+    return 0;
+  }
+  esdm_dataset_t * d;
+  ret = esdm_dataset_open(c, dataset_name, 0, & d);
+  if(ret != ESDM_SUCCESS) {
+    esdm_container_close(c);
+    return 0;
+  }
+  assert(point->dims == d->dataspace->dims);
+  
+  int exists = g_hash_table_find(d->fragments.table, is_point_overlapping, point) != NULL;
+  esdm_container_close(c);
+  return exists;
+}
+
+
 void esdm_dataset_init(esdm_container_t *c, const char *name, esdm_dataspace_t *dspace, esdm_dataset_t **out_dataset){
   esdm_dataset_t *d = ea_checked_malloc(sizeof(esdm_dataset_t));
   *d = (esdm_dataset_t) {
