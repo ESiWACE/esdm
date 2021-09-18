@@ -205,6 +205,11 @@ static void esdmI_dataspace_copy_instructions(
   eassert(out_sourceOffset);
   eassert(out_destOffset);
 
+  *out_instructionDims = 0;
+  *out_sourceChunkBytes = 0;
+  *out_sourceOffset = 0;
+  *out_destOffset = 0;
+
   uint64_t dimensions = sourceSpace->dims;
   int64_t overlapOffset[dimensions];
   int64_t overlapSize[dimensions];
