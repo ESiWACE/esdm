@@ -21,6 +21,7 @@
 
 #define _GNU_SOURCE /* See feature_test_macros(7) */
 
+
 #include <dirent.h>
 #include <errno.h>
 #include <esdm-debug.h>
@@ -37,7 +38,7 @@
 
 #include <esdm-stream.h>
 
-#include "posix.h"
+#include "posixi.h"
 #define DEBUG_ENTER ESDM_DEBUG_COM_FMT("POSIX", "", "")
 #define DEBUG(fmt, ...) ESDM_DEBUG_COM_FMT("POSIX", fmt, __VA_ARGS__)
 
@@ -45,9 +46,9 @@
 #define WARN(fmt, ...) ESDM_WARN_COM_FMT("POSIX", fmt, __VA_ARGS__)
 #define WARNS(fmt) ESDM_WARN_COM_FMT("POSIX", "%s", fmt)
 
-#define ESDM_POSIX_ID_LENGTH 10
-#define sprintfFragmentDir(path, f) (sprintf(path, "%s/%c/%c", tgt, f->id[0], f->id[1]))
-#define sprintfFragmentPath(path, f) (sprintf(path, "%s/%c/%c/%c%c%c%c%c%c%c%c", tgt, f->id[0], f->id[1], f->id[2], f->id[3], f->id[4], f->id[5], f->id[6], f->id[7], f->id[8], f->id[9]))
+
+#define sprintfFragmentDir(path, f) (sprintf(path, "%s/%c/%c/%s/%c/%c", tgt, f->dataset->id[0], f->dataset->id[1], f->dataset->id+2, f->id[0], f->id[1]))
+#define sprintfFragmentPath(path, f) (sprintf(path, "%s/%c/%c/%s/%c/%c/%s", tgt, f->dataset->id[0], f->dataset->id[1], f->dataset->id+2, f->id[0], f->id[1], f->id+2))
 
 ///////////////////////////////////////////////////////////////////////////////
 // Helper and utility /////////////////////////////////////////////////////////
@@ -56,6 +57,22 @@
 ///////////////////////////////////////////////////////////////////////////////
 // Internal Helpers ///////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////
+
+static int entry_retrieve(const char *path, void *buf, uint64_t size) {
+  DEBUG("entry_retrieve(%s)", path);
+
+  // write to non existing file
+  int fd = open(path, O_RDONLY);
+  // everything ok? read and close
+  if (fd < 0) {
+    WARN("error on opening file \"%s\": %s", path, strerror(errno));
+    return ESDM_ERROR;
+  }
+  int ret = ea_read_check(fd, buf, size);
+  close(fd);
+  return ret;
+}
+
 
 static int entry_update(const char *path, void *buf, size_t len, int update_only) {
   DEBUG("entry_update(%s: %ld)\n", path, len);
@@ -81,7 +98,7 @@ static int entry_update(const char *path, void *buf, size_t len, int update_only
 static int fragment_delete(esdm_backend_t * backend, esdm_fragment_t *f){
   DEBUG_ENTER;
 
-  posix_backend_data_t *data = (posix_backend_data_t *)backend->data;
+  posixi_backend_data_t *data = (posixi_backend_data_t *)backend->data;
   const char *tgt = data->config->target;
 
   char path[PATH_MAX];
@@ -106,7 +123,7 @@ static int fragment_delete(esdm_backend_t * backend, esdm_fragment_t *f){
 }
 
 static int mkfs(esdm_backend_t *backend, int format_flags) {
-  posix_backend_data_t *data = (posix_backend_data_t *)backend->data;
+  posixi_backend_data_t *data = (posixi_backend_data_t *)backend->data;
 
   DEBUG("mkfs: backend->(void*)data->config->target = %s\n", data->config->target);
 
@@ -182,32 +199,20 @@ static int fragment_retrieve(esdm_backend_t *backend, esdm_fragment_t *f) {
   DEBUG_ENTER;
 
   // set data, options and tgt for convienience
-  posix_backend_data_t *data = (posix_backend_data_t *)backend->data;
+  posixi_backend_data_t *data = (posixi_backend_data_t *)backend->data;
   const char *tgt = data->config->target;
 
   // determine path to fragment
   char path[PATH_MAX];
   sprintfFragmentPath(path, f);
-  DEBUG("retrieve path_fragment: %s", path);
+  DEBUG("path_fragment: %s", path);
 
   void* readBuffer;
   size_t size;
   int ret;
   bool needUnpack = estream_mem_unpack_fragment_param(f, & readBuffer, & size);
-  int fd = open(path, O_RDONLY);
-  if (fd >= 0) {
-    uint64_t epos = *(uint64_t*) f->backend_md;
-    off_t pos = lseek(fd, epos, SEEK_SET);
-    if (epos != pos){
-      WARN("Cannot seek to the expected position: %s", strerror(errno));
-      return ESDM_ERROR;
-    }
-    ret = ea_read_check(fd, readBuffer, size);
-    close(fd);
-  }else{
-    WARN("error on opening file \"%s\": %s", path, strerror(errno));
-    return ESDM_ERROR;
-  }
+  ret = entry_retrieve(path, readBuffer, size);
+  if(ret != ESDM_SUCCESS) return ret;
   if(needUnpack){
     ret = estream_mem_unpack_fragment(f, readBuffer, size);
   }
@@ -215,22 +220,11 @@ static int fragment_retrieve(esdm_backend_t *backend, esdm_fragment_t *f) {
   return ret;
 }
 
-static int create_posix_id(posix_backend_data_t * b, esdm_fragment_t * f, const char *tgt, int * out_fd){
+static int create_posix_id(esdm_fragment_t * f, const char *tgt, int * out_fd){
   char path[PATH_MAX];
-  // piggyback on previous fragment
-  if(b->openfd){
-    uint64_t offset = lseek(b->openfd, 0, SEEK_END);
-    f->id = ea_checked_malloc(ESDM_POSIX_ID_LENGTH + 11);
-    sprintf(f->id, "%s%010llu", b->open_fragment, (long long unsigned)  offset);
-    *out_fd = b->openfd;    
-    f->backend_md = ea_checked_malloc(sizeof(uint64_t));
-    *(uint64_t*)f->backend_md = offset;
-    return ESDM_SUCCESS;
-  }
-  
   // ensure that the fragment with the ID doesn't exist, yet
   while(1){
-    f->id = ea_make_id(ESDM_POSIX_ID_LENGTH);
+    f->id = ea_make_id(ESDM_ID_LENGTH);
     struct stat sb;
     sprintfFragmentDir(path, f);
     if (stat(path, &sb) == -1) {
@@ -250,13 +244,6 @@ static int create_posix_id(posix_backend_data_t * b, esdm_fragment_t * f, const 
       return ESDM_ERROR;
     }
     *out_fd = fd;
-    b->openfd = fd;
-    b->open_fragment = strdup(f->id);
-    char * id = ea_checked_malloc(ESDM_POSIX_ID_LENGTH + 11);
-    sprintf(id, "%s%010llu", b->open_fragment, 0llu);
-    f->id = id;
-    f->backend_md = ea_checked_malloc(sizeof(uint64_t));
-    *(uint64_t*)f->backend_md = 0;
     return ESDM_SUCCESS;
   }
 }
@@ -268,7 +255,7 @@ typedef struct{
 static int fragment_write_stream_blocksize(esdm_backend_t * b, estream_write_t * state, void * c_buf, size_t c_off, uint64_t c_size){
   int ret;
   esdm_fragment_t * f = state->fragment;
-  posix_backend_data_t *data = (posix_backend_data_t *) b->data;
+  posixi_backend_data_t *data = (posixi_backend_data_t *) b->data;
   const char *tgt = data->config->target;
   posix_stream_t * s = (posix_stream_t*) state->backend_state;
 
@@ -286,7 +273,7 @@ static int fragment_write_stream_blocksize(esdm_backend_t * b, estream_write_t *
         return ESDM_ERROR;
       }
     } else {
-      ret = create_posix_id(data, f, tgt, & s->fd);
+      ret = create_posix_id(f, tgt, & s->fd);
       if(ret != ESDM_SUCCESS){
         free(s);
         return ret;
@@ -313,7 +300,7 @@ static int fragment_update(esdm_backend_t *backend, esdm_fragment_t *f) {
   DEBUG_ENTER;
 
   // set data, options and tgt for convenience
-  posix_backend_data_t *data = (posix_backend_data_t *)backend->data;
+  posixi_backend_data_t *data = (posixi_backend_data_t *)backend->data;
   const char *tgt = data->config->target;
   int ret = ESDM_SUCCESS;
 
@@ -326,19 +313,16 @@ static int fragment_update(esdm_backend_t *backend, esdm_fragment_t *f) {
   if(f->id != NULL){
     char path[PATH_MAX];
     sprintfFragmentPath(path, f);
+    DEBUG("path: %s\n", path);
     // create data
     ret = entry_update(path, buff, buff_size, 1);
   } else {
     int fd;
-    ret = create_posix_id(data, f, tgt, & fd);
+    ret = create_posix_id(f, tgt, & fd);
     if(ret == ESDM_SUCCESS){
-      uint64_t epos = *(uint64_t*) f->backend_md;
-      off_t pos = lseek(fd, epos, SEEK_SET);
-      if (epos != pos){
-        WARN("Cannot seek to the expected position: %s", strerror(errno));
-        return ESDM_ERROR;
-      }
+      //write the data
       ret = ea_write_check(fd, buff, buff_size);
+      close(fd);
     }
   }
 
@@ -358,47 +342,27 @@ static int posix_backend_performance_estimate(esdm_backend_t *backend, esdm_frag
   if (!backend || !fragment || !out_time)
     return 1;
 
-  posix_backend_data_t *data = (posix_backend_data_t *)backend->data;
+  posixi_backend_data_t *data = (posixi_backend_data_t *)backend->data;
   return esdm_backend_t_perf_model_long_lat_perf_estimate(&data->perf_model, fragment, out_time);
 }
 
 static float posix_backend_estimate_throughput(esdm_backend_t* backend) {
   DEBUG_ENTER;
 
-  posix_backend_data_t *data = (posix_backend_data_t *)backend->data;
+  posixi_backend_data_t *data = (posixi_backend_data_t *)backend->data;
   return esdm_backend_t_perf_model_get_throughput(&data->perf_model);
 }
 
-int posix_finalize(esdm_backend_t *backend) {
+int posixi_finalize(esdm_backend_t *backend) {
   DEBUG_ENTER;
 
-  posix_backend_data_t* data = backend->data;
-  
-  if(data->openfd){
-    close(data->openfd);
-  }
-  
+  posixi_backend_data_t* data = backend->data;
   free(data->config);  //TODO: Do we need to destruct this?
   free(data);
   free(backend);
 
   return 0;
 }
-
-static void * fragment_metadata_load(esdm_backend_t * b, esdm_fragment_t *f, json_t *md){
-  eassert(f->id);
-  uint64_t * offset = ea_checked_malloc(sizeof(uint64_t));
-  long long unsigned o;
-  sscanf(f->id + ESDM_POSIX_ID_LENGTH, "%llu", &o);
-  *offset = o;
-  return offset;
-}
-
-static int fragment_metadata_free(esdm_backend_t * b, void * f){
-  free(f);
-  return 0;
-}
-
 
 ///////////////////////////////////////////////////////////////////////////////
 // ESDM Module Registration ///////////////////////////////////////////////////
@@ -408,12 +372,12 @@ static esdm_backend_t backend_template = {
   ///////////////////////////////////////////////////////////////////////////////
   // NOTE: This serves as a template for the posix plugin and is memcopied!    //
   ///////////////////////////////////////////////////////////////////////////////
-  .name = "POSIX",
+  .name = "POSIXI",
   .type = ESDM_MODULE_DATA,
   .version = "0.0.1",
   .data = NULL,
   .callbacks = {
-    .finalize = posix_finalize,
+    .finalize = posixi_finalize,
     .performance_estimate = posix_backend_performance_estimate,
     .estimate_throughput = posix_backend_estimate_throughput,
     .fragment_create = NULL,
@@ -421,8 +385,8 @@ static esdm_backend_t backend_template = {
     .fragment_update = fragment_update,
     .fragment_delete = fragment_delete,
     .fragment_metadata_create = NULL,
-    .fragment_metadata_load = fragment_metadata_load,
-    .fragment_metadata_free = fragment_metadata_free,
+    .fragment_metadata_load = NULL,
+    .fragment_metadata_free = NULL,
     .mkfs = mkfs,
     .fsck = fsck,
     .fragment_write_stream_blocksize = fragment_write_stream_blocksize
@@ -433,10 +397,10 @@ static esdm_backend_t backend_template = {
 //
 // datadummy.c
 
-esdm_backend_t *posix_backend_init(esdm_config_backend_t *config) {
+esdm_backend_t *posixi_backend_init(esdm_config_backend_t *config) {
   DEBUG_ENTER;
 
-  if (!config || !config->type || strcasecmp(config->type, "POSIX") || !config->target) {
+  if (!config || !config->type || strcasecmp(config->type, "POSIXI") || !config->target) {
     DEBUG("Wrong configuration%s\n", "");
     return NULL;
   }
@@ -445,8 +409,7 @@ esdm_backend_t *posix_backend_init(esdm_config_backend_t *config) {
   memcpy(backend, &backend_template, sizeof(esdm_backend_t));
 
   // allocate memory for backend instance
-  posix_backend_data_t *data = ea_checked_malloc(sizeof(*data));
-  memset(data, 0, sizeof(posix_backend_data_t));
+  posixi_backend_data_t *data = ea_checked_malloc(sizeof(*data));
   backend->data = data;
 
   if (data && config->performance_model)

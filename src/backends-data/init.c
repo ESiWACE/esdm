@@ -10,6 +10,7 @@
 
 #ifdef ESDM_HAS_POSIX
 #  include "posix/posix.h"
+#  include "posixi/posixi.h"
 #  pragma message("Building ESDM with support for generic POSIX backend.")
 #endif
 
@@ -43,6 +44,9 @@ esdm_backend_t * esdmI_init_backend(char const * name, esdm_config_backend_t * b
     return dummy_backend_init(b);
   }
 #ifdef ESDM_HAS_POSIX
+  else if (strncmp(b->type, "POSIXI", 6) == 0) {
+    return posixi_backend_init(b);
+  }
   else if (strncmp(b->type, "POSIX", 5) == 0) {
     return posix_backend_init(b);
   }

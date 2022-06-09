@@ -279,7 +279,7 @@ _Static_assert(sizeof(kCharset) - 1 == 1 << kCharsetBits, "wrong number of chara
 
 void ea_generate_id(char* str, size_t length) {
   size_t randomBitCount = length*kCharsetBits;
-  eassert(randomBitCount >= 128 && "don't try to use less than 128 random bits to avoid possibility of collision");
+  eassert(randomBitCount >= 60 && "don't try to use less than 64 random bits to avoid possibility of collision");
 
   size_t randomByteCount = (randomBitCount + 7)/8;
   uint8_t randomBytes[randomByteCount];

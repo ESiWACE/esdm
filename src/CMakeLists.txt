@@ -153,6 +153,9 @@ if(BACKEND_POSIX)
 	add_definitions(-DESDM_HAS_POSIX=1)
 	SUBDIRS(backends-data/posix)
   target_link_libraries(esdm esdmposix)
+  
+	SUBDIRS(backends-data/posixi)
+  target_link_libraries(esdm esdmposixi)
 endif()
 
 

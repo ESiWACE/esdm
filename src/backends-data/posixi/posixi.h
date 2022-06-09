@@ -13,8 +13,8 @@
  * You should have received a copy of the GNU Lesser General Public License
  * along with ESDM.  If not, see <http://www.gnu.org/licenses/>.
  */
-#ifndef ESDM_BACKENDS_POSIX_H
-#define ESDM_BACKENDS_POSIX_H
+#ifndef ESDM_BACKENDS_POSIXI_H
+#define ESDM_BACKENDS_POSIXI_H
 
 #include <esdm-internal.h>
 
@@ -24,10 +24,7 @@
 typedef struct {
   esdm_config_backend_t *config;
   esdm_perf_model_lat_thp_t perf_model;
-  
-  char * open_fragment; // NULL if none
-  int openfd;
-} posix_backend_data_t;
+} posixi_backend_data_t;
 
 // static int mkfs(esdm_backend_t* backend, int enforce_format);
 
@@ -39,7 +36,7 @@ typedef struct {
 * This routine is also expected to clean up memory that is used by the backend.
 */
 
-int posix_finalize(esdm_backend_t *backend);
+int posixi_finalize(esdm_backend_t *backend);
 
 /**
 * Initializes the POSIX plugin. In particular this involves:
@@ -55,6 +52,6 @@ int posix_finalize(esdm_backend_t *backend);
 * @return pointer to backend struct
 */
 
-esdm_backend_t *posix_backend_init(esdm_config_backend_t *config);
+esdm_backend_t *posixi_backend_init(esdm_config_backend_t *config);
 
 #endif
