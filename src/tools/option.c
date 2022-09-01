@@ -7,6 +7,7 @@
 
 #include <tools/option.h>
 #include <esdm-debug.h>
+#include <esdm-internal.h>
 
 /*
 * Takes a string of the form 64, 8m, 128k, 4g, etc. and converts to bytes.
@@ -337,7 +338,7 @@ int option_parse(int argc, char **argv, option_help *args, int *printhelp) {
               }
               case ('H'):
               case ('s'): {
-                (*(char **)o->variable) = strdup(arg);
+                (*(char **)o->variable) = ea_checked_strdup(arg);
                 break;
               }
               case ('c'): {

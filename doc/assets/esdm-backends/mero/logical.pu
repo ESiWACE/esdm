@@ -1,7 +1,7 @@
 @startuml
 
-class Mero
-class Clovis
+class Motr
+class MotrClient
 
 class Datatypes
 class Scheduler
@@ -13,15 +13,15 @@ interface "ESDM API" as ESDMAPI
 
 
 
-Mero <-left- Clovis
+Motr <-left- MotrClient
 
-Clovis <-left- Scheduler
+MotrClient <-left- Scheduler
 note top
 	Scheduler processes read/write calls for Fragments.
 end note
 
-Clovis --> Performance: provides
-Clovis --> SiteConfig: provides
+MotrClient --> Performance: provides
+MotrClient --> SiteConfig: provides
 
 
 Datatypes -down-> Scheduler

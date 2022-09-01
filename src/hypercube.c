@@ -29,8 +29,6 @@
 
 //Generate symbols for the inline functions.
 esdmI_range_t esdmI_range_intersection(esdmI_range_t a, esdmI_range_t b);
-bool esdmI_range_isEmpty(esdmI_range_t range);
-int64_t esdmI_range_size(esdmI_range_t range);
 
 void esdmI_range_print(esdmI_range_t range, FILE* stream) {
   if(esdmI_range_isEmpty(range)) {
@@ -47,7 +45,7 @@ void esdmI_range_print(esdmI_range_t range, FILE* stream) {
 esdmI_hypercube_t* esdmI_hypercube_makeDefault(int64_t dimensions) {
   eassert(dimensions >= 0);
 
-  esdmI_hypercube_t* result = malloc(sizeof(*result) + dimensions*sizeof(*result->ranges));
+  esdmI_hypercube_t* result = ea_checked_malloc(sizeof(*result) + dimensions*sizeof(*result->ranges));
   result->dims = dimensions;
   for(int64_t i = 0; i < dimensions; i++) {
     result->ranges[i] = (esdmI_range_t){
@@ -62,7 +60,7 @@ esdmI_hypercube_t* esdmI_hypercube_make(int64_t dimensions, int64_t* offset, int
   eassert(offset);
   eassert(size);
 
-  esdmI_hypercube_t* result = malloc(sizeof(*result) + dimensions*sizeof(*result->ranges));
+  esdmI_hypercube_t* result = ea_checked_malloc(sizeof(*result) + dimensions*sizeof(*result->ranges));
   result->dims = dimensions;
   for(int64_t i = 0; i < dimensions; i++) {
     result->ranges[i] = (esdmI_range_t){
@@ -75,7 +73,7 @@ esdmI_hypercube_t* esdmI_hypercube_make(int64_t dimensions, int64_t* offset, int
 
 esdmI_hypercube_t* esdmI_hypercube_makeCopy(esdmI_hypercube_t* original) {
   int64_t size = sizeof(*original) + original->dims*sizeof(*original->ranges);
-  esdmI_hypercube_t* result = malloc(size);
+  esdmI_hypercube_t* result = ea_checked_malloc(size);
   memcpy(result, original, size);
   return result;
 }
@@ -86,7 +84,7 @@ esdmI_hypercube_t* esdmI_hypercube_makeIntersection(esdmI_hypercube_t* a, esdmI_
   eassert(a->dims == b->dims);
   int64_t dimensions = a->dims;
 
-  esdmI_hypercube_t* result = malloc(sizeof(*result) + dimensions*sizeof(*result->ranges));
+  esdmI_hypercube_t* result = ea_checked_malloc(sizeof(*result) + dimensions*sizeof(*result->ranges));
   result->dims = dimensions;
   for(int64_t i = 0; i < dimensions; i++) {
     result->ranges[i] = esdmI_range_intersection(a->ranges[i], b->ranges[i]);
@@ -107,6 +105,35 @@ bool esdmI_hypercube_isEmpty(esdmI_hypercube_t* me) {
   return false;
 }
 
+static const uint32_t kRandomPrime = 2146462999;  //Chosen by a fair dice roll. Guaranteed to be random.
+
+//XXX: This function must be implemented with exactly the same algorithm as esdmI_hypercube_hashOffsetSize().
+uint32_t esdmI_hypercube_hash(const esdmI_hypercube_t* me) {
+  eassert(me);
+
+  uint32_t factor = kRandomPrime, result = me->dims*factor;
+  for(int64_t i = 0; i < me->dims; i++) {
+    result += (factor *= kRandomPrime)*me->ranges[i].start;
+    result += (factor *= kRandomPrime)*me->ranges[i].end;
+  }
+  return result;
+}
+
+//XXX: This function must be implemented with exactly the same algorithm as esdmI_hypercube_hash().
+uint32_t esdmI_hypercube_hashOffsetSize(int64_t dimCount, const int64_t* offset, const int64_t* size) {
+  eassert(dimCount >= 0);
+  eassert(offset);
+  eassert(size);
+
+  uint32_t factor = kRandomPrime, result = dimCount*factor;
+  for(int64_t i = 0; i < dimCount; i++) {
+    result += (factor *= kRandomPrime)*(uint32_t)offset[i]; //the cast prevents promotion to the larger signed integer type, which would yield UB on overflow
+    result += (factor *= kRandomPrime)*(uint32_t)(offset[i] + size[i]);
+  }
+  return result;
+}
+
+
 bool esdmI_hypercube_doesIntersect(esdmI_hypercube_t* a, esdmI_hypercube_t* b) {
   eassert(a);
   eassert(b);
@@ -124,9 +151,6 @@ bool esdmI_hypercube_touches(esdmI_hypercube_t* a, esdmI_hypercube_t* b) {
   eassert(b);
   eassert(a->dims == b->dims);
   int64_t dimensions = a->dims;
-
-  //"touch" means no overlap is allowed
-  if(esdmI_hypercube_doesIntersect(a, b)) return false;
 
   //check that the two cubes share exactly one bound
   bool haveBound = false;
@@ -160,6 +184,18 @@ int64_t esdmI_hypercube_overlap(esdmI_hypercube_t* a, esdmI_hypercube_t* b) {
   return overlap;
 }
 
+bool esdmI_hypercube_equal(const esdmI_hypercube_t* a, const esdmI_hypercube_t* b) {
+  eassert(a);
+  eassert(b);
+  eassert(a->dims == b->dims);
+  int64_t dimensions = a->dims;
+
+  for(int64_t i = 0; i < dimensions; i++) {
+    if(!esdmI_range_equal(a->ranges[i], b->ranges[i])) return false;
+  }
+  return true;
+}
+
 double esdmI_hypercube_shapeSimilarity(esdmI_hypercube_t* a, esdmI_hypercube_t* b) {
   eassert(a);
   eassert(b);
@@ -177,9 +213,7 @@ double esdmI_hypercube_shapeSimilarity(esdmI_hypercube_t* a, esdmI_hypercube_t* 
   return similarity;
 }
 
-int64_t esdmI_hypercube_dimensions(esdmI_hypercube_t* cube);  //instantiate inline function
-
-void esdmI_hypercube_getOffsetAndSize(esdmI_hypercube_t* cube, int64_t* out_offset, int64_t* out_size) {
+void esdmI_hypercube_getOffsetAndSize(const esdmI_hypercube_t* cube, int64_t* out_offset, int64_t* out_size) {
   eassert(out_offset);
   eassert(out_size);
 
@@ -214,7 +248,7 @@ void esdmI_hypercube_destroy(esdmI_hypercube_t* cube) {
 }
 
 esdmI_hypercubeSet_t* esdmI_hypercubeSet_make() {
-  esdmI_hypercubeSet_t* me = malloc(sizeof(*me));
+  esdmI_hypercubeSet_t* me = ea_checked_malloc(sizeof(*me));
   esdmI_hypercubeSet_construct(me);
   return me;
 }
@@ -224,7 +258,7 @@ void esdmI_hypercubeSet_construct(esdmI_hypercubeSet_t* me) {
     .list = {.cubes = NULL, .count = 0},
     .allocatedCount = 8
   };
-  me->list.cubes = malloc(me->allocatedCount*sizeof(*me->list.cubes));
+  me->list.cubes = ea_checked_malloc(me->allocatedCount*sizeof(*me->list.cubes));
   eassert(me->list.cubes);
 }
 
@@ -256,7 +290,7 @@ void esdmI_hypercubeSet_add(esdmI_hypercubeSet_t* me, esdmI_hypercube_t* cube) {
   //grow the buffer if necessary
   if(me->list.count == me->allocatedCount) {
     me->allocatedCount <<= 1;
-    me->list.cubes = realloc(me->list.cubes, me->allocatedCount*sizeof(*me->list.cubes));
+    me->list.cubes = ea_checked_realloc(me->list.cubes, me->allocatedCount*sizeof(*me->list.cubes));
     eassert(me->list.cubes);
   }
   eassert(me->allocatedCount > me->list.count);
@@ -342,8 +376,8 @@ static void makeIntersectionMatrix_internal(esdmI_hypercubeList_t* list, int64_t
   eassert(out_intersectionMatrix);
   eassert(out_intersectionSizes);
 
-  esdmI_hypercube_t* (*intersectionMatrix)[count] = malloc(count*sizeof(*intersectionMatrix));
-  int64_t (*intersectionSizes)[count] = malloc(count*sizeof(*intersectionSizes));
+  esdmI_hypercube_t* (*intersectionMatrix)[count] = ea_checked_malloc(count*sizeof(*intersectionMatrix));
+  int64_t (*intersectionSizes)[count] = ea_checked_malloc(count*sizeof(*intersectionSizes));
 
   for(int64_t i = 0; i < count; i++) {
     intersectionMatrix[i][i] = NULL;  //The algorithms relying on the intersection matrix work better when the self intersection is NULL.
@@ -440,7 +474,7 @@ void esdmI_hypercubeList_nonredundantSubsets_internal(esdmI_hypercubeList_t* lis
   esdmI_hypercube_t* (*intersectionMatrix)[list->count];
   int64_t (*intersectionSizes)[list->count];
   makeIntersectionMatrix(list, &intersectionMatrix, &intersectionSizes);
-  uint8_t* requiredCubes = malloc(list->count*sizeof(*requiredCubes));
+  uint8_t* requiredCubes = ea_checked_malloc(list->count*sizeof(*requiredCubes));
   for(int64_t i = 0; i < list->count; i++) {
     int64_t coverage = 0;
     for(int64_t j = 0; j < list->count; j++) coverage += intersectionSizes[i][j];
@@ -468,7 +502,7 @@ void esdmI_hypercubeList_nonredundantSubsets_internal(esdmI_hypercubeList_t* lis
 
 bool esdmI_hypercubeList_doesCoverFully(esdmI_hypercubeList_t* list, esdmI_hypercube_t* cube) {
   //make a list of the cubes in the set that actually intersect with cube, this avoids unnecessary splitting and reduces the total workload of this algorithm
-  esdmI_hypercube_t** intersectingCubes = malloc(list->count*sizeof(*intersectingCubes));
+  esdmI_hypercube_t** intersectingCubes = ea_checked_malloc(list->count*sizeof(*intersectingCubes));
   int64_t intersectingCubesCount = 0;
   for(int64_t i = 0; i < list->count; i++) {
     if(esdmI_hypercube_doesIntersect(list->cubes[i], cube)) {

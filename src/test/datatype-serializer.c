@@ -8,9 +8,9 @@ int main() {
   int64_t dim[2] = {10, 20}; // dim order highest first: (y, x)
   int64_t dim2[2] = {5, 20};
 
-  float *p = malloc(sizeof(float) * dim[0] * dim[1] * 2);
-  float **data = malloc(sizeof(float *) * dim[1]);
-  float **data_out = malloc(sizeof(float *) * dim[1]);
+  float *p = ea_checked_malloc(sizeof(float) * dim[0] * dim[1] * 2);
+  float **data = ea_checked_malloc(sizeof(float *) * dim[1]);
+  float **data_out = ea_checked_malloc(sizeof(float *) * dim[1]);
 
   // prepare test data
   float *c = p;
@@ -45,7 +45,7 @@ int main() {
     esdm_dataspace_subspace(space, 2, dim2, offset, &subspace);
     eassert(subspace != NULL);
 
-    uint64_t size = esdm_dataspace_size(subspace);
+    uint64_t size = esdm_dataspace_total_bytes(subspace);
     printf("Offset: %d,%d -- size: %lu\n", (int)offset[0], (int)offset[1], size);
 
     // now copy the data from the position

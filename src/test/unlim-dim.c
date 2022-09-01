@@ -65,6 +65,11 @@ void test(char const * str, int dims, int64_t bounds_dset[], int64_t bounds_data
   ret = esdm_read(dataset, buf_w, subspace);
   eassert(ret == ESDM_SUCCESS);
 
+  ret = esdm_dataspace_destroy(dataspace);
+  eassert(ret == ESDM_SUCCESS);
+  ret = esdm_dataspace_destroy(subspace);
+  eassert(ret == ESDM_SUCCESS);
+
   ret = etest_verify_buffer(dims, bounds_data, buf_w);
   eassert(ret == 0);
 

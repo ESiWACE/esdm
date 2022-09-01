@@ -5,18 +5,26 @@
 #ifndef ESDM_H
 #define ESDM_H
 
-#include <esdm-datatypes.h>
 #include <stdbool.h>
 #include <stddef.h>
 #include <sys/stat.h>
 #include <sys/types.h>
 #include <unistd.h>
 
+#include <esdm-datatypes.h>
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 ///////////////////////////////////////////////////////////////////////////////
 // ESDM ///////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////
 
+// Initialization /////////////////////////////////////////////////////////////
+
 // These functions must be used before calling init:
+
 /**
  * Set the number of processes to use per node.
  * Must not be called after `init()`.
@@ -59,6 +67,8 @@ esdm_status esdm_load_config_str(const char *str);
 
 esdm_status esdm_init();
 
+int esdm_is_initialized();
+
 /**
  * Display status information for objects stored in ESDM.
  *
@@ -66,6 +76,8 @@ esdm_status esdm_init();
  */
 
 esdm_status esdm_finalize();
+
+// I/O ////////////////////////////////////////////////////////////////////////
 
 /**
  * Write data with a given size and offset.
@@ -80,6 +92,11 @@ esdm_status esdm_finalize();
 esdm_status esdm_write(esdm_dataset_t *dataset, void *buf, esdm_dataspace_t *subspace);
 
 /**
+ * Identical to esdm_write except that it uses size/offset tuples instead of the subspace
+ */
+//esdm_status esdm_write_so(esdm_dataset_t *dataset, void *buf, int64_t *size, int64_t *offset);
+
+/**
  * Reads a data fragment described by desc to the dataset dset.
  *
  * @param [in] dataset TODO, currently a stub, we assume it has been identified/created before.... , json description?
@@ -90,6 +107,11 @@ esdm_status esdm_write(esdm_dataset_t *dataset, void *buf, esdm_dataspace_t *sub
  */
 
 esdm_status esdm_read(esdm_dataset_t *dataset, void *buf, esdm_dataspace_t *subspace);
+
+/**
+ * Identical to esdm_read except that it uses size/offset tuples instead of the subspace
+ */
+//esdm_status esdm_read_so(esdm_dataset_t *dataset, void *buf, int64_t *size, int64_t *offset);
 
 
 /**
@@ -106,12 +128,58 @@ typedef void* (*esdm_stream_func_t)(esdm_dataspace_t *space, void * buff, void *
 typedef void (*esdm_reduce_func_t)(esdm_dataspace_t *space, void * user_ptr, void * stream_func_out);
 esdm_status esdm_read_stream(esdm_dataset_t *dataset, esdm_dataspace_t *space, void * user_ptr, esdm_stream_func_t stream_func, esdm_reduce_func_t reduce_func);
 
+// Auxiliary //////////////////////////////////////////////////////////////////
+
+//size_t esdm_sizeof(esdm_type_t type);
+#define esdm_sizeof(type) (type->size)
+
+/**
+  * Initialize backend by invoking mkfs callback for matching target
+  *
+  * @param [in] enforce_format  force reformatting existing system (may result in data loss)
+  * @param [in] target  target descriptor
+  *
+  * @return status
+  */
+
+enum esdm_format_flags{
+  ESDM_FORMAT_DELETE = 1,
+  ESDM_FORMAT_CREATE = 2,
+  ESDM_FORMAT_IGNORE_ERRORS = 4,
+  ESDM_FORMAT_PURGE_RECREATE = 7
+};
+
+esdm_status esdm_mkfs(int format_flags, data_accessibility_t target);
+
+// LOGGING
+
+/*
+Loglevel for stdout.
+*/
+void esdm_loglevel(esdm_loglevel_e loglevel);
+void esdm_log_on_exit(int on);
+/*
+ Keeps a log to record last messages for crashes
+ Must be called from a single master thread
+ NOTE: logging into the shared buffer costs performance.
+*/
+void esdm_loglevel_buffer(esdm_loglevel_e loglevel);
+
+// Statistics
+
+/**
+ * Get some statistics about the reads that have been performed.
+ */
+esdm_statistics_t esdm_read_stats();
+
+/**
+ * Get some statistics about the writes that have been performed.
+ */
+esdm_statistics_t esdm_write_stats();
 
 ///////////////////////////////////////////////////////////////////////////////
-// Public API: Data Model Manipulators ////////////////////////////////////////
-///////////////////////////////////////////////////////////////////////////////
-
 // Container //////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////////
 
 /**
  * Create a new container.
@@ -125,8 +193,18 @@ esdm_status esdm_read_stream(esdm_dataset_t *dataset, esdm_dataspace_t *space, v
  * @return status
  *
  */
-
 esdm_status esdm_container_create(const char *name, int allow_overwrite, esdm_container_t **out_container);
+
+
+/**
+ * Check if a container with the given name was successfully created and is valid.
+ *
+ * @param [in] name string to identify the container, must not be empty
+ *
+ * @return 1 if the container exists and is valid, otherwise return 0
+ *
+ */
+int esdm_container_probe(const char *name);
 
 /**
  * Open an existing container.
@@ -140,6 +218,8 @@ esdm_status esdm_container_create(const char *name, int allow_overwrite, esdm_co
  * @return status
  */
 esdm_status esdm_container_open(const char *name, int esdm_mode_flags, esdm_container_t **out_container);
+
+int esdm_container_get_mode_flags(esdm_container_t * container);
 
 /**
  * Make container persistent to storage.
@@ -186,16 +266,21 @@ esdm_status esdm_container_close(esdm_container_t *container);
  */
 bool esdm_container_dataset_exists(esdm_container_t * container, char const * name);
 
-/*
- functions to change the size of the dataspace
+/**
+ * Check if a dataset with the given name was successfully created and is valid.
+ *
+ * @param [in] name string to identify the container, must not be empty
+ * @param [in] name string to identify the dataset, must not be empty
+ *
+ * @return 1 if the dataset exists and is valid, otherwise return 0
+ *
  */
-esdm_status esdm_dataset_update_size(esdm_dataset_t *dset, uint64_t * sizes);
-int64_t const * esdm_dataset_get_size(esdm_dataset_t * dset);
+int esdm_dataset_probe(const char *container_name, const char *dataset_name);
+
 /*
- This function returns the actual size for ulim
- Return a pointer to the internal size (having the same dimensions)
+ * Check if there exists any data point from the region exists in the specified container name and dataset
  */
-int64_t const * esdm_dataset_get_actual_size(esdm_dataset_t *dset);
+int esdm_dataset_probe_region(const char *container_name, const char *dataset_name, esdm_dataspace_t * region);
 
 /*
  * Return the number of datasets in the container.
@@ -205,10 +290,6 @@ int64_t const * esdm_dataset_get_actual_size(esdm_dataset_t *dset);
  * @return the number of datasets
  */
 int esdm_container_dataset_count(esdm_container_t * container);
-
-esdm_status esdm_dataset_rename(esdm_dataset_t *dataset, const char *name);
-
-void esdm_dataset_set_status_dirty(esdm_dataset_t * dataset);
 
 void esdm_container_set_status_dirty(esdm_container_t * container);
 
@@ -221,6 +302,27 @@ void esdm_container_set_status_dirty(esdm_container_t * container);
  * @return the dataset or NULL, if dset_number >= count
  */
 esdm_dataset_t * esdm_container_dataset_from_array(esdm_container_t * container, int dset_number);
+
+///////////////////////////////////////////////////////////////////////////////
+// Dataset ////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////////
+
+/*
+ functions to change the size of the dataspace
+ */
+esdm_status esdm_dataset_update_size(esdm_dataset_t *dset, uint64_t * sizes);
+int64_t const * esdm_dataset_get_size(esdm_dataset_t * dset);
+/*
+ This function returns the actual size for ulim
+ Return a pointer to the internal size (having the same dimensions)
+ */
+int64_t const * esdm_dataset_get_actual_size(esdm_dataset_t *dset);
+
+esdm_status esdm_dataset_rename(esdm_dataset_t *dataset, const char *name);
+
+esdm_status esdm_dataset_set_compression_hint(esdm_dataset_t * dataset, scil_user_hints_t const * hints);
+
+void esdm_dataset_set_status_dirty(esdm_dataset_t * dataset);
 
 // Dataset
 
@@ -241,12 +343,11 @@ esdm_dataset_t * esdm_container_dataset_from_array(esdm_container_t * container,
 
 esdm_status esdm_dataset_create(esdm_container_t *container, const char *name, esdm_dataspace_t *dataspace, esdm_dataset_t **out_dataset);
 
-
 /*
  The value to be used if data hasn't been written to a datapoint, it must be of the same type as the dataset type.
  If the fill value was already set, overwrite it.
  */
-esdm_status esdm_dataset_set_fill_value(esdm_dataset_t *dataset, void * value);
+esdm_status esdm_dataset_set_fill_value(esdm_dataset_t *dataset, void const * value);
 
 /*
  Copy the fill value into value
@@ -263,7 +364,9 @@ char const * esdm_dataset_name(esdm_dataset_t *dataset);
 /*
  Name the dimensions of a dataset
  */
-esdm_status esdm_dataset_name_dims(esdm_dataset_t *dataset, char **names);
+esdm_status esdm_dataset_name_dims(esdm_dataset_t *dataset, char * const * names);
+
+//esdm_status esdm_dataset_name_dimsv(esdm_dataset_t *dataset, ...);
 
 /*
  Rename a single dimension
@@ -275,38 +378,18 @@ esdm_status esdm_dataset_rename_dim(esdm_dataset_t *dataset, char const *name, i
  */
 esdm_status esdm_dataset_get_name_dims(esdm_dataset_t *dataset, char const *const **out_names);
 
+/**
+ * Inquire the shape of a dataset.
+ *
+ * @param [in] dset the dataset to question
+ * @param [out] out_dataspace a reference to the dataset's dataspace
+ *
+ * @return status
+ *
+ * The dataset remains the owner of the dataspace, the caller must not destroy it.
+ */
 esdm_status esdm_dataset_get_dataspace(esdm_dataset_t *dset, esdm_dataspace_t **out_dataspace);
 esdm_type_t esdm_dataset_get_type(esdm_dataset_t * d);
-
-int64_t esdm_dataspace_get_dims(esdm_dataspace_t * d);
-int64_t const* esdm_dataspace_get_size(esdm_dataspace_t * d);
-int64_t const* esdm_dataspace_get_offset(esdm_dataspace_t * d);
-esdm_type_t esdm_dataspace_get_type(esdm_dataspace_t * d);
-
-/**
- * Get the effective stride of a dataspace.
- *
- * If a stride has been set for the dataspace, that stride is copied to the `out_stride` array,
- * otherwise the effective stride is calculated and returned in that same array.
- *
- * @param [in] space the dataspace to query
- * @param [out] out_stride pointer to an array of size `space->dims` which will be filled with the components of the stride.
- *
- * As with `esdm_dataspace_set_stride()`, the stride is given in terms of fundamental datatype elements and needs to be multiplied with `esdm_sizeof(space->type)` to get the stride in bytes.
- */
-void esdm_dataspace_getEffectiveStride(esdm_dataspace_t* space, int64_t* out_stride);
-
-/**
- * Get the offset in bytes of the element at the given logical position.
- * The resulting offset may be negative if a custom stride has been set that has negative component(s).
- * Otherwise, a contiguous C order multidimensional array is assumed, producing only positive offsets.
- *
- * @param [in] space the dataspace to query
- * @param [in] coords an array with the coordinates of the element's logical location
- *
- * @return an offset in bytes
- */
-int64_t esdm_dataspace_elementOffset(esdm_dataspace_t* space, int64_t* coords);
 
 esdm_status esdm_dataset_change_name(esdm_dataset_t *dset, char const * new_name);
 
@@ -340,7 +423,6 @@ esdm_status esdm_dataset_by_name(esdm_container_t *container, const char *name, 
  */
 esdm_status esdm_dataset_ref(esdm_dataset_t *dataset);
 
-
 /**
  * Make dataset persistent to storage.
  * Schedule for writing to backends.
@@ -349,9 +431,7 @@ esdm_status esdm_dataset_ref(esdm_dataset_t *dataset);
  *
  * @return status
  */
-
 esdm_status esdm_dataset_commit(esdm_dataset_t *dataset);
-
 
 /**
  * Close a dataset object, if it isn't used anymore, it's metadata will be unloaded
@@ -376,7 +456,9 @@ esdm_status esdm_dataset_link_attribute(esdm_dataset_t *dset, int overwrite, smd
 /* This function returns the attributes */
 esdm_status esdm_dataset_get_attributes(esdm_dataset_t *dataset, smd_attr_t **out_metadata);
 
-// Dataspace
+///////////////////////////////////////////////////////////////////////////////
+// Dataspace //////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////////
 
 /**
  * Create a new dataspace.
@@ -391,14 +473,100 @@ esdm_status esdm_dataset_get_attributes(esdm_dataset_t *dataset, smd_attr_t **ou
  * @return status
  *
  */
-
 esdm_status esdm_dataspace_create(int64_t dims, int64_t *sizes, esdm_type_t type, esdm_dataspace_t **out_dataspace);
 
 /**
- * Reinstantiate dataspace from serialization.
+ * Create a new dataspace.
+ *
+ *  - Allocate process local memory structures.
+ *
+ * @param [in] dims count of dimensions of the new dataspace
+ * @param [in] sizes array of the sizes of the different dimensions, the length of this array is dims. Must not be `NULL` unless `dims == 0`
+ * @param [in] offset array containing the logical coordinates of the first data point in this dataspace
+ * @param [in] type the datatype for each data point
+ * @param [out] out_dataspace pointer to the new dataspace
+ *
+ * @return status
+ *
  */
+esdm_status esdm_dataspace_create_full(int64_t dims, int64_t *size, int64_t *offset, esdm_type_t type, esdm_dataspace_t **out_dataspace);
 
-esdm_status esdm_dataspace_deserialize(void *serialized_dataspace, esdm_dataspace_t **out_dataspace);
+/**
+ * Create a dataspace on the stack with up to three dimensions.
+ *
+ * **Do not use this directly, use `esdm_dataspace_2d()` and friends instead!**
+ */
+#define esdm_simple_dataspace_construct_internal(dimCount, xOffset, xSize, yOffset, ySize, zOffset, zSize, dataType) \
+  ((esdm_simple_dspace_t){ \
+    .ptr = &(esdm_dataspace_t){ \
+      .type = dataType, \
+      .dims = dimCount, \
+      .size = (int64_t [3]){xSize, ySize, zSize}, \
+      .offset = (int64_t [3]){xOffset, yOffset, zOffset}, \
+      .strideBacking = (int64_t [3]){0}, \
+      .stride = NULL \
+    } \
+  })
+
+/**
+ * Create a new 1D dataspace.
+ *
+ * Construct a simple dataspace on the stack.
+ * Since the lifetime of the dataspace is automatic, it is an error to call `esdm_dataspace_destroy()` on it.
+ */
+#define esdm_dataspace_1do(offset, size, type) esdm_simple_dataspace_construct_internal(1, offset, size, 0, 0, 0, 0, type)
+
+/**
+ * Create a new 1D dataspace.
+ *
+ * Construct a simple dataspace on the stack.
+ * Since the lifetime of the dataspace is automatic, it is an error to call `esdm_dataspace_destroy()` on it.
+ */
+#define esdm_dataspace_1d(size, type) esdm_simple_dataspace_construct_internal(1, 0, size, 0, 0, 0, 0, type)
+
+/**
+ * Create a new 2D dataspace.
+ *
+ * Construct a simple dataspace on the stack.
+ * Since the lifetime of the dataspace is automatic, it is an error to call `esdm_dataspace_destroy()` on it.
+ */
+#define esdm_dataspace_2do(xOffset, xSize, yOffset, ySize, type) esdm_simple_dataspace_construct_internal(2, xOffset, xSize, yOffset, ySize, 0, 0, type)
+
+/**
+ * Create a new 2D dataspace.
+ *
+ * Construct a simple dataspace on the stack.
+ * Since the lifetime of the dataspace is automatic, it is an error to call `esdm_dataspace_destroy()` on it.
+ */
+#define esdm_dataspace_2d(xSize, ySize, type) esdm_simple_dataspace_construct_internal(2, 0, xSize, 0, ySize, 0, 0, type)
+
+/**
+ * Create a new 3D dataspace.
+ *
+ * Construct a simple dataspace on the stack.
+ * Since the lifetime of the dataspace is automatic, it is an error to call `esdm_dataspace_destroy()` on it.
+ */
+#define esdm_dataspace_3do(xOffset, xSize, yOffset, ySize, zOffset, zSize, type) esdm_simple_dataspace_construct_internal(3, xOffset, xSize, yOffset, ySize, zOffset, zSize, type)
+
+/**
+ * Create a new 3D dataspace.
+ *
+ * Construct a simple dataspace on the stack.
+ * Since the lifetime of the dataspace is automatic, it is an error to call `esdm_dataspace_destroy()` on it.
+ */
+#define esdm_dataspace_3d(xSize, ySize, zSize, type) esdm_simple_dataspace_construct_internal(3, 0, xSize, 0, ySize, 0, zSize, type)
+
+
+/**
+ * Create a copy of a dataspace.
+ *
+ *  - Allocate process local memory structures.
+ * @param [in] orig the dataspace to copy
+ * @param [out] out_dataspace pointer to the new dataspace
+ *
+ * @return status
+ */
+esdm_status esdm_dataspace_copy(esdm_dataspace_t* orig, esdm_dataspace_t **out_dataspace);
 
 /**
  * Define a dataspace that is a subset of the given dataspace.
@@ -427,6 +595,48 @@ esdm_status esdm_dataspace_subspace(esdm_dataspace_t *dataspace, int64_t dims, i
  * @return `ESDM_SUCCESS`
  */
 esdm_status esdm_dataspace_makeContiguous(esdm_dataspace_t *dataspace, esdm_dataspace_t **out_dataspace);
+
+
+int64_t esdm_dataspace_get_dims(esdm_dataspace_t * d);
+int64_t const* esdm_dataspace_get_size(esdm_dataspace_t * d);
+int64_t const* esdm_dataspace_get_offset(esdm_dataspace_t * d);
+esdm_type_t esdm_dataspace_get_type(esdm_dataspace_t * d);
+
+/**
+ * Returns the number of datapoints in the dataspace.
+ */
+uint64_t esdm_dataspace_element_count(esdm_dataspace_t *dataspace);
+
+/**
+ * Returns the number of bytes covered by the dataspace.
+ */
+int64_t esdm_dataspace_total_bytes(esdm_dataspace_t * d);
+
+/**
+ * Get the effective stride of a dataspace.
+ *
+ * If a stride has been set for the dataspace, that stride is copied to the `out_stride` array,
+ * otherwise the effective stride is calculated and returned in that same array.
+ *
+ * @param [in] space the dataspace to query
+ * @param [out] out_stride pointer to an array of size `space->dims` which will be filled with the components of the stride.
+ *
+ * As with `esdm_dataspace_set_stride()`, the stride is given in terms of fundamental datatype elements and needs to be multiplied with `esdm_sizeof(space->type)` to get the stride in bytes.
+ */
+void esdm_dataspace_getEffectiveStride(esdm_dataspace_t* space, int64_t* out_stride);
+
+/**
+ * Get the offset in bytes of the element at the given logical position.
+ * The resulting offset may be negative if a custom stride has been set that has negative component(s).
+ * Otherwise, a contiguous C order multidimensional array is assumed, producing only positive offsets.
+ *
+ * @param [in] space the dataspace to query
+ * @param [in] coords an array with the coordinates of the element's logical location
+ *
+ * @return an offset in bytes
+ */
+int64_t esdm_dataspace_elementOffset(esdm_dataspace_t* space, int64_t* coords);
+
 
 /**
  * Specify a non-standard serialization order for a dataspace.
@@ -501,6 +711,20 @@ esdm_status esdm_dataspace_copyDatalayout(esdm_dataspace_t* dataspace, esdm_data
 esdm_status esdm_dataspace_copy_data(esdm_dataspace_t* sourceSpace, void *sourceData, esdm_dataspace_t* destSpace, void *destData);
 
 /**
+ * Overwrite a buffer with a fill value.
+ *
+ * This functions sets all elements in the given `data` buffer to the value given by `*fillElement`.
+ * The amount and offsets of the `data` elements to set is controlled by the `dataspace` argument.
+ *
+ * @param [in] dataspace description of the area to overwrite
+ * @param [inout] data pointer to the first element to set
+ * @param [in] fillElement pointer to a single element which is used as a prototype.
+ *
+ * @return status
+ */
+esdm_status esdm_dataspace_fill(esdm_dataspace_t* dataspace, void* data, void* fillElement);
+
+/**
  * Destruct and free a dataspace object.
  *
  * @param [in] dataspace an existing dataspace object that is no longer needed
@@ -516,20 +740,13 @@ esdm_status esdm_dataspace_destroy(esdm_dataspace_t *dataspace);
  *
  * e.g., to store along with fragment
  */
+void esdm_dataspace_serialize(const esdm_dataspace_t *dataspace, smd_string_stream_t* stream);
 
-esdm_status esdm_dataspace_serialize(esdm_dataspace_t *dataspace, void **out);
+void esdm_dataspace_print(esdm_dataspace_t *dataspace);
 
-uint64_t esdm_dataspace_element_count(esdm_dataspace_t *dataspace);
-
-/**
- * Calculate the logical amount of data in a dataspace in bytes.
- *
- * @return the volume of the dataspace's hypercube times the size of its elements
- */
-uint64_t esdm_dataspace_size(esdm_dataspace_t *dataspace);
-
-
-// Fragment
+///////////////////////////////////////////////////////////////////////////////
+// Fragment ///////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////////
 
 /**
  * Reinstantiate fragment from serialization.
@@ -537,7 +754,29 @@ uint64_t esdm_dataspace_size(esdm_dataspace_t *dataspace);
 
 esdm_status esdm_fragment_deserialize(void *serialized_fragment, esdm_fragment_t **_out_fragment);
 
+/**
+ * Fetch data from disk if possible.
+ * Loads fragments that are not loaded, noops on those that are loaded and clean, and errors out on those that are dirty or deleted.
+ *
+ * XXX: This should probably be turned into an internal interface.
+ */
 esdm_status esdm_fragment_retrieve(esdm_fragment_t *fragment);
+
+/**
+ * Like esdm_fragment_retrieve(), but more permissive:
+ * Does not throw an ESDM_DIRTY_DATA_ERROR,
+ * simply ensures that the fragments data is available in memory.
+ */
+esdm_status esdm_fragment_load(esdm_fragment_t *fragment);
+
+/**
+ * Ensure that the fragment has no data in memory.
+ *
+ * If the fragment is dirty, it is committed, turning it into a persistent fragment.
+ * If the fragment is persistent, its buffer is released, turning it into an unloaded fragment.
+ * If the fragment is deleted or not loaded, nothing is done successfully.
+ */
+esdm_status esdm_fragment_unload(esdm_fragment_t* fragment);
 
 /**
  * Make fragment persistent to storage.
@@ -576,59 +815,10 @@ esdm_status esdm_fragment_destroy(esdm_fragment_t *fragment);
  * @enduml
  *
  */
-
-
 void esdm_fragment_print(esdm_fragment_t *fragment);
 
-void esdm_dataspace_print(esdm_dataspace_t *dataspace);
-
-//size_t esdm_sizeof(esdm_type_t type);
-#define esdm_sizeof(type) (type->size)
-
-/**
-  * Initialize backend by invoking mkfs callback for matching target
-  *
-  * @param [in] enforce_format  force reformatting existing system (may result in data loss)
-  * @param [in] target  target descriptor
-  *
-  * @return status
-  */
-
-enum esdm_format_flags{
-  ESDM_FORMAT_DELETE = 1,
-  ESDM_FORMAT_CREATE = 2,
-  ESDM_FORMAT_IGNORE_ERRORS = 4,
-  ESDM_FORMAT_PURGE_RECREATE = 7
-};
-
-esdm_status esdm_mkfs(int format_flags, data_accessibility_t target);
-
-//// LOGGING
-
-/*
-Loglevel for stdout.
-*/
-void esdm_loglevel(esdm_loglevel_e loglevel);
-void esdm_log_on_exit(int on);
-/*
- Keeps a log to record last messages for crashes
- Must be called from a single master thread
- NOTE: logging into the shared buffer costs performance.
-*/
-void esdm_loglevel_buffer(esdm_loglevel_e loglevel);
-
-////////////////////////////////////////////////////////////////////////////////////////////////////
-// Statistics //////////////////////////////////////////////////////////////////////////////////////
-////////////////////////////////////////////////////////////////////////////////////////////////////
-
-/**
- * Get some statistics about the reads that have been performed.
- */
-esdm_statistics_t esdm_read_stats();
-
-/**
- * Get some statistics about the writes that have been performed.
- */
-esdm_statistics_t esdm_write_stats();
+#ifdef __cplusplus
+}
+#endif
 
 #endif

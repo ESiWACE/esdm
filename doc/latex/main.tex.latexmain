@@ -1,0 +1,11 @@
+" Compile rules
+" with vim-latex-suite plugin use the shortcut \ll to compile
+let g:Tex_CompileRule_pdf='pdflatex -interaction=nonstopmode $*'
+
+" with vim-dispatch plugin use the shortcut m-Enter to compile 
+" set makeprg=make\ all\ -C\ ..
+
+let b:tex_flavor = 'pdflatex'
+:compiler tex
+:set makeprg=make\ all\ -C\ ..
+:set errorformat=%f:%l:\ %m

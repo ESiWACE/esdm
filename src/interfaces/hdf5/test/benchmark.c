@@ -19,7 +19,7 @@
  * @brief Performance test/benchmark when writing a ND dataset using the HDF5 Interface to ESDM
  */
 
- 
+
 #include <esdm.h>
 #include <hdf5.h>
 #include <mpi.h>
@@ -55,7 +55,7 @@ void esdm_mpi_distribute_config_file(char *config_filename) {
   } else {
     int len;
     MPI_Bcast(&len, 1, MPI_INT, 0, MPI_COMM_WORLD);
-    config = (char *)malloc(len);
+    config = ea_checked_malloc(len);
     MPI_Bcast(config, len, MPI_CHAR, 0, MPI_COMM_WORLD);
   }
   esdm_load_config_str(config);
@@ -87,7 +87,7 @@ int main(int argc, char *argv[]) {
 
   int64_t _size;
   char *config_file;
-  char *default_args[] = {argv[0], "1024", "_esdm.conf", "B", "10"};
+  char *default_args[] = {argv[0], "1024", "esdm.conf", "B", "10"};
   if (argc == 1) {
     argc = 5;
     argv = default_args;
@@ -149,7 +149,7 @@ int main(int argc, char *argv[]) {
   }
 
   // prepare data
-  uint64_t *buf_w = (uint64_t *)malloc(volume);
+  uint64_t *buf_w = ea_checked_malloc(volume);
   eassert(buf_w != NULL);
   long x, y;
   for (y = offset[1]; y < dim[1]; y++) {
@@ -239,7 +239,7 @@ int main(int argc, char *argv[]) {
     // Read the data to the dataset
     for (int t = 0; t < timesteps; t++) {
       offset[0] = t;
-      uint64_t *buf_r = (uint64_t *)malloc(volume);
+      uint64_t *buf_r = ea_checked_malloc(volume);
       eassert(buf_r != NULL);
 
       esdm_dataspace_t *subspace;

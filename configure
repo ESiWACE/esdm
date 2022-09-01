@@ -6,30 +6,40 @@ SRCDIR=$(dirname $(readlink -f $0))/
 CURPATH="$PWD"
 
 function help(){
-	echo ""
-	echo "ESDM uses the CMake (http://www.cmake.org) buildsystem instead of configure."
-	echo "CMake uses different options than configure, but you can use this script to "
-	echo "specify them in the traditional way and get the equivalent cmake command."
-	echo "Use the following options to change default paths."
-	echo "--prefix=<dir>           : installation prefix"
-	echo
-	echo "Optional:"
-	echo "--build-dir=<dir>        : directory in which to build"
-	echo "--debug                  : build with debug flags"
-	echo "--verbose                : output the command but do not execute it"
-	echo "--reconfigure            : run configure again with the parameters used the last time"
-	echo "--with-cc=<file>         : path to the C compiler"
-	echo "--with-cxx=<file>        : path to the C++ compiler"
-	echo "--with-mpicc=<file>      : path to the MPI C compiler"
-	echo "--with-mpicxx=<file>     : path to the MPI C++ compiler"
+  echo ""
+  echo "ESDM uses the CMake (http://www.cmake.org) buildsystem instead of configure."
+  echo "CMake uses different options than configure, but you can use this script to "
+  echo "specify them in the traditional way and get the equivalent cmake command."
+  echo "Use the following options to change default paths."
+  echo
+  echo "Options:"
+  echo "--prefix=<dir>           : installation prefix"
+  echo "--build-dir=<dir>        : directory in which to build"
+  echo
+  echo "--help                   : print this usage information and exit"
+  echo "--version                : print cmake version and exit"
+  echo "--reconfigure            : run configure again with the parameters used the last time"
+  echo
+  echo "--debug                  : build with debug flags"
+  echo "--verbose                : output the command but do not execute it"
+  echo
+  echo "--with-cc=<file>         : path to the C compiler"
+  echo "--with-cxx=<file>        : path to the C++ compiler"
+  echo "--with-mpicc=<file>      : path to the MPI C compiler"
+  echo "--with-mpicxx=<file>     : path to the MPI C++ compiler"
+  echo
+  echo "--with-glib=<path>       : path prefix to the glib library"
+  echo "--with-jansson=<path>    : path prefix to the jansson library"
   echo "--with-ime-include=<dir> : path to ime_native.h"
   echo "--with-ime-lib=<dir>     : path to libim_client.so"
   echo "--with-kdsa-include=<dir>: path to kdsa.h"
   echo "--with-kdsa-lib=<dir>    : path to libkdsa.so"
+  echo "--with-scil=<dir>        : path prefix to scil library"
+  echo
   echo "--enable-kdsa-dummy      : compile the KDSA dummy backend"
-	echo "--with-boost=<file>      : path to boost library used for WOS"
-	echo "--enable-wos=<file>      : path to WOS library"
-	echo
+  echo "--enable-s3              : enable S3 backend using libs3"
+  echo "--enable-wos=<file>      : path to WOS library"
+  echo "--enable-netcdf4         : compile the NetCDF interface"
 }
 
 # Some defaults
@@ -38,48 +48,54 @@ VERBOSE=""
 buildDIR="build"
 
 function reconfigure(){
-	if [[ ! -e "configure.log" ]] ; then
-		echo "Error, didn't run configure before!" ;
-		exit 1
-	fi
-	$(cat configure.log)
-	exit $?
+  if [[ ! -e "configure.log" ]] ; then
+    echo "Error, didn't run configure before!" ;
+    exit 1
+  fi
+  $(cat configure.log)
+  exit $?
 }
 
-set -- `getopt -u -l "help,version,debug,reconfigure,prefix:,with-cc:,with-cxx:,enable-hdf5,enable-netcdf4,with-mpicc:,with-mpicxx:,verbose,build-dir:,enable-wos:,with-ime-lib:,with-ime-include:,with-kdsa-lib:,with-kdsa-include:,enable-kdsa-dummy" -o "h" -- "$@"`
+set -- `getopt -u -l "prefix:,build-dir:,help,version,reconfigure,debug,verbose,with-cc:,with-cxx:,with-mpicc:,with-mpicxx:,with-boost:,with-glib:,with-jansson:,with-ime-include:,with-ime-lib:,with-kdsa-include:,with-kdsa-lib:,with-scil:,enable-kdsa-dummy,enable-s3,enable-wos:,enable-netcdf4" -o "h" -- "$@"`
 test $# -lt 1  && exit 1
 while test $# -gt 0
 do
     echo $1 $2
 
-	case "$1" in
-		--help) help; exit;;
-		--reconfigure) reconfigure;;
-		--version) cmake --version; exit;;
-		--prefix) prefix="$2"; shift;;
-		--debug) debug="YES"; ;;
+  case "$1" in
+    --prefix) prefix="$2"; shift;;
+    --build-dir) buildDIR="$2"; shift;;
+
+    --help) help; exit;;
+    --version) cmake --version; exit;;
+    --reconfigure) reconfigure;;
+
+    --debug) debug="YES"; ;;
+    --verbose) VERBOSE="YES"; ;;
+
+    --with-cc) ccbin="$2"; shift;;
+    --with-cxx) cxxbin="$2"; shift;;
+    --with-mpicc) mpicc="$2"; shift;;
+    --with-mpicxx) mpicxx="$2"; shift;;
+
+    --with-boost) boost="$2"; shift;;
+    --with-glib) glib="$2"; shift;;
+    --with-jansson) jansson="$2"; shift;;
     --with-ime-include) ime_include="$2"; shift;;
     --with-ime-lib) ime_lib="$2"; shift;;
     --with-kdsa-include) kdsa_include="$2"; shift;;
     --with-kdsa-lib) kdsa_lib="$2"; shift;;
+    --with-scil) scil_lib="$2"; shift;;
+
     --enable-kdsa-dummy) kdsa_dummy="YES"; shift;;
-		--with-cc) ccbin="$2"; shift;;
-		--with-cxx) cxxbin="$2"; shift;;
-		--with-mpicc) mpicc="$2"; shift;;
-		--with-mpicxx) mpicxx="$2"; shift;;
-		--with-boost) boost="$2"; shift;;
-		--enable-hdf5) hdf5="YES"; echo "$2"; ;;
-		--enable-netcdf4) netcdf4="YES"; echo "$2"; ;;
-		--enable-lustre) lustre="$2"; shift;;
-		--enable-clovis) clovis="$2"; shift;;
-		--enable-wos) wos="$2"; shift;;
-		--enable-mongodb) mongodb="$2"; shift;;
-		--build-dir) buildDIR="$2"; shift;;
-		--verbose) VERBOSE="YES"; ;;
-		--) shift;;
-		*) echo "Unknown option $1"; exit 1;;
-	esac
-	shift
+    --enable-s3) s3="YES"; shift;;
+    --enable-wos) wos="$2"; shift;;
+    --enable-netcdf4) netcdf4="YES"; echo "$2"; ;;
+
+    --) shift;;
+    *) echo "Unknown option $1"; exit 1;;
+  esac
+  shift
 done
 
 echo $PARAMETERS > configure.log
@@ -87,73 +103,83 @@ echo $PARAMETERS > configure.log
 TARGET_DIR="/usr/local"
 
 if test -n "$debug"; then
-	CMAKEFLAGS="$CMAKEFLAGS -DCMAKE_BUILD_TYPE:STRING=Debug"
+  CMAKEFLAGS="$CMAKEFLAGS -DCMAKE_BUILD_TYPE:STRING=Debug"
 else
-	CMAKEFLAGS="$CMAKEFLAGS -DCMAKE_BUILD_TYPE:STRING=Release"
+  CMAKEFLAGS="$CMAKEFLAGS -DCMAKE_BUILD_TYPE:STRING=Release"
 fi
 
 if test -n "$prefix"; then
-	CMAKEFLAGS="$CMAKEFLAGS -DCMAKE_INSTALL_PREFIX:PATH=$prefix"
-	TARGET_DIR="$prefix"
+  CMAKEFLAGS="$CMAKEFLAGS -DCMAKE_INSTALL_PREFIX:PATH=$prefix"
+  TARGET_DIR="$prefix"
 fi
 if test -n "$ccbin"; then
-	CMAKEFLAGS="$CMAKEFLAGS -DCMAKE_C_COMPILER:FILEPATH=$ccbin"
+  CMAKEFLAGS="$CMAKEFLAGS -DCMAKE_C_COMPILER:FILEPATH=$ccbin"
 fi
 if test -n "$cxxbin"; then
-	CMAKEFLAGS="$CMAKEFLAGS -DCMAKE_CXX_COMPILER:FILEPATH=$cxxbin"
+  CMAKEFLAGS="$CMAKEFLAGS -DCMAKE_CXX_COMPILER:FILEPATH=$cxxbin"
 fi
 
-
-if test -n "$hdf5"; then
-	#CMAKEFLAGS="$CMAKEFLAGS -DHDF5_HDF5_LIBRARY_RELEASE:PATH=$hdf5/lib/libhdf5.so -DHDF5_C_INCLUDE_DIR:PATH=$hdf5/include -DENABLE_HDF5=ON"
-	CMAKEFLAGS="$CMAKEFLAGS -DINTERFACE_HDF5=ON"
-fi
 if test -n "$netcdf4"; then
-	CMAKEFLAGS="$CMAKEFLAGS -DINTERFACE_NETCDF4=ON"
+  CMAKEFLAGS="$CMAKEFLAGS -DINTERFACE_NETCDF4=ON"
 fi
-
+if test -n "$s3"; then
+  CMAKEFLAGS="$CMAKEFLAGS -DBACKEND_S3=ON"
+fi
 if test -n "$ime_lib"; then
-	CMAKEFLAGS="$CMAKEFLAGS -DBACKEND_IME=ON -DIME_LIB_DIR:FILEPATH=$ime_lib"
+  CMAKEFLAGS="$CMAKEFLAGS -DBACKEND_IME=ON -DIME_LIB_DIR:FILEPATH=$ime_lib"
 fi
 if test -n "$ime_include"; then
-	CMAKEFLAGS="$CMAKEFLAGS -DBACKEND_IME=ON -DIME_INCLUDE_DIR:FILEPATH=$ime_include"
+  CMAKEFLAGS="$CMAKEFLAGS -DBACKEND_IME=ON -DIME_INCLUDE_DIR:FILEPATH=$ime_include"
 fi
 if test -n "$kdsa_lib"; then
-	CMAKEFLAGS="$CMAKEFLAGS -DBACKEND_KDSA=ON -DKDSA_LIB_DIR:FILEPATH=$kdsa_lib"
+  CMAKEFLAGS="$CMAKEFLAGS -DBACKEND_KDSA=ON -DKDSA_LIB_DIR:FILEPATH=$kdsa_lib"
 fi
 if test -n "$kdsa_include"; then
-	CMAKEFLAGS="$CMAKEFLAGS -DBACKEND_KDSA=ON -DKDSA_INCLUDE_DIR:FILEPATH=$kdsa_include"
+  CMAKEFLAGS="$CMAKEFLAGS -DBACKEND_KDSA=ON -DKDSA_INCLUDE_DIR:FILEPATH=$kdsa_include"
+fi
+if test -n "$scil_lib"; then
+  export PKG_CONFIG_PATH="$scil_lib/lib/pkgconfig/:$PKG_CONFIG_PATH"
 fi
 if test -n "$kdsa_dummy"; then
   CMAKEFLAGS="$CMAKEFLAGS -DBACKEND_KDSA_DUMMY=ON"
 fi
 if test -n "$mpicc"; then
-	CMAKEFLAGS="$CMAKEFLAGS -DMPI_C_COMPILER:FILEPATH=$mpicc"
+  CMAKEFLAGS="$CMAKEFLAGS -DMPI_C_COMPILER:FILEPATH=$mpicc"
 fi
 if test -n "$mpicxx"; then
-	CMAKEFLAGS="$CMAKEFLAGS -DMPI_CXX_COMPILER:FILEPATH=$mpicxx"
+  CMAKEFLAGS="$CMAKEFLAGS -DMPI_CXX_COMPILER:FILEPATH=$mpicxx"
 fi
 if test -n "$wos"; then
-	CMAKEFLAGS="$CMAKEFLAGS -DWOS_wos_LIBRARY_RELEASE:PATH=$wos/lib/libwos_cpp.so -DWOS_C_INCLUDE_DIR:PATH=$wos/include"
+  CMAKEFLAGS="$CMAKEFLAGS -DWOS_wos_LIBRARY_RELEASE:PATH=$wos/lib/libwos_cpp.so -DWOS_C_INCLUDE_DIR:PATH=$wos/include"
 fi
 if test -n "$boost"; then
-	CMAKEFLAGS="$CMAKEFLAGS -DBOOST_boost_LIBRARY_RELEASE:PATH=$boost/lib/libboost_system.so -DBOOST_C_INCLUDE_DIR:PATH=$boost/include"
+  CMAKEFLAGS="$CMAKEFLAGS -DBOOST_boost_LIBRARY_RELEASE:PATH=$boost/lib/libboost_system.so -DBOOST_C_INCLUDE_DIR:PATH=$boost/include"
+fi
+if test -n "$glib"; then
+  export PKG_CONFIG_PATH="$glib/lib/pkgconfig/:$PKG_CONFIG_PATH"
+fi
+if test -n "$jansson"; then
+  export PKG_CONFIG_PATH="$jansson/lib/pkgconfig/:$PKG_CONFIG_PATH"
 fi
 
-
-COMMAND="mkdir -p $buildDIR && cd $buildDIR && echo $PARAMETERS > configure.log ; rm CMakeCache.txt 2>/dev/null; cmake $CMAKEFLAGS $SRCDIR"
+echo
+echo PKG_CONFIG_PATH='"'"$PKG_CONFIG_PATH"'"'
+echo
+COMMAND="mkdir -p $buildDIR && echo $PARAMETERS > $buildDIR/configure.log && cd $buildDIR && echo $PARAMETERS > configure.log ; rm CMakeCache.txt 2>/dev/null; cmake $CMAKEFLAGS $SRCDIR"
 
 echo $COMMAND
 
 if [[ "$VERBOSE" == "YES" ]] ; then
-	echo "Your current configure options translate to:"
-	echo "$COMMAND"
-	exit 0
+  echo "Your current configure options translate to:"
+  echo "$COMMAND"
+  exit 0
 else
-	eval "$COMMAND"
-	ERROR="$?"
-	if [[ "$ERROR" != 0 ]] ; then
-		echo "An error occurred during the configuration, aborting!"
-		exit 1
-	fi
+  set -x
+  eval "$COMMAND"
+  set +x
+  ERROR="$?"
+  if [[ "$ERROR" != 0 ]] ; then
+    echo "An error occurred during the configuration, aborting!"
+    exit 1
+  fi
 fi

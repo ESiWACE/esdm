@@ -1,0 +1,66 @@
+\section{Grid deduplication}
+\subsection{Requirements}
+
+\begin{itemize}
+  \item The user must be allowed to create throw-away grids for reading
+  \item It must be avoided that there are several fragments with the exact same shape
+  \item It must be avoided that there are several grids with the exact same axis and subgrid structure
+  \item[$\rightarrow$] deduplication must happen on two distinct levels: the fragment level and the grid level
+  \item It is not possible to reference count grids or fragments, as these objects contain a reference to their owning dataset, and thus must not survive its destruction
+    \begin{itemize}
+      \item[$\rightarrow$] deduplication must rely on proxy objects that reference the already existing objects
+    \end{itemize}
+  \item User code can hold pointers to subgrids
+    \begin{itemize}
+      \item[$\rightarrow$] grids cannot be replaced with proxy objects, they must be turned into proxy objects
+      \item[$\rightarrow$] grids that are turned into proxy objects must retain their subgrid structure to ensure proper destruction
+    \end{itemize}
+  \item A fragment cannot be matched with a subgrid, and a subgrid cannot be matched with another subgrid that differs in one of the axes or subgrids
+    \begin{itemize}
+      \item[$\rightarrow$] deduplication cannot happen while the grid is still in fixed axes state
+      \item[$\rightarrow$] \lstinline|esdm_read_grid()| and \lstinline|esdm_write_grid()| should be defined to put a grid into fixed structure state, allowing deduplication on their first call
+    \end{itemize}
+\end{itemize}
+
+
+
+\subsection{Implementation}
+\begin{itemize}
+  \item Fragments are managed in a centralized container (hashtable keyed by their extends), and referenced by the grids.
+    \begin{itemize}
+      \item A count of referencing grids can be added if necessary.
+        This is not a general ref count, the dataset still owns the fragments and destructs them in its destructor.
+        The grid count would allow the dataset to delete a fragment when its containing grids get deleted.
+      \item The fragment references in the grids remain plain pointers, but the grids loose their ownership over the fragments.
+      \item The MPI code that handles grids must be expanded to also communicate fragment information explicitly.
+      \item As a side effect, this also allows the dataset to unload any fragments to prevent run-away memory consumption.
+    \end{itemize}
+  \item Grids contain a delegate pointer.
+    \begin{itemize}
+      \item All grid methods must first resolve any delegate chain.
+      \item The delegate pointer is set when the grid is first touched with an I/O or MPI call and detected to be structurally identical to an existing grid.
+      \item When the delegate pointer is set, the delegate pointers of all subgrids are also set.
+      \item There are two possible implementations for managing grid proxy objects:
+        \begin{itemize}
+          \item The proxy grid's structure data remains valid (axes and cell matrix), the proxy's destructor recursively destructs its subgrid proxies.
+          \item All existing grids are managed via a flat list of grids within the dataset, and grids that become proxies get their axis and matrix data deleted immediately.
+        \end{itemize}
+    \end{itemize}
+\end{itemize}
+
+
+
+\subsection{Roadmap for Implementation}
+
+\begin{enumerate}
+ \item Create a hash function that works on hypercubes and offset/size arrays.
+ \item Centralize the storage of fragments in a hash table.
+    This deduplicates fragments, and takes fragment ownership away from grids.
+    This will break the MPI code.
+ \item Fix the MPI interface by communicating fragment metadata separately from grid metadata.
+ \item Centralize the storage of grids in the dataset.
+    The dataset should have separate lists for complete top-level grids, incomplete top-level grids, and subgrids.
+ \item Implement delegates for grids.
+ \item Implement the grid matching machinery to create the delegates.
+\end{enumerate}
+ 

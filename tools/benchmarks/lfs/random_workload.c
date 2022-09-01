@@ -70,7 +70,7 @@ int main(int argc, char *argv[]) {
   argv[1], file_size, iterations, block_size);
   printf("---------------------\n");
   size_t seq_io = 800 * 1024 * 1024;
-  fill_file = (char *)malloc(seq_io);
+  fill_file = ea_checked_malloc(seq_io);
   memset(fill_file, 4, seq_io);
   for (long long iii = 0; iii < file_size; iii += seq_io) {
     //myrand = (long long)(rand() % 8192) * 1048576 * 2;
@@ -91,7 +91,7 @@ int main(int argc, char *argv[]) {
   srand(666);
   char *test_write;
   free(fill_file);
-  test_write = (char *)malloc(block_size);
+  test_write = ea_checked_malloc(block_size);
   memset(test_write, 3, block_size);
   rett = lfs_write(myfd, test_write, block_size, file_size);
   if (rett <= 0) {
@@ -136,9 +136,9 @@ int main(int argc, char *argv[]) {
   printf("---- performing Random Read ----\n");
   //system("free -m | sed \"s/  */ /g\" | cut -d \" \" -f 7|tail -n 3");
   //      size_t read_bytes;
-  //test_read = (char *)malloc(8192 * 102400);
+  //test_read = ea_checked_malloc(8192 * 102400);
   long long blocksize = 2048 * 102400;
-  test_read = (char *)malloc(blocksize);
+  test_read = ea_checked_malloc(blocksize);
 
   //      for(long long pos = 0; pos < file_size; pos += blocksize){
   for (int i = 0; i < 50; i++) {
@@ -186,9 +186,9 @@ int main(int argc, char *argv[]) {
   printf("---- performing Sequential Read (Reading entire file) ----\n");
   //system("free -m | sed \"s/  */ /g\" | cut -d \" \" -f 7|tail -n 3");
   //      size_t read_bytes;
-  //test_read = (char *)malloc(8192 * 102400);
+  //test_read = ea_checked_malloc(8192 * 102400);
   blocksize = 8192 * 102400;
-  test_read = (char *)malloc(blocksize);
+  test_read = ea_checked_malloc(blocksize);
 
   for (long long pos = 0; pos < file_size; pos += blocksize) {
     //for(int i = 0; i < iterations; i++){

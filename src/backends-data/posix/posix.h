@@ -23,8 +23,10 @@
 // Internal functions used by this backend.
 typedef struct {
   esdm_config_backend_t *config;
-  const char *target;
   esdm_perf_model_lat_thp_t perf_model;
+  
+  char * open_fragment; // NULL if none
+  int openfd;
 } posix_backend_data_t;
 
 // static int mkfs(esdm_backend_t* backend, int enforce_format);

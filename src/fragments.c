@@ -4,55 +4,109 @@
 #include <stdlib.h>
 #include <test/util/test_util.h>
 
-static double gFragmentAddTime = 0.0, gMakeSetTime = 0.0;
-static int64_t gFragmentAddCount = 0, gMakeSetCount = 0;
+static esdm_fragmentsTimes_t gStats;
+esdm_fragmentsTimes_t esdmI_performance_fragments() { return gStats; }
+
+static guint esdmI_fragments_hashKey(gconstpointer keyArg) {
+  const esdmI_hypercube_t* key = keyArg;
+  return esdmI_hypercube_hash(key);
+}
+
+static gboolean esdmI_fragments_equalKeys(gconstpointer keyArg1, gconstpointer keyArg2) {
+  const esdmI_hypercube_t* key1 = keyArg1;
+  const esdmI_hypercube_t* key2 = keyArg2;
+
+  return esdmI_hypercube_equal(key1, key2) ? TRUE : FALSE;
+}
+
+static void esdmI_fragments_deallocateKey(gpointer keyArg) {
+  esdmI_hypercube_t* key = keyArg;
+  esdmI_hypercube_destroy(key);
+}
+
+static void esdmI_fragments_deallocateValue(gpointer valueArg) {
+  esdm_fragment_t* fragment = valueArg;
+  esdm_status result = esdm_fragment_destroy(fragment);
+  eassert(result == ESDM_SUCCESS);
+}
 
 void esdmI_fragments_construct(esdm_fragments_t* me) {
-  *me = (esdm_fragments_t){0};
+  me->table = g_hash_table_new_full(esdmI_fragments_hashKey, esdmI_fragments_equalKeys, esdmI_fragments_deallocateKey, esdmI_fragments_deallocateValue);
 }
 
-void esdmI_fragments_add(esdm_fragments_t* me, esdm_fragment_t* fragment) {
+esdm_status esdmI_fragments_add(esdm_fragments_t* me, esdm_fragment_t* fragment) {
+  eassert(me);
+  eassert(me->table);
+  eassert(fragment);
+
   timer myTimer;
-  start_timer(&myTimer);
+  ea_start_timer(&myTimer);
 
-  if(me->count == me->buff_size) {
-    me->buff_size = (me->buff_size ? 2*me->buff_size : 8);
-    eassert(me->buff_size > me->count);
-    me->frag = realloc(me->frag, me->buff_size * sizeof(*me->frag));
+  esdmI_hypercube_t* key;
+  esdm_status result = esdmI_dataspace_getExtends(fragment->dataspace, &key);
+  eassert(result == ESDM_SUCCESS);
+  if(g_hash_table_contains(me->table, key)) {
+    result = ESDM_INVALID_STATE_ERROR;
+  } else {
+    g_hash_table_insert(me->table, key, fragment);
   }
-  me->frag[me->count++] = fragment;
 
-  esdmI_hypercube_t* extends;
-  esdmI_dataspace_getExtends(fragment->dataspace, &extends);
-  if(!me->neighbourManager) me->neighbourManager = esdmI_hypercubeNeighbourManager_make(esdmI_hypercube_dimensions(extends));
-  esdmI_hypercubeNeighbourManager_pushBack(me->neighbourManager, extends);
+  gStats.fragmentAddCalls++;
+  gStats.fragmentAdding += ea_stop_timer(myTimer);
 
-  gFragmentAddTime += stop_timer(myTimer);
-  gFragmentAddCount++;
+  return result;
 }
 
-esdm_fragment_t** esdmI_fragments_list(esdm_fragments_t* me, int64_t* out_fragmentCount) {
-  eassert(out_fragmentCount && "How can you know how many fragments there are, if you don't let me tell you?");
+esdm_fragment_t* esdmI_fragments_lookupForShape(esdm_fragments_t* me, esdmI_hypercube_t* shape) {
+  timer myTimer;
+  ea_start_timer(&myTimer);
 
-  *out_fragmentCount = me->count;
-  return me->frag;
+  esdm_fragment_t* result = g_hash_table_lookup(me->table, shape);
+
+  gStats.fragmentLookupCalls++;
+  gStats.fragmentLookup += ea_stop_timer(myTimer);
+
+  return result;
 }
 
-enum {
-  NOT_VISITED = 0,  //the fragment has not been considered yet
-  IN_FRONT, //the fragment has been scheduled for consideration
-  SELECTED, //the fragment has been considered and was selected to be read
-  IGNORED //the fragment has been considered and was deemed useless
-};
+typedef struct deleteFragmentsFromBackendState {
+  esdm_status result;
+} deleteFragmentsFromBackendState;
 
-static int compareSimilarities(const void* a, const void* b, void* aux) {
-  const int64_t* leftIndex = a;
-  const int64_t* rightIndex = b;
-  double* similarities = aux;
+static gboolean esdmI_fragments_deleteFragmentsFromBackend(gpointer keyArg, gpointer valueArg, gpointer stateArg) {
+  esdmI_hypercube_t* key = keyArg;
+  esdm_fragment_t* value = valueArg;
+  deleteFragmentsFromBackendState* state = stateArg;
 
-  double diff = similarities[*leftIndex] - similarities[*rightIndex];
-  return diff < 0 ? -1 :
-         diff > 0 ? 1 : 0;
+  esdm_status result = esdmI_backend_fragment_delete(value->backend, value);
+  if(state->result == ESDM_SUCCESS) state->result = result;
+  return result == ESDM_SUCCESS ? TRUE : FALSE;
+}
+
+esdm_status esdmI_fragments_deleteAll(esdm_fragments_t* me) {
+  deleteFragmentsFromBackendState state = { .result = ESDM_SUCCESS };
+  g_hash_table_foreach_remove(me->table, esdmI_fragments_deleteFragmentsFromBackend, &state);
+  return state.result;
+}
+
+typedef struct selectFragmentsInRegionState {
+  esdmI_hypercube_t* region;
+  esdm_fragment_t** fragments;
+  int64_t fragmentCount, bufferSize;
+} selectFragmentsInRegionState;
+
+static void esdmI_fragments_selectFragmentsInRegion(gpointer keyArg, gpointer valueArg, gpointer stateArg) {
+  esdmI_hypercube_t* key = keyArg;
+  esdm_fragment_t* value = valueArg;
+  selectFragmentsInRegionState* state = stateArg;
+
+  if(esdmI_hypercube_overlap(key, state->region)) {
+    if(state->fragmentCount == state->bufferSize) {
+      state->fragments = ea_checked_realloc(state->fragments, (state->bufferSize *= 2)*sizeof*state->fragments);
+    }
+    eassert(state->fragmentCount < state->bufferSize);
+    state->fragments[state->fragmentCount++] = value;
+  }
 }
 
 esdm_fragment_t** esdmI_fragments_makeSetCoveringRegion(esdm_fragments_t* me, esdmI_hypercube_t* bounds, int64_t* out_fragmentCount) {
@@ -61,142 +115,71 @@ esdm_fragment_t** esdmI_fragments_makeSetCoveringRegion(esdm_fragments_t* me, es
   eassert(out_fragmentCount);
 
   timer myTimer;
-  start_timer(&myTimer);
+  ea_start_timer(&myTimer);
 
-  *out_fragmentCount = 0;
-  esdm_fragment_t** fragmentSet = NULL;
-  if(me->count) { //We need at least one fragment to know the dimension count, which we need to construct the neighbour manager.
-    //Compute the neighbourhood info and check which fragments can be ignored because they do not provide any useful data.
-    esdmI_hypercubeList_t* extendsList = esdmI_hypercubeNeighbourManager_list(me->neighbourManager);
-    uint8_t* visited = malloc(me->count*sizeof(*visited));
-    for(int64_t i = 0; i < me->count; i++) {
-      visited[i] = (esdmI_hypercube_doesIntersect(bounds, extendsList->cubes[i]) ? NOT_VISITED : IGNORED);
-    }
+  //try to find an exact match
+  esdm_fragment_t* singleFragment = esdmI_fragments_lookupForShape(me, bounds);
+  esdm_fragment_t** result = NULL;
+  if(singleFragment) {
+    *out_fragmentCount = 1;
+    result = ea_memdup(&singleFragment, sizeof(singleFragment));
+  } else {
+    //search the hash table for matching fragments
+    selectFragmentsInRegionState state = {
+      .region = bounds,
+      .fragmentCount = 0,
+      .bufferSize = 8,
+      .fragments = malloc(8*sizeof*state.fragments)
+    };
+    g_hash_table_foreach(me->table, esdmI_fragments_selectFragmentsInRegion, &state);
 
-    //Compute the similarities of the fragments with the bounds and cache their extends.
-    double* similarities = malloc(me->count*sizeof(*similarities));
-    double bestSimilarity = -1;
-    int64_t bestOverlap = -1, bestIndex = -1;
-    for(int64_t i = 0; i < me->count; i++) {
-      if(visited[i] == IGNORED) continue;
-      similarities[i] = esdmI_hypercube_shapeSimilarity(bounds, extendsList->cubes[i]);
-      if(similarities[i] > bestSimilarity) {
-        bestSimilarity = similarities[i];
-        bestOverlap = esdmI_hypercube_overlap(bounds, extendsList->cubes[i]);
-        bestIndex = i;
-      } else if(similarities[i] == bestSimilarity) {
-        //In case of a tie in similarity, we prefer the cube with the largest overlap.
-        int64_t overlap = esdmI_hypercube_overlap(bounds, extendsList->cubes[i]);
-        if(overlap > bestOverlap) {
-          bestOverlap = esdmI_hypercube_overlap(bounds, extendsList->cubes[i]);
-          bestIndex = i;
-        }
-      }
-    }
+    //TODO: kick out any fragments that happen to be redundant
 
-    if(bestIndex >= 0) { //We need at least one fragment where we can start the neighbour search.
-      //Walk the neighbours of the selected fragment.
-      //The way this is implemented, it performs a depth-first search, which is aborted immediately when the entire region has been covered.
-      esdmI_hypercubeSet_t uncovered;
-      esdmI_hypercubeSet_construct(&uncovered);
-      esdmI_hypercubeSet_add(&uncovered, bounds);
-      visited[bestIndex] = IN_FRONT;
-      int64_t* front = malloc(me->count*sizeof(*front));  //the indices of the nodes to visit
-      int64_t frontSize = 0, selectedFragmentCount = 0;
-      front[frontSize++] = bestIndex;
-      while(true) {
-        bool done;
-        for(; frontSize; ) {
-          int64_t curIndex = front[--frontSize];
-          esdmI_hypercube_t* curCube = extendsList->cubes[curIndex];
-          if(esdmI_hypercubeList_doesIntersect(esdmI_hypercubeSet_list(&uncovered), curCube)) {
-            visited[curIndex] = SELECTED;
-            selectedFragmentCount++;
-            esdmI_hypercubeSet_subtract(&uncovered, curCube);
-            if((done = esdmI_hypercubeSet_isEmpty(&uncovered))) break; //Fast abort of search when we have all data we need.
-            int64_t neighbourCount;
-            int64_t* neighbours = esdmI_hypercubeNeighbourManager_getNeighbours(me->neighbourManager, curIndex, &neighbourCount);
-            for(int64_t i = 0; i < neighbourCount; i++) {
-              int64_t curNeighbour = neighbours[i];
-              if(!visited[curNeighbour]) {
-                visited[curNeighbour] = IN_FRONT;
-                front[frontSize++] = curNeighbour;
-                qsort_r(front, frontSize, sizeof(*front), compareSimilarities, similarities);
-              }
-            }
-          } else {
-            visited[curIndex] = IGNORED;
-          }
-        }
-        if(done || esdmI_hypercubeSet_isEmpty(&uncovered)) break;
-
-        //The available set of neighbours did not fully cover the bounds.
-        //Search for a (non-neighbour) cube that still contributes to the uncovered region and restart the neighbour search.
-        esdmI_hypercubeList_t* uncoveredList = esdmI_hypercubeSet_list(&uncovered);
-        for(int64_t i = 0; i < me->count; i++) {
-          if(visited[i]) continue;
-          if(!esdmI_hypercubeList_doesIntersect(uncoveredList, extendsList->cubes[i])) continue;
-          visited[i] = IN_FRONT;
-          front[frontSize++] = i;
-          break;
-        }
-        if(!frontSize) break; //The uncovered region does not intersect with any fragments that we did not consider yet -> caller will need to handle incomplete read.
-      }
-
-      //Filter the list of fragments by the selected subset
-      fragmentSet = malloc(selectedFragmentCount*sizeof(*fragmentSet));
-      for(int64_t i = 0; i < me->count; i++) {
-        if(visited[i] == SELECTED) fragmentSet[(*out_fragmentCount)++] = me->frag[i];
-      }
-
-      //cleanup
-      free(front);
-      free(visited);
-      esdmI_hypercubeSet_destruct(&uncovered);
-      free(similarities);
-    }
+    *out_fragmentCount = state.fragmentCount;
+    result = state.fragments;
   }
 
-  gMakeSetTime = stop_timer(myTimer);
-  gMakeSetCount++;
+  gStats.setCreationCalls++;
+  gStats.setCreation += ea_stop_timer(myTimer);
 
-  return fragmentSet;
-}
-
-void esdmI_fragments_metadata_create(esdm_fragments_t* me, smd_string_stream_t* s) {
-  smd_string_stream_printf(s, "[");
-  for(int i=0; i < me->count; i++){
-    if(i) smd_string_stream_printf(s, ",\n");
-    esdm_fragment_metadata_create(me->frag[i], s);
-  }
-  smd_string_stream_printf(s, "]");
-}
-
-esdm_status esdmI_fragments_destruct(esdm_fragments_t* me) {
-  esdm_status result = ESDM_SUCCESS;
-  for(int i = me->count; i--; ) {
-    esdm_status ret = esdm_fragment_destroy(me->frag[i]);
-    if(ret != ESDM_SUCCESS) result = ret;
-  }
-  free(me->frag);
-  if(me->neighbourManager) esdmI_hypercubeNeighbourManager_destroy(me->neighbourManager);
-
-  *me = (esdm_fragments_t){0};
   return result;
 }
 
-void esdmI_fragments_getStats(int64_t* out_addedFragments, double* out_fragmentAddTime, int64_t* out_createdSets, double* out_setCreationTime) {
-  if(out_addedFragments) *out_addedFragments = gFragmentAddCount;
-  if(out_fragmentAddTime) *out_fragmentAddTime = gFragmentAddTime;
-  if(out_createdSets) *out_createdSets = gMakeSetCount;
-  if(out_setCreationTime) *out_setCreationTime = gMakeSetTime;
+typedef struct createFragmentMetadataState {
+  smd_string_stream_t* stream;
+  bool needComma;
+} createFragmentMetadataState;
+
+static void esdmI_fragments_createFragmentMetadata(gpointer keyArg, gpointer valueArg, gpointer stateArg) {
+  esdm_fragment_t* value = valueArg;
+  createFragmentMetadataState* state = stateArg;
+
+  if(state->needComma) smd_string_stream_printf(state->stream, ",\n");
+  state->needComma = true;
+  esdm_fragment_metadata_create(value, state->stream);
 }
 
-double esdmI_fragments_getFragmentAddTime() { return gFragmentAddTime; }
-int64_t esdmI_fragments_getFragmentAddCount() { return gFragmentAddCount; }
-double esdmI_fragments_getSetCreationTime() { return gMakeSetTime; }
-int64_t esdmI_fragments_getSetCreationCount() { return gMakeSetCount; }
-void esdmI_fragments_resetStats() {
-  gFragmentAddTime = gMakeSetTime = 0;
-  gFragmentAddCount = gMakeSetCount = 0;
+void esdmI_fragments_metadata_create(esdm_fragments_t* me, smd_string_stream_t* stream) {
+  timer myTimer;
+  ea_start_timer(&myTimer);
+
+  smd_string_stream_printf(stream, "[");
+  createFragmentMetadataState state = {
+    .stream = stream,
+    .needComma = false
+  };
+  g_hash_table_foreach(me->table, esdmI_fragments_createFragmentMetadata, &state);
+  smd_string_stream_printf(stream, "]");
+
+  gStats.metadataCreationCalls++;
+  gStats.metadataCreation += ea_stop_timer(myTimer);;
+}
+
+void esdmI_fragments_purge(esdm_fragments_t* me) {
+  g_hash_table_remove_all(me->table);
+}
+
+esdm_status esdmI_fragments_destruct(esdm_fragments_t* me) {
+  g_hash_table_destroy(me->table);
+  return ESDM_SUCCESS;
 }

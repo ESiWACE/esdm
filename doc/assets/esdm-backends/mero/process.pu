@@ -3,62 +3,62 @@
 node App1 {
 	node Proc11 {
 	control "ESDM Progress" as progress11
-	control "ESDM Clovis Instance" as clovis11
-	control "ESDM MeroSrvMgmt" as mgmt11
+	control "ESDM MotrClient Instance" as m0client11
+	control "ESDM MotrSrvMgmt" as mgmt11
 	}
 
 	node Proc12 {
 	control "ESDM Progress" as progress12
-	control "ESDM Clovis Instance" as clovis12
-	control "ESDM MeroSrvMgmt" as mgmt12
+	control "ESDM MotrClient Instance" as m0client12
+	control "ESDM MotrSrvMgmt" as mgmt12
 	}
 }
 
-progress11 --> clovis11 : use
-progress12 --> clovis12 : use
+progress11 --> m0client11 : use
+progress12 --> m0client12 : use
 
 node App2 {
 	node Proc21 {
 	control "ESDM Progress" as progress21
-	control "ESDM Clovis Instance" as clovis21
-	control "ESDM MeroSrvMgmt" as mgmt21
+	control "ESDM MotrClient Instance" as m0client21
+	control "ESDM MotrSrvMgmt" as mgmt21
 	}
 
 	node Proc22 {
 	control "ESDM Progress" as progress22
-	control "ESDM Clovis Instance" as clovis22
-	control "ESDM MeroSrvMgmt" as mgmt22
+	control "ESDM MotrClient Instance" as m0client22
+	control "ESDM MotrSrvMgmt" as mgmt22
 	}
 }
-progress21 --> clovis21 : use
-progress22 --> clovis22 : use
+progress21 --> m0client21 : use
+progress22 --> m0client22 : use
 
-storage MeroStorageSystem {
-	control MeroConfd
-	control MeroRMS
-	control MeroIOS
+storage MotrStorageSystem {
+	control MotrConfd
+	control MotrRMS
+	control MotrIOS
 }
 
-clovis11 <--> MeroConfd
-clovis11 <--> MeroRMS
-clovis11 <--> MeroIOS
+m0client11 <--> MotrConfd
+m0client11 <--> MotrRMS
+m0client11 <--> MotrIOS
 
-clovis12 <--> MeroConfd
-clovis12 <--> MeroRMS
-clovis12 <--> MeroIOS
+m0client12 <--> MotrConfd
+m0client12 <--> MotrRMS
+m0client12 <--> MotrIOS
 
-clovis21 <--> MeroConfd
-clovis21 <--> MeroRMS
-clovis21 <--> MeroIOS
+m0client21 <--> MotrConfd
+m0client21 <--> MotrRMS
+m0client21 <--> MotrIOS
 
 
-clovis22 <--> MeroConfd
-clovis22 <--> MeroRMS
-clovis22 <--> MeroIOS
+m0client22 <--> MotrConfd
+m0client22 <--> MotrRMS
+m0client22 <--> MotrIOS
 
-mgmt11 --> MeroConfd
-mgmt12 --> MeroConfd
-mgmt21 --> MeroConfd
-mgmt22 --> MeroConfd
+mgmt11 --> MotrConfd
+mgmt12 --> MotrConfd
+mgmt21 --> MotrConfd
+mgmt22 --> MotrConfd
 
 @enduml

@@ -1,0 +1,53 @@
+\section{Supported data backends}
+ESDM uses at least one storage backends but can use multiple to store the data and exactly one metadata backend.
+
+
+\subsection{DDN Web Object Scaler (WOS)}
+DDN's Web Object Scaler or WOS is a distributed object storage system designed for extremely large data. 
+It is available as a complete hardware/software solution or can be deployed on third-party hardware.
+Although, the nodes can be geographically distributed, they present a shared pool for object storage. 
+The data can be accessed over HTTP/REST, WebDAV, Swift, and S3 interfaces.
+Additionally, the pools can be mounted via NFS and CIFS/SMB. 
+
+\subsection{DDN Infinite Memory Engine (IME)}
+IME is software with a server and a client component. 
+Rather than issuing I/O to a parallel file system client, the IME client intercepts the I/O fragments and issues these to the IME server layer which manages the NVM media and stores and protects the data.
+Prior to synchronizing the data to the backing file system, IME coalesces and aligns the I/O optimally for the file system. 
+The read case works in the reverse: file data is ingested into the cache efficiently in parallel across the
+IME server layer and will satisfy reads from here in fragments according to the read request. 
+IME manages at-scale flash to eliminate file system bottlenecks and the burden of creating and maintaining application-specific optimizations. 
+It delivers:
+
+\begin{itemize}
+  \item New levels of I/O performance for predictable job completion in even the most demanding and complex high-performance environments.
+  \item Performance scaling independent of storage capacity for system designs with order of magnitude reductions in hardware.
+  \item Application transparency that eliminates the need to create and maintain application-specific optimizations.
+\end{itemize}
+
+\subsection{Seagate Motr (MOTR)}
+Motr is an object storage system developed by Seagate to overcome typical limitations of traditional storage systems.
+In contrast to similar I/O storage system (e.g. Ceph and DAOS) Motr assesses raw block devices directly.
+
+The design of Motr supports raw data and metadata.
+To achieve that it offers two types of objects:
+(1) A common object which is an array of fixed-size of blocks. 
+Data can be read from and written to these objects. 
+(2) An index for a key-value store. 
+Key-value records can be put to and get from an index. 
+At the moment, Motr provides a C interface.
+
+\subsection{Portable Operating System Interface (POSIX)}
+The Portable Operating System Interface (POSIX) is a family of standards specified by the IEEE Computer Society for maintaining compatibility between operating systems.
+POSIX defines the application programming interface (API), along with command line shells and utility interfaces, for software compatibility with variants of Unix and other operating systems.
+
+\subsection{Kove Direct System Architecture (KDSA)}
+Kove External Memory~\cite{10.1007/978-3-319-67630-2_48} allows the CPU access to unlimited memory right below the CPU cache. 
+Any data set can live in memory, close to the core, reducing processing time.
+The KDSA API is a low-level API that allows to access data on external memory by utilizing RDMA. 
+Data can be transferred synchronously or asynchronously, additionally, memory can be pre-registered for use with the Infiniband HCA. 
+Since registration of memory is time consuming, for unregistered memory regions the system may either use an internal (pre-registered) buffer and copy the user’s data to the buffer, or for larger accesses it registers the memory, performs an RDMA data transfer and then unregisters the memory again.
+
+\subsection{Amazon Simple Storage Service (S3)} 
+Amazon Simple Storage Service (S3) is a scalable, web-based, high-speed cloud storage service with a simple-to-use API.
+The service allows saving and archiving of data reliably in the Amazon Web Services (AWS) of all sizes.
+It is suitable for use cases, like backup, archives, big-data, IoT devices, websites and much more.

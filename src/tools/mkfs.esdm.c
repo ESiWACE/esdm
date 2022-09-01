@@ -74,7 +74,7 @@ int main(int argc, char **argv) {
   }
 
   char *config = NULL;
-  int ret = read_file(o.config_file, &config);
+  int ret = ea_read_file(o.config_file, &config);
   esdm_load_config_str(config);
 
   ret = esdm_init();

@@ -71,7 +71,7 @@ int wos_get_param(const char *conf, char **output, const char *param) {
   char _output[1 + size];
   strncpy(_output, value, size);
   _output[size] = 0;
-  *output = strdup(_output);
+  *output = ea_checked_strdup(_output);
   if (!*output) {
     DEBUG("Memory error");
     return ESDM_ERROR;
@@ -118,9 +118,9 @@ int wos_object_list_encode(t_WosOID **oid_list, char **out_object_id) {
         char buffer[strlen(*out_object_id) + strlen(current) + 2];
         sprintf(buffer, "%s,%s", *out_object_id, current);
         free(*out_object_id);
-        *out_object_id = strdup(buffer);
+        *out_object_id = ea_checked_strdup(buffer);
       } else
-        *out_object_id = strdup(current);
+        *out_object_id = ea_checked_strdup(current);
       if (!out_object_id) {
         DEBUG("Memory error");
         return ESDM_ERROR;
@@ -278,8 +278,8 @@ int esdm_backend_t_wos_alloc(esdm_backend_t *eb, int n_dims, int *dims_size, esd
   //rc = wos_metaobj_create(&ebm->wos_meta_obj, md1, md2);        /* To be completed */
 
   /* Reserve oids for storing data objects - null terminated array */
-  ebm->oid_list = (t_WosOID **)calloc(obj_num + 1, sizeof(t_WosOID *));
-  ebm->size_list = (uint64_t *)calloc(obj_num + 1, sizeof(uint64_t));
+  ebm->oid_list = ea_checked_calloc(obj_num + 1, sizeof(t_WosOID *));
+  ebm->size_list = ea_checked_calloc(obj_num + 1, sizeof(uint64_t));
 
   for (i = 0; i < obj_num; i++) {
     ebm->oid_list[i] = CreateWoid();
@@ -349,14 +349,14 @@ int esdm_backend_t_wos_open(esdm_backend_t *eb, char *object_id, void **obj_hand
   SetOID(oid, object_id);
 
   /*
-	Exists_b(wos_status, oid, ebm->wos_cluster);
-	if (GetStatus(wos_status)) {
-		DeleteWosWoid(oid);
-		DeleteWosStatus(wos_status);
-		DEBUG("Unable to find the object");
-		return ESDM_ERROR;
-	}
-*/
+  Exists_b(wos_status, oid, ebm->wos_cluster);
+  if (GetStatus(wos_status)) {
+    DeleteWosWoid(oid);
+    DeleteWosStatus(wos_status);
+    DEBUG("Unable to find the object");
+    return ESDM_ERROR;
+  }
+  */
 
   *obj_handle = (void *)oid;
 
@@ -443,7 +443,7 @@ int esdm_backend_t_wos_write(esdm_backend_t *eb, void *obj_handle, uint64_t star
     return ESDM_ERROR;
   }
 
-  void *buffer = calloc(obj_size, sizeof(char));
+  void *buffer = ea_checked_calloc(obj_size, sizeof(char));
   if (!buffer) {
     DEBUG("Memory error");
     return ESDM_ERROR;
@@ -599,8 +599,8 @@ int wos_backend_performance_check(esdm_backend_t *eb, int data_size, float *out_
   char *object_meta = NULL;
   void *object_handle = NULL;
 
-  char *data_w = (char *)malloc(data_size * sizeof(char));
-  char *data_r = (char *)malloc(data_size * sizeof(char));
+  char *data_w = ea_checked_malloc(data_size * sizeof(char));
+  char *data_r = ea_checked_malloc(data_size * sizeof(char));
 
   if (!data_w || !data_r)
     return ESDM_ERROR;
@@ -674,7 +674,7 @@ int esdm_backend_t_wos_fragment_retrieve(esdm_backend_t *backend, esdm_fragment_
   json_t *value;
   json_object_foreach(metadata, key, value) {
     if (!strcmp(key, WOS_OBJECT_ID)) {
-      obj_id = strdup(json_string_value(value));
+      obj_id = ea_checked_strdup(json_string_value(value));
       break;
     }
   }
@@ -692,7 +692,7 @@ int esdm_backend_t_wos_fragment_retrieve(esdm_backend_t *backend, esdm_fragment_
     end_id = strstr(start_id, "\"");
     if (!end_id)
       break;
-    obj_id = strndup(start_id, end_id - start_id);
+    obj_id = ea_checked_strndup(start_id, end_id - start_id);
     break;
   }
   if (!obj_id) {
@@ -746,7 +746,7 @@ int esdm_backend_t_wos_fragment_update(esdm_backend_t *backend, esdm_fragment_t 
     end_id = strstr(start_id, "\"");
     if (!end_id)
       break;
-    obj_id = strndup(start_id, end_id - start_id);
+    obj_id = ea_checked_strndup(start_id, end_id - start_id);
     break;
   }
 
@@ -818,7 +818,7 @@ int esdm_backend_t_wos_fragment_delete(esdm_backend_t *backend, esdm_fragment_t 
   json_t *value;
   json_object_foreach(metadata, key, value) {
     if (!strcmp(key, WOS_OBJECT_ID)) {
-      obj_id = strdup(json_string_value(value));
+      obj_id = ea_checked_strdup(json_string_value(value));
       break;
     }
   }
@@ -836,7 +836,7 @@ int esdm_backend_t_wos_fragment_delete(esdm_backend_t *backend, esdm_fragment_t 
     end_id = strstr(start_id, "\"");
     if (!end_id)
       break;
-    obj_id = strndup(start_id, end_id - start_id);
+    obj_id = ea_checked_strndup(start_id, end_id - start_id);
     break;
   }
   if (!obj_id) {
@@ -923,11 +923,11 @@ esdm_backend_t *wos_backend_init(esdm_config_backend_t *config) {
     return NULL;
   }
 
-  esdm_backend_t *backend = (esdm_backend_t *)malloc(sizeof(esdm_backend_t));
+  esdm_backend_t *backend = ea_checked_malloc(sizeof(esdm_backend_t));
   memcpy(backend, &backend_template, sizeof(esdm_backend_t));
 
   // allocate memory for backend instance
-  backend->data = (void *)malloc(sizeof(wos_backend_data_t));
+  backend->data = ea_checked_malloc(sizeof(wos_backend_data_t));
   wos_backend_data_t *data = (wos_backend_data_t *)backend->data;
   if (!data)
     return NULL;
@@ -945,7 +945,7 @@ esdm_backend_t *wos_backend_init(esdm_config_backend_t *config) {
   // configure backend instance
   data->config = config;
   json_t *elem;
-  elem = json_object_get(config->backend, "target");
+  elem = jansson_object_get(config->backend, "target");
   data->target = json_string_value(elem);
 
   return backend;

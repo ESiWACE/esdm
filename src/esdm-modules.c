@@ -50,7 +50,7 @@ esdm_modules_t *esdm_modules_init(esdm_instance_t *esdm) {
   esdm_modules_t *modules = NULL;
   esdm_backend_t *backend = NULL;
 
-  modules = (esdm_modules_t *)malloc(sizeof(esdm_modules_t));
+  modules = ea_checked_malloc(sizeof(esdm_modules_t));
 
   esdm_config_backends_t *config_backends = esdm_config_get_backends(esdm);
   esdm_config_backend_t *b = NULL;
@@ -73,7 +73,7 @@ esdm_modules_t *esdm_modules_init(esdm_instance_t *esdm) {
 
   // Register data backends
   modules->data_backend_count = config_backends->count;
-  modules->data_backends = malloc(config_backends->count * sizeof(esdm_backend_t *));
+  modules->data_backends = ea_checked_malloc(config_backends->count * sizeof(esdm_backend_t *));
 
   for (int i = 0; i < config_backends->count; i++) {
     b = config_backends->backends[i];
@@ -104,7 +104,7 @@ esdm_status esdm_modules_finalize(esdm_instance_t *esdm) {
     for(int i = esdm->modules->data_backend_count - 1 ; i >= 0; i--){
       esdm_backend_t *backend =esdm->modules->data_backends[i];
       if(backend->callbacks.finalize){
-        backend->callbacks.finalize(backend);
+        esdmI_backend_finalize(backend);
       }
     }
     free(esdm->modules->data_backends);
@@ -120,22 +120,49 @@ esdm_status esdm_modules_finalize(esdm_instance_t *esdm) {
   return ESDM_SUCCESS;
 }
 
-esdm_backend_t** esdm_modules_makeBackendRecommendation(esdm_modules_t* modules, esdm_dataspace_t* space, int64_t* out_moduleCount, int64_t* out_maxFragmentSize) {
-  eassert(out_moduleCount);
+esdm_backend_t** esdm_modules_makeBackendRecommendation(esdm_modules_t* modules, esdm_dataspace_t* space, int64_t* out_backendCount, int64_t* out_maxFragmentSize) {
+  eassert(out_backendCount);
 
-  //trivial implementation for now: just return a copy of our modules array
-  *out_moduleCount = modules->data_backend_count;
-  esdm_backend_t** result = ea_memdup(modules->data_backends, *out_moduleCount*sizeof(*result));
+  //TODO: actually select a subset of backends
+  *out_backendCount = modules->data_backend_count;
+  esdm_backend_t** result = ea_memdup(modules->data_backends, *out_backendCount*sizeof(*result));
 
   if(out_maxFragmentSize) {
     //determine the minimal max_fragment_size of a data backend that we return
     *out_maxFragmentSize = INT64_MAX;
-    for(int64_t i = 0; i < *out_moduleCount; i++) {
+    for(int64_t i = 0; i < *out_backendCount; i++) {
       if(*out_maxFragmentSize > result[i]->config->max_fragment_size) *out_maxFragmentSize = result[i]->config->max_fragment_size;
     }
   }
 
   return result;
+}
+
+esdm_backend_t* esdm_modules_randomWeightedBackend(esdm_modules_t* modules) {
+  //esdm_backend_t* bestBackend = NULL;
+  // for now just randomly assign the backend
+  //float bestThroughput = 0;
+  //for(int64_t i = 0; i < modules->data_backend_count; i++) {
+  //  float curThroughput = esdmI_backend_estimate_throughput(modules->data_backends[i]);
+  //  if(curThroughput >= bestThroughput) {
+  //    bestThroughput = curThroughput;
+  //    bestBackend = modules->data_backends[i];
+  //  }
+  //}
+  return modules->data_backends[rand() % modules->data_backend_count];
+}
+
+esdm_backend_t* esdm_modules_fastestBackend(esdm_modules_t* modules) {
+  esdm_backend_t* bestBackend = NULL;
+  float bestThroughput = 0;
+  for(int64_t i = 0; i < modules->data_backend_count; i++) {
+    float curThroughput = esdmI_backend_estimate_throughput(modules->data_backends[i]);
+    if(curThroughput >= bestThroughput) {
+      bestThroughput = curThroughput;
+      bestBackend = modules->data_backends[i];
+    }
+  }
+  return bestBackend;
 }
 
 esdm_status esdm_modules_get_by_type(esdm_module_type_t type, esdm_module_type_array_t **array) {

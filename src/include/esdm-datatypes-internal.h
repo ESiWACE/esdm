@@ -9,12 +9,25 @@
 #include <esdm-datatypes.h>
 #include <smd-datatype.h>
 
+#ifdef HAVE_SCIL
+#include <scil.h>
+#else
+// fake definition of hints
+struct scil_user_hints_t{
+  int missing;
+};
+#endif
+
+typedef struct esdm_grid_t esdm_grid_t;
+typedef struct estream_write_t estream_write_t;
+
+enum { ESDM_ID_LENGTH = 23 }; //= strlen(id), to allocate the buffers, add one byte for the termination
+
 enum esdm_data_status_e {
-  ESDM_DATA_NOT_LOADED,
-  ESDM_DATA_LOADING,
-  ESDM_DATA_DIRTY,
-  ESDM_DATA_PERSISTENT,
-  ESDM_DATA_DELETED
+  ESDM_DATA_NOT_LOADED, //no data in memory, on-disk state is unspecified
+  ESDM_DATA_DIRTY,      //data in memory is different from data on disk
+  ESDM_DATA_PERSISTENT, //data is in memory, on-disk data is equal to data in memory
+  ESDM_DATA_DELETED     //no data in memory, no data on disk, and no data should be added in any way, the object is a zombie
 };
 
 typedef enum esdm_data_status_e esdm_data_status_e;
@@ -36,11 +49,9 @@ struct esdm_container_t {
 };
 
 typedef struct esdmI_hypercubeNeighbourManager_t esdmI_hypercubeNeighbourManager_t;
+
 struct esdm_fragments_t {
-  esdm_fragment_t ** frag;
-  esdmI_hypercubeNeighbourManager_t* neighbourManager;
-  int count;
-  int buff_size;
+  GHashTable* table;
 };
 
 typedef struct esdm_fragments_t esdm_fragments_t;
@@ -55,9 +66,13 @@ struct esdm_dataset_t {
   smd_attr_t *attr;
   int64_t *actual_size; // used for unlimited dimensions
   esdm_fragments_t fragments;
+  int64_t gridCount, incompleteGridCount, gridSlotCount;
+  esdm_grid_t** grids; //This array first contains the complete grids, then the grids that still lack some subgrids/fragments, and finally some pointers that are allocated but not used.
+                      //When a grid is completed, it is swapped with the first incomplete grid and the grid counts are adjusted accordingly. This should be more efficient than managing two separate arrays.
   int refcount;
   esdm_data_status_e status;
   int mode_flags; // set via esdm_mode_flags_e
+  scil_user_hints_t * chints; // compression hints from SCIL, NULL if none available
 };
 
 struct esdm_fragment_t {
@@ -66,19 +81,13 @@ struct esdm_fragment_t {
   esdm_dataspace_t *dataspace;
   esdm_backend_t *backend;
   void * backend_md; // backend-specific metadata if set
-  void *buf;
+  void * buf;
   size_t elements;
-  size_t bytes;
+  size_t bytes; // expected size in bytes
+  size_t actual_bytes; // actual size, can differ from actual size due to compression
   //int direct_io;
   esdm_data_status_e status;
-};
-
-struct esdm_dataspace_t {
-  esdm_type_t type;
-  int64_t dims;
-  int64_t *size;
-  int64_t *offset;
-  int64_t *stride;  //may be NULL, in this case contiguous storage in C order is assumed
+  bool ownsBuf; //If true, the fragment is responsible to free the buffer when it's destructed or unloaded. Otherwise, `buf` is just a reference for zero copy writing.
 };
 
 // MODULES ////////////////////////////////////////////////////////////////////
@@ -127,8 +136,26 @@ struct esdm_backend_t_callbacks_t {
   void* (*fragment_metadata_load)(esdm_backend_t * b, esdm_fragment_t *fragment, json_t *metadata);
   int (*fragment_metadata_free) (esdm_backend_t * b, void * options);
 
-  int (*mkfs)(esdm_backend_t *, int format_flags);
-  int (*fsck)(esdm_backend_t*);
+  int (*mkfs)(esdm_backend_t * b, int format_flags);
+  int (*fsck)(esdm_backend_t * b);
+
+  // write streaming functions
+  /**
+   * Write a fragment by streaming it piecemeal.
+   *
+   * @param[in] backend the backend object
+   * @param[inout] state the caller sets the `fragment` member, and then reuses the state object for further calls unchanged
+   * @param[in] cur_buf pointer to the first byte that is to be written by this call
+   * @param[in] cur_offset logical offset to the first byte in `cur_buf` within the fragment, this is used to select whether the stream is being set up, streamed to, or torn down
+   * @param[in] cur_size count of bytes to be streamed by this call
+   *
+   * For proper operation, `cur_offset` must be `0` on the first call, and `cur_offset + cur_size` must be equal the size of the fragment on the last call.
+   * Intermediate call must satisfy neither condition.
+   *
+   * the expected blocksize for streaming is stored inside the backend configuration
+   */
+  //TODO: I find the semantics of `cur_buf` and `cur_offset` surprising. Imho, we should redesign this call, possibly splitting it into two or three functions.
+  int (*fragment_write_stream_blocksize)(esdm_backend_t * b, estream_write_t * state, void * cur_buf, size_t cur_offset, uint64_t cur_size);
 };
 
 struct esdm_md_backend_callbacks_t {
@@ -173,7 +200,7 @@ struct esdm_backend_t {
   esdm_module_type_t type;
   char *version; // 0.0.0
   void *data;    /* backend-specific data. */
-  uint32_t blocksize; /* any io must be multiple of 'blocksize' and aligned. */
+  //uint32_t blocksize; /* any io must be multiple of 'blocksize' and aligned. */
   esdm_backend_t_callbacks_t callbacks;
   int threads;
   GThreadPool *threadPool;
@@ -232,6 +259,7 @@ struct esdm_config_backend_t {
   uint64_t max_fragment_size; //this is a soft limit that may be exceeded anytime
   esdmI_fragmentation_method_t fragmentation_method;
   data_accessibility_t data_accessibility;
+  uint32_t write_stream_blocksize; /* size in bytes for enabling write streaming, 0 if disabled */
 
   json_t *performance_model;
   json_t *esdm;
@@ -440,6 +468,46 @@ struct esdm_writeTimes_t {
   double backendDispatch; //the time spent sending fragments to the different backends
   double completion;  //the time spent waiting for background tasks to complete
   double total; //sum of all the times above and other small things like taking times...
+};
+
+/// time measurements for esdm_dataspace_copy_data(), including invocation both by users and ESDM itself
+typedef struct esdm_copyTimes_t esdm_copyTimes_t;
+struct esdm_copyTimes_t {
+  double planning;  //the time spent analysing the dataspaces to determine what needs to be done
+  double execution; //the time spent to actually move the data
+  double total; //sum of all the times above and other small things like taking times...
+};
+
+//timers for each of the different backend interface functions
+typedef struct esdm_backendTimes_t esdm_backendTimes_t;
+struct esdm_backendTimes_t {
+  double finalize;
+  double performance_estimate;
+  double estimate_throughput;
+  double fragment_create;
+  double fragment_retrieve;
+  double fragment_update;
+  double fragment_delete;
+  double fragment_metadata_create;
+  double fragment_metadata_load;
+  double fragment_metadata_free;
+  double mkfs;
+  double fsck;
+  double fragment_write_stream_blocksize;
+};
+
+//statistics for the handling of fragments
+typedef struct esdm_fragmentsTimes_t esdm_fragmentsTimes_t;
+struct esdm_fragmentsTimes_t {
+  double fragmentAdding;
+  double fragmentLookup;
+  double metadataCreation;
+  double setCreation;
+
+  int64_t fragmentAddCalls;
+  int64_t fragmentLookupCalls;
+  int64_t metadataCreationCalls;
+  int64_t setCreationCalls;
 };
 
 #endif

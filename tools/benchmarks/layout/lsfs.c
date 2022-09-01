@@ -208,7 +208,7 @@ lfs_index *lfsReadIndex() {
 
   int record_count = stats.st_size / sizeof(lfs_record_on_disk);
 
-  lfs_record *records = malloc(sizeof(lfs_record) * record_count);
+  lfs_record *records = ea_checked_malloc(sizeof(lfs_record) * record_count);
 
   size_t file_position = 0;
   FILE *lfs = fopen(lfsfilename, "r");
@@ -224,7 +224,7 @@ lfs_index *lfsReadIndex() {
   // do the sort
   qsort(records, record_count, sizeof(lfs_record), lfsRecordComparePos);
 
-  lfs_record *records_end = malloc(sizeof(lfs_record) * record_count);
+  lfs_record *records_end = ea_checked_malloc(sizeof(lfs_record) * record_count);
   memcpy(records_end, records, sizeof(lfs_record) * record_count);
   qsort(records_end, record_count, sizeof(lfs_record), lfsRecordCompareEndPos);
 
@@ -233,7 +233,7 @@ lfs_index *lfsReadIndex() {
   data *= sizeof(lfs_record_on_disk);
 
   printf("lfsReadIndex: %f %zu bytes = %.1f MiB/s\n", t, data, data / t / 1024.0 / 1024);
-  lfs_index *index = (lfs_index *)malloc(sizeof(lfs_index));
+  lfs_index *index = ea_checked_malloc(sizeof(lfs_index));
   *index = (lfs_index) {record_count, records, records_end};
   return index;
 }
@@ -391,7 +391,7 @@ int main(int argc, char **argv) {
 
   eassert(smalldatasize < blocksize);
 
-  buffer = malloc(blocksize);
+  buffer = ea_checked_malloc(blocksize);
   memset(buffer, 1, blocksize);
 
   // stdWrite();

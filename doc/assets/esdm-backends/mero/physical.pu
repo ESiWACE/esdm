@@ -1,8 +1,8 @@
 @startuml
 
 package StorageSystem {
-	class Mero
-	class Clovis
+	class Motr
+	class MotrClient
 }
 
 
@@ -10,23 +10,23 @@ package ApplicationProc {
 	class Datatypes
 	class Progress
 	class Layout
-	class "Mero Backend" as Backend
+	class "Motr Backend" as Backend
 }
 
 class "Performance Model" as Performance
 class "Site Configuration" as SiteConfig
 
 
-Mero <-- Clovis
+Motr <-- MotrClient
 
 
 
 
-Clovis --> Performance: provides
-Clovis --> SiteConfig: provides
+MotrClient --> Performance: provides
+MotrClient --> SiteConfig: provides
 
 
-Backend --> Clovis
+Backend --> MotrClient
 
 Backend <-- Progress
 

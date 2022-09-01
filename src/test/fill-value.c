@@ -71,11 +71,15 @@ int main(int argc, char const *argv[]) {
   }
 
   //write a subregion
-  esdm_dataspace_t* subspace;
-  ret = esdm_dataspace_subspace(dataspace, dims, subspaceSize, subspaceOffset, &subspace);
-  eassert(ret == ESDM_SUCCESS);
-  ret = esdm_write(dataset, writeBuffer, subspace);
-  eassert(ret == ESDM_SUCCESS);
+  {
+    esdm_dataspace_t* subspace;
+    ret = esdm_dataspace_subspace(dataspace, dims, subspaceSize, subspaceOffset, &subspace);
+    eassert(ret == ESDM_SUCCESS);
+    ret = esdm_write(dataset, writeBuffer, subspace);
+    eassert(ret == ESDM_SUCCESS);
+    ret = esdm_dataspace_destroy(subspace);
+    eassert(ret == ESDM_SUCCESS);
+  }
 
   //commit and close stuff
   ret = esdm_dataset_commit(dataset);
@@ -110,13 +114,39 @@ int main(int argc, char const *argv[]) {
   ret = esdmI_readWithFillRegion(dataset, readBuffer, dataspace, &fillRegion);
   eassert(ret == ESDM_SUCCESS);
 
+  //Print a matrix of the comparison results, a good output has small letters 'f' (fill value) and 'd' (data) everywhere.
+  //Big letters signify an unexpected fill value 'F', unexpected data 'D', or other value 'X'.
+  //A question mark is printed where the expected data value equals the fill value.
+  printf("\n"
+         "d = good data\n"
+         "f = good fill value\n"
+         "\x1b[1mD\x1b[0m = unexpected data\n"
+         "\x1b[1mF\x1b[0m = unexpected fill value\n"
+         "\x1b[1mX\x1b[0m = neither data nor fill value\n"
+         "? = good data == fill value\n");
+  for(int y=0; y < bounds[0]; y++){
+    for(int x=0; x < bounds[1]; x++){
+      bool isData = readBuffer[y][x] == y*bounds[1] + x;
+      bool isFill = readBuffer[y][x] == fill_value;
+      bool expectFill = false;
+      if(y < subspaceOffset[0] || y >= subspaceOffset[0] + subspaceSize[0]) expectFill = true;
+      if(x < subspaceOffset[1] || x >= subspaceOffset[1] + subspaceSize[1]) expectFill = true;
+      char* statusLetter = ((char*[8]){"\x1b[1mX\x1b[m", "\x1b[1mX\x1b[m", "\x1b[1mF\x1b[m", "f", "d", "\x1b[1mD\x1b[m", "?", "?"})[4*isData + 2*isFill + expectFill];
+      printf("%s", statusLetter);
+    }
+    printf("\n");
+  }
+
   //check that the result is actually what we expect (linear index within subspace, updated fill_value everywhere else)
   for(int y=0; y < bounds[0]; y++){
     for(int x=0; x < bounds[1]; x++){
       uint64_t expectedValue = y*bounds[1] + x;
       if(y < subspaceOffset[0] || y >= subspaceOffset[0] + subspaceSize[0]) expectedValue = fill_value;
       if(x < subspaceOffset[1] || x >= subspaceOffset[1] + subspaceSize[1]) expectedValue = fill_value;
-      eassert(readBuffer[y][x] == expectedValue);
+      if(readBuffer[y][x] != expectedValue) {
+        fprintf(stderr, "expected %"PRIu64" (data = %"PRIu64", fill value = %"PRIu64"), but found %"PRIu64"\n", expectedValue, y*bounds[1] + x, fill_value, readBuffer[y][x]);
+        eassert(readBuffer[y][x] == expectedValue);
+      }
     }
   }
 
@@ -135,9 +165,17 @@ int main(int argc, char const *argv[]) {
 
   //close down
   esdmI_hypercubeSet_destroy(fillRegion);
+  esdmI_hypercube_destroy(dataRegion);
+  esdmI_hypercube_destroy(fullRegion);
+  ret = esdm_dataspace_destroy(dataspace);
+  eassert(ret == ESDM_SUCCESS);
   ret = esdm_dataset_commit(dataset);
   eassert(ret == ESDM_SUCCESS);
+  ret = esdm_dataset_close(dataset);
+  eassert(ret == ESDM_SUCCESS);
   ret = esdm_container_commit(container);
+  eassert(ret == ESDM_SUCCESS);
+  ret = esdm_container_close(container);
   eassert(ret == ESDM_SUCCESS);
 
   ret = esdm_finalize();

@@ -56,7 +56,7 @@ static void boundArray_construct(esdmI_boundArray_t* me) {
     .count = 0,
     .allocatedCount = 16
   };
-  me->entries = malloc(me->allocatedCount*sizeof(*me->entries));
+  me->entries = ea_checked_malloc(me->allocatedCount*sizeof(*me->entries));
   eassert(me->entries);
 }
 
@@ -84,7 +84,7 @@ static void boundArray_add(esdmI_boundArray_t* me, int64_t bound, bool isStart, 
   //make sure we have enough space
   if(me->count == me->allocatedCount) {
     me->allocatedCount *= 2;
-    me->entries = realloc(me->entries, me->allocatedCount*sizeof(*me->entries));
+    me->entries = ea_checked_realloc(me->entries, me->allocatedCount*sizeof(*me->entries));
     eassert(me->entries);
   }
   eassert(me->allocatedCount > me->count);
@@ -152,7 +152,7 @@ static void boundTree_construct(esdmI_boundTree_t* me) {
 }
 
 //For debugging purposes.
-static void boundTree_print(esdmI_boundTree_t* me, FILE* stream, int indentation) {
+__attribute__((unused)) static void boundTree_print(esdmI_boundTree_t* me, FILE* stream, int indentation) {
   if(!me) return;
 
   fprintf(stream, "%*s{\n", 4*indentation++, "");
@@ -165,12 +165,52 @@ static void boundTree_print(esdmI_boundTree_t* me, FILE* stream, int indentation
 }
 
 //For debugging purposes.
-static void boundTree_checkTree(esdmI_boundTree_t* me) {
+static void boundTree_printNode(FILE* stream, esdmI_boundTree_t* me) {
+  fprintf(stream, "%p: {\n", (void*)me);
+  fprintf(stream, "\t.super = {\n");
+  fprintf(stream, "\t},\n");
+  fprintf(stream, "\t.entryCount = %"PRId64"\n", me->entryCount);
+  fprintf(stream, "\t.bounds = [");
+  for(int i = 0; i < me->entryCount; i++) {
+    fprintf(stream, "%s%"PRId64, i ? ", " : "", me->bounds[i].bakedBound);
+  }
+  fprintf(stream, "],\n\t.children = [");
+  for(int i = 0; i <= me->entryCount; i++) {
+    fprintf(stream, "%s%p", i ? ", " : "", (void*)me->children[i]);
+  }
+  fprintf(stream, "],\n\t.parent = %p\n", (void*)me->parent);
+  fprintf(stream, "}\n");
+}
+
+//For debugging purposes.
+static bool boundTree_checkTree_internal(esdmI_boundTree_t* me) {
+  if(me->entryCount > BOUND_TREE_MAX_ENTRY_COUNT || me->entryCount < 0) {
+    fprintf(stderr, "assertion failed: entry count %"PRId64" of node at %p is out of bounds [0, %d]\nparent chain:\n", me->entryCount, (void*)me, BOUND_TREE_MAX_ENTRY_COUNT);
+    return true;
+  }
   for(int64_t i = 0; i <= me->entryCount; i++) {
+    bool error = false;
     if(me->children[i]) {
-      eassert(me->children[i]->parent == me);
-      boundTree_checkTree(me->children[i]);
+      if(me->children[i]->parent == me) {
+        error = boundTree_checkTree_internal(me->children[i]);
+      } else {
+        fprintf(stderr, "assertion failed: node is not the parent of its child\nparent chain:\n");
+        error = true;
+      }
+      if(error) {
+        boundTree_printNode(stderr, me);
+        return true;
+      }
     }
+  }
+  return false;
+}
+
+//For debugging purposes.
+__attribute__((unused)) static void boundTree_checkTree(esdmI_boundTree_t* me, int callerLine) {
+  if(boundTree_checkTree_internal(me)) {
+    fprintf(stderr, __FILE__":%d: call to boundTree_checkTree() failed\n", callerLine);
+    abort();
   }
 }
 
@@ -183,40 +223,8 @@ static void boundTree_fixRelations(esdmI_boundTree_t* me) {
   }
 }
 
-//Split a full node into two new nodes, reducing this node to an `entryCount == 1` node.
-static void boundTree_splitNode_internal(esdmI_boundTree_t* me) {
-  eassert(me->entryCount == BOUND_TREE_MAX_ENTRY_COUNT);
-  if(DEBUG_BOUND_TREE) boundTree_checkTree(me);
-
-  esdmI_boundTree_t* left = malloc(sizeof(*left));
-  esdmI_boundTree_t* right = malloc(sizeof(*right));
-  const int splitIndex = BOUND_TREE_MAX_ENTRY_COUNT/2;
-
-  *left = (esdmI_boundTree_t){
-    .entryCount = splitIndex,
-    .parent = me
-  };
-  memmove(left->bounds, me->bounds, left->entryCount*sizeof(*left->bounds));
-  memmove(left->children, me->children, (left->entryCount + 1)*sizeof(*left->children));
-  boundTree_fixRelations(left);
-
-  *right = (esdmI_boundTree_t){
-    .entryCount = me->entryCount - splitIndex - 1,
-    .parent = me
-  };
-  memmove(right->bounds, &me->bounds[splitIndex + 1], right->entryCount*sizeof(*right->bounds));
-  memmove(right->children, &me->children[splitIndex + 1], (right->entryCount + 1)*sizeof(*right->children));
-  boundTree_fixRelations(right);
-
-  me->entryCount = 1;
-  me->bounds[0] = me->bounds[splitIndex];
-  me->children[0] = left;
-  me->children[1] = right;
-  if(DEBUG_BOUND_TREE) boundTree_checkTree(me);
-}
-
 //Returns the first position with a greater bakedBound than the given entry, i.e. the location where the newEntry should be inserted.
-static int boundTree_findChildPosition(esdmI_boundTree_t* me, int64_t bakedBound) {
+static int boundTree_findBoundPosition(esdmI_boundTree_t* me, int64_t bakedBound) {
   int childIndex = 0;
   for(; childIndex < me->entryCount; childIndex++) {
     if(me->bounds[childIndex].bakedBound > bakedBound) break;
@@ -224,63 +232,107 @@ static int boundTree_findChildPosition(esdmI_boundTree_t* me, int64_t bakedBound
   return childIndex;
 }
 
-//If there's no room left to add the entry, the node is split into two new nodes, which become the only two children of the old node.
-//The old node is then returned to indicate the caller that it needs to add the two new nodes as its own children recursively.
-//With enough space in the respective node, this returns NULL to indicate to the caller that no further work is necessary.
-static esdmI_boundTree_t* boundTree_add_internal(esdmI_boundTree_t* me, esdmI_boundListEntry_t newEntry) {
-  esdmI_boundTree_t* result = NULL;
-  int childIndex = boundTree_findChildPosition(me, newEntry.bakedBound);
-  if(me->children[childIndex]) {
-    //This is an internal node, recurse.
-    esdmI_boundTree_t* returnedNode = boundTree_add_internal(me->children[childIndex], newEntry);
-    if(!returnedNode) return NULL;  //no more splitting necessary
-
-    //Add the children of the returned node to this node, if possible.
-    eassert(returnedNode->entryCount == 1);
-    if(me->entryCount == BOUND_TREE_MAX_ENTRY_COUNT) {
-      //Need to split this node as well.
-      boundTree_splitNode_internal(me);
-      result = me;
-      //Continue as the child that should absorb the returnedNode's bound.
-      me = me->children[me->bounds[0].bakedBound <= returnedNode->bounds[0].bakedBound];
-      childIndex = boundTree_findChildPosition(me, returnedNode->bounds[0].bakedBound);
-    }
-
-    //Now that we have enough space here, adopt the children of the returnedNode.
-    memmove(&me->bounds[childIndex + 1], &me->bounds[childIndex], (me->entryCount - childIndex)*sizeof(*me->bounds));
-    memmove(&me->children[childIndex + 2], &me->children[childIndex + 1], (me->entryCount - childIndex)*sizeof(*me->children));
-    me->bounds[childIndex] = returnedNode->bounds[0];
-    me->children[childIndex] = returnedNode->children[0];
-    me->children[childIndex]->parent = me;
-    me->children[childIndex + 1] = returnedNode->children[1];
-    me->children[childIndex + 1]->parent = me;
-    me->entryCount++;
-
-    free(returnedNode); //We have absorbed its data, get rid of the carcass...
-  } else {
-    //This is a leaf node.
-    if(me->entryCount == BOUND_TREE_MAX_ENTRY_COUNT) {
-      //Need to split this node.
-      boundTree_splitNode_internal(me);
-      result = me;
-      //Continue as the child that should absorb the new entry
-      me = me->children[me->bounds[0].bakedBound <= newEntry.bakedBound];
-      childIndex = boundTree_findChildPosition(me, newEntry.bakedBound);
-    }
-    //Now that we have enough space here, just add the entry.
-    if(childIndex < me->entryCount) { //This `if()` is needed despite `memmove(..., 0)` being a noop because we need to avoid undefined behavior when we calculate `&me->bounds[childIndex + 1]`.
-      memmove(&me->bounds[childIndex + 1], &me->bounds[childIndex], (me->entryCount - childIndex)*sizeof(*me->bounds));
-    }
-    me->bounds[childIndex] = newEntry;
-    me->entryCount++;
+//Returns the index of a specific child within its parent node.
+static int boundTree_findChildPosition(esdmI_boundTree_t* parent, esdmI_boundTree_t* child) {
+  for(int i = 0; i <= parent->entryCount; i++) {
+    if(parent->children[i] == child) return i;
   }
-  return result;
+  fprintf(stderr, "internal error: corrupt bound tree, could not find child in its parent node\n");
+  fprintf(stderr, "parent node:\n");
+  boundTree_printNode(stderr, parent);
+  fprintf(stderr, "child node:\n");
+  boundTree_printNode(stderr, child);
+  fprintf(stderr, "aborting...\n");
+  abort();
+}
+
+static void boundTree_insert(esdmI_boundTree_t* me, esdmI_boundListEntry_t newEntry, esdmI_boundTree_t* insertChild, esdmI_boundTree_t* splittedChild) {
+  eassert((insertChild && splittedChild) || (!insertChild && !splittedChild));
+  eassert(!insertChild || insertChild->parent == me);
+  eassert(!splittedChild || splittedChild->parent == me);
+
+  //Determine the position at which to insert the insertChild.
+  int childIndex = insertChild ? boundTree_findChildPosition(me, splittedChild) : boundTree_findBoundPosition(me, newEntry.bakedBound);
+
+  //Check whether we need to split the node
+  if(me->entryCount < BOUND_TREE_MAX_ENTRY_COUNT) {
+    //no split necessary
+    memmove(&me->bounds[childIndex + 1], &me->bounds[childIndex], (me->entryCount - childIndex)*sizeof(*me->bounds));
+    me->bounds[childIndex] = newEntry;
+    memmove(&me->children[childIndex + 1], &me->children[childIndex], (me->entryCount - childIndex + 1)*sizeof(*me->children));
+    me->children[childIndex] = insertChild;   //no need to adjust the parent of the insertChild, the caller already ensured that (see assert)
+    me->entryCount++;
+  } else {
+    //need to split the node
+
+    //copy the arrrays to larger temp storage
+    esdmI_boundListEntry_t tempBounds[BOUND_TREE_MAX_ENTRY_COUNT + 1];
+    memcpy(tempBounds, me->bounds, sizeof(me->bounds));
+    esdmI_boundTree_t* tempChildren[BOUND_TREE_MAX_BRANCH_FACTOR + 1];
+    memcpy(tempChildren, me->children, sizeof(me->children));
+
+    //add the new entries
+    memmove(&tempBounds[childIndex + 1], &tempBounds[childIndex], (me->entryCount - childIndex)*sizeof(*tempBounds));
+    tempBounds[childIndex] = newEntry;
+    memmove(&tempChildren[childIndex + 1], &tempChildren[childIndex], (me->entryCount - childIndex + 1)*sizeof(*tempChildren));
+    tempChildren[childIndex] = insertChild;   //no need to adjust the parent of the insertChild, the caller already ensured that (see assert)
+    int entryCount = me->entryCount + 1;
+
+    //split the contents of the arrays
+    esdmI_boundTree_t* left = ea_checked_malloc(sizeof(*left));
+    const int splitIndex = BOUND_TREE_MAX_ENTRY_COUNT/2;
+
+    *left = (esdmI_boundTree_t){
+      .super = me->super,
+      .entryCount = splitIndex,
+      .parent = me->parent
+    };
+    memmove(left->bounds, tempBounds, left->entryCount*sizeof(*left->bounds));
+    memmove(left->children, tempChildren, (left->entryCount + 1)*sizeof(*left->children));
+    boundTree_fixRelations(left);
+
+    me->entryCount = entryCount - left->entryCount - 1;
+    memmove(me->bounds, &tempBounds[splitIndex + 1], me->entryCount*sizeof(*me->bounds));
+    memmove(me->children, &tempChildren[splitIndex + 1], (me->entryCount + 1)*sizeof(*me->children));
+    //no need to call boundTree_fixRelations() because those children were already children of me
+
+    //recurse one level up
+    if(me->parent) {
+      boundTree_insert(me->parent, tempBounds[splitIndex], left, me);
+    } else {
+      //We have split the root node. Move the contents of `me` into a new node.
+      esdmI_boundTree_t* right = ea_checked_malloc(sizeof(*right));
+      *right = *me;
+      boundTree_fixRelations(right);
+
+      //construct the new root in `me`, so that we don't need to change the outside reference
+      *me = (esdmI_boundTree_t){
+        .super = right->super,
+        .entryCount = 1,
+        .parent = NULL,
+        .bounds = {tempBounds[splitIndex]},
+        .children = {left, right}
+      };
+      boundTree_fixRelations(me);
+    }
+  }
+}
+
+static void boundTree_add_internal(esdmI_boundTree_t* me, esdmI_boundListEntry_t newEntry) {
+  //Walk down the tree until we find the leaf node that is supposed to contain the entry.
+  int childIndex = boundTree_findBoundPosition(me, newEntry.bakedBound);
+  while(me->children[childIndex]) {
+    me = me->children[childIndex];
+    childIndex = boundTree_findBoundPosition(me, newEntry.bakedBound);
+  }
+
+  boundTree_insert(me, newEntry, NULL, NULL);
 }
 
 static void boundTree_add(esdmI_boundTree_t* me, int64_t bound, bool isStart, int64_t cubeIndex) {
-  if(DEBUG_BOUND_TREE) boundTree_checkTree(me);
+  if(DEBUG_BOUND_TREE) boundTree_checkTree(me, __LINE__);
   boundTree_add_internal(me, (esdmI_boundListEntry_t){ .bakedBound = bakeBound(bound, isStart), .cubeIndex = cubeIndex});
-  if(DEBUG_BOUND_TREE) boundTree_checkTree(me);
+  if(DEBUG_BOUND_TREE) boundTree_checkTree(me, __LINE__);
 }
 
 static int boundTree_findPositionInParent(esdmI_boundTree_t* me, esdmI_boundTree_t** out_parent) {
@@ -298,7 +350,7 @@ static esdmI_boundListEntry_t* boundTree_findFirst_internal(esdmI_boundTree_t* m
   //Find the first entry that is greater or equal to the given bakedBound.
   int childIndex;
   while(true) {
-    childIndex = boundTree_findChildPosition(me, bakedBound - 1);
+    childIndex = boundTree_findBoundPosition(me, bakedBound - 1);
     if(!me->children[childIndex]) break;
     me = me->children[childIndex];
   }
@@ -318,14 +370,14 @@ static esdmI_boundListEntry_t* boundTree_findFirst_internal(esdmI_boundTree_t* m
 }
 
 static esdmI_boundListEntry_t*  boundTree_findFirst(esdmI_boundTree_t* me, int64_t bound, bool isStart, esdmI_boundIterator_t* out_iterator) {
-  if(DEBUG_BOUND_TREE) boundTree_checkTree(me);
+  if(DEBUG_BOUND_TREE) boundTree_checkTree(me, __LINE__);
   return boundTree_findFirst_internal(me, bakeBound(bound, isStart), out_iterator);
 }
 
 static esdmI_boundListEntry_t* boundTree_nextEntry(esdmI_boundTree_t* me, esdmI_boundIterator_t* inout_iterator) {
   eassert(inout_iterator);
   eassert(inout_iterator->treeIterator.node);
-  if(DEBUG_BOUND_TREE) boundTree_checkTree(me);
+  if(DEBUG_BOUND_TREE) boundTree_checkTree(me, __LINE__);
 
   //get the info from the iterator and advance the entry position
   me = inout_iterator->treeIterator.node;
@@ -374,12 +426,12 @@ static esdmI_boundList_t* boundList_create() {
       ESDM_WARN("configuration parameter boundListImplementation has an illegal value, continuing with B-tree implementation");
       //fallthrough
     case BOUND_LIST_IMPLEMENTATION_BTREE: {
-      esdmI_boundTree_t* result = malloc(sizeof(*result));
+      esdmI_boundTree_t* result = ea_checked_malloc(sizeof(*result));
       boundTree_construct(result);
       return &result->super;
     }
     case BOUND_LIST_IMPLEMENTATION_ARRAY: {
-      esdmI_boundArray_t* result = malloc(sizeof(*result));
+      esdmI_boundArray_t* result = ea_checked_malloc(sizeof(*result));
       boundArray_construct(result);
       return &result->super;
     }
@@ -394,12 +446,12 @@ static void neighbourList_construct(esdmI_neighbourList_t* me) {
     .allocatedCount = 8,
     .neighbourIndices = NULL
   };
-  me->neighbourIndices = malloc(me->allocatedCount*sizeof(*me->neighbourIndices));
+  me->neighbourIndices = ea_checked_malloc(me->allocatedCount*sizeof(*me->neighbourIndices));
 }
 
 static void neighbourList_add(esdmI_neighbourList_t* me, int64_t index) {
   if(me->neighbourCount == me->allocatedCount) {
-    me->neighbourIndices = realloc(me->neighbourIndices, (me->allocatedCount *= 2)*sizeof(*me->neighbourIndices));
+    me->neighbourIndices = ea_checked_realloc(me->neighbourIndices, (me->allocatedCount *= 2)*sizeof(*me->neighbourIndices));
   }
   eassert(me->neighbourCount < me->allocatedCount);
   me->neighbourIndices[me->neighbourCount++] = index;
@@ -418,7 +470,7 @@ static void neighbourList_destruct(esdmI_neighbourList_t* me) {
 // esdmI_hypercubeNeighbourManager_t ///////////////////////////////////////////////////////////////
 
 esdmI_hypercubeNeighbourManager_t* esdmI_hypercubeNeighbourManager_make(int64_t dimensions) {
-  esdmI_hypercubeNeighbourManager_t* result = malloc(sizeof(*result) + dimensions*sizeof(*result->boundLists));
+  esdmI_hypercubeNeighbourManager_t* result = ea_checked_malloc(sizeof(*result) + dimensions*sizeof(*result->boundLists));
   *result = (esdmI_hypercubeNeighbourManager_t){
     .list = {
       .cubes = NULL,
@@ -428,8 +480,8 @@ esdmI_hypercubeNeighbourManager_t* esdmI_hypercubeNeighbourManager_make(int64_t 
     .dims = dimensions,
     .neighbourLists = NULL
   };
-  result->list.cubes = malloc(result->allocatedCount*sizeof(*result->list.cubes));
-  result->neighbourLists = malloc(result->allocatedCount*sizeof(*result->neighbourLists));
+  result->list.cubes = ea_checked_malloc(result->allocatedCount*sizeof(*result->list.cubes));
+  result->neighbourLists = ea_checked_malloc(result->allocatedCount*sizeof(*result->neighbourLists));
   for(int64_t i = 0; i < dimensions; i++) result->boundLists[i] = boundList_create();
   return result;
 }
@@ -444,9 +496,9 @@ void esdmI_hypercubeNeighbourManager_pushBack(esdmI_hypercubeNeighbourManager_t*
   //assert enough space
   if(me->list.count == me->allocatedCount) {
     me->allocatedCount *= 2;
-    me->list.cubes = realloc(me->list.cubes, me->allocatedCount*sizeof(*me->list.cubes));
+    me->list.cubes = ea_checked_realloc(me->list.cubes, me->allocatedCount*sizeof(*me->list.cubes));
     eassert(me->list.cubes);
-    me->neighbourLists = realloc(me->neighbourLists, me->allocatedCount*sizeof(*me->neighbourLists));
+    me->neighbourLists = ea_checked_realloc(me->neighbourLists, me->allocatedCount*sizeof(*me->neighbourLists));
     eassert(me->neighbourLists);
   }
 

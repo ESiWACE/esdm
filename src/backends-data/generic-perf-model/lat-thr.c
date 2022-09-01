@@ -21,11 +21,11 @@ int esdm_backend_t_parse_perf_model_lat_thp(json_t *str, esdm_perf_model_lat_thp
     return -1;
 
   json_t *elem = NULL;
-  elem = json_object_get(str, "latency");
+  elem = jansson_object_get(str, "latency");
   eassert(elem != NULL);
   out_data->latency_in_s = json_real_value(elem);
 
-  elem = json_object_get(str, "throughput");
+  elem = jansson_object_get(str, "throughput");
   eassert(elem != NULL);
   out_data->throughputBs = json_real_value(elem) * 1024 * 1024;
 

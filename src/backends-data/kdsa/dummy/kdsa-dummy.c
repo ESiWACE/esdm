@@ -12,6 +12,7 @@
 #include <fcntl.h>
 
 #include <esdm-debug.h>
+#include <esdm-internal.h>
 #include <kdsa.h>
 
 //#define DEBUG
@@ -123,7 +124,7 @@ int kdsa_connect(char* connection_string, uint32_t flags, kdsa_vol_handle_t *han
       return -1;
     }
   }
-  int * fd = (int*) malloc(sizeof(int));
+  int * fd = ea_checked_malloc(sizeof(int));
   *fd = f;
 
   *handle = (kdsa_vol_handle_t) fd;

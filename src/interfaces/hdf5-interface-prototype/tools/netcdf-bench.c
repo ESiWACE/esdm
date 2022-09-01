@@ -55,7 +55,7 @@ int main(int argc, char **argv) {
   //ret = nc_var_par_access(ncid, var, NC_INDEPENDENT);
   //eassert(ret == NC_NOERR);
 
-  int *data = (int *)malloc(sizeof(int) * 100 * 100);
+  int *data = ea_checked_malloc(sizeof(int) * 100 * 100);
   for (int i = 0; i < 100; i++) {
     for (int j = 0; j < 100; j++) {
       data[i + j * 100] = i + j * 100;

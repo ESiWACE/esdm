@@ -30,8 +30,8 @@
 
 int main() {
   timer myTimer;
-  start_timer(&myTimer);
-  int64_t (*referenceData)[kDimSize][kDimSize] = malloc(kDimSize*sizeof(*referenceData));
+  ea_start_timer(&myTimer);
+  int64_t (*referenceData)[kDimSize][kDimSize] = ea_checked_malloc(kDimSize*sizeof(*referenceData));
   for(int64_t z = 0, value = 0; z < kDimSize; z++) {
       for(int64_t y = 0; y < kDimSize; y++) {
         for(int64_t x = 0; x < kDimSize; x++) {
@@ -39,20 +39,20 @@ int main() {
         }
       }
   }
-  printf("referenceData initialization: %.3fms\n", 1000*stop_timer(myTimer));
+  printf("referenceData initialization: %.3fms\n", 1000*ea_stop_timer(myTimer));
 
-  start_timer(&myTimer);
-  int64_t (*data)[kDimSize][kDimSize] = malloc(kDimSize*sizeof(*data));
+  ea_start_timer(&myTimer);
+  int64_t (*data)[kDimSize][kDimSize] = ea_checked_malloc(kDimSize*sizeof(*data));
   memcpy(data, referenceData, kDimSize*sizeof(*data));
-  printf("memcopy to new buffer (forcing mapping of memory pages): %.3fms\n", 1000*stop_timer(myTimer));
+  printf("memcopy to new buffer (forcing mapping of memory pages): %.3fms\n", 1000*ea_stop_timer(myTimer));
 
-  start_timer(&myTimer);
+  ea_start_timer(&myTimer);
   memset(data, 0, kDimSize*sizeof(*data));
-  printf("memset on paged buffer: %.3fms\n", 1000*stop_timer(myTimer));
+  printf("memset on paged buffer: %.3fms\n", 1000*ea_stop_timer(myTimer));
 
-  start_timer(&myTimer);
+  ea_start_timer(&myTimer);
   memcpy(data, referenceData, kDimSize*sizeof(*data));
-  printf("memcopy to paged buffer: %.3fms\n", 1000*stop_timer(myTimer));
+  printf("memcopy to paged buffer: %.3fms\n", 1000*ea_stop_timer(myTimer));
 
   esdm_dataspace_t *logicalSpace, *sourceSubspace, *destSubspace;
   esdm_status result = esdm_dataspace_create(3, (int64_t[3]){kDimSize, kDimSize, kDimSize}, SMD_DTYPE_INT64, &logicalSpace);
@@ -63,14 +63,14 @@ int main() {
   assert(result == ESDM_SUCCESS);
   result = esdm_dataspace_set_stride(destSubspace, (int64_t[3]){kDimSize*kDimSize, kDimSize, 1});
   assert(result == ESDM_SUCCESS);
-  start_timer(&myTimer);
+  ea_start_timer(&myTimer);
   result = esdm_dataspace_copy_data(sourceSubspace, referenceData, destSubspace, data);
   assert(result == ESDM_SUCCESS);
-  printf("copy %d block: %.3fms\n", 1, 1000*stop_timer(myTimer));
+  printf("copy %d block: %.3fms\n", 1, 1000*ea_stop_timer(myTimer));
   result = esdm_dataspace_destroy(destSubspace);
   assert(result == ESDM_SUCCESS);
 
-  start_timer(&myTimer);
+  ea_start_timer(&myTimer);
   for(int64_t z = 0; z < kDimSize - 1; z++) {
       for(int64_t y = 0; y < kDimSize; y++) {
         for(int64_t x = 0; x < kDimSize; x++) {
@@ -78,20 +78,20 @@ int main() {
         }
       }
   }
-  printf("checking result: %.3fms\n", 1000*stop_timer(myTimer));
+  printf("checking result: %.3fms\n", 1000*ea_stop_timer(myTimer));
 
   result = esdm_dataspace_subspace(logicalSpace, 3, (int64_t[3]){kDimSize, kDimSize-1, kDimSize}, (int64_t[3]){0, 1, 0}, &destSubspace);
   assert(result == ESDM_SUCCESS);
   result = esdm_dataspace_set_stride(destSubspace, (int64_t[3]){kDimSize*kDimSize, kDimSize, 1});
   assert(result == ESDM_SUCCESS);
-  start_timer(&myTimer);
+  ea_start_timer(&myTimer);
   result = esdm_dataspace_copy_data(sourceSubspace, referenceData, destSubspace, data);
   assert(result == ESDM_SUCCESS);
-  printf("copy %d blocks: %.3fms\n", kDimSize, 1000*stop_timer(myTimer));
+  printf("copy %d blocks: %.3fms\n", kDimSize, 1000*ea_stop_timer(myTimer));
   result = esdm_dataspace_destroy(destSubspace);
   assert(result == ESDM_SUCCESS);
 
-  start_timer(&myTimer);
+  ea_start_timer(&myTimer);
   for(int64_t z = 0; z < kDimSize; z++) {
       for(int64_t y = 0; y < kDimSize - 1; y++) {
         for(int64_t x = 0; x < kDimSize; x++) {
@@ -99,20 +99,20 @@ int main() {
         }
       }
   }
-  printf("checking result: %.3fms\n", 1000*stop_timer(myTimer));
+  printf("checking result: %.3fms\n", 1000*ea_stop_timer(myTimer));
 
   result = esdm_dataspace_subspace(logicalSpace, 3, (int64_t[3]){kDimSize, kDimSize, kDimSize-1}, (int64_t[3]){0, 0, 1}, &destSubspace);
   assert(result == ESDM_SUCCESS);
   result = esdm_dataspace_set_stride(destSubspace, (int64_t[3]){kDimSize*kDimSize, kDimSize, 1});
   assert(result == ESDM_SUCCESS);
-  start_timer(&myTimer);
+  ea_start_timer(&myTimer);
   result = esdm_dataspace_copy_data(sourceSubspace, referenceData, destSubspace, data);
   assert(result == ESDM_SUCCESS);
-  printf("copy %d blocks: %.3fms\n", kDimSize*kDimSize, 1000*stop_timer(myTimer));
+  printf("copy %d blocks: %.3fms\n", kDimSize*kDimSize, 1000*ea_stop_timer(myTimer));
   result = esdm_dataspace_destroy(destSubspace);
   assert(result == ESDM_SUCCESS);
 
-  start_timer(&myTimer);
+  ea_start_timer(&myTimer);
   for(int64_t z = 0; z < kDimSize; z++) {
       for(int64_t y = 0; y < kDimSize; y++) {
         for(int64_t x = 0; x < kDimSize - 1; x++) {
@@ -120,20 +120,20 @@ int main() {
         }
       }
   }
-  printf("checking result: %.3fms\n", 1000*stop_timer(myTimer));
+  printf("checking result: %.3fms\n", 1000*ea_stop_timer(myTimer));
 
   result = esdm_dataspace_subspace(logicalSpace, 3, (int64_t[3]){kDimSize, kDimSize, kDimSize}, (int64_t[3]){0, 0, 0}, &destSubspace);
   assert(result == ESDM_SUCCESS);
   result = esdm_dataspace_set_stride(destSubspace, (int64_t[3]){kDimSize*kDimSize, 1, kDimSize});
   assert(result == ESDM_SUCCESS);
-  start_timer(&myTimer);
+  ea_start_timer(&myTimer);
   result = esdm_dataspace_copy_data(sourceSubspace, referenceData, destSubspace, data);
   assert(result == ESDM_SUCCESS);
-  printf("transpose two inner dimensions (copy %d blocks): %.3fms\n", kDimSize*kDimSize*kDimSize, 1000*stop_timer(myTimer));
+  printf("transpose two inner dimensions (copy %d blocks): %.3fms\n", kDimSize*kDimSize*kDimSize, 1000*ea_stop_timer(myTimer));
   result = esdm_dataspace_destroy(destSubspace);
   assert(result == ESDM_SUCCESS);
 
-  start_timer(&myTimer);
+  ea_start_timer(&myTimer);
   for(int64_t z = 0; z < kDimSize; z++) {
       for(int64_t y = 0; y < kDimSize; y++) {
         for(int64_t x = 0; x < kDimSize; x++) {
@@ -141,20 +141,20 @@ int main() {
         }
       }
   }
-  printf("checking result: %.3fms\n", 1000*stop_timer(myTimer));
+  printf("checking result: %.3fms\n", 1000*ea_stop_timer(myTimer));
 
   result = esdm_dataspace_subspace(logicalSpace, 3, (int64_t[3]){kDimSize, kDimSize, kDimSize}, (int64_t[3]){0, 0, 0}, &destSubspace);
   assert(result == ESDM_SUCCESS);
   result = esdm_dataspace_set_stride(destSubspace, (int64_t[3]){1, kDimSize, kDimSize*kDimSize}); //expected to be brutally inefficient due to really bad cache usage
   assert(result == ESDM_SUCCESS);
-  start_timer(&myTimer);
+  ea_start_timer(&myTimer);
   result = esdm_dataspace_copy_data(sourceSubspace, referenceData, destSubspace, data);
   assert(result == ESDM_SUCCESS);
-  printf("transforming to FORTRAN order (copy %d blocks): %.3fms\n", kDimSize*kDimSize*kDimSize, 1000*stop_timer(myTimer));
+  printf("transforming to FORTRAN order (copy %d blocks): %.3fms\n", kDimSize*kDimSize*kDimSize, 1000*ea_stop_timer(myTimer));
   result = esdm_dataspace_destroy(destSubspace);
   assert(result == ESDM_SUCCESS);
 
-  start_timer(&myTimer);
+  ea_start_timer(&myTimer);
   for(int64_t z = 0; z < kDimSize; z++) {
       for(int64_t y = 0; y < kDimSize; y++) {
         for(int64_t x = 0; x < kDimSize; x++) {
@@ -162,7 +162,7 @@ int main() {
         }
       }
   }
-  printf("checking result: %.3fms\n", 1000*stop_timer(myTimer));
+  printf("checking result: %.3fms\n", 1000*ea_stop_timer(myTimer));
 
   result = esdm_dataspace_destroy(logicalSpace);
   assert(result == ESDM_SUCCESS);

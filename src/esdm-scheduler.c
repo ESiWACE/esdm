@@ -44,7 +44,7 @@ esdm_scheduler_t *esdm_scheduler_init(esdm_instance_t *esdm) {
   ESDM_DEBUG(__func__);
 
   esdm_scheduler_t *scheduler = NULL;
-  scheduler = (esdm_scheduler_t *)malloc(sizeof(esdm_scheduler_t));
+  scheduler = ea_checked_malloc(sizeof(esdm_scheduler_t));
 
   // create thread pools per device
   // decide how many threads should be used per backend.
@@ -101,7 +101,7 @@ static void backend_thread(io_work_t *work, esdm_backend_t *backend) {
   io_request_status_t *status = work->parent;
 
   timer myTimer;
-  start_timer(&myTimer);
+  ea_start_timer(&myTimer);
   DEBUG("Backend thread operates on %s via %s", backend->name, backend->config->target);
 
   eassert(backend == work->fragment->backend);
@@ -109,7 +109,7 @@ static void backend_thread(io_work_t *work, esdm_backend_t *backend) {
   esdm_status ret;
   switch (work->op) {
     case (ESDM_OP_READ): {
-      ret = esdm_fragment_retrieve(work->fragment);
+      ret = esdm_fragment_load(work->fragment);
       break;
     }
     case (ESDM_OP_WRITE): {
@@ -126,7 +126,7 @@ static void backend_thread(io_work_t *work, esdm_backend_t *backend) {
     work->callback(work);
   }
 
-  double localTime = stop_timer(myTimer);
+  double localTime = ea_stop_timer(myTimer);
 
   g_mutex_lock(&status->mutex);
   // Please note the return value from atomic_fetch_sub() is the original
@@ -147,7 +147,6 @@ static void backend_thread(io_work_t *work, esdm_backend_t *backend) {
   g_mutex_unlock(&status->mutex);
   //esdm_dataspace_destroy(work->fragment->dataspace);
 
-  work->fragment->status = ESDM_DATA_NOT_LOADED;
   free(work);
 }
 
@@ -193,7 +192,7 @@ static void esdmI_dataspace_copy_instructions(
     esdm_dataspace_t* sourceSpace,
     esdm_dataspace_t* destSpace,
     int64_t* out_instructionDims,
-    int64_t* out_chunkSize,
+    int64_t* out_sourceChunkBytes,
     int64_t* out_sourceOffset,
     int64_t* out_destOffset,
     int64_t* out_size,  //actually an array of size `*out_instructionDims`, may be NULL
@@ -201,11 +200,15 @@ static void esdmI_dataspace_copy_instructions(
     int64_t* out_relDestStride  //actually an array of size `*out_instructionDims`, may be NULL
 ) {
   eassert(sourceSpace->dims == destSpace->dims);
-  eassert(sourceSpace->type == destSpace->type);
   eassert(out_instructionDims);
-  eassert(out_chunkSize);
+  eassert(out_sourceChunkBytes);
   eassert(out_sourceOffset);
   eassert(out_destOffset);
+
+  *out_instructionDims = 0;
+  *out_sourceChunkBytes = 0;
+  *out_sourceOffset = 0;
+  *out_destOffset = 0;
 
   uint64_t dimensions = sourceSpace->dims;
   int64_t overlapOffset[dimensions];
@@ -231,22 +234,22 @@ static void esdmI_dataspace_copy_instructions(
   esdm_dataspace_getEffectiveStride(destSpace, destStride);
 
   //determine how much data we can move with memcpy() at a time
-  int64_t dataPointerOffset = 0, memcpySize = 1;  //both are counts of fundamental elements, not bytes
+  int64_t dataPointerOffset = 0, chunkSize = 1;  //both are counts of fundamental elements, not bytes
   bool memcpyDims[dimensions];
   memset(memcpyDims, 0, sizeof(memcpyDims));
   while(true) {
-    //search for a dimension with a stride that matches our current memcpySize
+    //search for a dimension with a stride that matches our current chunkSize
     int64_t curDim;
     for(curDim = dimensions; curDim--; ) {
       if(!memcpyDims[curDim] && sourceStride[curDim] == destStride[curDim]) {
-        if(abs_int64(sourceStride[curDim]) == memcpySize) break;
+        if(abs_int64(sourceStride[curDim]) == chunkSize) break;
       }
     }
     if(curDim >= 0) {
       //found a fitting dimension, update our parameters
       memcpyDims[curDim] = true;  //remember not to loop over this dimension when copying the data
-      if(sourceStride[curDim] < 0) dataPointerOffset += memcpySize*(overlapSize[curDim] - 1); //When the stride is negative, the first byte belongs to the last slice of this dimension, not the first one. Remember that.
-      memcpySize *= overlapSize[curDim];
+      if(sourceStride[curDim] < 0) dataPointerOffset += chunkSize*(overlapSize[curDim] - 1); //When the stride is negative, the first byte belongs to the last slice of this dimension, not the first one. Remember that.
+      chunkSize *= overlapSize[curDim];
       if(overlapSize[curDim] != sourceSpace->size[curDim] || overlapSize[curDim] != destSpace->size[curDim]) break; //cannot fuse other dimensions in a memcpy() call if this dimensions does not have a perfect match between the dataspaces
     } else break; //didn't find another suitable dimension for fusing memcpy() calls
   }
@@ -280,39 +283,54 @@ static void esdmI_dataspace_copy_instructions(
   if(!out_size) out_size = trashSize;
   if(!out_relSourceStride) out_relSourceStride = trashRelSourceStride;
   if(!out_relDestStride) out_relDestStride = trashRelDestStride;
-  uint64_t elementSize = esdm_sizeof(sourceSpace->type);
+  uint64_t sourceElementSize = esdm_sizeof(sourceSpace->type);
+  uint64_t destElementSize = esdm_sizeof(destSpace->type);
   for(int64_t memcpyDim = 0; memcpyDim < *out_instructionDims; memcpyDim++) {
     int64_t logicalDim = memcpyDim2LogicalDim[memcpyDim];
     out_size[memcpyDim] = overlapSize[logicalDim];
-    out_relSourceStride[memcpyDim] = sourceStride[logicalDim]*elementSize;
-    out_relDestStride[memcpyDim] = destStride[logicalDim]*elementSize;
+    out_relSourceStride[memcpyDim] = sourceStride[logicalDim]*sourceElementSize;
+    out_relDestStride[memcpyDim] = destStride[logicalDim]*destElementSize;
     if(memcpyDim) {
       //make the previous stride relative to this stride
       out_relSourceStride[memcpyDim-1] -= out_size[memcpyDim]*out_relSourceStride[memcpyDim];
       out_relDestStride[memcpyDim-1] -= out_size[memcpyDim]*out_relDestStride[memcpyDim];
     }
   }
-  *out_chunkSize = memcpySize*elementSize;
+  *out_sourceChunkBytes = chunkSize*sourceElementSize;
   int64_t sourceIndex = 0, destIndex = 0;
   for(int64_t i = 0; i < dimensions; i++) {
     sourceIndex += (overlapOffset[i] - sourceSpace->offset[i])*sourceStride[i];
     destIndex += (overlapOffset[i] - destSpace->offset[i])*destStride[i];
   }
-  *out_sourceOffset = (sourceIndex - dataPointerOffset)*elementSize;
-  *out_destOffset = (destIndex - dataPointerOffset)*elementSize;
+  *out_sourceOffset = (sourceIndex - dataPointerOffset)*sourceElementSize;
+  *out_destOffset = (destIndex - dataPointerOffset)*destElementSize;
 }
+
+static esdm_copyTimes_t gCopyTimes = {0};
+esdm_copyTimes_t esdmI_performance_copy() { return gCopyTimes; }
 
 esdm_status esdm_dataspace_copy_data(esdm_dataspace_t* sourceSpace, void *voidPtrSource, esdm_dataspace_t* destSpace, void *voidPtrDest) {
   eassert(sourceSpace->dims == destSpace->dims);
-  eassert(sourceSpace->type == destSpace->type);
+
+  timer myTimer;
+  ea_start_timer(&myTimer);
 
   char* sourceData = voidPtrSource;
   char* destData = voidPtrDest;
   uint64_t dimensions = sourceSpace->dims;
+  ea_datatype_converter converter = ea_converter_for_types(destSpace->type, sourceSpace->type);
+  if(!converter) {
+    ESDM_WARN("unable to convert the given datatypes");
+    return ESDM_ERROR;
+  }
 
   //get the instructions on how to copy the data
   int64_t instructionDims, chunkSize, sourceOffset, destOffset, size[dimensions], relSourceStride[dimensions], relDestStride[dimensions];
   esdmI_dataspace_copy_instructions(sourceSpace, destSpace, &instructionDims, &chunkSize, &sourceOffset, &destOffset, size, relSourceStride, relDestStride);
+
+  double workStartTime = ea_stop_timer(myTimer);
+  gCopyTimes.planning += workStartTime;
+  gCopyTimes.total += workStartTime;
 
   //execute the instructions
   if(instructionDims < 0) return ESDM_SUCCESS;  //nothing to do
@@ -321,7 +339,7 @@ esdm_status esdm_dataspace_copy_data(esdm_dataspace_t* sourceSpace, void *voidPt
   int64_t counters[instructionDims];
   memset(counters, 0, sizeof(counters));
   while(true) {
-    memcpy(destData, sourceData, chunkSize);
+    converter(destData, sourceData, chunkSize);
 
     int64_t i;
     for(i = instructionDims; i--; ) {
@@ -333,6 +351,10 @@ esdm_status esdm_dataspace_copy_data(esdm_dataspace_t* sourceSpace, void *voidPt
     if(i == -1) break;
   }
 
+  double workEndTime = ea_stop_timer(myTimer);
+  gCopyTimes.execution += workEndTime - workStartTime;
+  gCopyTimes.total += workEndTime - workStartTime;
+
   return ESDM_SUCCESS;
 }
 
@@ -342,13 +364,21 @@ static void read_copy_callback(io_work_t *work) {
     return;
   }
   esdm_dataspace_copy_data(work->fragment->dataspace, work->fragment->buf, work->data.buf_space, work->data.mem_buf);
-  free(work->fragment->buf);  //TODO: Decide whether to cache the data.
-  work->fragment->buf = NULL;
+}
+
+static void buffer_cleanup_callback(io_work_t *work) {
+  if (work->return_code != ESDM_SUCCESS) {
+    DEBUG("Error reading from fragment ", work->fragment);
+    return;
+  }
+  work->return_code = esdm_fragment_unload(work->fragment); //get rid of the reference to user supplied data to avoid UB
 }
 
 bool esdmI_scheduler_try_direct_io(esdm_fragment_t *f, void * buf, esdm_dataspace_t * da){
+  if(f->dataspace->type != da->type){
+    return FALSE;
+  }
   eassert(f->dataspace->dims == da->dims);
-  eassert(f->dataspace->type == da->type);
 
   int64_t instructionDims, chunkSize, sourceOffset, destOffset;
   esdmI_dataspace_copy_instructions(f->dataspace, da, &instructionDims, &chunkSize, &sourceOffset, &destOffset, NULL, NULL, NULL);
@@ -357,17 +387,14 @@ bool esdmI_scheduler_try_direct_io(esdm_fragment_t *f, void * buf, esdm_dataspac
 
   //Ok, only a single memcpy() would be needed to move the data.
   //Determine whether the entire fragment's data would be needed.
-  if(esdm_dataspace_size(f->dataspace) == chunkSize) {
-    //The entire fragment's data is used in one piece.
-    //Setup it's data buffers' pointer so that the backend will directly fill the correct part of the users' buffer.
-    eassert(sourceOffset == 0 && "we have determined that we need the entire fragments data, so there should be no cut-off at the beginning");
-    f->buf = (char*)buf + destOffset;
-    return true;
-  } else {
-    //The fragments data is only used partially.
-    //Thus, direct I/O is impossible as it would overwrite data next to the needed portion.
-    return false;
-  }
+  if(esdm_dataspace_total_bytes(f->dataspace) != chunkSize) return false; //Only part of the data is used, making direct I/O impossible. That would overwrite data next to the needed portion.
+  if(f->buf) return false;  //The fragment is already loaded, thus reading it is by definition a copy.
+
+  //The entire fragment's data is used in one piece.
+  //Setup it's data buffers' pointer so that the backend will directly fill the correct part of the users' buffer.
+  eassert(sourceOffset == 0 && "we have determined that we need the entire fragments data, so there should be no cut-off at the beginning");
+  f->buf = (char*)buf + destOffset;
+  return true;
 }
 
 esdm_status esdm_scheduler_enqueue_read(esdm_instance_t *esdm, io_request_status_t *status, int frag_count, esdm_fragment_t **read_frag, void *buf, esdm_dataspace_t *buf_space) {
@@ -377,25 +404,16 @@ esdm_status esdm_scheduler_enqueue_read(esdm_instance_t *esdm, io_request_status
 
   for (int i = 0; i < frag_count; i++) {
     esdm_fragment_t *f = read_frag[i];
-    uint64_t size = esdm_dataspace_size(f->dataspace);
     esdm_backend_t *backend_to_use = f->backend;
 
-    io_work_t *task = (io_work_t *)malloc(sizeof(io_work_t));
+    io_work_t *task = ea_checked_malloc(sizeof(io_work_t));
     task->parent = status;
     task->op = ESDM_OP_READ;
     task->fragment = f;
     if (esdmI_scheduler_try_direct_io(f, buf, buf_space)) {
-      task->callback = NULL;
+      task->callback = buffer_cleanup_callback;
     } else {
       //We cannot instruct the fragment to read the data directly into `buf` as we may only need a part of the fragment's data, and the overshoot may cause UB.
-      //And we don't want to allocate more memory here than just enough to actually read the fragment's data, so we cannot use the fragment's possibly strided dataspace.
-      //However, we can ensure that the fragment can read directly into our buffer by supplying an unstrided dataspace.
-      esdm_dataspace_t* contiguousSpace;
-      esdm_dataspace_makeContiguous(f->dataspace, &contiguousSpace);
-      esdm_dataspace_destroy(f->dataspace);
-      f->dataspace = contiguousSpace;
-
-      f->buf = malloc(size);  //This buffer will be filled by some background I/O process, read_copy_callback() will only be invoked *after* that has happened.
       task->callback = read_copy_callback;
       task->data.mem_buf = buf;
       task->data.buf_space = buf_space;
@@ -408,6 +426,58 @@ esdm_status esdm_scheduler_enqueue_read(esdm_instance_t *esdm, io_request_status
   }
 
   return ESDM_SUCCESS;
+}
+
+//Not a sensible abstraction in itself, but it completes the updateRequestStats() function.
+static void updateIoStats(esdm_statistics_t* stats, uint64_t fragmentCount, uint64_t byteCount) {
+  stats->fragments += fragmentCount;
+  stats->bytesIo += byteCount;
+}
+
+static void updateRequestStats(esdm_statistics_t* stats, uint64_t requestCount, uint64_t byteCount, bool requestIsInternal) {
+  if(requestIsInternal) {
+    stats->internalRequests += requestCount;
+    stats->bytesInternal += byteCount;
+  } else {
+    stats->requests += requestCount;
+    stats->bytesUser += byteCount;
+  }
+}
+
+esdm_status esdmI_scheduler_readSingleFragmentBlocking(esdm_instance_t* esdm, esdm_dataset_t* dataset, void* buffer, esdm_dataspace_t* memspace, esdm_fragment_t* fragment) {
+  timer myTimer;
+  ea_start_timer(&myTimer);
+  esdm_readTimes_t myTimes = {0};
+  double startTime = ea_stop_timer(myTimer);
+
+  io_request_status_t status;
+  esdm_status ret = esdm_scheduler_status_init(&status);
+  if(ret != ESDM_SUCCESS) return ret;
+
+  ret = esdm_scheduler_enqueue_read(esdm, &status, 1, &fragment, buffer, memspace);
+  eassert(ret == ESDM_SUCCESS);
+  myTimes.enqueue = ea_stop_timer(myTimer) - startTime;
+
+  startTime = ea_stop_timer(myTimer);
+  ret = esdm_scheduler_wait(&status);
+  eassert(ret == ESDM_SUCCESS);
+
+  ret = esdm_scheduler_status_finalize(&status);
+  eassert(ret == ESDM_SUCCESS);
+  myTimes.completion = ea_stop_timer(myTimer) - startTime;
+
+  ret = status.return_code;
+
+  //update the statistics
+  int64_t requestBytes = esdm_dataspace_total_bytes(memspace);
+  updateIoStats(&esdm->readStats, 1, requestBytes);
+  updateRequestStats(&esdm->readStats, 1, requestBytes, false);
+
+  gReadTimes.enqueue += myTimes.enqueue;
+  gReadTimes.completion += myTimes.completion;
+  gReadTimes.total += ea_stop_timer(myTimer);
+
+  return ret;
 }
 
 static esdm_status esdm_scheduler_enqueue_fill(esdm_instance_t* esdm, io_request_status_t* status, void* fillValue, void* buf, esdm_dataspace_t* bufSpace, esdmI_hypercubeList_t* fillRegion) {
@@ -448,6 +518,8 @@ static esdm_status esdm_scheduler_enqueue_fill(esdm_instance_t* esdm, io_request
     esdm_dataspace_copy_data(sourceSpace, fillValue, bufSpace, buf);
     eassert(ret == ESDM_SUCCESS);
   }
+
+  esdm_dataspace_destroy(sourceSpace);
 
   return ESDM_SUCCESS;
 }
@@ -505,6 +577,7 @@ static esdmI_hypercubeSet_t* makeSplitRecommendation_balancedDims(esdm_dataspace
     }
     if(updateDim < 0) break;
   }
+  esdmI_hypercube_destroy(curCube);
   return result;
 }
 
@@ -528,7 +601,7 @@ static esdmI_hypercubeSet_t* makeSplitRecommendation_contiguousFragments(esdm_da
   esdmI_hypercube_t* extends;
   esdmI_dataspace_getExtends(space, &extends);
 
-  if(maxFragmentSize > 0 && esdm_dataspace_size(space) < (uint64_t)maxFragmentSize) {
+  if(maxFragmentSize > 0 && esdm_dataspace_total_bytes(space) < (uint64_t)maxFragmentSize) {
     //fast path: just return the full extends if the dataspace fits into the maxFragmentSize
     esdmI_hypercubeSet_add(result, extends);
   } else {
@@ -618,10 +691,10 @@ static void splitToBackends(esdm_dataspace_t* space, int64_t backendCount, esdm_
   eassert(out_backendExtends);
 
   //get some input data
-  float* weights = malloc(backendCount*sizeof(*weights));
+  float* weights = ea_checked_malloc(backendCount*sizeof(*weights));
   for (int64_t i = 0; i < backendCount; i++) {
     if (backends[i]->callbacks.estimate_throughput != NULL)
-      weights[i] = backends[i]->callbacks.estimate_throughput(backends[i]);
+      weights[i] = esdmI_backend_estimate_throughput(backends[i]);
   }
 
   int64_t dims = esdm_dataspace_get_dims(space);
@@ -649,7 +722,7 @@ static void splitToBackends(esdm_dataspace_t* space, int64_t backendCount, esdm_
     //determine the ranges for the different backends
     for(int64_t i = 1; i < backendCount; i++) weights[i] += weights[i-1]; //make weights cumulative
     float totalWeight = weights[backendCount-1];
-    int64_t* bounds = malloc((backendCount + 1)*sizeof(*bounds));
+    int64_t* bounds = ea_checked_malloc((backendCount + 1)*sizeof(*bounds));
     bounds[0] = totalExtends->ranges[bestDim].start;
     bounds[backendCount] = totalExtends->ranges[bestDim].end;
     int64_t size = esdmI_range_size(totalExtends->ranges[bestDim]);
@@ -695,100 +768,123 @@ static void splitToBackends(esdm_dataspace_t* space, int64_t backendCount, esdm_
   if(totalExtends) esdmI_hypercube_destroy(totalExtends);
 }
 
-//Not a sensible abstraction in itself, but it completes the updateRequestStats() function.
-static void updateIoStats(esdm_statistics_t* stats, uint64_t fragmentCount, uint64_t byteCount) {
-  stats->fragments += fragmentCount;
-  stats->bytesIo += byteCount;
-}
-
-static void updateRequestStats(esdm_statistics_t* stats, uint64_t requestCount, uint64_t byteCount, bool requestIsInternal) {
-  if(requestIsInternal) {
-    stats->internalRequests += requestCount;
-    stats->bytesInternal += byteCount;
-  } else {
-    stats->requests += requestCount;
-    stats->bytesUser += byteCount;
-  }
-}
-
 esdm_status esdm_scheduler_enqueue_write(esdm_instance_t *esdm, io_request_status_t *status, esdm_dataset_t *dataset, void *buf, esdm_dataspace_t *space, bool requestIsInternal) {
   timer myTimer;
-  start_timer(&myTimer);
+  ea_start_timer(&myTimer);
   double startTime; //reused for the different individual measurements
 
-  GError *error;
   //Gather I/O recommendations
   //esdm_performance_recommendation(esdm, NULL, NULL);    // e.g., split, merge, replication?
   //esdm_layout_recommendation(esdm, NULL, NULL);		  // e.g., merge, split, transform?
   int64_t backendCount;
   esdm_backend_t** backends = esdm_modules_makeBackendRecommendation(esdm->modules, space, &backendCount, NULL);
   eassert(backends);
-  esdmI_hypercube_t** backendExtends = malloc(backendCount*sizeof(*backendExtends));
+  esdmI_hypercube_t** backendExtends = ea_checked_malloc(backendCount*sizeof(*backendExtends));
   splitToBackends(space, backendCount, backends, backendExtends);
-  gWriteTimes.backendDistribution += startTime = stop_timer(myTimer);
+  gWriteTimes.backendDistribution += startTime = ea_stop_timer(myTimer);
   for(int64_t backendIndex = 0; backendIndex < backendCount; backendIndex++) {
     esdmI_hypercube_t* curExtends = backendExtends[backendIndex];
-    if(curExtends) {
-      esdm_backend_t* curBackend = backends[backendIndex];
-
-      //get a list of hypercubes to write to this backend
-      esdm_dataspace_t* backendSpace;
-      esdm_status ret = esdmI_dataspace_createFromHypercube(curExtends, esdm_dataspace_get_type(space), &backendSpace);
-      eassert(ret == ESDM_SUCCESS);
-      ret = esdm_dataspace_copyDatalayout(backendSpace, space);
-      eassert(ret == ESDM_SUCCESS);
-      esdmI_hypercubeSet_t* cubes = esdm_scheduler_makeSplitRecommendation(backendSpace, curBackend);
-      esdmI_hypercubeList_t* cubeList = esdmI_hypercubeSet_list(cubes);
-      esdm_dataspace_destroy(backendSpace);
-
-      //create a fragment and task for each of the hypercubes in the list
-      int64_t dim[space->dims], offset[space->dims];
-      for(int64_t i = 0; i < cubeList->count; i++) {
-        atomic_fetch_add(&status->pending_ops, 1);
-
-        esdmI_hypercube_getOffsetAndSize(cubeList->cubes[i], offset, dim);
-
-        esdm_dataspace_t* subspace;
-        esdm_status ret = esdmI_dataspace_createFromHypercube(cubeList->cubes[i], esdm_dataspace_get_type(space), &subspace);
-        eassert(ret == ESDM_SUCCESS);
-        ret = esdm_dataspace_copyDatalayout(subspace, space);
-        eassert(ret == ESDM_SUCCESS);
-        esdm_fragment_t* fragment;
-        ret = esdmI_fragment_create(dataset, subspace, (char*)buf + esdm_dataspace_elementOffset(space, offset), &fragment);
-        eassert(ret == ESDM_SUCCESS);
-        fragment->backend = curBackend;
-
-        io_work_t* task = malloc(sizeof(*task));
-        *task = (io_work_t){
-          .fragment = fragment,
-          .op = ESDM_OP_WRITE,
-          .return_code = ESDM_SUCCESS,
-          .parent = status,
-          .callback = NULL,
-          .data = {NULL, NULL}
-        };
-
-        if (curBackend->threads == 0) {
-          backend_thread(task, curBackend);
-        } else {
-          g_thread_pool_push(curBackend->threadPool, task, &error);
-        }
-
-        updateIoStats(&esdm->writeStats, 1, esdm_dataspace_size(subspace)); //update the statistics
-      }
-
-      esdmI_hypercubeSet_destroy(cubes);
-      esdmI_hypercube_destroy(curExtends);
+    if(! curExtends) {
+      continue;
     }
-  }
-  gWriteTimes.backendDispatch += stop_timer(myTimer) - startTime;
+    esdm_backend_t* curBackend = backends[backendIndex];
 
-  updateRequestStats(&esdm->writeStats, 1, esdm_dataspace_size(space), requestIsInternal); //update the statistics
+    //get a list of hypercubes to write to this backend
+    esdm_dataspace_t* backendSpace;
+    esdm_status ret = esdmI_dataspace_createFromHypercube(curExtends, esdm_dataspace_get_type(space), &backendSpace);
+    eassert(ret == ESDM_SUCCESS);
+    ret = esdm_dataspace_copyDatalayout(backendSpace, space);
+    eassert(ret == ESDM_SUCCESS);
+    esdmI_hypercubeSet_t* cubes = esdm_scheduler_makeSplitRecommendation(backendSpace, curBackend);
+    esdmI_hypercubeList_t* cubeList = esdmI_hypercubeSet_list(cubes);
+    esdm_dataspace_destroy(backendSpace);
+
+    //create a fragment and task for each of the hypercubes in the list
+    int64_t dim[space->dims], offset[space->dims];
+    for(int64_t i = 0; i < cubeList->count; i++) {
+      esdmI_hypercube_getOffsetAndSize(cubeList->cubes[i], offset, dim);
+
+      esdm_dataspace_t* subspace;
+      esdm_status ret = esdmI_dataspace_createFromHypercube(cubeList->cubes[i], esdm_dataspace_get_type(space), &subspace);
+      eassert(ret == ESDM_SUCCESS);
+      ret = esdm_dataspace_copyDatalayout(subspace, space);
+      eassert(ret == ESDM_SUCCESS);
+      bool isNewFragment;
+      esdm_fragment_t* fragment = esdmI_dataset_createFragment(dataset, subspace, (char*)buf + esdm_dataspace_elementOffset(space, offset), &isNewFragment);
+      eassert(fragment);
+      esdm_dataspace_destroy(subspace);
+      if(!isNewFragment) continue;
+      fragment->backend = curBackend;
+      esdmI_scheduler_writeFragmentNonblocking(esdm, fragment, requestIsInternal, status);
+    }
+
+    esdmI_hypercubeSet_destroy(cubes);
+    esdmI_hypercube_destroy(curExtends);
+  }
+  gWriteTimes.backendDispatch += ea_stop_timer(myTimer) - startTime;
 
   //cleanup
   free(backendExtends);
   free(backends);
   return ESDM_SUCCESS;
+}
+
+void esdmI_scheduler_writeFragmentNonblocking(esdm_instance_t* esdm, esdm_fragment_t* fragment, bool requestIsInternal, io_request_status_t* status) {
+  timer myTimer;
+  ea_start_timer(&myTimer);
+
+  if(!fragment->backend) fragment->backend = esdm_modules_fastestBackend(esdm_get_modules());
+  esdm_backend_t* backend = fragment->backend;
+  io_work_t* task = ea_checked_malloc(sizeof(*task));
+  *task = (io_work_t){
+    .fragment = fragment,
+    .op = ESDM_OP_WRITE,
+    .return_code = ESDM_SUCCESS,
+    .parent = status,
+    .callback = buffer_cleanup_callback,
+    .data = {NULL, NULL}
+  };
+
+  atomic_fetch_add(&status->pending_ops, 1);
+  if (backend->threads == 0) {
+    backend_thread(task, backend);
+  } else {
+    GError *error;
+    g_thread_pool_push(backend->threadPool, task, &error);
+  }
+
+  int64_t byteCount = esdm_dataspace_total_bytes(fragment->dataspace);
+  updateIoStats(&esdm->writeStats, 1, byteCount);
+  updateRequestStats(&esdm->writeStats, 1, byteCount, requestIsInternal);
+
+  double endTime = ea_stop_timer(myTimer);
+  gWriteTimes.backendDispatch += endTime;
+  gWriteTimes.total += endTime;
+}
+
+esdm_status esdmI_scheduler_writeFragmentBlocking(esdm_instance_t* esdm, esdm_fragment_t* fragment, bool requestIsInternal) {
+  ESDM_DEBUG(__func__);
+
+  io_request_status_t status;
+  esdm_status ret = esdm_scheduler_status_init(&status);
+  eassert(ret == ESDM_SUCCESS);
+
+  esdmI_scheduler_writeFragmentNonblocking(esdm, fragment, requestIsInternal, &status);
+
+  //esdmI_scheduler_writeFragmentNonblocking() has its own internal time measurement which already adds to the total write time, so it must must be excluded from our time measurement
+  timer myTimer;
+  ea_start_timer(&myTimer);
+
+  ret = esdm_scheduler_wait(&status);
+  eassert(ret == ESDM_SUCCESS);
+  ret = esdm_scheduler_status_finalize(&status);
+  eassert(ret == ESDM_SUCCESS);
+
+  double endTime = ea_stop_timer(myTimer);
+  gWriteTimes.completion += endTime;
+  gWriteTimes.total += endTime;
+
+  return status.return_code;
 }
 
 esdm_status esdm_scheduler_status_init(io_request_status_t *status) {
@@ -814,35 +910,11 @@ esdm_status esdm_scheduler_wait(io_request_status_t *status) {
   return ESDM_SUCCESS;
 }
 
-static bool fragmentsCoverSpace(esdm_dataspace_t* space, int64_t fragmentCount, esdm_fragment_t** fragments, esdmI_hypercubeSet_t** out_uncoveredRegion) {
-  eassert(space);
-  eassert(out_uncoveredRegion);
-
-  esdmI_hypercube_t* curCube;
-  *out_uncoveredRegion = esdmI_hypercubeSet_make();
-
-  esdmI_dataspace_getExtends(space, &curCube);
-  esdmI_hypercubeSet_add(*out_uncoveredRegion, curCube);
-  esdmI_hypercube_destroy(curCube);
-
-  if(fragmentCount == 0){
-    return FALSE;
-  }
-
-  for(int64_t i = 0; i < fragmentCount; i++) {
-    esdmI_dataspace_getExtends(fragments[i]->dataspace, &curCube);
-    esdmI_hypercubeSet_subtract(*out_uncoveredRegion, curCube);
-    esdmI_hypercube_destroy(curCube);
-  }
-
-  return esdmI_hypercubeSet_isEmpty(*out_uncoveredRegion);
-}
-
 esdm_status esdm_scheduler_write_blocking(esdm_instance_t *esdm, esdm_dataset_t *dataset, void *buf, esdm_dataspace_t *subspace, bool requestIsInternal) {
   ESDM_DEBUG(__func__);
 
   timer myTimer;
-  start_timer(&myTimer);
+  ea_start_timer(&myTimer);
 
   io_request_status_t status;
   esdm_status ret = esdm_scheduler_status_init(&status);
@@ -852,14 +924,14 @@ esdm_status esdm_scheduler_write_blocking(esdm_instance_t *esdm, esdm_dataset_t 
   if( ret != ESDM_SUCCESS){
     return ret;
   }
-  double syncStartTime = stop_timer(myTimer);
+  double syncStartTime = ea_stop_timer(myTimer);
 
   ret = esdm_scheduler_wait(&status);
   eassert(ret == ESDM_SUCCESS);
 
   ret = esdm_scheduler_status_finalize(&status);
   eassert(ret == ESDM_SUCCESS);
-  double endTime = stop_timer(myTimer);
+  double endTime = ea_stop_timer(myTimer);
 
   gWriteTimes.completion += endTime - syncStartTime;
   gWriteTimes.total += endTime;
@@ -868,11 +940,11 @@ esdm_status esdm_scheduler_write_blocking(esdm_instance_t *esdm, esdm_dataset_t 
 }
 
 
-esdm_status esdm_scheduler_read_blocking(esdm_instance_t *esdm, esdm_dataset_t *dataset, void *buf, esdm_dataspace_t *subspace, esdmI_hypercubeSet_t** out_fillRegion, bool requestIsInternal) {
+esdm_status esdm_scheduler_read_blocking(esdm_instance_t *esdm, esdm_dataset_t *dataset, void *buf, esdm_dataspace_t *subspace, esdmI_hypercubeSet_t** out_fillRegion, bool allowWriteback, bool requestIsInternal) {
   ESDM_DEBUG(__func__);
 
   timer myTimer;
-  start_timer(&myTimer);
+  ea_start_timer(&myTimer);
   esdm_readTimes_t myTimes = {0};
   double startTime; //reused for the different individual measurements
 
@@ -880,22 +952,22 @@ esdm_status esdm_scheduler_read_blocking(esdm_instance_t *esdm, esdm_dataset_t *
   esdm_status ret = esdm_scheduler_status_init(&status);
   eassert(ret == ESDM_SUCCESS);
 
-  startTime = stop_timer(myTimer);
+  startTime = ea_stop_timer(myTimer);
   int64_t frag_count;
   esdm_fragment_t** read_frag;
+  esdmI_hypercubeSet_t* uncovered;
+  bool dataIsComplete;
   {
     esdmI_hypercube_t* readExtends;
     esdmI_dataspace_getExtends(subspace, &readExtends);
-    read_frag = esdmI_fragments_makeSetCoveringRegion(&dataset->fragments, readExtends, &frag_count);
+    esdmI_dataset_fragmentsCoveringRegion(dataset, readExtends, &frag_count, &read_frag, &uncovered, &dataIsComplete);
     esdmI_hypercube_destroy(readExtends);
     DEBUG("fragments to read: %d", frag_count);
   }
-  myTimes.makeSet = stop_timer(myTimer) - startTime;
+  myTimes.makeSet = ea_stop_timer(myTimer) - startTime;
 
   //check whether we have all the requested data
-  startTime = stop_timer(myTimer);
-  esdmI_hypercubeSet_t* uncovered;
-  bool dataIsComplete = fragmentsCoverSpace(subspace, frag_count, read_frag, &uncovered);
+  startTime = ea_stop_timer(myTimer);
   if(!dataIsComplete) {
     esdm_type_t type = esdm_dataspace_get_type(subspace);
     eassert(type == esdm_dataset_get_type(dataset));  //TODO handle the case that the two types don't match
@@ -908,44 +980,44 @@ esdm_status esdm_scheduler_read_blocking(esdm_instance_t *esdm, esdm_dataset_t *
       ret = ESDM_INCOMPLETE_DATA; //no fill value set, so we error out
     }
   }
-  myTimes.coverageCheck = stop_timer(myTimer) - startTime;
+  myTimes.coverageCheck = ea_stop_timer(myTimer) - startTime;
 
   int64_t requestBytes = 0, ioBytes = 0;
   if(ret == ESDM_SUCCESS) {
     //all preliminaries successful, commit to reading
-    startTime = stop_timer(myTimer);
+    startTime = ea_stop_timer(myTimer);
     ret = esdm_scheduler_enqueue_read(esdm, &status, frag_count, read_frag, buf, subspace);
     eassert(ret == ESDM_SUCCESS);
-    myTimes.enqueue = stop_timer(myTimer) - startTime;
+    myTimes.enqueue = ea_stop_timer(myTimer) - startTime;
 
-    startTime = stop_timer(myTimer);
+    startTime = ea_stop_timer(myTimer);
     ret = esdm_scheduler_wait(&status);
     eassert(ret == ESDM_SUCCESS);
 
     ret = esdm_scheduler_status_finalize(&status);
     eassert(ret == ESDM_SUCCESS);
-    myTimes.completion = stop_timer(myTimer) - startTime;
+    myTimes.completion = ea_stop_timer(myTimer) - startTime;
 
     ret = status.return_code;
 
     //update the statistics
-    requestBytes = esdm_dataspace_size(subspace);
+    requestBytes = esdm_dataspace_total_bytes(subspace);
     ioBytes = 0;
     for(int64_t i = 0; i < frag_count; i++) {
-      ioBytes += esdm_dataspace_size(read_frag[i]->dataspace);
+      ioBytes += esdm_dataspace_total_bytes(read_frag[i]->dataspace);
     }
     updateIoStats(&esdm->readStats, frag_count, ioBytes);
     updateRequestStats(&esdm->readStats, 1, requestBytes, requestIsInternal);
   }
 
-  startTime = stop_timer(myTimer);
   //reading is done, check whether we want to store the resulting fragment for faster access in the future
-  if(ret == ESDM_SUCCESS && dataIsComplete) { //don't perform write-back of data that contains fill values, we do not want to transform data holes into stored data!
+  if(allowWriteback && ret == ESDM_SUCCESS && dataIsComplete) { //don't perform write-back of data that contains fill values, we do not want to transform data holes into stored data!
     if(ioBytes/(double)requestBytes >= 8) { //TODO Turn this magic number into a proper configuration constant!
+      startTime = ea_stop_timer(myTimer);
       esdm_scheduler_write_blocking(esdm, dataset, buf, subspace, true);  //Ignore return code because this is just an optimization that writes a redundant data copy to disk.
+      myTimes.writeback = ea_stop_timer(myTimer) - startTime;
     }
   }
-  myTimes.writeback = stop_timer(myTimer) - startTime;
 
   //cleanup, must not happen before we wait for the background processes to finish their tasks
   if(out_fillRegion) {  //either return the fill region to the user or destroy it
@@ -954,7 +1026,7 @@ esdm_status esdm_scheduler_read_blocking(esdm_instance_t *esdm, esdm_dataset_t *
     esdmI_hypercubeSet_destroy(uncovered);
   }
   free(read_frag);
-  myTimes.total = stop_timer(myTimer);
+  myTimes.total = ea_stop_timer(myTimer);
 
   gReadTimes.makeSet += myTimes.makeSet;
   gReadTimes.coverageCheck += myTimes.coverageCheck;

@@ -1,0 +1,85 @@
+\section{Callgraph for accessing metadata}%
+\label{callgraph-for-accessing-metadata}
+
+Guiding question:
+
+\begin{itemize}
+  \item How and when do we fetch metadata in the read path?
+  \item When do we serialize metadata to JSON in the write path?
+\end{itemize}
+
+\subsection{General responsibility}%
+\label{general-responsibility}
+
+\begin{itemize}
+  \item Container holds references to datasets (under different name possibly)
+  \item Dataset holds information about the dataset itself:
+    \begin{itemize}
+      \item User-defined attributes (scientific metadata) =\textgreater{} it is not know a-priori what that is
+      \item Technical attributes (some may be optional) =\textgreater{} well known how they look like
+      \item Fragment information is directly inlined as part of datasets
+    \end{itemize}
+  \item Fragments
+    \begin{itemize}
+      \item Information about their shape, backend plugin ID, backend-specific options (unknown to us)
+    \end{itemize}
+\end{itemize}
+
+\subsection{Write}%
+\label{write}
+
+Applies for datasets, containers, fragments:
+
+\begin{itemize}
+  \item All data is kept in appropriate structures in main memory
+  \item Serialize to JSON just before calling the metadata backend to store the metadata (and free JSON afterwards)
+  \item Backend communicates via JSON to ESDM layer
+\end{itemize}
+
+Callgraph from user perspective:
+
+\begin{itemize}
+  \item \lstinline|c = container_create("name")|
+  \item \lstinline|d = dataset_create(c, "dset")|
+  \item \lstinline|write(d)| creates fragments and attaches the metadata to the dataset
+  \item \lstinline|dataset_commit(d)| =\textgreater{} make the dataset persistent, also write the dataset + fragment metadata
+  \item \lstinline|container_commit(c)| =\textgreater{} makes the container persistent
+    TODO: check that the right version of data is linked to it.
+  \item \lstinline|dataset_destroy(d)|
+  \item \lstinline|container_destroy(c)|
+\end{itemize}
+
+\subsection{Read}%
+\label{read}
+
+Applies for datasets, containers, fragments:
+
+\begin{itemize}
+  \item All data is kept in appropriate structures in main memory AND fetched when the data is queried initially
+  \item De-serialized from JSON at the earliest convenience in the ESDM layer
+  \item Backend communicates via JSON to ESDM layer
+\end{itemize}
+
+Callgraph from user perspective:
+
+\begin{itemize}
+  \item \lstinline|c = container_open("name")| \textless= here we read the metadata for "name" and generate appropriate structures
+  \item \lstinline|d = dataset_open("dset")| \textless= here we read the metadata for "dset" and generate appropriate structures
+  \item \lstinline|read(d)|
+  \item \lstinline|dataset_destroy(d)|
+  \item \lstinline|container_destroy(c)|
+\end{itemize}
+
+Alternative workflow with unkown dsets:
+
+\begin{itemize}
+  \item \lstinline|c = container_open("name")| \textless= here we read the metadata for "name" and generate appropriate structures
+  \item \lstinline|it = dataset_iterator()|
+  \item \lstinline|for x in it:|
+    \begin{itemize}
+      \item \lstinline|dataset_iterator_dataset(x)|
+    \end{itemize}
+  \item \lstinline|read(d)|
+  \item \lstinline|dataset_destroy(d)|
+  \item \lstinline|container_destroy(c)|
+\end{itemize}

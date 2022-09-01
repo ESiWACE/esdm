@@ -1,0 +1,155 @@
+\section{Building instructions}%
+\label{installation-instructions-for-mistral}
+%Mistral (HLRE-3) is the supercomputer installed at DKRZ in 2015/2016.
+This guide documents installation procedures to build prerequisites as well as the prototype codebase for development and testing purposes.
+
+\begin{figure}[!ht]
+  \begin{center}
+    \includegraphics[width=0.6\textwidth]{../assets/deps/graph.png}
+  \end{center}
+  \caption{Dependencies overview}
+  \label{fig:deps}
+\end{figure}
+
+\subsection{Dependencies (Spack)}%
+\label{satisfying-requirements}
+Although the software trees on supercomputer may provide all the standard tools and libraries required to build ESDM, it is still recommended to build, install, and manage dependencies via Spack\footnote{\url{https://spack.readthedocs.io/en/latest/index.html}}.
+The instructions below show how to setup Spack and install the ESDM dependencies.
+
+\begin{enumerate}
+  \item Download and enable Spack
+    \begin{lstlisting}
+    git clone --depth=2 https://github.com/spack/spack.git spack
+    . spack/share/spack/setup-env.sh
+    \end{lstlisting}
+  \item Set a \lstinline|gcc| version to be used
+    \begin{lstlisting}
+    gccver=7.3.0
+    \end{lstlisting}
+  \item Install dependencies
+    \begin{lstlisting}
+    spack install gcc@$gccver +binutils
+    spack compiler find
+    spack install autoconf%gcc@$gccver
+    spack install openmpi%gcc@$gccver gettext%gcc@$gccver
+    spack install jansson%gcc@$gccver glib%gcc@$gccver
+    \end{lstlisting}
+  \item Load dependencies
+    \begin{lstlisting}
+    spack load gcc@$gccver
+    spack load -r autoconf%gcc@$gccver
+    spack load -r libtool%gcc@$gccver
+    spack load -r openmpi%gcc@$gccver
+    spack load -r jansson%gcc@$gccver
+    spack load -r glib%gcc@$gccver
+    \end{lstlisting}
+\end{enumerate}
+
+
+\subsection{ESDM prototype}
+Assuming all prerequisites have been installed and tested, ESDM can be configured and build as follows.
+\begin{enumerate}
+  \item Ensure environment is aware of dependencies installed using \lstinline|spack| and \lstinline|dev-env|
+    \begin{lstlisting}
+    git clone https://github.com/ESiWACE/esdm
+    \end{lstlisting}
+  \item Configure and build ESDM
+    \begin{lstlisting}
+    cd esdm
+    pushd deps
+    ./prepare.sh
+    popd
+    ./configure \
+      --prefix=${PREFIX} \
+      --enable-netcdf4
+    cd build
+    make
+    make install
+    \end{lstlisting}
+\end{enumerate}
+
+
+\subsection{ESDM-NetCDF and ESDM-NetCDF-Python}%
+\begin{enumerate}
+  \item Clone the NetCDF-ESDM repository
+    \begin{lstlisting}
+    git clone https://github.com/ESiWACE/esdm-netcdf-c
+    \end{lstlisting}
+  \item Configure and build NetCDF-ESDM. (\lstinline|$INSTPATH| is the installation path of ESDM.)
+    \begin{lstlisting}
+    cd esdm-netcdf-c
+    /bootstrap
+    ./configure \
+      --prefix=$prefix \
+      --with-esdm=$INSTPATH \
+      LDFLAGS="-L$INSTPATH/lib" \
+      CFLAGS="-I$INSTPATH/include" \
+      CC=mpicc \
+      --disable-dap
+    make -j
+    make install
+    \end{lstlisting}
+  \item If required, install the netcdf4-python module. 
+    Change to the ESDM-NetCDF repository's root directory and install the patched NetCDF-Python module.
+    \begin{lstlisting}
+    cd dev
+    git clone https://github.com/Unidata/netcdf4-python.git
+    cd netcdf-python
+    patch -s -p1 < ../v2.patch
+    python3 setup.py install --user
+    \end{lstlisting}
+\end{enumerate}
+
+\subsection{Docker}
+For the development of ESDM, the directory \lstinline|./dev/docker| contains all requirements to set up a development environment using docker quickly.
+The Docker files contain ESDM installation instructions for different distributions.
+For easy building Docker files for different platforms are provided in different flavours:
+
+\begin{itemize}
+  \item CentOS/Fedora/RHEL like systems
+  \item Ubuntu/Debian like systems
+\end{itemize}
+
+\subsubsection{Setup}
+
+Assuming the docker service is running you can build the docker images as follows:
+
+\begin{lstlisting}
+cd ./dev/docker
+cd <choose ubuntu/fedora/..>
+sudo docker build -t esdm .
+\end{lstlisting}
+
+After docker is done building an image, you should see the ESMD test suite's output, which verifies that the development environment is set up correctly. 
+The output should look similar to the following output:
+
+\begin{lstlisting}
+Running tests...
+Test project /data/esdm/build
+Start 1: metadata
+1/2 Test #1: metadata .........................   Passed    0.00 sec
+Start 2: readwrite
+2/2 Test #2: readwrite ........................   Passed    0.00 sec
+
+100% tests passed, 0 tests failed out of 2
+
+Total Test time (real) =   0.01 sec
+\end{lstlisting}
+
+
+\subsubsection{Usage}
+Running the ESDM Docker container will run the test suite:
+
+\begin{lstlisting}
+sudo docker run esdm  # should display test output
+\end{lstlisting}
+
+You can also explore the development environment interactively:
+
+\begin{lstlisting}
+sudo docker run -it esdm bash
+\end{lstlisting}
+
+\begin{lstlisting}
+docker run dev/docker/ubuntu-whole-stack/Dockerfile
+\end{lstlisting}

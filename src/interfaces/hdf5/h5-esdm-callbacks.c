@@ -118,7 +118,7 @@ static void *H5VL_esdm_attribute_create(void *obj, H5VL_loc_params_t loc_params,
   //				SQO_t* sqo = (SQO_t*) obj;
   //				sqo->info.num_attrs++;
   //				attribute->object.location = create_path(sqo);
-  //				attribute->object.name = strdup(attr_name);
+  //				attribute->object.name = ea_checked_strdup(attr_name);
   //				attribute->object.root = sqo->root;
   //				attribute->object.fapl = sqo->fapl;
   //				attribute->data_size = data_size;
@@ -628,8 +628,8 @@ static void *H5VL_esdm_dataset_create(void *obj, H5VL_loc_params_t loc_params, c
   // #10 0x0000000000400b69 in ?? ()
 
   // allocate resoources
-  object = (H5VL_esdm_object_t *)malloc(sizeof(H5VL_esdm_object_t));
-  dataset = (H5VL_esdm_dataset_t *)malloc(sizeof(H5VL_esdm_dataset_t));
+  object = ea_checked_malloc(sizeof(H5VL_esdm_object_t));
+  dataset = ea_checked_malloc(sizeof(H5VL_esdm_dataset_t));
 
   object->type = MEMVOL_DATASET;
   object->object = dataset;
@@ -680,7 +680,7 @@ static void *H5VL_esdm_dataset_create(void *obj, H5VL_loc_params_t loc_params, c
       free(dataset);
       return NULL;
     }
-    g_hash_table_insert(parent->childs_tbl, strdup(name), object);
+    g_hash_table_insert(parent->childs_tbl, ea_checked_strdup(name), object);
     g_array_append_val(parent->childs_ord_by_index_arr, object);
   }
 
@@ -718,8 +718,8 @@ static herr_t H5VL_esdm_dataset_write(void *dset, hid_t mem_type_id, hid_t mem_s
 
   herr_t ret_value = SUCCEED;
 
-  dset_t *d = (dset_t *)malloc(sizeof(dset_t));
-  //d->object = (obj_t*) malloc(sizeof(obj_t));
+  dset_t *d = ea_checked_malloc(sizeof(dset_t));
+  //d->object = ea_checked_malloc(sizeof(obj_t));
 
   int ndims = H5Sget_simple_extent_ndims(mem_space_id);
 
@@ -745,7 +745,7 @@ static herr_t H5VL_esdm_dataset_write(void *dset, hid_t mem_type_id, hid_t mem_s
 
   hid_t dspace_id;
 
-  //unsigned char* space_buf = malloc(data_size)set pointer to data;
+  //unsigned char* space_buf = ea_checked_malloc(data_size)set pointer to data;
   //const void * data =  /* set pointer to data*/;
   //memcpy(space_buf, data, data_size);
   //*space_id = H5Sdecode(space_buf);
@@ -828,7 +828,7 @@ static herr_t H5VL_esdm_dataset_get(void *obj, H5VL_dataset_get_t get_type, hid_
                 if((*ret_id = H5D_get_space(dset)) < 0)
                     HGOTO_ERROR(H5E_ARGS, H5E_CANTGET, FAIL, "can't get space ID of dataset")
 
-				*/
+        */
 
       break;
     }
@@ -891,7 +891,7 @@ static herr_t H5VL_esdm_dataset_get(void *obj, H5VL_dataset_get_t get_type, hid_
       /*
                 if((*ret_id = H5D_get_access_plist(dset)) < 0)
                     HGOTO_ERROR(H5E_ARGS, H5E_CANTGET, FAIL, "can't get access property list for dataset")
-				*/
+        */
 
       break;
     }
@@ -960,8 +960,8 @@ static herr_t H5VL_esdm_dataset_specific(void *obj, H5VL_dataset_specific_t spec
       int rank;
       rank = H5Sget_simple_extent_ndims(dataset->dataspace);
 
-      hsize_t *dims = (hsize_t *)malloc(rank * sizeof(hsize_t));
-      hsize_t *max = (hsize_t *)malloc(rank * sizeof(hsize_t));
+      hsize_t *dims = ea_checked_malloc(rank * sizeof(hsize_t));
+      hsize_t *max = ea_checked_malloc(rank * sizeof(hsize_t));
 
       for (int i = 0; i < rank; i++) {
         info("%s: rank[i]=%d, dims=%lld, max=%lld   =>   size=%lld\n", __func__, i, dims[i], max[i], size[i]);
@@ -1306,8 +1306,8 @@ static void *H5VL_esdm_file_create(const char *name, unsigned flags, hid_t fcpl_
   // create the file if not already existent
   if (file == NULL) {
     // allocate resources
-    object = (H5VL_esdm_object_t *)malloc(sizeof(H5VL_esdm_object_t));
-    file = (H5VL_esdm_file_t *)malloc(sizeof(H5VL_esdm_file_t));
+    object = ea_checked_malloc(sizeof(H5VL_esdm_object_t));
+    file = ea_checked_malloc(sizeof(H5VL_esdm_file_t));
 
     // populate file and object data strutures
     H5VL_esdm_group_init(&file->root_grp);
@@ -1315,10 +1315,10 @@ static void *H5VL_esdm_file_create(const char *name, unsigned flags, hid_t fcpl_
     object->type = MEMVOL_GROUP;
     object->object = &file->root_grp;
 
-    g_hash_table_insert(file->root_grp.childs_tbl, strdup("/"), object);
-    g_hash_table_insert(files_tbl, strdup(name), object);
+    g_hash_table_insert(file->root_grp.childs_tbl, ea_checked_strdup("/"), object);
+    g_hash_table_insert(files_tbl, ea_checked_strdup(name), object);
 
-    file->name = strdup(name);
+    file->name = ea_checked_strdup(name);
     file->fcpl_id = H5Pcopy(fcpl_id);
   }
 
@@ -1596,8 +1596,8 @@ static void *H5VL_esdm_group_create(void *obj, H5VL_loc_params_t loc_params, con
   //esdm_container_t* esdm_container_create(const char *name);
 
   // allocate resources
-  object = (H5VL_esdm_object_t *)malloc(sizeof(H5VL_esdm_object_t));
-  group = (H5VL_esdm_group_t *)malloc(sizeof(H5VL_esdm_group_t));
+  object = ea_checked_malloc(sizeof(H5VL_esdm_object_t));
+  group = ea_checked_malloc(sizeof(H5VL_esdm_group_t));
 
   object->type = MEMVOL_GROUP;
   object->object = group;
@@ -1613,7 +1613,7 @@ static void *H5VL_esdm_group_create(void *obj, H5VL_loc_params_t loc_params, con
       free(group);
       return NULL;
     }
-    g_hash_table_insert(parent->childs_tbl, strdup(name), object);
+    g_hash_table_insert(parent->childs_tbl, ea_checked_strdup(name), object);
     g_array_append_val(parent->childs_ord_by_index_arr, object);
   }
 

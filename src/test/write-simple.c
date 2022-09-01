@@ -22,12 +22,13 @@
 
 
 #include <esdm.h>
+#include <esdm-internal.h>
 #include <stdio.h>
 #include <stdlib.h>
 
 int main(int argc, char const *argv[]) {
   // prepare data
-  uint64_t *buf_w = (uint64_t *)malloc(10 * 20 * sizeof(uint64_t));
+  uint64_t *buf_w = ea_checked_malloc(10 * 20 * sizeof(uint64_t));
 
   for (int x = 0; x < 10; x++) {
     for (int y = 0; y < 20; y++) {
@@ -47,16 +48,13 @@ int main(int argc, char const *argv[]) {
   eassert(ret == ESDM_SUCCESS);
 
   // define dataspace
-  int64_t bounds[] = {10, 20};
-  esdm_dataspace_t *dataspace;
-
-  ret = esdm_dataspace_create(2, bounds, SMD_DTYPE_UINT64, &dataspace);
-  eassert(ret == ESDM_SUCCESS);
+  esdm_simple_dspace_t dataspace = esdm_dataspace_2d(10, 20, SMD_DTYPE_UINT64);
+  eassert(dataspace.ptr);
 
   ret = esdm_container_create("mycontainer", 1, &container);
   eassert(ret == ESDM_SUCCESS);
 
-  ret = esdm_dataset_create(container, "mydataset", dataspace, &dataset);
+  ret = esdm_dataset_create(container, "mydataset", dataspace.ptr, &dataset);
   eassert(ret == ESDM_SUCCESS);
 
   ret = esdm_container_commit(container);
@@ -66,20 +64,21 @@ int main(int argc, char const *argv[]) {
   eassert(ret == ESDM_SUCCESS);
 
   // define subspace
-  int64_t size[] = {10, 20};
-  int64_t offset[] = {0, 0};
-  esdm_dataspace_t *subspace;
-
-  ret = esdm_dataspace_subspace(dataspace, 2, size, offset, &subspace);
-  eassert(ret == ESDM_SUCCESS);
+  esdm_simple_dspace_t subspace = esdm_dataspace_2d(10, 20, SMD_DTYPE_UINT64);
+  eassert(subspace.ptr);
 
   // Write the data to the dataset
-  ret = esdm_write(dataset, buf_w, subspace);
+  ret = esdm_write(dataset, buf_w, subspace.ptr);
   eassert(ret == ESDM_SUCCESS);
 
   ret = esdm_container_commit(container);
   eassert(ret == ESDM_SUCCESS);
   ret = esdm_dataset_commit(dataset);
+  eassert(ret == ESDM_SUCCESS);
+
+  ret = esdm_dataset_close(dataset);
+  eassert(ret == ESDM_SUCCESS);
+  ret = esdm_container_close(container);
   eassert(ret == ESDM_SUCCESS);
 
   ret = esdm_finalize();

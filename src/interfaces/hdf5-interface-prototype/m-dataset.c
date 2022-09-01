@@ -84,8 +84,8 @@ static void *memvol_dataset_create(void *obj, H5VL_loc_params_t loc_params, cons
   // #10 0x0000000000400b69 in ?? ()
 
   // allocate resoources
-  object = (memvol_object_t *)malloc(sizeof(memvol_object_t));
-  dataset = (memvol_dataset_t *)malloc(sizeof(memvol_dataset_t));
+  object = ea_checked_malloc(sizeof(memvol_object_t));
+  dataset = ea_checked_malloc(sizeof(memvol_dataset_t));
 
   object->type = MEMVOL_DATASET;
   object->object = dataset;
@@ -136,7 +136,7 @@ static void *memvol_dataset_create(void *obj, H5VL_loc_params_t loc_params, cons
       free(dataset);
       return NULL;
     }
-    g_hash_table_insert(parent->childs_tbl, strdup(name), object);
+    g_hash_table_insert(parent->childs_tbl, ea_checked_strdup(name), object);
     g_array_append_val(parent->childs_ord_by_index_arr, object);
   }
 
@@ -232,7 +232,7 @@ static herr_t memvol_dataset_get(void *obj, H5VL_dataset_get_t get_type, hid_t d
                 if((*ret_id = H5D_get_space(dset)) < 0)
                     HGOTO_ERROR(H5E_ARGS, H5E_CANTGET, FAIL, "can't get space ID of dataset")
 
-				*/
+        */
 
       break;
     }
@@ -295,7 +295,7 @@ static herr_t memvol_dataset_get(void *obj, H5VL_dataset_get_t get_type, hid_t d
       /*
                 if((*ret_id = H5D_get_access_plist(dset)) < 0)
                     HGOTO_ERROR(H5E_ARGS, H5E_CANTGET, FAIL, "can't get access property list for dataset")
-				*/
+        */
 
       break;
     }
@@ -364,8 +364,8 @@ static herr_t memvol_dataset_specific(void *obj, H5VL_dataset_specific_t specifi
       int rank;
       rank = H5Sget_simple_extent_ndims(dataset->dataspace);
 
-      hsize_t *dims = (hsize_t *)malloc(rank * sizeof(hsize_t));
-      hsize_t *max = (hsize_t *)malloc(rank * sizeof(hsize_t));
+      hsize_t *dims = ea_checked_malloc(rank * sizeof(hsize_t));
+      hsize_t *max = ea_checked_malloc(rank * sizeof(hsize_t));
 
       for (int i = 0; i < rank; i++) {
         debugI("%s: rank[i]=%d, dims=%lld, max=%lld   =>   size=%lld\n", __func__, i, dims[i], max[i], size[i]);

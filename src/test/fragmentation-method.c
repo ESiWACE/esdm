@@ -36,7 +36,7 @@ int64_t totalSize(int64_t dims, int64_t* dimSizes) {
 }
 
 void fakeData(int64_t dims, int64_t* dimSizes, uint64_t** out_data) {
-  *out_data = malloc(totalSize(dims, dimSizes));
+  *out_data = ea_checked_malloc(totalSize(dims, dimSizes));
   for(int64_t i = totalElements(dims, dimSizes); i--; ) (*out_data)[i] = i;
 }
 
@@ -57,7 +57,7 @@ void writeData(int64_t dims, int64_t* dimSizes, esdm_dataset_t* dataset, esdm_da
 }
 
 void readAndCheckData(int64_t dims, int64_t* dimSizes, esdm_dataset_t* dataset, esdm_dataspace_t* dataspace) {
-  uint64_t* data = malloc(totalSize(dims, dimSizes));
+  uint64_t* data = ea_checked_malloc(totalSize(dims, dimSizes));
   esdm_status ret = esdm_read(dataset, data, dataspace);
   eassert(ret == ESDM_SUCCESS);
   eassert(dataIsCorrect(dims, dimSizes, data));
@@ -73,6 +73,7 @@ void testMain(int64_t dims, int64_t* dimSizes, int64_t threads, int64_t nodeThre
 
   esdm_status ret = esdm_load_config_str(config);
   eassert(ret == ESDM_SUCCESS);
+  esdm_loglevel(ESDM_LOGLEVEL_WARNING); //stop the esdm_mkfs() call from spamming us with infos about deleted objects
   ret = esdm_init();
   eassert(ret == ESDM_SUCCESS);
 
@@ -117,8 +118,16 @@ void testMain(int64_t dims, int64_t* dimSizes, int64_t threads, int64_t nodeThre
   printf("fragments read = %"PRId64" (expected %"PRId64")\n", after.fragments - before.fragments, expectedFragmentCount);
   eassert(after.fragments - before.fragments == expectedFragmentCount);
 
+  esdm_dataspace_destroy(dataspace);
+  ret = esdm_dataset_close(dataset);
+  eassert(ret == ESDM_SUCCESS);
+  ret = esdm_container_close(container);
+  eassert(ret == ESDM_SUCCESS);
+
   ret = esdm_finalize();
   eassert(ret == ESDM_SUCCESS);
+
+  free(config);
 }
 
 int main() {

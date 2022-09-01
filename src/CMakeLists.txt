@@ -15,6 +15,14 @@ set_package_properties(JANSSON PROPERTIES
 )
 include_directories(${JANSSON_INCLUDE_DIRS})
 
+pkg_search_module(SCIL scil)
+set_package_properties(SCIL PROPERTIES
+	DESCRIPTION "Library for compression."
+	URL "https://github.com/JulianKunkel/scil"
+	TYPE OPTIONAL
+	PURPOSE "Support for SCIL compression."
+)
+
 find_package (Threads)
 
 # Optional
@@ -26,7 +34,7 @@ set(THREADS_PREFER_PTHREAD_FLAG ON)
 find_package(Threads REQUIRED)
 
 set(CMAKE_MACOSX_RPATH 1)
-set(CMAKE_INSTALL_RPATH "${CMAKE_INSTALL_PREFIX}/lib")
+set(CMAKE_INSTALL_RPATH "${CMAKE_INSTALL_PREFIX}/lib:${GLIB_LIBRARY_DIRS}:${JANSSON_LIBRARY_DIRS}:${SCIL_LIBRARY_DIRS}")
 
 
 
@@ -38,7 +46,7 @@ set(CMAKE_INSTALL_RPATH "${CMAKE_INSTALL_PREFIX}/lib")
 
 message(STATUS "GLIB_FOUND   ${GLIB_FOUND}")
 message(STATUS "GLIB_LIBRARIES   ${GLIB_LIBRARIES}")
-message(STATUS "GLIB_LIBRARY_DIR   ${GLIB_LIBRARY_DIR}")
+message(STATUS "GLIB_LIBRARY_DIRS   ${GLIB_LIBRARY_DIRS}")
 message(STATUS "GLIB_LDFLAGS   ${GLIB_LDFLAGS}")
 message(STATUS "GLIB_LDFLAGS_OTHER   ${GLIB_LDFLAGS_OTHER}")
 message(STATUS "GLIB_INCLUDE_DIRS   ${GLIB_INCLUDE_DIRS}")
@@ -47,13 +55,25 @@ message(STATUS "GLIB_CFLAGS_OTHER   ${GLIB_CFLAGS_OTHER}")
 
 message(STATUS "JANSSON_FOUND   ${JANSSON_FOUND}")
 message(STATUS "JANSSON_LIBRARIES   ${JANSSON_LIBRARIES}")
-message(STATUS "JANSSON_LIBRARY_DIR   ${JANSSON_LIBRARY_DIR}")
+message(STATUS "JANSSON_LIBRARY_DIRS   ${JANSSON_LIBRARY_DIRS}")
 message(STATUS "JANSSON_LDFLAGS   ${JANSSON_LDFLAGS}")
 message(STATUS "JANSSON_LDFLAGS_OTHER   ${JANSSON_LDFLAGS_OTHER}")
 message(STATUS "JANSSON_INCLUDE_DIRS   ${JANSSON_INCLUDE_DIRS}")
 message(STATUS "JANSSON_CFLAGS   ${JANSSON_CFLAGS}")
 message(STATUS "JANSSON_CFLAGS_OTHER   ${JANSSON_CFLAGS_OTHER}")
 
+if(SCIL_FOUND)
+  set (CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -DHAVE_SCIL ${SCIL_CFLAGS}")
+endif(SCIL_FOUND)
+
+message(STATUS "SCIL_FOUND   ${SCIL_FOUND}")
+message(STATUS "SCIL_LIBRARIES   ${SCIL_LIBRARIES}")
+message(STATUS "SCIL_LIBRARY_DIRS   ${SCIL_LIBRARY_DIRS}")
+message(STATUS "SCIL_LDFLAGS   ${SCIL_LDFLAGS}")
+message(STATUS "SCIL_LDFLAGS_OTHER   ${SCIL_LDFLAGS_OTHER}")
+message(STATUS "SCIL_INCLUDE_DIRS   ${SCIL_INCLUDE_DIRS}")
+message(STATUS "SCIL_CFLAGS   ${SCIL_CFLAGS}")
+message(STATUS "SCIL_CFLAGS_OTHER   ${SCIL_CFLAGS_OTHER}")
 
 
 
@@ -79,7 +99,6 @@ option(ENABLE_HDF5 "Compile Plugin for HDF5 Virtual Object Layer?" OFF)
 set(ESDM_INCLUDE_DIRS "${CMAKE_SOURCE_DIR}/src/include;${GLIB_INCLUDE_DIRS};${JANSSON_INCLUDE_DIRS};${SMD_INCLUDES}")
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}/)
 
-
 add_subdirectory(backends-metadata)
 add_subdirectory(utils)
 add_subdirectory(test)
@@ -89,18 +108,12 @@ add_subdirectory(tools)
 
 
 # Include directories for all target in this CMakeLists.txt
-include_directories(${CMAKE_BINARY_DIR} ${ESDM_INCLUDE_DIRS} ${GLIB_INCLUDE_DIRS} ${JANSSON_INCLUDE_DIRS} ${SMD_INCLUDES})
-
-
-# ESDM Utils and Database Library
-add_library(esdmutils SHARED esdm.c esdm-attributes.c esdm-datatypes.c  esdm-layout.c  esdm-performancemodel.c esdm-config.c  hypercube.c hypercube-neighbour-manager.c utils/debug.c utils/auxiliary.c)
-target_link_libraries(esdmutils ${GLIB_LDFLAGS} ${JANSSON_LDFLAGS} smd ${CMAKE_THREAD_LIBS_INIT} m)
-install(TARGETS esdmutils LIBRARY DESTINATION lib)
+include_directories(${CMAKE_BINARY_DIR} ${ESDM_INCLUDE_DIRS} ${GLIB_INCLUDE_DIRS} ${JANSSON_INCLUDE_DIRS} ${SMD_INCLUDES} ${SCIL_INCLUDE_DIRS})
 
 
 # ESDM Middleware Library
-add_library(esdm SHARED esdm.c  esdm-scheduler.c fragments.c  esdm-modules.c backends-data/init.c)
-target_link_libraries(esdm ${GLIB_LDFLAGS} ${JANSSON_LDFLAGS} esdmutils esdmposix esdm-mdposix)
+add_library(esdm SHARED esdm.c esdm-scheduler.c esdm-stream.c fragments.c esdm-modules.c backends-data/init.c estream.c esdm-attributes.c esdm-datatypes.c esdm-layout.c esdm-performancemodel.c esdm-config.c performance.c hypercube.c hypercube-neighbour-manager.c esdm-grid.c utils/debug.c utils/auxiliary.c)
+target_link_libraries(esdm ${GLIB_LDFLAGS} ${JANSSON_LDFLAGS} ${SCIL_LDFLAGS} ${CMAKE_THREAD_LIBS_INIT} esdmdummy esdm-mdposix smd m)
 if(BACKEND_MONGODB)
     target_link_libraries(esdm esdmmongodb)
 endif()
@@ -112,6 +125,7 @@ endif()
 install(TARGETS esdm LIBRARY DESTINATION lib)
 install(FILES "./include/esdm-datatypes.h" DESTINATION include)
 install(FILES "./include/esdm.h" DESTINATION include)
+install(FILES "./include/esdm-stream.h" DESTINATION include)
 install(FILES "./include/esdm-mpi.h" DESTINATION include)
 
 SUBDIRS(interfaces)
@@ -119,12 +133,31 @@ SUBDIRS(interfaces)
 
 
 ### Data backends ###
+SUBDIRS(backends-data/dummy)
+
+option(BACKEND_S3 "Compile backend for S3 support?" OFF)
+if(BACKEND_S3)
+	message(STATUS "WITH_BACKEND_S3")
+	add_definitions(-DESDM_HAS_S3=1)
+	SUBDIRS(backends-data/s3)
+
+  find_path(S3_INCLUDE_DIR libs3.h HINTS ${S3_INCLUDE_DIR})
+  find_library(S3_LIBRARY NAMES s3 HINTS ${S3_LIB_DIR})
+
+  target_link_libraries(esdm esdms3)
+endif()
+
 option(BACKEND_POSIX "Compile backend for POSIX support?" ON)
 if(BACKEND_POSIX)
 	message(STATUS "WITH_BACKEND_POSIX")
 	add_definitions(-DESDM_HAS_POSIX=1)
 	SUBDIRS(backends-data/posix)
+  target_link_libraries(esdm esdmposix)
+  
+	SUBDIRS(backends-data/posixi)
+  target_link_libraries(esdm esdmposixi)
 endif()
+
 
 option(BACKEND_LUSTRE "Compile backend for Lustre support?" OFF)
 if(BACKEND_LUSTRE)
@@ -133,12 +166,12 @@ if(BACKEND_LUSTRE)
 	SUBDIRS(backends-data/lustre)
 endif()
 
-option(BACKEND_CLOVIS "Compile backend for Clovis support?" OFF)
-if(BACKEND_CLOVIS)
-	message(STATUS "WITH_BACKEND_CLOVIS")
-	add_definitions(-DESDM_HAS_CLOVIS=1)
-  target_link_libraries(esdm esdmclovis)
-	SUBDIRS(backends-data/Clovis)
+option(BACKEND_MOTR "Compile backend for Motr support?" OFF)
+if(BACKEND_MOTR)
+	message(STATUS "WITH_BACKEND_MOTR")
+	add_definitions(-DESDM_HAS_MOTR=1)
+  target_link_libraries(esdm esdmmotr)
+	SUBDIRS(backends-data/Motr)
 endif()
 
 option(BACKEND_WOS "Compile backend for WOS support?" OFF)

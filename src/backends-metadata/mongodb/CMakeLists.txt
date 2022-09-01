@@ -7,10 +7,8 @@ message ("--   mongoc libraries \"${MONGOC_LIBRARIES}\"")
 
 
 add_library(esdmmongodb SHARED mongodb.c)
-#target_link_libraries(esdmmongodb esdmutils ${GLIB_LIBRARIES})
-#include_directories(${CMAKE_BINARY_DIR} ${ESDM_INCLUDE_DIRS} ${GLIB_INCLUDE_DIRS})
 
-target_link_libraries (esdmmongodb PRIVATE esdmutils ${GLIB_LIBRARIES} ${MONGOC_LIBRARIES})
+target_link_libraries (esdmmongodb PRIVATE ${GLIB_LIBRARIES} ${MONGOC_LIBRARIES})
 target_include_directories (esdmmongodb PRIVATE ${MONGOC_INCLUDE_DIRS} ${CMAKE_BINARY_DIR} ${ESDM_INCLUDE_DIRS} ${GLIB_INCLUDE_DIRS})
 target_compile_definitions (esdmmongodb PRIVATE ${MONGOC_DEFINITIONS})
 

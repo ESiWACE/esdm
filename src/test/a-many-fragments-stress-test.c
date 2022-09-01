@@ -48,7 +48,7 @@ void writeData(esdm_dataset_t* dataset, esdm_dataspace_t* dataspace, int64_t len
   int64_t fragmentCount = 0;
   int64_t totalSize = 0;
   timer myTimer;
-  start_timer(&myTimer);
+  ea_start_timer(&myTimer);
 
   for(int64_t offset = 0; offset < length; offset++) {
     for(int64_t size = 1; offset + size <= length; size++) {
@@ -79,7 +79,7 @@ void writeData(esdm_dataset_t* dataset, esdm_dataspace_t* dataspace, int64_t len
   ret = esdm_dataset_commit(dataset);
   eassert(ret == ESDM_SUCCESS);
 
-  double writeTime = stop_timer(myTimer);
+  double writeTime = ea_stop_timer(myTimer);
   printf("write %"PRId64" fragments of %"PRId64" bytes of data (%"PRId64" bytes total): %.3fms\n", fragmentCount, length*sizeof(*data), totalSize, 1000*writeTime);
   totalFragmentCount += fragmentCount;
   totalWrittenData += totalSize;
@@ -209,26 +209,25 @@ void runTestWithConfig(int64_t length, int64_t readCount, const char* configStri
 
   esdm_loglevel(ESDM_LOGLEVEL_WARNING); //stop the esdm_mkfs() call from spamming us with infos about deleted objects
   timer myTimer;
-  start_timer(&myTimer);
+  ea_start_timer(&myTimer);
   ret = esdm_mkfs(ESDM_FORMAT_PURGE_RECREATE, ESDM_ACCESSIBILITY_GLOBAL);
   eassert(ret == ESDM_SUCCESS);
-  printf("esdm_mkfs(): %.3fms\n", 1000*stop_timer(myTimer));
-  start_timer(&myTimer);
+  printf("esdm_mkfs(): %.3fms\n", 1000*ea_stop_timer(myTimer));
+  ea_start_timer(&myTimer);
   ret = esdm_mkfs(ESDM_FORMAT_PURGE_RECREATE, ESDM_ACCESSIBILITY_NODELOCAL);
   eassert(ret == ESDM_SUCCESS);
-  printf("esdm_mkfs(): %.3fms\n", 1000*stop_timer(myTimer));
+  printf("esdm_mkfs(): %.3fms\n", 1000*ea_stop_timer(myTimer));
   esdm_loglevel(ESDM_LOGLEVEL_INFO);
 
   // define dataspace
-  esdm_dataspace_t *dataspace;
-  ret = esdm_dataspace_create(1, &length, SMD_DTYPE_UINT8, &dataspace);
-  eassert(ret == ESDM_SUCCESS);
+  esdm_simple_dspace_t dataspace = esdm_dataspace_1d(length, SMD_DTYPE_UINT8);
+  eassert(dataspace.ptr);
   esdm_container_t *container;
   ret = esdm_container_create("mycontainer", 1, &container);
   eassert(ret == ESDM_SUCCESS);
 
   esdm_dataset_t *dataset;
-  ret = esdm_dataset_create(container, "dataset", dataspace, &dataset);
+  ret = esdm_dataset_create(container, "dataset", dataspace.ptr, &dataset);
   eassert(ret == ESDM_SUCCESS);
   ret = esdm_dataset_commit(dataset);
   eassert(ret == ESDM_SUCCESS);
@@ -236,21 +235,19 @@ void runTestWithConfig(int64_t length, int64_t readCount, const char* configStri
   eassert(ret == ESDM_SUCCESS);
 
   // perform the test
-  uint8_t* data = malloc(length*sizeof(*data));
+  uint8_t* data = ea_checked_malloc(length*sizeof(*data));
   initData(length, data);
 
-  writeData(dataset, dataspace, length, data);
+  writeData(dataset, dataspace.ptr, length, data);
 
-  start_timer(&myTimer);
-  for(int64_t i = 0; i < readCount; i++) readRandomFragment(dataset, dataspace, length, data);
-  double readTime = stop_timer(myTimer);
+  ea_start_timer(&myTimer);
+  for(int64_t i = 0; i < readCount; i++) readRandomFragment(dataset, dataspace.ptr, length, data);
+  double readTime = ea_stop_timer(myTimer);
   printf("read %"PRId64" random fragments: %.3fms\n", readCount, 1000*readTime);
   totalReadTime += readTime;
   eassert(dataIsCorrect(length, data));
 
   free(data);
-  ret = esdm_dataspace_destroy(dataspace);
-  eassert(ret == ESDM_SUCCESS);
   ret = esdm_dataset_close(dataset);
   eassert(ret == ESDM_SUCCESS);
   ret = esdm_container_close(container);
@@ -280,40 +277,36 @@ int main(int argc, char const *argv[]) {
 
   double arrayWriteTime = 0, btreeWriteTime = 0;
   double arrayReadTime = 0, btreeReadTime = 0;
-  double arrayFragmentAddTime = 0, btreeFragmentAddTime = 0;
-  double arrayFragmentSetCreationTime = 0, btreeFragmentSetCreationTime = 0;
-  int64_t arrayFragmentAddCount = 0, btreeFragmentAddCount = 0;
-  int64_t arrayFragmentSetCreationCount = 0, btreeFragmentSetCreationCount = 0;
   double arrayOutputTime = 0, btreeOutputTime = 0;
   double arrayInputTime = 0, btreeInputTime = 0;
   esdm_readTimes_t arrayReadTimes = {0}, btreeReadTimes = {0};
   esdm_writeTimes_t arrayWriteTimes = {0}, btreeWriteTimes = {0};
+  esdm_fragmentsTimes_t fragmentsTimes_array = {0}, fragmentsTimes_btree = {0};
+  esdm_fragmentsTimes_t fragmentsStartTimes = esdmI_performance_fragments();
   for(int64_t i = 0; i < repetitions; i++) {
     totalWriteTime = totalReadTime = 0;
-    esdmI_fragments_resetStats();
     esdmI_resetBackendIoTimes();
     printf("\n\n=== array based bound list ===\n\n");
     runTestWithConfig(length, readCount, "{ \"esdm\": { \"bound list implementation\": \"array\", \"backends\": [ { \"type\": \"POSIX\", \"id\": \"p1\", \"accessibility\": \"global\", \"target\": \"./_posix1\" } ], \"metadata\": { \"type\": \"metadummy\", \"id\": \"md\", \"target\": \"./_metadummy\" } } }", &arrayReadTimes, &arrayWriteTimes);
+    esdm_fragmentsTimes_t fragmentsCurTimes = esdmI_performance_fragments();
+    esdm_fragmentsTimes_t diff = esdmI_performance_fragments_sub(&fragmentsCurTimes, &fragmentsStartTimes);
+    fragmentsTimes_array = esdmI_performance_fragments_add(&fragmentsTimes_array, &diff);
+    fragmentsStartTimes = fragmentsCurTimes;
     arrayWriteTime += totalWriteTime;
     arrayReadTime += totalReadTime;
-    arrayFragmentAddTime += esdmI_fragments_getFragmentAddTime();
-    arrayFragmentAddCount += esdmI_fragments_getFragmentAddCount();
-    arrayFragmentSetCreationTime += esdmI_fragments_getSetCreationTime();
-    arrayFragmentSetCreationCount += esdmI_fragments_getSetCreationCount();
     arrayOutputTime += esdmI_backendOutputTime();
     arrayInputTime += esdmI_backendInputTime();
 
     totalWriteTime = totalReadTime = 0;
-    esdmI_fragments_resetStats();
     esdmI_resetBackendIoTimes();
     printf("\n\n=== B-tree based bound list ===\n\n");
     runTestWithConfig(length, readCount, "{ \"esdm\": { \"bound list implementation\": \"btree\", \"backends\": [ { \"type\": \"POSIX\", \"id\": \"p1\", \"accessibility\": \"global\", \"target\": \"./_posix1\" } ], \"metadata\": { \"type\": \"metadummy\", \"id\": \"md\", \"target\": \"./_metadummy\" } } }", &btreeReadTimes, &btreeWriteTimes);
+    fragmentsCurTimes = esdmI_performance_fragments();
+    diff = esdmI_performance_fragments_sub(&fragmentsCurTimes, &fragmentsStartTimes);
+    fragmentsTimes_btree = esdmI_performance_fragments_add(&fragmentsTimes_btree, &diff);
+    fragmentsStartTimes = fragmentsCurTimes;
     btreeWriteTime += totalWriteTime;
     btreeReadTime += totalReadTime;
-    btreeFragmentAddTime += esdmI_fragments_getFragmentAddTime();
-    btreeFragmentAddCount += esdmI_fragments_getFragmentAddCount();
-    btreeFragmentSetCreationTime += esdmI_fragments_getSetCreationTime();
-    btreeFragmentSetCreationCount += esdmI_fragments_getSetCreationCount();
     btreeOutputTime += esdmI_backendOutputTime();
     btreeInputTime += esdmI_backendInputTime();
   }
@@ -323,8 +316,9 @@ int main(int argc, char const *argv[]) {
   printf("\n");
   printf("\tarray based bound list:\n");
   printf("\n");
+  esdmI_performance_fragments_print(stdout, "\t\t", "\t", NULL, &fragmentsTimes_array);
+  printf("\n");
   printf("\t\twrite time: %.3fs (%.3fs avg)\n", arrayWriteTime, arrayWriteTime/repetitions);
-  printf("\t\t\tcomputing neighbourhood relations: %.3fs, %.3fus per call\n", arrayFragmentAddTime, 1000*1000*arrayFragmentAddTime/arrayFragmentAddCount);
   printf("\t\t\tbackend time: %.3fs (%.3fs avg)\n", arrayOutputTime, arrayOutputTime/repetitions);
   printf("\n");
   printf("\t\tesdm_performance_write():\n");
@@ -334,7 +328,6 @@ int main(int argc, char const *argv[]) {
   printf("\t\t\ttotal: %.3fs (%.3fs avg)\n", arrayWriteTimes.total, arrayWriteTimes.total/repetitions);
   printf("\n");
   printf("\t\tread time: %.3fs (%.3fs avg, %.3fms per call, %.3fus per considered fragment)\n", arrayReadTime, arrayReadTime/repetitions, arrayReadTime*1000/repetitions/readCount, arrayReadTime*1000*1000/readCount/totalFragmentCount*2);
-  printf("\t\t\tcomputing fragment sets: %.3fs, %.3fus per call\n", arrayFragmentSetCreationTime, 1000*1000*arrayFragmentSetCreationTime/arrayFragmentSetCreationCount);
   printf("\t\t\tbackend time: %.3fs (%.3fs avg)\n", arrayInputTime, arrayInputTime/repetitions);
   printf("\n");
   printf("\t\tesdm_performance_read():\n");
@@ -347,8 +340,9 @@ int main(int argc, char const *argv[]) {
   printf("\n");
   printf("\tB-tree based bound list:\n");
   printf("\n");
+  esdmI_performance_fragments_print(stdout, "\t\t", "\t", NULL, &fragmentsTimes_btree);
+  printf("\n");
   printf("\t\twrite time: %.3fs (%.3fs avg)\n", btreeWriteTime, btreeWriteTime/repetitions);
-  printf("\t\t\tcomputing neighbourhood relations: %.3fs, %.3fus per call\n", btreeFragmentAddTime, 1000*1000*btreeFragmentAddTime/btreeFragmentAddCount);
   printf("\t\t\tbackend time: %.3fs (%.3fs avg)\n", btreeOutputTime, btreeOutputTime/repetitions);
   printf("\n");
   printf("\t\tesdm_performance_write():\n");
@@ -358,7 +352,6 @@ int main(int argc, char const *argv[]) {
   printf("\t\t\ttotal: %.3fs (%.3fs avg)\n", btreeWriteTimes.total, btreeWriteTimes.total/repetitions);
   printf("\n");
   printf("\t\tread time: %.3fs (%.3fs avg, %.3fms per call, %.3fus per considered fragment)\n", btreeReadTime, btreeReadTime/repetitions, btreeReadTime*1000/repetitions/readCount, btreeReadTime*1000*1000/readCount/totalFragmentCount*2);
-  printf("\t\t\tcomputing fragment sets: %.3fs, %.3fus per call\n", btreeFragmentSetCreationTime, 1000*1000*btreeFragmentSetCreationTime/btreeFragmentSetCreationCount);
   printf("\t\t\tbackend time: %.3fs (%.3fs avg)\n", btreeInputTime, btreeInputTime/repetitions);
   printf("\n");
   printf("\t\tesdm_performance_read():\n");

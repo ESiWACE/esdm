@@ -247,7 +247,7 @@ static int fragment_retrieve(esdm_backend_t *backend, esdm_fragment_t *f) {
   DEBUG("path_fragment: %s", path);
 
   //ensure that we have a contiguous read buffer
-  void* readBuffer = f->dataspace->stride ? malloc(f->bytes) : f->buf;
+  void* readBuffer = f->dataspace->stride ? ea_checked_malloc(f->bytes) : f->buf;
 
   int ret = entry_retrieve(path, readBuffer, f->bytes);
 
@@ -275,7 +275,7 @@ static int fragment_update(esdm_backend_t *backend, esdm_fragment_t *f) {
   void* writeBuffer = f->buf;
   if(f->dataspace->stride) {
     //data is not necessarily contiguous in memory -> copy to contiguous dataspace
-    writeBuffer = malloc(f->bytes);
+    writeBuffer = ea_checked_malloc(f->bytes);
     esdm_dataspace_t* contiguousSpace;
     esdm_dataspace_makeContiguous(f->dataspace, &contiguousSpace);
     esdm_dataspace_copy_data(f->dataspace, f->buf, contiguousSpace, writeBuffer);
@@ -290,11 +290,9 @@ static int fragment_update(esdm_backend_t *backend, esdm_fragment_t *f) {
     // create data
     ret = entry_update(path, writeBuffer, f->bytes, 1);
   } else {
-    f->id = malloc(24);
-    eassert(f->id);
     // ensure that the fragment with the ID doesn't exist, yet
     while(1){
-      ea_generate_id(f->id, 23);
+      f->id = ea_make_id(23);
       struct stat sb;
       sprintfFragmentDir(path, f);
       if (ime_native_stat(path, &sb) == -1) {
@@ -308,6 +306,7 @@ static int fragment_update(esdm_backend_t *backend, esdm_fragment_t *f) {
       int fd = ime_native_open(path, O_WRONLY | O_CREAT | O_EXCL, S_IWUSR | S_IRUSR | S_IWGRP | S_IRGRP | S_IROTH);
       if(fd < 0){
         if(errno == EEXIST){
+          free(f->id);  //we'll make a new one
           continue;
         }
         WARN("error on creating file \"%s\": %s", path, strerror(errno));
@@ -398,11 +397,11 @@ esdm_backend_t *ime_backend_init(esdm_config_backend_t *config) {
     return NULL;
   }
 
-  esdm_backend_t *backend = (esdm_backend_t *)malloc(sizeof(esdm_backend_t));
+  esdm_backend_t *backend = ea_checked_malloc(sizeof(esdm_backend_t));
   memcpy(backend, &backend_template, sizeof(esdm_backend_t));
 
   // allocate memory for backend instance
-  ime_backend_data_t *data = malloc(sizeof(*data));
+  ime_backend_data_t *data = ea_checked_malloc(sizeof(*data));
   backend->data = data;
 
   if (data && config->performance_model)
@@ -413,7 +412,7 @@ esdm_backend_t *ime_backend_init(esdm_config_backend_t *config) {
   // configure backend instance
   data->config = config;
   json_t *elem;
-  elem = json_object_get(config->backend, "target");
+  elem = jansson_object_get(config->backend, "target");
   data->target = json_string_value(elem);
 
   DEBUG("Backend config: target=%s\n", data->target);

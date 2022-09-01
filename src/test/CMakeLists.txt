@@ -3,11 +3,11 @@
 # _____________________________________________________________________________
 
 # Copy some prepared files such as a ESDM configuration to the build test directory
-file(COPY ${CMAKE_CURRENT_SOURCE_DIR}/_esdm.conf DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
-file(COPY ${CMAKE_CURRENT_SOURCE_DIR}/_esdm-posix.conf DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
-file(COPY ${CMAKE_CURRENT_SOURCE_DIR}/_esdm-wos.conf DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
-file(COPY ${CMAKE_CURRENT_SOURCE_DIR}/_esdm-clovis.conf DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
-file(COPY ${CMAKE_CURRENT_SOURCE_DIR}/_esdm-mixed.conf DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
+file(COPY ${CMAKE_CURRENT_SOURCE_DIR}/esdm.conf DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
+file(COPY ${CMAKE_CURRENT_SOURCE_DIR}/esdm-posix.conf DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
+file(COPY ${CMAKE_CURRENT_SOURCE_DIR}/esdm-wos.conf DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
+file(COPY ${CMAKE_CURRENT_SOURCE_DIR}/esdm-motr.conf DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
+file(COPY ${CMAKE_CURRENT_SOURCE_DIR}/esdm-mixed.conf DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
 file(COPY ${CMAKE_CURRENT_SOURCE_DIR}/cleanup.sh DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
 
 
@@ -24,12 +24,13 @@ foreach(TESTFILE ${TESTFILES})
 	# Build, link and add as test
     add_executable(${TESTNAME} ${TESTFILE} util/test_util.c)
    	target_link_libraries(${TESTNAME} esdm esdmmpi -lrt)
-    target_include_directories(${TESTNAME} SYSTEM PRIVATE ${MPI_INCLUDE_PATH} ${CMAKE_BINARY_DIR} ${ESDM_INCLUDE_DIRS} ${GLIB_INCLUDE_DIRS} ${SMD_INCLUDES})
+    target_include_directories(${TESTNAME} PRIVATE ${ESDM_INCLUDE_DIRS} ${MPI_INCLUDE_PATH} ${CMAKE_BINARY_DIR} ${GLIB_INCLUDE_DIRS} ${SMD_INCLUDES})
 
     add_test(${TESTNAME} ./${TESTNAME})
   endif()
 endforeach()
 
+set_tests_properties(fragment-selection-benchmark PROPERTIES WILL_FAIL TRUE)
 
 
 

@@ -237,7 +237,7 @@ static int mkfs(esdm_backend_t *backend, int format_flags) {
     }
   }
 
-  data->block_map = malloc(blockmap_size* sizeof(uint64_t));
+  data->block_map = ea_checked_malloc(blockmap_size* sizeof(uint64_t));
   memset(data->block_map, 0, blockmap_size* sizeof(uint64_t));
   data->free_blocks_estimate = blocks;
 
@@ -270,7 +270,7 @@ static int fsck(esdm_backend_t* backend) {
 ///////////////////////////////////////////////////////////////////////////////
 
 static void * fragment_metadata_load(esdm_backend_t * b, esdm_fragment_t *f, json_t *md){
-  kdsa_fragment_metadata_t * fragmd = malloc(sizeof(kdsa_fragment_metadata_t));
+  kdsa_fragment_metadata_t * fragmd = ea_checked_malloc(sizeof(kdsa_fragment_metadata_t));
   eassert(f->id);
   long long unsigned offset;
   sscanf(f->id, "%llu", & offset);
@@ -299,7 +299,7 @@ static int fragment_retrieve(esdm_backend_t *backend, esdm_fragment_t *f) {
   }
   if(f->dataspace->stride) {
     //the data is not necessarily supposed to be contiguous in memory -> read into separate buffer
-    void* readBuffer = malloc(f->bytes);
+    void* readBuffer = ea_checked_malloc(f->bytes);
     ret = kdsa_read_unregistered(data->handle, fragmd->offset, readBuffer, f->bytes);
     DEBUG("read: %lu\n", *(uint64_t*) readBuffer);
     if(ret != 0){
@@ -371,7 +371,7 @@ static uint64_t find_offset_to_store_fragment(kdsa_backend_data_t* data){
   uint64_t offset = 0;
   uint64_t blockmap_size = calc_block_map_size(data->h.blockcount);
   for(int i = 0; i < 30; i++){
-    uint64_t bitmap_pos = rand() % blockmap_size;
+    uint64_t bitmap_pos = rand() % blockmap_size; //FIXME: Don't use [s]rand().
     offset = try_to_use_block(data, bitmap_pos);
     if(offset != 0){
       break;
@@ -379,7 +379,7 @@ static uint64_t find_offset_to_store_fragment(kdsa_backend_data_t* data){
   }
   if(offset == 0){
     // try a sequential strategy starting at one block, this is inefficient!
-    uint64_t bitmap_pos = rand() % blockmap_size;
+    uint64_t bitmap_pos = rand() % blockmap_size; //FIXME: Don't use [s]rand().
     for(int i = 0; i < blockmap_size; i++){
       offset = try_to_use_block(data, (i + bitmap_pos) % blockmap_size);
       if(offset != 0){
@@ -412,12 +412,12 @@ static int fragment_update(esdm_backend_t *backend, esdm_fragment_t *f) {
     if(offset == 0){
       return ESDM_ERROR;
     }
-    fragmd = malloc(sizeof(kdsa_fragment_metadata_t));
+    fragmd = ea_checked_malloc(sizeof(kdsa_fragment_metadata_t));
     f->backend_md = fragmd;
     eassert(f->backend_md);
     fragmd->offset = offset;
 
-    f->id = malloc(22);
+    f->id = ea_checked_malloc(22);
     eassert(f->id);
     sprintf(f->id, "%"PRId64, offset);
   }
@@ -430,7 +430,7 @@ static int fragment_update(esdm_backend_t *backend, esdm_fragment_t *f) {
   DEBUG("write: %lu\n", *(uint64_t*) f->buf);
   if(f->dataspace->stride) {
     //The fragment appears to have a non-trivial stride. Linearize the fragment's data before writing.
-    void* writeBuffer = malloc(f->bytes);
+    void* writeBuffer = ea_checked_malloc(f->bytes);
     esdm_dataspace_t* contiguousSpace;
     esdm_dataspace_makeContiguous(f->dataspace, &contiguousSpace);
     esdm_dataspace_copy_data(f->dataspace, f->buf, contiguousSpace, writeBuffer);
@@ -555,11 +555,11 @@ esdm_backend_t *kdsa_backend_init(esdm_config_backend_t *config) {
     return NULL;
   }
 
-  esdm_backend_t *backend = (esdm_backend_t *)malloc(sizeof(esdm_backend_t));
+  esdm_backend_t *backend = ea_checked_malloc(sizeof(esdm_backend_t));
   memcpy(backend, &backend_template, sizeof(esdm_backend_t));
   int ret;
   // allocate memory for backend instance
-  backend->data = malloc(sizeof(kdsa_backend_data_t));
+  backend->data = ea_checked_malloc(sizeof(kdsa_backend_data_t));
   kdsa_backend_data_t *data = (kdsa_backend_data_t *)backend->data;
   ret = pthread_spin_init(& data->block_lock, PTHREAD_PROCESS_PRIVATE);
   eassert(ret == 0);
@@ -572,8 +572,8 @@ esdm_backend_t *kdsa_backend_init(esdm_config_backend_t *config) {
   // configure backend instance
   data->config = config;
   json_t *elem;
-  elem = json_object_get(config->backend, "target");
-  char * tgt = (char*) strdup(json_string_value(elem));
+  elem = jansson_object_get(config->backend, "target");
+  char * tgt = (char*) ea_checked_strdup(json_string_value(elem));
   data->config->target = tgt;
 
   uint64_t blocksize = config->max_fragment_size;
@@ -614,7 +614,7 @@ esdm_backend_t *kdsa_backend_init(esdm_config_backend_t *config) {
     data->h.offset_to_data = 0;
     data->block_map = NULL;
   }else{
-    data->block_map = malloc(calc_block_map_size(data->h.blockcount)* sizeof(uint64_t));
+    data->block_map = ea_checked_malloc(calc_block_map_size(data->h.blockcount)* sizeof(uint64_t));
     ret = load_block_bitmap(data);
     if( ret != 0 ){
       ERROR("Could not read block bitmap from %s", tgt);

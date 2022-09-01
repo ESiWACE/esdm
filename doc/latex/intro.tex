@@ -1,0 +1,139 @@
+\section{Earth System Data Middleware}%
+\label{earth-system-data-middleware}
+
+The middleware for earth system data is a prototype to improve I/O
+performance for earth system simulation as used in climate and weather
+applications. ESDM exploits structural information exposed by workflows,
+applications as well as data description formats such as HDF5 and NetCDF
+to more efficiently organize metadata and data across a variety of
+storage backends.
+
+%\href{https://travis-ci.org/ESiWACE/esdm}{\includegraphics{https://travis-ci.org/ESiWACE/esdm.svg?branch=master}}
+
+%\subsection{Requirements}%
+%\label{requirements}
+
+%A compiler for C99 such as GCC5.0
+
+%\subsection{Installation}%
+%\label{installation}
+
+%Ensure you cloned the repository with the required submodules:
+
+%\begin{itemize}
+%  \item git clone -\/-recurse-submodules Or to initialize the submodules after the cloning:
+%  \item git submodule update -\/-init -\/-recursive
+%\end{itemize}
+
+%The installation instructions for the full stack with ESDM and NetCDF
+%can be found in the Dockerfiles that we use for testing.
+
+%\subsubsection{Ubuntu 20.04}%
+%\label{ubuntu-2004}
+
+%\$ grep RUN dev/docker/ubuntu-whole-stack/Dockerfile
+
+%\paragraph{Installation for CentOS7}%
+%\label{installation-for-centos7}
+
+%\$ grep RUN dev/docker/centos7-whole-stack/Dockerfile
+
+%\paragraph{Installation for FedoraSystem}%
+%\label{installation-for-fedora-system}
+
+%\begin{itemize}
+%  \item dnf install glib2 glib2-devel mpi jansson jansson-devel
+%  \item dnf install mpich-3.0 mpich-3.0-devel OR dnf install openmpi
+%    opemmpi-devel
+%  \item dnf install gcc-c++ gcc libtool cmake
+%\end{itemize}
+
+%\paragraph{Installation with Spack}%
+%\label{installation-with-spack}
+
+%Installation of spack itself:
+
+%\begin{itemize}
+%  \item git clone \url{https://github.com/spack/spack}
+%  \item export PATH=\$PATH:\$PWD/spack/bin/ Check that a suitable compiler is
+%    found
+%  \item spack compilers
+%\end{itemize}
+
+%First get the recent GCC:
+
+%\begin{itemize}
+%  \item spack install \href{mailto:gcc@9.3.0}{\nolinkurl{gcc@9.3.0}} Then
+%    install the packages with GCC:
+%  \item spack install jansson\%\href{mailto:gcc@9.3.0}{\nolinkurl{gcc@9.3.0}}
+%    glib\%\href{mailto:gcc@9.3.0}{\nolinkurl{gcc@9.3.0}}
+%    openmpi\%\href{mailto:gcc@9.3.0}{\nolinkurl{gcc@9.3.0}}
+%    gettext\%\href{mailto:gcc@9.3.0}{\nolinkurl{gcc@9.3.0}} Before running
+%    configure load the modules:
+%  \item spack load jansson\%\href{mailto:gcc@9.3.0}{\nolinkurl{gcc@9.3.0}}
+%    glib\%\href{mailto:gcc@9.3.0}{\nolinkurl{gcc@9.3.0}}
+%    openmpi\%\href{mailto:gcc@9.3.0}{\nolinkurl{gcc@9.3.0}} gcc
+%    gettext\%\href{mailto:gcc@9.3.0}{\nolinkurl{gcc@9.3.0}} -r
+%\end{itemize}
+
+%\subsection{Development}%
+%\label{development}
+
+%\subsubsection{Project directory structure}%
+%\label{project-directory-structure}
+
+%\begin{itemize}
+%  \item \texttt{dev} contains helpers for development purposes. For example,
+%    this project requires a development variant of HDF5 that provides the
+%    Virtual Object Layer (VOL). This and other dependencies can be
+%    installed into a development environment using the following script:
+
+%    \begin{lstlisting}
+%    ./dev/setup-development-environment.sh
+%    \end{lstlisting}
+%  \item \texttt{src} contains the source code... To build the project call:
+
+%    \begin{lstlisting}
+%    source dev/activate-development-environment.bash
+%    ./configure --debug
+%    cd build
+%    make -j
+%    \end{lstlisting}
+
+%    To run the test suite call:
+
+%    \begin{lstlisting}
+%    cd build
+%    make test
+%    \end{lstlisting}
+
+%    You may also choose to configure with a different hdf5 installation
+%    (see ./configure -\/-help) e.g.:
+
+%    \begin{lstlisting}
+%    ./configure --with-hdf5=$PWD/install
+%    \end{lstlisting}
+%  %\item \texttt{doc} contains documentation which uses doxygen to build a HTML
+%  %  or a PDF version:
+
+%  %  For the HTML Reference use the following commands (assuming
+%  %  ./configure completed successfully):
+
+%  %  \begin{lstlisting}
+%  %  cd build
+%  %  doxygen
+%  %  build/doc/html/index.html
+%  %  \end{lstlisting}
+
+%  %  For a PDF Reference (requries LaTeX) run:
+
+%  %  \begin{lstlisting}
+%  %  cd build
+%  %  doxygen
+%  %  cd /doc/latex
+%  %  make
+%  %  \end{lstlisting}
+%  \item \texttt{tools} contains separate programs, e.g., for benchmarking
+%    HDF5. They should only be loosely coupled with the source code and
+%    allow to be used with the regular HDF5.
+%\end{itemize}

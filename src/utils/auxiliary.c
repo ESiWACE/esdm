@@ -22,6 +22,7 @@
  */
 
 #include <errno.h>
+#include <esdm-datatypes.h>
 #include <esdm-internal.h>
 #include <fcntl.h>
 #include <glib.h>
@@ -43,7 +44,7 @@ bool ea_is_valid_dataset_name(char const*str) {
   }
   for(char const * p = str; p[0] != 0 ; p++){
     char c = *p;
-    if ((c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') || (c >= '0' && c <= '9') || c=='_' || c=='-'){
+    if ((c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') || (c >= '0' && c <= '9') || c=='_' || c=='-' || c=='%'){
       last = c;
       continue;
     }
@@ -139,21 +140,20 @@ int posix_recursive_remove(const char *path) {
 }
 
 // file I/O handling //////////////////////////////////////////////////////////
-
-int read_file(char *filepath, char **buf) {
+int ea_read_file(char *filepath, char **buf) {
   eassert(buf);
 
   int fd = open(filepath, O_RDONLY);
   if (fd < 0) {
-    ESDM_ERROR_COM_FMT("POSIX", "cannot open %s %s", filepath, strerror(errno));
+    ESDM_WARN_COM_FMT("POSIX", "cannot open %s %s", filepath, strerror(errno));
     return 1;
   }
 
   off_t fsize = lseek(fd, 0, SEEK_END);
   lseek(fd, 0, SEEK_SET);
 
-  char *string = malloc(fsize + 1);
-  int ret = read_check(fd, string, fsize);
+  char *string = ea_checked_malloc(fsize + 1);
+  int ret = ea_read_check(fd, string, fsize);
   close(fd);
 
   string[fsize] = 0;
@@ -164,7 +164,7 @@ int read_file(char *filepath, char **buf) {
   return ret;
 }
 
-int write_check(int fd, char *buf, size_t len) {
+int ea_write_check(int fd, char *buf, size_t len) {
   while (len > 0) {
     ssize_t ret = write(fd, buf, len);
     if (ret != -1) {
@@ -182,7 +182,7 @@ int write_check(int fd, char *buf, size_t len) {
   return 0;
 }
 
-int read_check(int fd, char *buf, size_t len) {
+int ea_read_check(int fd, char *buf, size_t len) {
   while (len > 0) {
     ssize_t ret = read(fd, buf, len);
     if (ret == 0) {
@@ -230,6 +230,15 @@ void print_stat(struct stat sb) {
   printf("\n");
 }
 
+/* Fix conflict with libjson-c */
+json_t *jansson_object_get(const json_t *object, const char *key){
+  void * iter = json_object_iter_at(object, key);
+  if(! iter){
+    return NULL;
+  }
+  return json_object_iter_value(iter);
+}
+
 // use json_decref() to free it
 json_t *load_json(const char *str) {
   json_error_t error;
@@ -270,7 +279,7 @@ _Static_assert(sizeof(kCharset) - 1 == 1 << kCharsetBits, "wrong number of chara
 
 void ea_generate_id(char* str, size_t length) {
   size_t randomBitCount = length*kCharsetBits;
-  eassert(randomBitCount >= 128 && "don't try to use less than 128 random bits to avoid possibility of collision");
+  eassert(randomBitCount >= 60 && "don't try to use less than 64 random bits to avoid possibility of collision");
 
   size_t randomByteCount = (randomBitCount + 7)/8;
   uint8_t randomBytes[randomByteCount];
@@ -297,31 +306,82 @@ void ea_generate_id(char* str, size_t length) {
   str[length] = 0;  //termination
 }
 
-void* ea_memdup(void* data, size_t size) {
+char* ea_make_id(size_t length) {
+  char* result = ea_checked_malloc(length + 1);
+  ea_generate_id(result, length);
+  return result;
+}
+
+void* ea_checked_malloc(size_t size) {
   void* result = malloc(size);
+  if(!result) {
+    fprintf(stderr, "out-of-memory error: could not allocate a block of %zd bytes, aborting...\n", size);
+    abort();
+  }
+  return result;
+}
+
+void* ea_checked_calloc(size_t nmemb, size_t size) {
+  void* result = calloc(nmemb, size);
+  if(!result) {
+    fprintf(stderr, "out-of-memory error: could not allocate a block for %zd objects of %zd bytes, aborting...\n", nmemb, size);
+    abort();
+  }
+  return result;
+}
+
+void* ea_checked_realloc(void* ptr, size_t size) {
+  void* result = realloc(ptr, size);
+  if(!result && size) {
+    fprintf(stderr, "out-of-memory error: could not reallocate a block to a size of %zd bytes, aborting...\n", size);
+    abort();
+  }
+  return result;
+}
+
+char* ea_checked_strdup(const char* string) {
+  char* result = strdup(string);
+  if(!result) {
+    fprintf(stderr, "out-of-memory error: could not copy a string of length %zd, aborting...\n", strlen(string));
+    abort();
+  }
+  return result;
+}
+
+char* ea_checked_strndup(const char* string, size_t n) {
+  char* result = strndup(string, n);
+  if(!result) {
+    fprintf(stderr, "out-of-memory error: could not copy a string of length %zd, aborting...\n", strnlen(string, n));
+    abort();
+  }
+  return result;
+}
+
+void* ea_memdup(void* data, size_t size) {
+  void* result = ea_checked_malloc(size);
   memcpy(result, data, size);
   return result;
 }
 
 #ifdef ESM
 
-void start_timer(timer *t1) {
+void ea_start_timer(timer *t1) {
   *t1 = clock64();
 }
 
-double stop_timer(timer t1) {
+double ea_stop_timer(timer t1) {
   timer end;
-  start_timer(&end);
+  ea_start_timer(&end);
   return (end - t1) / 1000.0 / 1000.0;
 }
 
-double timer_subtract(timer number, timer subtract) {
+double ea_timer_subtract(timer number, timer subtract) {
   return (number - subtract) / 1000.0 / 1000.0;
 }
 
 #else // POSIX COMPLAINT
 
-void start_timer(timer *t1) {
+void ea_start_timer(timer *t1) {
   clock_gettime(CLOCK_MONOTONIC, t1);
 }
 
@@ -344,14 +404,88 @@ static double time_to_double(struct timespec t) {
   return d;
 }
 
-double timer_subtract(timer number, timer subtract) {
+double ea_timer_subtract(timer number, timer subtract) {
   return time_to_double(time_diff(number, subtract));
 }
 
-double stop_timer(timer t1) {
+double ea_stop_timer(timer t1) {
   timer end;
-  start_timer(&end);
+  ea_start_timer(&end);
   return time_to_double(time_diff(end, t1));
 }
 
 #endif
+
+////////////////////////////////////////////////////////////////////////////////////////////////////
+// data conversion /////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////////////////////////
+
+//define the converter functions
+
+#define defineConverter(destType, sourceType) \
+  void* convert_from_##sourceType##_to_##destType(void* vdest, const void* vsource, size_t sourceBytes) { \
+    sourceType const* source = vsource; \
+    destType* dest = vdest; \
+    size_t elementCount = sourceBytes/sizeof*source; \
+    eassert(elementCount*sizeof(sourceType) == sourceBytes); \
+    for(size_t i = 0; i < elementCount; i++) dest[i] = (destType)source[i]; \
+    return dest; \
+  }
+
+#define defineConvertersForSourceType(sourceType) \
+  defineConverter(int8_t, sourceType) \
+  defineConverter(int16_t, sourceType) \
+  defineConverter(int32_t, sourceType) \
+  defineConverter(int64_t, sourceType) \
+  defineConverter(uint8_t, sourceType) \
+  defineConverter(uint16_t, sourceType) \
+  defineConverter(uint32_t, sourceType) \
+  defineConverter(uint64_t, sourceType) \
+  defineConverter(float, sourceType) \
+  defineConverter(double, sourceType)
+
+defineConvertersForSourceType(int8_t)
+defineConvertersForSourceType(int16_t)
+defineConvertersForSourceType(int32_t)
+defineConvertersForSourceType(int64_t)
+defineConvertersForSourceType(uint8_t)
+defineConvertersForSourceType(uint16_t)
+defineConvertersForSourceType(uint32_t)
+defineConvertersForSourceType(uint64_t)
+defineConvertersForSourceType(float)
+defineConvertersForSourceType(double)
+
+//define the selector function
+ea_datatype_converter ea_converter_for_types(esdm_type_t requestDestType, esdm_type_t requestSourceType) {
+  if(requestDestType == requestSourceType) return memcpy; //fast path for all noop conversions
+
+  #define selectConverterForDest(destType, esdmDestType, sourceType) \
+    if(esdmDestType == requestDestType) return convert_from_##sourceType##_to_##destType;
+
+  #define selectConvertersForSource(sourceType, esdmSourceType) \
+    if(esdmSourceType == requestSourceType) { \
+      selectConverterForDest(int8_t, SMD_DTYPE_INT8, sourceType) \
+      selectConverterForDest(int16_t, SMD_DTYPE_INT16, sourceType) \
+      selectConverterForDest(int32_t, SMD_DTYPE_INT32, sourceType) \
+      selectConverterForDest(int64_t, SMD_DTYPE_INT64, sourceType) \
+      selectConverterForDest(uint8_t, SMD_DTYPE_UINT8, sourceType) \
+      selectConverterForDest(uint16_t, SMD_DTYPE_UINT16, sourceType) \
+      selectConverterForDest(uint32_t, SMD_DTYPE_UINT32, sourceType) \
+      selectConverterForDest(uint64_t, SMD_DTYPE_UINT64, sourceType) \
+      selectConverterForDest(float, SMD_DTYPE_FLOAT, sourceType) \
+      selectConverterForDest(double, SMD_DTYPE_DOUBLE, sourceType) \
+      return NULL; \
+    }
+
+  selectConvertersForSource(int8_t, SMD_DTYPE_INT8)
+  selectConvertersForSource(int16_t, SMD_DTYPE_INT16)
+  selectConvertersForSource(int32_t, SMD_DTYPE_INT32)
+  selectConvertersForSource(int64_t, SMD_DTYPE_INT64)
+  selectConvertersForSource(uint8_t, SMD_DTYPE_UINT8)
+  selectConvertersForSource(uint16_t, SMD_DTYPE_UINT16)
+  selectConvertersForSource(uint32_t, SMD_DTYPE_UINT32)
+  selectConvertersForSource(uint64_t, SMD_DTYPE_UINT64)
+  selectConvertersForSource(float, SMD_DTYPE_FLOAT)
+  selectConvertersForSource(double, SMD_DTYPE_DOUBLE)
+  return NULL;
+}

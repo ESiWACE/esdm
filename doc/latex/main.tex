@@ -1,0 +1,143 @@
+\documentclass{article}
+
+%\usepackage{hyperref}
+\usepackage[table]{xcolor} 
+\usepackage{colortbl}
+\usepackage{tabu}
+\usepackage{url}
+\usepackage{graphicx}
+\usepackage[utf8]{inputenc}
+%\usepackage{listings}
+\usepackage[listings,skins,breakable,raster,most]{tcolorbox}
+\usepackage{lstautogobble}
+\usepackage{tabularx}
+\usepackage{geometry}
+\usepackage{hyperref}
+\usepackage{cleveref}
+\usepackage{silence}
+\WarningFilter[]{latex}{File}
+\WarningFilter[]{latex}{Unknown}
+\usepackage{todonotes}
+\newcommand{\eb}[1]{\todo[inline]{EB: \@#1}}
+\usepackage{array}
+\usepackage{tcolorbox}
+\usepackage{booktabs}
+\usepackage{etoolbox}
+\usepackage{placeins}
+
+\colorlet{headercolour}{black!40}
+
+\AtBeginEnvironment{tabularx}{\rowcolors{1}{\ifnumless{\rownum}{2}{headercolour}{white}}{}}
+
+
+\geometry{margin=1.5in}
+
+\lstset{ %
+  autogobble=true,
+  backgroundcolor=\color{black!5},   % choose the background color; you must add \usepackage{color} or \usepackage{xcolor}
+  basicstyle=\normalfont\ttfamily,       % the size of the fonts that are used for the code
+  %basicstyle=\scriptsize\ttfamily,       % the size of the fonts that are used for the code
+  breakatwhitespace=false,         % sets if automatic breaks should only happen at whitespace
+  breaklines=true,                 % sets automatic line breaking
+  captionpos=b,                    % sets the caption-position to bottom
+  %commentstyle=\color{green},    % comment style
+  deletekeywords={...},            % if you want to delete keywords from the given language
+  escapeinside={(*@}{@*)},          % if you want to add LaTeX within your code
+  extendedchars=true,              % lets you use non-ASCII characters; for 8-bits encodings only, does not work with UTF-8
+  frame=none,	                   % (none, single) adds a frame around the code
+  keepspaces=true,                 % keeps spaces in text, useful for keeping indentation of code (possibly needs columns=flexible)
+  keywordstyle=\color{blue},       % keyword style
+  language=C,                 % the language of the code
+  otherkeywords={*,...},           % if you want to add more keywords to the set
+  %numbers=left,                    % where to put the line-numbers; possible values are (none, left, right)
+  numbersep=5pt,                   % how far the line-numbers are from the code
+  numberstyle=\tiny\color{gray}, % the style that is used for the line-numbers
+  rulecolor=\color{black},         % if not set, the frame-color may be changed on line-breaks within not-black text (e.g. comments (green here))
+  showspaces=false,                % show spaces everywhere adding particular underscores; it overrides 'showstringspaces'
+  showstringspaces=false,          % underline spaces within strings only
+  showtabs=false,                  % show tabs within strings adding particular underscores
+  stepnumber=1,                    % the step between two line-numbers. If it's 1, each line will be numbered
+  stringstyle=\color{blue},     % string literal style
+  tabsize=2,	                   % sets default tabsize to 2 spaces
+  %title=\lstname                   % show the filename of files included with \lstinputlisting; also try caption instead of title
+}
+
+
+
+\lstdefinestyle{injson} {
+  backgroundcolor=\color{black!5},   % choose the background color; you must add \usepackage{color} or \usepackage{xcolor}
+  %basicstyle=\normalfont\ttfamily,       % the size of the fonts that are used for the code
+  basicstyle=\normalfont\ttfamily,       % the size of the fonts that are used for the code
+  breakatwhitespace=false,         % sets if automatic breaks should only happen at whitespace
+  breaklines=true,                 % sets automatic line breaking
+  captionpos=b,                    % sets the caption-position to bottom
+  %commentstyle=\color{green},    % comment style
+  deletekeywords={...},            % if you want to delete keywords from the given language
+  escapeinside={(*@}{@*)},          % if you want to add LaTeX within your code
+  extendedchars=true,              % lets you use non-ASCII characters; for 8-bits encodings only, does not work with UTF-8
+  frame=none,	                   % (none, single) adds a frame around the code
+  keepspaces=true,                 % keeps spaces in text, useful for keeping indentation of code (possibly needs columns=flexible)
+  keywordstyle=\color{blue},       % keyword style
+  language=C,                 % the language of the code
+  otherkeywords={*,...},           % if you want to add more keywords to the set
+  %numbers=left,                    % where to put the line-numbers; possible values are (none, left, right)
+  numbersep=5pt,                   % how far the line-numbers are from the code
+  numberstyle=\tiny\color{gray}, % the style that is used for the line-numbers
+  rulecolor=\color{black},         % if not set, the frame-color may be changed on line-breaks within not-black text (e.g. comments (green here))
+  showspaces=false,                % show spaces everywhere adding particular underscores; it overrides 'showstringspaces'
+  showstringspaces=false,          % underline spaces within strings only
+  showtabs=false,                  % show tabs within strings adding particular underscores
+  stepnumber=1,                    % the step between two line-numbers. If it's 1, each line will be numbered
+  stringstyle=\color{blue},     % string literal style
+  tabsize=2,	                   % sets default tabsize to 2 spaces
+  %title=\lstname                   % show the filename of files included with \lstinputlisting; also try caption instead of title
+}
+
+\usepackage{enumitem}
+\setlist{nolistsep}
+
+\providecommand{\tightlist}{%
+  \setlength{\itemsep}{0pt}\setlength{\parskip}{0pt}}
+
+\def\examplespath{../examples}
+
+\title{ESDM Documentation}
+\date{}
+\author{}
+
+\newenvironment{preserve}{}{}
+
+
+\begin{document}
+
+\maketitle
+
+\tableofcontents
+
+%INTRO
+\input{intro.tex}
+
+%MODEL
+\input{data-model.tex}
+\input{backends.tex}
+
+%USER
+\input{user-guides/build-docs.tex}
+\input{user-guides/build-esdm.tex}
+\input{user-guides/configuration.tex}
+\input{user-guides/usage-examples.tex}
+
+% DEVELOPER
+\input{dev-guides/developers-guide.tex}
+\input{dev-guides/use-cases.tex}
+\input{design/style-guide.tex}
+\input{design/call-graph.tex}
+\input{design/grid-deduplication.tex}
+
+%%SUMMARY 
+%\input{related-work.tex}
+
+\bibliographystyle{plain}
+\bibliography{lib}
+
+\end{document}

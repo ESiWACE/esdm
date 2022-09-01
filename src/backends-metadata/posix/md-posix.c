@@ -68,7 +68,7 @@ static int entry_create(const char *path, char * const json, int size) {
     return 1;
   }
   if ( json != NULL) {
-    int ret = write_check(fd, json, size);
+    int ret = ea_write_check(fd, json, size);
     close(fd);
     return ret;
   }
@@ -87,7 +87,7 @@ static int entry_update(const char *path, void *buf, size_t len) {
   // everything ok? write and close
   if (fd != -1) {
     // write some metadata
-    write_check(fd, buf, len);
+    ea_write_check(fd, buf, len);
     close(fd);
   }
 
@@ -194,7 +194,7 @@ static int container_create(esdm_md_backend_t *backend, esdm_container_t *contai
   // create subdirectory if needed; find the last slash
   for(int i = strlen(container->name) - 1; i > 1; i--){
     if(container->name[i] == '/'){
-      char * dir = strdup(container->name);
+      char * dir = ea_checked_strdup(container->name);
       dir[i] = 0;
       sprintf(path, "%s/containers/%s", tgt, dir);
       free(dir);
@@ -286,8 +286,8 @@ static int container_retrieve(esdm_md_backend_t *backend, esdm_container_t *cont
 
   int fd = open(path_metadata, O_RDONLY);
   if (fd < 0) return ESDM_ERROR;
-  char * json = (char *)malloc(len);
-  ret = read_check(fd, json, statbuf.st_size);
+  char * json = ea_checked_malloc(len);
+  ret = ea_read_check(fd, json, statbuf.st_size);
   close(fd);
   json[statbuf.st_size] = 0;
   if (ret != 0){
@@ -311,12 +311,10 @@ static int dataset_create(esdm_md_backend_t * backend, esdm_dataset_t *d){
 
   metadummy_backend_options_t *options = (metadummy_backend_options_t *)backend->data;
   const char *tgt = options->target;
-  d->id = malloc(24);
-  eassert(d->id);
 
   while(1){
     // TODO fix race condition with the file creation here
-    ea_generate_id(d->id, 23);
+    d->id = ea_make_id(ESDM_ID_LENGTH);
 
     // create directory for datsets
     sprintfDatasetMd(path_dataset, d);
@@ -329,6 +327,8 @@ static int dataset_create(esdm_md_backend_t * backend, esdm_dataset_t *d){
       }
       return ESDM_SUCCESS;
     }
+
+    free(d->id);  //we'll make a new ID
   }
 }
 
@@ -373,8 +373,8 @@ static int dataset_retrieve(esdm_md_backend_t *backend, esdm_dataset_t *d, char 
 
   int fd = open(path_metadata, O_RDONLY);
   if (fd < 0) return ESDM_ERROR;
-  char * json = (char *)malloc(len);
-  ret = read_check(fd, json, statbuf.st_size);
+  char * json = ea_checked_malloc(len);
+  ret = ea_read_check(fd, json, statbuf.st_size);
   close(fd);
   json[statbuf.st_size] = 0;
   if (ret != 0){
@@ -439,10 +439,10 @@ static esdm_md_backend_t backend_template = {
 esdm_md_backend_t *metadummy_backend_init(esdm_config_backend_t *config) {
   DEBUG_ENTER;
 
-  esdm_md_backend_t *backend = (esdm_md_backend_t *)malloc(sizeof(esdm_md_backend_t));
+  esdm_md_backend_t *backend = ea_checked_malloc(sizeof(esdm_md_backend_t));
   memcpy(backend, &backend_template, sizeof(esdm_md_backend_t));
 
-  metadummy_backend_options_t *data = (metadummy_backend_options_t *)malloc(sizeof(metadummy_backend_options_t));
+  metadummy_backend_options_t *data = ea_checked_malloc(sizeof(metadummy_backend_options_t));
 
   data->target = config->target;
   backend->data = data;

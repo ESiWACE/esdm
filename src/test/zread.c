@@ -22,6 +22,7 @@
 
 
 #include <esdm.h>
+#include <esdm-internal.h>
 #include <stdio.h>
 #include <stdlib.h>
 
@@ -45,8 +46,8 @@ int verify_data(uint64_t *a, uint64_t *b) {
 
 int main(int argc, char const *argv[]) {
   // prepare data
-  uint64_t *buf_w = (uint64_t *)malloc(10 * 20 * sizeof(uint64_t));
-  uint64_t *buf_r = (uint64_t *)malloc(10 * 20 * sizeof(uint64_t));
+  uint64_t *buf_w = ea_checked_malloc(10 * 20 * sizeof(uint64_t));
+  uint64_t *buf_r = ea_checked_malloc(10 * 20 * sizeof(uint64_t));
   memset(buf_r, -1, 10 * 20 * sizeof(uint64_t));
 
   for (int x = 0; x < 10; x++) {
@@ -74,17 +75,19 @@ int main(int argc, char const *argv[]) {
   status = esdm_dataset_open(container, "mydataset",ESDM_MODE_FLAG_READ, &dataset);
   eassert(status == ESDM_SUCCESS);
 
-  int64_t size[] = {10, 20};
-  esdm_dataspace_t *space;
-
   //failing input tests are in write.c
-  status = esdm_dataspace_create(2, size, SMD_DTYPE_UINT64, &space);
+  esdm_simple_dspace_t space = esdm_dataspace_2d(10, 20, SMD_DTYPE_UINT64);
+  eassert(space.ptr);
+
+  eassert_crash(esdm_read(NULL, buf_r, space.ptr));
+  eassert_crash(esdm_read(dataset, NULL, space.ptr));
+  eassert_crash(esdm_read(dataset, buf_r, NULL));
+  status = esdm_read(dataset, buf_r, space.ptr);
   eassert(status == ESDM_SUCCESS);
 
-  eassert_crash(esdm_read(NULL, buf_r, space));
-  eassert_crash(esdm_read(dataset, NULL, space));
-  eassert_crash(esdm_read(dataset, buf_r, NULL));
-  status = esdm_read(dataset, buf_r, space);
+  status = esdm_dataset_close(dataset);
+  eassert(status == ESDM_SUCCESS);
+  status = esdm_container_close(container);
   eassert(status == ESDM_SUCCESS);
 
   status = esdm_finalize();

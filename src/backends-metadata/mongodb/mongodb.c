@@ -133,7 +133,7 @@ static int entry_retrieve(const char *path) {
   // everything ok? write and close
   if (fd != -1) {
     // write some metadata
-    buf = (char *)malloc(sb.st_size + 1);
+    buf = ea_checked_malloc(sb.st_size + 1);
     buf[sb.st_size] = 0;
 
     read(fd, buf, sb.st_size);
@@ -376,10 +376,10 @@ static int fragment_update(esdm_backend_t *backend, esdm_fragment_t *fragment) {
   //entry_update()
 
   /*
-	size_t *count = NULL;
-	void *buf = NULL;
-	entry_retrieve(path_fragment, &buf, &count);
-	*/
+  size_t *count = NULL;
+  void *buf = NULL;
+  entry_retrieve(path_fragment, &buf, &count);
+  */
 
   free(path);
   free(path_fragment);
@@ -499,10 +499,10 @@ NULL,            // fragment destroy
 esdm_backend_t *mongodb_backend_init(esdm_config_backend_t *config) {
   DEBUG("Initializing mongodb backend.");
 
-  esdm_backend_t *backend = (esdm_backend_t *)malloc(sizeof(esdm_backend_t));
+  esdm_backend_t *backend = ea_checked_malloc(sizeof(esdm_backend_t));
   memcpy(backend, &backend_template, sizeof(esdm_backend_t));
 
-  mongodb_backend_options_t *data = (mongodb_backend_options_t *)malloc(sizeof(mongodb_backend_options_t));
+  mongodb_backend_options_t *data = ea_checked_malloc(sizeof(mongodb_backend_options_t));
 
   char *tgt;
   asprintf(&tgt, "./_mongodb");

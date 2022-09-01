@@ -1,0 +1,374 @@
+\section{Developers guide}
+This document aims to give a quick conceptual overview of the API that is available to programs which link directly to ESDM. 
+It is not meant to be exhaustive, but rather to give enough background information so that reading the documentation of the ESDM API becomes easy. 
+The intended audience of this guide are developers of scientific applications who wish to benefit of the full potential of the ESDM API.
+
+Readers who are interested in using an ESDM file system with a NetCDF based application should read the users guide instead. 
+Unfortunately, there is no guide for ESDM backend developers and ESDM core contributors yet.
+
+\subsection{Internal data model}
+
+The first thing to understand is the data model used by ESDM.
+This data model is very similar to that employed by NetCDF, but it adds some abstractions.
+This section describes the model.
+
+\subsubsection{Dataspace}
+\label{sec:user-guides:data-space}
+
+A data space describes the layout of data in memory.
+It is a mapping of logical data space to sequential bytes in memory.
+All data handled by ESDM is associated with a data space.
+Mostly the data spaces are user-provided. 
+Several copies of the same data may use distinct datas paces.
+In this case, ESDM allows users to transform data from one layout to another by providing a source and a destination data space (\lstinline|esdm_dataspace_copy_data()|). 
+User code needs to provide a data space when it defines a variable (here, the data layout part is irrelevant), when it stores data, and when it reads data.
+
+The logical data space is always a multidimensional, axis-aligned box in ESDM. 
+As such, a data space consists of the following information:
+
+\begin{itemize}
+  \item the dimension count
+  \item start and end coordinates for each axis
+  \item a data type describing a single value within the multidimensional array
+  \item (data serialization information)
+\end{itemize}
+
+The data serialization information is usually implicit.
+By default, ESDM assumes a C multidimensional array layout. 
+Fortran programs will need to set explicitly the data serialization information to match Fortran's inverse dimension order. 
+The data serialization information (\lstinline|stride|) can also achieve unorthodox effects like arrays with holes or replicating a single 2D slice along a third axis.
+
+\paragraph{Creating and destroying dataspaces}
+ESDM provides two distinct mechanisms to create a data space: A generic API that allocates the data space on the heap and an API to create a throw-away data space on the stack quickly.
+
+\subparagraph{The generic API}
+The functions used to create dataspaces are:
+
+\begin{itemize}
+  \item \lstinline|esdm_dataspace_create()|
+    Construct a data space with a given dimension count, size, and datatype. 
+    It assumes that the hypercube starts at (0, 0, ..., 0) and C data layout.
+  \item \lstinline|esdm_dataspace_create_full()|
+    Like \lstinline|esdm_dataspace_create()|, but allows the user to specify start coordinates.
+  \item \lstinline|esdm_dataspace_copy()|
+    Copy constructor.
+  \item \lstinline|esdm_dataspace_subspace()|
+    Create a data space that contains a subset of the logical data space of its parent data space. 
+    It copies the datatype and assumes the C data layout for the subspace. 
+    If this is not desireable, follow up with a call to \lstinline|esdm_dataspace_copyDatalayout()|.
+  \item \lstinline|esdm_dataspace_makeContiguous()|
+    Create a data space with the same logical space and datatype, but which uses the C data layout.
+\end{itemize}
+
+All these functions return a pointer to a new data space \textbf{which must be destroyed with a call to \lstinline|esdm_dataspace_destroy()|}.
+
+Data layout can only be set explicitly after a data space has been created. 
+This is done by a call to \lstinline|esdm_dataspace_set_stride()| or to \lstinline|esdm_dataspace_copyDatalayout()|. 
+The first allows the user to specify any standard data layout, including but not limited to Fortran's data layout. 
+The latter assumes that the data space will access the same data buffer as the data space from which the data layout is copied. 
+As such, \lstinline|esdm_dataspace_copyDatalayout()| is very convenient for data subseting operations.
+
+\subparagraph{The simple API}
+
+For convenience and performance reasons, ESDM provides preprocessor macros that allocate a data space on the stack. 
+Macros are provided for 1D, 2D, and 3D data spaces and come in variants that either assume start coordinates at the origin of the coordinate system, or
+allow the offset to be specified explicitly. 
+The macros without explicit start coordinates are:
+
+\begin{lstlisting}
+esdm_dataspace_1d()
+esdm_dataspace_2d()
+esdm_dataspace_3d()
+\end{lstlisting}
+
+The macros that take start coordinates simply add an "o" to the end of
+the name:
+
+\begin{lstlisting}
+esdm_dataspace_1do()
+esdm_dataspace_2do()
+esdm_dataspace_3do()
+\end{lstlisting}
+
+The result of these macros is a value of type \lstinline|esdm_simple_dspace_t|, which is a struct containing a single member \lstinline|ptr| which includes the pointer value that can subsequently be used in all ESDM calls that require a data space, i.e., a typical usage might be:
+
+\begin{lstlisting}
+esdm_simple_dspace_t region = esdm_dataspace_2do(x, width, y, height, type);
+esdm_read(dataset, buffer, region.ptr);
+\end{lstlisting}
+
+As the \lstinline|esdm_simple_dspace_t| lives on the stack, \textbf{it must not be destroyed with \lstinline|esdm_dataspace_destroy()|}. 
+It ceases to exist when the surrounding block exits.
+
+\subsubsection{Dataset}
+\label{sec:user-guides:dataset}
+
+A dataset in ESDM is what a variable is in NetCDF or HDF5. 
+Each data set is associated with a data space that describes the logical extends of the data, and it acts as a container for data written into this logical space.
+
+There is no requirement to fill the entire logical space with data. 
+Usually, reading nonexistent data results in an error. 
+However, a dataset can also be associated with a fill value to handle data with holes seamlessly.
+
+There is also no requirement to write non-overlapping data. 
+When write accesses overlap, ESDM will assume that both accesses place the same data in the overlapping area. 
+If this condition does not hold, there is no guarantee which data will be returned on a read.
+
+In addition to the data and the logical space, datasets can also contain several attributes. 
+Like attributes in NetCDF, these are meant to associate metadata with a dataset.
+
+User code can either create a dataset with \lstinline|esdm_dataset_create()| or look up an existing dataset from a container with \lstinline|esdm_dataset_open()|. 
+In either case, the reference to the dataset must later be dropped by a call to \lstinline|esdm_dataset_close()|. 
+A dataset can also be deleted with a call to \lstinline|esdm_dataset_delete()| which will remove its data from the file system, as well as its name and link from its container.
+
+\subsubsection{Container}%
+\label{sec:user-guides:container}
+
+Containers provide a means to organize and retrieve datasets. 
+When a dataset is created, it is added to a container and associated with a name for later retrieval.
+
+Like datasets, containers are created with \lstinline|esdm_container_create()| or looked up from the file system with \lstinline|esdm_container_open()| and need to be closed with \lstinline|esdm_container_close()| when their reference is not required anymore.
+Closing a container requires closing all datasets it contains first. 
+\lstinline|esdm_container_delete()| removes a container from the file system.
+
+\subsubsection{Grid}%
+\label{sec:user-guides:grid}
+
+The grid abstraction exists for performance reasons only: While it is possible to think of a data set as a set of possibly overlapping chunks of data, it is surprisingly hard to determine minimal sets of chunks to satisfy a read request. 
+On the other hand, user code generally does not use overlapping chunks of data. 
+Instead, user code can be assumed to work on (semi-)regular non-overlapping chunks of data. 
+Passing this chunking information to ESDM allows the library to make the right decisions faster.
+
+Grids also allow user code to inquire how the data is available on disk, allowing consumer code to iterate over complete and non-overlapping sets of data chunks in the most efficient fashion.
+To work with grids, the header \lstinline|esdm-grid.h| must be included.
+
+Like a data space, a grid covers an axis-aligned hyper box in the logical space. 
+This space is called the grid's domain, and it is defined when a grid is created with \lstinline|esdm_grid_create()|, \lstinline|esdm_grid_createSimple()| allows omitting the start coordinates to use the origin as one corner of the hyper box.
+
+Once a grid has been created, its axes can be subdivided individually by calls to \lstinline|esdm_grid_subdivide()|. 
+It allows the user to specify all the bounds for an axis explicitly. 
+In many contexts, however, it will be simpler to use \lstinline|esdm_grid_subdivideFixed()| or \lstinline|esdm_grid_subdivideFlexible()| which instruct ESDM to generate bounds
+in a regular way. 
+The fixed subdivision will produce intervals of a given size.
+Flexible subdivision instructs ESDM to generate a specific number of similar size intervals.
+
+After the grid axis has been defined, individual grid cells may be turned into subgrids via \lstinline|esdm_grid_createSubgrid()|. 
+After this, the parent grid axes are fixed, and the subdivision calls cannot be used anymore. 
+On the other hand, the subrid is a newly created grid with the parent grid's cell bounds as its domain. 
+Usually, user code will follow up with calls to \lstinline|esdm_grid_subdivide*()| on the subgrid to define its axes. 
+Subgrids may be constructed recursively to any depth.
+
+This subgrid feature is useful to define grids with semi-regular decompositions: For instance, an image may be decomposed into stripes, which are themselves decomposed into rectangles, but the rectangle bounds of one stripe do not match those of another stripe. 
+Such semi-regular decompositions are a typical result of load balancing of earth system simulations.
+
+Once a grids structure has been defined fully, it can be used to read/write data via \lstinline|esdm_read_grid()| and \lstinline|esdm_write_grid()|.
+Parallel applications will want to distribute the grid to all involved processes first by calling \lstinline|esdm_mpi_grid_bcast()| (include \lstinline|esdm-mpi.h| for this). 
+Both use a grid for input/output, and communicating it over MPI will fix the grid's structure, prohibiting future calls to subdivide axes or create subgrids.
+
+It is possible to iterate over all (sub-)cells of a grid. 
+This is done using an iterator, the three relevant functions are \lstinline|esdm_gridIterator_create()|, \lstinline|esdm_gridIterator_next()| and \lstinline|esdm_gridIterator_destroy()|. 
+This is meant to be used by readers who inquire about an available grid from a dataset using \lstinline|esdm_dataset_grids()|. 
+This method of reading avoids any cropping or stitching together of data chunks within ESDM, delivering the best possible performance.
+
+Grids always remain in possession of their data space. 
+Consequently, it is not necessary to dispose of them explicitly. 
+However, closing a data space invalidates all associated (sub-)grids.
+
+\subsection{Usage examples}%
+\label{sec:user-guides:usage-example}
+Learning usage of an API is easiest by seeing it in action in concrete examples. 
+As such, this section provides four relatively basic examples of how the ESDM API is supposed to be used, which nevertheless cover all the necessary core functionality.
+
+\subsubsection{Basic writing}
+The simplest way to write a greyscale image to ESDM is as follows:
+
+\begin{lstlisting}
+//assume image data stored in either
+uint16_t imageBuffer[height][width];
+uint16_t (*imageBuffer)[width] = malloc(height*sizeof*imageBuffer);
+
+//initialize ESDM
+esdm_status result = esdm_init();
+assert(result == ESDM_SUCCESS);
+
+//create the container, dataspace, and dataset
+esdm_container_t* container;
+//pass true to allow overwriting of an existing container
+result = esdm_container_create("path/to/container", false, &container); 
+assert(result == ESDM_SUCCESS);
+//the data is 2D and consists of uint64_t values
+esdm_simple_dspace_t space = 
+  esdm_dataspace_2d(height, width, SMD_TYPE_UINT16);  esdm_dataset_t* dataset;
+result = esdm_dataset_create(container, "myImage", space.ptr, &dataset);
+assert(result == ESDM_SUCCESS);
+
+//write the data
+result = esdm_write(dataset, imageBuffer, space.ptr);
+assert(result == ESDM_SUCCESS);
+
+//cleanup
+result = esdm_dataset_close(dataset);
+assert(result == ESDM_SUCCESS);
+result = esdm_container_close(container);
+assert(result == ESDM_SUCCESS);
+
+//bring down ESDM
+result = esdm_finalize();
+assert(result == ESDM_SUCCESS);
+\end{lstlisting}
+
+In this example, the same dataspace is used to create the dataset and write the data, writing all the data in one large piece. 
+Although it is not necessary, the data spaces that are passed to \lstinline|esdm_write()| may be smaller than the data set, calling \lstinline|esdm_write()| as many times as required to write the entire data.
+
+\subsubsection{Grid-based writing}
+When using grid-based writing, creating of the container and the dataset is the same. 
+The creation of the grid, however, is added explicitly. 
+In this case, we are going to slice a 3D data space into ten slices of similar size along the z-axis and into rows of 256 lines along the y axis:
+
+\begin{lstlisting}
+// define the grid
+esdm_grid_t* grid;
+result = esdm_grid_createSimple(dataset, 3, (int64_t[3]){depth, height, width}, &grid);
+assert(result == ESDM_SUCCESS);
+// the last parameter allows the last interval to be smaller than 256 lines
+result = esdm_grid_subdivideFixed(grid, 1, 256, true);  
+assert(result == ESDM_SUCCESS);
+result = esdm_grid_subdivideFlexible(grid, 0, 10);
+assert(result == ESDM_SUCCESS);
+
+for(int64_t z0 = 0, slice = 0, curDepth; z0 < depth; z0 += curDepth, slice++) {
+    // inquire the depth of the current slice
+    // use of esdm_grid_subdivideFlexible() generally 
+    // requires use of a grid bounds inquiry function
+    int64_t z1;
+    result = esdm_grid_getBound(grid, 0, slice + 1, &z1);
+    assert(result == ESDM_SUCCESS);
+    curDepth = z1 - z0;
+
+    for(int64_t row = 0; row*256 < height; row++) {
+        // compute the height of the current row
+        // we can calculate this ourselves as we have used esdm_grid_subdivideFixed()
+        int64_t height = (row < height/256 ? 256 : height - row*256);
+
+        // set contents of dataBuffer
+
+        // use the grid to write one chunk of data, the grid knows 
+        // to which dataset it belongs
+        result = esdm_write_grid(
+            grid, 
+            esdm_dataspace_3do(z0, curDepth, row*256, height, 0, width, SMD_TYPE_DOUBLE).ptr, 
+            dataBuffer);
+        assert(result == ESDM_SUCCESS);
+    }
+}
+
+// no need to cleanup the grid, it belongs to the dataset and 
+// will be disposed off when the dataset is closed
+\end{lstlisting}
+
+\subsubsection{Simple reading}
+
+Reading data is very similar to writing it. 
+Nevertheless, a simple example is given to read an entire dataset in one piece:
+
+\begin{lstlisting}
+// open the container and dataset, and inquire the dataspace
+esdm_container_t* container;
+result = esdm_container_open("path/to/container", ESDM_MODE_FLAG_READ, &container);
+assert(result == ESDM_SUCCESS);
+esdm_dataset_t* dataset;
+result = esdm_dataset_open(container, "myDataset", ESDM_MODE_FLAG_READ, &dataset);
+assert(result == ESDM_SUCCESS);
+esdm_dataspace_t* dataspace;
+// this returns a reference to the internal dataspace, do not destroy or modify it
+esdm_dataset_get_dataspace(dataset, &dataspace);  
+
+// allocate a buffer large enough to hold the data and generate a dataspace for it
+// the buffer will be in contiguous C data layout
+result = esdm_dataspace_makeContiguous(dataspace, &dataspace);  
+assert(result == ESDM_SUCCESS);
+int64_t bufferSize = esdm_dataspace_total_bytes(dataspace);
+void* buffer = malloc(bufferSize);
+
+// read the data
+result = esdm_read(dataset, buffer, dataspace);
+assert(result == ESDM_SUCCESS);
+
+// do stuff with buffer and dataspace
+
+// cleanup
+// esdm_dataspace_makeContiguous() creates a new dataspace
+result = esdm_dataspace_destroy(dataspace); 
+assert(result == ESDM_SUCCESS);
+result = esdm_dataset_close(dataset);
+assert(result == ESDM_SUCCESS);
+result = esdm_container_close(container);
+assert(result == ESDM_SUCCESS);
+\end{lstlisting}
+
+\subsubsection{Grid-based reading}
+Reading an entire dataset as a single chunk is generally a terrible idea. 
+Data sets, especially those generated by earth system models, can be massive, many times larger than the available main memory. 
+Reading a dataset in the form of reader-defined chunks is possible with \lstinline|esdm_read()|, but not necessarily efficient. 
+The chunks on disk may not match those which are used to read, requiring \lstinline|esdm_read()| to
+
+\begin{itemize}
+  \item read multiple chunks from disk and stitch them together,
+  \item and to read more data from disk than is required.
+\end{itemize}
+
+If the dataset has been written using a grid, this grid can be recovered to inform the reading process of the actual data layout on disk:
+
+\begin{lstlisting}
+    // open the container and dataset, and inquire the available grids
+    esdm_container_t* container;
+    result = esdm_container_open("path/to/container", ESDM_MODE_FLAG_READ, &container);
+    assert(result == ESDM_SUCCESS);
+    esdm_dataset_t* dataset;
+    result = esdm_dataset_open(container, "myDataset", ESDM_MODE_FLAG_READ, &dataset);
+    assert(result == ESDM_SUCCESS);
+    int64_t gridCount;
+    esdm_grid_t** grids;
+    result = esdm_dataset_grids(dataset, &gridCount, &grids);
+    assert(result == ESDM_SUCCESS);
+
+    // select a grid, here we just use the first one
+    assert(gridCount >= 1);
+    esdm_grid_t* grid = grids[0];
+    free(grids);  //we are responsible to free this array
+
+    // iterate over the data, reading the data one stored chunk at a time
+    esdm_gridIterator_t* iterator;
+    result = esdm_gridIterator_create(grid, &iterator);
+    assert(result == ESDM_SUCCESS);
+    while(true) {
+        esdm_dataspace_t* cellSpace;
+        result = esdm_gridIterator_next(&iterator, 1, &cellSpace);
+        assert(result == ESDM_SUCCESS);
+
+        if(!iterator) break;
+
+        // allocate a buffer large enough to hold the data
+        int64_t bufferSize = esdm_dataspace_total_bytes(cellSpace);
+        void* buffer = malloc(bufferSize);
+
+        // read the data
+        result = esdm_read_grid(grid, cellSpace, buffer);
+        assert(result == ESDM_SUCCESS);
+
+        // do stuff with buffer and cellSpace
+
+        // cleanup
+        free(buffer);
+        result = esdm_dataspace_destroy(cellSpace);
+        assert(result == ESDM_SUCCESS);
+    }
+
+    // cleanup
+    // no cleanup necessary for the iterator, it has already been destroyed 
+    // by esdm_gridIterator_next()
+    result = esdm_dataset_close(dataset);
+    assert(result == ESDM_SUCCESS);
+    result = esdm_container_close(container);
+    assert(result == ESDM_SUCCESS);
+\end{lstlisting}

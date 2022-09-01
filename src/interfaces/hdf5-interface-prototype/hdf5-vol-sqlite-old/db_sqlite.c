@@ -204,7 +204,7 @@ int DBF_get_fapl(SQF_t *file, hid_t *plist) {
     ret = -1;
   } else {
     int data_size = sqlite3_column_bytes(res, 0);
-    unsigned char *buf = malloc(data_size);
+    unsigned char *buf = ea_checked_malloc(data_size);
     const void *data = sqlite3_column_blob(res, 0);
     memcpy(buf, data, data_size);
     *plist = H5Pdecode(buf);
@@ -238,7 +238,7 @@ int DBF_get_fcpl(SQF_t *file, hid_t *plist) {
     ret = -1;
   } else {
     int data_size = sqlite3_column_bytes(res, 0);
-    unsigned char *buf = malloc(data_size);
+    unsigned char *buf = ea_checked_malloc(data_size);
     const void *data = sqlite3_column_blob(res, 0);
     memcpy(buf, data, data_size);
     *plist = H5Pdecode(buf);
@@ -254,7 +254,7 @@ int DB_entry_exists(SQO_t *obj, const char *table, const char *name, int *exists
   sqlite3_stmt *res;
   int ret = 0;
   const char *sql_query_template = "SELECT 1 FROM %s WHERE path = ? AND name = ?;";
-  char *sql_query = malloc(strlen(table) + strlen(sql_query_template) + 1);
+  char *sql_query = ea_checked_malloc(strlen(table) + strlen(sql_query_template) + 1);
   sprintf(sql_query, sql_query_template, table);
 
   const char *pzTest;
@@ -291,7 +291,7 @@ int DB_create_name_list(SQO_t *parent, H5VL_loc_params_t loc_params, const char 
   int rc;
 
   char *sql_query_count_template = "SELECT count(*) FROM %s WHERE path = ?;";
-  char *sql_query_count = (char *)malloc(strlen(sql_query_count_template) + strlen(tab_name) + 1);
+  char *sql_query_count = ea_checked_malloc(strlen(sql_query_count_template) + strlen(tab_name) + 1);
   sprintf(sql_query_count, sql_query_count_template, tab_name);
 
   rc = sqlite3_prepare(db, sql_query_count, strlen(sql_query_count), &res, &pzTest);
@@ -330,7 +330,7 @@ int DB_create_name_list(SQO_t *parent, H5VL_loc_params_t loc_params, const char 
   int rc2;
 
   char *sql_query_template = "SELECT name FROM %s WHERE path = ?;";
-  char *sql_query = (char *)malloc(strlen(sql_query_template) + strlen(tab_name) + 1);
+  char *sql_query = ea_checked_malloc(strlen(sql_query_template) + strlen(tab_name) + 1);
   sprintf(sql_query, sql_query_template, tab_name);
 
   rc2 = sqlite3_prepare(db, sql_query, strlen(sql_query), &res2, &pzTest2);
@@ -341,7 +341,7 @@ int DB_create_name_list(SQO_t *parent, H5VL_loc_params_t loc_params, const char 
 
   sqlite3_bind_text(res2, 1, path2, strlen(path2), 0);
 
-  *attr_list = (char **)malloc(sizeof(**attr_list) * *attr_list_size);
+  *attr_list = ea_checked_malloc(sizeof(**attr_list) * *attr_list_size);
   for (size_t i = 0; i < *attr_list_size; ++i) {
     rc2 = sqlite3_step(res2);
     if (rc2 != SQLITE_OK && rc2 != SQLITE_ROW) {
@@ -351,7 +351,7 @@ int DB_create_name_list(SQO_t *parent, H5VL_loc_params_t loc_params, const char 
       *attr_list_size = 0;
       ret = -1;
     } else {
-      (*attr_list)[i] = strdup(sqlite3_column_text(res2, 0));
+      (*attr_list)[i] = ea_checked_strdup(sqlite3_column_text(res2, 0));
     }
   }
 
@@ -391,7 +391,7 @@ int DBA_create(SQA_t *attr, H5VL_loc_params_t loc_params, hid_t acpl_id, hid_t a
   eassert(-1 != type_id);
   size_t type_size;
   H5Tencode(type_id, NULL, &type_size);
-  char *type_buf = (char *)malloc(type_size);
+  char *type_buf = ea_checked_malloc(type_size);
   H5Tencode(type_id, type_buf, &type_size);
 
   hid_t space_id;
@@ -399,24 +399,24 @@ int DBA_create(SQA_t *attr, H5VL_loc_params_t loc_params, hid_t acpl_id, hid_t a
   eassert(-1 != space_id);
   size_t space_size;
   H5Sencode(space_id, NULL, &space_size);
-  unsigned char *space_buf = (unsigned char *)malloc(space_size);
+  unsigned char *space_buf = ea_checked_malloc(space_size);
   H5Sencode(space_id, space_buf, &space_size);
 
   size_t acpl_size;
   H5Pencode(acpl_id, NULL, &acpl_size);
-  char *acpl_buf = (char *)malloc(acpl_size);
+  char *acpl_buf = ea_checked_malloc(acpl_size);
   eassert(NULL != acpl_buf);
   H5Pencode(acpl_id, acpl_buf, &acpl_size);
 
   //	size_t aapl_size;
   //	H5Pencode(aapl_id, NULL, &aapl_size);
-  //	char* aapl_buf = (char*) malloc(aapl_size);
+  //	char* aapl_buf = ea_checked_malloc(aapl_size);
   //	eassert(NULL != aapl_buf);
   //	H5Pencode(aapl_id, aapl_buf, &aapl_size);
   //
   //	size_t dxpl_size;
   //	H5Pencode(dxpl_id, NULL, &dxpl_size);
-  //	char* dxpl_buf = (char*) malloc(dxpl_size);
+  //	char* dxpl_buf = ea_checked_malloc(dxpl_size);
   //	eassert(NULL != dxpl_buf);
   //	H5Pencode(dxpl_id, dxpl_buf, &dxpl_size);
 
@@ -466,7 +466,7 @@ int DBA_open(SQO_t *parent, H5VL_loc_params_t loc_params, const char *attr_name,
   }
 
   attr->object.location = create_path(parent);
-  attr->object.name = strdup(attr_name);
+  attr->object.name = ea_checked_strdup(attr_name);
   attr->object.fapl = parent->fapl;
   attr->object.root = parent->root;
 
@@ -531,7 +531,7 @@ int DBA_open_by_idx(SQO_t *obj, H5VL_loc_params_t loc_params, const unsigned int
 
   if (attr_list_size > 0) {
     attr->object.location = create_path(obj);
-    attr->object.name = strdup(attr_list[idx]);
+    attr->object.name = ea_checked_strdup(attr_list[idx]);
     attr->data_size = data_size;
     attr->object.fapl = obj->fapl;
     attr->object.root = obj->root;
@@ -572,7 +572,7 @@ int DBA_get_acpl(SQA_t *attr, hid_t *acpl_id) {
   if (0 == data_size) {
     ERRORMSG("Couldn't read acpl.");
   } else {
-    unsigned char *acpl_buf = malloc(data_size);
+    unsigned char *acpl_buf = ea_checked_malloc(data_size);
     const void *data = sqlite3_column_blob(res, 0);
     memcpy(acpl_buf, data, data_size);
     *acpl_id = H5Pdecode(acpl_buf);
@@ -612,7 +612,7 @@ int DBA_get_type(SQA_t *attr, hid_t *type_id) {
   if (0 == data_size) {
     ERRORMSG("Couldn't read type.");
   } else {
-    unsigned char *type_buf = malloc(data_size);
+    unsigned char *type_buf = ea_checked_malloc(data_size);
     const void *data = sqlite3_column_blob(res, 0);
     memcpy(type_buf, data, data_size);
     *type_id = H5Tdecode(type_buf);
@@ -652,7 +652,7 @@ int DBA_get_space(SQA_t *attr, hid_t *space_id) {
   if (0 == data_size) {
     ERRORMSG("Couldn't read space.");
   } else {
-    unsigned char *space_buf = malloc(data_size);
+    unsigned char *space_buf = ea_checked_malloc(data_size);
     const void *data = sqlite3_column_blob(res, 0);
     memcpy(space_buf, data, data_size);
     *space_id = H5Sdecode(space_buf);
@@ -776,7 +776,7 @@ int DBG_open(SQO_t *parent, H5VL_loc_params_t loc_params, const char *group_name
   }
 
   group->object.location = create_path(parent);
-  group->object.name = strdup(group_name);
+  group->object.name = ea_checked_strdup(group_name);
   group->object.fapl = parent->fapl;
   group->object.root = parent->root;
 
@@ -826,7 +826,7 @@ int DBG_get_gcpl(SQG_t *group, hid_t *plist) {
   }
 
   int data_size = sqlite3_column_bytes(res, 0);
-  unsigned char *buf = malloc(data_size);
+  unsigned char *buf = ea_checked_malloc(data_size);
   const void *data = sqlite3_column_blob(res, 0);
   memcpy(buf, data, data_size);
   *plist = H5Pdecode(buf);
@@ -864,7 +864,7 @@ int DBD_create(SQD_t *dset, H5VL_loc_params_t loc_params, hid_t dcpl_id, hid_t d
   eassert(-1 != type_id);
   size_t type_size;
   H5Tencode(type_id, NULL, &type_size);
-  char *type_buf = (char *)malloc(type_size);
+  char *type_buf = ea_checked_malloc(type_size);
   H5Tencode(type_id, type_buf, &type_size);
 
   hid_t space_id;
@@ -874,18 +874,18 @@ int DBD_create(SQD_t *dset, H5VL_loc_params_t loc_params, hid_t dcpl_id, hid_t d
   eassert(-1 != space_id);
   size_t space_size;
   H5Sencode(space_id, NULL, &space_size);
-  unsigned char *space_buf = (unsigned char *)malloc(space_size);
+  unsigned char *space_buf = ea_checked_malloc(space_size);
   H5Sencode(space_id, space_buf, &space_size);
 
   size_t dcpl_size;
   H5Pencode(dcpl_id, NULL, &dcpl_size);
-  char *dcpl_buf = (char *)malloc(dcpl_size);
+  char *dcpl_buf = ea_checked_malloc(dcpl_size);
   eassert(NULL != dcpl_buf);
   H5Pencode(dcpl_id, dcpl_buf, &dcpl_size);
 
   size_t dapl_size;
   H5Pencode(dapl_id, NULL, &dapl_size);
-  char *dapl_buf = (char *)malloc(dapl_size);
+  char *dapl_buf = ea_checked_malloc(dapl_size);
   eassert(NULL != dapl_buf);
   H5Pencode(dapl_id, dapl_buf, &dapl_size);
 
@@ -921,7 +921,7 @@ int DBD_open(SQO_t *parent, H5VL_loc_params_t loc_params, const char *name, SQD_
   dset->object.root = parent->root;
   dset->object.fapl = parent->fapl;
   dset->object.location = create_path(parent);
-  dset->object.name = strdup(name);
+  dset->object.name = ea_checked_strdup(name);
 
   char *sql = "SELECT offset, data_size, info FROM DATASETS WHERE path = ? and name = ?;";
 
@@ -983,7 +983,7 @@ int DBD_get_dcpl(SQD_t *dset, hid_t *plist) {
   if (0 == data_size) {
     ERRORMSG("Couldn't read dcpl.");
   } else {
-    unsigned char *buf = malloc(data_size);
+    unsigned char *buf = ea_checked_malloc(data_size);
     const void *data = sqlite3_column_blob(res, 0);
     memcpy(buf, data, data_size);
     *plist = H5Pdecode(buf);
@@ -1024,7 +1024,7 @@ int DBD_get_dapl(SQD_t *dset, hid_t *plist) {
   if (0 == data_size) {
     ERRORMSG("Couldn't read dapl.");
   } else {
-    unsigned char *buf = malloc(data_size);
+    unsigned char *buf = ea_checked_malloc(data_size);
     const void *data = sqlite3_column_blob(res, 0);
     memcpy(buf, data, data_size);
     *plist = H5Pdecode(buf);
@@ -1066,7 +1066,7 @@ int DBD_get_type(SQD_t *dset, hid_t *type_id) {
   if (0 == data_size) {
     ERRORMSG("Couldn't read type.");
   } else {
-    unsigned char *type_buf = malloc(data_size);
+    unsigned char *type_buf = ea_checked_malloc(data_size);
     const void *data = sqlite3_column_blob(res, 0);
     memcpy(type_buf, data, data_size);
     *type_id = H5Tdecode(type_buf);
@@ -1105,7 +1105,7 @@ int DBD_get_space(SQD_t *dset, hid_t *space_id) {
     if (0 == data_size) {
       ERRORMSG("Couldn't read space.");
     }
-    unsigned char *space_buf = malloc(data_size);
+    unsigned char *space_buf = ea_checked_malloc(data_size);
     const void *data = sqlite3_column_blob(res, 0);
     memcpy(space_buf, data, data_size);
     *space_id = H5Sdecode(space_buf);

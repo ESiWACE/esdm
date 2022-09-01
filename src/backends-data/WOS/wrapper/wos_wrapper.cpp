@@ -268,7 +268,7 @@ void GetDataObj(const void **value, int *len, const t_WosObjPtr * wobj) {
 void GetMetaObj(const char *key, char **value, const t_WosObjPtr * wobj) {
 	std::string temp;
 	wobj->wobj->GetMeta(key, temp);
-	*value = strndup(temp.c_str(), temp.size());
+	*value = ea_checked_strndup(temp.c_str(), temp.size());
 	return;
 }
 

@@ -1,7 +1,16 @@
 #include <esdm-internal.h>
 
+#include "dummy/dummy.h"
+
+
+#ifdef ESDM_HAS_S3
+#  include "s3/s3.h"
+#  pragma message("Building ESDM with support for S3 backend.")
+#endif
+
 #ifdef ESDM_HAS_POSIX
 #  include "posix/posix.h"
+#  include "posixi/posixi.h"
 #  pragma message("Building ESDM with support for generic POSIX backend.")
 #endif
 
@@ -15,9 +24,9 @@
 #  pragma message("Building ESDM with Kove XPD KDSA support.")
 #endif
 
-#ifdef ESDM_HAS_CLOVIS
-#  include "Clovis/clovis.h"
-#  pragma message("Building ESDM with Clovis support.")
+#ifdef ESDM_HAS_MOTR
+#  include "Motr/client.h"
+#  pragma message("Building ESDM with Motr support.")
 #endif
 
 #ifdef ESDM_HAS_WOS
@@ -31,8 +40,14 @@
 #endif
 
 esdm_backend_t * esdmI_init_backend(char const * name, esdm_config_backend_t * b){
+  if (strncmp(b->type, "DUMMY", 5) == 0) {
+    return dummy_backend_init(b);
+  }
 #ifdef ESDM_HAS_POSIX
-  if (strncmp(b->type, "POSIX", 5) == 0) {
+  else if (strncmp(b->type, "POSIXI", 6) == 0) {
+    return posixi_backend_init(b);
+  }
+  else if (strncmp(b->type, "POSIX", 5) == 0) {
     return posix_backend_init(b);
   }
 #endif
@@ -42,13 +57,13 @@ esdm_backend_t * esdmI_init_backend(char const * name, esdm_config_backend_t * b
   }
 #endif
 #ifdef ESDM_HAS_KDSA
-  else if (strncasecmp(b->type, "KDSA", 6) == 0) {
+  else if (strncasecmp(b->type, "KDSA", 4) == 0) {
     return kdsa_backend_init(b);
   }
 #endif
-#ifdef ESDM_HAS_CLOVIS
-  else if (strncasecmp(b->type, "CLOVIS", 6) == 0) {
-    return clovis_backend_init(b);
+#ifdef ESDM_HAS_MOTR
+  else if (strncasecmp(b->type, "MOTR", 6) == 0) {
+    return motr_backend_init(b);
   }
 #endif
 #ifdef ESDM_HAS_WOS
@@ -59,6 +74,11 @@ esdm_backend_t * esdmI_init_backend(char const * name, esdm_config_backend_t * b
 #ifdef ESDM_HAS_PMEM
   else if (strncmp(b->type, "PMEM", 4) == 0) {
     return pmem_backend_init(b);
+  }
+#endif
+#ifdef ESDM_HAS_S3
+  else if (strncmp(b->type, "S3", 2) == 0){
+    return s3_backend_init(b);
   }
 #endif
   return NULL;

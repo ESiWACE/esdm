@@ -1,0 +1,559 @@
+\section{Configuration}
+
+ESDM can store metadata and data separately.
+Furthermore, the data can be distributed over multiple storage media.
+How exactly the data is distributed can be specified in the configuration file.
+This section describes the file structure, the metadata and supported storage backends configuration and provides examples.
+
+\subsection{Search paths}
+
+The current implemention reads \lstinline|esdm.conf| file in the current directory.
+In the next ESDM versions it is planned to support other common paths as well, like \lstinline|/etc/esdm/esdm.conf|, \lstinline|~/.config/esdm/esdm.conf|, \lstinline|~/.esdm.conf|, \lstinline|./esdm.conf|.
+In addition, the configuration should also be possible via the environment variable and arguments.
+
+
+\subsection{File format}
+The configuration file format is based on JSON, i.e. all configuration files must be valid JSON files.
+However, ESDM places some restrictions on what keys are recognized and which types are expected.
+The tables summarize parameters that can be used in the configuration file.
+Parameter can be of four types: string, integer, float and object, which are collections of key-value pairs.
+
+The \lstinline|"esdm":{}| key-value pair in the root of the JSON configuration file can contain configuration for multiple data backends and one metadata backend.
+The backends are organized in the \lstinline|"backends":[]| key-value pair as a list.
+
+%\begin{lstlisting}
+%{
+%  "esdm":	{
+%    "backends": [backend_1, backend_2, \ldots, backend_n],
+%    "metadata": {}
+%  }
+%}
+%\end{lstlisting}
+
+
+\begin{lstlisting}
+{
+  "esdm":	{
+    "backends": [
+      <insert backend config here>,
+      <insert backend config here>,
+      ...
+      <insert backend config here>,
+    "metadata": {
+      <insert metadata config here>,
+    }
+  }
+}
+\end{lstlisting}
+
+\lstinputlisting{../examples/conf/esdm.conf}
+
+\subsection{Data parameters}
+
+\begin{preserve}
+\begin{table}[!h]
+  \begin{center}
+    %\begin{scriptsize}
+      \begin{tabularx}{\textwidth}{llllX}
+        Parameter              & Type    & Default    &          & Description \\
+        \hline
+        id                     & string  & (not set)  & required & Unique identifier \\
+        type                   & string  & (not set)  & required & Backend name \\
+        target                 & string  & (not set)  & required & Connection specification (Bucket name for S3) \\
+        performance-model      & object  & (not set)  & optional & Performance model definition.\\
+        max-threads-per-node   & integer & 0          & optional & Maximum number of threads on a node. \\
+        write-stream-blocksize & integer & 0          & optional & Blocksize in bytes used to write fragments. \\
+        max-global-threads     & integer & 0          & optional & Maximum total number of threads. \\
+        accessibility          & string  & global     & optional & Data access permission rights. \\
+        max-fragment-size      & integer & 10485760   & optional & Maximum fragment size in bytes. \\
+        fragmentation-method   & string  & contiguous & optional & Fragmentation methods.\\
+      \end{tabularx}
+    %\end{scriptsize}
+  \end{center}
+  \caption{Backend configuration parameters overview}%
+  \label{tab:backend_conf_params}
+\end{table}
+\end{preserve}
+
+\begin{preserve}
+\def\gapsize{1cm}
+\end{preserve}
+\def\gapsize{1cm}
+
+
+\paragraph{Parameter: /esdm/backends/id}
+
+Unique alpha-numeric identifier.
+
+\begin{preserve}
+ \noindent
+ \begin{tabular}{ll}
+   Type     & string    \\ 
+   Default  & (not set) \\ 
+   Required & yes       \\ 
+ \end{tabular} 
+\end{preserve}
+\FloatBarrier
+\vspace{\gapsize}
+
+
+\paragraph{Parameter: /esdm/backends/type}
+Storage backend type. 
+
+\begin{preserve}
+  \noindent
+  \begin{tabular}{ll}
+    Type     & string    \\ 
+    Default  & (not set) \\ 
+    Required & yes       \\ 
+  \end{tabular}
+\end{preserve}
+
+Can take a value of one of the supported backends.
+
+\begin{preserve}
+  \noindent
+  \begin{center}
+    \begin{tabular}{ll}
+      Type   & Description                          \\ 
+      \hline
+      MOTR   & Seagate Object Storage API           \\ 
+      DUMMY  & Dummy storage (Used for development) \\ 
+      IME    & DDN Infinite Memory Engine           \\ 
+      KDSA   & Kove Direct System Architecture      \\ 
+      POSIX  & Portable Operating System Interface  \\ 
+      S3     & Amazon Simple Storage Service        \\ 
+      WOS    & DDN Web Object Scaler                \\ 
+    \end{tabular}
+  \end{center}
+\end{preserve}
+\FloatBarrier
+\vspace{\gapsize}
+
+
+\paragraph{Parameter: /esdm/backends/target}
+The target specifies connection to storage.
+Therefore, its value depends on the storage type.
+The following sections describe targets for each storage type and provide an example.
+
+\begin{preserve}
+  \noindent
+  \begin{tabular}{ll}
+    Type     & string    \\ 
+    Default  & (not set) \\ 
+    Required & yes       \\ 
+  \end{tabular}
+\end{preserve}
+\subparagraph{Type = MOTR}
+If Seagate Object Storage API is selected, then the target string is composed of four parameters separated by spaces.
+
+\begin{lstlisting} 
+[local_addr] [ha_addr] [prof] [proc_fid]
+\end{lstlisting}
+
+where
+\begin{itemize}
+  \item "local\_addr" is the local address used to connect to Motr service, 
+  \item "ha\_addr" is the hardware address in Motr service, 
+  \item "prof" is the profile FID in the Motr service, and
+  \item "proc\_fid" is the process FID in the Motr service.
+\end{itemize}
+
+\begin{lstlisting}
+{
+  "type": "MOTR",
+  "id": "c1",
+  "target": ":12345:33:103 192.168.168.146@tcp:12345:34:1 
+  <0x7000000000000001:0> <0x7200000000000001:64>"
+}
+\end{lstlisting}
+\FloatBarrier
+\vspace{\gapsize}
+
+
+\subparagraph{Type = DUMMY}
+Used for development.
+
+\begin{lstlisting}
+{
+  "type": "DUMMY",
+  "id": "c1",
+  "target": "./_dummy",
+}
+\end{lstlisting}
+\FloatBarrier
+\vspace{\gapsize}
+
+\subparagraph{Type = IME}
+The target is the IME storage mount point.
+
+\begin{lstlisting}
+{
+  "type": "IME",
+  "id": "p1",
+  "target": "./_ime"
+}
+\end{lstlisting}
+\FloatBarrier
+\vspace{\gapsize}
+
+
+\subparagraph{Type = KDSA}
+Prefix ``xpd:'' followed by volume specifications. Multiple volume names can be connected by ``+'' sign.
+
+\begin{lstlisting}
+xpd:mlx5\_0.1/260535867639876.9:e58c053d-ac6b-4973-9722-cf932843fe4e[+mlx...]
+\end{lstlisting}
+
+A module specification consists of several parts.
+Caller provides a device handle, the target serial number, the target link number, the volume UUID,
+The convention for specifying a KDSA volume uses the following format:
+
+\begin{lstlisting}
+[localdevice[.localport]/][serialnumber[.linknum]:]volumeid
+\end{lstlisting}
+
+where the square brackets indicate optional parts of the volume connection specification.
+Thus, a volumeid is nominally sufficient to specify a desired volume, and one can then optionally additionally 
+specify the serial number of the XPD with optional link number, and/or one can optionally specify the local 
+device to use with optional local port number.
+The convention for specifying multiple KDSA volumes to stripe together uses the following format:
+
+\begin{lstlisting}
+volume_specifier[+volume_specifier[+volume_specifier[+...]]][@parameter]
+\end{lstlisting}
+
+where the square brackets indicate optional parts of the aggregated connection specification. Thus, a single
+volume connection specification is sufficient for a full connection specifier, and one can then optionally specify
+additional volume specifiers to aggregate, using the plus sign as a separator. The user may also additionally
+specify parameters for the aggregation, using the “at sign”, a single character as a parameter identifier, and the
+parameter value.
+
+\begin{lstlisting}
+{
+  "type": "KDSA",
+  "id": "p1",
+  "target": "This is the XPD connection string",
+}
+\end{lstlisting}
+  %"max-threads-per-node" : 0,
+  %"max-fragment-size" : 1048,
+  %"accessibility" : "global"
+\FloatBarrier
+\vspace{\gapsize}
+
+\subparagraph{Type = POSIX}
+The target string is the path to a directory.
+\begin{lstlisting}
+{
+  "type": "POSIX",
+  "id": "p2",
+  "target": "./_posix2"
+}
+\end{lstlisting}
+\FloatBarrier
+\vspace{\gapsize}
+
+\subparagraph{Type = S3}
+%Amazon Docs
+%https://docs.aws.amazon.com/AmazonS3/latest/API/API_CreateBucket.html
+The target string is a bucket name with at least a 5 characters.
+A proper S3 configuration requires at three additional parameters: \lstinline|host|, \lstinline|secret-key| and \lstinline|access-key|.
+Other parameters are optional.
+
+\begin{preserve}
+%\begin{table}[!h]
+  %\begin{center}
+  \begin{scriptsize}
+    \noindent
+    \begin{tabularx}{\textwidth}{llllX}
+      Parameter              & Type    & Default    &          & Description \\
+      \hline
+      host                   & string  & (not set)  & required & A valid endpoint name for the Amazon S3 region provided by the agency. \\
+      secret-key             & string  & (not set)  & required & Secret Access Key for the account. \\
+      access-key             & string  & (not set)  & required & Access key ID for the account. \\
+      locationConstraint     & string  & (not set)  & optional & Specifies the Region where the bucket will be created. If you don't specify a Region, the bucket is created in the US East (N. Virginia) Region (us-east-1). For a list of all the Amazon S3 supported regions, see API Bucket reference (\url{https://docs.aws.amazon.com/AmazonS3/latest/API/API_CreateBucket.html}) \\
+      authRegion             & string  & (not set)  & optional & For a list of all the Amazon S3 supported regions and endpoints, see regions and endpoints in the AWS General Reference (\url{https://docs.aws.amazon.com/general/latest/gr/rande.html\#s3_region}) \\
+      timeout                & integer & (not set)  & optional & Request timeout in milliseconds. \\
+      s3-compatible          & integer & (not set)  & optional & TODO (not used ?) \\
+      use-ssl                & integer & 0          & optional & Use HTTPS for encryption, if enabled. \\
+    \end{tabularx}
+  \end{scriptsize}
+  %\end{center}
+  %\caption{S3 parameters}%
+  %\label{tab:s3_params}
+  %\end{table}
+\end{preserve}
+
+\begin{lstlisting}
+{
+  "type": "S3",
+  "id": "p1",
+  "target": "./_posix1",
+  "access-key" : "",
+  "secret-key" : "",
+  "host" : "localhost:9000"
+}
+\end{lstlisting}
+\FloatBarrier
+\vspace{\gapsize}
+
+
+\subparagraph{Type = WOS}
+The target string is a concatenation of \lstinline|key=value;| pairs.
+The \lstinline|host| key specifies the WOS service host.
+The \lstinline|policy| name is that one, that was set up on the DDN WOS console.
+
+\begin{lstlisting}
+{
+  "type": "WOS",
+  "id": "w1",
+  "target": "host=192.168.80.33;policy=test;",
+}
+\end{lstlisting}
+  %"max-threads-per-node" : 1,
+  %"max-fragment-size" : 1073741825,
+  %"max-global-threads" : 1,
+  %"accessibility" : "global"
+\FloatBarrier
+\vspace{\gapsize}
+
+
+\paragraph{Parameter: performance-model}
+The performance model estimates expected performance of backends and can affect the choice of backend.
+
+\begin{preserve}
+  \noindent
+  \begin{tabular}{ll}
+    Type     & object \\ 
+    Default  & (not set)       \\ 
+    Required & no      \\ 
+  \end{tabular}
+\end{preserve}
+
+Dynamic performance model parameters.
+
+%\begin{preserve}
+%\begin{table}[!ht]
+  \begin{center}
+    \begin{tabularx}{\textwidth}{lllllX}
+      Parameter  & Type  & Default & Domain &          & Description \\ 
+      \hline
+      latency    & float & 0.0     & $>=0.0$  & optional & Latency in seconds     \\ 
+      throughput & float & 0.0     & $>0.0$   & optional & Throughput in MiB/s       \\ 
+    \end{tabularx}
+  \end{center}
+  %\caption{Dynamic performance model parameters}%
+  %\label{tab:dyn_perf_model_conf_params}
+%\end{table}
+%\end{preserve}
+
+  Generic performance model parameters.
+  The proximity coefficient determines how fast the performance model reacts to backend performance fluctuations.
+  The higher the value, the faster the performance estimation.
+%\begin{preserve}
+%\begin{table}[!ht]
+  %\begin{center}
+    \begin{tabularx}{\textwidth}{lllllX}
+      Parameter  & Type    & Default & Domain      &          & Description               \\ 
+      \hline
+      latency    & float   & 0.0     & $>=0.0$     & optional & Latency in seconds        \\ 
+      throughput & float   & 0.0     & $>0.0$      & optional & Throughput in MiB/s       \\ 
+      size       & integer & 0       & $>0$        & optional & Test buffer size in bytes \\ 
+      period     & float   & 0.0     & $>0.0$      & optional & Test period in seconds    \\ 
+      alpha      & float   & 0.0     & $[0.0,1.0)$ & optional & Adaption rate             \\ 
+    \end{tabularx}
+  %\end{center}
+  %\caption{Generic performance model parameters}%
+  %\label{tab:gen_perf_model_conf_params}
+%\end{table}
+%\end{preserve}
+
+\FloatBarrier
+\vspace{\gapsize}
+
+
+\paragraph{Parameter: max-threads-per-node}
+Maximum number of threads on a node.
+If \lstinline|max-threads-per-node=0|, then the ESDM scheduler estimates an optimal value.
+
+\begin{preserve}
+  \noindent
+  \begin{tabular}{ll}
+    Type     & integer \\ 
+    Default  & 0       \\ 
+    Required & no      \\ 
+  \end{tabular}
+\end{preserve}
+\FloatBarrier
+\vspace{\gapsize}
+
+\paragraph{Parameter: write-stream-blocksize}
+Block size in bytes used to read/write fragments.
+If \lstinline|write-stream-blocksize=0|, then ESDM estimates optimal block size for each storage type individually.
+
+\begin{preserve}
+  \noindent
+  \begin{tabular}{ll}
+    Type     & integer \\ 
+    Default  & 0       \\ 
+    Required & no      \\ 
+  \end{tabular}
+\end{preserve}
+\FloatBarrier
+\vspace{\gapsize}
+
+\paragraph{Parameter: max-global-threads}
+Maximum total number of threads.
+If \lstinline|max-global-threads=0|, then the ESDM scheduler estimates an optimal value.
+
+\begin{preserve}
+  \noindent
+  \begin{tabular}{ll}
+    Type     & integer \\ 
+    Default  & 0       \\ 
+    Required & no      \\ 
+  \end{tabular}
+\end{preserve}
+\FloatBarrier
+\vspace{\gapsize}
+
+\paragraph{Parameter: accessibility}
+Data access permission rights.
+
+\begin{preserve}
+  \noindent
+  \begin{tabular}{ll}
+    Type     & string \\ 
+    Default  & global \\ 
+    Required & no     \\ 
+  \end{tabular}
+\end{preserve}
+
+\begin{preserve}
+%\begin{table}[!ht]
+  \begin{center}
+    \begin{tabularx}{\textwidth}{lX}
+      Method & Description                                                 \\ 
+      \hline
+      global & data is accessible from all nodes, e.g., shared file system \\ 
+      local  & data is accessible from local node only                     \\ 
+    \end{tabularx}
+  \end{center}
+  %\caption{Accessibility}%
+  %\label{tab:accessibility}
+%\end{table}
+\end{preserve}
+\FloatBarrier
+\vspace{\gapsize}
+
+\paragraph{Parameter: max-fragment-size}
+The amount of data that may be written into a single fragment. 
+The amount is given in bytes.
+
+\begin{preserve}
+  \noindent
+  \begin{tabular}{ll}
+    Type     & integer  \\ 
+    Default  & 10485760 \\ 
+    Required & no       \\ 
+  \end{tabular}
+\end{preserve}
+\FloatBarrier
+\vspace{\gapsize}
+
+
+\paragraph{Parameter: fragmentation-method}
+A string identifying the algorithm to use to split a chunk of data into fragments. 
+
+\begin{preserve}
+  \noindent
+  \begin{tabular}{ll}
+    Type     & string     \\ 
+    Default  & contiguous \\ 
+    Required & no         \\ 
+  \end{tabular}
+\end{preserve}
+
+Legal values are:
+
+\begin{preserve}
+\begin{table}[!ht]
+  \begin{center}
+    \begin{tabularx}{\textwidth}{lX}
+      Method     & Description \\
+      \hline
+      contiguous  & This algorithm tries to form fragments that are scattered across memory as little as possible. As such, it is expected to yield the best possible write performance. 
+      However, if a transposition is performed when reading the data back, performance may be poor.
+      Splitting a dataspace of size (50, 80, 100) into fragments of 2000 entries results in fragments of size (1, 20, 100). \\
+      equalized   & This algorithm tries to form fragments that have a similar size in all dimensions. As such, it is expected to perform equally well with all kinds of read requests, but it tends to write scattered data to disk which has to be sequentialized first, imposing a performance penalty on the write side.
+      Splitting a dataspace of size (50, 80, 100) into fragments of at most 2000 entries results in fragments of sizes between (10, 11, 11) and (10, 12, 12). \\
+    \end{tabularx}
+  \end{center}
+  \caption{Fragmentation methods}%
+  \label{tab:frag_methods}
+\end{table}
+\end{preserve}
+\FloatBarrier
+\vspace{\gapsize}
+
+\subsection{Metadata parameters}
+
+\begin{preserve}
+\begin{table}[!ht]
+  \begin{center}
+    \begin{tabularx}{\textwidth}{llllX}
+      Parameter & Type   & Default   & Required   & Description                             \\ 
+      \hline
+      id        & string & (not set) & (not used) & Unique alpha-numeric identifier.        \\ 
+      type      & string & (not set) & yes        & Metadata type. Reserved for future use. \\ 
+      target    & string & (not set) & yes        & Path to metadata folder                 \\ 
+    \end{tabularx}
+  \end{center}
+  \caption{Metadata parameters overview}%
+  \label{tab:metadata_params}
+\end{table}
+\end{preserve}
+
+\paragraph{Parameter: /esdm/metadata/id}
+Unique alpha-numeric identifier.
+
+\begin{preserve}
+ \noindent
+ \begin{tabular}{ll}
+   Type     & string    \\ 
+   Default  & (not set) \\ 
+   Required & yes       \\ 
+ \end{tabular} 
+\end{preserve}
+\FloatBarrier
+\vspace{\gapsize}
+
+\paragraph{Parameter: /esdm/metadata/type}
+Metadata type. Reserved for future use.
+
+\begin{preserve}
+  \noindent
+  \begin{tabular}{ll}
+    Type     & string         \\ 
+    Default  & (not set)      \\ 
+    Required & yes (not used) \\ 
+  \end{tabular}
+\end{preserve}
+\FloatBarrier
+\vspace{\gapsize}
+
+\paragraph{Parameter: /esdm/metadata/target}
+Path to the metadata folder.
+
+\begin{preserve}
+  \noindent
+  \begin{tabular}{ll}
+    Type     & string         \\ 
+    Default  & (not set)      \\ 
+    Required & yes \\ 
+  \end{tabular}
+\end{preserve}
+\FloatBarrier
+\vspace{\gapsize}
+
